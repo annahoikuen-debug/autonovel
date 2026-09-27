@@ -1,22 +1,68 @@
+# 本番イメージ（マルチステージ）
+#
+# ビルド方法:
+#   docker build -t autonovel-backend:5.2.1 -f Dockerfile.prod .
+#
+# 補足（2026-09-27 修正）:
+#   旧版は CMD が `src.api.main:app` を指していたが、このモジュールは存在せず
+#   （src/api/ には health.py / conflicts.py / dashboard.py / agent_memory.py
+#   / middleware.py のみ）、コンテナが起動できない状態だった。EXPOSE も 8000 だった
+#   が、実際のアプリケーションは 8200 でリッスンしている（Dockerfile / compose と
+#   不一致）。正のエントリポイントは `src.backend.server:app`（src/backend/server.py:108
+#   で `app = FastAPI(...)` を定義）であり、ポートは 8200。
+#   また旧版は `COPY . .` で作業ツリー全体（.env を含む）をイメージに載せていたため、
+#   .dockerignore に .env を追加したうえで、必要なディレクトリだけコピーする形に改めた。
+#
+# 注意: 現在の docker-compose.yml / docker-compose.prod.yml のどちらからも
+# dockerfile: Dockerfile を指定されており、本ファイルは使用されていない。
+# `Dockerfile` が entrypoint.sh + `src.backend.server:app` を使う多段ビルドの
+# 正本命であり、本ファイルは plan 上の成果物（Phase 4 Step 5）として
+# `docker build -f Dockerfile.prod .` を単発で実行する用途のために維持している。
+
 # ビルドステージ
 FROM python:3.12-slim AS builder
 WORKDIR /app
-# 依存関係のみコピーしてキャッシュ活用
+ENV PIP_PREFIX=/opt/deps
+ENV PIP_NO_CACHE_DIR=1
 COPY requirements.txt ./
-# 本番依存関係のみインストール
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --prefix=/opt/deps -r requirements.txt
 
 # 本番ステージ
 FROM python:3.12-slim
 WORKDIR /app
-# ビルドステージから成果物コピー
-COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
-COPY --from=builder /usr/local/bin /usr/local/bin
-# アプリコード
-COPY . .
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/home/appuser/.local/bin:${PATH}"
+
+# ビルドステージから依存関係のみコピー（アプリ本体は後でコピー）
+COPY --from=builder /opt/deps /home/appuser/.local
+
+# アプリケーションコード（.dockerignore により .env / tests / node_modules 等は
+# 含まれない）。COPY . . ではなく必要なディレクトリだけをコピーし、
+# イメージ.layers に不要なファイルが残らないようにする。
+COPY --chown=appuser:appuser src/ ./src/
+COPY --chown=appuser:appuser config/ ./config/
+COPY --chown=appuser:appuser database/ ./database/
+COPY --chown=appuser:appuser formatters/ ./formatters/
+COPY --chown=appuser:appuser plugins/ ./plugins/
+COPY --chown=appuser:appuser prompts/ ./prompts/
+COPY --chown=appuser:appuser schemas/ ./schemas/
+COPY --chown=appuser:appuser alembic.ini pyproject.toml ./
+
 # 非rootユーザー作成
 RUN useradd -m -u 1000 appuser
 USER appuser
-# エントリーポイント
-EXPOSE 8000
-CMD ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+# 実際のアプリケーションポート
+EXPOSE 8200
+
+# ワーカー数は環境変数 UVICORN_WORKERS で制御する。
+# ただし APP_ENV=production では JWT 署名の鍵が全ワーカーで同一である必要がある
+# （未設定だとワーカーごとに secrets.token_hex(32) が生成され、発行済みトークンが
+# ワーカー間で不一致になる）。docker-compose.prod.yml 側で JWT_SECRET_KEY を
+# fail-fast で設定し、UVICORN_WORKERS も環境変数から必ず渡すこと。
+#
+# shell 形式で起動し、UVICORN_WORKERS の既定を 1 にする。
+# ここでは "${UVICORN_WORKERS:-1}" はビルド時に展開されず、実行時に sh が展開する。
+CMD ["sh", "-c", "exec uvicorn src.backend.server:app --host 0.0.0.0 --port 8200 --workers ${UVICORN_WORKERS:-1}"]

@@ -22,6 +22,12 @@ services:
     environment:
       - PYTHONPATH=/app
       - DATABASE_URL=postgresql://${POSTGRES_USER:-autonovel}:${POSTGRES_PASSWORD:-autonovel}@db:5432/${POSTGRES_DB:-autonovel}
+      # src/backend/alembic/env.py は ALEMBIC_DATABASE_URL を参照する。未設定だと
+      # alembic.ini の `sqlalchemy.url = sqlite:///./autonovel.db` にフォールバックし、
+      # `alembic upgrade head` が Compose の PostgreSQL ではなくイメージ内の SQLite に
+      # 適用されてしまう（結果、既存 DB にスキーマ変更が一切反映されない）。
+      # DATABASE_URL と同じ値を渡す。
+      - ALEMBIC_DATABASE_URL=postgresql://${POSTGRES_USER:-autonovel}:${POSTGRES_PASSWORD:-autonovel}@db:5432/${POSTGRES_DB:-autonovel}
       - REDIS_URL=redis://redis:6379/0
       - HUEY_BACKEND=redis
       - AUTH_DISABLED=true

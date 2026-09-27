@@ -83,3 +83,32 @@ manual_verification.py
 final_verification.py
 test_simple.py
 json-report.json
+
+# ============================================================
+# カバレッジ出力（ビルド成果物・追跡すべきでない）
+# ------------------------------------------------------------
+# 2026-09-27 時点で以下 4 ファイル、合計 約 22.5 MB が git に追跡されたまま
+# 残っており、20.92 MiB の pack の中で約 31% を占めていた:
+#     output/coverage-baseline.json   (5,643 KB)
+#     output/coverage-round1.json     (5,627 KB)
+#     output/coverage-round2.json     (5,640 KB)
+#     output/coverage-round3.json     (5,642 KB)
+# これらは `scripts/coverage_summary.py` / `scripts/run_full_coverage.py` の
+# 再生成可能な成果物であり、リポジトリに含める理由がない。
+#
+# .gitignore に追加しても、既に追跡済みのファイルは追跡され続ける。
+# 追跡を外すには下記のコマンドを明示的に実行すること（自動では行わない）:
+#     git rm --cached output/coverage-baseline.json output/coverage-round1.json \
+#                output/coverage-round2.json output/coverage-round3.json
+#     git commit -m "chore: untrack generated coverage artifacts"
+# ============================================================
+output/coverage-*.json
+# output/ 内の生成物（レポート類）。ただし .gitkeep はディレクトリ保持のため追跡を続ける。
+output/branches_missing.txt
+output/failures_analysis.txt
+output/m5.txt
+output/probe_lines.txt
+!output/.gitkeep
+# artifacts/ のベンチマーク/テストベースラインも再生成可能なため忽略する。
+# ただし既に追跡済みのファイルは追跡され続ける（下記コマンドで明示的に外す）。
+artifacts/

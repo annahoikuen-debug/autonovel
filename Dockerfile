@@ -64,4 +64,12 @@ USER appuser
 EXPOSE 8200
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
-CMD ["uvicorn", "src.backend.server:app", "--host", "0.0.0.0", "--port", "8200", "--workers", "1"]
+# ワーカー数は環境変数 UVICORN_WORKERS で制御する。旧 CMD は `--workers 1` を
+# ハードコードしており、docker-compose.prod.yml が広告している UVICORN_WORKERS が
+# 一切効かなかった（環境変数としては渡されるが参照されない死んだ設定だった）。
+# "${UVICORN_WORKERS:-1}" はこの行では展開されず、実行時に sh が展開する。
+# 既定を 1 未満にしないよう、UVICORN_WORKERS 未設定時は必ず 1 で起動する。
+# ただし APP_ENV=production では JWT_SECRET_KEY が全ワーカーで同一である必要がある
+# （未設定だとワーカーごとに secrets.token_hex(32) が生成され、署名済みトークンが
+# ワーカー間で不一致になる）。docker-compose.prod.yml 側で fail-fast 設定済み。
+CMD ["sh", "-c", "exec uvicorn src.backend.server:app --host 0.0.0.0 --port 8200 --workers ${UVICORN_WORKERS:-1}"]

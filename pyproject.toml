@@ -1,6 +1,6 @@
 [project]
 name = "autonovel"
-version = "5.2.0"
+version = "5.2.1"
 description = "AutoNovel - 小説生成エンジン (FastAPI + React + Huey + SQLAlchemy)"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -30,6 +30,13 @@ dependencies = [
     "opentelemetry-sdk>=1.24.0",
     "aiosqlite>=0.19.0",
     "dependency-injector>=4.41.0",
+    # JWT 認証 (src/backend/security/jwt.py:3 がモジュール直下で無条件に import するため必須)
+    "PyJWT>=2.8.0",
+    # アプリロガー (src/logging/setup.py:2 が無条件に import するため必須)
+    "loguru>=0.7.2",
+    # メトリクス (src/backend/observability/metrics.py, src/llm/resilient_gateway.py などが
+    # モジュール直下で import するため必須。/metrics エンドポイントの前提となる)
+    "prometheus-client>=0.20.0",
 ]
 
 [project.scripts]
@@ -49,6 +56,8 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pytest-cov>=4.1",
+    # ハングした非同期テストが CI を無期限に停止させるのを防ぐ
+    "pytest-timeout>=2.3.0",
     "testcontainers>=4.14.2",
 ]
 rag = [
@@ -62,22 +71,56 @@ nlp = [
     "sudachidict-core>=20230109",
     "sudachidict-full>=20230109",
     "sudachidict-small>=20230109",
+    # src/pipeline/ (character_extractor / nlp_init / polarity / signal_extractor) が
+    # モジュール直下で import する。spaCy モデル本体のDL は必要だがライブラリ自体は任意。
+    "spacy>=3.7.0",
+]
+observability = [
+    # src/monitoring/sentry.py がモジュール直下で import する。
+    # src/api/middleware/error_handler.py:19 側は try/except で保護済み。
+    "sentry-sdk>=2.0.0",
+]
+load = [
+    # 負荷試験 (tests/load/test_locustfile.py のみで使用)
+    "locust>=2.32.0",
 ]
 
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+# `src` はディレクトリ名ではなく「インポート可能なパッケージ」（`src/__init__.py` が存在する）であり、
+# リポジトリ内 2453 箇所の `from src...` 絶対 import と `[project.scripts]` の
+# `src.cli.main:main` はその前提で書かれている。package-dir = {"" = "src"} を指定すると
+# ビルド成果物が backend / cli / models 等のトップレベル名前で flats になり、wheel install 後に
+# `from src...` が全て失敗する（editable install はリポジトリルートが sys.path に入るため
+# 偶然動くだけだった）。よってここではパッケージルートを明示的にリポジトリルートに固定する。
 [tool.setuptools]
-package-dir = {"" = "src"}
+include-package-data = true
 
 [tool.setuptools.packages.find]
-where = ["src"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-norecursedirs = [".git", "scripts", "node_modules", "storage", "autonovel"]
-addopts = "-p no:cacheprovider --import-mode=importlib --tb=short"
-asyncio_mode = "auto"
-markers = [
-    "perf: Performance benchmark tests",
+# `src` 自体をパッケージとして配布するため、`where` はリポジトリルート（".") のまま。
+# 注意: include パターンには `src` 自身を明示する必要がある。`src*` だけだと
+# setuptools の packages.find に一致せず 0 パッケージになる（実測済み）。
+# `config` / `prompts` / `schemas` / `formatters` は Dockerfile が実行時に必要として
+# COPY しており、`src` からも `config.*` として import されるため併せて配布する。
+# tests / plans / benchmarks / docs / output などの成果物ディレクトリは除外する。
+where = ["."]
+# `src/llm` など __init__.py を持たない名前空間パッケージ（実測で 19 ディレクトリ）
+# が wheel から黙って落ちないようにする。これを付けないと find_packages は
+# __init__.py の無いディレクトリを「パッケージではない」とみなして除外する。
+namespaces = true
+include = [
+    "src", "src.*",
+    "config", "config.*",
+    "prompts", "prompts.*",
+    "schemas", "schemas.*",
+    "formatters", "formatters.*",
 ]
+exclude = ["tests*", "benchmarks*", "plans*", "docs*", "output*", "artifacts*", "data*", "frontend*"]
+
+# NOTE: pytest の設定は pytest.ini のみに集約している（pytest.ini が実際に読み込まれる）。
+# ここに [tool.pytest.ini_options] を残すと二重管理になり、どちらが有効か読み手に混乱を招く。
 
 [tool.coverage.run]
 source = ["src"]

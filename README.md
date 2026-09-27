@@ -26,7 +26,7 @@
   <img src="docs/demo.gif" alt="AutoNovel UI & Workflow Demo" width="900" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
 </p>
 
-*▲ AutoNovel v5.2.0: デモアニメーション（説明用）。実際のAI生成品質・所要時間・外部サービス接続を示すものではありません。*
+*▲ AutoNovel v5.2.1: デモアニメーション（説明用）。実際のAI生成品質・所要時間・外部サービス接続を示すものではありません。*
 
 ---
 
@@ -195,7 +195,31 @@ writing_service = container.writing_service()
 ```
 ## 📖 実践操作マニュアル
 
-### かんたんモード操作ステップ
+### 3 つの入口 — どこから始めるか
+
+AutoNovel には 3 つの入口があります。どれも同じ作品に書き足していくので、
+あとから別の入口へ移っても内容は失われません。
+
+| 入口 | URL | 向いている人 | 手順 |
+|---|---|---|---|
+| ⚡ かんたん執筆 | `/` | はじめて書きたい人 | 手順 2 つ（約 1 分） |
+| ✨ 共創ウィザード | `/wizard` | 物語の骨組みから作りたい人 | 手順 3 つ（方針 → 構成 → 執筆） |
+| 🚀 Studio | `/studio` | 仕上げや設定を担う人 | 既存作品からすぐ |
+
+**はじめて使うとき**: 初回起動時に `/welcome`（入口選択）が自動的に表示されます。
+3 つの入口が「誰向け・何ができるか・手順はいくらか」の形で並ぶので、理解したうえで
+好きなものを選んでください。「あとで決める」を押すとかんたん執筆へ直行します。
+2 回目以降は各入口へそのまま着地します。
+
+**どの画面からでも**: ヘッダーの `⚡ かんたん` / `✨ 共創ウィザード` / `🚀 Studio`
+から 3 つの入口へ移動できます。いまいる入口はハイライトされます。
+
+**入口のつなぎ方**:
+- かんたん執筆 → 「Studio へ昇格」で移行オーバーレイが出て、そのまま Studio へ
+- 共創ウィザード → Step3 で「もう 1 話書く」か「Studio で細部を手入れする」を選ぶ
+- Studio → 既存作品をそのまま開いて編集
+
+### かんたん執筆の操作ステップ
 
 ```
 [ステップ1: 設定入力] ──> [ステップ2: 本文生成] ──> [ステップ3: プレビュー&提案] ──> [ステップ4: 納品ZIP保存]
@@ -219,12 +243,26 @@ writing_service = container.writing_service()
 4. **納品パッケージのダウンロード**:
    - 「📦 納品パッケージ (ZIP) ダウンロード」をクリックすると、`export_1.zip` が即座にダウンロードされます。
 
-### 上級者 Studio の使い方
+### ✨ 共創ウィザードの使い方（/wizard）
+
+画面上部の進捗バーに、いまが 1/3・2/3・3/3 のどこかが常に見えます。
+
+1. **方針を決める**: ジャンル・synopsis・各種パラメータを入力すると AI が各話の骨組みを生成。
+2. **構成を確かめる**: 話ごとのタイトル・あらすじ・伏線を確認・編集し、内容を保存。
+3. **執筆する**: 本文がストリーミングで画面に流れ込みます（進捗バーで状況表示）。
+   - 「リテイク」で同じ話を書き直す
+   - 「次の一話を執筆する」で次の話へ
+   - 書き終えたら「もう 1 話書く」か「Studio で細部を手入れする」を選べます
+
+### 🚀 Studio の使い方
 
 - 左ペイン: 主人公設定・世界観パラメータ・ジャンル設定の参照。
 - 中央ペイン: 本文編集用リッチエディタ & 次の展開提案（Next Beats）。
 - 右ペイン: GraphRAG 専属 AI 編集者（設定Q&A & リアルタイム矛盾診断）。
-- タブ切替: エディタ / IF分岐ルート / 矛盾診断レポート / マルチメディア / 商用投稿。
+- タブは 3 グループに整理されています:
+  - **執筆**: エディタ / IF分岐ルート
+  - **点検**: 矛盾診断 / マルチメディア
+  - **公開**: 商用投稿
 
 ---
 
@@ -287,9 +325,9 @@ make verify        # 全品質ゲートを一括実行 (PR前必須)
 make clean         # キャッシュや一時DBファイルをクリーンアップ
 ```
 
-品質計画・テスト網羅率プランは [TEST_COVERAGE_PLAN.md](TEST_COVERAGE_PLAN.md) を、パイプライン統合の将来計画は [PIPELINE_UNIFICATION_PLAN.md](PIPELINE_UNIFICATION_PLAN.md) を参照してください。
+テスト戦略・網羅率の方針は [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) を、パイプライン統合の将来計画は [plans/PLAN_J3_PIPELINE_INTEGRATION_36STEPS.md](plans/PLAN_J3_PIPELINE_INTEGRATION_36STEPS.md) を参照してください。
 
-> **現行バージョン**: v5.2.1 (`pyproject.toml`, `frontend/package.json`, Docker イメージ `autonovel-backend:5.2.1` / `autonovel-frontend:5.2.1`)。直近のリリースノートは [CHANGELOG.md](CHANGELOG.md)。
+> **現行バージョン**: v5.2.1。権威あるバージョンは `pyproject.toml` の `project.version` 1 か所が正であり、`frontend/package.json`・`docker-compose.prod.yml`・`src/cli/main.py`・`src/backend/__init__.py` はすべてそれに追随します（`tests/regression/test_v5_version_consistency.py` が検証）。直近のリリースノートは [CHANGELOG.md](CHANGELOG.md)。
 
 ---
 

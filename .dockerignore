@@ -1,5 +1,6 @@
 .git
 .gitignore
+.gitattributes
 .venv
 venv/
 __pycache__/
@@ -13,6 +14,8 @@ coverage.json
 .mypy_cache/
 .ruff_cache/
 htmlcov/
+output/
+artifacts/
 tests/
 plans/
 docs/
@@ -23,3 +26,11 @@ node_modules/
 *.sqlite
 *.sqlite3
 *.log
+
+# 重要: ローカルの実シークレットをイメージ層に焼き込まない。
+# `COPY . .` を使うビルド（Dockerfile.prod 等）で .env がイメージに含まれてしまうと、
+# コンテナ.layers に平文で残り、イメージの diff 経由で漏洩する。
+# テンプレート（.env.example 相当）はバージョンを記述するため除外しない。
+.env
+.env.*
+!.env.example
