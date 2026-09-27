@@ -1,8 +1,11 @@
+import logging
 from typing import List, Dict, Any
 
 import yaml
 
 from src.llm.fallback_policy import DEFAULT_FALLBACK_CHAINS
+
+logger = logging.getLogger(__name__)
 
 
 class AuditorModelRouter:
@@ -77,9 +80,10 @@ class AuditorModelRouter:
         self._client_registry[provider] = client
 
     def get_llm_for_auditor(self, auditor_name: str) -> Any | None:
-        """オーディター名を受け取り、割り当てられたプロバイダを取得し、対応するクライアントを返す。"""
-        # 1. オーディター特性に基づいて優先プロバイダを解決
+        """オーディター名を受け取り、割り当てられたクライアントを返す。"""
         primary_provider = self._resolve_primary_provider_for_auditor(auditor_name)
+        if not primary_provider:
+            return None
 
         # 2. プロバイダ解決（フォールバックチェーンを使用）
         candidates = [primary_provider] + self.fallback_chains.get(primary_provider, [])
@@ -89,6 +93,16 @@ class AuditorModelRouter:
             if candidate in self._client_registry:
                 return self._client_registry[candidate]
 
+        # クライアントが 1 つも無い場合、時々黙って None を返して
+        # 呼び出し側を score=50.0 のフォールバックに導いていた。
+        # ここでは「クライアントが未登録」であることを明示する。
+        if not self._client_registry:
+            logger.error(
+                "AuditorModelRouter has NO registered clients; auditor %r would "
+                "always degrade to the neutral fallback. Call register_client() "
+                "with the real LLM before running specialist auditors.",
+                auditor_name,
+            )
         return None
 
     def _resolve_primary_provider_for_auditor(self, auditor_name: str) -> str:
@@ -99,7 +113,9 @@ class AuditorModelRouter:
         # 設定ファイルからモデル名を取得、プロバイダへマッピング
         model_name = self._auditor_model_mapping.get(auditor_name)
         if model_name:
-            return self._model_name_to_provider(model_name)
+            provider = self._model_name_to_provider(model_name)
+            if provider:
+                return provider
 
         # 設計マッピングに従う: 軽量タスク → gemini、高負荷タスク → claude/medium → openai
         if auditor_name in ("factual", "consistency", "style", "multimodal"):
@@ -111,8 +127,8 @@ class AuditorModelRouter:
         elif auditor_name == "structure":
             return "openai"
         else:
-            # デフォルト（フォールバック含む）
-            return "mock"
+            # デフォルト: 実プロバイダへ退避する（mock は使わない）
+            return "openai"
 
     def get_provider_for_auditor(self, auditor_name: str) -> str:
         """オーディターに割り当てられたプロバイダを取得する（クライアントのみの場合に便利）。"""
@@ -126,42 +142,81 @@ class AuditorModelRouter:
     def refresh_from_config(self, config_path: str = "config/audit_models.yaml") -> None:
         """設定ファイルを再読み込み、チェーンを更新する（ホットリロード）。"""
         try:
-            import logging
             with open(config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f) or {}
+
+            # 明示的なフォールバックチェーンがあれば尊重する
+            # ({provider: [provider_fallback, ...]} の形式)
+            explicit = config.get("fallback_chains") or config.get("provider_chains")
+            if explicit:
+                self.fallback_chains = {
+                    str(p): [str(c) for c in v] for p, v in explicit.items()
+                }
+                self._rebuild_provider_auditors()
+                return
+
             chains = config.get("auditor_models", {})
-            # {"factual": "openai/gpt-4o-mini", ...} を {provider: [fallback1, fallback2]} に変換
-            # 単純な実装: モデル名からプロバイダを抽出（anthropic/claude-3-5-sonnet-20241022 → claude）
-            provider_chains: Dict[str, List[str]] = {}
-            for auditor, model_name in chains.items():
+            if not chains:
+                return
+
+            # 既知のプロバイダに対応する実クライアントのみをフォールバック対象にする。
+            # 以前は「他のオーディター名」をチェーンに入れていたため
+            # (``{"openai": ["openai", "creativity", ...]}``)、
+            # get_llm_for_auditor が ``self._client_registry[candidate]`` を
+            # 引いた時に必ず None になっていた。
+            provider_order: List[str] = []
+            for _auditor, model_name in chains.items():
                 provider = self._model_name_to_provider(model_name)
-                if provider not in provider_chains:
-                    provider_chains[provider] = []
-                # 他のオーディターもそのプロバイダを使用する場合は、重複しない
-                for other in chains:
-                    if other != auditor and self._model_name_to_provider(chains[other]) == provider:
-                        provider_chains[provider].append(other)
-            # プロバイダ自己自身を追加
-            for provider in provider_chains:
-                if provider not in provider_chains[provider]:
-                    provider_chains[provider].insert(0, provider)
-            self.fallback_chains = provider_chains
-            # プロバイダ別一覧を再構築
+                if provider and provider != "mock" and provider not in provider_order:
+                    provider_order.append(provider)
+
+            # 既知のクライアント登録済みプロバイダを末尾に足す
+            for provider in self._client_registry:
+                if provider not in provider_order and provider != "mock":
+                    provider_order.append(provider)
+
+            if not provider_order:
+                logger.error(
+                    "refresh_from_config: could not resolve any real provider from %s; "
+                    "keeping the previous fallback chains.",
+                    config_path,
+                )
+                return
+
+            primary = provider_order[0]
+            self.fallback_chains = {p: [c for c in provider_order if c != p] for p in provider_order}
+            logger.info(
+                "refresh_from_config: provider order=%s (primary=%s)", provider_order, primary
+            )
             self._rebuild_provider_auditors()
         except Exception as e:
-            import logging
-            logger = logging.getLogger(__name__)
             logger.warning(f"Failed to refresh from config: {e}")
 
     def _model_name_to_provider(self, model_name: str) -> str:
-        """モデル名からプロバイダを抽出する。"""
-        if "openai" in model_name.lower():
+        """モデル名からプロバイダを抽出する。
+
+        以前は未知のモデル名に対して必ず "mock" を返していたため、
+        ``auditor_models: {style: "gpt-4o"}`` のような設定が
+        本番でも無言でモックへルーティングされ、8 specialists すべてが
+        score=50.0 になっていた。未知のモデル名は「空の provider 名」を
+        返し、呼び出し側で未解決として明示的に扱うようにする。
+        """
+        if not model_name:
+            return ""
+        lowered = model_name.lower()
+        if "openai" in lowered or lowered.startswith("gpt-") or lowered.startswith(("o1", "o3", "o4")):
             return "openai"
-        elif "claude" in model_name.lower() or "anthropic" in model_name.lower():
+        if "claude" in lowered or "anthropic" in lowered:
             return "claude"
-        elif "gemini" in model_name.lower() or "google" in model_name.lower():
+        if "gemini" in lowered or "google" in lowered:
             return "gemini"
-        elif "mock" in model_name.lower():
+        if "mock" in lowered:
             return "mock"
-        else:
-            return "mock"
+        # 既知のプロバイダに解決できない。黙って mock にはしない。
+        logger.warning(
+            "Unknown model %r could not be mapped to a provider; "
+            "auditor will fall back to the default provider instead of 'mock'.",
+            model_name,
+        )
+        return ""
+

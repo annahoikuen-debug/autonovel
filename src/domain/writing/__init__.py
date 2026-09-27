@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.domain.writing.coordinator import WritingCoordinator
+from src.domain.writing.coordinator import (
+    ChapterImportNotAvailableError,
+    WritingCoordinator,
+)
+
 from src.domain.writing.models import (
     WritingGenerationContext,
     clean_writing_response,
@@ -217,6 +221,7 @@ __all__ = [
     "WritingService",
     "WritingServices",
     "WritingCoordinator",
+    "ChapterImportNotAvailableError",
     "QualityLoop",
     "StateGuard",
     "ValidationResult",

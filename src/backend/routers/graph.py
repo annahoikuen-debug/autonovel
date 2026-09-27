@@ -6,10 +6,11 @@ import logging
 import re
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, field_validator
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 
 from src.backend import database
 from src.backend.auth import require_api_key
@@ -153,6 +154,10 @@ class RagContextRequest(BaseModel):
     current_prompt: str = Field(..., description="現在のプロンプト/クエリ")
     character_name: str = Field(..., description="主人公名")
     additional_entities: list[str] | None = Field(None, description="追加エンティティ")
+    book_id: int | None = Field(
+        None,
+        description="対象書籍ID。コンテキストキャッシュのキー的重要组成部分（未指定時はキャッシュを読み書きしない）",
+    )
 
 
 # ============================================================
@@ -301,16 +306,37 @@ def execute_cypher(
 # ============================================================
 
 
+def _graph_write_not_implemented() -> HTTPException:
+    """グラフ書き込み系が未実装であることを示す 501 を生成する。
+
+    GraphRAG は "Relational Memory mode" へ移行済みで、ノード/エッジを
+    永続化するテーブルもリポジトリも存在しない。従来は書き込みを一切行わず
+    `{"success": true}` を返していたため、クライアントは成功と誤認していた。
+    """
+    return HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=(
+            "Graph node/edge persistence is not implemented. "
+            "Relational Memory mode has no graph write store; "
+            "use the /api/branches and /api/chapters endpoints instead."
+        ),
+    )
+
+
+def _require_graphrag() -> None:
+    """GraphRAG が有効かつ PostgreSQL であることを確認する。"""
+    if not settings.ENABLE_GRAPHRAG or not settings.DATABASE_URL.startswith("postgresql"):
+        raise HTTPException(status_code=400, detail="GraphRAG is not enabled or not on PostgreSQL")
+
+
 @router.post("/nodes", status_code=201)
 def upsert_node(
     request: NodeUpsertRequest,
     session: Session = Depends(database.get_db),
 ) -> dict[str, Any]:
-    """ノードを作成または更新する."""
-    if not settings.ENABLE_GRAPHRAG or not settings.DATABASE_URL.startswith("postgresql"):
-        raise HTTPException(status_code=400, detail="GraphRAG is not enabled or not on PostgreSQL")
-
-    return {"success": True, "label": request.label, "name": request.name}
+    """ノードを作成または更新する（未実装）。"""
+    _require_graphrag()
+    raise _graph_write_not_implemented()
 
 
 @router.post("/edges", status_code=201)
@@ -318,11 +344,9 @@ def upsert_edge(
     request: EdgeUpsertRequest,
     session: Session = Depends(database.get_db),
 ) -> dict[str, Any]:
-    """エッジを作成または更新する."""
-    if not settings.ENABLE_GRAPHRAG or not settings.DATABASE_URL.startswith("postgresql"):
-        raise HTTPException(status_code=400, detail="GraphRAG is not enabled or not on PostgreSQL")
-
-    return {"success": True, "relation": request.relation_type}
+    """エッジを作成または更新する（未実装）。"""
+    _require_graphrag()
+    raise _graph_write_not_implemented()
 
 
 @router.post("/batch", response_model=BatchUpsertResponse)
@@ -330,47 +354,11 @@ def upsert_batch(
     request: BatchUpsertRequest,
     session: Session = Depends(database.get_db),
 ) -> BatchUpsertResponse:
-    """ノードとエッジをバッチで作成・更新する."""
-    if not settings.ENABLE_GRAPHRAG or not settings.DATABASE_URL.startswith("postgresql"):
-        raise HTTPException(status_code=400, detail="GraphRAG is not enabled or not on PostgreSQL")
-
-    errors = []
-    nodes_created = 0
-    edges_created = 0
-
-    # ノードのバッチUPSERT
-    if request.nodes:
-        node_dicts = [
-            {"label": n.label, "name": n.name, "properties": n.properties} for n in request.nodes
-        ]
-        nodes_created = len(request.nodes)
-
-    # エッジのバッチUPSERT
-    if request.edges:
-        edge_dicts = [
-            {
-                "source_label": e.source_label,
-                "source_name": e.source_name,
-                "target_label": e.target_label,
-                "target_name": e.target_name,
-                "relation_type": e.relation_type,
-                "properties": e.properties,
-            }
-            for e in request.edges
-        ]
-        edges_created = len(request.edges)
-
-    try:
-        session.commit()
-    except Exception as e:
-        session.rollback()
-        errors.append(f"Commit failed: {e}")
-
-    return BatchUpsertResponse(
-        nodes_created=nodes_created,
-        edges_created=edges_created,
-        errors=errors,
-    )
+    """ノードとエッジをバッチで作成・更新する（未実装）。"""
+    _require_graphrag()
+    # 従来は node_dicts / edge_dicts を組み立てて捨て、去重の上に "作成件数" を
+    # 返していた（＝何も書き込まず成功を報告）。永続化先が無いため 501 を返す。
+    raise _graph_write_not_implemented()
 
 
 @router.delete("/nodes/{label}/{name}")
@@ -381,11 +369,9 @@ def delete_node(
     detach: bool = Query(True, description="関連エッジも削除"),
     session: Session = Depends(database.get_db),
 ) -> dict[str, Any]:
-    """ノードを削除する."""
-    if not settings.ENABLE_GRAPHRAG or not settings.DATABASE_URL.startswith("postgresql"):
-        raise HTTPException(status_code=400, detail="GraphRAG is not enabled or not on PostgreSQL")
-
-    return {"success": True, "label": label, "name": name}
+    """ノードを削除する（未実装）。"""
+    _require_graphrag()
+    raise _graph_write_not_implemented()
 
 
 # ============================================================
@@ -576,6 +562,7 @@ async def build_rag_context(
     try:
         context = await rag_service.build_rag_context(
             session=session,
+            book_id=request.book_id,
             current_prompt=request.current_prompt,
             character_name=request.character_name,
             additional_entities=request.additional_entities,

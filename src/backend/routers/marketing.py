@@ -3,7 +3,8 @@ from typing import Any, List
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response
 
-from src.backend.auth import get_prompt_manager, validate_api_key_or_raise
+from src.backend.auth import get_current_user, get_prompt_manager, validate_api_key_or_raise
+from src.backend.database.models import User
 from src.backend.engine_helpers import get_engine
 from src.backend.task_helpers import create_task
 from src.backend.tasks import execute_service_workflow
@@ -19,12 +20,18 @@ router = APIRouter(tags=["marketing"])
 async def generate_marketing(
     req: MarketingGenerateRequest,
     prompt_manager: Any = Depends(get_prompt_manager),
+    current_user: User = Depends(get_current_user),
 ):
-    validate_api_key_or_raise(req.api_key)
+    await validate_api_key_or_raise(req.api_key)
     import time
 
     task_id = f"marketing_{int(time.time())}"
-    await create_task(task_id, "マーケティング情報の生成を開始中...", total_steps=1)
+    await create_task(
+        task_id,
+        "マーケティング情報の生成を開始中...",
+        total_steps=1,
+        user_id=getattr(current_user, "id", None),
+    )
 
     execute_service_workflow(
         task_id=task_id,
@@ -44,7 +51,7 @@ async def generate_marketing(
 @router.post("/api/marketing/export_package/{book_id}")
 async def export_package_post(book_id: int, req: MarketingExportRequest):
     """作品データ一式 (本文 / 設定 / プロット / JSON) を ZIP で返す."""
-    validate_api_key_or_raise(req.api_key)
+    await validate_api_key_or_raise(req.api_key)
     engine = get_engine(req.api_key)
     zip_data, zip_filename = await engine.marketing.create_export_package(book_id)
     return Response(

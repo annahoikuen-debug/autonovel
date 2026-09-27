@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import logging
+import random
 from functools import wraps
 from typing import Any, Protocol
 
@@ -227,6 +228,17 @@ def with_llm_retry():
                         or "timeout" in err_msg
                         or "deadline" in err_msg
                     )
+                    # 空/切り詰め応答は最も頻出する一時的失敗であり、
+                    # キーワードを含まないため従来は「回復不能」と誤判定されていた。
+                    is_empty_response = any(
+                        x in err_msg
+                        for x in [
+                            "empty response",
+                            "empty llm response",
+                            "response is empty",
+                            "empty response from",
+                        ]
+                    )
                     is_retryable = (
                         any(
                             x in err_msg
@@ -242,6 +254,7 @@ def with_llm_retry():
                             ]
                         )
                         or is_timeout
+                        or is_empty_response
                     )
 
                     if not is_retryable:
@@ -265,14 +278,17 @@ def with_llm_retry():
                     # 待機時間の計算とスリープ (指数バックオフ)
                     # 適応的バックオフ戦略
                     # 429 (Too Many Requests) の場合はより強力な指数バックオフを適用
+                    # ※ ジッターを加えないと複数エージェントが同時に再試行して
+                    #    429 を再増幅する (thundering herd) ため必ず揺らす。
                     if "429" in err_msg or "quota" in err_msg:
-                        wait_time = min(2.0 * (2**state.attempt), 60.0)
+                        base_wait = min(2.0 * (2**state.attempt), 60.0)
                     # 5xx系サーバーエラーの場合は中程度のバックオフ
                     elif any(x in err_msg for x in ["503", "500", "unavailable"]):
-                        wait_time = min(3.0 * (2**state.attempt), 20.0)
+                        base_wait = min(3.0 * (2**state.attempt), 20.0)
                     # その他の一時的エラー
                     else:
-                        wait_time = min(1.0 * (2**state.attempt), 10.0)
+                        base_wait = min(1.0 * (2**state.attempt), 10.0)
+                    wait_time = base_wait * random.uniform(0.5, 1.5)
                     logger.warning(
                         "Retry attempt %d/%d for %s after %.2fs due to: %s",
                         state.attempt + 1,

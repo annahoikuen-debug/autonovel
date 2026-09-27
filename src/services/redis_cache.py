@@ -56,6 +56,11 @@ class RedisCacheService:
             )
             self._client = None
             self._pool = None
+            # namespace / default_ttl は縮退モードでも必ず定義する。
+            # 未設定のままにすると _make_key() などが AttributeError になり、
+            # 「Redis が無い」ことが「オブジェクトが壊れている」に化ける。
+            self.namespace = namespace
+            self.default_ttl = default_ttl
             return
 
         self.namespace = namespace
@@ -331,18 +336,55 @@ class PromptCacheService:
             "warm_cache_count": 0,
         }
 
+    #: スコープ不明のときに使うキーセグメント (実際の値と衝突しない文字列)
+    SCOPE_UNKNOWN = "-"
+
+    @staticmethod
+    def _key_segment(value: Any) -> str:
+        """キーセグメントを正規化する.
+
+        ``:`` をセグメント区切りとして使うため、値に含まれる ``:`` は必ず
+        置換する。置換されていないと `invalidate_pattern` のワイルドカード
+        位置がずれてパターンが一致しなくなる。
+        """
+        return str(value).replace(":", "_") or PromptCacheService.SCOPE_UNKNOWN
+
     def _generate_cache_key(
         self,
         template_name: str,
         prompt_hash: str,
         model_id: str,
         template_version: str = "1.0",
+        task_type: str | None = None,
+        book_id: int | None = None,
     ) -> str:
         """プロンプトキャッシュ用の一意キーを生成.
 
-        形式: prompt:{template_name}:{model_id}:{template_version}:{prompt_hash[:16]}
+        形式: ``prompt:{template}:{model}:{version}:{task_type}:{book_id}:{hash16}``
+
+        ``task_type`` と ``book_id`` を固定位置のセグメントに埋め込むことで、
+        以下の無効化パターンが実際に一致する:
+
+        - ``invalidate_template``:  ``prompt:{template_name}:*``
+        - ``invalidate_task_type``: ``prompt:*:*:*:{task_type}:*``
+        - ``invalidate_book``:      ``prompt:*:*:*:*:{book_id}:*``
         """
-        return f"prompt:{template_name}:{model_id}:{template_version}:{prompt_hash[:16]}"
+        book_seg = (
+            self._key_segment(book_id)
+            if book_id is not None
+            else self.SCOPE_UNKNOWN
+        )
+        return ":".join(
+            [
+                "prompt",
+                self._key_segment(template_name),
+                self._key_segment(model_id),
+                self._key_segment(template_version),
+                self._key_segment(task_type or self.SCOPE_UNKNOWN),
+                book_seg,
+                prompt_hash[:16],
+            ]
+        )
 
     @staticmethod
     def compute_prompt_hash(prompt: str, **params: Any) -> str:
@@ -404,18 +446,25 @@ class PromptCacheService:
         genre: str = "general",
         temperature: float = 0.7,
         template_version: str = "1.0",
+        book_id: int | None = None,
         **params: Any,
     ) -> Any | None:
         """3層キャッシュから応答を取得.
 
         検索順序: L1 (インメモリ) -> L2 (Redis) -> L3 (セマンティック/ChromaDB)
+
+        Args:
+            book_id: 対象書籍 ID。`invalidate_book` の選択的無効化のために
+                キーへ埋め込む。省略時はスコープ不明キー (`-`) として扱われる。
         """
         prompt_hash = self.compute_prompt_hash(prompt, **params)
-        cache_key = self._generate_cache_key(template_name, prompt_hash, model_id, template_version)
+        cache_key = self._generate_cache_key(
+            template_name, prompt_hash, model_id, template_version, task_type, book_id
+        )
+        l1_key = f"{cache_key}:{self._key_segment(genre)}:{temperature}"
 
         # L1: インメモリキャッシュ
         if self.l1 is not None:
-            l1_key = f"{cache_key}:{task_type}:{genre}:{temperature}"
             if l1_key in self.l1:
                 await self._record_hit("l1")
                 logger.info(f"[PROMPT CACHE] L1 HIT: {template_name} (task={task_type})")
@@ -481,12 +530,15 @@ class PromptCacheService:
         temperature: float = 0.7,
         template_version: str = "1.0",
         ttl: int | None = None,
+        book_id: int | None = None,
         **params: Any,
     ) -> None:
         """3層キャッシュに応答を保存."""
         prompt_hash = self.compute_prompt_hash(prompt, **params)
-        cache_key = self._generate_cache_key(template_name, prompt_hash, model_id, template_version)
-        l1_key = f"{cache_key}:{task_type}:{genre}:{temperature}"
+        cache_key = self._generate_cache_key(
+            template_name, prompt_hash, model_id, template_version, task_type, book_id
+        )
+        l1_key = f"{cache_key}:{self._key_segment(genre)}:{temperature}"
         effective_ttl = self._get_ttl(task_type, ttl)
 
         # L1: インメモリ
@@ -522,39 +574,56 @@ class PromptCacheService:
 
     async def invalidate_book(self, book_id: int) -> int:
         """特定の書籍に関連するキャッシュを無効化 (Redis パターン削除)."""
-        if self.redis:
-            # キー命名規則に book_id を含めていればパターン削除可能
-            # 例: "prompt:*:book:{book_id}:*"
-            pattern = f"*:book:{book_id}:*"
-            deleted = await self.redis.invalidate_pattern(pattern)
-            logger.info(f"[PROMPT CACHE] Invalidated book {book_id}: {deleted} keys")
-            return deleted
-        return 0
+        if not self.redis:
+            return 0
+        # キーの5番目が book_id セグメント (prompt:tmpl:model:ver:task:book:hash)
+        pattern = f"prompt:*:*:*:*:{self._key_segment(book_id)}:*"
+        deleted = await self.redis.invalidate_pattern(pattern)
+        l1_deleted = self._purge_l1(lambda k: f":{self._key_segment(book_id)}:" in k)
+        logger.info(
+            f"[PROMPT CACHE] Invalidated book {book_id}: "
+            f"{deleted} redis keys + {l1_deleted} L1 entries"
+        )
+        return deleted
 
     async def invalidate_template(self, template_name: str) -> int:
         """特定テンプレートのキャッシュを全削除."""
-        if self.redis:
-            pattern = f"prompt:{template_name}:*"
-            deleted = await self.redis.invalidate_pattern(pattern)
-            logger.info(f"[PROMPT CACHE] Invalidated template {template_name}: {deleted} keys")
-            return deleted
-        return 0
+        if not self.redis:
+            return 0
+        pattern = f"prompt:{self._key_segment(template_name)}:*"
+        deleted = await self.redis.invalidate_pattern(pattern)
+        tmpl_prefix = f"prompt:{self._key_segment(template_name)}:"
+        l1_deleted = self._purge_l1(lambda k: k.startswith(tmpl_prefix))
+        logger.info(
+            f"[PROMPT CACHE] Invalidated template {template_name}: "
+            f"{deleted} redis keys + {l1_deleted} L1 entries"
+        )
+        return deleted
 
     async def invalidate_task_type(self, task_type: str) -> int:
         """特定タスクタイプのキャッシュを全削除."""
-        if self.redis:
-            pattern = f"prompt:*:*:*:*:{task_type}:*"
-            deleted = await self.redis.invalidate_pattern(pattern)
-            # L1からも削除
-            if self.l1:
-                keys_to_delete = [k for k in self.l1.keys() if f":{task_type}:" in k]
-                for k in keys_to_delete:
-                    del self.l1[k]
-            logger.info(
-                f"[PROMPT CACHE] Invalidated task_type {task_type}: {deleted} keys + {len(keys_to_delete)} L1 entries"
-            )
-            return deleted
-        return 0
+        if not self.redis:
+            return 0
+        # キーの4番目が task_type セグメント
+        pattern = f"prompt:*:*:*:{self._key_segment(task_type)}:*"
+        deleted = await self.redis.invalidate_pattern(pattern)
+        l1_deleted = self._purge_l1(
+            lambda k: k.startswith(f"prompt:*:*:*:{self._key_segment(task_type)}:")
+        )
+        logger.info(
+            f"[PROMPT CACHE] Invalidated task_type {task_type}: "
+            f"{deleted} redis keys + {l1_deleted} L1 entries"
+        )
+        return deleted
+
+    def _purge_l1(self, predicate: Any) -> int:
+        """L1 キャッシュから predicate に一致するエントリを削除して件数を返す."""
+        if not self.l1:
+            return 0
+        keys_to_delete = [k for k in list(self.l1.keys()) if predicate(k)]
+        for k in keys_to_delete:
+            del self.l1[k]
+        return len(keys_to_delete)
 
     async def get_stats(self) -> dict[str, Any]:
         """キャッシュ統計情報を取得（ダッシュボード用拡張版）."""
@@ -657,37 +726,34 @@ class PromptCacheService:
         model_id: str = "gemini-2.5-pro",
         **common_params: Any,
     ) -> int:
-        """次のエピソード用プロンプトをプリフェッチ（予測的キャッシュ）.
+        """プリフェッチ対象の按键を列挙する（**キャッシュは投入しない**）.
 
-        将来的に必要になる可能性の高いプロンプトを事前に生成・キャッシュしておく。
-        実際の生成は非同期でバックグラウンド実行想定。
+        このメソッドは LLM 呼び出しを行わない。旧実装はループ内で
+        ``prefetched += 1`` のみを行い、docstring が約束する
+        「次エピソードの生成・キャッシュ投入」は一切行っていなかった
+        (返り値は常に ``next_ep_count``)。        呼び出し側が「キャッシュ済み」と誤解しないよう、実際の契約を明記する。
 
         Args:
             book_id: 書籍ID
             current_ep: 現在のエピソード番号
-            next_ep_count: プリフェッチする次エピソード数
+            next_ep_count: 列挙する次エピソード数
             template_name: 使用するテンプレート名
             model_id: 使用するモデルID
             **common_params: 共通パラメータ
 
         Returns:
-            プリフェッチしたエピソード数
+            プリフェッチ候補として列挙したエピソード数。
+            **キャッシュへの投入は伴わない** (0件が実投入)。
         """
-        # このメソッドは「プリフェッチ候補のキーを生成して返す」だけに留め、
-        # 実際の生成は呼び出し側（バックグラウンドタスク等）で行う設計
-        prefetched = 0
-
-        for i in range(1, next_ep_count + 1):
-            # 予測プロンプトキーを生成（実際のプロンプト生成は別途必要）
-            # ここではキー構造のみを準備し、生成は外部で行う
-            _ = current_ep + i
-            prefetched += 1
-
+        candidates = [current_ep + i for i in range(1, next_ep_count + 1)]
         await self._record_prefetch()
         logger.info(
-            f"[PROMPT CACHE] Prefetch prepared for book={book_id}, episodes {current_ep + 1}~{current_ep + next_ep_count}"
+            "[PROMPT CACHE] Prefetch candidates enumerated (no cache written) for "
+            "book=%s, episodes %s",
+            book_id,
+            candidates,
         )
-        return prefetched
+        return len(candidates)
 
     async def warm_by_similarity(
         self,
@@ -703,15 +769,16 @@ class PromptCacheService:
         それらのキャッシュエントリをウォーミング候補として返す。
 
         Returns:
-            ウォーミング候補のリスト（各要素: prompt, response, similarity_score）
+            ウォーミング候補のリスト（各要素: prompt, response, similarity_score）。
+            ``similarity_score`` は検索メトリクスが常に ``1.0`` 固定のため
+            **参考値ではない**（`top_k` も現在は未使用）。
         """
         if not self.semantic:
             return []
 
         try:
             # セマンティック検索で類似プロンプトを取得
-            # ※SemanticCacheManager.search は単一結果を返すため、複数取得には拡張が必要
-            # ここではインターフェースのみ定義し、実装は将来の拡張で対応
+            # ※SemanticCacheManager.search は単一結果のみを返す (top_k 未使用)
             similar = await self.semantic.search(
                 prompt=seed_prompt,
                 task_type=task_type,
@@ -726,7 +793,9 @@ class PromptCacheService:
                     {
                         "prompt": seed_prompt,
                         "response": similar,
-                        "similarity_score": 1.0,  # 実際の類似度は実装時に取得
+                        # 実際の類似度は SemanticCacheManager から取得できていない。
+                        # 固定値 1.0 は「最良一致」の意味ではない。
+                        "similarity_score": None,
                     }
                 ]
         except Exception as e:
@@ -737,7 +806,8 @@ class PromptCacheService:
 
 
 async def get_redis_cache() -> RedisCacheService:
-    container = __get_app_container()
+    """DI コンテナが保持する単一インスタンス (Singleton) を返す."""
+    container = _get_app_container()
     return container.redis_cache()
 
 
@@ -751,16 +821,20 @@ async def get_prompt_cache(
     return container.prompt_cache(semantic_cache=semantic_cache, l1_cache=l1_cache)
 
 
-def __get_app_container():
+def _get_app_container():
     from src.core.container import AppContainer
 
     return AppContainer()
 
 
 async def close_cache_services():
-    """全キャッシュサービスをクローズ."""
-    from src.core.container import AppContainer
+    """キャッシュサービスをクローズ.
 
-    container = AppContainer()
-    if container.redis_cache:
-        await container.redis_cache().close()
+    ``redis_cache`` プロバイダは Singleton なので、解決したインスタンスが
+    実際に使われているもの閉じる。 (旧実装はプロバイダオブジェクト自体を
+    真偽判定し、別インスタンスを生成して閉じていた)
+    """
+    container = _get_app_container()
+    cache = container.redis_cache()
+    if cache is not None:
+        await cache.close()

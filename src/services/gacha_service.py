@@ -277,8 +277,26 @@ JSONキー:
 
         try:
             tasks = [_generate_single_plan(pt, direction) for pt, direction in types]
-            plans_raw = await asyncio.wait_for(asyncio.gather(*tasks), timeout=30.0)
-            plans = list(plans_raw)
+            # return_exceptions=True: 1案の失敗で他案の生成結果まで破棄されないようにする。
+            plans_raw = await asyncio.wait_for(
+                asyncio.gather(*tasks, return_exceptions=True), timeout=30.0
+            )
+            failures = [r for r in plans_raw if isinstance(r, BaseException)]
+            if failures:
+                logger.error(
+                    "[gacha-pitch] %d/%d plan generations failed: %s",
+                    len(failures),
+                    len(tasks),
+                    failures[0],
+                )
+            succeeded = [r for r in plans_raw if not isinstance(r, BaseException)]
+            if not succeeded:
+                first_error = str(failures[0]) if failures else ""
+                raise RuntimeError(
+                    f"企画の生成がすべて失敗しました "
+                    f"({len(failures)} 件): {first_error}"
+                )
+            plans = list(succeeded)
         except TimeoutError:
             logger.error("[gacha-pitch] Gacha generation timed out (30s)")
             raise TimeoutError("企画の生成処理がタイムアウトしました")

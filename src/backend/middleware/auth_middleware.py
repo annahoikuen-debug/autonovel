@@ -22,17 +22,20 @@ from src.backend.security.jwt import decode_token
 logger = logging.getLogger(__name__)
 
 # 公開許可パス（完全一致、末尾スラッシュ除去後）
+# 費用が発生する / 内部情報を含む detailed エンドポイントは公開しない
 PUBLIC_EXACT_PATHS: set[str] = {
     "",
     "/health",
+    "/health/live",
     "/health/liveness",
+    "/health/ready",
     "/health/readiness",
-    "/health/detail",
     "/metrics",
     "/api/health",
+    "/api/health/live",
     "/api/health/liveness",
+    "/api/health/ready",
     "/api/health/readiness",
-    "/api/health/detail",
     "/api/metrics",
     "/docs",
     "/redoc",

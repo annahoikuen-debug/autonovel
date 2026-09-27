@@ -1,12 +1,16 @@
 # src/agents/orchestrator.py
 from __future__ import annotations
 
+import asyncio
+import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Awaitable, Callable, List, Optional
 
 from src.agents.event_bus import AgentEvent, EventBus
 from src.agents.skill_base import SkillAgent
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from src.backend.tasks.dag_models import DAGGraph
@@ -81,6 +85,8 @@ class Orchestrator:
         self._active_skill_version: str = "v1"
         self._ordered_skill_names: list[str] = []
         self._skill_instances: dict[str, SkillAgent] = {}
+        # 実行中の A/B テストタスクへの強参照（GC による実行中の消失を防ぐ）
+        self._ab_test_tasks: set[Any] = set()
 
 
     def _build_dag_graph(self) -> "DAGGraph":
@@ -492,20 +498,55 @@ class Orchestrator:
         version_b: str,
         interval_hours: float,
         min_samples: int = 10,
-    ) -> str:
-        """定期的なA/Bテストをスケジュールする（簡易実装：即時実行・結果返却）。
+    ) -> "asyncio.Task[Any] | Any":
+        """A/B テストをバックグラウンドで起動する。
 
-        実運用ではバックグラウンドタスクとして実装する必要があります。
+        呼び出し側（``src/backend/routers/system.py`` の async ルート）は
+        本メソッドを **同期呼び出し** し、戻り値の ``id()`` をタスクIDとして
+        返しているため、戻り値は実在するオブジェクトのままでなければならない。
+        そのため ``async def`` にはせず、Task 自身を返す契約を維持する。
+
+        返り値の型は「実行中ループがあれば Task / なければ完了済みの結果」。
+        どちらの場合も例外は監視され、ログに残る。
         """
-        import asyncio
-        # 簡易実装：指定サンプル数のコンテキストを生成して即時実行
+
+        # 指定サンプル数のコンテキストを生成して A/B 評価を実行する。
+        # 周期実行 (interval_hours) は Huey 等の永続キューに載せる必要が
+        # あるため、ここでは単発実行のスケジューリングのみ行う。
         ctx_list = [
             AgentContext(book_id=i, branch_id=1, ep_num=1, artifacts={})
             for i in range(min_samples)
         ]
-        return asyncio.create_task(
-            self.run_ab_test(skill_name, version_a, version_b, ctx_list)
-        )
+        coro = self.run_ab_test(skill_name, version_a, version_b, ctx_list)
+
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            # 同期コンテキストから呼ばれた場合。create_task は
+            # 「実行中ループなし」で RuntimeError になるため、その場で
+            # 完了まで実行して結果（None）を返す。
+            logger.warning(
+                "schedule_ab_test: 実行中のイベントループがないため "
+                "A/B テストを同期実行します (skill=%s)",
+                skill_name,
+            )
+            return asyncio.run(coro)
+
+        task = loop.create_task(coro, name=f"ab_test:{skill_name}")
+        # イベントループは弱参照しか保持しないため、参照を Orchestrator 側に
+        # 保持して GC による実行中の消失を防ぐ。
+        self._ab_test_tasks.add(task)
+        task.add_done_callback(self._ab_test_tasks.discard)
+        task.add_done_callback(self._log_ab_test_result)
+        return task
+
+    @staticmethod
+    def _log_ab_test_result(task: "asyncio.Task[Any]") -> None:
+        if task.cancelled():
+            return
+        exc = task.exception()
+        if exc is not None:
+            logger.error("A/B テストが失敗しました: %r", exc, exc_info=exc)
 
     def promote_ab_winner(self, skill_name: str, winner_version: str) -> None:
         """A/Bテスト勝者バージョンを本番昇格する"""

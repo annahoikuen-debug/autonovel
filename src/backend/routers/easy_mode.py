@@ -72,10 +72,14 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
     history_context = "\n".join(chapter_history[:-1]) if len(chapter_history) > 1 else "なし"
 
     # GraphRAG コンテキストの取得
+    # ※ book_id を渡さないとコンテキストキャッシュが読み書きされない
+    #   （書籍をまたいだキャッシュ汚染を防ぐため、キーには必ず book_id を含める）
+    book_id = payload.get("book_id")
     db = get_db_manager()
     async with db.get_session() as session:
         rag_context = await rag_service.build_rag_context(
             session=session,
+            book_id=book_id,
             current_prompt=current_chapter,
             character_name=char_name,
         )
@@ -241,7 +245,7 @@ async def generate_content(
     api_key: str = Depends(require_api_key),
 ) -> GenerationResponse:
     """章単位の対話型自動生成 [Interactive Writer]"""
-    generate_limiter.check(request)
+    await generate_limiter.check(request)
     try:
         # 章の中身処理
         processed_chapter = process_chapter(input_data.current_chapter)

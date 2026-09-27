@@ -9,7 +9,11 @@ from typing import Any
 from openai import AsyncOpenAI
 
 from src.backend.config import settings
-from src.services.llm.base import BaseLLMAdapter
+from src.services.llm.base import (
+    PLACEHOLDER_API_KEY,
+    BaseLLMAdapter,
+    is_placeholder_api_key,
+)
 from src.services.llm.retry import with_retry
 
 logger = logging.getLogger(__name__)
@@ -24,9 +28,17 @@ class OpenAIAdapter(BaseLLMAdapter):
         base_url: str | None = None,
         model: str | None = None,
     ) -> None:
-        self.api_key = api_key or settings.OPENAI_API_KEY or "dummy_key_for_local"
+        self.api_key = api_key or settings.OPENAI_API_KEY or PLACEHOLDER_API_KEY
         self.base_url = base_url or settings.OPENAI_BASE_URL
         self.model = model or settings.OPENAI_MODEL
+        if is_placeholder_api_key(self.api_key):
+            # ローカル OpenAI 互換エンドポイント (Ollama 等) はキー不要なので
+            # ここでは例外にせず、警告のみで設定不足を可視化する。
+            logger.warning(
+                "OpenAIAdapter initialised without a real API key "
+                "(OPENAI_API_KEY unset). "
+                "Requests to a remote api.openai.com endpoint will fail with HTTP 401."
+            )
         self.client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
 
     async def generate_text(

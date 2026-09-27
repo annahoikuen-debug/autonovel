@@ -157,17 +157,21 @@ class AgeClient:
 
     def get_graph_stats(self, *args: Any, **kwargs: Any) -> Any:
         class DummyStats:
-            node_count = 0
-            edge_count = 0
-            labels = []
-            relationship_types = []
+            # リストはインスタンス属性にする。クラス属性にすると全呼び出しで
+            # 共有され、.append() されたエントリが無限に蓄積する。
+            def __init__(self) -> None:
+                self.node_count = 0
+                self.edge_count = 0
+                self.labels: list[Any] = []
+                self.relationship_types: list[Any] = []
         return DummyStats()
 
     def execute_cypher(self, *args: Any, **kwargs: Any) -> Any:
         class DummyResult:
-            records = []
-            summary = "deprecated"
-            execution_time_ms = 0.0
+            def __init__(self) -> None:
+                self.records: list[Any] = []
+                self.summary = "deprecated"
+                self.execution_time_ms = 0.0
         return DummyResult()
 
 

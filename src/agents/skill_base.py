@@ -43,14 +43,21 @@ class SkillAgent(BaseAgent):
         self.ab_test_variant: Optional[str] = None  # A/Bテスト用バリアント ("a" or "b")
 
     def emit_event(self, event_name: str, payload: dict[str, Any]) -> None:
-        """イベント発行ヘルパー（EventBus が設定されている場合のみ発行・非同期）"""
+        """イベント発行ヘルパー（EventBus が設定されている場合のみ発行・非同期）
+
+        同期・非同期の両コンテキストから呼ばれるため ``async def`` にはしない。
+        以前は async な ``publish_async`` を await せずに呼んでいたため、
+        36 箇所の呼び出しすべてでイベントが破棄され RuntimeWarning が発生していた。
+        ``EventBus.emit`` が実行中のループへ安全にスケジュールし、
+        強参照の保持と例外ログ的责任を持つ。
+        """
         if self.event_bus:
             event = AgentEvent(
                 agent=self._skill_name,
                 payload={"event": event_name, **payload},
                 correlation_id=payload.get("correlation_id", self._skill_name),
             )
-            self.event_bus.publish_async(event)
+            self.event_bus.emit(event)
 
     async def emit_event_sync(self, event_name: str, payload: dict[str, Any]) -> None:
         """イベント発行ヘルパー（EventBus が設定されている場合のみ発行・同期・全ハンドラ完了を待つ）"""

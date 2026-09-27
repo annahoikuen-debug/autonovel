@@ -13,7 +13,7 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.database.models_foreshadowing import ForeshadowingModel
-from src.models.foreshadowing_status import ForeshadowingStatus
+from src.models.foreshadowing_status import ForeshadowingScope, ForeshadowingStatus
 
 
 class DbForeshadowingRepository:

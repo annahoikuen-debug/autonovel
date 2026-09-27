@@ -13,6 +13,20 @@ from src.services.book_score_models import BookScore, BookScoreRepository  # noq
 logger = logging.getLogger(__name__)
 
 
+class ScoringUnavailableError(RuntimeError):
+    """スコア算出に必要なデータが存在しない、または壊れていることを示す。
+
+    「低いスコア」 (``LowScore``) とは区別される。呼び出し側は
+    この例外を捕捉して当該次元を判定不能として扱うべきで、
+    点数を偽の数値に置き換えてはならない。
+    """
+
+
+#: 判定不能な次元に対して用いる中立スコア。
+#: 閾値を下回らせないため 100.0 (満点) を用い、減点理由には含めない。
+NEUTRAL_SCORE = 100.0
+
+
 class BookScoreCalculator:
     """統一100点尺度の成熟度評価メトリクスを計算する（Phase 4 / UnifiedBookScoreBridge 委譲統合）"""
 
@@ -163,7 +177,16 @@ class BookScoreCalculator:
         # 各次元スコアを計算（0-100 の範囲で正規化）
         structure = await self._score_structure(book_id, chapter_number, ctx)
         coherency = await self._score_coherency(book_id, chapter_number, ctx)
-        factual = await self._score_factual(book_id, chapter_number, ctx)
+        try:
+            factual = await self._score_factual(book_id, chapter_number, ctx)
+        except ScoringUnavailableError as e:
+            # 障害を「低スコア」に偽装しない。neutral(100) として扱い、
+            # 他の次元が評価できるようにはするが、閾値判定で落ちないようにする。
+            logger.warning(
+                "factual dimension unavailable (scored neutral): book=%s ch=%s: %s",
+                book_id, chapter_number, e
+            )
+            factual = NEUTRAL_SCORE
         visual_textual = await self._score_visual_textual(book_id, chapter_number, ctx)
         reader_exp = await self._score_reader_experience(book_id, chapter_number, ctx)
 
@@ -530,9 +553,17 @@ class BookScoreCalculator:
         1. GraphRAG参照情報との整合性 (0-40点): RAG取得エンティティと本文の一致
         2. 歴史・文化的正確性 (0-35点): 時代考証チェック
         3. 用語の適切性 (0-25点): 用語集・Wiki照合
+
+        Raises:
+            ScoringUnavailableError: スコア算出に必要なデータ (章/バイブル) に
+                問題がある場合。呼び出し側は本エラーを「低スコア」として
+                扱わず、点数算出をスキップすべき。
         """
         if not self._repository or not hasattr(self._repository, 'session'):
-            return 50.0
+            raise ScoringUnavailableError(
+                "repository is not configured with a session; "
+                "factual scoring unavailable"
+            )
 
         try:
             # 1. GraphRAG参照情報との整合性
@@ -567,8 +598,16 @@ class BookScoreCalculator:
                                 rag_score = 65.0
                             else:
                                 rag_score = 50.0
-                    except Exception:
-                        pass
+                    except (TypeError, ValueError) as e:
+                        # バイブルの settings が壊れている = データ不備。
+                        # 黙って既定点のまま進むと「低スコア」に誤解される。
+                        logger.warning(
+                            "bible.settings is not valid JSON; factual scoring cannot "
+                            "evaluate RAG consistency: %s", e
+                        )
+                        raise ScoringUnavailableError(
+                            f"bible.settings is not valid JSON: {e}"
+                        ) from e
 
             # 2. 歴史・文化的正確性 (HistoricalAccuracyChecker 連携簡易版)
             history_score = 70.0
@@ -587,8 +626,14 @@ class BookScoreCalculator:
                             history_score = 75.0
                         else:
                             history_score = 50.0
-                except Exception:
-                    pass
+                except (TypeError, ValueError) as e:
+                    logger.warning(
+                        "bible.settings is not valid JSON; historical accuracy check "
+                        "skipped: %s", e
+                    )
+                    raise ScoringUnavailableError(
+                        f"bible.settings is not valid JSON: {e}"
+                    ) from e
 
             # 3. 用語の適切性
             term_score = 70.0
@@ -614,8 +659,15 @@ class BookScoreCalculator:
                                         term_score = 80.0
                                     else:
                                         term_score = 60.0
-                    except Exception:
-                        pass
+                    except (TypeError, ValueError) as e:
+                        logger.warning(
+                            "bible.settings is not valid JSON; "
+                            "glossary check skipped: %s",
+                            e,
+                        )
+                        raise ScoringUnavailableError(
+                            f"bible.settings is not valid JSON: {e}"
+                        ) from e
 
             # 重み付け合計 (0-100スケール)
             total = (
@@ -625,9 +677,15 @@ class BookScoreCalculator:
             )
             return round(min(100.0, max(0.0, total)), 2)
 
+        except ScoringUnavailableError:
+            raise
         except Exception as e:
-            logger.debug(f"Factual scoring failed: {e}")
-            return 50.0
+            # 障害と「低いスコア」を区別できない 50.0 は返さない。
+            logger.warning(
+                "Factual scoring failed for book=%s ch=%s: %s",
+                book_id, chapter_number, e,
+            )
+            raise ScoringUnavailableError(f"factual scoring failed: {e}") from e
 
     def _get_anachronisms(self, period: str) -> list[str]:
         """時代に合わない用語リストを返す（簡易版）"""

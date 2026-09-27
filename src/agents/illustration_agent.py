@@ -121,9 +121,25 @@ class IllustrationAgent(SkillAgent):
                 generation_time_ms=0,
             )
 
+            # image_url="" は「画像が無い」ことを意味するため、このまま
+            # 永続化すると下流が「画像が存在するがURLだけ空」と誤認する。
+            # .downstream で識別できるよう、status を明示し警告を出す。
+            logger.warning(
+                "IllustrationAgent: 画像生成は未実装のため prompt のみ返します "
+                "(type=%s, book_id=%s, ep_num=%s)。image_url は空文字で永続化されます。",
+                kind,
+                getattr(request, "book_id", None),
+                getattr(request, "ep_num", None),
+            )
+
             illustration_id = await self._persist(request, result)
             result.illustration_id = illustration_id
-            return {"status": "success", "result": result, "prompt": prompt}
+            return {
+                "status": "prompt_only",
+                "result": result,
+                "prompt": prompt,
+                "image_generated": False,
+            }
         except Exception as e:  # noqa: BLE001
             logger.error(f"IllustrationAgent prompt generation error: {str(e)}")
             return {"status": "error", "message": str(e)}

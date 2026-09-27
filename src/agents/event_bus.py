@@ -2,12 +2,17 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import json
+import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-import redis.asyncio as redis
+logger = logging.getLogger(__name__)
+
+if TYPE_CHECKING:  # pragma: no cover - typing only
+    from redis.asyncio import Redis
 
 
 @dataclass
@@ -40,10 +45,13 @@ AGENT_BACKTRACKED = "agent.backtracked"
 class EventBus:
     def __init__(self, use_redis: bool = False, redis_url: str | None = None):
         self._subs: dict[str, list[Callable[[AgentEvent], Awaitable[None]]]] = {}
-        self._redis: redis.asyncio.Redis | None = None
+        self._redis: Redis | None = None
         self._use_redis = use_redis
         self._redis_url = redis_url or "redis://localhost:6379/0"
         self._consumer_task: asyncio.Task | None = None
+        # fire-and-forget タスクへの強参照。イベントループは弱参照しか保持しないため、
+        # ここを保持しないと GC に回収され実行中に消失する。
+        self._background_tasks: set[asyncio.Task] = set()
 
     def subscribe(self, agent: str, handler: Callable[[AgentEvent], Awaitable[None]]) -> None:
         self._subs.setdefault(agent, []).append(handler)
@@ -52,49 +60,122 @@ class EventBus:
         """非同期ハンドラ登録（subscribe のエイリアス）"""
         self.subscribe(agent, handler)
 
-    async def publish(self, event: AgentEvent) -> list[asyncio.Task]:
-        # ローカルハンドラ実行
-        tasks = []
-        for handler in self._subs.get(event.agent, []):
-            tasks.append(asyncio.create_task(handler(event)))
+    @staticmethod
+    def _coerce_event(event: Any, payload: dict[str, Any] | None = None) -> AgentEvent:
+        """``AgentEvent`` または ``(name, payload)`` のどちらでも受理して正規化する。
 
-        # Redis Stream へ発行
+        後方互換のための shim。``src/backend/tasks/dag_scheduler`` /
+        ``worker_recovery`` は ``publish_async(event_type, payload)`` という
+        2 引数leases で 1 引数メソッドを呼ぶため TypeError になり、
+        呼び出し側の ``except Exception: logger.debug(...)`` で黙殺されていた。
+        """
+        if isinstance(event, AgentEvent):
+            return event
+        if isinstance(event, str):
+            return AgentEvent(
+                agent=event,
+                payload=payload or {},
+                correlation_id=(payload or {}).get("correlation_id")
+                or (payload or {}).get("task_id")
+                or event,
+            )
+        raise TypeError(
+            f"EventBus.publish expects an AgentEvent or (name, payload); got {type(event)!r}"
+        )
+
+    async def publish(self, event: AgentEvent, payload: dict[str, Any] | None = None) -> list[asyncio.Task]:
+        """ハンドラを fire-and-forget で起動し、タスクを返す（呼び出し側が wait する前提）。"""
+        ev = self._coerce_event(event, payload)
+        tasks = []
+        for handler in self._subs.get(ev.agent, []):
+            tasks.append(asyncio.create_task(self._invoke_handler(handler, ev)))
+
         if self._use_redis and self._redis is not None:
-            stream_name = f"agent_events:{event.correlation_id}"
-            tasks.append(asyncio.create_task(self._redis.xadd(
-                stream_name,
-                {
-                    "agent": event.agent,
-                    "payload": json.dumps(event.payload, ensure_ascii=False),
-                    "correlation_id": event.correlation_id,
-                },
-            )))
+            tasks.append(self._create_redis_task(ev))
 
         return tasks
 
-    async def publish_async(self, event: AgentEvent) -> None:
-        """非同期イベント発行（publish のエイリアス・戻り値無視）"""
-        await self.publish(event)
+    @staticmethod
+    async def _invoke_handler(
+        handler: Callable[[AgentEvent], Awaitable[None]], ev: AgentEvent
+    ) -> None:
+        """ハンドラ例外を握り潰さないラッパー。同期ハンドラも許容する。"""
+        result = handler(ev)
+        if inspect.isawaitable(result):
+            await result
 
-    async def publish_sync(self, event: AgentEvent) -> None:
-        """同期的にイベント発行（全ハンドラ完了を待つ）"""
-        tasks = []
-        for handler in self._subs.get(event.agent, []):
-            tasks.append(asyncio.create_task(handler(event)))
-
-        if self._use_redis and self._redis is not None:
-            stream_name = f"agent_events:{event.correlation_id}"
-            tasks.append(asyncio.create_task(self._redis.xadd(
+    def _create_redis_task(self, ev: AgentEvent) -> asyncio.Task:
+        stream_name = f"agent_events:{ev.correlation_id}"
+        return asyncio.create_task(
+            self._redis.xadd(
                 stream_name,
                 {
-                    "agent": event.agent,
-                    "payload": json.dumps(event.payload, ensure_ascii=False),
-                    "correlation_id": event.correlation_id,
+                    "agent": ev.agent,
+                    "payload": json.dumps(ev.payload, ensure_ascii=False),
+                    "correlation_id": ev.correlation_id,
                 },
-            )))
+            )
+        )
 
-        if tasks:
-            await asyncio.gather(*tasks)
+    async def publish_async(self, event: Any, payload: dict[str, Any] | None = None) -> None:
+        """非同期イベント発行。全ハンドラ完了を待ち、例外はログに記録する。
+
+        以前は ``await self.publish(event)`` とするだけでタスク一覧を捨てていたため、
+        await してもハンドラ完了の保証にならず、参照を 잃ったタスクは GC 対象となり、
+        ハンドラ例外は「Task exception was never retrieved」として不可視になっていた。
+        """
+        tasks = await self.publish(event, payload)
+        if not tasks:
+            return
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for result in results:
+            if isinstance(result, BaseException) and not isinstance(
+                result, asyncio.CancelledError
+            ):
+                logger.warning(
+                    "EventBus handler failed for agent=%r correlation_id=%r: %r",
+                    self._coerce_event(event, payload).agent,
+                    self._coerce_event(event, payload).correlation_id,
+                    result,
+                    exc_info=result,
+                )
+
+    def emit(self, event: Any, payload: dict[str, Any] | None = None) -> asyncio.Task | None:
+        """同期コンテキストから使える非同期発行。実行中ループがあればバックグラウンドで走らせる。
+
+        ``SkillAgent.emit_event`` は同期・非同期両方のコンテキストから 36 箇所で呼ばれる
+        ため、``async def`` 化すると呼び出し側 36 箇所の変更が必要になる。
+        そのため这里では「ループがあれば安全に登録、なければ警告して落とす」設計にする。
+        """
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            logger.warning(
+                "EventBus.emit called with no running event loop; event %r dropped. "
+                "Use 'await event_bus.publish_async(...)' from async code.",
+                self._coerce_event(event, payload).agent,
+            )
+            return None
+        task = loop.create_task(
+            self.publish_async(event, payload), name="event_bus_emit"
+        )
+        # GC 対策 AND 例外可視化（fire_and_forget 相当.done コールバック）
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
+        task.add_done_callback(self._log_task_exception)
+        return task
+
+    @staticmethod
+    def _log_task_exception(task: asyncio.Task) -> None:
+        if task.cancelled():
+            return
+        exc = task.exception()
+        if exc is not None:
+            logger.error("EventBus.emit background publish failed: %r", exc, exc_info=exc)
+
+    async def publish_sync(self, event: Any, payload: dict[str, Any] | None = None) -> None:
+        """同期的にイベント発行（全ハンドラ完了を待つ）"""
+        await self.publish_async(event, payload)
 
     async def publish_blind(
         self,

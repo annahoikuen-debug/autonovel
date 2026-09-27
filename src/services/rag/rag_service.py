@@ -65,6 +65,7 @@ class GraphRAGService:
         *,
         token_budget: int = 3000,
         enable_cache: bool = True,
+        cache_max_entries: int = 1024,
     ) -> None:
         self._reranker = reranker
         self._custom_vector_store = vector_store
@@ -74,6 +75,7 @@ class GraphRAGService:
         self._enable_cache = enable_cache
         self._cache: dict[str, tuple[RagContext, float]] = {}  # key -> (context, timestamp)
         self._cache_ttl = 300  # 5分
+        self._cache_max_entries = cache_max_entries
 
     @property
     def _vector_store(self) -> BaseVectorStore:
@@ -146,22 +148,42 @@ class GraphRAGService:
 
         return hashlib.md5("|".join(args).encode()).hexdigest()
 
+    def _purge_expired(self, now: float) -> None:
+        """TTL切れエントリを削除する (読取を待たずに回収する)."""
+        expired = [
+            k for k, (_, ts) in self._cache.items()
+            if now - ts >= self._cache_ttl
+        ]
+        for k in expired:
+            del self._cache[k]
+
     def _get_cached(self, key: str) -> RagContext | None:
         """キャッシュから取得（TTLチェック付き）."""
         if not self._enable_cache:
             return None
-        if key in self._cache:
-            context, timestamp = self._cache[key]
-            if time.time() - timestamp < self._cache_ttl:
-                return context
-            else:
-                del self._cache[key]
+        entry = self._cache.get(key)
+        if entry is None:
+            return None
+        context, timestamp = entry
+        if time.time() - timestamp < self._cache_ttl:
+            return context
+        del self._cache[key]
         return None
 
     def _set_cache(self, key: str, context: RagContext) -> None:
-        """キャッシュに保存."""
-        if self._enable_cache:
-            self._cache[key] = (context, time.time())
+        """キャッシュに保存（上限を又名超えたら全体を破棄して再肥大を防ぐ）."""
+        if not self._enable_cache:
+            return
+        now = time.time()
+        if len(self._cache) >= self._cache_max_entries:
+            self._purge_expired(now)
+        if len(self._cache) >= self._cache_max_entries:
+            logger.warning(
+                "[RAG CACHE] entry cap %d reached; dropping all cached contexts",
+                self._cache_max_entries,
+            )
+            self._cache.clear()
+        self._cache[key] = (context, now)
 
     async def search_similar_chunks(
         self,
@@ -616,17 +638,35 @@ class GraphRAGService:
         character_name: str,
         additional_entities: list[str] | None = None,
         *,
+        book_id: int | None = None,
         use_cache: bool = True,
     ) -> RagContext:
         """小説執筆プロンプトに注入するハイブリッドコンテキストを生成.
 
+        Args:
+            book_id: 対象書籍の ID。コンテキストは `session` に紐づく書籍スコープの
+                データから構築されるため、キャッシュキーにも必ず含めること。
+                ``None`` の場合は **キャッシュを一切利用しない**（Read も Write も
+                行わない）。これにより書籍をまたいだコンテキスト混入を防ぐ。
+
         Returns:
             RagContext: グラフ/ベクトル/全文コンテキストと統計
         """
+        # 書籍スコープが不明な場合はキャッシュを無効化する（フェイルセーフ）。
+        # 同一キャラ名の他書籍とキーが衝突し、混入したコンテキストを返してしまうため。
+        cache_enabled = use_cache and self._enable_cache and book_id is not None
+        if use_cache and book_id is None:
+            logger.debug(
+                "RAG context cache bypassed: book_id is required to scope the cache key"
+            )
         cache_key = self._get_cache_key(
-            "rag_ctx", current_prompt, character_name, str(additional_entities)
+            "rag_ctx",
+            str(book_id),
+            current_prompt,
+            character_name,
+            str(additional_entities),
         )
-        if use_cache:
+        if cache_enabled:
             cached = self._get_cached(cache_key)
             if cached:
                 logger.debug("RAG context cache hit")
@@ -690,7 +730,7 @@ class GraphRAGService:
             token_estimate=self._estimate_tokens(graph_context + vector_context),
         )
 
-        if use_cache:
+        if cache_enabled:
             self._set_cache(cache_key, context)
 
         return context
@@ -723,6 +763,7 @@ class GraphRAGService:
             current_prompt=current_prompt,
             character_name=character_name,
             additional_entities=additional_entities,
+            book_id=book_id,
         )
 
         return {

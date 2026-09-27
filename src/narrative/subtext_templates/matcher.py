@@ -4,6 +4,7 @@ ContextMatcher: Matches dialogue context against subtext templates (PLAN_Y2 Step
 
 from __future__ import annotations
 
+import hashlib
 import logging
 import random
 from pathlib import Path
@@ -148,9 +149,12 @@ class ContextMatcher:
             return matches[0]
 
         # Deterministic seed calculation
+        # ※ Python の hash() は PYTHONHASHSEED でプロセスごとに変わるため
+        #    プロセス再起動で選択結果が変わる。sha256 で安定したシードにする。
         calc_seed = seed
         if calc_seed is None:
-            calc_seed = hash(f"{context.scene_id}_{context.turn_index}_{context.speaker}") & 0xFFFFFFFF
+            seed_str = f"{context.scene_id}_{context.turn_index}_{context.speaker}"
+            calc_seed = int.from_bytes(hashlib.sha256(seed_str.encode("utf-8")).digest()[:4], "big")
 
         rnd = random.Random(calc_seed)
         weights = [max(0.1, m.score) for m in matches]

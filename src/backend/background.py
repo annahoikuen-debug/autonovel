@@ -99,10 +99,14 @@ class ProgressState:
         task_id: str | None = None,
         repo: Any | None = None,
         skip_initial_save: bool = False,
+        user_id: int | None = None,
     ):
         self.is_running = is_running
         self.task_id = task_id or f"task_{int(time.time())}"
         self.repo = repo
+        # このタスクを所有するユーザー。タスク状態の永続化経由で
+        # `GET /api/tasks/{task_id}/status` の所有権判定に使用される。
+        self.user_id = user_id
         self.current_step = 0
         self.total_steps = 0
         self.message = "準備中..."
@@ -162,6 +166,7 @@ class ProgressState:
 
         state_dict = {
             "is_running": self.is_running,
+            "user_id": self.user_id,
             "current_step": self.current_step,
             "total_steps": self.total_steps,
             "message": self.message,

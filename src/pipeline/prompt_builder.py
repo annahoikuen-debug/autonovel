@@ -1,7 +1,7 @@
 """Prompt builder for emotional context injection."""
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 from jinja2 import Environment, FileSystemLoader
 

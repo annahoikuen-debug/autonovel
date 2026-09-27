@@ -3,6 +3,7 @@ import importlib
 import sys
 import types
 import warnings
+from typing import TYPE_CHECKING
 
 warnings.warn(
     "src.services.rag_service is deprecated; use src.services.rag instead",
@@ -11,6 +12,16 @@ warnings.warn(
 )
 
 _TARGET_MODULE = "src.services.rag.rag_service"
+
+if TYPE_CHECKING:  # pragma: no cover - 型チェック用の再エクスポート宣言
+    from src.services.rag.rag_service import (
+        GraphRAGService,
+        RagContext,
+        Reranker,
+        SearchResult,
+        embedding_service,
+        rag_service,
+    )
 
 __all__ = [
     "GraphRAGService",

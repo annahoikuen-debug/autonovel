@@ -197,14 +197,11 @@ class WorkerRecoveryManager:
 
         if self.event_bus:
             try:
-                if hasattr(self.event_bus, "publish_async"):
-                    await self.event_bus.publish_async("worker.recovery_alert", alert_data)
-                elif hasattr(self.event_bus, "publish"):
-                    result = self.event_bus.publish("worker.recovery_alert", alert_data)
-                    if asyncio.iscoroutine(result):
-                        await result
+                # EventBus.publish_async は (AgentEvent) と (name, payload) の両方を受け付ける
+                await self.event_bus.publish_async("worker.recovery_alert", alert_data)
             except Exception as e:
-                logger.debug(f"Failed to publish recovery alert: {e}")
+                # 従来は logger.debug だったためアラート欠落が観測されなかった
+                logger.warning("Failed to publish recovery alert: %s", e, exc_info=True)
 
     async def log_task_start(
         self,

@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = (
         "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:8080"
     )
+    # `X-Forwarded-For` を信頼してよいプロキシの CIDR（カンマ区切り）。
+    # 未設定（既定）または空の場合はヘッダーを一切信用せず、
+    # 直接接続の peer (`request.client.host`) をクライアント IP として扱う。
+    TRUSTED_PROXY_CIDRS: str = ""
     FRONTEND_URL: str = "http://localhost:5173"
     CORS_ALLOW_HEADERS: str = "Content-Type,Authorization,X-API-Key,Accept,Origin,X-Requested-With"
     ALLOWED_API_KEYS: str = ""
@@ -92,6 +96,11 @@ class Settings(BaseSettings):
         return self
 
     # 外部決済設定
+    # Stripe: 未設定は空文字 / None とし、Webhook 側は本地・テスト以外での
+    # 未設定を致命エラーとして扱う（src/backend/routers/billing_webhook.py）。
+    STRIPE_SECRET_KEY: str | None = None
+    STRIPE_WEBHOOK_SECRET: str = ""
+
     def get_jwt_secret_key(self) -> str:
         """JWTシークレットキーを取得し、本番環境での安全性を厳格に検証する。"""
         import os
@@ -206,6 +215,11 @@ class Settings(BaseSettings):
     VOICEVOX_DEFAULT_SPEAKER_ID: int = 3
     VOICEVOX_TIMEOUT_SECONDS: float = 30.0
     MULTIMEDIA_OUTPUT_DIR: str = Field(default_factory=lambda: str(STORAGE_DIR / "multimedia"))
+
+    # ヘルスチェック詳細エンドポイント
+    # 有効にすると LLM API を実際に呼び出すため費用が発生する（既定は無効）
+    HEALTH_CHECK_LLM_PROBE: bool = False
+    HEALTH_CHECK_TIMEOUT_SECONDS: float = 5.0
 
     # 画像生成プロバイダ設定 (DALL-E 3 / Stable Diffusion WebUI / ComfyUI / Mock)
     IMAGE_PROVIDER: Literal["mock", "dalle3", "sd_webui", "comfyui"] = "mock"

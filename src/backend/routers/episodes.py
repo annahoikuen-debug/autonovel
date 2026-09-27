@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from src.backend.auth import get_current_user, validate_api_key_sync
+from src.backend.auth import get_current_user, require_valid_api_key
 from src.backend.database.models import User
 from src.backend.database.uow import UnitOfWork
 from src.backend.security.owner_guard import verify_book_ownership
@@ -50,13 +50,16 @@ async def generate_episodes(
     current_user: User = Depends(get_current_user),
 ):
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("write")
     await _create_task(
-        task_id, "執筆タスクを開始中...", total_steps=req.write_to - req.write_from + 1
+        task_id,
+        "執筆タスクを開始中...",
+        total_steps=req.write_to - req.write_from + 1,
+        user_id=getattr(current_user, "id", None),
     )
     execute_service_workflow(
         task_id=task_id,
@@ -85,13 +88,16 @@ async def generate_episodes_candidates(
     current_user: User = Depends(get_current_user),
 ):
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("write_candidates")
     await _create_task(
-        task_id, "本文候補案を生成中...", total_steps=req.write_to - req.write_from + 1
+        task_id,
+        "本文候補案を生成中...",
+        total_steps=req.write_to - req.write_from + 1,
+        user_id=getattr(current_user, "id", None),
     )
     execute_service_workflow(
         task_id=task_id,
@@ -120,12 +126,17 @@ async def retry_failed_episodes(
     current_user: User = Depends(get_current_user),
 ):
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("retry_failed")
-    await _create_task(task_id, "失敗エピソードの修復を開始中...", total_steps=1)
+    await _create_task(
+        task_id,
+        "失敗エピソードの修復を開始中...",
+        total_steps=1,
+        user_id=getattr(current_user, "id", None),
+    )
     execute_service_workflow(
         task_id=task_id,
         api_key=req.api_key,
@@ -143,12 +154,17 @@ async def import_chapter(
     current_user: User = Depends(get_current_user),
 ):
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("import")
-    await _create_task(task_id, "手書き原稿のインポートと研磨を開始中...", total_steps=1)
+    await _create_task(
+        task_id,
+        "手書き原稿のインポートと研磨を開始中...",
+        total_steps=1,
+        user_id=getattr(current_user, "id", None),
+    )
     execute_service_workflow(
         task_id=task_id,
         api_key=req.api_key,

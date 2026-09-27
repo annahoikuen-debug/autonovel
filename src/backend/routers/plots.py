@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from src.backend.auth import get_current_user, validate_api_key_sync
+from src.backend.auth import get_current_user, require_valid_api_key
 from src.backend.database.models import User
 from src.backend.database.uow import UnitOfWork
 from src.backend.engine_helpers import get_engine as resolve_engine
@@ -64,11 +64,13 @@ async def plan_generation(
     current_user: User = Depends(get_current_user),
 ):
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("plan_gen")
-    await _create_task(task_id, "企画作成を開始中...", total_steps=1)
+    await _create_task(
+        task_id, "企画作成を開始中...", total_steps=1, user_id=getattr(current_user, "id", None)
+    )
     execute_service_workflow(
         task_id=task_id,
         api_key=req.api_key,
@@ -86,13 +88,16 @@ async def expand_plots(
     current_user: User = Depends(get_current_user),
 ):
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("plot_expand")
     await _create_task(
-        task_id, "プロット作成を開始中...", total_steps=req.gen_to - req.gen_from + 1
+        task_id,
+        "プロット作成を開始中...",
+        total_steps=req.gen_to - req.gen_from + 1,
+        user_id=getattr(current_user, "id", None),
     )
     execute_service_workflow(
         task_id=task_id,
@@ -116,13 +121,16 @@ async def expand_plots_candidates(
     current_user: User = Depends(get_current_user),
 ):
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("plot_candidates")
     await _create_task(
-        task_id, "プロット候補案を生成中...", total_steps=req.gen_to - req.gen_from + 1
+        task_id,
+        "プロット候補案を生成中...",
+        total_steps=req.gen_to - req.gen_from + 1,
+        user_id=getattr(current_user, "id", None),
     )
     execute_service_workflow(
         task_id=task_id,
@@ -146,7 +154,7 @@ async def rebuild_plots(
     current_user: User = Depends(get_current_user),
 ):
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
     import json
     import time
 
@@ -188,7 +196,7 @@ async def audit_plan(
     current_user: User = Depends(get_current_user),
 ):
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
     engine = resolve_engine(req.api_key)
     res = await engine.planner.audit_producer_plan(
         req.genre,
@@ -216,11 +224,16 @@ async def reverse_generate_plot(
 ):
     """逆算プロットビルダーからの回答を受け、プロット構造を生成"""
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("reverse_plot")
-    await _create_task(task_id, "逆算プロット構造を生成中...", total_steps=3)
+    await _create_task(
+        task_id,
+        "逆算プロット構造を生成中...",
+        total_steps=3,
+        user_id=getattr(current_user, "id", None),
+    )
     execute_service_workflow(
         task_id=task_id,
         api_key=req.api_key,
@@ -243,7 +256,7 @@ async def wizard_save(
 ):
     """ウィザードで作成した企画とビートシートをDBに保存する"""
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
 
     from src.backend.database.models import Book
     from src.services.errors import retry_on_lock
@@ -303,7 +316,7 @@ async def expand_commercial_beats(
 ):
     """企画パラメータから商業12ステップビートシートを生成"""
     if req.api_key:
-        validate_api_key_sync(req.api_key)
+        require_valid_api_key(req.api_key)
 
     llm = LLMGateway()
     prompt = f"""【作品タイトル】{req.title}

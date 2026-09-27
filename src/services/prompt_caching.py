@@ -35,13 +35,33 @@ except ImportError:
                 return default
 
 
-# コンテキストキャッシュの無効化（一時的な処置）
+class ContextCachingNotSupportedError(NotImplementedError):
+    """Gemini Context Caching (L4) がこのビルドでは利用できないことを示す。
+
+    ``CachedContent`` は effectively ``pass`` のスタブであり、
+    ``.create()`` は存在しない。呼び出し側はこれを捕捉し、
+    L4 を使わないものとして L1〜L3 のみで運用できる。
+    """
+
+
 class CachedContent:
-    pass
+    """Gemini Context Caching のスタブ。実装は存在しない。"""
+
+    @staticmethod
+    def create(*args: Any, **kwargs: Any) -> Any:
+        raise ContextCachingNotSupportedError(
+            "Gemini Context Caching is not implemented in this build. "
+            "Use the L1/L2/L3 caches (UnifiedPromptCache.get_cached_response / "
+            "cache_response) instead, or implement CachedContent.create against "
+            "google.genai's caching API."
+        )
 
 
 class CachingPlaceholder:
+    """L4 キャッシュが未実装であることを示すマーカー。"""
+
     CachedContent = CachedContent
+    available = False
 
 
 caching = CachingPlaceholder()
@@ -74,24 +94,26 @@ class PromptCacheManager:
         contents: list,
         model_name: str = "gemini-3.1-flash-lite",
         ttl_minutes: int = 60,
-    ) -> caching.CachedContent:
-        """
-        キャッシュが存在すれば取得、なければ作成する。
-        contents: [{"role": "user", "parts": [...]}, ...] の形式を想定
+    ) -> Any:
+        """Gemini Context Caching を取得または作成する。
+
+        既にこのプロセスで作成済みのキャッシュがあればそれを返す。
+        未作成の場合は L4 の実体が未実装なので、
+        ``ContextCachingNotSupportedError`` で明示的に失敗させる
+        (AttributeError を握り潰して黙って失敗させないため)。
+
+        Raises:
+            ContextCachingNotSupportedError: キャッシュ未作成かつ L4 が未実装のため。
+                呼び出し側は L1〜L3 にフォールバックすること。
         """
         if cache_key in self._cache_map:
-            # 簡易チェック: TTLが切れていないかの確認などはGoogle SDKがよしなにやってくれることを期待するが
-            # 必要であればここで期限チェックを行う
             return self._cache_map[cache_key]
 
-        logger.info(f"Creating Context Cache: {cache_key}")
-        # Note: 実際の実装では genai.caching.CachedContent.create を使用
-        # モデル名やコンテンツの構造はAPI仕様に従う
-        cache = caching.CachedContent.create(
-            model=model_name, contents=contents, ttl=f"{ttl_minutes * 60}s"
+        raise ContextCachingNotSupportedError(
+            "Gemini Context Caching (L4) is not implemented in this build. "
+            "Use UnifiedPromptCache.get_cached_response()/cache_response() "
+            "(L1/L2/L3) instead."
         )
-        self._cache_map[cache_key] = cache
-        return cache
 
     def clear_cache(self, cache_key: str):
         if cache_key in self._cache_map:
@@ -106,7 +128,8 @@ class UnifiedPromptCache:
     L1: インメモリ LRU (完全一致)
     L2: Redis 分散キャッシュ (完全一致)
     L3: ChromaDB セマンティックキャッシュ (類似検索)
-    L4: Gemini Context Caching (静的システムプロンプト等)
+    L4: Gemini Context Caching — **未実装**。`get_or_create_context_cache()` は
+        `ContextCachingNotSupportedError` を送出する (L1〜L3 のみ利用可能)。
     """
 
     def __init__(
@@ -196,6 +219,7 @@ class UnifiedPromptCache:
         )
 
     # === Gemini Context Caching (L4) 用メソッド ===
+    # 注意: L4 は未実装。下記はいずれも ContextCachingNotSupportedError を送出する。
 
     def get_or_create_context_cache(
         self,
@@ -203,8 +227,12 @@ class UnifiedPromptCache:
         contents: list,
         model_name: str = "gemini-3.1-flash-lite",
         ttl_minutes: int = 60,
-    ) -> caching.CachedContent:
-        """Gemini Context Cache を取得または作成."""
+    ) -> Any:
+        """Gemini Context Cache を取得または作成する。
+
+        Raises:
+            ContextCachingNotSupportedError: L4 が未実装のため常に送出。
+        """
         return self._context_cache_manager.get_or_create_cache(
             cache_key, contents, model_name, ttl_minutes
         )

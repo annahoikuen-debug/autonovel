@@ -62,4 +62,6 @@ async def test_validation_exception_handler():
 def test_register_error_handlers():
     app = MagicMock()
     register_error_handlers(app)
-    assert app.add_exception_handler.call_count == 2
+    # HTTPException / RequestValidationError に加えて、status_code を持つ
+    # AutoNovelException / HegemonyError も登録される（未登録だと 404/429 が 500 になる）
+    assert app.add_exception_handler.call_count == 4

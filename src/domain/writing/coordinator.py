@@ -10,10 +10,20 @@ from src.domain.writing.models import (
     clean_writing_response,
 )
 from src.audit.pipeline import AuditPipeline
+from src.domain.interfaces.metrics import NOOP_METRICS_RECORDER
 from src.generation.local_polish import LocalPolisher
 from src.generation.pdca_controller import PDCAController
 
 logger = logging.getLogger(__name__)
+
+
+class ChapterImportNotAvailableError(NotImplementedError):
+    """手書き原稿のインポート機能が利用できないことを示す。
+
+    v5.0 では WritingAgent 側の ``analyze_and_import_chapter`` が未実装の
+    ため、``ChapterImportWorkflow`` は実行できない。呼び出し側はこれを
+    捕捉し、Features Not Available (501) 相当として応答できる。
+    """
 
 
 class WritingCoordinator:
@@ -32,6 +42,7 @@ class WritingCoordinator:
         pdca_controller: Any = None,
         audit_pipeline: Any = None,
         local_polisher: Any = None,
+        metrics: Any = None,
     ) -> None:
         self.writer = writer
         self.repo = repo
@@ -45,6 +56,8 @@ class WritingCoordinator:
         self.pdca_controller = pdca_controller or PDCAController()
         self.audit_pipeline = audit_pipeline or AuditPipeline()
         self.local_polisher = local_polisher or LocalPolisher()
+        # メトリクスはポート経由。未注入なら no-op (旧: backend を直接 import していた)
+        self._metrics = metrics or NOOP_METRICS_RECORDER
 
     async def generate_episodes_pipeline(
         self,
@@ -307,11 +320,10 @@ class WritingCoordinator:
             result["regeneration_actions"] = []
 
         # メトリクス記録
-        try:
-            from src.backend.observability.metrics import record_book_score
-            record_book_score(result, genre, phase)
-        except Exception:
-            pass  # メトリクス失敗は無視
+        # 旧実装はドメイン層から src.backend.observability.metrics を
+        # 直接 import して層境界を破っていた。ポート経由にし、実装は
+        # インフラ層が注入する (未注入なら no-op)。
+        self._metrics.record_book_score(result, genre, phase)
 
         return result
 
@@ -377,6 +389,19 @@ class WritingCoordinator:
                 actions.append(action)
         return actions
 
+    def supports_chapter_import(self) -> bool:
+        """手書き原稿インポートが利用可能かを返す。
+
+        現在の WritingAgent は ``analyze_and_import_chapter`` を「存在するが
+        常に NotImplementedError を送出する」形で実装している。そのため
+        ``hasattr`` だけでは実装済みと判定できず、実行時に 500 になる。
+        """
+        method = getattr(self.writer, "analyze_and_import_chapter", None)
+        if method is None:
+            return False
+        # 常に送出する実装には _unimplemented_marker が立つ。
+        return not bool(getattr(method, "_unimplemented_marker", False))
+
     async def analyze_and_import_chapter(
         self,
         book_id: int,
@@ -386,16 +411,19 @@ class WritingCoordinator:
     ) -> Any:
         """
         手書き原稿のインポート・研磨を実行する。
-        writer が analyze_and_import_chapter を持っていれば委譲、
-        持っていなければ NotImplementedError を送出（呼び出し側で要ハンドリング）。
+
+        Raises:
+            ChapterImportNotAvailableError: 注入された writer が
+                章インポートを実装していない場合。NotImplementedError を
+                再送出せず、原因と対処を示す明確なエラーにする。
         """
-        method = getattr(self.writer, "analyze_and_import_chapter", None)
-        if method is None:
-            raise NotImplementedError(
-                "WritingAgent に analyze_and_import_chapter が実装されていません。"
-                "ChapterImportWorkflow の実行には当該メソッドが必要です。"
+        if not self.supports_chapter_import():
+            raise ChapterImportNotAvailableError(
+                "手書き原稿のインポート (analyze_and_import_chapter) は v5.0 で"
+                "未実装です。WritingAgent / WritingGenerator 側が実装を"
+                "追加するまで、ChapterImportWorkflow は利用できません。"
             )
-        return await method(
+        return await self.writer.analyze_and_import_chapter(
             book_id=book_id,
             ep_num=ep_num,
             import_text=import_text,

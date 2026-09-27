@@ -33,22 +33,32 @@ class CommentRequest(BaseModel):
 
 
 async def _verify_book_access(uow: UnitOfWork, book_id: int, current_user: User) -> None:
-    """リクエストユーザーがブックの所有者または管理者であることを検証する。"""
+    """
+    リクエストのユーザーがブックの所有者または管理者であることを検証する。
+    
+    `book.user_id` が NULL (所有者未設定) の作品については、コラボレーションメンバーに
+    含まれているかを所有権の代わりに確認する。所有者が設定済みの場合は
+    所有者本人のみを許す。
+    """
     book = await uow.books.get_book(book_id)
     if not book:
         from src.core.exceptions import NotFoundError
         raise NotFoundError("Book not found", resource_type="Book", resource_id=str(book_id))
 
-    if current_user.role != "admin" and getattr(book, "user_id", None) is not None:
-        if book.user_id != current_user.id:
-            # メンバーリストに含まれるかも確認
-            members = await uow.collab.list_members(book_id)
-            member_names = {m.user_name for m in members}
-            if current_user.display_name not in member_names and current_user.email not in member_names:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="この作品へのアクセス権限がありません",
-                )
+    if current_user.role == "admin":
+        return
+
+    if getattr(book, "user_id", None) is not None:
+        if book.user_id == current_user.id:
+            return
+        # メンバーリストに含まれるかも確認
+        members = await uow.collab.list_members(book_id)
+        member_names = {m.user_name for m in members}
+        if current_user.display_name not in member_names and current_user.email not in member_names:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="この作品へのアクセス権限がありません",
+            )
 
 
 # ---- Members ----

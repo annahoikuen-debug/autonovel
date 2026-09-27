@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import inspect
 import json
+import logging
+import os
 import re
 import time
 from collections.abc import Awaitable, Callable, Mapping
@@ -11,8 +13,10 @@ from typing import Any
 from prometheus_client import Counter
 
 from .circuit_breaker import LLMCircuitBreaker
-from .fallback_policy import FallbackPolicy
+from .fallback_policy import ALLOW_MOCK_ENV, FallbackPolicy, _mock_allowed
 from src.services.llm.provider_failover import ProviderFailoverManager
+
+logger = logging.getLogger(__name__)
 
 
 llm_failover_total = Counter(
@@ -49,6 +53,12 @@ def normalize_schema_prompt(prompt: str, response_schema: Any | None) -> str:
 
 
 class ResilientLLMGateway:
+    # プロセス共有の ProviderFailoverManager。ResilientLLMGateway は
+    # src/backend/engine.py と src/backend/routers/system.py の 2 箇所で
+    # 生成されるため、インスタンスごとに作るとブレーカー状態が共有されず
+    # どちらかの网关だけ衰退する。
+    _failover_manager_singleton: ProviderFailoverManager | None = None
+
     def __init__(
         self,
         circuit_breaker: LLMCircuitBreaker | None = None,
@@ -60,6 +70,7 @@ class ResilientLLMGateway:
         backoff_base_seconds: float = 0.1,
         max_backoff_seconds: float = 2.0,
         sleep: Callable[[float], Awaitable[None]] | None = None,
+        call_timeout_seconds: float | None = None,
     ) -> None:
         self.circuit_breaker = circuit_breaker or LLMCircuitBreaker()
         self.providers = dict(providers or {})
@@ -72,8 +83,38 @@ class ResilientLLMGateway:
         self.backoff_base_seconds = max(0.0, backoff_base_seconds)
         self.max_backoff_seconds = max(0.0, max_backoff_seconds)
         self._sleep = sleep or asyncio.sleep
-        # ProviderFailoverManager singleton for additional circuit breaker checks
-        self._failover_manager = ProviderFailoverManager()
+        # プロバイダ呼び出し全体の期限。None なら環境変数
+        # AUTONOVEL_LLM_CALL_TIMEOUT_SECONDS、既定 300 秒。
+        # 以前は timeout が一切無く、応答無いプロバイダでパイプラインが
+        # 無期限にハングしていた。
+        if call_timeout_seconds is not None:
+            self.call_timeout_seconds = float(call_timeout_seconds)
+        else:
+            raw = os.environ.get("AUTONOVEL_LLM_CALL_TIMEOUT_SECONDS", "").strip()
+            try:
+                self.call_timeout_seconds = float(raw) if raw else 300.0
+            except ValueError:
+                logger.warning(
+                    "AUTONOVEL_LLM_CALL_TIMEOUT_SECONDS=%r is not a number; using 300.0",
+                    raw,
+                )
+                self.call_timeout_seconds = 300.0
+        if self.call_timeout_seconds <= 0:
+            self.call_timeout_seconds = 300.0
+        # プロセス共有の ProviderFailoverManager（インスタンス毎の生成をやめる）
+        if ResilientLLMGateway._failover_manager_singleton is None:
+            ResilientLLMGateway._failover_manager_singleton = ProviderFailoverManager()
+        self._failover_manager = ResilientLLMGateway._failover_manager_singleton
+
+    def _failover_breaker_for(self, provider: str) -> Any | None:
+        """プロバイダ名に対応する_failover_manager_のブレーカーを返す。
+
+        以前は ``breakers.get(provider, breakers["gemini"])`` としており、
+        (1) dict.get の default 引数は常に評価されるため "gemini" が無くても
+        KeyError になり、(2) ollama/vllm/mock が Gemini の健全性で
+        遮断されていた。未知のプロバイダは「遮断しない」として扱う。
+        """
+        return self._failover_manager.breakers.get(provider)
 
     async def generate_text(
         self,
@@ -135,13 +176,25 @@ class ResilientLLMGateway:
                 continue
             seen.add(provider)
             next_provider = self._next_candidate(candidates, attempt, seen)
+            if provider == "mock" and not _mock_allowed():
+                # 実プロバイダが全部失敗したときに、MockAdapter の出力が
+                # 本物の LLM 出力と区別できないままパイプラインを流していた。
+                last_unavailable = RuntimeError(
+                    "Refusing to use the 'mock' LLM provider in production. "
+                    f"Set {ALLOW_MOCK_ENV}=1 only for tests/CI."
+                )
+                logger.error("%s", last_unavailable)
+                if next_provider:
+                    self._record_failover(provider, next_provider, "mock_blocked")
+                continue
             if not self.circuit_breaker.can_execute(provider):
                 last_unavailable = RuntimeError(f"Circuit breaker is OPEN for {provider}")
                 if next_provider:
                     self._record_failover(provider, next_provider, "circuit_open")
                 continue
-            # Additional check using ProviderFailoverManager
-            if not self._failover_manager.breakers.get(provider, self._failover_manager.breakers["gemini"]).can_execute():
+            # Additional check using ProviderFailoverManager（プロバイダが登録されている場合のみ）
+            failover_breaker = self._failover_breaker_for(provider)
+            if failover_breaker is not None and not failover_breaker.can_execute():
                 last_unavailable = RuntimeError(f"Failover manager circuit breaker is OPEN for {provider}")
                 if next_provider:
                     self._record_failover(provider, next_provider, "circuit_open")
@@ -259,7 +312,12 @@ class ResilientLLMGateway:
         else:
             result = method(prompt, provider_name, effective_system, temperature_value, **call_kwargs)
         if inspect.isawaitable(result):
-            return await result
+            # 応答のないプロバイダでパイプラインが無期限ハングするのを防ぐ。
+            # クライアント層（gemini 120s/180s, openai 120s）よりも外側の
+            # ガードとして機能する。TimeoutError は failover 対象の
+            # 一時エラーとして扱われ、次のプロバイダへ退避する。
+            async with asyncio.timeout(self.call_timeout_seconds):
+                return await result
         return result
 
     def _get_provider(self, provider_name: str) -> Any | None:

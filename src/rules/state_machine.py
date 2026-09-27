@@ -5,7 +5,7 @@
 """
 from __future__ import annotations
 
-from typing import Dict, Iterator, Tuple
+from typing import Dict, Iterator, Optional, Tuple
 
 from src.pipeline.emotional_residue import EmotionType
 

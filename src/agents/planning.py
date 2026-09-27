@@ -312,18 +312,33 @@ class PlanningAgent(SkillAgent):
         for beat in beats:
             beat_engine.apply_to_beat(beat, beat.ep_num)
 
-        # 40話分になるように補足（不足分はデフォルト値で埋める）
+        # 40話分になるように補足（不足分はプレースホルダで埋める）
+        #
+        # 以前はこうしていただけで、何を埋めたかが記録もログも残らなかった:
+        #     mission="未実装", visual_scene_focus="未設定"
+        # 結果として 1〜N 话しか立案されていない物語が「40话構成」を
+        # 主張し、プレースホルダ文字列がそのままプロット DB に永続化されて
+        # いた。埋めた範囲を明示して、立案不足が観測できるようにする。
         if len(beats) < 40:
-            for i in range(len(beats) + 1, 41):
+            padded_from = len(beats) + 1
+            for i in range(padded_from, 41):
                 beats.append(
                     EpisodeBeat(
                         ep_num=i,
                         phase="不明",
-                        mission="未実装",
+                        mission="(未設定・自動補完)",
                         tension_target=0.5,
                         visual_scene_focus="未設定",
                     )
                 )
+            logger.warning(
+                "PlanningAgent: LLM が %d 话しか立案しなかったため %d-%d 话を "
+                "プレースホルダで補完した。この範囲は未立案であり、"
+                "そのまま生成するとプレースホルダが本文の前提になる。",
+                len(beats) - (40 - padded_from + 1),
+                padded_from,
+                40,
+            )
         return beats
 
     async def run(self, ctx: AgentContext) -> AgentResult:

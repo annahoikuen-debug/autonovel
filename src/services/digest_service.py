@@ -147,7 +147,22 @@ class DigestService:
             ep1_task = self.llm_service.generate_text(purpose="writing", prompt=ep1_prompt)
             climax_task = self.llm_service.generate_text(purpose="climax", prompt=climax_prompt)
 
-            ep1_text, climax_text = await asyncio.gather(ep1_task, climax_task)
+            # return_exceptions=True: 片方の失敗で他方の結果が破棄されるのを防ぐ。
+            # 部分失敗は下の except で明示的に扱う。
+            ep1_text, climax_text = await asyncio.gather(
+                ep1_task, climax_task, return_exceptions=True
+            )
+            if isinstance(ep1_text, BaseException) or isinstance(
+                climax_text, BaseException
+            ):
+                failed = (
+                    ep1_text
+                    if isinstance(ep1_text, BaseException)
+                    else climax_text
+                )
+                raise RuntimeError(
+                    f"LLM generation failed during quick-digest: {failed}"
+                )
 
             response = DigestResponse(
                 book_id=draft_id,

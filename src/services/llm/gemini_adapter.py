@@ -10,7 +10,11 @@ from google import genai
 from google.genai import types
 
 from src.backend.config import settings
-from src.services.llm.base import BaseLLMAdapter
+from src.services.llm.base import (
+    PLACEHOLDER_API_KEY,
+    BaseLLMAdapter,
+    ensure_api_key_configured,
+)
 from src.services.llm.retry import with_retry
 
 logger = logging.getLogger(__name__)
@@ -27,14 +31,20 @@ class GeminiAdapter(BaseLLMAdapter):
         resolved_key = api_key
         if not resolved_key:
             resolved_key = getattr(settings, "get_gemini_api_key", lambda: settings.GEMINI_API_KEY)() or ""
-        self.api_key = resolved_key
+        self.api_key = resolved_key or PLACEHOLDER_API_KEY
         self.model_name = model_name or settings.GEMINI_MODEL
         self._client: Any = None
 
     def _get_client(self) -> Any:
         """Client を遅延初期化する。"""
         if self._client is None:
-            self._client = genai.Client(api_key=self.api_key or "dummy_key_for_testing")
+            # Gemini API は常にリモートなので、キー未設定はそのまま渡すと
+            # 不透明な 400/401 になる。明確な設定エラーに翻訳する。
+            # 不透明な 400/401 になる。明確な設定エラーに翻訳する。
+            ensure_api_key_configured(
+                self.api_key, provider="Gemini", env_var="GEMINI_API_KEY"
+            )
+            self._client = genai.Client(api_key=self.api_key)
         return self._client
 
     async def generate_text(

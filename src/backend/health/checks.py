@@ -121,17 +121,22 @@ async def check_llm_gateway(api_key: str | None) -> HealthCheckResult:
     """LLM Gateway 軽量呼び出し（モデル一覧 or 短い生成）"""
     import os
 
-    # ヘルスチェックでの LLM 呼び出しを無効化する環境変数
-    if os.getenv("KAKU_HEALTH_CHECK_LLM", "true").lower() == "false":
+    from src.backend.config import settings
+
+    # ヘルスチェックでの LLM 呼び出しは既定で無効（実 API コールは費用が発生するため）
+    # 環境変数 KAKU_HEALTH_CHECK_LLM=true で明示的に有効化できる
+    if not settings.HEALTH_CHECK_LLM_PROBE and os.getenv(
+        "KAKU_HEALTH_CHECK_LLM", "false"
+    ).lower() != "true":
         return HealthCheckResult(
-            status=HealthStatus.NOT_CONFIGURED, details="LLM check disabled via env"
+            status=HealthStatus.NOT_CONFIGURED,
+            details="LLM check disabled (set HEALTH_CHECK_LLM_PROBE=true to enable)",
         )
 
     if not api_key or api_key == "DUMMY":
         return HealthCheckResult(status=HealthStatus.NOT_CONFIGURED, error="API key not configured")
     start = time.perf_counter()
     try:
-        from src.backend.config import settings
         from src.backend.engine_utils import AdaptiveCooldown
         from src.core.llm_gateway import LLMProviderFactory, create_genai_client
 

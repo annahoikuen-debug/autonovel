@@ -49,16 +49,38 @@ class UnifiedAuditor:
         character_profiles: str = "",
         plot_spec: str = "",
     ) -> QualitativeAudit:
-        """LLMによる定性的評価を1回のみ実行"""
+        """LLMによる定性的評価を1回のみ実行（公開 API。署名は互換のため維持）"""
+        qual, _degraded = await self._audit_qualitative_with_status(
+            text, character_profiles, plot_spec
+        )
+        return qual
+
+    async def _audit_qualitative_with_status(
+        self,
+        text: str,
+        character_profiles: str = "",
+        plot_spec: str = "",
+    ) -> tuple[QualitativeAudit, bool]:
+        """定性評価を実行し、(結果, 評価是否=degraded) を返す。
+
+        degraded=True は「評価そのものが成立していない」ことを意味する
+        （LLM 未設定 / 呼び出し失敗 / JSON パース失敗）。この場合 return される
+        スコアは評価結果ではなくプレースホルダであり、降雨ゲートはこれを
+        根拠に MUST fail-closed としなければならない。
+
+        以前は失敗時も 70.0 を返し、総合ゲートが ``final >= 70.0`` だったため
+        「LLM がタイムアウトした/認証失敗した/JSON が壊れた」章が
+        ちょうど合格点ちょうどで承認されていた。
+        """
         if self.llm is None:
-            return QualitativeAudit(
-                hook_score=75.0,
-                emotional_score=75.0,
-                character_consistency=80.0,
-                overall_score=76.0,
-                critique="LLM未設定のため標準フォールバック適用",
+            logger.error(
+                "UnifiedAuditor: LLM が未設定のため定性評価を実施できません。"
+                "監査結果は degraded（不合格）として扱われます。"
             )
+            return self._failed_qualitative("LLM未設定のため定性評価を実施できません"), True
+
         from src.agents.prompts.unified_audit_prompt import UNIFIED_AUDIT_PROMPT_TEMPLATE
+
         prompt = UNIFIED_AUDIT_PROMPT_TEMPLATE.format(
             character_profiles=character_profiles or "主人公: 標準設定",
             plot_spec=plot_spec or "標準構成",
@@ -66,18 +88,32 @@ class UnifiedAuditor:
         )
         try:
             resp = await self.llm.generate(prompt=prompt, temperature=0.2)
-            json_match = re.search(r'\{.*\}', resp, re.DOTALL)
-            if json_match:
-                data = json.loads(json_match.group(0))
-                return QualitativeAudit(**data)
         except Exception as e:
-            logger.warning(f"UnifiedAuditor LLM call failed: {e}")
+            logger.error(f"UnifiedAuditor LLM call failed: {e!r}")
+            return self._failed_qualitative(f"LLM呼び出し失敗: {e}"), True
+
+        try:
+            json_match = re.search(r"\{.*\}", resp, re.DOTALL)
+            if not json_match:
+                raise ValueError("LLM 応答に JSON オブジェクトが含まれていません")
+            data = json.loads(json_match.group(0))
+            if not isinstance(data, dict):
+                raise ValueError(f"JSON のトップレベルが dict ではありません: {type(data)!r}")
+            return QualitativeAudit(**data), False
+        except Exception as e:
+            logger.error(f"UnifiedAuditor LLM response parse failed: {e!r}")
+            return self._failed_qualitative(f"LLM応答パース失敗: {e}"), True
+
+    @staticmethod
+    def _failed_qualitative(reason: str) -> QualitativeAudit:
+        """評価不成立時のプレースホルダ。スコアは 0.0（= 合格不能）とする。"""
         return QualitativeAudit(
-            hook_score=70.0,
-            emotional_score=70.0,
-            character_consistency=70.0,
-            overall_score=70.0,
-            critique="パース失敗による安全フォールバック",
+            hook_score=0.0,
+            emotional_score=0.0,
+            character_consistency=0.0,
+            overall_score=0.0,
+            critique=f"[監査未実施] {reason}",
+            actionable_patch=None,
         )
 
     def _build_conflicts(self, meta: dict[str, Any], qual: QualitativeAudit) -> list[ConflictItemSchema]:
@@ -157,12 +193,38 @@ class UnifiedAuditor:
     ) -> UnifiedAuditReport:
         """二層ハイブリッド監査を実行し総合判定を下す"""
         q_score, meta = self.audit_quantitative(text)
-        qual = await self.audit_qualitative(text, character_profiles, plot_spec)
+        qual, degraded = await self._audit_qualitative_with_status(
+            text, character_profiles, plot_spec
+        )
 
         # 総合得点 = 定量40% + 定性60%
         final = (q_score * 0.4) + (qual.overall_score * 0.6)
-        is_ok = final >= 70.0 and len(meta["cliches"]) < 3
+        # 定量スコアだけで合格させないよう、定性評価が成立しなかった場合は
+        # 必ず不合格とする（fail-closed）。
+        is_ok = (not degraded) and final >= 70.0 and len(meta["cliches"]) < 3
         conflicts = self._build_conflicts(meta, qual)
+
+        if degraded:
+            logger.error(
+                "UnifiedAuditor: 定性評価が成立しなかったため不合格判定 "
+                "(q_score=%.1f final=%.1f): %s",
+                q_score,
+                final,
+                qual.critique,
+            )
+            conflicts.append(
+                ConflictItemSchema(
+                    category="hook",
+                    severity="critical",
+                    title="監査が未実施のため不合格",
+                    description=(
+                        "AI編集者による定性評価が完了しませんでした"
+                        f"（{qual.critique}）。"
+                        "本章は未評価として扱われます。"
+                    ),
+                    confidence=1.0,
+                )
+            )
 
         return UnifiedAuditReport(
             is_acceptable=is_ok,

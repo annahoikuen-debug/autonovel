@@ -8,11 +8,14 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy import select
 
+from src.backend.auth import get_current_user
+from src.backend.database.models import User
 from src.backend.database.uow import UnitOfWork
+from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
 from src.services.hook_diagnoser import HOOK_THRESHOLD, HookDiagnoser
 
@@ -25,11 +28,15 @@ class FixRequest(BaseModel):
 
 
 @router.get("/books/{book_id}/diagnose")
-async def diagnose_hooks(book_id: int) -> dict[str, Any]:
+async def diagnose_hooks(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """作品の全章についてフック強度を診断する。"""
     from src.backend.database.models import Chapter
 
     async with UnitOfWork(AppContainer.db()) as uow:
+        await verify_book_ownership(book_id, current_user, uow)
         if uow.session is None:
             raise RuntimeError("Database session not initialized")
         result = await uow.session.execute(
@@ -54,11 +61,16 @@ async def diagnose_hooks(book_id: int) -> dict[str, Any]:
 
 
 @router.post("/books/{book_id}/suggest")
-async def suggest_hook_fix(book_id: int, req: FixRequest) -> dict[str, Any]:
+async def suggest_hook_fix(
+    book_id: int,
+    req: FixRequest,
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """指定章のフック改善案を生成する。"""
     from src.backend.database.models import Chapter
 
     async with UnitOfWork(AppContainer.db()) as uow:
+        await verify_book_ownership(book_id, current_user, uow)
         if uow.session is None:
             raise RuntimeError("Database session not initialized")
         result = await uow.session.execute(
@@ -78,16 +90,40 @@ async def suggest_hook_fix(book_id: int, req: FixRequest) -> dict[str, Any]:
 
 
 @router.post("/books/{book_id}/episodes/{ep_num}/apply")
-async def apply_hook_fix(book_id: int, ep_num: int, payload: dict[str, Any]) -> dict[str, Any]:
+async def apply_hook_fix(
+    book_id: int,
+    ep_num: int,
+    payload: dict[str, Any],
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """生成した修正案を章末に適用する（本文の末尾を置換し、履歴は別途管理）。"""
+    from src.backend.database.models import Chapter
+
     new_tail = payload.get("content")
     if not new_tail:
         raise HTTPException(status_code=422, detail="content is required")
 
     async with UnitOfWork(AppContainer.db()) as uow:
+        await verify_book_ownership(book_id, current_user, uow)
         # branch_id 未指定なら 1（単一ブランチ既定）。payload から上書き可能。
         branch_id = int(payload.get("branch_id", 1) or 1)
+
+        # `update_chapter_content` は (branch_id, ep_num) のみで更新するため、
+        # パス指定の book_id と一致しない章を上書きできないように必ず突き合わせる。
+        if uow.session is not None:
+            owner_check = await uow.session.execute(
+                select(Chapter.book_id)
+                .where(Chapter.branch_id == branch_id)
+                .where(Chapter.ep_num == ep_num)
+            )
+            target_book_id = owner_check.scalar_one_or_none()
+            if target_book_id is None or target_book_id != book_id:
+                raise HTTPException(
+                    status_code=404,
+                    detail="Chapter not found for this book/branch",
+                )
+
         await uow.chapters.update_chapter_content(
             branch_id=branch_id, ep_num=ep_num, content=new_tail
         )
-    return {"status": "success", "ep_num": ep_num, "branch_id": branch_id}
+    return {"status": "success", "book_id": book_id, "ep_num": ep_num, "branch_id": branch_id}

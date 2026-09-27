@@ -97,15 +97,44 @@ class GeminiApiClient(BaseLLMClient):
 
             try:
                 if stream_callback:
-                    response_stream = self.client.models.generate_content_stream(
-                        model=current_model, contents=full_prompt, config=config
-                    )
-                    for chunk in response_stream:
-                        if chunk.text:
-                            full_text += chunk.text
-                            stream_callback(chunk.text)
-                        if chunk.usage_metadata:
-                            usage = chunk.usage_metadata
+                    # ストリーミングは同期ジェネレータのため、実行中イベントループを
+                    # ブロックしないよう別スレッドへ退避する（generate_text と同じ方針）。
+                    # 以前は async 関数の本体で直接 for していたため、结构化生成の
+                    # たびにイベントループが LLM 応答時間そのまま停止していた。
+                    from src.core.async_utils import safe_timeout
+                    from src.core.executor_manager import executor_manager
+
+                    def _run_stream():
+                        collected: list[str] = []
+                        last_usage = None
+                        # 404 NOT_FOUND 回避のため、モデル名に 'models/' プレフィックスが
+                        # 付いていない場合は付与する
+                        model_with_prefix = (
+                            current_model
+                            if current_model.startswith("models/")
+                            else f"models/{current_model}"
+                        )
+                        for chunk in self.client.models.generate_content_stream(
+                            model=model_with_prefix,
+                            contents=full_prompt,
+                            config=config,
+                        ):
+                            if getattr(chunk, "text", None):
+                                text = chunk.text
+                                collected.append(text)
+                                try:
+                                    stream_callback(text)
+                                except Exception as cb_err:
+                                    logger.warning(f"Stream callback failed: {cb_err}")
+                            if getattr(chunk, "usage_metadata", None):
+                                last_usage = chunk.usage_metadata
+                        return "".join(collected), last_usage
+
+                    async with safe_timeout(180.0):
+                        full_text, usage = await executor_manager.run_io(_run_stream)
+
+                    if not full_text:
+                        raise ValueError("API応答が空です。")
                 else:
 
                     def _call():
@@ -265,18 +294,17 @@ class GeminiApiClient(BaseLLMClient):
             )
             return story, usage
 
-        except Exception as e:
-            if not await self._handle_error(
-                e,
-                current_model,
-                retry_state.attempt if retry_state else 0,
-                retry_state.max_retries if retry_state else 5,
-            ):
-                raise e
-            raise e
+        except Exception:
+            # 以前は except 節で _handle_error() を await してから戻り値に
+            # 関係なく無条件に raise e しており、装飾子のバックオフと二重に
+            # 待っていた（最大 +60s/回）。待機と retry 判定は with_llm_retry() が
+            # 単独で所有するため、ここでは素通しにする（_handle_error は
+            # 単体テストから直接呼ばれる classify helper として残置）。
+            raise
 
     def build_config(
         self,
+
         system_instruction: str | None,
         temp: float,
         attempt: int,

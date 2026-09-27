@@ -7,10 +7,11 @@
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi import Path as PathParam
 from fastapi.responses import FileResponse
 
@@ -71,6 +72,38 @@ def _safe_path_under_base(name: str) -> Path:
     return candidate
 
 
+# 成果物は `MULTIMEDIA_OUTPUT_DIR/book_<id>/<kind>/...` レイアウトで出力される
+_BOOK_DIR_RE = re.compile(r"^book_(\d+)$")
+
+
+def _book_id_from_media_path(safe_path: Path) -> int | None:
+    """`MULTIMEDIA_OUTPUT_DIR` 配下のパスから作品 ID を特定する。
+
+    先頭ディレクトリが `book_<id>` 形式でなければ、作品に帰属しないため None を返す。
+    """
+    base = get_multimedia_dir().resolve()
+    try:
+        rel = safe_path.relative_to(base)
+    except ValueError:
+        return None
+    parts = rel.parts
+    if not parts:
+        return None
+    m = _BOOK_DIR_RE.match(parts[0])
+    return int(m.group(1)) if m else None
+
+
+async def _assert_media_path_ownership(safe_path: Path, current_user: User) -> None:
+    """メディア成果物パスへのアクセス権を検証する。"""
+    book_id = _book_id_from_media_path(safe_path)
+    if book_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="file not found",
+        )
+    await verify_book_ownership(book_id, current_user, None)
+
+
 @router.post(
     "/media-mix",
     response_model=MediaMixResponse,
@@ -85,7 +118,7 @@ async def generate_media_mix(
     """Media Mix 台本生成。"""
     _check_enabled()
     await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
-    generate_limiter.check(request)
+    await generate_limiter.check(request)
     metrics.increment("multimedia_requests_total")
     logger.info("multimedia.media_mix book_id=%s format=%s", payload.book_id, payload.format)
     try:
@@ -124,7 +157,7 @@ async def export_ebook(
     """Ebook エクスポート (EPUB/PDF/MOBI)。"""
     _check_enabled()
     await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
-    generate_limiter.check(request)
+    await generate_limiter.check(request)
     logger.info("multimedia.ebook book_id=%s formats=%s", payload.book_id, payload.formats)
     try:
         result = service.export_ebook(book_id=payload.book_id, formats=payload.formats)
@@ -158,7 +191,7 @@ async def generate_if_routes(
     """IF ルートグラフ生成。"""
     _check_enabled()
     await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
-    generate_limiter.check(request)
+    await generate_limiter.check(request)
     logger.info(
         "multimedia.if_routes book_id=%s persist=%s (also accessible via /api/branches)",
         payload.book_id,
@@ -200,7 +233,7 @@ async def generate_asset_pack(
     """統合アセットパック (ZIP) を生成。"""
     _check_enabled()
     await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
-    generate_limiter.check(request)
+    await generate_limiter.check(request)
     logger.info("multimedia.asset_pack book_id=%s", payload.book_id)
     try:
         result, task_id = service.generate_asset_pack(
@@ -240,7 +273,7 @@ async def generate_asset_pack_alias(
     """README 互換エイリアス: 統合アセットパック (ZIP) を生成 (`/asset-pack` と同等)。"""
     _check_enabled()
     await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
-    generate_limiter.check(request)
+    await generate_limiter.check(request)
     logger.info("multimedia.generate (alias) book_id=%s", payload.book_id)
     try:
         result, task_id = service.generate_asset_pack(
@@ -353,10 +386,11 @@ def get_task(
 
 
 @router.get("/files/{filename:path}")
-def serve_file(
+async def serve_file(
     filename: str = PathParam(...),
+    current_user: User = Depends(get_current_user),
 ) -> FileResponse:
-    """`MULTIMEDIA_OUTPUT_DIR` 配下の静的ファイルを配信 (パストラバーサル防止済み)。"""
+    """`MULTIMEDIA_OUTPUT_DIR` 配下の生成済みファイルを配信 (パストラバーサル防止済み)。"""
     if not is_multimedia_enabled():
         raise HTTPException(status_code=503, detail="Multimedia disabled")
     try:
@@ -365,6 +399,9 @@ def serve_file(
         raise
     if not safe_path.exists() or not safe_path.is_file():
         raise HTTPException(status_code=404, detail="file not found")
+    # 出力ディレクトリは作品ごとに `book_<id>/` ディレクトリで分離されているため、
+    # パスから作品 ID を取り出して所有者を確認する
+    await _assert_media_path_ownership(safe_path, current_user)
     media_type = "application/zip" if safe_path.suffix == ".zip" else "application/octet-stream"
     return FileResponse(safe_path, media_type=media_type, filename=safe_path.name)
 
@@ -399,7 +436,8 @@ async def trigger_audio_synthesis(
         from src.backend.database.models import Chapter
         from sqlalchemy import select
         db_mgr = get_db_manager()
-        async with db_mgr.session() as session:
+        # DatabaseManager には session() がなく get_session() のみ存在する
+        async with db_mgr.get_session() as session:
             result = await session.execute(
                 select(Chapter).where(Chapter.book_id == payload.book_id, Chapter.ep_num == payload.episode_num)
             )
@@ -434,13 +472,15 @@ async def get_chapter_audio(
     from src.backend.database.models import AudioAssetModel
     from sqlalchemy import select
     db_mgr = get_db_manager()
-    async with db_mgr.session() as session:
+    # DatabaseManager には session() がなく get_session() のみ存在する
+    async with db_mgr.get_session() as session:
         result = await session.execute(
             select(AudioAssetModel)
             .where(AudioAssetModel.book_id == book_id, AudioAssetModel.episode_num == episode_num)
             .order_by(AudioAssetModel.created_at.desc())
         )
-        audio = result.scalar_one_or_none()
+        # 同一 (book_id, episode_num) に複数行ある可能性があるため先頭 1 件を取得する
+        audio = result.scalars().first()
         if not audio:
             raise HTTPException(status_code=404, detail="Audio not found for this chapter")
 
@@ -458,6 +498,7 @@ async def get_chapter_audio(
 @router.get("/audio/{audio_id}/stream")
 async def stream_audio_file(
     audio_id: int = PathParam(..., ge=1),
+    current_user: User = Depends(get_current_user),
 ) -> FileResponse:
     """音声バイナリ (WAV) を配信する (Step 20)。"""
     _check_enabled()
@@ -465,13 +506,17 @@ async def stream_audio_file(
     from src.backend.database.models import AudioAssetModel
     from sqlalchemy import select
     db_mgr = get_db_manager()
-    async with db_mgr.session() as session:
+    # DatabaseManager には session() がなく get_session() のみ存在する
+    async with db_mgr.get_session() as session:
         result = await session.execute(
             select(AudioAssetModel).where(AudioAssetModel.id == audio_id)
         )
         audio = result.scalar_one_or_none()
         if not audio or not Path(audio.file_path).exists():
             raise HTTPException(status_code=404, detail="Audio asset file not found")
+
+        # アセットが属する作品の所有者を確認する
+        await verify_book_ownership(audio.book_id, current_user, session)
 
         return FileResponse(
             Path(audio.file_path),

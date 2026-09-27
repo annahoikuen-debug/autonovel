@@ -1,10 +1,10 @@
 {
   "10KB": {
-    "median_ms": 146.38,
-    "mean_ms": 147.54,
-    "stdev_ms": 5.17,
-    "min_ms": 143.04,
-    "max_ms": 153.19,
+    "median_ms": 11.65,
+    "mean_ms": 11.69,
+    "stdev_ms": 0.22,
+    "min_ms": 11.51,
+    "max_ms": 11.93,
     "final_tokens": 36,
     "reduction_ratio": 0.997
   }

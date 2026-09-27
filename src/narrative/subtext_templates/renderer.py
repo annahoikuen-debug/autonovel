@@ -56,7 +56,8 @@ class TemplateRenderer:
         self.constraints = constraints or CharacterConstraints()
 
         # Jinja2 environment setup
-        self.jinja_env = jinja2.Environment(
+        # ユーザー投稿テンプレートを eval するため、必ず sandbox 化する
+        self.jinja_env = jinja2.sandbox.SandboxedEnvironment(
             loader=jinja2.FileSystemLoader(str(self.template_dir)),
             autoescape=False,
             trim_blocks=True,

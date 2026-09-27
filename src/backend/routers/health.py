@@ -2,10 +2,11 @@ import asyncio
 import logging
 from datetime import UTC, datetime
 
-from fastapi import APIRouter, Response, status
+from fastapi import APIRouter, Depends, Response, status
 from pydantic import BaseModel
 
 from config import get_config
+from src.backend.auth import require_api_key
 from src.backend.config import settings
 from src.backend.health.checks import (
     HealthCheckResult,
@@ -125,8 +126,13 @@ def determine_overall_status(checks: dict[str, HealthCheckResult]) -> HealthStat
 
 
 @router.get("/health/detail", response_model=HealthResponse)
-async def health_check():
-    """拡張ヘルスチェック: DB, Redis, ChromaDB, LLM Gateway, Worker を並列チェック"""
+@router.get("/api/health/detail", response_model=HealthResponse, include_in_schema=False)
+async def health_check(_: None = Depends(require_api_key)):
+    """拡張ヘルスチェック: DB, Redis, ChromaDB, LLM Gateway, Worker を並列チェック
+
+    内部のバージョン・依存関係・レイテンシなどの情報を返すため認証必須とする。
+    LLM プローブは既定で無効 (`settings.HEALTH_CHECK_LLM_PROBE`)。
+    """
     cfg = get_config()
     db_manager = AppContainer.db()
 
@@ -147,8 +153,14 @@ async def health_check():
 
     for name, result in zip(check_names, results):
         if isinstance(result, Exception):
-            checks[name] = HealthCheckResult(status=HealthStatus.ERROR, error=str(result))
-            check_responses[name] = CheckResponse(status=HealthStatus.ERROR, error=str(result))
+            # 詳細をクライアントへ漏らさず、サーバログにのみ残す
+            logger.warning("health check %s raised: %s", name, result, exc_info=result)
+            checks[name] = HealthCheckResult(
+                status=HealthStatus.ERROR, details="check raised an internal error"
+            )
+            check_responses[name] = CheckResponse(
+                status=HealthStatus.ERROR, error="check raised an internal error"
+            )
         elif isinstance(result, HealthCheckResult):
             checks[name] = result
             check_responses[name] = CheckResponse(

@@ -71,7 +71,10 @@ class TestFallbackPolicy:
     def test_default_chains_loaded(self):
         policy = FallbackPolicy()
         seq = policy.get_fallback_sequence("claude")
-        assert seq == ["openai", "gemini", "mock"]
+        # 実プロバイダが全て失敗しても MockAdapter の出力を本番応答として返さない。
+        # mock を.opt-backs するには AUTONOVEL_ALLOW_MOCK_LLM=1 を設定する。
+        assert seq == ["openai", "gemini"]
+        assert "mock" not in seq
 
     def test_custom_chain(self):
         custom = {"myprov": ["fallback1", "fallback2"]}

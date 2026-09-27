@@ -30,6 +30,24 @@ except Exception as e:
     HAS_CHROMA = False
     chromadb = None
 
+
+#: Chroma が「コレクション未存在」を表す型名/メッセージの断片。
+_NOT_FOUND_MARKERS = ("not found", "does not exist", "doesn't exist", "notexist")
+_NOT_FOUND_TYPES = ("NotFoundError", "CollectionNotFoundError")
+
+
+def _is_collection_not_found(exc: BaseException) -> bool:
+    """例外が「コレクション未存在」かどうかを判定する。
+
+    ``chromadb.errors.NotFoundError`` は型で判別できる。SDK 側で例外型を
+    公開していない場合はメッセージで判定する。
+    """
+    if any(t in type(exc).__name__ for t in _NOT_FOUND_TYPES):
+        return True
+    msg = str(exc).lower()
+    return any(m in msg for m in _NOT_FOUND_MARKERS)
+
+
 try:
     from rank_bm25 import BM25Okapi
     HAS_BM25 = True
@@ -161,6 +179,9 @@ class ChromaVectorStore(BaseVectorStore):
 
         try:
             # 既存コレクションのメタデータを確認
+            # 「存在しない」だけを別扱いする。認証/接続エラーも従来は
+            # ここでの except で握り潰され、 直後の get_or_create が
+            # 失敗して原因が隠れていた。
             try:
                 existing = self.client.get_collection(name=config.name)
                 existing_meta = existing.metadata or {}
@@ -169,9 +190,18 @@ class ChromaVectorStore(BaseVectorStore):
                     logger.warning(
                         f"[VECTOR STORE] Collection '{config.name}' has different space: {existing_meta.get('hnsw:space')} vs {config.space}"
                     )
-            except Exception:
+            except Exception as e:
+                if not _is_collection_not_found(e):
+                    logger.error(
+                        "[VECTOR STORE] Failed to read collection '%s' metadata "
+                        "(not a 'not found' condition): %s", config.name, e
+                    )
+                    return False
                 # 存在しない場合は作成
-                pass
+                logger.debug(
+                    "[VECTOR STORE] Collection '%s' does not exist yet; creating.",
+                    config.name,
+                )
 
             # メタデータ込みで取得または作成
             metadata = config.get_metadata()

@@ -226,7 +226,10 @@ class TestPromptCacheService:
             model_id="gemini-2.5-pro",
             template_version="1.0",
         )
-        assert key == "prompt:drafting:gemini-2.5-pro:1.0:abc123"
+        # キーは `prompt:{template}:{model}:{version}:{task_type}:{book_id}:{hash}` の
+        # 7 セグメント。task_type / book_id を含むことで invalidate_task_type /
+        # invalidate_book のワイルドカードが実際に一致する。
+        assert key == "prompt:drafting:gemini-2.5-pro:1.0:-:-:abc123"
 
     def test_compute_prompt_hash(self):
         """Test deterministic prompt hash computation."""
@@ -245,7 +248,7 @@ class TestPromptCacheService:
     @pytest.mark.asyncio
     async def test_get_l1_hit(self):
         """Test L1 cache hit."""
-        l1_key = "prompt:test:model:1.0:hash:generation:general:0.7"
+        l1_key = "prompt:test:model:1.0:hash:general:0.7"
         self.mock_l1[l1_key] = "cached_response"
 
         # Need to mock the key generation
@@ -322,7 +325,7 @@ class TestPromptCacheService:
                     task_type="generation",
                 )
 
-        assert "prompt:test:model:1.0:hash:generation:general:0.7" in self.mock_l1
+        assert "prompt:test:model:1.0:hash:general:0.7" in self.mock_l1
         self.mock_redis.set.assert_called_once()
         self.mock_semantic.add.assert_called_once()
 
@@ -333,7 +336,8 @@ class TestPromptCacheService:
 
         result = await self.cache.invalidate_book(123)
         assert result == 5
-        self.mock_redis.invalidate_pattern.assert_called_with("*:book:123:*")
+        # book_id は 6 番目のセグメント
+        self.mock_redis.invalidate_pattern.assert_called_with("prompt:*:*:*:*:123:*")
 
     @pytest.mark.asyncio
     async def test_invalidate_template(self):

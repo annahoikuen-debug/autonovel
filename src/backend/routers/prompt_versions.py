@@ -18,7 +18,7 @@ async def get_prompt_versions(book_id: int):
 
 @router.post("/api/prompt_versions/{book_id}/rollback")
 async def rollback_prompt_version(book_id: int, req: RollbackRequest):
-    validate_api_key_or_raise(req.api_key)
+    await validate_api_key_or_raise(req.api_key)
     from src.backend.prompt_version_manager import PromptVersionManager
 
     _ = PromptVersionManager(AppContainer.db())

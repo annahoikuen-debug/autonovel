@@ -10,6 +10,30 @@ from config import MODEL_EMBEDDING
 
 logger = logging.getLogger(__name__)
 
+#: バックグラウンドタスクの生存を保証するための強参照集合。
+#: これを持たないと `asyncio.create_task` の戻り値は即座に参照カウントが減り、
+#: 実行前に GC されてサイレントに消える (公式ドキュメントの既知の落とし穴)。
+_BACKGROUND_TASKS: set[asyncio.Task] = set()
+
+
+def _spawn_background(coro: Any, name: str) -> asyncio.Task:
+    """バックグラウンドタスクを起動し、例外をログに記録して強参照を保持する."""
+    task = asyncio.create_task(coro, name=name)
+    _BACKGROUND_TASKS.add(task)
+    task.add_done_callback(_BACKGROUND_TASKS.discard)
+
+    def _handle_done(t: asyncio.Task) -> None:
+        try:
+            t.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            logger.exception("Background task %s failed", name)
+
+    task.add_done_callback(_handle_done)
+    return task
+
+
 import hashlib
 
 try:
@@ -169,14 +193,15 @@ class SemanticCacheManager:
             meta["last_accessed"] = datetime.datetime.now().isoformat()
 
             # 非同期でアクセス日時を更新して保存
-            asyncio.create_task(
+            _spawn_background(
                 self.vector_store.add_documents(
                     collection_name=self.COLLECTION_NAME,
                     ids=[doc_id],
                     documents=[best_hit["content"]],
                     embeddings=[vec],
                     metadatas=[meta],
-                )
+                ),
+                name="semantic_cache.touch",
             )
 
             logger.info(
@@ -248,7 +273,7 @@ class SemanticCacheManager:
         logger.info(f"[SEMANTIC CACHE ADD] task_type={task_type}, length={len(content_str)}")
 
         # LRUエビクションチェック
-        asyncio.create_task(self.evict_if_needed())
+        _spawn_background(self.evict_if_needed(), name="semantic_cache.evict")
 
     async def evict_if_needed(self, max_items: int = 1000) -> None:
         """
@@ -359,7 +384,10 @@ class SemanticCacheManager:
             # プロンプトのハッシュをキーとして、プレースホルダー値を登録
             l1_key = self._get_l1_key(prompt, task_type, genre, temperature)
             # 実際のEmbedding計算は非同期でバックグラウンド実行
-            asyncio.create_task(self._prefetch_embedding(prompt, task_type, genre, temperature))
+            _spawn_background(
+            self._prefetch_embedding(prompt, task_type, genre, temperature),
+            name="semantic_cache.prefetch",
+        )
             logger.info(
                 f"[PREFETCH] Queued prefetch for ep{next_ep} task={task_type}, key={l1_key[:16]}..."
             )

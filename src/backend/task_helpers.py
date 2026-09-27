@@ -6,11 +6,22 @@ import time
 from src.core.container import AppContainer
 
 
-async def create_task(task_id: str, message: str, total_steps: int = 1) -> None:
-    """タスクの初期状態をDBに保存する。"""
+async def create_task(
+    task_id: str,
+    message: str,
+    total_steps: int = 1,
+    user_id: int | None = None,
+) -> None:
+    """タスクの初期状態をDBに保存する。
+
+    `user_id` はこのタスクを所有するユーザーの ID。
+    `GET /api/tasks/{task_id}/status` などの所有権判定に使用されるため、
+    呼び出し側は必ず現在ユーザーを渡すこと。
+    """
     db = AppContainer.db()
     initial_state = {
         "is_running": True,
+        "user_id": user_id,
         "current_step": 0,
         "total_steps": total_steps,
         "message": message,

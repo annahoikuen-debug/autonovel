@@ -131,7 +131,7 @@ async def stream_generation(
     個別フィールドが指定された場合は ``StreamQueryInput`` 経由で組み立てる。
     ``payload`` (base64 JSON) を渡した場合は ``EasyModeInput`` として直接復元する。
     """
-    stream_limiter.check(request)
+    await stream_limiter.check(request)
 
     if payload is not None:
         try:
@@ -176,7 +176,7 @@ async def stream_generation_post(
     api_key: str = Depends(require_api_key),
 ) -> StreamingResponse:
     """POST endpoint for SSE streaming (fully implemented)."""
-    stream_limiter.check(request)
+    await stream_limiter.check(request)
     return StreamingResponse(
         _stream_generator(input_data, request),
         media_type="text/event-stream",

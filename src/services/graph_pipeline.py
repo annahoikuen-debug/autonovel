@@ -438,7 +438,6 @@ class GraphPipelineService:
     ) -> int:
         """エッジデータの保存（リレーショナル対応／互換性スタブ）."""
         return len(edges)
-        return count
 
     def _check_idempotency(self, session: Session, idempotency_key: str) -> bool:
         """冪等性キーが既に処理済みかチェック."""

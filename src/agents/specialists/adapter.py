@@ -24,17 +24,32 @@ from src.services.experiment_allocator import ExperimentAllocator, DEFAULT_ALLOC
 logger = logging.getLogger(__name__)
 
 
-def create_default_specialists() -> list[SpecialistAuditor]:
-    """Instantiate the standard 8 specialist auditors."""
+def create_default_specialists(llm: Any = None) -> list[SpecialistAuditor]:
+    """Instantiate the standard 8 specialist auditors.
+
+    Args:
+        llm: 実 LLM クライアント。渡さないと、各 specialist は
+             ``_resolve_llm()`` で ``AuditorModelRouter`` を見ますが、
+             ``register_client()`` は本番コードから一度も呼ばれていない
+             ため必ず ``None`` になり、8 specialists すべてが
+             ``score=50.0, degraded=True`` のフォールバックに落ちていた。
+             LLM を持つ呼び出し側は必ずこれを渡すこと。
+    """
+    if llm is None:
+        logger.error(
+            "create_default_specialists() was called without an LLM client. "
+            "All 8 specialist auditors will degrade to score=50.0 "
+            "(degraded=True) unless the caller passes llm=... ."
+        )
     return [
-        ConsistencyAuditor(),
-        CreativityAuditor(),
-        ReaderHookAuditor(),
-        EmotionCurveAuditor(),
-        StyleAuditor(),
-        FactualAuditor(),
-        StructureAuditor(),
-        MultimodalAuditor(),
+        ConsistencyAuditor(llm=llm),
+        CreativityAuditor(llm=llm),
+        ReaderHookAuditor(llm=llm),
+        EmotionCurveAuditor(llm=llm),
+        StyleAuditor(llm=llm),
+        FactualAuditor(llm=llm),
+        StructureAuditor(llm=llm),
+        MultimodalAuditor(llm=llm),
     ]
 
 
@@ -118,7 +133,9 @@ class AuditAggregatorNode:
         from src.config.weight_variants import get_variant
         weights = get_variant(variant_name)
 
-        specialists = create_default_specialists()
+        # self.llm は __init__ で保持されているが、これまで
+        # create_default_specialists() に渡されていなかったため使われていなかった。
+        specialists = create_default_specialists(llm=self.llm)
         agg = AuditAggregator(
             specialists=specialists,
             weights=weights,

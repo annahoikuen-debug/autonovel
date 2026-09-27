@@ -21,7 +21,18 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/billing/webhook", tags=["billing-webhook"])
 
 # Webhook署名の検証用エンドポイントシークレット
-WEBHOOK_SECRET = getattr(settings, "STRIPE_WEBHOOK_SECRET", "")
+WEBHOOK_SECRET = getattr(settings, "STRIPE_WEBHOOK_SECRET", "") or ""
+
+# 署名検証なしでペイロードを受け付けてよい環境（ローカル検証専用）
+# 本番・ステージングでは必ず STRIPE_WEBHOOK_SECRET を設定すること。
+SIGNATURE_OPTIONAL_ENVS: frozenset[str] = frozenset({"local", "testing", "development"})
+
+
+def _signature_verification_optional() -> bool:
+    """署名検証を省略してよい環境かどうかを返す。"""
+    if WEBHOOK_SECRET:
+        return False
+    return str(getattr(settings, "APP_ENV", "")).lower() in SIGNATURE_OPTIONAL_ENVS
 
 
 @router.post("")
@@ -33,16 +44,22 @@ async def handle_stripe_webhook(
     """Stripe Webhookを受信して安全・非同期かつべき等に処理する。"""
     payload = await request.body()
 
+    if not _signature_verification_optional():
+        # 署名シークレット未設定 かつ 本番系環境 は 500 で即時拒否する
+        # （これまで 200 を返していたため、攻撃者がクレジットを偽装付与できていた）
+        if not WEBHOOK_SECRET:
+            logger.error("STRIPE_WEBHOOK_SECRET is required outside local/testing environments!")
+            raise HTTPException(
+                status_code=500, detail="Server configuration error: missing webhook secret"
+            )
+
     try:
         if WEBHOOK_SECRET:
             event = stripe.Webhook.construct_event(
                 payload, stripe_signature, WEBHOOK_SECRET
             )
         else:
-            if getattr(settings, "APP_ENV", "").lower() == "production":
-                logger.error("STRIPE_WEBHOOK_SECRET is required in production mode!")
-                raise HTTPException(status_code=500, detail="Server configuration error: missing webhook secret")
-            # 開発・テスト環境でシークレット未設定時
+            # ローカル検証環境のみで、署名検証を省略して JSON を直接解釈する
             import json
             event = json.loads(payload)
     except ValueError as e:
@@ -120,10 +137,45 @@ async def handle_stripe_webhook(
         logger.error(f"Error handling Stripe webhook event {event_id}: {e}", exc_info=True)
         webhook_record.status = "failed"
         await db.commit()
-        # Stripeのリトライを防ぐため、内部エラー時もログを残した上で200を返すか、再試行させたい場合はエラー送出
-        return {"status": "error", "event_id": event_id, "detail": str(e)}
+        # 処理に失敗した場合は 5xx を返して Stripe に再試行させる。
+        # 200 を返すとイベントが "成功" と記録され、永久に処理されなくなる。
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to process Stripe event {event_id}",
+        ) from e
 
     return {"status": "success", "event_id": event_id}
+
+
+def _field(obj, key: str, default=None):
+    """Stripe オブジェクト / dict のどちらからでもフィールドを取り出す。
+
+    `stripe.Webhook.construct_event` 経由なら `StripeObject`、
+    ローカル検証時の `json.loads` 経由なら素の `dict` が渡ってくるため、
+    属性アクセスとキーアクセスの両方をここに集約する。
+    """
+    if obj is None:
+        return default
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    value = getattr(obj, key, None)
+    if value is None:
+        # StripeObject は Mapping なので get() も使える
+        try:
+            return obj.get(key, default)
+        except Exception:  # noqa: BLE001 - get を持たないオブジェクトは既定値
+            return default
+    return value
+
+
+def _dig(obj, *path: str, default=None):
+    """`_field` を連続適用してネストしたフィールドを取り出す。"""
+    current = obj
+    for key in path:
+        current = _field(current, key, default)
+        if current is None:
+            return default
+    return current
 
 
 async def _resolve_user(result) -> Optional[User]:
@@ -238,7 +290,7 @@ async def _handle_invoice_payment_succeeded(
 
 async def _handle_customer_subscription_deleted(subscription, db: AsyncSession):
     """サブスクリプション削除時にフリープランにダウングレード"""
-    stripe_customer_id = subscription.customer
+    stripe_customer_id = _field(subscription, "customer")
     if isinstance(stripe_customer_id, dict):
         stripe_customer_id = stripe_customer_id.get("id")
 
@@ -255,7 +307,7 @@ async def _handle_customer_subscription_deleted(subscription, db: AsyncSession):
 
 async def _handle_customer_subscription_updated(subscription, db: AsyncSession):
     """サブスクリプション更新時に情報を同期"""
-    stripe_customer_id = subscription.customer
+    stripe_customer_id = _field(subscription, "customer")
     if isinstance(stripe_customer_id, dict):
         stripe_customer_id = stripe_customer_id.get("id")
 
@@ -280,27 +332,41 @@ async def _create_or_update_subscription_record(user: User, subscription, db: As
     if inspect.isawaitable(db_subscription):
         db_subscription = await db_subscription
 
-    price_id = subscription.items.data[0].price.id if getattr(subscription, "items", None) and subscription.items.data else "unknown"
+    price_id = _dig(subscription, "items", "data", default=None)
+    price_id = "unknown"
+    if isinstance(price_id, (list, tuple)) and price_id:
+        first_item = price_id[0]
+        nested = _field(first_item, "price")
+        if nested is not None:
+            resolved = _field(nested, "id")
+            if resolved is not None:
+                price_id = resolved
     tier = get_tier_for_price_id(price_id)
-    period_end_val = getattr(subscription, "current_period_end", None)
+    period_end_val = _field(subscription, "current_period_end")
     if isinstance(period_end_val, (int, float)):
         period_end = datetime.fromtimestamp(period_end_val)
     else:
         period_end = datetime.now(timezone.utc)
 
+    stripe_subscription_id = _field(subscription, "id")
+    stripe_status = _field(subscription, "status")
+    stripe_customer = _field(subscription, "customer")
+    if isinstance(stripe_customer, dict):
+        stripe_customer = stripe_customer.get("id")
+
     if db_subscription:
-        db_subscription.stripe_subscription_id = subscription.id
-        db_subscription.stripe_customer_id = subscription.customer
+        db_subscription.stripe_subscription_id = stripe_subscription_id
+        db_subscription.stripe_customer_id = stripe_customer
         db_subscription.plan_tier = tier
-        db_subscription.status = subscription.status
+        db_subscription.status = stripe_status
         db_subscription.current_period_end = period_end
     else:
         new_subscription = SubscriptionModel(
             user_id=user.id,
-            stripe_subscription_id=subscription.id,
-            stripe_customer_id=subscription.customer,
+            stripe_subscription_id=stripe_subscription_id,
+            stripe_customer_id=stripe_customer,
             plan_tier=tier,
-            status=subscription.status,
+            status=stripe_status,
             current_period_end=period_end,
         )
         db.add(new_subscription)

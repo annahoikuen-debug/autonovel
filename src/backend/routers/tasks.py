@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 
-from src.backend.auth import get_current_user, require_api_key
+from src.backend.auth import get_current_user, require_admin_user_or_key, require_api_key
 from src.backend.database.models import InternalState, TaskWALLogModel, User
 from src.backend.redis_util import get_async_redis_client
 from src.backend.sse import task_event_generator
@@ -21,6 +21,29 @@ router = APIRouter(
     tags=["tasks"],
     dependencies=[Depends(get_current_user)],
 )
+
+
+def _assert_task_ownership(data: dict, current_user: User | None) -> None:
+    """タスク状態の所有者を確認する（fail-closed）。
+
+    状態に `user_id` が無い（所有者が記録されていない）場合は
+    管理者のみアクセスを許可する。従来は `user_id` が無いだけで
+    判定がスキップされ、全ユーザーが任意のタスクを参照できた。
+    """
+    if current_user is None or getattr(current_user, "role", None) == "admin":
+        return
+
+    owner_id = data.get("user_id")
+    if owner_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="このタスクの所有者が記録されていないためアクセスできません",
+        )
+    if owner_id != getattr(current_user, "id", None):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="このタスクへのアクセス権限がありません",
+        )
 
 
 @router.get("/{task_id}/status")
@@ -54,9 +77,7 @@ async def get_task_status(
         else:
             data = {"is_running": False, "message": "タスクが見つかりません", "logs": []}
 
-    task_user_id = data.get("user_id")
-    if task_user_id and current_user and task_user_id != getattr(current_user, "id", None) and getattr(current_user, "role", None) != "admin":
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="このタスクへのアクセス権限がありません")
+    _assert_task_ownership(data, current_user)
     return data
 
 
@@ -94,8 +115,42 @@ async def get_dag_status(dag_id: str):
     }
 
 
+async def _load_task_state(task_id: str) -> dict:
+    """Redis 優先・DB フォールバックでタスク状態を読み込む。"""
+    redis_client = await get_async_redis_client()
+    if redis_client is not None:
+        try:
+            val = await redis_client.get(f"task_status:{task_id}")
+            if val:
+                return json.loads(val)
+        except Exception as exc:
+            logger.warning(
+                "Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True
+            )
+
+    db = AppContainer.db()
+    if db is None:
+        return {"is_running": False, "message": "タスクが見つかりません", "logs": []}
+
+    async with db.get_session() as session:
+        stmt = select(InternalState).where(InternalState.key == f"task_status:{task_id}")
+        result = await session.execute(stmt)
+        row = result.scalar_one_or_none()
+    if not row:
+        return {"is_running": False, "message": "タスクが見つかりません", "logs": []}
+    return json.loads(row.value)
+
+
 @router.get("/{task_id}/stream")
-async def stream_task_status(task_id: str):
+async def stream_task_status(
+    task_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """タスクの進捗を SSE で配信する。所有者が一致しない場合は拒否する。"""
+    # レスポンス開始前に所有権を確認するため、StreamingResponse を返す前に検証する
+    data = await _load_task_state(task_id)
+    _assert_task_ownership(data, current_user)
+
     return StreamingResponse(
         task_event_generator(task_id),
         media_type="text/event-stream",
@@ -108,7 +163,11 @@ async def stream_task_status(task_id: str):
 
 
 @router.post("/{task_id}/stop")
-async def stop_task(task_id: str, api_key: str = Depends(require_api_key)):
+async def stop_task(
+    task_id: str,
+    api_key: str = Depends(require_api_key),
+    current_user: User = Depends(get_current_user),
+):
     # Retrieve current task status, set stop event
     redis_client = await get_async_redis_client()
     state_dict = None
@@ -132,11 +191,16 @@ async def stop_task(task_id: str, api_key: str = Depends(require_api_key)):
             raise NotFoundError("Task not found", resource_type="TaskStatus", resource_id=task_id)
         state_dict = json.loads(row.value)
 
+    # API キー保持者が任意のタスクでタスクを停止できないよう所有権も検証する
+    _assert_task_ownership(state_dict, current_user)
+
     state_dict["is_running"] = False
     state_dict["error"] = "ユーザーにより停止されました"
-    state_dict["logs"].append(
-        f"[{time.strftime('%H:%M:%S')}] 🛑 ユーザーにより停止命令が出されました。"
-    )
+    logs = state_dict.get("logs")
+    if not isinstance(logs, list):
+        logs = []
+    logs.append(f"[{time.strftime('%H:%M:%S')}] 🛑 ユーザーにより停止命令が出されました。")
+    state_dict["logs"] = logs
 
     state_json = json.dumps(state_dict)
     if redis_client is not None:
@@ -176,7 +240,10 @@ async def trigger_task_recovery():
     }
 
 
-@router.get("/admin/recover/zombies")
+@router.get(
+    "/admin/recover/zombies",
+    dependencies=[Depends(require_admin_user_or_key)],
+)
 async def list_zombie_tasks():
     """List current zombie tasks (running with stale heartbeat) without recovering them."""
     db_manager = AppContainer.db()
@@ -202,9 +269,16 @@ async def list_zombie_tasks():
     }
 
 
-@router.get("/admin/wal/{dag_id}")
+@router.get(
+    "/admin/wal/{dag_id}",
+    dependencies=[Depends(require_admin_user_or_key)],
+)
 async def get_wal_logs(dag_id: str):
-    """Get WAL logs for a specific DAG for debugging."""
+    """Get WAL logs for a specific DAG for debugging.
+
+    WAL には入力/出力ペイロード（プロンプト・LLM 出力）が含まれるため、
+    管理者権限または API Key を要求する。
+    """
     db_manager = AppContainer.db()
 
     async with db_manager.get_session() as session:

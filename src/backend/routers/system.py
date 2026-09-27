@@ -6,14 +6,17 @@ DB/Gemini の到達性とオフラインモード状態を報告する。
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
 from src.backend.auth import require_api_key
 from src.services import resilience
 
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["system"])
 
@@ -155,29 +158,44 @@ async def get_skill_version() -> dict[str, Any]:
 @router.post("/api/system/admin/book_score/recalc", dependencies=[Depends(require_api_key)])
 async def recalc_all_book_scores() -> dict[str, Any]:
     """全書籍の BookScore を再計算する（管理者用・並列化対応）"""
-    try:
-        import asyncio
-        from sqlalchemy import delete, select
+    import asyncio
 
-        from src.agents.orchestrator import AgentContext
-        from src.backend.database.core import get_db_manager
-        from src.backend.database.repositories.book_score import BookScoreRepository
-        from src.backend.database.models import Book as BookModel
-        from src.infrastructure.database.models.book_score import BookScore as BookScoreModel
-        from src.backend.database.models import Chapter as ChapterModel
-        from src.services.book_score_service import BookScoreCalculator
+    from sqlalchemy import delete, select
 
-        db_manager = get_db_manager()
-        async with db_manager.get_session() as session:
-            books_result = await session.execute(select(BookModel.id))
-            book_ids = [row[0] for row in books_result.fetchall()]
+    from src.agents.orchestrator import AgentContext
+    from src.backend.database.core import get_db_manager
+    from src.backend.database.repositories.book_score import BookScoreRepository
+    from src.backend.database.models import Book as BookModel
+    from src.infrastructure.database.models.book_score import BookScore as BookScoreModel
+    from src.backend.database.models import Chapter as ChapterModel
+    from src.services.book_score_service import BookScoreCalculator
 
-            book_score_repo = BookScoreRepository(session)
-            calculator = BookScoreCalculator(repository=book_score_repo)
-            semaphore = asyncio.Semaphore(10)
+    db_manager = get_db_manager()
 
-            async def recalc_chapter(book_id: int, chapter_number: int):
-                async with semaphore:
+    # 対象的作品と章を先に列挙する（読み取り専用のセッションで終える）
+    async with db_manager.get_session() as session:
+        books_result = await session.execute(select(BookModel.id))
+        book_ids = [row[0] for row in books_result.fetchall()]
+
+        targets: list[tuple[int, int]] = []
+        for book_id in book_ids:
+            chapters_result = await session.execute(
+                select(ChapterModel.ep_num).where(ChapterModel.book_id == book_id)
+            )
+            for row in chapters_result.fetchall():
+                targets.append((book_id, row[0]))
+
+    if not targets:
+        return {"status": "success", "recalculated_count": 0}
+
+    semaphore = asyncio.Semaphore(10)
+    errors: list[str] = []
+
+    async def recalc_chapter(book_id: int, chapter_number: int) -> int:
+        # AsyncSession は並行利用できないため、タスクごとにセッションを持たせる
+        async with semaphore:
+            async with db_manager.get_session() as session:
+                try:
                     await session.execute(
                         delete(BookScoreModel).where(
                             BookScoreModel.book_id == book_id,
@@ -190,29 +208,34 @@ async def recalc_all_book_scores() -> dict[str, Any]:
                         ep_num=chapter_number,
                         artifacts={},
                     )
+                    calculator = BookScoreCalculator(repository=BookScoreRepository(session))
                     await calculator.calculate(
                         book_id=book_id,
                         chapter_number=chapter_number,
                         ctx=ctx,
                     )
+                    # 明示的に commit する（否则セッション終了時にロールバックされる）
+                    await session.commit()
                     return 1
+                except Exception as exc:  # noqa: BLE001 - 1 件の失敗で全体を落とさない
+                    await session.rollback()
+                    logger.exception("BookScore 再計算に失敗: book_id=%s ep_num=%s", book_id, chapter_number)
+                    errors.append(f"book_id={book_id} ep_num={chapter_number}: {exc}")
+                    return 0
 
-            recalculated = 0
-            for book_id in book_ids:
-                chapters_result = await session.execute(
-                    select(ChapterModel.ep_num).where(ChapterModel.book_id == book_id)
-                )
-                chapter_numbers = [row[0] for row in chapters_result.fetchall()]
-                tasks = [recalc_chapter(book_id, ch_num) for ch_num in chapter_numbers]
-                if tasks:
-                    results = await asyncio.gather(*tasks, return_exceptions=True)
-                    for result in results:
-                        if isinstance(result, (int, float)):
-                            recalculated += int(result)
+    results = await asyncio.gather(
+        *(recalc_chapter(book_id, ch_num) for book_id, ch_num in targets)
+    )
+    recalculated = sum(1 for r in results if isinstance(r, (int, float)))
 
-            return {"status": "success", "recalculated_count": recalculated}
-    except Exception as exc:
-        return {"status": "error", "detail": str(exc)}
+    if errors:
+        return {
+            "status": "partial",
+            "recalculated_count": recalculated,
+            "failed_count": len(errors),
+            "errors": errors[:20],
+        }
+    return {"status": "success", "recalculated_count": recalculated}
 
 
 class ImprovementPriorityItem(BaseModel):
@@ -354,24 +377,19 @@ async def run_ab_test(req: ABTestRequest) -> dict[str, Any]:
 
 @router.get("/api/system/admin/skills/ab_test/history", dependencies=[Depends(require_api_key)])
 async def get_ab_test_history(skill_name: str | None = None) -> dict[str, Any]:
-    """A/Bテスト履歴を取得する（簡易実装：メトリクスから取得）"""
-    try:
-        return {
-            "status": "success",
-            "history": [
-                {
-                    "skill_name": "planning",
-                    "version_a": "v1",
-                    "version_b": "v2",
-                    "winner": "a",
-                    "p_value": 0.05,
-                    "timestamp": "2026-01-01T00:00:00Z",
-                }
-            ],
-            "message": "履歴機能は簡易実装です。本格実装には専用DBテーブルが必要です。",
-        }
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    """A/Bテスト履歴を取得する
+
+    履歴を永続化するテーブル/リポジトリが存在しないため、従来は固定の
+    ダミーデータ（固定 timestamp・根拠のない p_value）を返していた。
+    偽の成功レスポンスを返さないよう、実装されるまでは 501 を返す。
+    """
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=(
+            "A/B test history is not persisted yet. "
+            "A dedicated history table/repository is required."
+        ),
+    )
 
 
 class ABTestScheduleRequest(BaseModel):
@@ -408,11 +426,19 @@ async def schedule_ab_test(req: ABTestScheduleRequest) -> dict[str, Any]:
 
 @router.delete("/api/system/admin/skills/ab_test/schedule/{task_id}", dependencies=[Depends(require_api_key)])
 async def cancel_ab_test_schedule(task_id: int) -> dict[str, Any]:
-    """スケジュール済みA/Bテストをキャンセルする"""
-    try:
-        return {"status": "cancelled", "task_id": task_id}
-    except Exception as exc:
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    """スケジュール済みA/Bテストをキャンセルする
+
+    スケジュール自体は Huey タスクとして登録されるが、キャンセル可能な
+    ハンドル（タスクIDの永続化・停止）が実装されていない。
+    従来は何もせず 200 を返していたため、偽の成功にならないよう 501 を返す。
+    """
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=(
+            "Cancelling a scheduled A/B test is not implemented; "
+            "scheduled tasks are not tracked by a cancellable handle."
+        ),
+    )
 
 
 class AuditModelRoutingRequest(BaseModel):
@@ -444,24 +470,19 @@ async def get_audit_model_routing() -> dict[str, Any]:
 
 @router.post("/admin/audit/model-routing", dependencies=[Depends(require_api_key)])
 async def update_audit_model_routing(req: AuditModelRoutingRequest) -> dict[str, Any]:
-    """オーディターのモデル割り当てを動的に変更"""
-    from src.agents.specialists.model_router import AuditorModelRouter
+    """オーディターのモデル割り当てを動的に変更する
 
-    try:
-        router = AuditorModelRouter()
-        # Register new model routing
-        # The model_router will automatically use the config mapping
-        # This endpoint confirms the model change is valid
-        provider = router.get_provider_for_auditor(req.auditor_name)
-        model_name = router._resolve_primary_provider_for_auditor(req.auditor_name)
-        return {
-            "status": "success",
-            "auditor_name": req.auditor_name,
-            "new_provider": provider,
-            "new_model": model_name,
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e)) from e
+    `AuditorModelRouter` は設定ファイルを読み取るだけで、書き込み API を
+    持たない。従来は変更を一切保存せずに 200 を返していた（偽の成功）。
+    永続化されるまで 501 を返す。
+    """
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail=(
+            "Auditor model routing is read-only; "
+            "AuditorModelRouter has no persistence API yet."
+        ),
+    )
 
 
 class ABTestAutoPromoteRequest(BaseModel):

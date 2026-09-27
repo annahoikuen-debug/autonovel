@@ -17,6 +17,7 @@ try:
 except ImportError:
     from src.backend.engine_context import ContextManager
 from src.core.container.infra import InfraContainer
+from src.services.llm.base import PLACEHOLDER_API_KEY
 
 if TYPE_CHECKING:
     pass
@@ -34,7 +35,9 @@ class AppContainer(InfraContainer):
         ]
     )
 
-    api_key: providers.Object = providers.Object("DUMMY")
+    # 未設定時はプレースホルダを入れ、LLM レイヤーが明確な設定エラーを出すようにする
+    # (旧: 実キーなしでも "DUMMY" が実キーとして流通し、不透明な 401 になっていた)
+    api_key: providers.Object = providers.Object(PLACEHOLDER_API_KEY)
 
     genai_client: providers.Singleton = providers.Singleton(
         "src.core.llm_gateway.create_genai_client",
@@ -132,12 +135,7 @@ class AppContainer(InfraContainer):
         llm=llm,
         prompt_manager=pm,
     )
-    validator: providers.Singleton = providers.Singleton(
-        "src.agents.audit.LogicalAuditor",
-        repo=repo,
-        pm=pm,
-        llm=llm,
-    )
+    validator = auditor
     narrative: providers.Singleton = providers.Singleton(
         "src.backend.engine_narrative.NarrativeController",
         repo=repo,
@@ -174,9 +172,15 @@ class AppContainer(InfraContainer):
         repo=repo,
         llm=llm,
         style_rag=style_rag,
-        rag_prefetch=providers.Self(),  # RAGPrefetchService が必要なら追加
-        event_bus=providers.Self(),  # EventBus が必要なら追加
-        compressor=compressor,  # ← 追加
+        # 旧実装は providers.Self() でコンテナ自身をこれらの引数に注入していた。
+        # AppContainer は truthy なので `if self.event_bus:` を素通りし、
+        # skill_base.emit_event() の `self.event_bus.emit(...)` が
+        # AttributeError になっていた。 canonical EventBus は
+        # src.agents.event_bus.EventBus (プロセスグローバルに get_event_bus() あり)。
+        # このエージェントには意図的に何も渡さない (emit_event は no-op になる)。
+        rag_prefetch=None,
+        event_bus=None,
+        compressor=compressor,
     )
     image_service: providers.Factory = providers.Factory(
         "src.services.image_service.ImageService",
@@ -205,7 +209,9 @@ class AppContainer(InfraContainer):
         ),
         engine=engine,
     )
-    redis_cache: providers.Factory = providers.Factory("src.services.redis_cache.RedisCacheService")
+    redis_cache: providers.Singleton = providers.Singleton(
+        "src.services.redis_cache.RedisCacheService"
+    )
     prompt_cache: providers.Factory = providers.Factory(
         "src.services.redis_cache.PromptCacheService",
         redis_cache=redis_cache,
@@ -219,9 +225,10 @@ class AppContainer(InfraContainer):
     )
 
     # BookScore & WritingService
+    # ※ repository / reporter_factory はどちらも __init__ で未使用の任意引数であり、
+    #   providers.Self()（コンテナ自身）を渡しても機能しない。意図的に未指定のままにする。
     book_score_calculator: providers.Singleton = providers.Singleton(
         "src.services.book_score_service.BookScoreCalculator",
-        repository=providers.Self(),  # BookScoreRepository
     )
     writing_service: providers.Singleton = providers.Singleton(
         "src.domain.writing.WritingService",
@@ -230,7 +237,6 @@ class AppContainer(InfraContainer):
         pm=pm,
         style_rag=style_rag,
         ctx_mgr=ctx_mgr,
-        reporter_factory=providers.Self(),
         book_score_calculator=book_score_calculator,
         score_threshold=70.0,
         writing_agent=writer,
@@ -248,12 +254,13 @@ class AppContainer(InfraContainer):
     marketing_service: providers.Singleton = providers.Singleton(
         "src.services.marketing.MarketingService",
     )
+    # 3.6: RAG サービス (単一インスタンスを共有)
     rag_service: providers.Singleton = providers.Singleton(
         "src.services.rag.GraphRAGService",
     )
-    rag_pipeline_service: providers.Singleton = providers.Singleton(
-        "src.services.rag.GraphRAGService",
-    )
+    #: 後方互換エイリアス。旧 `rag_pipeline_service` 名で参照するコードのため、
+    #: 別インスタンスではなく `rag_service` と同じものを返す。
+    rag_pipeline_service = rag_service
 
     # DAG パイプラインのプロバイダー
     dag_pipeline: providers.Singleton = providers.Singleton(

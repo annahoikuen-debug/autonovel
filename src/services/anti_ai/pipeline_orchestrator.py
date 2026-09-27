@@ -56,6 +56,7 @@ class ProseDetoxPipeline:
         # Pipeline state
         self._episode_id: Optional[str] = None
         self._processing_times: Dict[str, float] = {}
+        self._auto_episode_seq = 0
     
     def reset_episode(self, episode_id: str) -> None:
         """Reset pipeline for a new episode.
@@ -90,10 +91,12 @@ class ProseDetoxPipeline:
         if episode_id is not None:
             if self._episode_id != episode_id:
                 self.reset_episode(episode_id)
-        elif self._episode_id is None:
-            # Generate a default episode ID if none provided
-            self._episode_id = f"episode_{int(time.time())}"
-            self.stream_guard.reset()
+        else:
+            # episode_id 未指定の呼び出しごとに新しいエピソードとして扱う。
+            # 旧実装は int(time.time()) (秒精度) を使っており、同じ秒に処理された
+            # 別エピソードが ID を共有し、stream_guard の状態が混入していた。
+            self._auto_episode_seq += 1
+            self.reset_episode(f"episode_auto_{self._auto_episode_seq}")
         
         metadata = metadata or {}
         start_time = time.time()

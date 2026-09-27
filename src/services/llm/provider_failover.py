@@ -20,25 +20,31 @@ class ProviderFailoverManager:
         fallback_fn: Callable[[], Coroutine[Any, Any, Any]],
     ) -> tuple[Any, str]:
         """Primaryで試行し、遮断または失敗時にFallbackを実行する。"""
-        p_breaker = self.breakers.get(primary_provider, self.breakers["gemini"])
-        f_breaker = self.breakers.get(fallback_provider, self.breakers["openai"])
+        # 未知プロバイダが他プロバイダのブレーカー状態を継承しないよう、
+        # 未登録なら None（= 遮断なし）として扱う。
+        p_breaker = self.breakers.get(primary_provider)
+        f_breaker = self.breakers.get(fallback_provider)
 
-        if p_breaker.can_execute():
+        if p_breaker is None or p_breaker.can_execute():
             try:
                 res = await primary_fn()
-                p_breaker.record_success()
+                if p_breaker is not None:
+                    p_breaker.record_success()
                 return res, primary_provider
             except Exception:
-                p_breaker.record_failure()
+                if p_breaker is not None:
+                    p_breaker.record_failure()
 
         # Fallback 実行
-        if not f_breaker.can_execute():
+        if f_breaker is not None and not f_breaker.can_execute():
             raise CircuitBreakerOpenException("すべての利用可能なプロバイダーが遮断されています")
 
         try:
             res = await fallback_fn()
-            f_breaker.record_success()
+            if f_breaker is not None:
+                f_breaker.record_success()
             return res, fallback_provider
         except Exception as e:
-            f_breaker.record_failure()
+            if f_breaker is not None:
+                f_breaker.record_failure()
             raise e

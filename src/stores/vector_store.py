@@ -100,22 +100,38 @@ class RedisVectorStore(VectorStore):
 
     def get_latest(self, namespace: str, pair: tuple[str, str]) -> Optional[EmotionalVector]:
         """指定ペアの最新ベクトルを取得
-        
+
         キー形式:
         - ep{episode}:{source}->{target} (ペア別)
         - ep{episode} (エピソード全体のベクトル、複数ペア含む)
+
+        ``pair`` に ``("*", "*")`` を渡すと全ペアを対象とする。
         """
         keys = self.get_namespace_keys(namespace)
         if not keys:
             return None
-        
+
         # ペア接頭辞でフィルタ
+        # 旧実装は `pair_prefix in k or k.startswith("ep")` を使っていたが、
+        # 全キーが "ep{N}" 形式で始まるため startswith("ep") が常に真となり、
+        # フィルタが事実上無効化されていた。その結果 max() が要求ペアと無関係な
+        # エピソードのベクトル (別エピソードの fused_payload) を返していた。
+        wildcard = pair == ("*", "*")
         pair_prefix = f"{pair[0]}->{pair[1]}"
-        matching_keys = [k for k in keys if pair_prefix in k or k.startswith("ep")]
-        
+
+        if wildcard:
+            matching_keys = list(keys)
+        else:
+            matching_keys = [
+                k
+                for k in keys
+                # ペア専用キー、またはエピソード全体の集約キー
+                if pair_prefix in k or "->" not in k
+            ]
+
         if not matching_keys:
             return None
-        
+
         # エピソード番号でソートして最新を取得
         def extract_ep_num(key: str) -> int:
             parts = key.split(":")[0] if ":" in key else key
@@ -123,10 +139,14 @@ class RedisVectorStore(VectorStore):
                 try:
                     return int(parts[2:])
                 except ValueError:
-                    return 0
-            return 0
-        
-        latest_key = max(matching_keys, key=extract_ep_num)
+                    return -1
+            return -1
+
+        parseable = [k for k in matching_keys if extract_ep_num(k) >= 0]
+        if not parseable:
+            return None
+
+        latest_key = max(parseable, key=extract_ep_num)
         vector = self._get_by_key(namespace, latest_key)
         
         if vector:

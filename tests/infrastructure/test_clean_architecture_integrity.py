@@ -5,17 +5,29 @@ Part 5 (Step 16-18) リグレッション防止テスト:
 モジュールインポート健全性とクリーンアーキテクチャ整合性を検証。
 """
 
-import warnings
+import importlib
+import sys
 import pytest
 
 
-def test_src_agent_imports_resolve_to_agents():
-    """src.agent からのインポートが DeprecationWarning を伴いながら安全に src.agents に解決されることを検証"""
-    with warnings.catch_warnings(record=True) as w:
-        warnings.simplefilter("always")
-        import src.agent
-        assert any(issubclass(item.category, DeprecationWarning) for item in w)
-        assert hasattr(src.agent, "agents")
+def test_src_agent_package_is_purged():
+    """二重化解消（src.agent -> src.agents）後、レガシー `src.agent` は存在しないことを検証。
+
+    以前は `import src.agent` が DeprecationWarning を伴って `src.agents` に解決される
+    ことを期待していたが、v5 ファイナライゼーションで conftest の sys.modules エイリアス
+    shim を撤去したため、その前提は失われた。現行の正しい状態は「旧パッケージが完全に
+    消えている」ことなので、そのように検証する。
+    """
+    # 正規のモジュールは存在する
+    agents_pkg = importlib.import_module("src.agents")
+    assert agents_pkg is not None
+
+    # レガシー名は sys.modules に残っていない（shim 撤去の回帰防止）
+    assert "src.agent" not in sys.modules
+
+    # レガシー名は import できない
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("src.agent")
 
 
 def test_no_broken_database_imports_across_project():

@@ -12,17 +12,13 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-# ---------------------------------------------------------------------------
-# Legacy import compatibility: `src.agent.*` was purged and unified into
-# `src.agents.*` (Step 16-18), but several test modules still import from
-# `src.agent.*`. Register a module alias so those imports resolve.
-# ---------------------------------------------------------------------------
-try:
-    import src.agents as _agents_pkg
-
-    sys.modules.setdefault("src.agent", _agents_pkg)
-except Exception:
-    pass
+# NOTE: 以前はここで `src.agent.*` → `src.agents.*` のエイリアスを
+# sys.modules.setdefault で登録し、`except Exception: pass` で失敗を握り潰していた。
+# その shim は削除済み: 全テストを `src.agents.*` へ統一し、エイリアスに依存しない形に
+# した。`src/agent` は Part 5 (Step 16-18) で削除済みであり、存在しないモジュールを
+# sys.modules で黙って置換する shim は、根本原因を隠して「No module named 'src.agent'」
+# という無関係な collection error しか生まさないため使用しない。
+# tests/regression/test_v5_repo_cleanliness.py が `src.agent` の再導入を禁止している。
 
 from tests.mocks.llm_adapter import LLMMocker, MockLLMAdapter
 

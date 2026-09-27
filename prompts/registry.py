@@ -51,30 +51,49 @@ class PromptRegistry:
         # 設定ファイルから最大キャッシュサイズを取得
         self._cache_max_size = ConfigManager.get_config().prompt_cache_max_size
 
-        # メトリクス追跡用
+        # メトリクス追跡用（_update_cache_lru から消さないこと。
+        # 以前は LRU 更新のたびに self._metrics = {} が走り、キャッシュヒット
+        # ごとに全メトリクスがリセットされていたため hits/avg/error_count が
+        # 常に 0 のままだった）
         self._metrics: Dict[str, Dict[str, Any]] = {}
 
-        # templates/ 以下のサブディレクトリを自動的にロードする
-        # templates/ 以下のサブディレクトリを自動的にロードする
+        # 呼び出し側（await されない sync 経路）からのファイルシステム I/O を避けるため、
+        # 探索パスは構築済みでキャッシュし、呼び出しごとに walk し直さない。
         normalized_dir = os.path.abspath(self.templates_dir)
-        search_paths = []
+        self._search_paths = self._build_search_paths(normalized_dir)
+
+        self.fs_loader = FileSystemLoader(self._search_paths)
+        self.dict_loader = DictLoader(PROMPT_TEMPLATES)
+
+        self.jinja_env = Environment(loader=self.fs_loader, autoescape=select_autoescape())
+
+    @staticmethod
+    def _build_search_paths(normalized_dir: str) -> list[str]:
+        """templates_dir 配下を 1 度だけ走査して探索パスを組み立てる。"""
+        search_paths: list[str] = []
 
         # 1. templates_dir 自体を再帰的に探索して search_paths に追加
-        for root, dirs, _ in os.walk(normalized_dir):
+        for root, _dirs, _files in os.walk(normalized_dir):
             search_paths.append(root)
 
         # 2. templates/ サブディレクトリがある場合はそれを優先的な探索パスとして追加
         templates_root = os.path.join(normalized_dir, "templates")
         if os.path.exists(templates_root):
             sub_paths = []
-            for root, dirs, _ in os.walk(templates_root):
+            for root, _dirs, _files in os.walk(templates_root):
                 sub_paths.append(root)
-            search_paths = sub_paths + [p for p in search_paths if not p.startswith(templates_root)]
+            search_paths = sub_paths + [
+                p for p in search_paths if not p.startswith(templates_root)
+            ]
 
-        self.fs_loader = FileSystemLoader(search_paths)
-        self.dict_loader = DictLoader(PROMPT_TEMPLATES)
+        return search_paths
 
-        self.jinja_env = Environment(loader=self.fs_loader, autoescape=select_autoescape())
+    def rebuild_search_paths(self) -> None:
+        """テンプレート追加後に探索パスを張り直す（ホットリロード用）。"""
+        normalized_dir = os.path.abspath(self.templates_dir)
+        self._search_paths = self._build_search_paths(normalized_dir)
+        self.fs_loader.searchpath = self._search_paths
+        self.clear_cache()
 
     def _update_cache_lru(self, template_name: str, cached_template: CachedTemplate):
         """LRUキャッシュを更新し、最大サイズを超えた場合は最古のエントリを削除する。"""
@@ -83,9 +102,8 @@ class PromptRegistry:
         self._template_cache[template_name] = cached_template
         if len(self._template_cache) > self._cache_max_size:
             self._template_cache.popitem(last=False)
-
-        # メトリクス追跡用
-        self._metrics: Dict[str, Dict[str, Any]] = {}
+        # 注記: ここでは self._metrics を触らない。metrics は _init_metric /
+        # record_hit が組み立てる。サンセットすると全テンプレート統計が消える。
 
     def _init_metric(self, template_name: str):
         """Initialize metrics for a template if not already present."""
@@ -146,7 +164,10 @@ class PromptRegistry:
                     # 実際のファイルパスを特定してmtimeを確認
                     _, filename, _ = self.fs_loader.get_source(self.jinja_env, template_name)
                     current_mtime = os.path.getmtime(filename)
-                    if current_mtime < cached.mtime:
+                    # キャッシュが有効なのは「ファイルが更新されていない」場合。
+                    # 以前は `current_mtime < cached.mtime`（= 古いほう）で
+                    # 判定しており、render() 側の `<=` と食い違っていた。
+                    if current_mtime <= cached.mtime:
                         logger.debug(f"Cache hit for template: {template_name}")
                         self._update_cache_lru(template_name, cached)
                         return cached.source
@@ -252,6 +273,7 @@ class PromptRegistry:
             template_name = f"{template_name}.j2"
 
         source = None
+        source_origin = "filesystem"
         if book_id and self.db_manager:
             try:
                 from src.backend.database.uow import UnitOfWork
@@ -260,11 +282,34 @@ class PromptRegistry:
                     ver = await uow.prompt_versions.get_active_version(book_id, template_name)
                     if ver:
                         source = ver["content"]
+                        source_origin = f"db(version={ver.get('version', '?')})"
             except Exception as e:
-                logger.error(f"Error fetching prompt version from DB: {e}")
+                # 以前はここでログを出するだけで、A/B 割当やホットリロードが
+                # 別の版（= 別のプロンプト）に差し替わり、実験アームが
+                # 汚染されていた。フォールバックそのものを止め、
+                # 呼び出し側が識別できるよう例外を伝播させる。
+                logger.error(
+                    "Error fetching prompt version from DB for %s (book_id=%s): %s",
+                    template_name,
+                    book_id,
+                    e,
+                )
+                raise
 
         if source is None:
             source = self._get_template_source_sync(template_name)
+            if book_id and self.db_manager:
+                logger.warning(
+                    "No DB prompt version for %s (book_id=%s); falling back to the "
+                    "filesystem template. The rendered prompt does NOT match the "
+                    "assigned A/B arm.",
+                    template_name,
+                    book_id,
+                )
+        else:
+            logger.debug(
+                "Rendering %s from %s", template_name, source_origin
+            )
 
         metadata, pure_template = self.parse_frontmatter(source)
         return self.jinja_env.from_string(pure_template).render(**context)

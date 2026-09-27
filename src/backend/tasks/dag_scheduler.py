@@ -108,14 +108,11 @@ class DAGScheduler:
         """Helper to publish DAG lifecycle events to EventBus (Step 55)."""
         if self.event_bus:
             try:
-                if hasattr(self.event_bus, "publish_async"):
-                    await self.event_bus.publish_async(event_type, payload)
-                elif hasattr(self.event_bus, "publish"):
-                    res = self.event_bus.publish(event_type, payload)
-                    if inspect.iscoroutine(res):
-                        await res
+                # EventBus.publish_async は (AgentEvent) と (name, payload) の両方を受け付ける
+                await self.event_bus.publish_async(event_type, payload)
             except Exception as e:
-                logger.debug(f"Failed to publish event {event_type}: {e}")
+                # 従来は logger.debug だったためイベント欠落が完全に合流していた
+                logger.warning("Failed to publish event %s: %s", event_type, e, exc_info=True)
 
         # Also publish to PipelineEventHub for real-time WebSocket streaming
         if self.pipeline_event_hub:

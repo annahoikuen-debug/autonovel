@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import Any
 
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -169,6 +170,24 @@ async def validate_api_key_or_raise(
     return await require_api_key(authorization)
 
 
+def require_valid_api_key(api_key: str) -> str:
+    """リクエストボディで受け取った API キーを検証し、無効なら 401 を送出する。
+
+    ``validate_api_key_sync`` は例外を送出せず値を返すだけなので、
+    呼び出し側で戻り値を捨てると検証が丸ごとスキップされてしまう。
+    このラッパーは「検証して、無効なら例外を発生させる」-purpose 専用に用意している。
+    ``api_key`` が空文字列 / None の場合は「検証しない（任意）」として素通しする。
+    """
+    if not api_key:
+        return api_key
+    if validate_api_key_sync(api_key) is False:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Key",
+        )
+    return api_key
+
+
 def get_prompt_manager() -> Any:
     """FastAPI Depends 用の PromptManager プロバイダ。
 
@@ -191,6 +210,7 @@ __all__ = [
     "require_admin_user",
     "require_admin_user_or_key",
     "require_api_key",
+    "require_valid_api_key",
     "validate_api_key_or_raise",
     "validate_api_key_sync",
 ]

@@ -365,6 +365,61 @@ class OutputSanitizer:
     _normalization_flow = NormalizationFlow()
 
     @staticmethod
+    def _find_last_json_object(text: str) -> tuple[str, int, int] | None:
+        """本文末尾の最上位JSONオブジェクトを厳密-balancedで抽出する。
+
+        旧実装の ``re.search(r"(\\{.*\\})", ..., re.DOTALL)`` は最初の ``{`` から
+        最後の ``}`` までを一気に掴むため、本文中の ``{``（会話中のitary、エコされた
+        プロンプト、コードフェンス）だけで本文を丸ごと呑み込み、空の本文を生成していた。
+        ここでは後方から候補を探しつつ、文字列リテラルとエスケープを考慮して
+        括弧の深さを数え、完全なJSONオブジェクトだけを返す。
+        """
+        if not text:
+            return None
+
+        stripped = text.strip()
+        if not stripped:
+            return None
+
+        # 後方から '{' 候補を順に試し、最初に balanced に閉じたものを採用する
+        for start in range(len(stripped) - 1, -1, -1):
+            if stripped[start] != "{":
+                continue
+
+            depth = 0
+            in_string = False
+            escaped = False
+            end = -1
+            for i in range(start, len(stripped)):
+                ch = stripped[i]
+                if in_string:
+                    if escaped:
+                        escaped = False
+                    elif ch == "\\":
+                        escaped = True
+                    elif ch == '"':
+                        in_string = False
+                    continue
+                if ch == '"':
+                    in_string = True
+                elif ch == "{":
+                    depth += 1
+                elif ch == "}":
+                    depth -= 1
+                    if depth == 0:
+                        end = i
+                        break
+
+            if end == -1:
+                continue
+            candidate = stripped[start : end + 1]
+            # 括弧が balanced であれば採用する。構文の修復は呼び出し側の
+            # fix_json() が担当する（ここで repair すると相互再帰する）。
+            return candidate, start, end
+
+        return None
+
+    @staticmethod
     def parse_llm_json(text: str) -> dict[str, Any]:
         """
         LLMの出力からJSON部分を抽出し、修復してパースする。
@@ -372,12 +427,12 @@ class OutputSanitizer:
         if not text:
             return {}
         # 最も外側の波括弧を抽出（LLMが前後にテキストを付けても対応）
-        json_match = re.search(r"(\{.*\})", text.strip(), re.DOTALL)
-        if not json_match:
+        found = OutputSanitizer._find_last_json_object(text)
+        if found is None:
             return {}
 
         try:
-            raw_json = OutputSanitizer.fix_json(json_match.group(0))
+            raw_json = OutputSanitizer.fix_json(found[0])
             return json.loads(raw_json)
         except Exception as e:
             logger.error(f"JSON Parse Error: {e}")
@@ -406,10 +461,15 @@ class OutputSanitizer:
         # 2. JSON末尾抽出
         metadata = OutputSanitizer.parse_llm_json(text)
         if metadata:
-            # 文字列の最後にあるJSONらしき部分を特定
-            json_match = re.search(r"(\{.*\})(?:\s|`|#)*$", text.strip(), re.DOTALL)
-            if json_match:
-                story_content = (text[: json_match.start()] + text[json_match.end() :]).strip()
+            # 文字列の最後にある JSON オブジェクト（厳密 balanced）を特定
+            found = OutputSanitizer._find_last_json_object(text)
+            if found:
+                _, json_start, json_end = found
+                # _find_last_json_object は strip 後の文字列のインデックスを返すため、
+                # 先頭の空白だけ補正して元の text のインデックスに戻す
+                json_start += len(text) - len(text.lstrip())
+                json_end += len(text) - len(text.lstrip())
+                story_content = (text[:json_start] + text[json_end + 1 :]).strip()
                 # [thought_process] 等のブロックを広範囲に除去
                 story_content = re.sub(
                     r"\[(thought_process|DIRECTOR_NOTE|METADATA_JSON|CONTENT_SEPARATOR|SCENE|BEAT)\].*?(\n\n|\Z)",
@@ -420,6 +480,14 @@ class OutputSanitizer:
                 if len(story_content) < 50:
                     story_content = (
                         metadata.get("final_content") or metadata.get("script_content") or ""
+                    )
+                if not story_content:
+                    # 本文が無いこと自体は異常としてログに残すが、
+                    # 「メタデータのみを返す」のはこの関数の正当な契約なので
+                    # メタデータごと破棄してはいけない。
+                    logger.error(
+                        "extract_content_and_metadata: 本文が空。LLM出力がメタデータのみ"
+                        "の形式だった可能性。可読本文を生成できていない疑い。"
                     )
                 return OutputSanitizer.normalize_metadata(metadata), OutputSanitizer._clean_story(
                     story_content
@@ -494,7 +562,10 @@ class OutputSanitizer:
 
         # JSONを囲むテキストの除去を強化
         text = text.strip()
-        # 最初に見つかった '{' から 最後に見つかった '}' までを抽出
+        # ここは修復対象が「JSONそのもの」なので、旧来どおり最初の '{' から
+        # 最後の '}' までをひとまとめに扱う（括弧自動補完が壊れた JSON を直す役目）。
+        # 本文と混ざった散文の解析は parse_llm_json / extract_content_and_metadata 側で
+        # _find_last_json_object を使う。
         match = re.search(r"(\{.*\})", text, re.DOTALL)
         if match:
             text = match.group(1)
@@ -532,7 +603,16 @@ class OutputSanitizer:
         # Python形式クォートの修正
         text = re.sub(r"([{,]\s*)\'([a-zA-Z0-9_.]+)\'\s*:", r'\1"\2":', text)
         text = re.sub(r"([{,]\s*)([a-zA-Z0-9_]+)\s*:", r'\1"\2":', text)
-        text = re.sub(r":\s*\'(.*?)\'(?=\s*[,}\]])", r': "\1"', text, flags=re.DOTALL)
+        # 値は貪欲に伸ばさず「クォート/ZIP 終端記号で閉じてる」最短一致にする。
+        # 旧実装の DOTALL + 遅延 .*? は終端が見つからない場合に O(n^2) になり、
+        # かつ値の中に含まれる " をエスケープせず埋め込んで壊れた JSON を返す。
+        def _single_to_double(match: re.Match[str]) -> str:
+            body = match.group(1).replace("\\'", "'")
+            # 値の内部クォートは JSON ではエスケープ必須（エスケープ済みは二重化しない）
+            body = re.sub(r'(?<!\\)"', r'\\"', body)
+            return f': "{body}"'
+
+        text = re.sub(r":\s*'([^'\\]*(?:\\.[^'\\]*)*)'", _single_to_double, text)
         # 末尾カンマ（リストや辞書の最後）を削除
         text = re.sub(r",\s*([}\]])", r"\1", text)
 

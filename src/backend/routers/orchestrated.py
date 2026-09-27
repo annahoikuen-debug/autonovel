@@ -69,7 +69,7 @@ async def generate_orchestrated(
     current_user: User = Depends(get_current_user),
 ) -> OrchestratedGenerateResponse:
     """マルチエージェントオーケストレーションによる章生成をキューに投入。"""
-    generate_limiter.check(request)
+    await generate_limiter.check(request)
 
     # ブックの所有権チェック
     repo = BookRepository(session)
