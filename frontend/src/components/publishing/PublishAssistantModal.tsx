@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiFetch } from '../../api/client';
 
 interface PublishAssistantModalProps {
   isOpen: boolean;
@@ -46,12 +47,15 @@ export const PublishAssistantModal: React.FC<PublishAssistantModalProps> = ({
     setLoading(true);
     setError(null);
     try {
-      const apiKey = localStorage.getItem('AUTONOVEL_API_KEY') || 'dev-key';
-      const res = await fetch('/api/publishing-assistant/format', {
+      // バックエンド routers/publishing_assistant.py の
+      // APIRouter(prefix="/publishing-assistant") は server.py で
+      // prefix="/api" 付きでマウントされるため、正解は /api/publishing-assistant/format。
+      // apiFetch を使うことで localStorage の auth_token から
+      // Authorization ヘッダーが自動付与される（裸の fetch では 401 になる）。
+      const res = await apiFetch('/api/publishing-assistant/format', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
           platform,
@@ -127,11 +131,10 @@ export const PublishAssistantModal: React.FC<PublishAssistantModalProps> = ({
             <button
               key={p.id}
               onClick={() => setPlatform(p.id)}
-              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-all border-b-2 ${
-                platform === p.id
+              className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-all border-b-2 ${platform === p.id
                   ? 'border-indigo-500 text-indigo-400 bg-slate-900'
                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/50'
-              }`}
+                }`}
             >
               {p.name}
             </button>

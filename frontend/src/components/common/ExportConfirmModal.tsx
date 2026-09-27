@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Modal } from './Modal';
 import { ExportHandoffSummary, ExportTarget } from '../../types/export';
 
@@ -15,15 +15,15 @@ export function ExportConfirmModal({
   summary,
   onConfirm,
 }: ExportConfirmModalProps) {
-  if (!isOpen || !summary) return null;
-
-  const [isOpenState, setIsOpenState] = useState(isOpen);
+  // フックは早期 return より前で必ず呼ぶこと（Hooks はレンダー順 invariant）。
+  // 閉じている間にフックを飛ばすと、開いた瞬間に
+  // 「Rendered more hooks than during the previous render」で落ちる。
   const firstFocusableRef = useRef<HTMLButtonElement | null>(null);
   const lastFocusableRef = useRef<HTMLButtonElement | null>(null);
 
   // モーダルが開いたときにフォーカスを管理
   useEffect(() => {
-    if (!isOpenState) return;
+    if (!isOpen) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
@@ -48,18 +48,20 @@ export function ExportConfirmModal({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isOpenState, onClose, firstFocusableRef, lastFocusableRef]);
+  }, [isOpen, onClose]);
 
   // 初期フォーカスを設定
   useEffect(() => {
-    if (isOpenState) {
+    if (isOpen) {
       firstFocusableRef.current?.focus();
     }
-  }, [isOpenState, firstFocusableRef]);
+  }, [isOpen]);
+
+  if (!isOpen || !summary) return null;
 
   return (
     <Modal 
-      isOpen={isOpenState} 
+      isOpen={isOpen} 
       onClose={onClose} 
       title="出力前確認"
     >

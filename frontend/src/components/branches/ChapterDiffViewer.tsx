@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChapterDiffResponse } from '@/types/branches';
+import { fetchChapterDiff } from '@/api/branches';
 
 type ChapterDiffViewerProps = {
   chapterNumber: number;
@@ -23,16 +24,10 @@ export const ChapterDiffViewer: React.FC<ChapterDiffViewerProps> = ({
 
   React.useEffect(() => {
     const loadDiff = async () => {
+      setIsLoading(true);
+      setIsError(false);
       try {
-        setIsLoading(true);
-        const response = await fetch(
-          `/api/branches/diff?bookId=${bookId}&branchA=${branchAId}&branchB=${branchBId}&chapter=${chapterNumber}`
-          // Note: In a real app, bookId would come from context or props
-        );
-        if (!response.ok) {
-          throw new Error(`Failed to fetch diff: ${response.status}`);
-        }
-        const data = await response.json();
+        const data = await fetchChapterDiff(bookId, branchAId, branchBId, chapterNumber);
         setDiffData(data);
       } catch (err) {
         console.error('Error fetching chapter diff:', err);
@@ -42,8 +37,8 @@ export const ChapterDiffViewer: React.FC<ChapterDiffViewerProps> = ({
       }
     };
 
-    loadDiff();
-  }, [chapterNumber, branchAId, branchBId]);
+    void loadDiff();
+  }, [bookId, chapterNumber, branchAId, branchBId]);
 
   if (isLoading) return <div>Loading diff...</div>;
   if (isError) return <div>Error loading diff</div>;

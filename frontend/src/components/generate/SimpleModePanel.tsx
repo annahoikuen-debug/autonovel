@@ -1,4 +1,6 @@
 import React from "react";
+import { Modal } from "../common/Modal";
+import { Button } from "../common/Button";
 import type { CharacterParams as Character } from "../../types";
 import type { GenerationState } from "../../types";
 
@@ -42,6 +44,7 @@ interface SimpleModePanelProps {
 }
 
 export default function SimpleModePanel(props: SimpleModePanelProps) {
+  const [showStudioPeek, setShowStudioPeek] = React.useState(false);
   const {
     character,
     setCharacter,
@@ -172,20 +175,61 @@ export default function SimpleModePanel(props: SimpleModePanelProps) {
             ⏹ 中止
           </button>
         )}
-        
+
         {/* Studio機能チラ見せボタン */}
         <button
           type="button"
           className="btn btn-outline-secondary"
           style={{ flex: 1, minWidth: "120px", fontSize: "0.9rem" }}
-          onClick={() => {
-            // Studio機能のチラ見せとして、マルチメディアプレビューのサンプルを表示
-            alert("Studio機能のプレビュー:\n・シーン別マルチメディアプレビュー\n・AI診断・品質スコア詳細表示\n・プロットビジュアライザー\n・キャラ設定詳細編集\n\n※実際の機能はStudioモードでご利用ください");
-          }}
+          onClick={() => setShowStudioPeek(true)}
           disabled={isBusy}
+          data-testid="btn-studio-peek"
         >
           👀 Studio機能チラ見せ
         </button>
+
+        {/* ネイティブ alert() の代わりに共通 Modal を使う（画面ロックと継続操作を保証） */}
+        <Modal
+          isOpen={showStudioPeek}
+          onClose={() => setShowStudioPeek(false)}
+          title="👀 Studio でできること"
+          testId="studio-peek-modal"
+          closeBtnTestId="btn-close-studio-peek"
+          maxWidth={520}
+        >
+          <ul style={{ paddingLeft: "20px", lineHeight: 1.9, color: "var(--text-main)" }}>
+            <li>🖼️ 場面ごとのマルチメディアプレビューと画像生成</li>
+            <li>🔍 AI 診断・品質スコアの詳細表示</li>
+            <li>📖 プロットビジュアライザーと Beat シート編集</li>
+            <li>🎭 キャラクター設定の詳細編集</li>
+          </ul>
+          <p
+            style={{
+              marginTop: "16px",
+              fontSize: "0.9rem",
+              color: "var(--text-muted)",
+              lineHeight: 1.7,
+            }}
+          >
+            ここまで書いた内容はそのまま残ります。実際に使うときは「Studio」タブから移動できます。
+          </p>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "20px" }}>
+            <Button variant="secondary" onClick={() => setShowStudioPeek(false)}>
+              閉じる
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setShowStudioPeek(false);
+                // Router に依存しないよう、通常のリンク遷移で Studio へ送る。
+                window.location.assign("/studio");
+              }}
+              data-testid="btn-studio-peek-goto"
+            >
+              Studio を開く →
+            </Button>
+          </div>
+        </Modal>
         <button
           className="btn btn-outline-primary"
           style={{ flex: 1, minWidth: "120px", borderColor: "var(--accent-cyan)", color: "var(--accent-cyan)" }}

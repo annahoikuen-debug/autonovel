@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { PlatformCopyButton } from '../common/PlatformCopyButton';
 import { StreamingProgressBar } from '../common/StreamingProgressBar';
 import { subscribeWritingStreamFetch, WritingStreamEvent } from '../../api/wizard';
@@ -12,6 +12,17 @@ interface Step3Props {
   isGenerating: boolean;
   onGenerateNext: () => void | Promise<void>;
   onRegenerate: () => void;
+  /**
+   * SSE から届いた本文を親へ通知する。
+   * @param content 受信済みの本文（差分ではなく累積全文）
+   * @param done    執筆が完了したか
+   */
+  onContentChange?: (content: string, done: boolean) => void;
+  /**
+   * ストリームがエラーになったことを親へ通知する。
+   * 親は `isGenerating` を解除してボタンを再度押せるようにする。
+   */
+  onStreamError?: (message: string) => void;
 }
 
 export const Step3InteractiveWriting: React.FC<Step3Props> = ({
@@ -23,6 +34,8 @@ export const Step3InteractiveWriting: React.FC<Step3Props> = ({
   isGenerating,
   onGenerateNext,
   onRegenerate,
+  onContentChange,
+  onStreamError,
 }) => {
   const [streamProgress, setStreamProgress] = useState(0);
   const [streamPhase, setStreamPhase] = useState<'ContextBuilding' | 'Drafting' | 'Auditing' | 'Complete' | 'Error' | 'Connecting'>('Connecting');
@@ -30,11 +43,22 @@ export const Step3InteractiveWriting: React.FC<Step3Props> = ({
   const [streamElapsed, setStreamElapsed] = useState(0);
   const [streamError, setStreamError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  /** SSE から受け取った本文の累積（親 state と二重管理しないためローカルに持つ） */
+  const bufferRef = useRef<string>('');
+  /**
+   * 経過時間計算の基準時刻。
+   * バックエンドの `timestamp` は `time.time()` のエポック秒なので、
+   * そのままでは「経過時間」として使えない（最初のイベント時刻との差を取る）。
+   */
+  const streamStartTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Setup SSE stream subscription with AbortController
     const controller = new AbortController();
     abortControllerRef.current = controller;
+    // 话が変わったら本文バッファをリセットする
+    bufferRef.current = '';
+    streamStartTimeRef.current = null;
 
     subscribeWritingStreamFetch(
       book_id,
@@ -43,29 +67,59 @@ export const Step3InteractiveWriting: React.FC<Step3Props> = ({
       (event: WritingStreamEvent) => {
         setStreamProgress(event.progress);
         setStreamPhase(event.phase);
-        setStreamStatus(event.phase === 'Error' ? 'error' : 
-                       event.phase === 'Complete' ? 'completed' : 
-                       event.progress > 0 ? 'receiving' : 'connected');
-        setStreamElapsed(Math.floor(event.timestamp / 1000)); // Assuming timestamp is in seconds
-        setStreamError(event.phase === 'Error' ? event.message || 'Unknown error' : null);
+        setStreamStatus(event.phase === 'Error' ? 'error' :
+          event.phase === 'Complete' ? 'completed' :
+            event.progress > 0 ? 'receiving' : 'connected');
+        // `event.timestamp` はエポック秒。最初のイベントを起点にした経過秒に変換する。
+        if (streamStartTimeRef.current === null) {
+          streamStartTimeRef.current = event.timestamp;
+        }
+        setStreamElapsed(Math.max(0, Math.floor(event.timestamp - streamStartTimeRef.current)));
+        const errorMessage = event.phase === 'Error' ? event.message || 'Unknown error' : null;
+        setStreamError(errorMessage);
+        // 親側の isGenerating も解除する（解除しないとオーバーレイが回り続け、
+        // ボタンが押せないまま復旧にはリロードが必要になる）
+        if (errorMessage !== null) {
+          onStreamError?.(errorMessage);
+        }
+
+        // 本文を溜める。バックエンドが差分(content)を刻々と送ってくる想定で、
+        // phase === 'Complete' のときは全文として確定させる。
+        if (typeof event.content === 'string' && event.content.length > 0) {
+          if (event.phase === 'Complete') {
+            bufferRef.current = event.content;
+            onContentChange?.(event.content, true);
+          } else {
+            bufferRef.current += event.content;
+            onContentChange?.(bufferRef.current, false);
+          }
+        } else if (event.phase === 'Complete') {
+          onContentChange?.(bufferRef.current, true);
+        }
       },
       controller.signal
     ).catch((err) => {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       console.error('SSE stream error:', err);
+      const message = err instanceof Error ? err.message : 'ストリーム接続に失敗しました';
       setStreamStatus('error');
-      setStreamError(err instanceof Error ? err.message : 'ストリーム接続に失敗しました');
+      setStreamError(message);
+      // 接続自体が失敗した場合も親の isGenerating を解除する
+      onStreamError?.(message);
     });
 
     // Cleanup on unmount
     return () => {
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [book_id, ep_num, branch_id]);
 
   const handleRegenerate = () => {
     onRegenerate();
     // Reset stream state
+    bufferRef.current = '';
+    streamStartTimeRef.current = null;
     setStreamProgress(0);
     setStreamPhase('Connecting');
     setStreamStatus('connecting');
@@ -87,6 +141,7 @@ export const Step3InteractiveWriting: React.FC<Step3Props> = ({
           rows={16}
           readOnly={isGenerating}
           value={chapterContent}
+          data-testid="wizard-chapter-textarea"
           className="w-full p-4 rounded bg-slate-950 border border-slate-800 text-slate-100 font-serif leading-relaxed text-base focus:outline-none focus:border-amber-500"
           placeholder={isGenerating ? "AIが本文を執筆中... (約30秒)" : "本文がここに表示されます"}
         />

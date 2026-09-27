@@ -9,14 +9,24 @@ interface StyleComparisonModalProps {
 
 export const StyleComparisonModal: React.FC<StyleComparisonModalProps> = ({ onClose }) => {
   const [activeTab, setActiveTab] = useState<"action" | "dialogue" | "psychology">("action");
+  // ネイティブ alert() の代わりに画面内で結果を示す
+  const [notice, setNotice] = useState<string | null>(null);
   const [styleParams, setStyleParams] = useState<StyleTuningParams>({
     kemeritsu: 3,
     bodyStop: 50,
     metaphor: 50,
   });
-  const [customStyles, setCustomStyles] = useState<Array<{id: string; name: string; params: StyleTuningParams}>>(() => {
-    const saved = localStorage.getItem("customStyles");
-    return saved ? JSON.parse(saved) : [];
+  const [customStyles, setCustomStyles] = useState<Array<{ id: string; name: string; params: StyleTuningParams }>>(() => {
+    // localStorage は壊れた JSON や別バージョンの構造を返しうるため、
+    // パースに失敗しても画面ごと落ち 않도록 [] にフォールバックする
+    // （NovelContext と同じパターン）。
+    try {
+      const saved = localStorage.getItem("customStyles");
+      const parsed = saved ? JSON.parse(saved) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   });
 
   const scene = styleSamples.find((s) => s.id === activeTab);
@@ -40,17 +50,54 @@ export const StyleComparisonModal: React.FC<StyleComparisonModalProps> = ({ onCl
       };
       setCustomStyles([...customStyles, newStyle]);
       localStorage.setItem("customStyles", JSON.stringify([...customStyles, newStyle]));
-      window.alert(`カスタム文体「${name}」を保存しました`);
+      setNotice(`カスタム文体「${name}」を保存しました`);
     }
   };
 
   const handleApplyStyle = () => {
-    window.alert(`文体スタイルを適用しました！\nケレン味: ${styleParams.kemeritsu}\n体言止め: ${styleParams.bodyStop}%\n比喩: ${styleParams.metaphor}%`);
+    setNotice(
+      `文体スタイルを適用しました！\nケレン味: ${styleParams.kemeritsu}\n体言止め: ${styleParams.bodyStop}%\n比喩: ${styleParams.metaphor}%`
+    );
     // TODO: Actually apply the style to the novel context
   };
 
   return (
     <div className="style-comparison-modal">
+      {notice && (
+        <div
+          role="status"
+          data-testid="style-notice"
+          style={{
+            margin: "12px 16px 0",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            whiteSpace: "pre-line",
+            background: "var(--surface-3)",
+            border: "1px solid var(--accent-success)",
+            color: "var(--text-main)",
+            fontSize: "0.9rem",
+            lineHeight: 1.7,
+          }}
+        >
+          {notice}
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            style={{
+              marginLeft: "12px",
+              background: "transparent",
+              border: "1px solid var(--border-color)",
+              borderRadius: "6px",
+              color: "var(--text-muted)",
+              cursor: "pointer",
+              padding: "2px 10px",
+              fontSize: "0.8rem",
+            }}
+          >
+            閉じる
+          </button>
+        </div>
+      )}
       <div className="style-comparison-modal-content">
         <div className="style-comparison-modal-header">
           <h2>🎨 作家性DNA・文体Before/Afterプレビュー</h2>

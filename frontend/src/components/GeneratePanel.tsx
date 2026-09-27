@@ -95,7 +95,7 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
       syncGenerationToEditor(finalText);
       onGenerated?.(finalText, []);
     },
-    onMessage: onMessage ?? (() => {}),
+    onMessage: onMessage ?? (() => { }),
     onError: (err) => onMessage?.(`❌ ${err}`),
   });
 
@@ -109,6 +109,8 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
   } = useUnifiedStreaming();
 
   const [mode, setMode] = useState<'simple' | 'reverse' | 'orchestrated'>('simple');
+  // 段階開示: 「かんたん」を既定にし、上級向けの選択肢は折りたたんで隠す
+  const [showAdvancedModes, setShowAdvancedModes] = useState(false);
   const [showGachaModal, setShowGachaModal] = useState(false);
   const [showDigestModal, setShowDigestModal] = useState(false);
 
@@ -277,42 +279,42 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
     if (mode === 'simple') {
       return (
         <SimpleModePanel
-        character={character}
-        setCharacter={setCharacter}
-        llmConfig={llmConfig}
-        setLlmConfig={setLlmConfig}
-        selectedStyleId={selectedStyleId}
-        customStyleProfile={customStyleProfile}
-        showStyleModal={showStyleModal}
-        setShowStyleModal={setShowStyleModal}
-        showApiSettings={showApiSettings}
-        setShowApiSettings={setShowApiSettings}
-        showApiKey={showApiKey}
-        setShowApiKey={setShowApiKey}
-        yonkomaEnabled={yonkomaEnabled}
-        setYonkomaEnabled={setYonkomaEnabled}
-        generationState={generationState}
-        startGeneration={startGeneration}
-        cancelGeneration={cancelGeneration}
-        isStreaming={isStreaming}
-        startStreaming={startStreaming}
-        cancelStreaming={cancelStreaming}
-        isPaused={isPaused}
-        resumeStreaming={resumeStreaming}
-        pauseStreaming={pauseStreaming}
-        streamOutput={streamOutput}
-        isBusy={isBusy}
-        targetEpisodes={targetEpisodes}
-        setTargetEpisodes={setTargetEpisodes}
-        contentLengthLimit={contentLengthLimit}
-        setContentLengthLimit={setContentLengthLimit}
-        currentChapterText={currentChapterText}
-        setCurrentChapterText={setCurrentChapterText}
-        onMessage={onMessage ?? (() => {})}
-        onRunGacha={handleRunGacha}
-        onRunDigest={handleRunDigest}
-        isGachaLoading={gachaLoading}
-        isDigestLoading={digestLoading}
+          character={character}
+          setCharacter={setCharacter}
+          llmConfig={llmConfig}
+          setLlmConfig={setLlmConfig}
+          selectedStyleId={selectedStyleId}
+          customStyleProfile={customStyleProfile}
+          showStyleModal={showStyleModal}
+          setShowStyleModal={setShowStyleModal}
+          showApiSettings={showApiSettings}
+          setShowApiSettings={setShowApiSettings}
+          showApiKey={showApiKey}
+          setShowApiKey={setShowApiKey}
+          yonkomaEnabled={yonkomaEnabled}
+          setYonkomaEnabled={setYonkomaEnabled}
+          generationState={generationState}
+          startGeneration={startGeneration}
+          cancelGeneration={cancelGeneration}
+          isStreaming={isStreaming}
+          startStreaming={startStreaming}
+          cancelStreaming={cancelStreaming}
+          isPaused={isPaused}
+          resumeStreaming={resumeStreaming}
+          pauseStreaming={pauseStreaming}
+          streamOutput={streamOutput}
+          isBusy={isBusy}
+          targetEpisodes={targetEpisodes}
+          setTargetEpisodes={setTargetEpisodes}
+          contentLengthLimit={contentLengthLimit}
+          setContentLengthLimit={setContentLengthLimit}
+          currentChapterText={currentChapterText}
+          setCurrentChapterText={setCurrentChapterText}
+          onMessage={onMessage ?? (() => { })}
+          onRunGacha={handleRunGacha}
+          onRunDigest={handleRunDigest}
+          isGachaLoading={gachaLoading}
+          isDigestLoading={digestLoading}
         />
       );
     }
@@ -378,96 +380,120 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
     <>
       <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
         <h2 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0 }}>⚙️ 制作設定 & プロンプト</h2>
-        <div style={{ display: "flex", gap: "8px" }}>
-          <button
-            type="button"
-            className={`btn ${mode === "simple" ? "btn-primary" : "btn-secondary"}`}
-            onClick={() => setMode("simple")}
-            disabled={generationState.isGenerating}
-            data-testid="btn-submode-simple"
-          >
-            ⚙️ かんたんモード
-          </button>
-          <button
-            type="button"
-            className={`btn ${mode === "reverse" ? "btn-primary" : "btn-secondary"}`}
-            onClick={() => setMode("reverse")}
-            disabled={generationState.isGenerating}
-            data-testid="btn-submode-reverse"
-          >
-            🔮 逆算プロットビルダー
-          </button>
-        </div>
-      {chapterScore !== null && (
-        <div
-          style={{
-            background: "rgba(255, 255, 255, 0.05)",
-            border: `1px solid ${chapterScore >= 70 ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
-            borderRadius: "12px",
-            padding: "12px 16px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-          }}
+        {/* 段階開示: 既定は「かんたん」だけ。上級向けの操作は fold に隠す。 */}
+        <button
+          type="button"
+          className={`btn ${mode === "simple" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setMode("simple")}
+          disabled={generationState.isGenerating}
+          data-testid="btn-submode-simple"
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div
-              style={{
-                width: "40px",
-                height: "40px",
-                borderRadius: "50%",
-                background: chapterScore >= 70 ? "rgba(34, 197, 94, 0.2)" : "rgba(239, 68, 68, 0.2)",
-                color: chapterScore >= 70 ? "#4ade80" : "#f87171",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontWeight: "bold",
-                fontSize: "1.1rem",
-                border: `1px solid ${chapterScore >= 70 ? "#4ade80" : "#f87171"}`,
-              }}
+          ⚙️ かんたん執筆（はじめはこれで十分）
+        </button>
+        {showAdvancedModes ? (
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className={`btn ${mode === "reverse" ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setMode("reverse")}
+              disabled={generationState.isGenerating}
+              data-testid="btn-submode-reverse"
             >
-              {chapterScore.toFixed(0)}
-            </div>
-            <div>
-              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>
-                Current Chapter Quality Score
-              </div>
-              <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-main)" }}>
-                {chapterScore >= 70 ? "✅ High Quality" : "⚠️ Needs Improvement"}
-              </div>
-            </div>
+              🔮 逆算プロットビルダー
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowAdvancedModes(false)}
+              data-testid="btn-submode-collapse"
+            >
+              閉じる
+            </button>
           </div>
-
-          {chapterScore < 70 && (
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#f87171", fontSize: "0.8rem", fontWeight: 600 }}>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setShowAdvancedModes(true)}
+            data-testid="btn-show-advanced-modes"
+          >
+            もっと細かく設定する ▾
+          </button>
+        )}
+        {chapterScore !== null && (
+          <div
+            style={{
+              background: "rgba(255, 255, 255, 0.05)",
+              border: `1px solid ${chapterScore >= 70 ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+              borderRadius: "12px",
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
               <div
-                className="spinner"
                 style={{
-                  width: "14px",
-                  height: "14px",
-                  border: "2px solid rgba(248, 113, 113, 0.3)",
-                  borderTopColor: "#f87171",
+                  width: "40px",
+                  height: "40px",
                   borderRadius: "50%",
-                  animation: "spin 1s linear infinite",
+                  background: chapterScore >= 70 ? "rgba(34, 197, 94, 0.2)" : "rgba(239, 68, 68, 0.2)",
+                  color: chapterScore >= 70 ? "#4ade80" : "#f87171",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: "bold",
+                  fontSize: "1.1rem",
+                  border: `1px solid ${chapterScore >= 70 ? "#4ade80" : "#f87171"}`,
                 }}
-              />
-              自動改善ループ実行中...
-              <style>{`
+              >
+                {chapterScore.toFixed(0)}
+              </div>
+              <div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>
+                  Current Chapter Quality Score
+                </div>
+                <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-main)" }}>
+                  {chapterScore >= 70 ? "✅ High Quality" : "⚠️ Needs Improvement"}
+                </div>
+              </div>
+            </div>
+
+            {chapterScore < 70 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#f87171", fontSize: "0.8rem", fontWeight: 600 }}>
+                <div
+                  className="spinner"
+                  style={{
+                    width: "14px",
+                    height: "14px",
+                    border: "2px solid rgba(248, 113, 113, 0.3)",
+                    borderTopColor: "#f87171",
+                    borderRadius: "50%",
+                    animation: "spin 1s linear infinite",
+                  }}
+                />
+                自動改善ループ実行中...
+                <style>{`
                 @keyframes spin {
                   to { transform: rotate(360deg); }
                 }
               `}</style>
-            </div>
-          )}
-        </div>
-      )}
-      {renderContent()}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <PDCALiveMonitor bookId={selectedBookId} />
-        <DAGLiveTracker bookId={selectedBookId} />
+              </div>
+            )}
+          </div>
+        )}
+        {renderContent()}
+        {/* 監視パネルは常時表示せず、fold にして必要なときだけ開く */}
+        <details className="monitor-fold mt-4" data-testid="monitor-fold">
+          <summary className="monitor-fold__summary">📡 執筆の進み具合を詳しく見る</summary>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+            <PDCALiveMonitor bookId={selectedBookId} />
+            <DAGLiveTracker bookId={selectedBookId} />
+          </div>
+        </details>
       </div>
-    </div>
       <GachaModal
         isOpen={showGachaModal}
         onClose={() => setShowGachaModal(false)}

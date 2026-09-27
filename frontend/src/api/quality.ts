@@ -1,5 +1,4 @@
 import { apiFetch, handleResponse } from './client';
-import { LineScore } from '../types/quality';
 
 export interface BookScore {
   book_id: number;
@@ -58,10 +57,9 @@ export interface PDCACycleSnapshot {
   created_at: string;
 }
 
-export async function fetchLineScores(bookId: number, chapterNumber: number): Promise<LineScore[]> {
-  const res = await apiFetch(`/api/novel/books/${bookId}/chapters/${chapterNumber}/line-scores`);
-  return handleResponse<LineScore[]>(res, 'Failed to fetch line scores');
-}
+// 注: 旧 fetchLineScores（`/api/novel/books/*/chapters/*/line-scores`）は
+// バックエンドに対応 API が存在しないため削除済み。
+// 行スコアの表示は editors（EditorGutter）は audit 結果から setLineScores 経由で供給される。
 
 export async function fetchChapterBookScore(bookId: number, chapterNumber: number): Promise<BookScore> {
   const res = await apiFetch(`/api/novel/books/${bookId}/chapters/${chapterNumber}/score`);

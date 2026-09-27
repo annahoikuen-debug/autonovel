@@ -87,7 +87,7 @@ export const PromoCardGenerator: React.FC<PromoCardGeneratorProps> = ({
       ctx.font = '20px "Noto Serif JP", serif';
       ctx.textAlign = 'center';
       const lines = wrapText(ctx, catchcopy, width - 100, 24);
-      let startY = height * 0.6;
+      const startY = height * 0.6;
       lines.forEach((line, index) => {
         ctx.fillText(line, width / 2, startY + index * 28);
       });

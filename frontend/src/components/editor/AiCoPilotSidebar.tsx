@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { GraphEvidenceNode, ConsistencyIssue } from '../../types/editor';
 import { useNovelContext } from '../../context/NovelContext';
+import { askBible } from '../../api/editor';
 
 interface AiCoPilotSidebarProps {
   bookId?: number;
@@ -74,8 +75,8 @@ export const AiCoPilotSidebar: React.FC<AiCoPilotSidebarProps> = ({
     eroticDensity: 3.8,
     pacing: 6.5,
     consistency: 8.9,
-  density: 5.2,
-  originality: 7.1,
+    density: 5.2,
+    originality: 7.1,
   });
 
   const formatTime = (date: Date) => {
@@ -111,31 +112,22 @@ export const AiCoPilotSidebar: React.FC<AiCoPilotSidebarProps> = ({
     setMessages(prev => [...prev, aiResponse]);
 
     try {
-      const response = await fetch('/api/ai/coach', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          book_id: bookId || selectedBookId,
-          chapter: currentEpNum,
-          current_text: currentText,
-          user_query: inputValue,
-          character_context: {
-            name: character.name,
-            personality: character.personality,
-            genre: character.genre,
-          },
-        }),
+      // `/api/ai/coach` はバックエンドに定義が無いため（404 になっていた）、
+      // 同じ用途を満たす `/api/editor/ask-bible`
+      // （GraphRAG 専属 AI 編集者）を使う。
+      const data = await askBible({
+        book_id: bookId || selectedBookId,
+        query: inputValue,
+        current_chapter: currentEpNum,
       });
-
-      const data = await response.json();
 
       const finalAiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
-        content: data.response || '...に関する洞察を得ました！',
+        content: data.answer || `${inputValue} に関する洞察を得ました！`,
         timestamp: new Date(),
-        suggestions: data.suggestions || [],
-        evidence: data.evidence || [],
+        suggestions: [],
+        evidence: data.evidence_nodes || [],
         isAiThinking: false,
       };
 
@@ -143,13 +135,9 @@ export const AiCoPilotSidebar: React.FC<AiCoPilotSidebarProps> = ({
         msg.id === aiResponse.id ? finalAiMessage : msg
       ));
 
-      if (data.suggestions && data.suggestions.length > 0) {
-        onToast?.(`✨ ${data.suggestions[0]}`, 'success');
-      }
-
     } catch (error) {
-      console.error('AIコーチからの応答取得に失敗:', error);
-      
+      console.error('AI アシスタントからの応答取得に失敗:', error);
+
       const errorAiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'ai',
@@ -172,19 +160,19 @@ export const AiCoPilotSidebar: React.FC<AiCoPilotSidebarProps> = ({
       if (value >= 5) return '#fbbf24';
       return '#ef4444';
     }
-    
+
     if (type === 'tension' || type === 'pacing') {
       if (value >= 7) return '#8b5cf6';
       if (value >= 4) return '#06b6d4';
       return '#10b981';
     }
-    
+
     if (type === 'eroticDensity' || type === 'density') {
       if (value >= 5) return '#f43f5e';
       if (value >= 3) return '#eab308';
       return '#10b981';
     }
-    
+
     return '#9ca3af';
   };
 
@@ -260,7 +248,7 @@ export const AiCoPilotSidebar: React.FC<AiCoPilotSidebarProps> = ({
               fontSize: '1.1rem',
               fontWeight: 700,
               color: confidenceScore >= 80 ? '#10b981' :
-                     confidenceScore >= 60 ? '#fbbf24' : '#ef4444'
+                confidenceScore >= 60 ? '#fbbf24' : '#ef4444'
             }}>
               {confidenceScore}%
             </span>
@@ -276,7 +264,7 @@ export const AiCoPilotSidebar: React.FC<AiCoPilotSidebarProps> = ({
               width: `${confidenceScore}%`,
               height: '100%',
               backgroundColor: confidenceScore >= 80 ? '#10b981' :
-                             confidenceScore >= 60 ? '#fbbf24' : '#ef4444',
+                confidenceScore >= 60 ? '#fbbf24' : '#ef4444',
               transition: 'width 0.3s ease'
             }} />
           </div>

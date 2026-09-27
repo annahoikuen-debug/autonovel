@@ -27,7 +27,7 @@ export const VerticalReader: React.FC<VerticalReaderProps> = ({
       .split("\n\n")
       .map((paragraph) => {
         // Add full-width space (U+3000) at the start of each paragraph
-        let processed = "　" + paragraph;
+        const processed = "　" + paragraph;
         // Handle Japanese quotation marks if needed
         // For now, we'll keep them as-is since they work in vertical writing
         return processed;

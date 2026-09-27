@@ -10,7 +10,9 @@ import {
   PublicationScheduleCancelResponse,
 } from "../types/commercial";
 
-const BASE_URL = "/api/commercial"; // 実際のエンドポイントパスに合わせて調整
+// バックエンド routers/commercial.py の APIRouter(prefix="/commercial") に合わせる。
+// （/api/commercial だと 404 になっていた）
+const BASE_URL = "/commercial";
 
 /**
  * 投稿スケジュールを新規登録する

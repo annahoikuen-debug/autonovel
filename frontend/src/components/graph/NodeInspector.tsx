@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { GraphNodeDetail } from "../../types/graphInspector";
 import { GraphEdge } from "../../types/graph";
 import { upsertEdge } from "../../api/graph";
@@ -40,13 +40,12 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({
   onUpdate,
   onAddEdge,
 }) => {
-  if (!node) {
-    return null;
-  }
-
-  const [localLabel, setLocalLabel] = useState(node.label);
-  const [localProperties, setLocalProperties] = useState<{ key: string; value: string }[]>(
-    Object.entries(node.properties).map(([key, value]) => ({ key, value }))
+  // フックは早期 return より前で必ず呼ぶこと（Hooks はレンダー順 invariant）。
+  // 選択ノードが null になった瞬間にフックを飛ばすと、選び直しの瞬間に
+  // 「Rendered more hooks than during the previous render」で落ちる。
+  const [localLabel, setLocalLabel] = useState(node?.label ?? "");
+  const [localProperties, setLocalProperties] = useState<{ key: string; value: string }[]>(() =>
+    Object.entries(node?.properties ?? {}).map(([key, value]) => ({ key, value }))
   );
 
   const [showAddEdgeDialog, setShowAddEdgeDialog] = useState(false);
@@ -54,6 +53,24 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({
   const [edgeType, setEdgeType] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const { addToast } = useToast();
+
+  // 選択中のノードが切り替わったらローカル編集状態を読み直す
+  const selectedNodeId = node?.id;
+  useEffect(() => {
+    setLocalLabel(node?.label ?? "");
+    setLocalProperties(
+      Object.entries(node?.properties ?? {}).map(([key, value]) => ({ key, value }))
+    );
+    setShowAddEdgeDialog(false);
+    setTargetNodeId("");
+    setEdgeType("");
+    setIsSaving(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedNodeId]);
+
+  if (!node) {
+    return null;
+  }
 
   const handleLabelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newLabel = e.target.value;

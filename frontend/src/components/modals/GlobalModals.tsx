@@ -4,7 +4,6 @@ import { Button } from "../common/Button";
 import { AssetPackPanel } from "../AssetPackPanel";
 import ConfigPanel from "../ConfigPanel";
 import { BookshelfModal } from "../common/BookshelfModal";
-import { WizardWorkflowPage } from "../../pages/WizardWorkflowPage";
 import { useModal } from "../../context/ModalContext";
 import { useNovelContext } from "../../context/NovelContext";
 import { useNavigate } from "react-router-dom";
@@ -25,8 +24,6 @@ export function GlobalModals() {
     setShowBookshelf,
     showTransitionOverlay,
     setShowTransitionOverlay,
-    showWizardWorkflow,
-    setShowWizardWorkflow,
   } = useModal();
 
   const {
@@ -126,22 +123,6 @@ export function GlobalModals() {
         }}
       />
 
-      {/* ウィザードオーバーレイ */}
-      {showWizardWorkflow && (
-        <div className="wizard-workflow-overlay">
-          <div className="flex justify-end mb-4 max-w-4xl mx-auto px-4">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setShowWizardWorkflow(false)}
-              data-testid="close-wizard-btn"
-            >
-              ✕ ウィザードを閉じる
-            </Button>
-          </div>
-          <WizardWorkflowPage />
-        </div>
-      )}
     </>
   );
 }

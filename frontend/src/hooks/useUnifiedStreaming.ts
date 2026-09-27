@@ -41,16 +41,30 @@ export function useUnifiedStreaming() {
           abortRef.current.signal
         );
         const reader = response.body!.getReader();
-        const decoder = new TextDecoder();
+        const decoder = new TextDecoder("utf-8");
         let buffer = "";
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
-          for (const line of buffer.split("\n")) {
-            if (line.startsWith("data:")) {
+          // バックエンドの SSE は `data: {json}\n\n` 形式でフレームを区切る。
+          // バッファを未処理のまま再ループすると既読行を何度でも再処理して
+          // 本文が N 重に複製されるため、最後の未完フレームは保持して差し戻す。
+          const frames = buffer.split("\n\n");
+          buffer = frames.pop() || "";
+          for (const frame of frames) {
+            const line = frame.trim();
+            if (!line.startsWith("data:")) continue;
+            try {
               const data = JSON.parse(line.replace(/^data:\s*/, ""));
-              if (data.type === "chunk") setState((s: UnifiedStreamingState) => ({ ...s, output: s.output + data.text }));
+              if (data.type === "chunk" && data.text) {
+                setState((s: UnifiedStreamingState) => ({ ...s, output: s.output + data.text }));
+              } else if (data.type === "error") {
+                throw new Error(data.message || "ストリーミング生成エラー");
+              }
+            } catch (err: any) {
+              if (err?.message?.includes("ストリーミング生成エラー")) throw err;
+              // 通常の JSON パース失敗はスキップ
             }
           }
         }

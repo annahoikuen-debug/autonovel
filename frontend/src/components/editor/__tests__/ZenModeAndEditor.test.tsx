@@ -256,9 +256,16 @@ describe('ZenModeAndEditor Components Tests', () => {
     });
 
     it('should send and receive messages', async () => {
+      // AiCoPilotSidebar は `/api/editor/ask-bible` (AskBibleResponse) を叩く。
+      // 応答本文は `answer` フィールドで返り、サイドバーはそれを
+      // メッセージ本文として描画する。
       global.fetch = vi.fn().mockResolvedValue({
         ok: true,
-        json: async () => ({ response: 'AIからの提案です' }),
+        json: async () => ({
+          answer: 'AIからの提案です',
+          evidence_nodes: [],
+          related_characters: [],
+        }),
       }) as any;
 
       render(

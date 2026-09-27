@@ -6,7 +6,14 @@ import App from "../../src/App";
 describe("Studio Mode Flow Integration Test", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    // 初回起動の入口選択（/welcome リダイレクト）を無効化して、
+    // 各ルートの実体を検証できるようにする
+    window.localStorage.setItem("autonovel.onboardingCompleted", "1");
     window.history.pushState({}, "", "/studio");
+  });
+
+  afterEach(() => {
+    window.localStorage.clear();
   });
 
   it("renders Studio mode by default and allows mode switching", async () => {

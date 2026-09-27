@@ -255,6 +255,18 @@ const [currentChapterText, setCurrentChapterText] = useState<string>(
 
   const isSwitchingEpRef = useRef(false);
 
+  /**
+   * `setCurrentChapterText` の updater 内で「いまの本文」を読むためのミラー。
+   *
+   * updater 関数は純関数でなければならない（React は StrictMode で二重に呼ぶ）。
+   * そのため updater の内側から `setChapters` を呼ぶのではなく、
+   * 新しい本文を先に確定させてから 2 つの setter を順番に呼ぶ。
+   */
+  const currentChapterTextRef = useRef(currentChapterText);
+  useEffect(() => {
+    currentChapterTextRef.current = currentChapterText;
+  }, [currentChapterText]);
+
   // 章切り替え時に該当章のテキストをロード
   useEffect(() => {
     isSwitchingEpRef.current = true;
@@ -270,13 +282,13 @@ const [currentChapterText, setCurrentChapterText] = useState<string>(
 
   // 本文編集時に chapters 配列の該当章 content も同期
   const updateActiveChapterText = useCallback((textOrUpdater: string | ((prev: string) => string)) => {
-    setCurrentChapterText((prev) => {
-      const newText = typeof textOrUpdater === "function" ? textOrUpdater(prev) : textOrUpdater;
-      setChapters((prevChapters) =>
-        prevChapters.map((c) => (c.ep_num === currentEpNum ? { ...c, content: newText } : c))
-      );
-      return newText;
-    });
+    const prev = currentChapterTextRef.current;
+    const newText = typeof textOrUpdater === "function" ? textOrUpdater(prev) : textOrUpdater;
+    currentChapterTextRef.current = newText;
+    setCurrentChapterText(newText);
+    setChapters((prevChapters) =>
+      prevChapters.map((c) => (c.ep_num === currentEpNum ? { ...c, content: newText } : c))
+    );
   }, [currentEpNum]);
 
   const applySuggestion = useCallback((suggestion: string) => {

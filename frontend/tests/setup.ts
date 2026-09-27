@@ -17,7 +17,7 @@ class MockWebSocket extends EventTarget {
     }, 0);
   }
 
-  send() {}
+  send() { }
   close() {
     this.readyState = 3;
     setTimeout(() => {
@@ -31,6 +31,6 @@ globalThis.WebSocket = MockWebSocket as any;
 
 // Minimal setup
 export const server = {
-  resetHandlers: () => {},
-  close: () => {},
+  resetHandlers: () => { },
+  close: () => { },
 };

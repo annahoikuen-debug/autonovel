@@ -11,6 +11,7 @@ import { getGenreBadgeConfig } from "../../constants/genres";
 import { MobileBottomNav } from "../mobile/MobileBottomNav";
 import { MobileChapterDrawer } from "../mobile/MobileChapterDrawer";
 import { MobileQuickActionBar } from "../mobile/MobileQuickActionBar";
+import { ENTRY_POINTS, EntryMeta } from "../../routes";
 
 export interface AppLayoutProps {
   children?: React.ReactNode;
@@ -36,10 +37,8 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
   const {
     openModal,
     setShowConfig,
-    setShowWizardWorkflow,
     setShowMedia,
     setShowGraph,
-    setShowTransitionOverlay,
     isChapterDrawerOpen,
     setIsChapterDrawerOpen,
   } = useModal();
@@ -49,7 +48,12 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
   const [mobileTab, setMobileTab] = useState<"books" | "plots" | "writing" | "settings">("writing");
 
   const isStudio = location.pathname.startsWith("/studio");
-  const isWizard = location.pathname.startsWith("/wizard");
+  const isWelcome = location.pathname.startsWith("/welcome");
+
+  /** 現在のルートに対応する入口（最長プレフィックス一致）を返す */
+  const activeEntry: EntryMeta | null = ENTRY_POINTS.filter((e) =>
+    location.pathname.startsWith(e.matchPrefix)
+  ).sort((a, b) => b.matchPrefix.length - a.matchPrefix.length)[0] ?? null;
 
   React.useEffect(() => {
     refreshBooks();
@@ -76,11 +80,15 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
       <header className="header">
         <div style={{ display: "flex", alignItems: "center", gap: "16px", flex: 1 }}>
           <div>
-            <h1 className="brand-title" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
-              AutoNovel Studio
+            <h1 className="brand-title" onClick={() => navigate("/welcome")} style={{ cursor: "pointer" }}>
+              AutoNovel
             </h1>
             <p style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginTop: "4px" }}>
-              AI 執筆・設定管理・矛盾診断・マルチメディア生成スタジオ
+              {isWelcome
+                ? "どの入口から始めるか選んでください"
+                : activeEntry
+                  ? `${activeEntry.label} — ${activeEntry.description}`
+                  : "AI 執筆・設定管理・矛盾診断・マルチメディア生成スタジオ"}
             </p>
           </div>
           <BookSelector
@@ -102,25 +110,37 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
         </div>
 
         <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-          {/* モード切替スイッチ */}
-          <div className="mode-switcher" data-testid="mode-switcher">
-            <button
-              type="button"
-              className={`mode-btn ${!isStudio && !isWizard ? "mode-btn--active" : ""}`}
-              onClick={() => navigate("/")}
-              data-testid="btn-mode-easy"
-            >
-              ⚡ かんたんモード
-            </button>
-            <button
-              type="button"
-              className={`mode-btn ${isStudio ? "mode-btn--active" : ""}`}
-              onClick={() => navigate("/studio")}
-              data-testid="btn-mode-studio"
-            >
-              🚀 上級者 Studio
-            </button>
-          </div>
+          {/* 3 つの入口（かんたん／共創ウィザード／Studio）＋現在地ハイライト */}
+          <nav className="entry-nav" aria-label="入口ナビゲーション" data-testid="mode-switcher">
+            {ENTRY_POINTS.map((entry) => {
+              const isActive = activeEntry?.id === entry.id;
+              return (
+                <button
+                  key={entry.id}
+                  type="button"
+                  className={`entry-nav__item ${isActive ? "entry-nav__item--active" : ""}`}
+                  onClick={() => navigate(entry.path)}
+                  data-testid={
+                    entry.id === "easy"
+                      ? "btn-mode-easy"
+                      : entry.id === "studio"
+                        ? "btn-mode-studio"
+                        : "btn-mode-wizard"
+                  }
+                  aria-current={isActive ? "page" : undefined}
+                  title={`${entry.label} — ${entry.description}`}
+                >
+                  <span className="entry-nav__icon" aria-hidden>
+                    {entry.emoji}
+                  </span>
+                  <span className="entry-nav__text">
+                    <span className="entry-nav__label">{entry.label}</span>
+                    <span className="entry-nav__desc">{entry.description}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
 
           {/* テーマ切替セレクター */}
           <select
@@ -143,15 +163,6 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
             data-testid="open-config-btn"
           >
             ⚙️ LLM設定
-          </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => setShowWizardWorkflow(true)}
-            data-testid="open-wizard-btn"
-          >
-            ✨ 3ステップ共創ウィザード
           </Button>
 
           <Button

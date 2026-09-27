@@ -67,6 +67,8 @@ describe("handleReversePlotComplete - data protection", () => {
     // 既存の失敗 fetchStylePresets エラーを握りつぶす (console.warn は出ても問題なし)
     vi.mocked(fetchStylePresets).mockResolvedValueOnce([] as any);
 
+    // 上級モードは既定で折りたたまれているので、まず開く
+    await user.click(screen.getByTestId("btn-show-advanced-modes"));
     // 逆算プロットビルダーへ切替
     await user.click(screen.getByTestId("btn-submode-reverse"));
 
@@ -88,6 +90,8 @@ describe("handleReversePlotComplete - data protection", () => {
 
     vi.mocked(fetchStylePresets).mockResolvedValueOnce([] as any);
 
+    // 上級モードは既定で折りたたまれているので、まず開く
+    await user.click(screen.getByTestId("btn-show-advanced-modes"));
     // 逆算プロットビルダーモードへ
     await user.click(screen.getByTestId("btn-submode-reverse"));
 

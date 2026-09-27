@@ -38,7 +38,9 @@ export const IllustrationModal: React.FC<IllustrationModalProps> = ({
   const generateAll = async () => {
     setIsGenerating(true);
     try {
-      const resp = await apiFetch('/api/illustrations/batch', {
+      // バックエンド routers/illustrations.py は prefix なし（APIRouter()）なので
+      // /batch に直接あたる。/api/illustrations/batch では 404 になっていた。
+      const resp = await apiFetch('/batch', {
         method: 'POST',
         body: JSON.stringify({
           book_id: bookId,
@@ -47,7 +49,7 @@ export const IllustrationModal: React.FC<IllustrationModalProps> = ({
         }),
       });
       const data = await handleResponse<{ illustrations: IllustrationItem[] }>(resp);
-      
+
       setIllustrations(data.illustrations);
       addToast('✨ 画像生成が完了しました！', 'success');
     } catch (err) {
@@ -71,7 +73,7 @@ export const IllustrationModal: React.FC<IllustrationModalProps> = ({
           <div style={{ marginBottom: '16px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
             <strong>チャプター:</strong> {chapterTitle}
           </div>
-          
+
           <div style={{ display: 'grid', gap: '16px', marginBottom: '24px' }}>
             {illustrations.map((illust) => (
               <div key={illust.id} className="illustration-card" style={{
@@ -87,7 +89,7 @@ export const IllustrationModal: React.FC<IllustrationModalProps> = ({
                     padding: '4px 8px',
                     borderRadius: '9999px',
                     backgroundColor: illust.type === 'character' ? 'var(--accent-primary)' :
-                                   illust.type === 'scene' ? 'var(--accent-secondary)' : 'var(--accent-danger)',
+                      illust.type === 'scene' ? 'var(--accent-secondary)' : 'var(--accent-danger)',
                     color: 'white',
                     textTransform: 'capitalize',
                   }}>
@@ -98,26 +100,26 @@ export const IllustrationModal: React.FC<IllustrationModalProps> = ({
                     padding: '2px 8px',
                     borderRadius: '9999px',
                     backgroundColor: illust.status === 'completed' ? 'var(--success-bg)' :
-                                   illust.status === 'generating' ? 'var(--warning-bg)' :
-                                   illust.status === 'failed' ? 'var(--danger-bg)' : 'var(--muted-bg)',
+                      illust.status === 'generating' ? 'var(--warning-bg)' :
+                        illust.status === 'failed' ? 'var(--danger-bg)' : 'var(--muted-bg)',
                     color: illust.status === 'completed' ? 'var(--success-text)' :
-                           illust.status === 'generating' ? 'var(--warning-text)' :
-                           illust.status === 'failed' ? 'var(--danger-text)' : 'var(--muted-text)',
+                      illust.status === 'generating' ? 'var(--warning-text)' :
+                        illust.status === 'failed' ? 'var(--danger-text)' : 'var(--muted-text)',
                   }}>
                     {illust.status === 'completed' ? '完了' :
-                     illust.status === 'generating' ? '生成中' :
-                     illust.status === 'failed' ? '失敗' : '未生成'}
+                      illust.status === 'generating' ? '生成中' :
+                        illust.status === 'failed' ? '失敗' : '未生成'}
                   </span>
                 </div>
-                
+
                 {illust.imageUrl ? (
-                  <img 
-                    src={illust.imageUrl} 
+                  <img
+                    src={illust.imageUrl}
                     alt={`${illust.type} illustration`}
-                    style={{ 
-                      width: '100%', 
-                      maxHeight: '300px', 
-                      objectFit: 'cover', 
+                    style={{
+                      width: '100%',
+                      maxHeight: '300px',
+                      objectFit: 'cover',
                       borderRadius: '8px',
                       border: '1px solid var(--border-color)',
                     }}
@@ -137,7 +139,7 @@ export const IllustrationModal: React.FC<IllustrationModalProps> = ({
                     {illust.status === 'generating' ? '🎨 生成中...' : '画像未生成'}
                   </div>
                 )}
-                
+
                 {illust.error && (
                   <div style={{ marginTop: '8px', color: 'var(--accent-danger)', fontSize: '0.8rem' }}>
                     エラー: {illust.error}

@@ -17,7 +17,6 @@ export interface MergeConflictPreviewProps {
   targetBranchId?: number;
   mergeEpNum?: number;
   onResolveConflict?: (chunkId: string, action: ResolutionAction, manualContent?: string) => void;
-  onExecuteMerge?: () => void;
   onClose?: () => void;
   onSuccess?: (response: BranchMergeCommitResponse) => void;
 }
@@ -29,17 +28,17 @@ export const MergeConflictPreview: React.FC<MergeConflictPreviewProps> = ({
   targetBranchId,
   mergeEpNum = 1,
   onResolveConflict,
-  onExecuteMerge,
   onClose,
   onSuccess,
 }) => {
-  if (!previewData) return null;
-
+  // フックは早期 return より前で必ず呼ぶこと（Hooks はレンダー順 invariant）。
   const [resolutions, setResolutions] = React.useState<Record<string, ResolutionAction>>({});
   const [manualContents, setManualContents] = React.useState<Record<string, string>>({});
   const [toastMessage, setToastMessage] = React.useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const commitMutation = useCommitBranchMerge();
+
+  if (!previewData) return null;
 
   const handleResolve = (
     chunkId: string,
@@ -59,12 +58,9 @@ export const MergeConflictPreview: React.FC<MergeConflictPreviewProps> = ({
   const allResolved = conflicts.length === 0 || conflicts.every((chunk) => !!resolutions[chunk.id]);
 
   // マージコミットの実行ハンドラ (Step 63, 64)
+  // 実際の `POST /api/branches/{bookId}/merge/commit` を必ず叩く。
+  // 成功を嘘で返すスタブ経路は持たない。
   const handleCommit = async () => {
-    if (onExecuteMerge) {
-      onExecuteMerge();
-      return;
-    }
-
     const sBranchId = sourceBranchId ?? previewData.source_branch_id ?? 0;
     const tBranchId = targetBranchId ?? previewData.target_branch_id ?? 0;
 
