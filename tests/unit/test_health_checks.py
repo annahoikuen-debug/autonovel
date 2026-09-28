@@ -32,6 +32,12 @@ async def test_check_llm_gateway_returns_not_configured_when_disabled(monkeypatc
 async def test_check_llm_gateway_instantiates_factory_with_cooldown(monkeypatch):
     """LLMProviderFactory が cooldown 付きで生成され、正常応答を返せること。"""
 
+    # LLM ヘルスプローブは既定で無効（実 API コールで費用が発生するため）。
+    # このテストはプローブ有効時の経路を検証するので明示的に有効化する。
+    from src.backend.config import settings
+
+    monkeypatch.setattr(settings, "HEALTH_CHECK_LLM_PROBE", True, raising=False)
+
     async def fake_generate_text(*args, **kwargs):
         return "ok"
 
@@ -59,6 +65,12 @@ async def test_check_llm_gateway_instantiates_factory_with_cooldown(monkeypatch)
 
 @pytest.mark.asyncio
 async def test_check_llm_gateway_returns_error_on_factory_exception(monkeypatch):
+    # プローブは既定で無効なので、このテストが対象とする
+    # 「ファクトリ生成で例外が出る」経路を明示的に有効化する。
+    from src.backend.config import settings
+
+    monkeypatch.setattr(settings, "HEALTH_CHECK_LLM_PROBE", True, raising=False)
+
     def factory_raises(*args, **kwargs):
         raise RuntimeError("boom")
 

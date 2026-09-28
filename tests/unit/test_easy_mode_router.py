@@ -42,6 +42,12 @@ class DummyRepo:
         self.session = session
         self.task_id = 42
 
+    # easy_mode.py は BookRepository の公開面のうち is_async を見て
+    # 同期/非同期メソッドを切り替えるため、テストダブルにも持たせる。
+    @property
+    def is_async(self) -> bool:
+        return False
+
     def create_task(self, task_id: str | None = None, status: str = "pending", result: str | None = None):
         return DummyTask(task_id or self.task_id)
 
@@ -452,6 +458,14 @@ async def test_export_with_data_endpoint(monkeypatch, dummy_session):
 @pytest.mark.asyncio
 async def test_cancel_task(monkeypatch):
     class DummyRepo:
+        def __init__(self, session=None):
+            self.session = session
+
+        # cancel_task も is_async を見て同期/非同期メソッドを切り替える
+        @property
+        def is_async(self) -> bool:
+            return False
+
         def update_task_status(self, task_id, status):
             pass
 
