@@ -311,6 +311,8 @@ def test_module_level_report_exception_helper(monkeypatch):
     _patch_redis(monkeypatch, None)
     state = ProgressState(task_id="t1", skip_initial_save=True)
     reporter = StatusReporter(state)
+    # the module-level helper reads the module global ``self``
+    monkeypatch.setitem(bg.__dict__, "self", reporter)
     bg.report_exception(reporter, ValueError("oops"), context="ctx")
     assert "ctx - ValueError: oops" in state.error
     bg.report_exception(reporter, ValueError("oops"))

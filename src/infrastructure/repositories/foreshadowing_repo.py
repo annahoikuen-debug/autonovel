@@ -42,15 +42,13 @@ def _status_predicate(target_status: ForeshadowingStatus):
     読み取りフェーズで判定していた内容を SQL の WHERE にそのまま埋め込むことで、
     SELECT と UPDATE の間の TOCTOU（並行実行で resolved が巻き戻る）を無くす。
     未知ステータス（手動投入・旧データ）は判断D2によりガード対象外＝素通しとするため、
-    既知4値以外を OR で-Moeglichkeit付けている。
+    既知4値以外を OR で付け足している。
     """
     known = [s.value for s in ForeshadowingStatus]
     return or_(
         ForeshadowingModel.status.in_(_allowed_predecessors(target_status)),
         not_(ForeshadowingModel.status.in_(known)),
     )
-
-
 
 
 class DbForeshadowingRepository:

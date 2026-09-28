@@ -757,7 +757,8 @@ class TestUltraFastPlan:
 
         llm.generate_json = AsyncMock(side_effect=lambda *a, **k: make())
         gen = make_generator(llm=llm)
-        with pytest.raises(RuntimeError):
+        # asyncio.TaskGroup wraps the plot failure into an ExceptionGroup.
+        with pytest.raises(BaseExceptionGroup):
             await gen._create_ultra_fast_plan(make_config(ultra_fast=True, initial_plot_limit=1), None)
 
     async def test_reporter_notified(self):
@@ -769,14 +770,8 @@ class TestUltraFastPlan:
 
 
 class TestCreateHegemonyPlan:
-    async def test_ultra_fast_route(self):
-        llm = make_llm(
-            {
-                "bible_core": {"title": "UFT", "concept": "C", "synopsis": "x" * 60, "world_settings": {}},
-                "full_story_roadmap": [],
-            }
-        )
-        gen = make_generator(llm=llm)
+    async def test_builds_default_config_and_uses_uf_route(self):
+        gen = make_generator()
 
         class FakeUOW:
             def __init__(self, *a, **k):
@@ -788,12 +783,15 @@ class TestCreateHegemonyPlan:
             async def __aexit__(self, *exc):
                 return False
 
-        with patch("src.backend.database.UnitOfWork", FakeUOW):
-            # `config` is not supplied, so the default PlanningConfig (ultra_fast=True) is used.
+        with patch("src.backend.database.UnitOfWork", FakeUOW), \
+             patch.object(gen, "_create_ultra_fast_plan", AsyncMock(return_value=(11, "UF_BIBLE"))) as uf:
             book_id, bible = await gen.create_hegemony_plan(
                 genre="fantasy", keywords="k", style_key="style_web_standard", concept="c", title="T"
             )
-        assert book_id == 11
+        assert (book_id, bible) == (11, "UF_BIBLE")
+        config = uf.await_args.args[0]
+        assert config.ultra_fast is True
+        assert config.genre == "fantasy"
 
     async def test_standard_route(self):
         gen = make_generator()

@@ -2,7 +2,7 @@
 
 import asyncio
 import threading
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
@@ -115,10 +115,21 @@ class TestSyncClient:
         ac.close_client()
 
     def test_close_client_runtime_error(self, caplog):
+        # 実行中のループがあるため close_async_client の asyncio.run が RuntimeError になる
         ac._resilient_client = None
-        ac._async_client = MagicMock()
-        ac._async_client.aclose = MagicMock(side_effect=RuntimeError("loop"))
-        ac.close_client()
+        ac._async_client = None
+        real_run = ac.asyncio.run
+
+        def boom(coro):
+            coro.close()
+            raise RuntimeError("loop running")
+
+        ac.asyncio.run = boom
+        try:
+            with caplog.at_level("WARNING"):
+                ac.close_client()
+        finally:
+            ac.asyncio.run = real_run
         assert any("イベントループ" in r.message for r in caplog.records)
 
 
@@ -142,6 +153,7 @@ class TestAsyncClient:
     async def test_close_async_client(self):
         client = MagicMock()
         client.is_closed = False
+        client.aclose = AsyncMock()
         ac._async_client = client
         await ac.close_async_client()
         client.aclose.assert_awaited_once()
@@ -161,10 +173,7 @@ class TestAsyncClient:
             return make_response(200, {"ok": True})
 
         client.request = request
-        client.is_closed = False
         monkeypatch.setattr(ac, "_get_async_client", lambda: client)
-        monkeypatch.setattr(ac, "_get_async_client", lambda: client)
-        monkeypatch.setattr("src.infrastructure.proxy.get_di_container", MagicMock(), raising=False)
         resp = await ac._async_request("GET", "http://x/y", params={"a": 1})
         assert resp.json() == {"ok": True}
 
@@ -399,13 +408,13 @@ class TestApiMethods:
         responder({"ok": True})
         assert await ac.resolve_issue(1, "fix", "k") == {"ok": True}
         responder(None, response=False)
-        assert await ac.resolve_issue(1, "fix", "k")["status"] == "error"
+        assert (await ac.resolve_issue(1, "fix", "k"))["status"] == "error"
 
     async def test_save_pending_patch(self, responder):
         responder({"success": True})
         assert await ac.save_pending_patch(1, "t", "c", {}) == {"success": True}
         responder(None, response=False)
-        assert await ac.save_pending_patch(1, "t", "c", {})["success"] is False
+        assert (await ac.save_pending_patch(1, "t", "c", {}))["success"] is False
 
     async def test_get_pending_patches(self, responder):
         responder([{"id": 1}])
@@ -415,13 +424,13 @@ class TestApiMethods:
         responder({})
         assert await ac.approve_patch(1) == {"success": True}
         responder(None, response=False)
-        assert await ac.approve_patch(1)["success"] is False
+        assert (await ac.approve_patch(1))["success"] is False
 
     async def test_reject_patch(self, responder):
         responder({})
         assert await ac.reject_patch(1) == {"success": True}
         responder(None, response=False)
-        assert await ac.reject_patch(1)["success"] is False
+        assert (await ac.reject_patch(1))["success"] is False
 
     async def test_get_prompt_versions(self, responder):
         responder([1])
@@ -431,7 +440,7 @@ class TestApiMethods:
         responder({"ok": 1})
         assert await ac.rollback_prompt_version(1, 2) == {"ok": 1}
         responder(None, response=False)
-        assert await ac.rollback_prompt_version(1, 2)["success"] is False
+        assert (await ac.rollback_prompt_version(1, 2))["success"] is False
 
     async def test_audit_producer_plan(self, responder):
         responder({"score": 80})

@@ -56,7 +56,7 @@ from src.services.compression.models import (
 TEXT = (
     "アルトは魔導剣を抜刀し、魔王と決闘した。"
     "ルナは火球の魔術で敵を撃破した。"
-    "圣剑arteが他の手の中にある。"
+    "聖剣arteが彼の手の中にある。"
 )
 
 
@@ -203,7 +203,7 @@ def test_tfidf_extractor_legacy_helpers():
     ex = TFIDFExtractor()
     res = ex.extract(TEXT, top_k=3)
     assert len(res) <= 3
-    nouns = ex._extract_japanese_nouns("アルトは魔導剑を持ち」。")
+    nouns = ex._extract_japanese_nouns("アルトは魔導剣を持ち」。")
     assert isinstance(nouns, list)
     assert ex._is_function_word("は") is True
     assert ex._is_function_word("魔導剣") is False
@@ -432,7 +432,7 @@ def test_detect_scene_type():
 def test_detect_scene_context_aware():
     t = Layer4SceneTrimmer()
     flow = SceneFlowHistory(recent_scene_types=["flashback"], episode_goal="心理の葛藤")
-    out = t.detect_scene_context_aware("回憶の記憶", scene_flow=flow)
+    out = t.detect_scene_context_aware("回忆の記憶", scene_flow=flow)
     assert out
     assert out == sorted(out, key=lambda x: x[1], reverse=True)
     no_flow = t.detect_scene_context_aware("何もない")
