@@ -55,8 +55,14 @@ def test_route_after_audit_max_iterations_reached():
     assert manager.route_after_audit(state) == "finish"
 
 
-def test_route_after_audit_heavy_audit_needed():
-    """重監査が必要かつイテレーション残っている場合はcriticへ"""
+def test_route_after_audit_integrity_and_causality_ok_finishes():
+    """整合性・因果性が両方OKなら v5.0 Early Exit で即 finish する。
+
+    旧テストは「重監査が必要なら critic」を期待していたが、v5.0 の
+    Early Exit 方針（writing_langgraph.route_after_audit）が
+    ``is_integrity_ok and is_causal_ok`` を優先するため finish になる。
+    重監査の critic へ回すのは、いずれかが NG の場合のみ。
+    """
     mock_manager = MagicMock()
     manager = WritingGraphManager(mock_manager)
 
@@ -67,6 +73,23 @@ def test_route_after_audit_heavy_audit_needed():
         "is_causal_ok": True,
         "should_heavy_audit": True,
         "ac_iter": 0,  # イテレーション残っている
+        "max_ac_iter": 2
+    }
+    assert manager.route_after_audit(state) == "finish"
+
+
+def test_route_after_audit_heavy_audit_needed_goes_to_critic():
+    """NG が無く重監査が必要なら critic（Early Exit が効かないケース）。"""
+    mock_manager = MagicMock()
+    manager = WritingGraphManager(mock_manager)
+
+    state = {
+        "is_easy_mode": False,
+        "quality_skip": False,
+        "is_integrity_ok": False,   # 整合性NG → Early Exit しない
+        "is_causal_ok": True,
+        "should_heavy_audit": True,
+        "ac_iter": 0,
         "max_ac_iter": 2
     }
     assert manager.route_after_audit(state) == "critic"
@@ -187,6 +210,8 @@ def test_writing_graph_retry_count_increment():
     }
 
     # audit後の状態（ac_iterがインクリメントされる）
+    # v5.0 Early Exit（整合性・因果性 両方OK）で finish になる。
+    # critic へ回す経路は、QC がNG のときだけ通る。
     audited_state = {
         **state,
         "is_integrity_ok": True,
@@ -195,20 +220,19 @@ def test_writing_graph_retry_count_increment():
     }
 
     assert audited_state["ac_iter"] == 1
+    assert manager.route_after_audit(audited_state) == "finish"
 
-    # まだイテレーション残っているのでcriticへ
-    assert manager.route_after_audit(audited_state) == "critic"
-
-    # critic後もまだリトリー可能
-    critiqued_state = {
+    # QC がNG なら反復を継続する
+    critic_state = {
         **audited_state,
-        "critic_triggered": True
+        "is_integrity_ok": False,
+        "critic_triggered": True,  # route_after_critic はこれを見て retry を返す
     }
-    assert manager.route_after_critic(critiqued_state) == "retry"
+    assert manager.route_after_critic(critic_state) == "retry"
 
-    # drafting後またaudit
+    # drafting後またaudit（まだ残りがある）
     drafted_state = {
-        **critiqued_state,
+        **critic_state,
         "draft_content": "new draft",
         "ac_iter": audited_state["ac_iter"] + 1  # またインクリメント
     }
