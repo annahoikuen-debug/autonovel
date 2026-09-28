@@ -257,6 +257,35 @@ async def get_graph_data(
         }
 
 
+@router.get("/foreshadowing/kpi")
+async def get_foreshadowing_kpi(
+    book_id: int = Query(..., description="作品ID"),
+    current_episode: int | None = Query(
+        None, ge=1, description="現在話数（指定時は期限超過数も計測）"
+    ),
+    session: AsyncSession = Depends(database.get_async_db),
+) -> dict[str, Any]:
+    """伏線KPI（回収率・未回収数・期限超過数）を取得する。
+
+    v5.3 で追加。ロードマップの主要KPI「伏線回収率」を実測する唯一のAPI。
+    同時に Prometheus メトリクス（foreshadowing_collection_rate 等）も更新する。
+    """
+    from src.services.foreshadowing.kpi import ForeshadowingKpiService
+
+    try:
+        repo = DbForeshadowingRepository(session)
+        kpi = await ForeshadowingKpiService(repo).compute(
+            book_id=book_id, current_episode=current_episode
+        )
+        return kpi.to_dict()
+    except Exception as e:
+        logger.error(f"Failed to compute foreshadowing KPI for book_id={book_id}: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"伏線KPIの取得に失敗しました: {e}",
+        ) from e
+
+
 @router.get("/chunks")
 async def list_chapter_chunks(
     chapter_id: int | None = Query(None, description="章IDでフィルタ"),
@@ -449,7 +478,7 @@ def get_labels(
 
 
 @router.post("/pipeline/process", response_model=dict[str, Any])
-def process_chapter(
+async def process_chapter(
     request: PipelineProcessRequest,
     session: Session = Depends(database.get_db),
 ) -> dict[str, Any]:
@@ -458,7 +487,8 @@ def process_chapter(
         return {"chunks_created": 0, "entities_created": 0, "relationships_created": 0}
 
     idempotency_key = request.idempotency_key or f"chapter_{request.chapter_id}"
-    result = graph_pipeline_service.process_chapter_knowledge(
+    # await 漏れにより result が coroutine になっていた（上記 process_chapter 参照）
+    result = await graph_pipeline_service.process_chapter_knowledge(
         session=session,
         chapter_id=request.chapter_id,
         chapter_text=request.chapter_text,
@@ -477,13 +507,14 @@ def process_chapter(
 
 
 @router.post("/pipeline/batch", response_model=dict[str, Any])
-def process_chapters_batch(
+async def process_chapters_batch(
     request: PipelineBatchRequest,
     session: Session = Depends(database.get_db),
 ) -> dict[str, Any]:
     """複数チャプターのGraphRAG処理をバッチ実行する."""
     chapters = [(c.chapter_id, c.chapter_text) for c in request.chapters]
-    stats = graph_pipeline_service.process_chapters_batch(
+    # await 漏れ（process_chapter と同じ原因）
+    stats = await graph_pipeline_service.process_chapters_batch(
         session=session,
         chapters=chapters,
         continue_on_error=request.continue_on_error,

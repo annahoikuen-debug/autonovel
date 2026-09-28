@@ -1,20 +1,40 @@
 """API エンドポイント契約テスト.
 
 レスポンス形状の不変性を確認し、破壊的変更を検知する。
+
+認証について:
+``/api/*`` は AuthMiddleware の default-deny 網に入っており、
+トークン無しでは 401 になる。ここでは**レスポンス形状**を契約化したい
+ので、fixture で AUTH_DISABLED を有効にして素通しする。
+認証そのものの検証は test_auth_jwt_security.py / router 側テストに委ね、
+ここでは 200 にならない原因にしない。
 """
+
+import pytest
 from fastapi.testclient import TestClient
 
-print("[test module] About to import app", flush=True)
 from src.backend.server import app
 
-print("[test module] Creating TestClient", flush=True)
+
+@pytest.fixture(autouse=True)
+def _bypass_auth(monkeypatch):
+    """契約テストでは認証をバイパスする（形状検証が目的のため）。"""
+    from src.backend.middleware import auth_middleware
+
+    monkeypatch.setattr(auth_middleware.settings, "AUTH_DISABLED", True, raising=False)
+    yield
+
+
 client = TestClient(app)
-print("[test module] TestClient created", flush=True)
 
 
 def test_graph_endpoint_response_shape():
-    """/api/graph レスポンス形状の不変性"""
-    resp = client.get("/api/graph")
+    """/api/graph レスポンス形状の不変性
+
+    注意: book_id は必須クエリパラメータになった（ノード/エッジ取得は
+    作品単位で行う方針への変更）。指定しない限り 422 になる。
+    """
+    resp = client.get("/api/graph", params={"book_id": 1})
     assert resp.status_code == 200
     data = resp.json()
 

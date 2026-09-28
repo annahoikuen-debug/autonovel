@@ -29,6 +29,11 @@ def pytest_configure(config):
     os.environ.setdefault("AUTONOVEL_RAG_MODE", "memory")
     os.environ.setdefault("RAG_FALLBACK_MODE", "memory")
     os.environ.setdefault("AUTH_DISABLED", "true")
+    # 開発者のローカル .env に HUEY_BACKEND=memory が残っていても、
+    # Settings.HUEY_BACKEND は Literal["sqlite","redis"] しか許可しないため
+    # テスト収集時に ValidationError で全滅する。pydantic-settings は
+    # 環境変数を .env より優先するので、ここで固定する。
+    os.environ["HUEY_BACKEND"] = "sqlite"
 
     def dummy_init_db(*args, **kwargs):
         pass

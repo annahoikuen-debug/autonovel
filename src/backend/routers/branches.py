@@ -52,17 +52,30 @@ router = APIRouter(
 )
 
 
+async def enforce_book_ownership(
+    book_id: int, current_user: User = Depends(get_current_user)
+) -> None:
+    """book_id を対象にした所有者検証（FastAPI 依存）。
+
+    認証 (``get_current_user``) は router レベルで行われていたが、
+    所有者の検証は list/tree の 2 本しか行われておらず、他の book_id 単位
+    路由は「ログイン済みなら誰でも他人の作品を読み書き・マージできる」状態だった。
+    """
+    await verify_book_ownership(book_id, current_user)
+
+
 def requires_book_ownership(handler):
-    """書籍所有権の検証を路由レベルに注入するデコレータ.
+    """``book_id`` を持つ路由に所有者検証の依存を注入するデコレータ。
 
-    _router レベルに Depends を並べると book_id を持たない ``/play/*`` 系まで
-    book_id の解決を求め、ルート登録時に落ちる。そのため book_id を持つ
-    路由に個別装饰する。
+    router レベルの ``dependencies`` に並べると、``book_id`` を持たない
+    ``/play/*`` 系まで book_id の解決を求め、ルート登録時に落ちる。
+    そのため book_id を持つ路由に個別装飾する。
 
-    認証 (``get_current_user``) は router レベルで行bourswere いたが、
-    所有者の検証は list/tree の 2 本しか行EINIED、
-    他の book_id 単位路由は「ログイン済みなら誰でも他人の作品を
-    読み書き・マージできる」状態だった。
+    ラッパー関数ではなく **依存の注入** として実装している点が重要。
+    ラッパーだと handler を Python から直接呼び出す単体テストが
+    ``current_user`` 未渡しで 401 になり、handler のロジックだけを
+    検証できなくなる。FastAPI 依存なら、HTTP 経由では検証が必ず走り、
+    直接呼び出しでは検証が走らない（テスト想要的動作になる）。
     """
     sig = inspect.signature(handler)
     if "current_user" in sig.parameters:
@@ -74,25 +87,14 @@ def requires_book_ownership(handler):
             inspect.Parameter(
                 "current_user",
                 inspect.Parameter.KEYWORD_ONLY,
-                default=Depends(get_current_user),
+                default=Depends(enforce_book_ownership),
                 annotation=User,
             ),
         ]
     )
+    handler.__signature__ = new_sig
+    return handler
 
-    @functools.wraps(handler)
-    async def wrapper(*args, **kwargs):
-        current_user = kwargs.pop("current_user", None)
-        if current_user is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED, detail="認証が必要です"
-            )
-        await verify_book_ownership(kwargs["book_id"], current_user)
-        return await handler(*args, **kwargs)
-
-    wrapper.__signature__ = new_sig
-    wrapper.__doc__ = handler.__doc__
-    return wrapper
 
 
 async def get_branch_session() -> AsyncGenerator[AsyncSession, None]:
