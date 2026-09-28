@@ -7,11 +7,14 @@ src/services/publishers/base.py - Publisher Adapter 基底クラス
 from __future__ import annotations
 
 import asyncio
+import logging
 import random
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Callable, Optional
 from functools import wraps
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -207,9 +210,29 @@ def async_retry(
                     if attempt >= max_attempts:
                         raise
 
-                    # RateLimitErrorの場合はretry_afterを優先使用
+                    # RateLimitError の retry_after はプラットフォームが指定する
+                    # 待機時間で、5分から数時間 (なろうは 300 秒) に達することがある。
+                    # この関数内でその時間だけ sleep しても、呼び出し側の HTTP
+                    # タイムアウトや Huey ワーカーの猶予に必ず先行して失敗し、
+                    # リクエストが 10 分ブロックされるだけで成果がない。
+                    # よって上限を超える retry_after は「再試行しても無駄」として
+                    # 処理せず、そのまま呼び出し側へ伝播させる。
+                    # 呼び出し側は eta やクライアント側の再安排で待機する。
                     if isinstance(exc, RateLimitError) and exc.retry_after:
-                        delay = exc.retry_after
+                        requested = float(exc.retry_after)
+                        if requested > max_delay:
+                            logger.warning(
+                                "retry_after=%.0fs が上限 %.0fs を超えたため、"
+                                "プロセス内での再試行は行わず呼び出し側へ伝播します"
+                                "（プラットフォーム=%s, attempt=%d/%d）",
+                                requested,
+                                max_delay,
+                                getattr(exc, "platform", "unknown"),
+                                attempt,
+                                max_attempts,
+                            )
+                            raise
+                        delay = requested
                         jitter_amount = delay * jitter * random.uniform(0.5, 1.5)
                         total_delay = delay + jitter_amount
                     else:

@@ -1,4 +1,6 @@
 from abc import ABC, abstractmethod
+import inspect
+import logging
 from typing import Any
 
 from src.backend.database import DataRepository
@@ -7,6 +9,31 @@ from src.backend.planning_service import PlanningService
 from src.backend.protocols import BiblePort, CritiquePort, TensionPort, WritingPort
 from src.backend.writing_service import WritingService
 from src.shared.utils import StatusReporter
+
+logger = logging.getLogger(__name__)
+
+
+def _is_usable_tension_port(candidate: Any) -> bool:
+    """TensionPort の 2 メソッドが「呼ばれても例外を投げない」実装かを判定する.
+
+    OrchestratorEngineAdapter は両メソッドを定義しているが中身が
+    ``raise NotImplementedError`` であり、属性の有無 (``hasattr``) では
+    使えると誤判定されてしまう。adapter 自身を信用せずに、
+    ソース上で未実装かを静的に確認する。
+    """
+    for name in ("determine_target_tension", "validate_tension_deviation"):
+        method = getattr(candidate, name, None)
+        if method is None or not callable(method):
+            return False
+        try:
+            source = inspect.getsource(method)
+        except (OSError, TypeError):
+            # ソースが取れない場合は判定を諦めて「使える」とみなす
+            return True
+        body = source.split("\n", 1)[1] if "\n" in source else ""
+        if "NotImplementedError" in body:
+            return False
+    return True
 
 
 class BaseWorkflow(ABC):
@@ -117,6 +144,17 @@ class BaseWorkflow(ABC):
                 engine, "validate_tension_deviation"
             ):
                 self.tension = engine
+
+        # 両メソッドを未実装のまま advertise している（NotImplementedError を投げる）
+        # エンジン适配器は、呼び出された時点で必ず 500 になるため、属性の有無では
+        # 「使える」と判定できない。実際に呼べる実装があるかをここで確定させる。
+        if self.tension is not None and not _is_usable_tension_port(self.tension):
+            logger.warning(
+                "Tension 功能が未実装のエンジン (%s) が注入されたため、テンション目標の"
+                "算出・逸脱検証を無効化する。プロット展開自体は続行する。",
+                type(self.tension).__name__,
+            )
+            self.tension = None
 
         self.image_service = image_service
         self.illustration_agent = illustration_agent

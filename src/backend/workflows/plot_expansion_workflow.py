@@ -40,8 +40,22 @@ class PlotExpansionWorkflow(BaseWorkflow):
         # - ジャンルと物語タイプをBibleから取得（簡易的に'general'と想定）
         genre = "general"
         story_type = None
-        for ep_num in range(gen_from, gen_to + 1):
-            await self.tension.determine_target_tension(book_id, ep_num, genre, story_type)
+        # 1. 生成前に目標Tension値を計算してDBに保存
+        #    ※ tension が利用不可（未実装エンジン）ならこの工程はスキップする。
+        #      従来はここで NotImplementedError が送出され、プロット展開ごと
+        #      500 になっていた。展開自体は tension と独立して実行できる。
+        if self.tension is None:
+            logger.warning(
+                "Tension 功能が利用不可のため、目標Tensionの算出と逸脱検証をスキップします。"
+            )
+            if reporter:
+                reporter.report(
+                    "テンション目標の算出は未対応のため，本次プロット展開では検証しません。",
+                    "warn",
+                )
+        else:
+            for ep_num in range(gen_from, gen_to + 1):
+                await self.tension.determine_target_tension(book_id, ep_num, genre, story_type)
 
         # 2. プロット展開を実行
         results = await self.planner.expand_plots(
@@ -53,7 +67,7 @@ class PlotExpansionWorkflow(BaseWorkflow):
         )
 
         # 3. 生成されたTension値のバリデーション
-        if results and mode != "candidates":
+        if results and mode != "candidates" and self.tension is not None:
             for res in results:
                 ep_num = res.ep_num
                 gen_tension = res.tension / 100.0  # 0-100 scale to 0.0-1.0
