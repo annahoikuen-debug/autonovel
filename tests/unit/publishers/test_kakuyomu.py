@@ -1,15 +1,23 @@
 """
 tests/unit/publishers/test_kakuyomu.py - カクヨムPublisherテスト
+
+注意: カクヨムには公式の投稿APIが存在しないため、Step 16/17 で架空の
+REST API（api.kakuyomu.jp）実装は完全に撤廃された。現行仕様は
+「整形済み本文 + 『エピソード新規作成画面』URL」を返す手動投稿支援のみ。
+そのため本ファイルは HTTP クライアント（_client）を前提とした旧仕様の
+テストではなく、現行の URL 生成・整形・検証の振る舞いを検証する。
 """
 
 from __future__ import annotations
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock
 
-
-from src.services.publishers.kakuyomu import KakuyomuPublisher, KakuyomuCredentials
-from src.services.publishers.base import AuthError, RateLimitError, ValidationError
+from src.services.publishers.kakuyomu import (
+    KAKUYOMU_EPISODE_NEW_URL_TEMPLATE,
+    KakuyomuPublisher,
+    KakuyomuCredentials,
+)
+from src.services.publishers.base import ValidationError
 
 
 class TestKakuyomuPublisher:
@@ -26,75 +34,38 @@ class TestKakuyomuPublisher:
     def test_publisher_initialization(self, publisher):
         """初期化テスト"""
         assert publisher.platform == "kakuyomu"
-        assert publisher.description == "カクヨム（非公式REST API）"
-        assert publisher.rate_limit_per_minute == 30
-        assert publisher.rate_limit_per_hour == 500
+        assert publisher.description == "カクヨム（ワンクリック整形コピー + 投稿画面URL生成）"
+        # 手動投稿支援モードのためレート制限は実質無制限
+        assert publisher.rate_limit_per_minute == 60
+        assert publisher.rate_limit_per_hour == 3600
+        assert publisher.timeout == 10.0
+
+    def test_no_http_client_attribute(self, publisher):
+        """HTTPクライアントは存在しない（外部API撤廃済み）。"""
+        assert not hasattr(publisher, "_client")
 
     @pytest.mark.asyncio
     async def test_authenticate_success(self, publisher, credentials):
-        """認証成功テスト"""
-        mock_response = MagicMock()
-        mock_response.status_code = 200
-        mock_response.json.return_value = {"id": "user_456", "name": "Test User"}
-
-        mock_client = AsyncMock()
-        mock_client.is_closed = False
-        mock_client.get = AsyncMock(return_value=mock_response)
-
-        publisher._client = mock_client
-
-        result = await publisher.authenticate(credentials)
-
-        assert result is True
-        assert credentials.user_id == "user_456"
-        mock_client.get.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_authenticate_invalid_token(self, publisher, credentials):
-        """無効トークンテスト"""
-        mock_response = MagicMock()
-        mock_response.status_code = 401
-
-        mock_client = AsyncMock()
-        mock_client.is_closed = False
-        mock_client.get = AsyncMock(return_value=mock_response)
-        publisher._client = mock_client
-
-        with pytest.raises(AuthError) as exc_info:
-            await publisher.authenticate(credentials)
-
-        assert "無効または期限切れ" in str(exc_info.value)
+        """認証はHTTPなしで成功扱い（手動投稿支援モード）。"""
+        assert await publisher.authenticate(credentials) is True
 
     @pytest.mark.asyncio
     async def test_authenticate_missing_token(self, publisher):
-        """トークンなしテスト"""
-        creds = KakuyomuCredentials()  # api_tokenなし
+        """トークンなしでも認証エラーにはならない。"""
+        creds = KakuyomuCredentials()
 
-        with pytest.raises(AuthError) as exc_info:
-            await publisher.authenticate(creds)
-
-        assert "APIトークンが必要です" in str(exc_info.value)
+        assert await publisher.authenticate(creds) is True
 
     @pytest.mark.asyncio
     async def test_publish_success(self, publisher, credentials):
-        """投稿成功テスト"""
-        mock_client = AsyncMock()
-        mock_client.is_closed = False
-        publisher._client = mock_client
-
-        # 作品作成レスポンス
-        work_response = MagicMock()
-        work_response.status_code = 201
-        work_response.json.return_value = {"id": "work_123", "title": "テスト小説"}
-
-        # エピソード投稿レスポンス
-        episode_response = MagicMock()
-        episode_response.status_code = 201
-        episode_response.json.return_value = {"id": "episode_456", "number": 1}
-
-        mock_client.post = AsyncMock(side_effect=[work_response, episode_response])
-
-        novel = {"title": "テスト小説", "synopsis": "あらすじ", "genre": "fantasy", "tags": ["ファンタジー"]}
+        """投稿はHTTPなしでハンドオフを返す。"""
+        novel = {
+            "work_id": "work_123",
+            "title": "テスト小説",
+            "synopsis": "あらすじ",
+            "genre": "fantasy",
+            "tags": ["ファンタジー"],
+        }
         chapter = {"ep_num": 1, "title": "第1話", "content": "本文テスト"}
 
         result = await publisher.publish(novel, chapter, credentials)
@@ -102,59 +73,31 @@ class TestKakuyomuPublisher:
         assert result.success is True
         assert result.platform == "kakuyomu"
         assert result.post_id == "work_123"
+        assert result.url == KAKUYOMU_EPISODE_NEW_URL_TEMPLATE.format(work_id="work_123")
         assert result.metadata["work_id"] == "work_123"
-        assert result.metadata["episode_id"] == "episode_456"
-        assert mock_client.post.call_count == 2
-
-    @pytest.mark.asyncio
-    async def test_publish_rate_limit(self, publisher, credentials):
-        """レート制限テスト"""
-        mock_client = AsyncMock()
-        mock_client.is_closed = False
-        publisher._client = mock_client
-
-        mock_response = MagicMock()
-        mock_response.status_code = 429
-        mock_response.headers = {"Retry-After": "30"}
-
-        mock_client.post = AsyncMock(return_value=mock_response)
-
-        with pytest.raises(RateLimitError) as exc_info:
-            await publisher.publish({"title": "Test"}, {"ep_num": 1}, credentials)
-
-        assert exc_info.value.retry_after == 30.0
+        assert result.metadata["episode_creation_url"] == result.url
+        assert result.metadata["title"] == "テスト小説"
+        assert result.metadata["body"] == "本文テスト"
+        assert result.metadata["total_characters"] == len("本文テスト")
 
     @pytest.mark.asyncio
     async def test_publish_validation_error(self, publisher, credentials):
-        """バリデーションエラーテスト"""
-        mock_client = AsyncMock()
-        mock_client.is_closed = False
-        publisher._client = mock_client
-
-        mock_response = MagicMock()
-        mock_response.status_code = 400
-        mock_response.json.return_value = {"message": "Title too long"}
-
-        mock_client.post = AsyncMock(return_value=mock_response)
-
+        """work_id 欠落時は ValidationError（URL生成できないため）。"""
         with pytest.raises(ValidationError) as exc_info:
             await publisher.publish({"title": "Test"}, {"ep_num": 1}, credentials)
 
-        assert "Title too long" in str(exc_info.value)
+        assert "work_id" in str(exc_info.value)
+        assert exc_info.value.platform == "kakuyomu"
+
+    @pytest.mark.asyncio
+    async def test_publish_blank_work_id_rejected(self, publisher, credentials):
+        """空白だけの work_id も欠落扱い。"""
+        with pytest.raises(ValidationError):
+            await publisher.publish({"work_id": "   "}, {"ep_num": 1}, credentials)
 
     @pytest.mark.asyncio
     async def test_update_chapter(self, publisher, credentials):
-        """話追加テスト"""
-        mock_client = AsyncMock()
-        mock_client.is_closed = False
-        publisher._client = mock_client
-
-        mock_response = MagicMock()
-        mock_response.status_code = 201
-        mock_response.json.return_value = {"id": "episode_789", "number": 2}
-
-        publisher._client.post = AsyncMock(return_value=mock_response)
-
+        """話追加はHTTPなしでハンドオフを返す。"""
         chapter = {"ep_num": 2, "title": "第2話", "content": "第2話本文"}
 
         result = await publisher.update_chapter("work_123", chapter, credentials)
@@ -162,73 +105,31 @@ class TestKakuyomuPublisher:
         assert result.success is True
         assert result.post_id == "work_123"
         assert result.metadata["episode_number"] == 2
+        assert result.metadata["body"] == "第2話本文"
 
     @pytest.mark.asyncio
     async def test_update_chapter_not_found(self, publisher, credentials):
-        """作品未発見テスト"""
-        mock_client = AsyncMock()
-        mock_client.is_closed = False
-        publisher._client = mock_client
-
-        mock_response = MagicMock()
-        mock_response.status_code = 404
-
-        mock_client.post = AsyncMock(return_value=mock_response)
-
+        """post_id（作品ID）が空なら ValidationError。"""
         with pytest.raises(ValidationError) as exc_info:
-            await publisher.update_chapter("nonexistent", {"ep_num": 2}, credentials)
+            await publisher.update_chapter("   ", {"ep_num": 2}, credentials)
 
-        assert "見つかりません" in str(exc_info.value)
+        assert "作品ID" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_get_post_status(self, publisher, credentials):
-        """ステータス取得テスト"""
-        mock_client = AsyncMock()
-        mock_client.is_closed = False
-        publisher._client = mock_client
-
-        work_response = MagicMock()
-        work_response.status_code = 200
-        work_response.json.return_value = {
-            "id": "work_123",
-            "title": "テスト小説",
-            "status": "published",
-            "total_views": 1000,
-        }
-
-        eps_response = MagicMock()
-        eps_response.status_code = 200
-        eps_response.json.return_value = {
-            "episodes": [{"id": "ep1"}, {"id": "ep2"}, {"id": "ep3"}]
-        }
-
-        publisher._client.get = AsyncMock(side_effect=[work_response, eps_response])
-
+        """ステータス取得は作品ページURLのみ返す。"""
         status = await publisher.get_post_status("work_123", credentials)
 
         assert status["work_id"] == "work_123"
-        assert status["title"] == "テスト小説"
-        assert status["status"] == "published"
-        assert status["episode_count"] == 3
-        assert status["total_views"] == 1000
+        assert status["status"] == "manual_publish"
+        assert status["url"] == "https://kakuyomu.jp/works/work_123"
+        assert status["episode_creation_url"].endswith("/episodes/new")
 
     def test_format_for_kakuyomu(self, publisher):
         """カクヨム用フォーマットテスト"""
         content = "第1行\n\n第2行\n\n\n第3行"
         formatted = publisher._format_for_kakuyomu(content)
 
-        # Markdownとして有効な形で返る
-        assert "第1行" in formatted
-        assert "第2行" in formatted
-        assert "第3行" in formatted
-
-    def test_map_genre(self, publisher):
-        """ジャンルマッピングテスト"""
-        assert publisher._map_genre("fantasy") == "fantasy"
-        assert publisher._map_genre("sf") == "sf"
-        assert publisher._map_genre("general") == "literary"
-        assert publisher._map_genre("unknown") == "literary"  # デフォルト
-
-
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+        # 改行正規化 + 前後の空白除去
+        assert formatted == "第1行\n\n第2行\n\n\n第3行"
+        assert "\r" not in publisher._format_for_kakuyomu("a\r\nb\rc")

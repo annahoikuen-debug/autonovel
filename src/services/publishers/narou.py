@@ -158,8 +158,10 @@ class NarouPublisher(PublisherAdapter):
         def _sync_auth() -> bool:
             import time
 
-            driver = self._get_driver()
             try:
+                # ブラウザ起動（Selenium未導入・ChromeDriver取得失敗を含む）は
+                # このtryの内側に置かないとAuthErrorにラップされず素の例外が漏れる。
+                driver = self._get_driver()
                 # ログインページへ
                 driver.get(self.LOGIN_URL)
                 time.sleep(1)
@@ -183,6 +185,11 @@ class NarouPublisher(PublisherAdapter):
                     try:
                         error_elem = driver.find_element(By.CSS_SELECTOR, ".error, .alert, .warning")
                         raise AuthError(f"ログイン失敗: {error_elem.text}", self.platform)
+                    except AuthError:
+                        # 要素テキストを伴う具体的な失敗理由を維持する。
+                        # AuthErrorもException派生なので潰さないと
+                        # 汎用メッセージに置き換わってしまう。
+                        raise
                     except Exception:
                         raise AuthError(
                             "ログインに失敗しました（リダイレクトされませんでした）", self.platform

@@ -65,10 +65,15 @@ def test_get_driver_raises_without_selenium(publisher):
 
 
 def test_get_driver_and_close(publisher):
-    """selenium 実在を前提に driver 生成・再利用・クローズを検証。"""
+    """driver 生成・再利用・クローズを検証（実ブラウザは起動しない）。
+
+    selenium/webdriver-manager の有無に依存するため、未導入環境では
+    理由付きでスキップする。生成経路だけは
+    test_get_driver_raises_without_selenium がカバーしている。
+    """
     import src.services.publishers.narou as narou_module
     if narou_module.webdriver is None:
-        pytest.skip("selenium not installed")
+        pytest.skip("selenium / webdriver-manager not installed")
 
     fake_driver = MagicMock()
     fake_webdriver = MagicMock()
@@ -138,6 +143,9 @@ async def test_authenticate_login_failure_with_error_element(publisher, credenti
     driver.find_element.return_value = error_elem
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
+        # 実機では _get_driver() が self._driver を設定する。
+        # quit() が呼ばれるのは _close_driver() が所有 driver を_CLOSE するため。
+        publisher._driver = driver
         import src.services.publishers.narou as narou_module
         wait = MagicMock()
         wait.until.return_value = MagicMock()
@@ -172,18 +180,27 @@ async def test_authenticate_unexpected_error_wraps_auth_error(publisher, credent
 
 @pytest.mark.asyncio
 async def test_publish_auto_authenticates_first(publisher, credentials):
-    """未ログイン時は authenticate が先に実行される。"""
+    """未ログイン時は authenticate が先に実行される。
+
+    _get_driver も差し替える（selenium不要で-browserバックエンドを回避する）。
+    """
+    import src.services.publishers.narou as narou_module
+
     publisher._logged_in = False
+    driver = make_driver(current_url="https://mypage.syosetu.com/novelmanage/4242/")
     with pytest.MonkeyPatch.context() as m:
+        m.setattr(publisher, "_get_driver", lambda: driver)
         m.setattr(publisher, "authenticate", AsyncMock())
+        wait = MagicMock()
+        wait.until.return_value = MagicMock()
+        m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
+
         result = await publisher.publish({"title": "T", "synopsis": "S", "genre": "fantasy",
                                           "keywords": ["a", "b"], "is_adult": True},
                                          {"title": "第1話", "content": "本文"}, credentials)
         publisher.authenticate.assert_awaited_once()
-    # authenticate はモックのため _sync_publish は driver 生成で失敗しうる。
-    # 結果オブジェクトが得られた場合は型だけ検証する。
-    if result is not None:
-        assert hasattr(result, "success")
+    assert result.success is True
+    assert result.post_id == "4242"
 
 
 @pytest.mark.asyncio

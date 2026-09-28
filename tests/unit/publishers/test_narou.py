@@ -84,10 +84,19 @@ class TestNarouPublisher:
             with patch("src.services.publishers.narou.WebDriverWait") as mock_wait:
                 mock_email = MagicMock()
                 mock_password = MagicMock()
-                MagicMock()
+                mock_btn = MagicMock()
+                # エラー要素なし = 実際のSeleniumでは
+                # NoSuchElementException が送出されます。
+                # 素の MagicMock では常に要素が「見つかる」ため、
+                # エラー要素あり側の分岐しか通らない。
+                no_such_element = Exception("no such element: .error, .alert, .warning")
 
                 mock_wait.return_value.until.return_value = mock_email
-                mock_driver.find_element.return_value = mock_password
+                mock_driver.find_element.side_effect = [
+                    mock_password,  # パスワード入力欄
+                    mock_btn,  # ログインボタン
+                    no_such_element,  # エラー要素（存在しない）
+                ]
 
                 with pytest.raises(AuthError) as exc_info:
                     await publisher.authenticate(credentials)
