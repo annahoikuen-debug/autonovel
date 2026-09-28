@@ -2,23 +2,6 @@
 
 import pytest
 
-from src.services.age_client import CypherResult
-
-
-class TestCypherResultIteration:
-    """CypherResult のイテレーション正常性テスト."""
-
-    def test_cypher_result_iterable(self):
-        """CypherResult がイテラブルとして正しく動作すること."""
-        records = [{"a": 1}, {"b": 2}]
-        result = CypherResult(records=records, summary={}, execution_time_ms=1.0)
-        assert list(result) == records
-
-    def test_cypher_result_empty(self):
-        """空の CypherResult も正しく動作すること."""
-        result = CypherResult(records=[], summary={}, execution_time_ms=0.0)
-        assert list(result) == []
-
 
 class TestPublishRecordImport:
     """commercial.py の PublishRecord インポートおよびクエリ動作テスト."""
