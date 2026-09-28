@@ -165,7 +165,9 @@ export const EditorialSidebar: React.FC<EditorialSidebarProps> = ({
        onToast?.("該当箇所のテキストが指定されていません", "info");
        return;
      }
-     const issueId = issue.id ? String(issue.id) : `issue-${idx}`;
+      // ハイライトは表示専用の識別子なので、ID が無くても致命的ではない。
+      // （解決操作の Unlike こちらは idx を使うが、server には送信しない）
+      const issueId = issue.id ? String(issue.id) : `local-${idx}`;
      setActiveHighlight({
        issueId,
        conflictingText: issue.conflicting_text,
@@ -210,31 +212,41 @@ export const EditorialSidebar: React.FC<EditorialSidebarProps> = ({
      onToast?.(`✨ 修正案を適用しました`, "success");
    };
 
-   const handleResolveAction = async (
-     issue: ConsistencyIssue,
-     idx: number,
-     action: "Foreshadowing" | "Ignore"
-   ) => {
-     const issueId = issue.id || idx + 1;
-     setResolvingId(issueId);
-     try {
-       await resolveIssue(issueId, action);
-       setAuditIssues((prev) => prev.filter((_, i) => i !== idx));
-       setActiveHighlight(null);
-       if (action === "Foreshadowing") {
-         onToast?.("📌 世界観バイブルの伏線マップに登録しました！", "success");
-       } else {
-         onToast?.("🛡️ 許容例外ルール (Rule of Cool) に登録しました！", "success");
-       }
-     } catch (err: any) {
-       // フォールバック: UI上で解決扱いに
-       setAuditIssues((prev) => prev.filter((_, i) => i !== idx));
-       setActiveHighlight(null);
-       onToast?.(`✨ 設定に反映しました (${action === "Foreshadowing" ? "伏線化" : "例外許可"})`, "success");
-     } finally {
-       setResolvingId(null);
-     }
-   };
+    const handleResolveAction = async (
+      issue: ConsistencyIssue,
+      idx: number,
+      action: "Foreshadowing" | "Ignore"
+    ) => {
+      // ID はサーバ側（ConsistencyIssue.with_stable_id）が決定的に発行する。
+      // ここに無い場合は配列 index などで代用しない。代用すると
+      // 「別の問題を解決した」と誤って報告するため、操作させない。
+      const issueId = issue.id;
+      if (!issueId) {
+        onToast?.(
+          "⚠️ この問題には安定した ID が無いため、解決操作を実行できません。",
+          "error"
+        );
+        return;
+      }
+      setResolvingId(issueId);
+      try {
+        await resolveIssue(issueId, action);
+        setAuditIssues((prev) => prev.filter((_, i) => i !== idx));
+        setActiveHighlight(null);
+        if (action === "Foreshadowing") {
+          onToast?.("📌 世界観バイブルの伏線マップに登録しました！", "success");
+        } else {
+          onToast?.("🛡️ 許容例外ルール (Rule of Cool) に登録しました！", "success");
+        }
+      } catch (err: unknown) {
+        // 失敗を「ローカルで解決済み」に偽らない。SPA 上の取り消しは
+        // server に反映されていないため、UI 側の issue も残す。
+        const msg = err instanceof Error ? err.message : String(err);
+        onToast?.(`❌ 登録に失敗しました: ${msg}`, "error");
+      } finally {
+        setResolvingId(null);
+      }
+    };
 
    return (
      <>
@@ -439,27 +451,35 @@ export const EditorialSidebar: React.FC<EditorialSidebarProps> = ({
                          </button>
                        )}
 
-                       <button
-                         type="button"
-                         className="inline-ai-btn"
-                         style={{ padding: "4px 8px", fontSize: "0.75rem" }}
-                         disabled={resolvingId !== null}
-                         onClick={() => handleResolveAction(issue, idx, "Foreshadowing")}
-                         title="世界観バイブルの伏線マップに追加"
-                         data-testid={`btn-foreshadow-${idx}`}
-                       >
-                         📌 伏線化
-                       </button>
+                        <button
+                          type="button"
+                          className="inline-ai-btn"
+                          style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                          disabled={resolvingId !== null || !issue.id}
+                          onClick={() => handleResolveAction(issue, idx, "Foreshadowing")}
+                          title={
+                            issue.id
+                              ? "世界観バイブルの伏線マップに追加"
+                              : "サーバが問題 ID を返していないため実行できません"
+                          }
+                          data-testid={`btn-foreshadow-${idx}`}
+                        >
+                          📌 伏線化
+                        </button>
 
-                       <button
-                         type="button"
-                         className="inline-ai-btn"
-                         style={{ padding: "4px 8px", fontSize: "0.75rem" }}
-                         disabled={resolvingId !== null}
-                         onClick={() => handleResolveAction(issue, idx, "Ignore")}
-                         title="設定の例外ルール (Rule of Cool) として許容"
-                         data-testid={`btn-rule-of-cool-${idx}`}
-                       >
+                        <button
+                          type="button"
+                          className="inline-ai-btn"
+                          style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                          disabled={resolvingId !== null || !issue.id}
+                          onClick={() => handleResolveAction(issue, idx, "Ignore")}
+                          title={
+                            issue.id
+                              ? "設定の例外ルール (Rule of Cool) として許容"
+                              : "サーバが問題 ID を返していないため実行できません"
+                          }
+                          data-testid={`btn-rule-of-cool-${idx}`}
+                        >
                          🛡️ 許容例外
                        </button>
                      </div>

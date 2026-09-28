@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNovelContext } from "../context/NovelContext";
 import { useUnsavedGenerationGuard } from "../hooks/useUnsavedGenerationGuard";
 import "../components/common/GachaShimmer.css";
@@ -11,11 +11,12 @@ import { ReversePlotBuilder } from "./ReversePlotBuilder";
 import { GeneratedPlotStructure } from "../types/reversePlot";
 import { GachaPlan, GachaResponse, DigestResponse } from "../types/easyMode";
 import { generateGachaPlans, generateDigest } from "../api/easyMode";
-import { fetchChapterBookScore } from "../api/quality";
+import { fetchChapterBookScore, type BookScore } from "../api/quality";
 import { StylePresetSummary, StyleProfile } from "../types/style";
 import { fetchStylePresets, distillStyleFromText } from "../api/styleApi";
 import { GENRE_OPTIONS } from "../constants/genres";
 import { StyleComparisonModal } from "./style/StyleComparisonModal";
+import { ScoreDiagnostics } from "./generate/ScoreDiagnostics";
 import SimpleModePanel from "./generate/SimpleModePanel";
 import ReverseModePanel from "./generate/ReverseModePanel";
 import OrchestratedModePanel from "./generate/OrchestratedModePanel";
@@ -52,23 +53,30 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
     currentEpNum,
   } = useNovelContext();
 
-  const [chapterScore, setChapterScore] = useState<number | null>(null);
+  const [bookScore, setBookScore] = useState<BookScore | null>(null);
+  const [isScoring, setIsScoring] = useState(false);
 
   const { takeSnapshot } = useSnapshotHistory(selectedBookId, currentEpNum);
 
-  useEffect(() => {
-    const fetchScore = async () => {
-      if (!selectedBookId) return;
-      try {
-        const scoreData = await fetchChapterBookScore(selectedBookId, currentEpNum);
-        setChapterScore(scoreData.overall_score);
-      } catch (e) {
-        console.error("Failed to fetch chapter score in GeneratePanel", e);
-        setChapterScore(null);
-      }
-    };
-    void fetchScore();
+  const chapterScore = bookScore ? bookScore.overall_score : null;
+
+  const fetchScore = useCallback(async () => {
+    if (!selectedBookId) return;
+    setIsScoring(true);
+    try {
+      const scoreData = await fetchChapterBookScore(selectedBookId, currentEpNum);
+      setBookScore(scoreData);
+    } catch (e) {
+      console.error("Failed to fetch chapter score in GeneratePanel", e);
+      setBookScore(null);
+    } finally {
+      setIsScoring(false);
+    }
   }, [selectedBookId, currentEpNum]);
+
+  useEffect(() => {
+    void fetchScore();
+  }, [fetchScore]);
   const [showStyleComparison, setShowStyleComparison] = useState(false);
 
   const { startGeneration, cancelGeneration } = useNovelGeneration(
@@ -462,25 +470,11 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
             </div>
 
             {chapterScore < 70 && (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px", color: "#f87171", fontSize: "0.8rem", fontWeight: 600 }}>
-                <div
-                  className="spinner"
-                  style={{
-                    width: "14px",
-                    height: "14px",
-                    border: "2px solid rgba(248, 113, 113, 0.3)",
-                    borderTopColor: "#f87171",
-                    borderRadius: "50%",
-                    animation: "spin 1s linear infinite",
-                  }}
-                />
-                自動改善ループ実行中...
-                <style>{`
-                @keyframes spin {
-                  to { transform: rotate(360deg); }
-                }
-              `}</style>
-              </div>
+              <ScoreDiagnostics
+                bookScore={bookScore}
+                isScoring={isScoring}
+                onRescore={() => void fetchScore()}
+              />
             )}
           </div>
         )}

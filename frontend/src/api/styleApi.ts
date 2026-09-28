@@ -6,47 +6,46 @@ import {
   StyleEntry,
   StyleCategory,
 } from "../types/style";
-import { StyleTuningParams } from "../types/styleComparison";
+import { apiFetch } from "./client";
 
 const BASE = "/api/styles";
 
+/**
+ * スタイル API クライアント。
+ *
+ * 以前は素の fetch を使っていたため Authorization ヘッダが付かず、
+ * 認証を追加したルートでは常に 401 になっていた。apiFetch に統一済み。
+ */
 export async function fetchStylePresets(): Promise<StylePresetSummary[]> {
-  const res = await fetch(`${BASE}/presets`);
+  const res = await apiFetch(`${BASE}/presets`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export async function fetchAllStyles(): Promise<StyleEntry[]> {
-  const res = await fetch(`${BASE}/all`);
+  const res = await apiFetch(`${BASE}/all`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
 export async function fetchStyleCategories(): Promise<StyleCategory[]> {
-  const res = await fetch(`${BASE}/categories`);
+  const res = await apiFetch(`${BASE}/categories`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
 
+/**
+ * スタイル仕様（instruction / dialogue_ratio / syntax_rhythm / metaphor_dna /
+ * noise_dna）を取得する。GET /api/styles/{style_id}/preview は StyleEntry を返す。
+ */
 export async function fetchStylePreview(styleId: string): Promise<StyleEntry> {
-  const res = await fetch(`${BASE}/${styleId}/preview`);
+  const res = await apiFetch(`${BASE}/${styleId}/preview`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
-}
-
-export async function getStyleComparisonPreview(styleId: string, sceneId: string, params: StyleTuningParams): Promise<string> {
-  const query = new URLSearchParams();
-  query.append("scene_id", sceneId);
-  query.append("kemeritsu", params.kemeritsu.toString());
-  query.append("bodyStop", params.bodyStop.toString());
-  query.append("metaphor", params.metaphor.toString());
-  const res = await fetch(`${BASE}/${styleId}/preview?${query.toString()}`);
-  if (!res.ok) throw new Error(await res.text());
-  return res.text();
 }
 
 export async function distillStyleFromText(request: DistillRequest): Promise<DistillResponse> {
-  const res = await fetch(`${BASE}/distill`, {
+  const res = await apiFetch(`${BASE}/distill`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(request),
@@ -56,7 +55,7 @@ export async function distillStyleFromText(request: DistillRequest): Promise<Dis
 }
 
 export async function reformatCadence(text: string): Promise<ReformatResponse> {
-  const res = await fetch(`${BASE}/reformat`, {
+  const res = await apiFetch(`${BASE}/reformat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ text }),

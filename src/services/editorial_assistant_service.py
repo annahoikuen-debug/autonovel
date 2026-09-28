@@ -113,7 +113,17 @@ class EditorialAssistantService:
             raw_text = getattr(res, "story_content", "") or getattr(res, "content", "") or ""
 
             # JSON パース処理
-            return self._parse_audit_json(str(raw_text))
+            parsed = self._parse_audit_json(str(raw_text))
+            # 問題 ID はサーバ側で決定的に付与する（フロントが配列 index を
+            # ID として送っており、解決対象がずれていた）
+            return parsed.model_copy(
+                update={
+                    "issues": [
+                        issue.with_stable_id(request.book_id, request.current_chapter)
+                        for issue in parsed.issues
+                    ]
+                }
+            )
         except Exception as e:
             logger.error("Audit consistency LLM call failed: %s", e)
             return ConsistencyAuditResponse(has_issues=False, issues=[], confidence_score=0.5)

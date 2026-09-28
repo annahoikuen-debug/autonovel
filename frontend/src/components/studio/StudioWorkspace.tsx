@@ -35,6 +35,13 @@ interface BudgetInfo {
   consumption_ratio: number;
   consumption_percentage: number;
   budget_status: "no_budget" | "normal" | "warning" | "exceeded";
+  /** 予算ガード判定（budget_status と独立。予算未設定でも判定される） */
+  guard_status: "normal" | "warning" | "exceeded";
+  /** 予算ガードが推奨するモデル。実際の切替は行わない（ゲート側の責務） */
+  recommended_model: string;
+  /** 推奨モデルへの切替が有効か（= ガードが exceeded と判定したか） */
+  downgrade_active: boolean;
+  downgrade_threshold: number;
 }
 
 type StudioTab = "editor" | "branches" | "audit" | "multimedia" | "commercial";
@@ -646,9 +653,23 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
                   ...(budgetTone ?? {}),
                 }}
                 data-testid="cost-indicator"
-                title={`Status: ${budgetInfo.budget_status} (${budgetInfo.consumption_percentage}%)`}
+                title={[
+                  `予算消費: ${budgetInfo.consumption_percentage}%`,
+                  `ガード判定: ${budgetInfo.guard_status}`,
+                  budgetInfo.downgrade_active
+                    ? `推奨モデル: ${budgetInfo.recommended_model}（切替はゲート側で実施）`
+                    : `現在モデル推奨: ${budgetInfo.recommended_model}`,
+                ].join(" / ")}
               >
                 💰 {(budgetInfo.total_cost_usd ?? 0).toFixed(2)} / {(budgetInfo.budget_usd ?? 0).toFixed(2)}
+                {budgetInfo.downgrade_active ? (
+                  <span
+                    style={{ marginLeft: "6px", fontWeight: 600 }}
+                    title={`予算が ${Math.round(budgetInfo.downgrade_threshold * 100)}% を超えたため、推奨モデル: ${budgetInfo.recommended_model}`}
+                  >
+                    ⇩ {budgetInfo.recommended_model}
+                  </span>
+                ) : null}
               </div>
             )}
             <div style={{ display: "flex", gap: "4px", marginLeft: "12px" }}>

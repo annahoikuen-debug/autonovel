@@ -14,6 +14,9 @@ router = APIRouter(
     dependencies=[Depends(get_current_user), Depends(RoleChecker([UserRole.ADMIN, UserRole.PRO]))],
 )
 
+# 予算が未設定の書籍にガードを当てるときのフォールバック上限（USD）
+_DEFAULT_BUDGET_USD = 5.0
+
 
 @router.get("/summary")
 async def get_cost_summary(
@@ -27,8 +30,7 @@ async def get_cost_summary(
 
     # Query the cost logs for the current month
     from sqlalchemy import select
-    from sqlalchemy.sql import column
-    
+
     # Build the query using select instead of query() for AsyncSession
     stmt = select(
         func.sum(CostLogModel.cost_usd).label("total_cost_usd"),
@@ -126,7 +128,25 @@ async def get_budget_consumption_ratio(
             budget_status = "warning"
         else:
             budget_status = "exceeded"
-    
+
+    # 予算ガードを統合する。既に集計済みの total_cost_usd を渡すことで
+    # CostRepository.aggregate の二重実行を避ける。
+    #
+    # ここでは「推奨モデルと適用可否を返す」だけで、実際のモデル切替は行わない。
+    # 切り替えの判断は既存のゲート（Cooldown / budget gate）側の責務である。
+    from src.services.cost_analytics import CostCalculator
+    from src.services.cost_budget_guard import BudgetStatus as GuardStatus
+    from src.services.cost_budget_guard import CostBudgetGuard
+
+    guard_limit = budget_usd if budget_usd > 0 else _DEFAULT_BUDGET_USD
+    # CostCalculator は pricing テーブルのみで、集計はガード側が
+    # CostRepository を直接行うため、デフォルトのままでよい
+    guard = CostBudgetGuard(calculator=CostCalculator(), budget_limit=guard_limit)
+    guard_status = await guard.check_budget_status_async(db, book_id, total_cost_usd=total_cost_usd)
+    recommended_model = await guard.get_recommended_model_for_task_async(
+        db, "generation", book_id, total_cost_usd=total_cost_usd
+    )
+
     return {
         "book_id": book_id,
         "total_cost_usd": round(total_cost_usd, 4),
@@ -134,4 +154,10 @@ async def get_budget_consumption_ratio(
         "consumption_ratio": round(ratio, 4),
         "consumption_percentage": round(ratio * 100, 2),
         "budget_status": budget_status,
+        # 予算ガード由来の情報。budget_status は "no_budget" を含みうるため、
+        # guard_status は独立した判定として返す。
+        "guard_status": guard_status.value,
+        "recommended_model": recommended_model,
+        "downgrade_active": guard_status is GuardStatus.EXCEEDED,
+        "downgrade_threshold": 0.9,
     }

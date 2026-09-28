@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import hashlib
 from enum import StrEnum
 from typing import Any
 
@@ -110,6 +111,13 @@ class AskBibleResponse(BaseModel):
 class ConsistencyIssue(BaseModel):
     """設定矛盾・不整合の検出項目"""
 
+    id: str = Field(
+        default="",
+        description=(
+            "安定した問題 ID。フロントの配列 index ではなく book_id / 章 / "
+            "issue_type / conflicting_text から決定的に生成する"
+        ),
+    )
     issue_type: str = Field(
         ..., description="矛盾の種類 (attribute, relationship, timeline, death_status, location)"
     )
@@ -117,6 +125,17 @@ class ConsistencyIssue(BaseModel):
     description: str = Field(..., description="矛盾内容の解説")
     conflicting_text: str = Field(default="", description="本文中の該当箇所")
     suggested_fix: str = Field(default="", description="修正の提案")
+
+    def with_stable_id(self, book_id: int, chapter: int) -> "ConsistencyIssue":
+        """サーバ側で決定的な ID を付与する（自身は変更せず新しい値を返す）。
+
+        フロントが配列 index から ID を捏造していたため、別の問題と
+        解決扱いが混線していた。ID は同じ book/章/箇所なら再取得を重ねても
+        変わらない値でなければならないため、ハッシュを使う。
+        """
+        payload = f"{book_id}|{chapter}|{self.issue_type}|{self.conflicting_text}"
+        digest = hashlib.sha1(payload.encode("utf-8")).hexdigest()[:12]
+        return self.model_copy(update={"id": f"ci_{digest}"})
 
 
 class ConsistencyAuditRequest(BaseModel):
