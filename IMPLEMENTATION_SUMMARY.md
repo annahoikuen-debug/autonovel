@@ -1,3 +1,9 @@
+> [!WARNING]
+> **これは 2026-09-19 時点の作業スナップショットであり、現状ではありません。**
+> Issue #8（パープルプローズデトックスフィルター）の実装完了報告であり、
+> AutoNovel 全体の実装状況の記述ではない。
+> 現在の機能実装状況は **[docs/STATUS.md](./docs/STATUS.md)** を参照してください。
+
 # Purple Prose Detox Filter - Implementation Complete
 
 ## Overview
