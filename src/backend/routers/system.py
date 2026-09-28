@@ -170,20 +170,26 @@ async def recalc_all_book_scores() -> dict[str, Any]:
     from src.backend.database.models import Chapter as ChapterModel
     from src.services.book_score_service import BookScoreCalculator
 
-    db_manager = get_db_manager()
-
     # 対象的作品と章を先に列挙する（読み取り専用のセッションで終える）
-    async with db_manager.get_session() as session:
-        books_result = await session.execute(select(BookModel.id))
-        book_ids = [row[0] for row in books_result.fetchall()]
+    # get_db_manager() 自体の失敗も拾うため、中に含める。
+    try:
+        db_manager = get_db_manager()
+        async with db_manager.get_session() as session:
+            books_result = await session.execute(select(BookModel.id))
+            book_ids = [row[0] for row in books_result.fetchall()]
 
-        targets: list[tuple[int, int]] = []
-        for book_id in book_ids:
-            chapters_result = await session.execute(
-                select(ChapterModel.ep_num).where(ChapterModel.book_id == book_id)
-            )
-            for row in chapters_result.fetchall():
-                targets.append((book_id, row[0]))
+            targets: list[tuple[int, int]] = []
+            for book_id in book_ids:
+                chapters_result = await session.execute(
+                    select(ChapterModel.ep_num).where(ChapterModel.book_id == book_id)
+                )
+                for row in chapters_result.fetchall():
+                    targets.append((book_id, row[0]))
+    except Exception as e:
+        # 管理画面が 500 のまま原因を知れないので、構造化したエラーを返す。
+        # 「成功」を返さないことは維持する（捏造しない）。
+        logger.error("recalc_all_book_scores: failed to list targets: %r", e)
+        return {"status": "error", "detail": str(e), "recalculated_count": 0, "errors": [str(e)]}
 
     if not targets:
         return {"status": "success", "recalculated_count": 0}

@@ -229,6 +229,11 @@ async def test_recalc_all_book_scores():
                 return MagicMock()  # delete statements
 
             self.execute = AsyncMock(side_effect=execute_side_effect)
+            # 実セッションには commit / rollback がある。recalc_all_book_scores は
+            # セッションをタスクごとに分けて commit/rollback するため、
+            # ダブルにも持たせない AttributeError になる。
+            self.commit = AsyncMock()
+            self.rollback = AsyncMock()
 
         async def __aenter__(self):
             return self
