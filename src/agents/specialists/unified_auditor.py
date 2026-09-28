@@ -14,6 +14,30 @@ from src.models.unified_audit import UnifiedAuditReport, QualitativeAudit, Confl
 
 logger = logging.getLogger(__name__)
 
+
+def _resolve_audit_llm() -> Any:
+    """監査用 LLM を設定から解決する。
+
+    ``mock`` / 未設定の場合は ``None`` を返す。Mock の応答で品質ゲートを
+    通過させてはならないため、意図的に実プロバイダのみを受け付ける。
+    """
+    try:
+        from src.backend.config import settings
+        from src.services.llm.factory import get_llm_adapter
+
+        provider = (settings.LLM_PROVIDER or "").strip().lower()
+        if provider in ("", "mock"):
+            logger.warning(
+                "LLM_PROVIDER=%r のため監査は実行されません（品質ゲートは"
+                "degraded として不合格になります）。実プロバイダを設定してください。",
+                provider or "(empty)",
+            )
+            return None
+        return get_llm_adapter(provider)
+    except Exception as e:
+        logger.error("監査用 LLM の解決に失敗しました: %r", e)
+        return None
+
 class UnifiedAuditor:
     """二層ハイブリッド監査エンジン (v5.0 Hybrid-Lean)
     - 第1層: 静的ルール解析 (0ms, 0コスト)
@@ -21,7 +45,35 @@ class UnifiedAuditor:
     """
 
     def __init__(self, llm_gateway: Any = None):
-        self.llm = llm_gateway
+        # 明示注入がなければ設定から実 LLM を解決する。
+        # 4 つの本番呼び出し点がすべて引数なしで UnifiedAuditor() を生成しており、
+        # これが未設定のままibatると llm=None → degraded → 品質ゲートが
+        # 全章节で不合格になっていた。
+        self.llm = llm_gateway if llm_gateway is not None else _resolve_audit_llm()
+
+    async def _call_llm(self, prompt: str) -> str:
+        """LLM 呼び出しを統一する。
+
+        LLM 実装ごとにメソッド名が異なる（LLMGateway 系は ``generate``、
+        ``*Adapter`` 系は ``generate_text``）。両方を受け付け、
+        どちらにも無い場合は明示的な例外にする（黙って握り潰さない）。
+        """
+        if self.llm is None:
+            raise RuntimeError("監査用 LLM が未設定です")
+
+        for name in ("generate", "generate_text"):
+            fn = getattr(self.llm, name, None)
+            if callable(fn):
+                try:
+                    return await fn(prompt=prompt, temperature=0.2)
+                except TypeError:
+                    # temperature を位置引数で取らない実装への保険
+                    return await fn(prompt)
+
+        raise AttributeError(
+            f"{type(self.llm).__name__} は generate / generate_text のどちらを"
+            "持ってもいません。監査は実行できません。"
+        )
 
     def audit_quantitative(self, text: str) -> tuple[float, dict[str, Any]]:
         """静的ルールベースの定量的スコア（0ms, 0コスト）を算出"""
@@ -87,7 +139,7 @@ class UnifiedAuditor:
             draft_text=text[:3000],
         )
         try:
-            resp = await self.llm.generate(prompt=prompt, temperature=0.2)
+            resp = await self._call_llm(prompt)
         except Exception as e:
             logger.error(f"UnifiedAuditor LLM call failed: {e!r}")
             return self._failed_qualitative(f"LLM呼び出し失敗: {e}"), True

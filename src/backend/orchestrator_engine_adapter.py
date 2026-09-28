@@ -94,52 +94,93 @@ class OrchestratorEngineAdapter:
     使用しているため、それらを Orchestrator 経由で提供する。
     """
 
-    def __init__(self, orchestrator: Orchestrator):
+    def __init__(
+        self,
+        orchestrator: Orchestrator | None = None,
+        *,
+        repo: Any = None,
+        db: Any = None,
+        llm: Any = None,
+        plot_service: Any = None,
+        **extra: Any,
+    ):
+        """DI コンテナから注入された依存を保持する。
+
+        以前は ``__init__(self, orchestrator)`` しか受け取っていなかったが、
+        ``container/app.py`` の engine プロバイダは api_key / repo / db / llm /
+        cooldown / plot_service / illustration_agent を渡しており、生成のたびに
+        ``TypeError: unexpected keyword argument 'api_key'`` になっていた。
+        その結果 ``container.engine()`` を触る全ワークフロー
+        （plots / episodes / marketing 系）がワークフロー起動前に落ちていた。
+
+        orchestrator は任意。未設定でも注入依存から各プロパティを解決できる。
+        """
         self._orchestrator = orchestrator
+        self._injected: dict[str, Any] = {
+            "repo": repo,
+            "db": db,
+            "llm": llm,
+            "plot_service": plot_service,
+        }
+        self._injected.update(extra)
         self._planner = None
         self._writer = None
+
+    def _dep(self, name: str) -> Any:
+        """注入済み依存を優先し、無ければ Orchestrator のスキルから探す。"""
+        value = self._injected.get(name)
+        if value is not None:
+            return value
+        orchestrator = self._orchestrator
+        if orchestrator is None:
+            return None
+        for skill in getattr(orchestrator, "_skill_instances", {}).values():
+            found = getattr(skill, name, None)
+            if found:
+                return found
+        return None
+
+    def _require_orchestrator(self) -> Orchestrator:
+        if self._orchestrator is None:
+            raise RuntimeError(
+                "Orchestrator が未設定のため、engine.planner / engine.writer を"
+                "利用できません。container.app の engine プロバイダを "
+                "Orchestrator 付きで構築してください。"
+            )
+        return self._orchestrator
 
     @property
     def planner(self) -> PlannerAdapter:
         if self._planner is None:
-            self._planner = PlannerAdapter(self._orchestrator)
+            self._planner = PlannerAdapter(self._require_orchestrator())
         return self._planner
 
     @property
     def writer(self) -> WriterAdapter:
         if self._writer is None:
-            self._writer = WriterAdapter(self._orchestrator)
+            self._writer = WriterAdapter(self._require_orchestrator())
         return self._writer
 
     @property
     def repo(self) -> Any:
         """リポジトリへのアクセス"""
-        # 最初のスキルから repo を取得
-        for skill in self._orchestrator._skill_instances.values():
-            if hasattr(skill, "repo") and skill.repo:
-                return skill.repo
-        return None
+        return self._dep("repo")
 
     @property
     def llm(self) -> Any:
-        for skill in self._orchestrator._skill_instances.values():
-            if hasattr(skill, "llm") and skill.llm:
-                return skill.llm
-        return None
+        return self._dep("llm")
 
     @property
     def pm(self) -> Any:
-        for skill in self._orchestrator._skill_instances.values():
-            if hasattr(skill, "pm") and skill.pm:
-                return skill.pm
-        return None
+        return self._dep("pm")
 
     @property
     def ctx_mgr(self) -> Any:
-        for skill in self._orchestrator._skill_instances.values():
-            if hasattr(skill, "ctx_mgr") and skill.ctx_mgr:
-                return skill.ctx_mgr
-        return None
+        return self._dep("ctx_mgr")
+
+    @property
+    def plot_service(self) -> Any:
+        return self._dep("plot_service")
 
     # その他必要なプロパティを追加
     @property
@@ -180,7 +221,7 @@ class OrchestratorEngineAdapter:
 
     @property
     def db(self) -> Any:
-        return None
+        return self._dep("db")
 
     @property
     def logic_validator(self) -> Any:
