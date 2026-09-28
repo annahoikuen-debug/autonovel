@@ -24,7 +24,6 @@ class BranchRepository(BaseRepository):
         self, book_id: int, name: str, parent_id: int | None = None, fork_ep_num: int = 0
     ) -> int:
         """新しいブランチを作し、必要に応じて親ブランチからデータをコピーする"""
-        print(f"[repo] session bind URL: {self.session.bind.url}", flush=True)
         branch = Branch(
             book_id=book_id,
             name=name,

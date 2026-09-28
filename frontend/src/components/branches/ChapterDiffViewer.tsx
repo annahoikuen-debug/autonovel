@@ -22,6 +22,21 @@ export const ChapterDiffViewer: React.FC<ChapterDiffViewerProps> = ({
   const [isError, setIsError] = React.useState(false);
   const [viewMode, setViewMode] = React.useState<'unified' | 'side-by-side'>('unified');
 
+  // バックエンドは [left, right] のタプル配列を返す。想定外の payload で
+  // .map が例外を投げると画面が真っ白になるため、必ず配列であることを保証する。
+  const sideBySide: [string, string][] = React.useMemo(() => {
+    const raw = diffData?.diff_side_by_side;
+    if (!Array.isArray(raw)) return [];
+    return raw.map((pair) => {
+      if (Array.isArray(pair)) {
+        return [String(pair[0] ?? ''), String(pair[1] ?? '')] as [string, string];
+      }
+      // 旧来の {left, right} 形式に后备する
+      const legacy = pair as unknown as { left?: unknown; right?: unknown };
+      return [String(legacy.left ?? ''), String(legacy.right ?? '')] as [string, string];
+    });
+  }, [diffData]);
+
   React.useEffect(() => {
     const loadDiff = async () => {
       setIsLoading(true);
@@ -101,18 +116,18 @@ onClick={onClose}
           ) : (
             <div style={{ display: 'flex', gap: '16px' }}>
               <div style={{ flex: 1, borderRight: '1px solid var(--border-color)' }}>
-<div style={{ fontWeight: 'bold', marginBottom: '8px' }}>ブランチ A</div>
-                 <pre style={{ backgroundColor: 'var(--bg-muted)', padding: '12px', borderRadius: '4px', height: '400px', overflow: 'auto' }}>
-                  {diffData.diff_side_by_side.left.map((line, index) => (
-                    <div key={index}>{line}</div>
+                <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>ブランチ A</div>
+                <pre style={{ backgroundColor: 'var(--bg-muted)', padding: '12px', borderRadius: '4px', height: '400px', overflow: 'auto' }}>
+                  {sideBySide.map((pair, index) => (
+                    <div key={index}>{pair[0]}</div>
                   ))}
                 </pre>
               </div>
-<div style={{ flex: 1 }}>
-                 <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>ブランチ B</div>
-                 <pre style={{ backgroundColor: 'var(--bg-muted)', padding: '12px', borderRadius: '4px', height: '400px', overflow: 'auto' }}>
-                  {diffData.diff_side_by_side.right.map((line, index) => (
-                    <div key={index}>{line}</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>ブランチ B</div>
+                <pre style={{ backgroundColor: 'var(--bg-muted)', padding: '12px', borderRadius: '4px', height: '400px', overflow: 'auto' }}>
+                  {sideBySide.map((pair, index) => (
+                    <div key={index}>{pair[1]}</div>
                   ))}
                 </pre>
               </div>

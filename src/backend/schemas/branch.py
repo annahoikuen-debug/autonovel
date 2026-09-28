@@ -33,9 +33,14 @@ class BranchGraphResponse(BaseModel):
 
 
 class BranchForkRequest(BaseModel):
-    """フォーク（分岐作成）リクエスト."""
+    """フォーク（分岐作成）リクエスト.
 
-    parent_id: int
+    ``parent_id`` は省略可。省略時は「親なしの新規ブランチ」として作られる。
+    編集画面から分岐を作る場合、正しい親ブランチを特定できない状態で
+    既定値（従来は 1 固定）が送られ、無関係なブランチの子として作られていた。
+    """
+
+    parent_id: int | None = None
     name: str = Field(min_length=1, max_length=100)
     fork_ep_num: int = Field(default=0, ge=0)
 

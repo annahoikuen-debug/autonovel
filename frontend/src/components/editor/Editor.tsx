@@ -4,6 +4,7 @@ import { AutosaveIndicator } from "./AutosaveIndicator";
 import { EditorToolbar } from "./EditorToolbar";
 import { useNovelContext } from "../../context/NovelContext";
 import { fetchNodeSummary } from "../../api/graph";
+import { forkBranch } from "../../api/branches";
 import { SnippetTooltip } from "./SnippetTooltip";
 import { useHistoryStack } from "../../hooks/useHistoryStack";
 import { useSnapshotHistory } from "../../hooks/useSnapshotHistory";
@@ -324,21 +325,17 @@ export const Editor: React.FC<EditorProps> = ({
      }, 50);
    };
 
-   const handleCreateBranch = async () => {
+    const handleCreateBranch = async () => {
       const branchName = window.prompt("新しいIFルートの名前を入力してください（例: 第○話のIFルート）", `IFルート_第${currentEpNum}話`);
       if (!branchName) return;
       try {
-        const response = await fetch(`/api/branches/${selectedBookId}/fork`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            parent_id: 1,
-            name: branchName,
-            fork_ep_num: currentEpNum,
-          }),
+        // 素の fetch は Authorization ヘッダを付けないため、API モジュール経由で呼ぶ。
+        // parent_id はランダム値（従来は 1 固定）で指定せず、
+        // 「ルート直下に新しい分岐を作る」= 親なしの新規ブランチとして生成させる。
+        await forkBranch(selectedBookId, {
+          name: branchName,
+          fork_ep_num: currentEpNum,
         });
-        if (!response.ok) throw new Error(`Failed to create branch: ${response.status}`);
-        const result = await response.json();
         onToast?.(`✨ IFルート「${branchName}」を作成しました`, "success");
         onCreateBranch?.();
       } catch (err: unknown) {

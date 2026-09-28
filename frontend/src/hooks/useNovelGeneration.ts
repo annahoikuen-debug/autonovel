@@ -70,8 +70,18 @@ const response = await generateContent({
                 ? JSON.parse(rawResult || "{}")
                 : rawResult || {};
 
-            const out = parsed.output || "生成が完了しました。";
+            const out = typeof parsed.output === "string" ? parsed.output.trim() : "";
             const sug = parsed.suggestions || [];
+
+            // 本文が空だった場合に既定の文字列を 本文 に流し込むと、
+            // setCurrentChapterText（＝章节の上書き）によってユーザーの本文が
+            // 「生成が完了しました。」という状態メッセージで破壊される。
+            // 空本文はエラーとして扱い、既存本文を温存する。
+            if (!out) {
+              throw new Error(
+                "生成結果が空でした。既存本文は保持されています。"
+              );
+            }
 
             // 単一ソース化: currentChapterText に本文を反映、currentOutput は setter しない
             setCurrentChapterText(out);

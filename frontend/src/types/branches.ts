@@ -25,7 +25,8 @@ export interface BranchGraphResponse {
 
 /** フォーク（分岐作成）リクエスト */
 export interface BranchForkRequest {
-  parent_id: number;
+  /** 省略可。null の場合は親なしの新規ブランチとして作られる */
+  parent_id?: number;
   name: string;
   fork_ep_num: number;
 }
@@ -93,10 +94,8 @@ export interface ChapterDiffResponse {
   content_a: string;
   content_b: string;
   diff_unified: string;
-  diff_side_by_side: {
-    left: string[];
-    right: string[];
-  };
+  // バックエンドは list[tuple[str, str]] を返す（JSON では [left, right] の配列）
+  diff_side_by_side: [string, string][];
 }
 
 /** マージコンフリクトプレビューAPIレスポンス */

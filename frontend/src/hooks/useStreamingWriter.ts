@@ -159,7 +159,13 @@ export function useStreamingWriter(options?: UseStreamingWriterOptions) {
           }
         }
 
-        const finalText = accumulatedTextRef.current || "執筆が完了しました。";
+        const finalText = accumulatedTextRef.current.trim();
+        // 本文が空のときに「執筆が完了しました。」を本文として書き込むと、
+        // setCurrentChapterText（章节の上書き）によりユーザーの原稿が
+        // 状態メッセージで破壊される。空本文はエラーとして扱い既存本文を温存する。
+        if (!finalText) {
+          throw new Error("生成結果が空でした。既存本文は保持されています。");
+        }
         // 本文にリアルタイム反映（末尾追記または全文更新）
         setCurrentChapterText((prev) => (prev ? `${prev}\n\n${finalText}` : finalText));
         setGenerationState((prev) => ({
