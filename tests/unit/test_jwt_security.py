@@ -3,6 +3,11 @@ from pydantic import ValidationError
 from src.backend.config import Settings
 from src.backend.security.jwt import create_access_token, create_refresh_token, decode_token
 
+# テストプロセスには conftest が AUTH_DISABLED=true を設定している。
+# そのままだと APP_ENV="production" の Settings が一斉に「本番で認証無効は不可」
+# で ValidationError になり、検証したい JWT 鍵の検証に到達しない。
+# またローカル .env も混ざらないよう _env_file=None を渡す。
+
 
 def test_production_fails_fast_with_default_or_missing_secret():
     """本番環境でJWT_SECRET_KEYが未設定・デフォルトの場合に Settings の
@@ -11,23 +16,29 @@ def test_production_fails_fast_with_default_or_missing_secret():
     with pytest.raises(ValidationError):
         Settings(
             APP_ENV="production",
+            AUTH_DISABLED=False,
             JWT_SECRET_KEY="autonovel-super-secret-key-32bytes-minimum-change-in-prod",
             DATABASE_URL="postgresql://user:pass@localhost:5432/testdb",
+            _env_file=None,
         )
 
     # 空鍵 → ValidationError
     with pytest.raises(ValidationError):
         Settings(
             APP_ENV="production",
+            AUTH_DISABLED=False,
             JWT_SECRET_KEY="",
             DATABASE_URL="postgresql://user:pass@localhost:5432/testdb",
+            _env_file=None,
         )
 
     # 短すぎる鍵 → get_jwt_secret_key() 呼び出し時の ValueError (実装は起動時にのみ検証)
     short_settings = Settings(
         APP_ENV="production",
+        AUTH_DISABLED=False,
         JWT_SECRET_KEY="short-key",
         DATABASE_URL="postgresql://user:pass@localhost:5432/testdb",
+        _env_file=None,
     )
     with pytest.raises(ValueError):
         short_settings.get_jwt_secret_key()
@@ -38,8 +49,10 @@ def test_production_accepts_valid_strong_secret():
     strong_key = "a" * 32
     prod_settings = Settings(
         APP_ENV="production",
+        AUTH_DISABLED=False,
         JWT_SECRET_KEY=strong_key,
         DATABASE_URL="postgresql://user:pass@localhost:5432/testdb",
+        _env_file=None,
     )
     assert prod_settings.get_jwt_secret_key() == strong_key
 
