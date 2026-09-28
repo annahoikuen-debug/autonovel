@@ -12,6 +12,26 @@ logger = logging.getLogger(__name__)
 class PlotExpansionWorkflow(BaseWorkflow):
     """プロットの追加・再生成フロー"""
 
+    def _resolve_expander(self):
+        """実際に expand_plots を持つサービスを返す。
+
+        優先順位:
+          1. plot_agent（container.plot_expander() = PlotAgent）
+          2. planner に expand_plots がある場合のみ planner
+        属性の有無 (``hasattr``) ではなく実際に呼べるかを基準にする。
+        """
+        candidates = (self.plot_agent, self.planner)
+        for candidate in candidates:
+            if candidate is not None and callable(getattr(candidate, "expand_plots", None)):
+                return candidate
+
+        raise RuntimeError(
+            "expand_plots を提供するサービスが見つかりません。"
+            f"plot_agent={type(self.plot_agent).__name__}, "
+            f"planner={type(self.planner).__name__}。"
+            "container の plot_expander 設定を確認してください。"
+        )
+
     async def execute(self, reporter: StatusReporter, **kwargs) -> dict[str, Any]:
         book_id = kwargs["book_id"]
         gen_from = kwargs["gen_from"]
@@ -58,7 +78,14 @@ class PlotExpansionWorkflow(BaseWorkflow):
                 await self.tension.determine_target_tension(book_id, ep_num, genre, story_type)
 
         # 2. プロット展開を実行
-        results = await self.planner.expand_plots(
+        #
+        # 展開は planner ではなく plot_agent が実装している。
+        # ``_build_service_dict`` は planner=container.planner()（= PlanningAgent）と
+        # plot_agent=container.plot_expander()（= PlotAgent）の両方を渡すため、
+        # 従来は PlanningAgent に対して expand_plots を呼び、属性不在で落ちていた。
+        # PlotAgent.expand_plots は DefaultPlotExpander へ委譲する実装。
+        expander = self._resolve_expander()
+        results = await expander.expand_plots(
             book_id,
             list(range(gen_from, gen_to + 1)),
             arcs,

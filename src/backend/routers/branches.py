@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import io
 from src.backend.database.repositories.chapter import ChapterRepository
+import functools
+import inspect
 import logging
 import difflib
 import uuid
@@ -11,7 +13,7 @@ import zipfile
 from datetime import datetime
 from typing import Any, AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -48,6 +50,49 @@ router = APIRouter(
     tags=["branches"],
     dependencies=[Depends(get_current_user)],
 )
+
+
+def requires_book_ownership(handler):
+    """書籍所有権の検証を路由レベルに注入するデコレータ.
+
+    _router レベルに Depends を並べると book_id を持たない ``/play/*`` 系まで
+    book_id の解決を求め、ルート登録時に落ちる。そのため book_id を持つ
+    路由に個別装饰する。
+
+    認証 (``get_current_user``) は router レベルで行bourswere いたが、
+    所有者の検証は list/tree の 2 本しか行EINIED、
+    他の book_id 単位路由は「ログイン済みなら誰でも他人の作品を
+    読み書き・マージできる」状態だった。
+    """
+    sig = inspect.signature(handler)
+    if "current_user" in sig.parameters:
+        return handler
+
+    new_sig = sig.replace(
+        parameters=[
+            *sig.parameters.values(),
+            inspect.Parameter(
+                "current_user",
+                inspect.Parameter.KEYWORD_ONLY,
+                default=Depends(get_current_user),
+                annotation=User,
+            ),
+        ]
+    )
+
+    @functools.wraps(handler)
+    async def wrapper(*args, **kwargs):
+        current_user = kwargs.pop("current_user", None)
+        if current_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="認証が必要です"
+            )
+        await verify_book_ownership(kwargs["book_id"], current_user)
+        return await handler(*args, **kwargs)
+
+    wrapper.__signature__ = new_sig
+    wrapper.__doc__ = handler.__doc__
+    return wrapper
 
 
 async def get_branch_session() -> AsyncGenerator[AsyncSession, None]:
@@ -176,6 +221,7 @@ def _compute_side_by_side_diff(content_a: str, content_b: str) -> list[tuple[str
 
 
 @router.get("/{book_id}/diff", response_model=dict)
+@requires_book_ownership
 async def get_branch_diff(
     book_id: int,
     branchA: int,
@@ -217,6 +263,7 @@ async def get_branch_diff(
     }
 
 @router.get("/{book_id}/graph", response_model=BranchGraphResponse)
+@requires_book_ownership
 async def get_branch_graph(
     book_id: int,
     branch_id: int,
@@ -231,6 +278,7 @@ async def get_branch_graph(
 
 
 @router.post("/{book_id}/fork", response_model=BranchResponse, status_code=201)
+@requires_book_ownership
 async def fork_branch(
     book_id: int,
     payload: BranchForkRequest,
@@ -252,6 +300,7 @@ async def fork_branch(
 
 
 @router.post("/{book_id}/merge", response_model=BranchResponse)
+@requires_book_ownership
 async def merge_branches(
     book_id: int,
     payload: BranchMergeRequest,
@@ -289,6 +338,7 @@ async def merge_branches(
 
 
 @router.post("/{book_id}/merge/preview", response_model=dict)
+@requires_book_ownership
 async def preview_merge(
     book_id: int,
     payload: BranchMergeRequest,
@@ -357,6 +407,7 @@ async def preview_merge(
 
 
 @router.post("/{book_id}/merge/commit", response_model=BranchMergeCommitResponse)
+@requires_book_ownership
 async def commit_branch_merge(
     book_id: int,
     payload: BranchMergeCommitRequest,
@@ -396,6 +447,7 @@ async def commit_branch_merge(
 
 
 @router.put("/{book_id}/graph", response_model=BranchGraphResponse)
+@requires_book_ownership
 async def save_branch_graph(
     book_id: int,
     branch_id: int,
@@ -646,6 +698,7 @@ async def get_playthrough(
 
 
 @router.get("/{book_id}/nodes", response_model=dict)
+@requires_book_ownership
 async def list_branch_nodes(
     book_id: int,
     branch_id: int,
@@ -664,6 +717,7 @@ async def list_branch_nodes(
 
 
 @router.post("/{book_id}/nodes", response_model=dict)
+@requires_book_ownership
 async def create_branch_node(
     book_id: int,
     branch_id: int,
@@ -687,6 +741,7 @@ async def create_branch_node(
 
 
 @router.delete("/{book_id}/nodes/{node_id}", response_model=dict)
+@requires_book_ownership
 async def delete_branch_node(
     book_id: int,
     branch_id: int,
@@ -723,6 +778,7 @@ async def delete_branch_node(
 
 
 @router.post("/{book_id}/editor/validate", response_model=dict)
+@requires_book_ownership
 async def validate_branch_graph(
     book_id: int,
     branch_id: int,
@@ -1071,6 +1127,7 @@ def _topological_order(graph: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 @router.get("/{book_id}/export", response_class=Response)
+@requires_book_ownership
 async def export_branches_zip(
     book_id: int,
     session: AsyncSession = Depends(get_branch_session),
@@ -1106,6 +1163,7 @@ async def export_branches_zip(
 
 
 @router.get("/{book_id}/stats", response_model=dict)
+@requires_book_ownership
 async def get_branch_stats(
     book_id: int,
     session: AsyncSession = Depends(get_branch_session),
@@ -1141,6 +1199,7 @@ async def get_branch_stats(
 
 
 @router.get("/{book_id}/choices", response_model=dict)
+@requires_book_ownership
 async def get_branch_choice_stats(
     book_id: int,
     session: AsyncSession = Depends(get_branch_session),
