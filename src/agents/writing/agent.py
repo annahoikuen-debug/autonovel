@@ -221,8 +221,17 @@ class WritingAgent(SkillAgent):
         import_text: str,
         do_refine: bool = True,
     ) -> int:
-        """WritingService 互換: 原稿インポート（未実装）"""
+        """WritingService 互換: 原稿インポート（未実装）
+
+        呼び出し側（WritingCoordinator.supports_chapter_import）が
+        ``_unimplemented_marker is True`` で実装の有無を判定するため、
+        ここに印を付ける。印が無いと毎回 NotImplementedError が
+        そのままユーザまで突き抜ける。
+        """
         raise NotImplementedError("analyze_and_import_chapter is not implemented yet")
+
+    #: 未実装である旨の印（WritingCoordinator が参照する）
+    analyze_and_import_chapter._unimplemented_marker = True
 
     async def rewrite_with_focus(
         self,

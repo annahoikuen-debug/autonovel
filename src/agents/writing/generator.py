@@ -268,8 +268,15 @@ class WritingGenerator:
         import_text: str,
         do_refine: bool = True,
     ) -> Any:
-        """手書き原稿のインポート・研磨（未実装）"""
+        """手書き原稿のインポート・研磨（未実装）
+
+        呼び出し側が実装の有無を判定できるよう印を付ける
+        （WritingCoordinator.supports_chapter_import が参照する）。
+        """
         raise NotImplementedError("analyze_and_import_chapter is not implemented yet")
+
+    #: 未実装である旨の印
+    analyze_and_import_chapter._unimplemented_marker = True
 
 
 # 後方互換性のためのエイリアス

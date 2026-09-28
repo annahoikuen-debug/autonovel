@@ -395,12 +395,18 @@ class WritingCoordinator:
         現在の WritingAgent は ``analyze_and_import_chapter`` を「存在するが
         常に NotImplementedError を送出する」形で実装している。そのため
         ``hasattr`` だけでは実装済みと判定できず、実行時に 500 になる。
+        実装側は ``analyze_and_import_chapter._unimplemented_marker = True`` を
+        付けることで明示する。
+
+        ``is True`` で判定するのは、Mock オブジェクトが未知の属性に
+        対して truthy な子_mock を自動生成するため。``bool(...)`` で判定すると
+        正しい実装を使ったモックまで「未実装」と誤判定していた。
         """
         method = getattr(self.writer, "analyze_and_import_chapter", None)
         if method is None:
             return False
         # 常に送出する実装には _unimplemented_marker が立つ。
-        return not bool(getattr(method, "_unimplemented_marker", False))
+        return getattr(method, "_unimplemented_marker", None) is not True
 
     async def analyze_and_import_chapter(
         self,
