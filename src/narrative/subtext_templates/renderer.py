@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 import jinja2
+import jinja2.sandbox  # noqa: F401  # jinja2.sandbox は明示 import しないと属性として解決されない
 import yaml
 
 from src.narrative.subtext_engine.models import SubtextContext

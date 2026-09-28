@@ -109,6 +109,18 @@ output/failures_analysis.txt
 output/m5.txt
 output/probe_lines.txt
 !output/.gitkeep
-# artifacts/ のベンチマーク/テストベースラインも再生成可能なため忽略する。
-# ただし既に追跡済みのファイルは追跡され続ける（下記コマンドで明示的に外す）。
-artifacts/
+# artifacts/ は「テスト・スキーマの基準値」なので追跡を続ける
+# （合計 約 67 KB。db_schema_baseline.json / test_baseline.json などの
+#   回帰防止テストの入力になる）。
+# 大きな生成カバレッジ成果物のみ個別に無視する。
+artifacts/coverage-*.json
+
+# PowerShell の `> $null` リダイレクトで生成された空ファイル（事故ファイル）
+/$null
+
+# Vite の設定一時ファイル（build ごとに生成される）
+frontend/vite.config.ts.timestamp-*.mjs
+
+# 実行時ログ（クラッシュ調査用。コミット対象ではない）
+logs/*.jsonl
+
