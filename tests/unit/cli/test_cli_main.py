@@ -105,4 +105,15 @@ class TestMain:
             assert exc.code == 2
 
     def test_version_constant(self):
-        assert __version__ == "5.1.0"
+        """__version__ が pyproject.toml（SSOT）と一致すること。
+
+        リテラルで固定するとリリースのたびに落ちるので比較する。
+        """
+        import tomllib
+        from pathlib import Path
+
+        pyproject = Path(__file__).resolve().parents[3] / "pyproject.toml"
+        if not pyproject.exists():
+            pytest.skip("pyproject.toml が見つからない（配布物での実行）")
+        declared = tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"]["version"]
+        assert __version__ == declared

@@ -64,9 +64,15 @@ class TestHelpDisplay:
 
 class TestVersion:
     def test_version_flag(self, capsys):
-        """--version が 5.1.0 を表示すること。"""
+        """--version がパッケージの現行バージョンを表示すること。
+
+        バージョンをリテラルで固定するとリリースのたびに落ちるので、
+        SSOT（pyproject.toml / パッケージの __version__）から取得する。
+        """
+        from src.cli.main import __version__
+
         assert main(["--version"]) == 0
-        assert "5.1.0" in capsys.readouterr().out
+        assert __version__ in capsys.readouterr().out
 
 
 class TestErrorHandling:
