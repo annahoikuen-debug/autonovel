@@ -45,6 +45,7 @@ class ForeshadowingService:
         draft_text: str,
         writing_metadata: Optional[WritingMetadata] = None,
         contract_ids: Optional[list[int]] = None,
+        total_episodes: Optional[int] = None,
     ) -> list[str]:
         """本文および共連れメタデータをアンサンブル解析し、回収された伏線を自動更新する。
 
@@ -55,7 +56,9 @@ class ForeshadowingService:
             episode_num: 現在の話数
             draft_text: 生成された本文テキスト
             writing_metadata: 執筆時に共連れ出力されたメタデータ（任意）
-            contract_ids: ビートシートで契約された伏線IDリスト（任意）
+            contract_ids: ビートシートで契約された伏線IDリスト（任意）。
+                None = 契約情報が渡されていない、[] = 契約0件。両者を区別する。
+            total_episodes: 作品全体の予定話数（延期の上限。None = 上限なし）
 
         Returns:
             回収された伏線タイトルのリスト
@@ -72,11 +75,15 @@ class ForeshadowingService:
                 continue
 
             target_ep = getattr(f, "target_episode", None)
-            is_contracted = bool(
-                (contract_ids and f_id in contract_ids)
-                or (target_ep == episode_num)
-                or (target_ep is None and contract_ids is None)
+            # 契約済み = 今回のビートシートでIDが明示されたか、
+            # あるいは「回収予定話数が本話」か。
+            # `target_ep is None` のときに契約済みとみなす旧挙動は、
+            # 契約情報を持たない全伏線を無条件に「本话回収必須」扱いしていたため撤廃する。
+            in_contract = bool(contract_ids and f_id in contract_ids)
+            is_contracted = in_contract or (
+                target_ep is not None and target_ep == episode_num
             )
+
 
             # Metadata report matching
             meta_report = None
@@ -114,10 +121,19 @@ class ForeshadowingService:
                         f"伏線「{f.title}」を RESOLVED に更新 ({judgment.rationale})"
                     )
             elif judgment.status == "PROGRESSED":
-                await self.repo.progress(f_id)
-                logger.info(
-                    f"伏線「{f.title}」を PROGRESSED に更新 ({judgment.rationale})"
-                )
+                success = await self.repo.progress(f_id)
+                if success:
+                    logger.info(
+                        f"伏線「{f.title}」を PROGRESSED に更新 ({judgment.rationale})"
+                    )
+                else:
+                    # progressed → progressed などの拒否は意図的なガード命中であり
+                    # 異常ではない。回復済み伏線の巻き戻り等は rowcount=0 で弾かれるが、
+                    # ここでは静かに「変化なし」と記録する（WARNING は出さない）。
+                    logger.info(
+                        f"伏線「{f.title}」は既に PROGRESSED（変化なし）"
+                        f" ({judgment.rationale})"
+                    )
 
             # Reschedule if target episode passed or contracted but not resolved
             if judgment.should_reschedule:
@@ -125,6 +141,7 @@ class ForeshadowingService:
                     foreshadowing_id=f_id,
                     current_episode=episode_num,
                     repo=self.repo,
+                    max_episode=total_episodes,
                 )
 
         return resolved_titles

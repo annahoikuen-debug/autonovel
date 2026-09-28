@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, AsyncIterator
 
 import aiosqlite
-from sqlalchemy import create_engine, text, event
+from sqlalchemy import create_engine, event
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -195,7 +195,7 @@ class DatabaseManager:
     @retry_with_logging(retries=5, base_delay=0.5)
     async def get_conn(self):
         """非推奨: SQLAlchemyのコネクションプールから接続を取得し、aiosqlite互換ラッパーを返す
-        
+
         代わりに `connection()` または `begin()` コンテキストマネージャを使用してください。
         """
         import warnings
@@ -207,39 +207,39 @@ class DatabaseManager:
         sql_conn = await self.engine.connect()
         raw_conn = await sql_conn.get_raw_connection()
         dbapi_conn = raw_conn._connection
-        
+
         # 簡易ラッパー（最小限の互換性のみ）
         class _CompatWrapper:
             def __init__(self, dbapi_conn, sql_conn):
                 self.dbapi_conn = dbapi_conn
                 self.sql_conn = sql_conn
-            
+
             @property
             def cursor(self):
                 return self.dbapi_conn.cursor()
-            
+
             def commit(self):
                 return self.dbapi_conn.commit()
-            
+
             def rollback(self):
                 return self.dbapi_conn.rollback()
-            
+
             def execute(self, sql, params=()):
                 return self.dbapi_conn.execute(sql, params)
-            
+
             def fetchone(self):
                 return self.dbapi_conn.fetchone()
-            
+
             def fetchall(self):
                 return self.dbapi_conn.fetchall()
-            
+
             async def close(self):
                 try:
                     await self.dbapi_conn.rollback()
                 except Exception:
                     pass
                 await self.sql_conn.close()
-        
+
         return _CompatWrapper(dbapi_conn, sql_conn)
 
     async def get_read_conn(self):
@@ -351,8 +351,42 @@ class DatabaseManager:
 # ==========================================
 
 
+def _run_alembic_upgrade(sync_url: str) -> None:
+    """Alembic をプログラムから `upgrade head` まで実行する。
+
+    スキーマの唯一の正となる情報源を migration にするため、起動時は
+    必ずこの経路を通す。失敗時は例外をそのまま呼び出し元へ伝播させる
+    （黙って create_all へ落とすと、ORM と migration のドリフトが恒久的に隠蔽される）。
+    """
+    from alembic import command
+    from alembic.config import Config
+    from src.backend.config import ROOT_DIR
+
+    ini_path = ROOT_DIR / "alembic.ini"
+    if not ini_path.exists():
+        raise RuntimeError(f"alembic.ini が見つかりません: {ini_path}")
+
+    # alembic/env.py は `ALEMBIC_DATABASE_URL` があれば set_main_option より優先する。
+    # ここを明示しないと、プロセスの DATABASE_URL と別のDBに migration を適用してしまい
+    # 「アプリのDBは未移行」という状態が黙って残るため、アプリ側のURLで上書きする。
+    os.environ["ALEMBIC_DATABASE_URL"] = sync_url
+
+    cfg = Config(str(ini_path))
+    cfg.set_main_option("script_location", str(ROOT_DIR / "src" / "backend" / "alembic"))
+    cfg.set_main_option("sqlalchemy.url", sync_url.replace("%", "%%"))
+    command.upgrade(cfg, "head")
+
+
 def init_db(db_path: str = ""):
-    """データベースのマイグレーションまたはテーブル作成を同期的に実行"""
+    """データベーススキーマを Alembic migration で適用する。
+
+    方針:
+        - 正常系は `alembic upgrade head` のみ。migration がスキーマの唯一の正となる。
+        - Alembic が使えないのは「開発/テストで migration を未整備」な場合のみ。
+          その場合は非本番に限って `create_all()` へフォールバックし、警告を出す。
+        - 本番 (APP_ENV=production) ではフォールバックを一切許さず、起動を失敗させる。
+          本番で create_all が走ると、本番DB が migration と無関係に再構築されうるため。
+    """
     import os
 
     sync_url = os.environ.get("DATABASE_URL") or DATABASE_URL
@@ -361,20 +395,44 @@ def init_db(db_path: str = ""):
         sync_url = sync_url.replace("sqlite+aiosqlite://", "sqlite://")
     elif "postgresql+asyncpg" in sync_url:
         sync_url = sync_url.replace("postgresql+asyncpg://", "postgresql://")
+    elif "postgresql://" in sync_url and "+" not in sync_url.split("://", 1)[0]:
+        # _driver が明示されていない postgresql URL には psycopg2 を補う
+        sync_url = sync_url.replace("postgresql://", "postgresql+psycopg2://", 1)
 
-    import src.backend.database.models  # noqa
-    import src.infrastructure.database.models  # noqa
-    from src.infrastructure.database.models import Base as InfraBase
+    is_production = str(getattr(settings, "APP_ENV", "development")).lower() == "production"
 
-    engine_obj = create_engine(sync_url)
-    # BackendBase と InfraBase は同一の基底メタデータを共有しているため 1 回で同期
-    InfraBase.metadata.create_all(engine_obj)
+    try:
+        _run_alembic_upgrade(sync_url)
+        logger.info("[init_db] Alembic upgrade head completed (schema source of truth = migrations)")
+    except Exception as exc:
+        if is_production:
+            # 本番では create_all へ絶対に落とさない。黙ったDDL適用は
+            # 「migration チェーンが通っていない」事実を隠すため、起動不良として扱う。
+            raise RuntimeError(
+                f"[init_db] 本番環境で Alembic migration の適用に失敗しました: {exc}. "
+                "本番では create_all によるスキーマ生成を許可しません。"
+            ) from exc
+
+        logger.warning(
+            "[init_db] Alembic upgrade に失敗したため開発用フォールバック "
+            "(create_all) を実行します: %s",
+            exc,
+        )
+        import src.backend.database.models  # noqa: F401
+        import src.infrastructure.database.models  # noqa: F401
+        from src.infrastructure.database.models import Base as InfraBase
+
+        engine_obj = create_engine(sync_url)
+        # BackendBase と InfraBase は同一の基底メタデータを共有しているため 1 回で同期
+        InfraBase.metadata.create_all(engine_obj)
 
     # 初回起動時に作品が存在しない場合は初期作品を自動シード
     try:
+        from sqlalchemy import create_engine as _create_engine
         from sqlalchemy.orm import Session
         from src.backend.database.models import Book
-        with Session(engine_obj) as session:
+
+        with Session(_create_engine(sync_url)) as session:
             existing_count = session.query(Book).count()
             if existing_count == 0:
                 default_book = Book(
@@ -382,7 +440,7 @@ def init_db(db_path: str = ""):
                     title="はじめての物語",
                     genre="ハイファンタジー (R15)",
                     concept="古代魔導剣術を受け継いだ少年の冒険譚",
-                    synopsis="薄暗いダンジョンの中、15歳の青年アルトは古代の剣を手に取った。",
+                    synopsis="薄暗いダンジョンの中、15歳の青年アルトは古代の剣を手にした。",
                     catchcopy="運命の剣が、少年の世界を変える。",
                     target_eps=10,
                     mode="studio",

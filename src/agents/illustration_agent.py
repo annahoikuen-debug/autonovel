@@ -42,16 +42,35 @@ class IllustrationAgent(SkillAgent):
         self.yonkoma_illustrator = YonkomaIllustrator(image_service)
 
     async def execute(self, ctx: AgentContext) -> AgentResult:
-        """スキル実行エントリーポイント。"""
+        """スキル実行エントリーポイント。
+
+        v5.3 / Step 11 (K4): `request` が無い場合に `error` を返すと
+        `next_agent=None` となり、Orchestrator 側
+        (`orchestrator.py:806` の `current = result.next_agent`) でループが
+        終了し、**Illustration 以降のスキルが一切実行されなかった**。
+        実際の被害は大きかったが（`request` を設定する箇所がリポジトリ内に
+        存在せず常に error だった）、契約としては Chain を断っている。
+
+        方針(A) を採用: `request` が無い場合は **正常な no-op として終了**する。
+        `IllustrationSkill` は manifest 上で終端ノード（`runs_before: []`）のため
+        `next_agent=None` 自体は正しい。問題は `error` を返していたことで、
+        Orchestrator の `error_continued` 分岐（`orchestrator.py:806`）に落ち、
+        artifacts にエラーが混入しイベントが "error" として通知されていた点。
+        error を返さないことで、パイプラインは「挿絵なし」で正常に完了する。
+        """
         request = ctx.artifacts.get("request")
         if request is None:
-            self.emit_event("illustration.error", {
-                "error": "request is required in artifacts",
+            # 契約違反ではなく「挿絵なし」の正常系として扱う
+            logger.info(
+                "IllustrationAgent: request が無いため挿絵をスキップ（no-op）"
+            )
+            self.emit_event("illustration.skipped", {
+                "reason": "no request in artifacts",
             })
             return AgentResult(
                 next_agent=None,
-                artifacts={},
-                error="request is required in artifacts",
+                artifacts={"illustration_result": None, "illustration_skipped": True},
+                error=None,
             )
 
         # 再生成フォーカス取得（WritingService からの指示：visual_textual_synergy のみ対応）

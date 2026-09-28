@@ -6,14 +6,51 @@ ForeshadowingModel (ORM) を直接操作し、伏線の CRUD・未回収検索�
 """
 from __future__ import annotations
 
+import logging
 from datetime import datetime
 from typing import List, Optional
 
-from sqlalchemy import func, select, update
+from sqlalchemy import and_, func, not_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.database.models_foreshadowing import ForeshadowingModel
 from src.models.foreshadowing_status import ForeshadowingScope, ForeshadowingStatus
+
+logger = logging.getLogger(__name__)
+
+
+def _record_rejection(reason: str) -> None:
+    """遷移拒否を Prometheus メトリクスに記録する（失敗しても本体処理は継続）"""
+    try:
+        from src.backend.observability import metrics as m
+
+        m.foreshadowing_transitions_rejected_total.labels(reason=reason).inc()
+    except Exception as e:  # pragma: no cover - メトリクス非対応環境
+        logger.debug(f"Failed to record rejected foreshadowing transition: {e}")
+
+
+def _allowed_predecessors(target_status: ForeshadowingStatus) -> list[str]:
+    """`target_status` へ遷移できる「現在のステータス」一覧を返す。"""
+    return [
+        s.value for s in ForeshadowingStatus if ForeshadowingStatus.can_transition(s, target_status)
+    ]
+
+
+def _status_predicate(target_status: ForeshadowingStatus):
+    """CAS 用のステータス述語を組み立てる。
+
+    読み取りフェーズで判定していた内容を SQL の WHERE にそのまま埋め込むことで、
+    SELECT と UPDATE の間の TOCTOU（並行実行で resolved が巻き戻る）を無くす。
+    未知ステータス（手動投入・旧データ）は判断D2によりガード対象外＝素通しとするため、
+    既知4値以外を OR で-Moeglichkeit付けている。
+    """
+    known = [s.value for s in ForeshadowingStatus]
+    return or_(
+        ForeshadowingModel.status.in_(_allowed_predecessors(target_status)),
+        not_(ForeshadowingModel.status.in_(known)),
+    )
+
+
 
 
 class DbForeshadowingRepository:
@@ -122,45 +159,154 @@ class DbForeshadowingRepository:
 
     # ── ステータス遷移 ─────────────────────────────────
 
-    async def resolve(self, foreshadowing_id: int, episode_num: int) -> bool:
-        """伏線を回収済みに更新"""
+    async def _diagnose_rejection(
+        self,
+        foreshadowing_id: int,
+        target_status: ForeshadowingStatus,
+        resolved_episode: Optional[int] = None,
+    ) -> str:
+        """CAS 更新が rowcount=0 になった理由を特定する（拒否経路の診断専用 SELECT）。"""
+        current = await self.get_by_id(foreshadowing_id)
+        if current is None:
+            return "not_found"
+        try:
+            current_status = ForeshadowingStatus(current.status)
+        except ValueError:
+            current_status = None
+        if current_status is not None and not ForeshadowingStatus.can_transition(
+            current_status, target_status
+        ):
+            return "illegal_transition"
+        if (
+            isinstance(resolved_episode, int)
+            and isinstance(current.planted_episode, int)
+            and resolved_episode < current.planted_episode
+        ):
+            return "before_plant_episode"
+        return "concurrent_modification"
+
+    async def _transition(
+        self,
+        foreshadowing_id: int,
+        target_status: ForeshadowingStatus,
+        extra_values: Optional[dict] = None,
+    ) -> bool:
+        """ステートマシンの遷移ガード付きで UPDATE を実行する（CAS: 単一 UPDATE）。
+
+        終端状態（resolved / abandoned）からの巻き戻しと、
+        許可されていない遷移（例: planted → planted）は rowcount=0 として拒否する。
+        さらに『設置話数より前の話で回収できない』という不変条件も
+        `WHERE planted_episode <= :resolved_episode` として DB 側で保証する。
+
+        v5.3 までは SELECT→判定→WHERE 条件なし UPDATE の2往復で TOCTOU があり、
+        並行実行で「回収済みの行が progressed へ巻き戻る」事故が起こり得た。
+        判定条件を WHERE に埋め込んだ単一 UPDATE に変更し、往復を 2 → 1 にする。
+        """
+        values: dict = {
+            "status": target_status.value,
+            "updated_at": datetime.utcnow(),
+        }
+        if extra_values:
+            values.update(extra_values)
+
+        # 不変条件: resolved_episode >= planted_episode（DB 側で保証）
+        resolved_ep = values.get("resolved_episode")
+        conditions = [
+            ForeshadowingModel.id == foreshadowing_id,
+            _status_predicate(target_status),
+        ]
+        if isinstance(resolved_ep, int):
+            conditions.append(ForeshadowingModel.planted_episode <= resolved_ep)
+
         stmt = (
             update(ForeshadowingModel)
-            .where(ForeshadowingModel.id == foreshadowing_id)
-            .values(
-                status=ForeshadowingStatus.RESOLVED.value,
-                resolved_episode=episode_num,
-                updated_at=datetime.utcnow(),
-            )
+            .where(and_(*conditions))
+            .values(**values)
         )
         result = await self.db.execute(stmt)
-        return result.rowcount > 0
+        if result.rowcount > 0:
+            return True
+
+        reason = await self._diagnose_rejection(foreshadowing_id, target_status, resolved_ep)
+        if reason == "before_plant_episode":
+            logger.warning(
+                "Rejecting foreshadowing resolution before plant episode: id=%s target=%s",
+                foreshadowing_id,
+                target_status.value,
+            )
+        else:
+            logger.warning(
+                "Illegal foreshadowing transition blocked: id=%s -> %s (reason=%s)",
+                foreshadowing_id,
+                target_status.value,
+                reason,
+            )
+        _record_rejection(reason)
+        return False
+
+    async def resolve(self, foreshadowing_id: int, episode_num: int) -> bool:
+        """伏線を回収済みに更新"""
+        return await self._transition(
+            foreshadowing_id,
+            ForeshadowingStatus.RESOLVED,
+            {"resolved_episode": episode_num},
+        )
 
     async def progress(self, foreshadowing_id: int) -> bool:
         """伏線を「進展中」に更新"""
-        stmt = (
-            update(ForeshadowingModel)
-            .where(ForeshadowingModel.id == foreshadowing_id)
-            .values(
-                status=ForeshadowingStatus.PROGRESSED.value,
-                updated_at=datetime.utcnow(),
-            )
-        )
-        result = await self.db.execute(stmt)
-        return result.rowcount > 0
+        return await self._transition(foreshadowing_id, ForeshadowingStatus.PROGRESSED)
 
     async def abandon(self, foreshadowing_id: int) -> bool:
         """伏線を回収放棄に更新"""
+        return await self._transition(foreshadowing_id, ForeshadowingStatus.ABANDONED)
+
+    async def update_target_episode(self, foreshadowing_id: int, target_episode: int) -> bool:
+        """回収予定話数を延期する（Rescheduler が使用する実API）
+
+        v5.2 までは本メソッドが存在せず、`hasattr` ガードにより延期処理が
+        サイレントに no-op になっていた（ログだけが成功を偽装）。
+
+        v5.3: 判定を WHERE 句に埋め込んだ CAS（単一 UPDATE）に変更し、
+        終端状態への巻き戻しと horizon 0（`target == planted`）を
+        読み取りフェーズなしに拒否する。往復は 2 → 1。
+        """
+        conditions = [
+            ForeshadowingModel.id == foreshadowing_id,
+            # 未回収（active）な伏線だけを延期対象にする。判断D2の素通しを維持。
+            or_(
+                ForeshadowingModel.status.in_([s.value for s in ForeshadowingStatus.active_statuses()]),
+                not_(ForeshadowingModel.status.in_([s.value for s in ForeshadowingStatus])),
+            ),
+            # 不変条件: 回収予定は設置話より後（horizon 0 は禁止）
+            ForeshadowingModel.planted_episode < target_episode,
+        ]
+
         stmt = (
             update(ForeshadowingModel)
-            .where(ForeshadowingModel.id == foreshadowing_id)
-            .values(
-                status=ForeshadowingStatus.ABANDONED.value,
-                updated_at=datetime.utcnow(),
-            )
+            .where(and_(*conditions))
+            .values(target_episode=target_episode, updated_at=datetime.utcnow())
         )
         result = await self.db.execute(stmt)
-        return result.rowcount > 0
+        if result.rowcount > 0:
+            return True
+
+        # 拒否理由の診断（拒否経路でのみ SELECT する。成功経路は1往復のまま）
+        current = await self.get_by_id(foreshadowing_id)
+        if current is None:
+            reason = "not_found"
+        else:
+            planted_ep = getattr(current, "planted_episode", None)
+            reason = "horizon_zero" if (
+                isinstance(planted_ep, int) and target_episode <= planted_ep
+            ) else "illegal_transition"
+        logger.warning(
+            "Rejecting foreshadowing reschedule: id=%s target_ep=%s (reason=%s)",
+            foreshadowing_id,
+            target_episode,
+            reason,
+        )
+        _record_rejection(reason)
+        return False
 
     # ── 集計 ─────────────────────────────────────────────
 

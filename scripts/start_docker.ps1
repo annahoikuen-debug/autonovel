@@ -1,4 +1,4 @@
-# AutoNovel Docker Development Launcher (PowerShell)
+﻿# AutoNovel Docker Development Launcher (PowerShell)
 $ErrorActionPreference = "Continue"
 
 Write-Host "========================================================" -ForegroundColor Cyan

@@ -3,8 +3,11 @@ src/services/vector_store/chroma.py - ChromaDB ベクトルストア実装
 """
 from __future__ import annotations
 
+import importlib
+import importlib.util
 import logging
 import re
+import sys
 from typing import Any, TYPE_CHECKING
 
 from src.services.vector_store.base import (
@@ -22,13 +25,82 @@ if TYPE_CHECKING:
 else:
     ClientAPI = Any
 
-try:
-    import chromadb
-    HAS_CHROMA = True
-except Exception as e:
-    logger.warning(f"[VECTOR STORE] Failed to import/initialize chromadb: {e}.")
-    HAS_CHROMA = False
-    chromadb = None
+
+def _module_available(name: str) -> bool:
+    """``name`` がインポート可能かを「実際に import せずに」判定する。
+
+    ``import`` すると ChromaDB / rank_bm25 は数秒を要するうえ、起動時
+    (API サーバーの import) には一度も使われない。ここでは
+    ``importlib.util.find_spec`` で「導入されているか」だけを低コストで判定し、
+    実際の import は初回利用時に遅延実行する。
+    """
+    if name in sys.modules:
+        return True
+    try:
+        return importlib.util.find_spec(name) is not None
+    except (ImportError, ValueError):
+        return False
+
+
+#: chromadb がインストールされているか（遅延ロード的前提下の真偽値）。
+HAS_CHROMA = _module_available("chromadb")
+
+#: rank_bm25 がインストールされているか。
+HAS_BM25 = _module_available("rank_bm25")
+
+if not HAS_CHROMA:
+    logger.warning("[VECTOR STORE] chromadb is not installed. Vector features will be disabled.")
+
+
+_chromadb_module: Any = None
+_bm25_cls: Any = None
+
+
+def _get_chromadb() -> Any:
+    """chromadb モジュールを遅延ロードして返す。未導入なら None。
+
+    ``src.services.vector_store.chromadb`` へ代入済みの値（テストの
+    ``patch()`` や後方互換コードによる差し替え）があればそちらを優先する。
+    """
+    global _chromadb_module
+    injected = globals().get("chromadb")
+    if injected is not None:
+        return injected
+    if _chromadb_module is None and HAS_CHROMA:
+        try:
+            _chromadb_module = importlib.import_module("chromadb")
+        except Exception as e:  # noqa: BLE001 - インポート失敗は機能停止として扱う
+            logger.warning(f"[VECTOR STORE] Failed to import/initialize chromadb: {e}.")
+            _chromadb_module = False  # type: ignore[assignment]
+    return _chromadb_module or None
+
+
+def _get_bm25() -> Any:
+    """rank_bm25.BM25Okapi を遅延ロードして返す。未導入なら None。"""
+    global _bm25_cls
+    injected = globals().get("BM25Okapi")
+    if injected is not None:
+        return injected
+    if _bm25_cls is None and HAS_BM25:
+        try:
+            _bm25_cls = importlib.import_module("rank_bm25").BM25Okapi
+        except Exception as e:  # noqa: BLE001
+            logger.warning(f"[VECTOR STORE] Failed to import rank_bm25: {e}.")
+            _bm25_cls = False  # type: ignore[assignment]
+    return _bm25_cls or None
+
+
+def __getattr__(name: str) -> Any:
+    """``chromadb`` / ``BM25Okapi`` を遅延公開する (PEP 562)。
+
+    ``from src.services.vector_store.chroma import chromadb`` を使う既存コードを
+    壊さないよう、属性へ初めてアクセスした時点で本体を import する。
+    """
+    if name == "chromadb":
+        return _get_chromadb()
+    if name == "BM25Okapi":
+        return _get_bm25()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 #: Chroma が「コレクション未存在」を表す型名/メッセージの断片。
@@ -47,12 +119,6 @@ def _is_collection_not_found(exc: BaseException) -> bool:
     msg = str(exc).lower()
     return any(m in msg for m in _NOT_FOUND_MARKERS)
 
-
-try:
-    from rank_bm25 import BM25Okapi
-    HAS_BM25 = True
-except Exception:
-    HAS_BM25 = False
 
 class ChromaClientProvider:
     """
@@ -86,6 +152,13 @@ class ChromaClientProvider:
             )
             return None
 
+        chromadb_mod = _get_chromadb()
+        if chromadb_mod is None:
+            logger.warning(
+                "[CHROMA PROVIDER] chromadb import failed. Vector features will be disabled."
+            )
+            return None
+
         import time
 
         for attempt in range(retries):
@@ -95,12 +168,12 @@ class ChromaClientProvider:
                     logger.info(
                         f"[CHROMA PROVIDER] Initializing ChromaDB HTTP client at {self.host}:{port} (Attempt {attempt + 1}/{retries})"
                     )
-                    self._client = chromadb.HttpClient(host=self.host, port=port)
+                    self._client = chromadb_mod.HttpClient(host=self.host, port=port)
                 else:
                     logger.info(
                         f"[CHROMA PROVIDER] Initializing ChromaDB client at {self.db_path} (Attempt {attempt + 1}/{retries})"
                     )
-                    self._client = chromadb.PersistentClient(path=self.db_path)
+                    self._client = chromadb_mod.PersistentClient(path=self.db_path)
                 return self._client
             except Exception as e:
                 delay = base_delay * (2**attempt)
@@ -405,12 +478,13 @@ class ChromaVectorStore(BaseVectorStore):
 
     def _build_bm25_index(self, collection_name: str, documents: list[str], doc_ids: list[str]):
         """BM25インデックスを構築または更新する"""
-        if not HAS_BM25:
+        bm25_cls = _get_bm25()
+        if bm25_cls is None:
             logger.warning("[VECTOR STORE] BM25 not available, skipping index build")
             return
 
         corpus_tokens = [self._tokenize(doc) for doc in documents]
-        bm25 = BM25Okapi(corpus_tokens)
+        bm25 = bm25_cls(corpus_tokens)
 
         self._bm25_indexes[collection_name] = {
             "bm25": bm25,
@@ -598,4 +672,10 @@ class ChromaVectorStore(BaseVectorStore):
 
 
 
-__all__ = ["ChromaClientProvider", "ChromaVectorStore", "HAS_CHROMA", "HAS_BM25"]
+__all__ = [
+    "ChromaClientProvider",
+    "ChromaVectorStore",
+    "HAS_CHROMA",
+    "HAS_BM25",
+    "chromadb",
+]

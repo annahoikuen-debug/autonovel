@@ -6,8 +6,6 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
-from openai import AsyncOpenAI
-
 from src.backend.config import settings
 from src.services.llm.base import (
     PLACEHOLDER_API_KEY,
@@ -39,7 +37,25 @@ class OpenAIAdapter(BaseLLMAdapter):
                 "(OPENAI_API_KEY unset). "
                 "Requests to a remote api.openai.com endpoint will fail with HTTP 401."
             )
-        self.client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
+        self._client: Any = None
+
+    @property
+    def client(self) -> Any:
+        """OpenAI クライアントを遅延生成して返す。
+
+        openai SDK の import は数秒を要すため、実際に API を呼ぶまで
+        生成しない (起動時間短縮)。
+        """
+        if self._client is None:
+            from openai import AsyncOpenAI  # 遅延 import
+
+            self._client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
+        return self._client
+
+    @client.setter
+    def client(self, value: Any) -> None:
+        # テストや呼び出し側からの差し替えを従来どおり許可する。
+        self._client = value
 
     async def generate_text(
         self,

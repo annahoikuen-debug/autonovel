@@ -1,6 +1,6 @@
 [project]
 name = "autonovel"
-version = "5.2.1"
+version = "5.3.0"
 description = "AutoNovel - 小説生成エンジン (FastAPI + React + Huey + SQLAlchemy)"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -37,6 +37,9 @@ dependencies = [
     # メトリクス (src/backend/observability/metrics.py, src/llm/resilient_gateway.py などが
     # モジュール直下で import するため必須。/metrics エンドポイントの前提となる)
     "prometheus-client>=0.20.0",
+    # 決済 (src/backend/routers/billing_webhook.py:7 がモジュール直下で無条件に import する。
+    # server.py:182 で必ず router が登録されるため、欠けると起動自体が ImportError で失敗する)
+    "stripe>=11.0.0",
 ]
 
 [project.scripts]
@@ -81,8 +84,13 @@ observability = [
     "sentry-sdk>=2.0.0",
 ]
 load = [
-    # 負荷試験 (tests/load/test_locustfile.py のみで使用)
+    # 負荷試験 (tests/load/locustfile.py のみで使用)
     "locust>=2.32.0",
+]
+epub = [
+    # src/easy_mode/phase3/ebook_export.py が EPUB 出力時に import する。
+    # v5 の目玉機能（商用縦書き EPUB 3）なので、無条件列入を推奨。
+    "ebooklib>=0.18",
 ]
 
 [build-system]

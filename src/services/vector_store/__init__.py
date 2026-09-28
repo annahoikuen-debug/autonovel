@@ -24,7 +24,6 @@ from src.services.vector_store.chroma import (
     ChromaVectorStore,
     HAS_CHROMA,
     HAS_BM25,
-    chromadb,
 )
 from src.services.vector_store.pgvector import (
     PgVectorStore,
@@ -110,6 +109,19 @@ class _VectorStorePackage(types.ModuleType):
         if name in ("create_async_engine", "async_sessionmaker", "HAS_PGVECTOR"):
             if "src.services.vector_store.pgvector" in sys.modules:
                 setattr(sys.modules["src.services.vector_store.pgvector"], name, value)
+
+
+def __getattr__(name: str) -> Any:
+    """``chromadb`` を遅延公開する (PEP 562)。
+
+    chromadb の import は数秒を要するため、API サーバーの起動時には
+    実際に Chroma を使うまで読み込まないようにする。
+    """
+    if name == "chromadb":
+        from src.services.vector_store.chroma import _get_chromadb
+
+        return _get_chromadb()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 sys.modules[__name__].__class__ = _VectorStorePackage

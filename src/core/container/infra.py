@@ -6,7 +6,6 @@ config.container.Container の責務を引き継ぎ、DB・設定・ベクトル
 from __future__ import annotations
 
 import asyncio
-import logging
 import os
 
 from dependency_injector import containers, providers
@@ -17,7 +16,11 @@ from schemas.config import GlobalConfigModel
 from src.backend.database.core import DatabaseManager
 
 # SPI ファクトリー
-from src.core.spi.llm.provider_factory import LLMProviderFactory
+# 注: `llm_provider_factory` (src.core.spi.llm.provider_factory) は削除済み。
+# 元のGemini実装は実際のAPIを呼ばず "[Gemini Response] ..." という固定文字列を
+# 返すだけのフェイクで、DI経由でDAGパイプラインに注入されていた。DI経由で
+# 本番出力が捏造されうる経路を閉じるため登録しない。
+# 実運用のLLMは `src.services.llm.get_llm_adapter` / `src.core.llm_gateway` を使う。
 from src.core.spi.vector_store.provider_factory import VectorStoreFactory
 from src.core.spi.image.provider_factory import ImageProviderFactory
 
@@ -66,7 +69,6 @@ class InfraContainer(containers.DeclarativeContainer):
     )
 
     # SPI ファクトリーの登録
-    llm_provider_factory: providers.Singleton = providers.Singleton(LLMProviderFactory)
     vector_store_provider_factory: providers.Singleton = providers.Singleton(VectorStoreFactory)
     image_provider_factory: providers.Singleton = providers.Singleton(ImageProviderFactory)
 

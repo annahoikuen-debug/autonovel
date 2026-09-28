@@ -500,26 +500,53 @@ class TestDatabaseManager:
 
                             mock_session.add.assert_called_once_with(mock_new_state)
 
-    def test_init_db_creates_tables(self):
-        """init_db 関数がテーブルを作成することを確認"""
+    def test_init_db_uses_alembic_as_schema_source_of_truth(self):
+        """init_db は Alembic migration を適用する（create_all では作らない）"""
         with patch('os.environ.get', return_value=""):
             with patch('src.backend.database.core.DATABASE_URL', "sqlite:///test.db"):
-                with patch('src.backend.database.core.logger') as mock_logger:
+                with patch('src.backend.database.core._run_alembic_upgrade') as mock_alembic:
                     with patch('src.backend.database.core.create_engine') as mock_create_engine:
                         with patch('src.infrastructure.database.models.Base') as mock_infra_base:
                             with patch('src.backend.database.models.Base') as mock_backend_base:
+                                init_db()
 
+                                # 正常系は Alembic upgrade のみ。
+                                # create_all によるスキーマ生成は行わない。
+                                mock_alembic.assert_called_once()
+                                mock_infra_base.metadata.create_all.assert_not_called()
+                                mock_backend_base.metadata.create_all.assert_not_called()
+
+    def test_init_db_falls_back_to_create_all_only_outside_production(self):
+        """Alembic が失敗しても、非本番では create_all へフォールバックする。"""
+        from src.backend.config import settings
+
+        with patch('os.environ.get', return_value=""):
+            with patch('src.backend.database.core.DATABASE_URL', "sqlite:///test.db"):
+                with patch.object(settings, "APP_ENV", "development"):
+                    with patch('src.backend.database.core._run_alembic_upgrade', side_effect=RuntimeError("boom")):
+                        with patch('src.backend.database.core.create_engine') as mock_create_engine:
+                            with patch('src.infrastructure.database.models.Base') as mock_infra_base:
                                 mock_engine = Mock()
                                 mock_create_engine.return_value = mock_engine
 
                                 init_db()
 
-                                # Check that create_all was called on both bases
                                 mock_infra_base.metadata.create_all.assert_called_once_with(mock_engine)
-                                mock_backend_base.metadata.create_all.assert_called_once_with(mock_engine)
 
-                                # Check logging
-                                mock_logger.debug.assert_called()
+    def test_init_db_refuses_create_all_fallback_in_production(self):
+        """本番では Alembic 失敗時に create_all へ落とさず、起動を失敗させる。"""
+        from src.backend.config import settings
+
+        with patch('os.environ.get', return_value=""):
+            with patch('src.backend.database.core.DATABASE_URL', "postgresql+psycopg2://u:p@db/x"):
+                with patch.object(settings, "APP_ENV", "production"):
+                    with patch('src.backend.database.core._run_alembic_upgrade', side_effect=RuntimeError("boom")):
+                        with patch('src.backend.database.core.create_engine') as mock_create_engine:
+                            with patch('src.infrastructure.database.models.Base') as mock_infra_base:
+                                with pytest.raises(RuntimeError, match="Alembic"):
+                                    init_db()
+
+                                mock_infra_base.metadata.create_all.assert_not_called()
 
     def test_get_db_manager_returns_database_manager_instance(self):
         """get_db_manager 関数が DatabaseManager のインスタンスを返すことを確認"""

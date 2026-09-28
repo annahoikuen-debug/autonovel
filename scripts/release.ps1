@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     AutoNovel リリース検証 & タグ付けスクリプト。
 

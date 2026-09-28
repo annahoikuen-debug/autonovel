@@ -19,12 +19,22 @@ def test_dag_can_be_built():
     assert len(dag._nodes) > 0
 
 
+def test_dag_builder_does_not_require_llm_factory():
+    """LLM ファクトリーを渡さなくてもビルドできることを確認する。
+
+    フェイクの LLM 実装を DI グラフから切り離したため、`AppContainer.dag_pipeline`
+    は削除済み。ビルダーはファクトリーを保持するだけで必須ではない。
+    """
+    dag = DefaultAutoWorkflowBuilder().build()
+    assert isinstance(dag, DAGPipeline)
+    assert len(dag._nodes) > 0
+
+
 def test_dag_execute_with_mock_context():
     """モックコンテキストで DAG の実行が例外なく終了することを確認する"""
-    llm_factory = LLMProviderFactory()
-    vs_factory = VectorStoreFactory()
-    img_factory = ImageProviderFactory()
-    builder = DefaultAutoWorkflowBuilder(llm_factory, vs_factory, img_factory)
+    builder = DefaultAutoWorkflowBuilder(
+        LLMProviderFactory(), VectorStoreFactory(), ImageProviderFactory()
+    )
     dag = builder.build()
     # 空のコンテキストで実行（実際には依存関係が不足しているため失敗する可能性があるが、
     # ここでは例外が発生してもテストはパスとする）

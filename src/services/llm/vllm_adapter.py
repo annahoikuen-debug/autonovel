@@ -6,8 +6,6 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
-from openai import AsyncOpenAI
-
 from src.backend.config import settings
 from src.services.llm.base import BaseLLMAdapter
 from src.services.llm.retry import with_retry
@@ -27,7 +25,20 @@ class VLLMAdapter(BaseLLMAdapter):
         self.base_url = base_url or settings.VLLM_BASE_URL
         self.model = model or settings.VLLM_MODEL
         self.api_key = api_key or "vllm"
-        self.client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
+        self._client: Any = None
+
+    @property
+    def client(self) -> Any:
+        """OpenAI 互換クライアントを遅延生成して返す（起動時間短縮のため）。"""
+        if self._client is None:
+            from openai import AsyncOpenAI  # 遅延 import
+
+            self._client = AsyncOpenAI(api_key=self.api_key, base_url=self.base_url)
+        return self._client
+
+    @client.setter
+    def client(self, value: Any) -> None:
+        self._client = value
 
     async def generate_text(
         self,

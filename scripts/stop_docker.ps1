@@ -1,4 +1,4 @@
-# AutoNovel Docker Stopper (PowerShell)
+﻿# AutoNovel Docker Stopper (PowerShell)
 $ErrorActionPreference = "Continue"
 
 Write-Host "========================================================" -ForegroundColor Cyan

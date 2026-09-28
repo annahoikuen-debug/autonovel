@@ -1,14 +1,18 @@
+import importlib
 import logging
 import os
 import time
-
-from google import genai
-from google.genai import types
+from typing import Any
 
 from config.imagen_models import get_imagen_model_id
 from src.models.illustration import SafetyLevel
 
 logger = logging.getLogger(__name__)
+
+
+def _genai_types() -> Any:
+    """``google.genai.types`` を遅延ロードする（起動時間短縮のため）。"""
+    return importlib.import_module("google.genai.types")
 
 
 class ImageService:
@@ -33,9 +37,27 @@ class ImageService:
                 "ImageService requires a non-empty api_key. "
                 "Set GEMINI_API_KEY or GOOGLE_GENAI_API_KEY, or pass api_key explicitly."
             )
-        self.client = genai.Client(api_key=resolved_key)
+        self._api_key = resolved_key
+        self._client: Any = None
         self.storage_dir = storage_dir
         self.default_model = get_imagen_model_id(default_model)
+
+    @property
+    def client(self) -> Any:
+        """GenAI クライアントを遅延生成して返す。
+
+        google-genai SDK の import は数秒を要し、実際に画像を生成するまで
+        不要なため、生成時にだけ読み込む。
+        """
+        if self._client is None:
+            from google import genai  # 遅延 import
+
+            self._client = genai.Client(api_key=self._api_key)
+        return self._client
+
+    @client.setter
+    def client(self, value: Any) -> None:
+        self._client = value
 
     async def generate(
         self,
@@ -60,7 +82,7 @@ class ImageService:
             if negative_prompt:
                 config_kwargs["negative_prompt"] = negative_prompt
 
-            config = types.GenerateImagesConfig(**config_kwargs)
+            config = _genai_types().GenerateImagesConfig(**config_kwargs)
 
             response = self.client.models.generate_images(
                 model=model,

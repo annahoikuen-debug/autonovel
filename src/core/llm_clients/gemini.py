@@ -1,17 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import importlib
 import json
 import re
 import time
 from collections.abc import Callable
-from typing import Any
-
-try:
-    from google import genai  # type: ignore
-except ImportError:
-    import google.genai as genai  # type: ignore
-from google.genai import types as genai_types
+from typing import TYPE_CHECKING, Any
 
 from src.backend.engine_utils import AdaptiveCooldown, safe_model_validate
 from src.backend.sanitizer import OutputSanitizer
@@ -21,7 +16,30 @@ from src.core.observability import StructuredLogger
 from src.models.base import get_gemini_schema
 from src.services.retry_decorator import RetryState, with_llm_retry
 
+if TYPE_CHECKING:  # pragma: no cover - 型チェックのみ
+    from google import genai  # type: ignore[import-not-found]
+    from google.genai import types as genai_types  # type: ignore[import-not-found]
+
 logger = StructuredLogger(__name__)
+
+
+def _genai_types() -> Any:
+    """``google.genai.types`` を遅延ロードする。
+
+    google-genai SDK の import は数秒を要するが、このクライアントは
+    実際に Gemini を呼び出すまで使わない。API サーバーの起動を遅くしない
+    よう、設定オブジェクトを組み立てる時点で読み込む。
+    """
+    return importlib.import_module("google.genai.types")
+
+
+def __getattr__(name: str) -> Any:
+    """``genai`` / ``genai_types`` を遅延公開する (PEP 562)。"""
+    if name == "genai":
+        return importlib.import_module("google.genai")
+    if name == "genai_types":
+        return _genai_types()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class GeminiApiClient(BaseLLMClient):
@@ -326,6 +344,7 @@ class GeminiApiClient(BaseLLMClient):
         # リトライごとに温度を下げることで、AIの迷走を抑える
         current_temp = max(0.0, temp - (attempt * 0.15))
 
+        genai_types = _genai_types()
         config = genai_types.GenerateContentConfig(
             temperature=current_temp,
             system_instruction=system_instruction,

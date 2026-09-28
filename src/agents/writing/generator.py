@@ -137,8 +137,35 @@ class WritingGenerator:
                 "use_beat_to_scene": True,  # Beat-to-Scene分割執筆を有効化
             }
 
-            # 本文を生成
-            content = await writer.write(book_id, ep_num, context)
+            # v5.3 / Step 7: `write()` を直接呼ばず `run()` 経由で生成する。
+            # `EpisodeWriter.run` は本文生成に加えて
+            #   - 伏線自動回収（`check_and_resolve`）
+            #   - 事実ダイジェスト永続化（`_persist_episode_digest`）
+            # を行う。`write()` 直叩きでは両方が永久に未実行だった。
+            from src.agents.orchestrator import AgentContext
+
+            agent_ctx = AgentContext(
+                book_id=book_id,
+                branch_id=branch_id,
+                ep_num=ep_num,
+                artifacts={
+                    "repo": self.repo,
+                    "session": getattr(self.repo, "session", None),
+                    "writing_context": context,
+                    **context,
+                },
+            )
+            result = await writer.run(agent_ctx)
+
+            if result.error:
+                logger.warning(
+                    "EpisodeWriter.run returned error for book_id=%s ep=%s: %s",
+                    book_id,
+                    ep_num,
+                    result.error,
+                )
+
+            content = str(result.artifacts.get("written_text") or "")
 
             # 生成された本文をDBに保存
             if self.repo and content:

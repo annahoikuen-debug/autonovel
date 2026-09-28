@@ -1,4 +1,4 @@
-Set-Location $PSScriptRoot\..
+﻿Set-Location $PSScriptRoot\..
 Write-Host "=== ruff ==="
 py -m ruff check --fix src tests
 Write-Host "=== mypy ==="

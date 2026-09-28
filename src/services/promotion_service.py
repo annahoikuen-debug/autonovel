@@ -120,6 +120,7 @@ class PromotionService:
             if target_b_id is not None:
                 from src.backend.database.models import Plot
                 from src.backend.database.models_foreshadowing import ForeshadowingModel
+                from src.services.foreshadowing.planner import plan_foreshadowing
 
                 fs_stmt = ForeshadowingModel.__table__.select().where(
                     ForeshadowingModel.book_id == target_b_id
@@ -132,17 +133,27 @@ class PromotionService:
                         .order_by(Plot.ep_num)
                     )
                     plot_rows = (await session.execute(plot_stmt)).fetchall()
+                    total_eps = max(
+                        (getattr(p, "ep_num", 0) or 0 for p in plot_rows), default=0
+                    ) or None
                     for p_row in plot_rows:
                         note = getattr(p_row, "detailed_blueprint", "") or ""
                         if note and note.strip():
+                            # v5.3: scope / target_episode をビートシート基準で決定する
+                            # （旧: "ep_num <= 5 → short_term" ＋ target_episode=NULL）
+                            plan = plan_foreshadowing(
+                                planted_episode=p_row.ep_num,
+                                total_episodes=total_eps or p_row.ep_num,
+                            )
                             await session.execute(
                                 ForeshadowingModel.__table__.insert().values(
                                     book_id=target_b_id,
                                     title=f"第{p_row.ep_num}話: {getattr(p_row, 'title', '') or '伏線'}",
                                     description=note.strip(),
                                     planted_episode=p_row.ep_num,
+                                    target_episode=plan.target_episode,
                                     status="planted",
-                                    scope="short_term" if p_row.ep_num <= 5 else "long_term",
+                                    scope=plan.scope.value,
                                 )
                             )
 

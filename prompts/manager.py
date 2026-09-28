@@ -732,6 +732,22 @@ class PromptManager:
         if not blueprint and "blueprint" in kwargs:
             blueprint = kwargs.get("blueprint", "")
 
+        # v5.3: 契約伏線（ビートシートで本話回収が契約された伏線）
+        # 従来は final_writing_prompt.j2 の `foreshadowing_contract_context` 分岐と
+        # writing_metadata_instruction.j2 の `contract_foreshadowings` ループが
+        # 常に false になっており、LLM が回収結果を報告する手段が存在しなかった。
+        contract_foreshadowings = kwargs.get("contract_foreshadowings") or []
+        foreshadowing_contract_context = kwargs.get("foreshadowing_contract_context", "")
+        if contract_foreshadowings and not foreshadowing_contract_context:
+            foreshadowing_contract_context = await self.render_async(
+                "foreshadowing_contract_instruction.j2",
+                {
+                    "contract_foreshadowings": contract_foreshadowings,
+                    "background_foreshadowings": [],
+                },
+                book_id=book_id,
+            )
+
         # 感情コンテキスト生成（感情残基抽出が利用可能な場合）
         emotional_context = ""
         if EMOTIONAL_RESIDUE_AVAILABLE and book_id is not None:
@@ -767,6 +783,12 @@ class PromptManager:
             "CONTENT_SEPARATOR": "---",
             "dialogue_profiles": kwargs.get("dialogue_profiles", {}),
             "emotional_context": emotional_context,
+            # v5.3: 3層ローリング記憶の実配線（従来は組み立てられるだけだった）
+            "three_layer_ctx": kwargs.get("three_layer_ctx", ""),
+            # v5.3: 契約伏線とメタデータ出力スキーマの配線
+            "contract_foreshadowings": contract_foreshadowings,
+            "foreshadowing_contract_context": foreshadowing_contract_context,
+            "episode_number": ep_num,
         }
 
         return await self.render_async("final_writing_prompt.j2", context, book_id=book_id)

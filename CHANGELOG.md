@@ -2,6 +2,132 @@
 
 本プロジェクトの変更履歴。[Semantic Versioning](https://semver.org/lang/ja/) に準拠。
 
+## [5.3.0] - 2026-09-28 - V5.3 長編耐性（伏線ステートマシン実体化・3層記憶配線・KPI計測）
+
+ロードマップの主要KPI「**長編（20〜50話）で破綻なく完走する**」「**伏線回収率**」を
+目標に、v5.2 まで*配線されていなかった*長編機構を実体化した。
+
+### 修正（長編破綻の根本原因）
+
+- **伏線ステートマシンの未実装**
+  - `ForeshadowingStatus` に遷移テーブル（`can_transition` / `allowed_transitions`）を実装。
+    終端状態（resolved / abandoned）からの巻き戻しは UPDATE せず拒否。
+  - `DbForeshadowingRepository` に共通 `_transition()` を導入し、
+    `resolve` / `progress` / `abandon` をすべて遷移ガード経由に統一。
+  - 不変条件 `resolved_episode >= planted_episode` を `resolve()` で検証。
+    従来は「設置話より前の話で回収する」ことが(DB上)可能だった。
+- **`update_target_episode` の欠如による延期サイレント no-op**
+  - `ForeshadowingRescheduler` は `hasattr(repo, "update_target_episode")` で
+    呼び出しをガードしていたが、`DbForeshadowingRepository` にそのメソッドが
+    存在せず、**UPDATE は発行されないまま成功ログだけ出力**していた。
+  - 実 API を実装し、API 不在時・拒否時は成功を偽装せず `None` を返すよう修正。
+- **`target_episode` が常に NULL**
+  - `promotion_service` / `plots.py` の経験則 `ep_num <= 5 → short_term` を
+    ビートシート基準の計画に置き換え（`src/services/foreshadowing/planner.py` 新設）。
+  - NULL のままだと `ForeshadowingService.check_and_resolve` の `is_contracted` が
+    常に `True` となり、アンサンブルスコアの「契約ボーナス」が機能していなかった。
+
+### 追加
+
+- **伏線設置計画 `src/services/foreshadowing/planner.py`**
+  - 回収ビート（`foreshadowing_directive` に「回収」を含むビート。判定基準は
+    `ForeshadowingRescheduler` と共通）から scope と回収予定話を決定。
+  - 回収先は回収区間内に**設置位置に応じて線形分散**させ、同一話への集中を防ぐ。
+  - 回収ビート内に設置された場合は同ビート内で回収（クライマックス中に撒いた伏線が
+    クライマックス後に回収される構造的破綻を解消）。
+  - 不変条件: 回収予定話 > 設置話、horizon >= 1、同時回収は最大3本/話。
+- **契約伏線プレビューの本番配線**
+  - `ContextBuilderAgent._load_db_foreshadowings()` で伏線テーブルから
+    未回収伏線・契約伏線を取得し、`writing_context` に載せる
+    （正典を `plot_json` から `foreshadowings` テーブルへ移行）。
+  - `PromptManager.build_final_writing_prompt` が
+    `foreshadowing_contract_instruction.j2` を実際に描画するようにした
+    （同テンプレートは v5.2 までテストからのみ描画され、本番では未使用）。
+  - `writing_metadata_instruction.j2` の `contract_foreshadowings` ループに
+    データを供給。**LLM が「どの伏線を回収したか」を ID で報告できるようになった**
+    （従来は `foreshadowings` 配列が常に空で `WritingMetadata.foreshadowings` は
+    常に `[]`。`EnsembleJudge` は常に閾値下げモードで動作していた）。
+  - `EpisodeWriter.run` が `contract_ids` を `check_and_resolve` に渡す。
+- **3層ローリング記憶の実配線**
+  - `three_layer_context` は v5.2 まで `ContextBuilderAgent` で組み立てられるだけだった。
+    `PromptComposer._format_three_layer_context` を追加し、
+    `final_writing_prompt.j2` に注入する配線を追加。
+  - `episode_context.py` に Layer2 のトークンバジェット制御を導入。
+    直近10話は全文ダイジェスト、最初は2話を保持し、間は省略マーカーで圧縮、
+    総文字数は `LAYER2_MAX_CHARS`(既定4000) で頭打ち。
+    従来は過去話全文を無制限に積み上げて N話目に比例して肥大していた。
+- **ダイジェストの永続化**
+  - `EpisodeDigestService.summarize_and_save` に本番呼び出しが無い状態だったため、
+    `EpisodeWriter._persist_episode_digest` を追加。
+  - `episode_digests` テーブルの Alembic マイグレーション `0031_episode_digests.py` を新設
+    （テーブル定義はあったが DDL が存在せず、Alembic 構築の DB には不在だった）。
+- **伏線KPIの計測基盤**
+  - `src/services/foreshadowing/kpi.py` 新設: 回収率・解決率・未回収数・期限超過数を算出。
+    `DbForeshadowingRepository.get_balance` は完成していたが**本番から一度も
+    呼ばれていなかった**（デッドコード）状態を解消。
+  - Prometheus メトリクス 9 種を新設（`foreshadowing_collection_rate`,
+    `foreshadowing_active`, `foreshadowing_overdue`,
+    `foreshadowing_status_transitions_total`,
+    `foreshadowing_transitions_rejected_total`,
+    `foreshadowing_rescheduled_total`, `foreshadowing_planted_total`,
+    `longform_context_tokens`, `longform_context_chars`）。
+  - `GET /api/graph/foreshadowing/kpi` エンドポイントを追加。
+- **長編ベンチマーク `tests/benchmarks/long_form.py`**
+  - 完走率・回収率・解決率・Layer2 文字数の推移を 20/50/100/200話で計測。
+  - `python -m tests.benchmarks.long_form --eps 20,50,100 --check`
+
+### 変更
+
+- `format_unresolved_foreshadowings` が伏線 ID と現状ステータスを描画するようにした
+  （ID が無いと LLM は回収を報告できない）。出力書式は
+  `- **{id}** (第N話提示 → 第M話回収予定): 『タイトル』説明 [現状: status]`。
+- `ConsistencyAuditor` の伏線パーサを `_extract_foreshadowing_descriptions()`
+  として共通化し、同一書式でパースすることをテストで固定化。
+- バージョン表記を 5.3.0 へ統一。
+
+### テスト
+
+- `tests/regression/test_v53_long_form_integrity.py`（41 テスト）:
+  ステートマシン遷移ガード / 設置計画の不変条件 / プロンプトID配線 /
+  Rescheduler の偽成功防止 / KPI算出 / 3層記憶の注入 / 長編プラトー。
+- ベンチマーク実測（LLM 呼び出しなし）:
+  - 完走率 100%（20/50/100/200話すべて）
+  - 回収率 100%、解決率 98〜100%
+  - **Layer2 最大文字数が 50話で 995 にプラトー**（200話でも 995。線形成長しない）
+- 回帰確認: HEAD の worktree と差分比較し、**新規回帰 0 件**。
+
+## [Unreleased] - v5.2.1 後の欠陥修正・テスト復旧
+
+`docs/STATUS.md` を追加し、現在の機能実装状況（SSOT）を一元化した。
+
+### 修正
+- **fix(v5)**: GraphRAG pipeline の await 漏れにより `/api/graph/pipeline/process` と `/api/graph/pipeline/batch` が常に 500 を返していた（両ハンドラを `async` 化）
+  - `src/backend/routers/graph.py`
+- **fix(v5)**: branches ルータの所有者検証をラッパー方式から FastAPI 依存方式へ変更（ラッパー方式は単体テストの直接呼び出しを 401 で壊していた）
+  - `src/backend/routers/branches.py` / `src/backend/security/owner_guard.py`
+- **fix(v5)**: `jinja2.sandbox` の import 漏れでサブテキストテンプレートの描画が全滅していた
+  - `src/narrative/subtext_templates/renderer.py`
+- **fix(v5)**: 章インポートの実装判定マーカー (`_unimplemented_marker`) が未設定で、ガードが機能していなかった
+  - `src/agents/writing/agent.py`, `src/agents/writing/generator.py`, `src/domain/writing/coordinator.py`
+- **fix(v5)**: メトリクスポートのシグネチャ不一致で BookScore メトリクスが記録されていなかった
+  - `src/backend/observability/metrics.py`, `src/backend/database/repositories/book_score.py`
+- **fix(v5)**: `.env.example` の `HUEY_BACKEND=memory` が `Settings` の `Literal` と食い違い、初回起動が `ValidationError` で失敗していた
+  - `.env.example`（`HUEY_BACKEND=sqlite` へ修正）
+
+### テスト
+- 契約テストが認証導入後 401 で全滅していた件の復旧
+- 本番設定バリデーションのテストが `AUTH_DISABLED=true` に汚染されていた件の自己完結化
+- 執筆グラフの経路分岐テストを v5.0 Early Exit 方針に合わせる
+
+### 保守
+- 追跡されていた生成物を解除（`$null`、Vite 一時ファイル、`output/` のカバレッジ JSON と調査用 txt、`logs/*.jsonl`）。`artifacts/` は回帰防止の基準値として追跡を維持
+  - `.gitignore`
+
+### ドキュメント
+- `docs/STATUS.md`: 現行の機能実装状況・既知の制限を记录的した SSOT を新規追加
+- ルートの 6 つのサマリ文書（`IMPROVEMENT_SUMMARY.md` / `IMPROVEMENT_SUMMARY_CONCISE.md` / `IMPROVEMENT_SUGGESTIONS.md` / `IMPLEMENTATION_SUMMARY.md` / `IMPLEMENTATION_SUMMARY_JA.md` / `FINAL_SUMMARY.md`）に「過去スナップショット・現状ではない」旨のバナーを追加。本文は改変しない
+- `plans/README.md`: A1〜A4 の 96 ステップ文書は設計文書であり進捗 SSOT ではない旨を明記
+
 ## [5.2.1] - 2026-09-26 - V5 ファイナライゼーション（マンガ/low-cost パイプライン統合）
 
 ### 追加

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { fetchStreamToken } from '../api/streamToken';
 
 export interface PipelineEvent {
   event_type: string;
@@ -38,17 +39,33 @@ export function usePipelineWebSocket(bookId: number | null) {
   const isClosedExplicitlyRef = useRef(false);
   const maxReconnectAttempts = 5;
 
-  const connect = useCallback(() => {
+  const connect = useCallback(async () => {
     if (!bookId) return;
 
     setState(prev => ({ ...prev, status: 'connecting' }));
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.host || 'localhost:8000';
-    const token = localStorage.getItem('AUTONOVEL_API_KEY') || '';
-    const tokenParam = token ? `?token=${encodeURIComponent(token)}` : '';
-    const wsUrl = `${protocol}//${host}/api/ws/pipeline/${bookId}${tokenParam}`;
 
-    const ws = new WebSocket(wsUrl);
+    // 短命・bookスコープのストリーム専用トークンを取得する。
+    // 以前はこの接続で長生きの access / APIトークンをクエリに載せていたため、
+    // アクセスログやブラウザ履歴に認証情報が平文で残っていた。
+    let streamToken: string;
+    try {
+      streamToken = await fetchStreamToken(bookId);
+    } catch {
+      setState(prev => ({ ...prev, status: 'disconnected' }));
+      return;
+    }
+
+    // 接続中に bookId が変更された場合はこの接続を開かない
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return;
+    // トークン取得は非同期。取得中にアンマウント/明示クローズされた場合は
+    // 後から WebSocket が開かれてombie接続になるため中断する
+    if (isClosedExplicitlyRef.current) return;
+
+    const ws = new WebSocket(
+      `${protocol}//${host}/api/ws/pipeline/${bookId}?token=${encodeURIComponent(streamToken)}`
+    );
     wsRef.current = ws;
 
     ws.onopen = () => {

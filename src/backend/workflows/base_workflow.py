@@ -4,7 +4,7 @@ import logging
 from typing import Any
 
 from src.backend.database import DataRepository
-from src.backend.orchestrator_engine_adapter import OrchestratorEngineAdapter as UltimateHegemonyEngine
+from src.backend.orchestrator_engine_adapter import OrchestratorEngineAdapter
 from src.backend.planning_service import PlanningService
 from src.backend.protocols import BiblePort, CritiquePort, TensionPort, WritingPort
 from src.backend.writing_service import WritingService
@@ -49,7 +49,7 @@ class BaseWorkflow(ABC):
 
     def __init__(
         self,
-        engine: UltimateHegemonyEngine | None = None,
+        engine: OrchestratorEngineAdapter | None = None,
         writing: WritingPort | None = None,
         planner: PlanningService | None = None,
         writing_service: WritingService | None = None,

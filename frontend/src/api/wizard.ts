@@ -1,4 +1,5 @@
 import { apiFetch, handleResponse, ApiNetworkError, ApiTimeoutError } from "./client";
+import { buildStreamUrl } from "./streamToken";
 
 const PLOTS_BASE_URL = "/api/plots";
 const STREAM_BASE_URL = "/api/stream";
@@ -78,12 +79,16 @@ export async function saveWizardBook(data: WizardBookData): Promise<SaveWizardBo
 
 /**
  * 執筆ストリーム購読 (SSE)
- * 
+ *
+ * EventSource はヘッダーを付けられないため、クエリには **短命・作品スコープの
+ * ストリーム専用トークン** を用いる。access トークンをクエリに載せると
+ * アクセスログやブラウザ履歴に 60分有効な認証情報が平文で残るため使わない。
+ *
  * @param book_id 書籍ID
  * @param ep_num エピソード番号
  * @param branch_id ブランチID
  * @param onEvent イベント受信時のコールバック
- * @returns アンsubsribe関数
+ * @returns 購読解除関数
  */
 export function subscribeWritingStream(
   book_id: number,
@@ -91,34 +96,54 @@ export function subscribeWritingStream(
   branch_id: number = 1,
   onEvent: (event: WritingStreamEvent) => void
 ): () => void {
-  const token = localStorage.getItem("auth_token");
-  const url = `${STREAM_BASE_URL}/writing/${book_id}/${ep_num}?branch_id=${branch_id}${token ? `&token=${encodeURIComponent(token)}` : ""}`;
-  
-  const eventSource = new EventSource(url);
+  let eventSource: EventSource | null = null;
+  let disposed = false;
 
-  eventSource.onmessage = (event) => {
-    try {
-      const data = JSON.parse(event.data) as WritingStreamEvent;
-      onEvent(data);
-    } catch (err) {
-      console.error("Failed to parse SSE event:", err);
+  // トークン取得は非同期。完了前に購読解除された場合は接続しない。
+  void buildStreamUrl(
+    `${STREAM_BASE_URL}/writing/${book_id}/${ep_num}`,
+    book_id,
+    { branch_id }
+  ).then((url) => {
+    if (disposed) return;
+    if (!url) {
+      onEvent({
+        phase: "Error",
+        progress: 0,
+        message: "ストリーム認証に失敗しました",
+        timestamp: Date.now(),
+      });
+      return;
     }
-  };
 
-  eventSource.onerror = (err) => {
-    console.error("SSE connection error:", err);
-    eventSource.close();
-  };
+    const source = new EventSource(url);
+    eventSource = source;
 
-  // Return cleanup function
+    source.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as WritingStreamEvent;
+        onEvent(data);
+      } catch (err) {
+        console.error("Failed to parse SSE event:", err);
+      }
+    };
+
+    source.onerror = (err) => {
+      console.error("SSE connection error:", err);
+      source.close();
+    };
+  });
+
   return () => {
-    eventSource.close();
+    disposed = true;
+    eventSource?.close();
   };
 }
 
 /**
  * 執筆ストリーム購読 (fetch + ReadableStream版)
- * EventSourceが使えない環境向け
+ * EventSourceが使えない環境向け。fetch はヘッダーを付けられるため、
+ * ここでは短命トークンをクエリに載せる必要がない。
  */
 export async function subscribeWritingStreamFetch(
   book_id: number,
@@ -128,7 +153,7 @@ export async function subscribeWritingStreamFetch(
   signal?: AbortSignal
 ): Promise<void> {
   const url = `${STREAM_BASE_URL}/writing/${book_id}/${ep_num}?branch_id=${branch_id}`;
-  
+
   const res = await apiFetch(url, {
     method: "GET",
     signal,

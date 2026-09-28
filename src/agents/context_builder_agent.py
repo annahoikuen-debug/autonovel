@@ -437,6 +437,18 @@ class ContextBuilderAgent(SkillAgent):
                 import logging
                 logging.getLogger(__name__).warning(f"Context compression failed: {e}")
 
+        # v5.3: 未回収伏線は plot_json ではなく伏線ステートマシン(foreshadowings テーブル)を
+        # 正典とする。plot_json 由来のものはフォールバックに留める。
+        # これにより プロンプトに必ず ID が付き、LLM が [METADATA_JSON] で
+        # 回収を報告でき、check_and_resolve のアンサンブル判定が機能する。
+        db_foreshadowings, contract_foreshadowings = await self._load_db_foreshadowings(
+            session, book_id, ep_num
+        )
+        if db_foreshadowings:
+            foreshadowing_source = db_foreshadowings
+        else:
+            foreshadowing_source = plot_dict.get("foreshadowings", [])
+
         return {
             "plot": plot_dict,
             "target_word_count": target_word_count,
@@ -451,15 +463,53 @@ class ContextBuilderAgent(SkillAgent):
             "compressed_context": compressed_context,
             "compression_stats": compression_stats,
             "foreshadowing_ctx": self.format_unresolved_foreshadowings(
-                plot_dict.get("foreshadowings", [])
+                foreshadowing_source
             ),
+            # v5.3: 本話で回収すべき契約伏線（プロンプト契約＋メタデータ出力_schema に使用）
+            "contract_foreshadowings": contract_foreshadowings,
             # Step 7: 3層ローリング記憶をコンテキストに注入
             "three_layer_context": three_layer_context,
         }
 
+    async def _load_db_foreshadowings(
+        self, session: Any, book_id: int, ep_num: int
+    ) -> tuple[list, list[dict[str, Any]]]:
+        """伏線ステートマシンから未回収伏線と契約伏線を取得する。
+
+        Returns:
+            (未回収伏線リスト, 契約伏線辞書リスト)
+            DB が利用できない場合は ([], []) を返し、呼び出し側が
+            plot_json 由来のフォールバックを使う。
+        """
+        if session is None or book_id is None:
+            return [], []
+        try:
+            from src.infrastructure.repositories.foreshadowing_repo import (
+                DbForeshadowingRepository,
+            )
+            from src.services.foreshadowing_service import ForeshadowingService
+
+            repo = DbForeshadowingRepository(session)
+            service = ForeshadowingService(repo)
+            unresolved = await repo.get_unresolved(book_id)
+            contract = await service.get_contract_foreshadowings(book_id, ep_num)
+            return list(unresolved), list(contract)
+        except Exception as e:  # pragma: no cover - DB 未接続時のフォールバック
+            if hasattr(self, "logger"):
+                self.logger.debug(f"Failed to load foreshadowings from DB: {e}")
+            return [], []
+
     @staticmethod
     def format_unresolved_foreshadowings(foreshadowings: list) -> str:
         """未回収伏線一覧をプロンプト注入用テキストにフォーマットする。
+
+        v5.3: 伏線IDを必ず出力する。IDが無いと LLM は [METADATA_JSON] で
+        どの伏線を回収したかを報告できず、`ForeshadowingService.check_and_resolve`
+        のアンサンブル判定が機能しない（= 伏線が回収されずに放置される）。
+
+        出力形式は `- **{id}** (第N話提示 → 第M話回収予定): 説明 [現状: planted]`
+        とし、`ConsistencyAuditor` のパーサ（`- **` 行をパース）と
+        書式を揃える。
 
         Args:
             foreshadowings: ForeshadowingModel or dict のリスト
@@ -469,22 +519,31 @@ class ContextBuilderAgent(SkillAgent):
         """
         if not foreshadowings:
             return "なし"
-        lines = []
+        lines = ["【未回収伏線一覧 / OPEN FORESHADOWINGS】"]
         for f in foreshadowings:
             if isinstance(f, dict):
+                fs_id = f.get("id")
                 title = f.get("title", "不明")
                 planted = f.get("planted_episode", "?")
                 desc = f.get("description", "")
                 target = f.get("target_episode")
+                status = f.get("status")
             else:
+                fs_id = getattr(f, "id", None)
                 title = getattr(f, "title", "不明")
                 planted = getattr(f, "planted_episode", "?")
                 desc = getattr(f, "description", "")
                 target = getattr(f, "target_episode", None)
-            line = f"- 【伏線: {title}】(設置: 第{planted}話"
+                status = getattr(f, "status", None)
+
+            # IDが無い（プロット由来の未登録情報）場合は識別子を省略して扱う
+            head = f"- **{fs_id}** " if fs_id is not None else "- "
             if target:
-                line += f", 回収目標: 第{target}話"
-            line += f") {desc}"
+                line = f"{head}(第{planted}話提示 → 第{target}話回収予定): 『{title}』{desc}"
+            else:
+                line = f"{head}(第{planted}話提示・回収予定未定): 『{title}』{desc}"
+            if status:
+                line += f" [現状: {status}]"
             lines.append(line)
         return "\n".join(lines)
 
@@ -698,11 +757,19 @@ class ContextBuilderAgent(SkillAgent):
                         EpisodeDigestModel.book_id == book_id,
                         EpisodeDigestModel.episode_num == prev_ep,
                     )
-                    res = session.execute(stmt).scalars().first()
+                    # v5.3 / Step 10: `session` は AsyncSession であり、
+                    # `execute` は coroutine を返す。ここが await 無しだと
+                    # `TypeError: 'Result' object can't be awaited` になり、
+                    # 例外の握り潰しにより本文から静かに欠落していた（C2）。
+                    # 同一ファイル内で同期前提と非同期前提が混在していたのは
+                    # 排他要件の違反であり、`AsyncSession` に統一した。
+                    res = (await session.execute(stmt)).scalars().first()
                     if res and res.digest_text:
                         parts.append(f"【直前話(第{prev_ep}話)の確定事実ダイジェスト】\n- {res.digest_text}")
                 except Exception as e:
-                    logger.debug("Failed to retrieve digest for prev episode: %s", e)
+                    logger.warning(
+                        "Failed to retrieve digest for prev episode (ep=%s): %s", ep_num, e
+                    )
 
             # 3. フォールバック: SocialInteractionManager からの関係性メトリクス取得 (未取得時)
             if not any("動的関係性" in p or "動的心理関係性" in p for p in parts) and social_manager:

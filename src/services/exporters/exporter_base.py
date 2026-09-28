@@ -4,4 +4,4 @@ from typing import List, Dict, Any
 class ExporterBase(ABC):
     @abstractmethod
     def export(self, episodes: List[Dict[str, Any]]) -> str:
-        pass
+        pass  # pragma: no cover - 抽象メソッド本体

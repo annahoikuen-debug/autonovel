@@ -278,6 +278,10 @@ async def wizard_save(
         # ビートシートをPlotとして保存
         beats = req.beats if req.beats else []
         from src.backend.database.models_foreshadowing import ForeshadowingModel
+        from src.services.foreshadowing.planner import plan_foreshadowing
+
+        # v5.3: 回収予定話数の決定に作品全体の話数を使う
+        total_eps = len(beats) or req.target_chapters or None
 
         for i, beat in enumerate(beats, start=1):
             ep_num = beat.episode if beat.episode else i
@@ -295,13 +299,20 @@ async def wizard_save(
 
             # 伏線メモが存在する場合は伏線ステートマシンテーブル（foreshadowings）へ登録
             if beat.foreshadowing_notes and beat.foreshadowing_notes.strip():
+                # v5.3: scope / target_episode をビートシート基準で決定する
+                # （旧: "ep_num <= 5 → short_term" ＋ target_episode=NULL）
+                plan = plan_foreshadowing(
+                    planted_episode=ep_num,
+                    total_episodes=total_eps or ep_num,
+                )
                 fs = ForeshadowingModel(
                     book_id=book_id,
                     title=f"第{ep_num}話: {beat.title or '伏線'}",
                     description=beat.foreshadowing_notes.strip(),
                     planted_episode=ep_num,
+                    target_episode=plan.target_episode,
                     status="planted",
-                    scope="short_term" if ep_num <= 5 else "long_term",
+                    scope=plan.scope.value,
                 )
                 uow.session.add(fs)
 

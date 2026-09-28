@@ -1,86 +1,113 @@
-# AutoNovel Local Stop Script (PowerShell) - Step 6
-# Gracefully terminates Uvicorn, Vite, and Huey processes occupying ports 8200 / 5173.
+﻿# AutoNovel ローカル停止スクリプト (PowerShell)
+#
+# Backend (8200) / Frontend (5173) / Huey Worker を停止する。
 #
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File scripts/stop_local.ps1
 #
-# Strategy:
-#   1. Find PIDs listening on ports 8200 and 5173 (Get-NetTCPConnection).
-#   2. Also match python/node processes with AutoNovel-specific command lines.
-#   3. Send graceful termination (CloseMainWindow / taskkill without /F first),
-#      then force-kill only if still alive after a short wait.
+# 停止の優先順位:
+#   1. logs\autonovel.pids に記録された PID（start_local.ps1 が書いたもの）
+#   2. ポート 8200 / 5173 を LISTEN しているプロセス
+#   3. コマンドラインが autonovel の uvicorn / huey / vite に一致するプロセス
+#
+# どの経路でも 1 つでも見つかれば停止し、3 秒待っても生き残れば強制終了する。
 
 $ErrorActionPreference = "Continue"
+
+$ScriptDir = $PSScriptRoot
+$Root = Split-Path $ScriptDir -Parent
+$PidFile = Join-Path $Root "logs\autonovel.pids"
+$targetPorts = @(8200, 5173)
+
+$script:stopped = New-Object System.Collections.Generic.HashSet[int]
 
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host "        AutoNovel - Local Service Stopper               " -ForegroundColor Cyan
 Write-Host "========================================================" -ForegroundColor Cyan
 Write-Host ""
 
-$targetPorts = @(8200, 5173)
-$stoppedPIDs = @()
+function Stop-OneProcess {
+    param([int]$ProcId, [string]$Label)
 
-function Stop-ProcessGracefully {
-    param([int]$ProcessId, [string]$Label)
+    if ($script:stopped.Contains($ProcId)) { return }
+    if ($ProcId -le 0) { return }
 
-    if ($stoppedPIDs -contains $ProcessId) { return }
-    $proc = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
-    if (-not $proc) { return }
+    $proc = Get-Process -Id $ProcId -ErrorAction SilentlyContinue
+    if (-not $proc) {
+        $script:stopped.Add($ProcId) | Out-Null
+        return
+    }
 
-    Write-Host "  [$Label] Stopping PID $ProcessId ($($proc.ProcessName))..." -ForegroundColor Yellow
+    # /T で子プロセス（例: npm → vite）ごと確実に落とす
+    & taskkill /PID $ProcId /T 2>&1 | Out-Null
+    Start-Sleep -Milliseconds 600
 
-    # 1) Graceful: close main window (equivalent to SIGTERM for GUI-less console apps,
-    #    sends WM_CLOSE). For console apps use taskkill without /F (sends WM_CLOSE too).
-    $null = taskkill /PID $ProcessId 2>$null
-    Start-Sleep -Milliseconds 800
-
-    # 2) Force only if still alive
-    $proc = Get-Process -Id $ProcessId -ErrorAction SilentlyContinue
+    $proc = Get-Process -Id $ProcId -ErrorAction SilentlyContinue
     if ($proc) {
-        Write-Host "  [$Label] Still alive, force-killing PID $ProcessId..." -ForegroundColor Yellow
-        $null = taskkill /PID $ProcessId /T /F 2>$null
+        Write-Host "  [$Label] PID $ProcId still alive -> force kill" -ForegroundColor Yellow
+        & taskkill /PID $ProcId /T /F 2>&1 | Out-Null
         Start-Sleep -Milliseconds 300
     }
 
-    if (Get-Process -Id $ProcessId -ErrorAction SilentlyContinue) {
-        Write-Host "  [$Label] WARNING: PID $ProcessId could not be terminated." -ForegroundColor Red
-    } else {
-        Write-Host "  [$Label] PID $ProcessId stopped." -ForegroundColor Green
-        $script:stoppedPIDs += $ProcessId
+    if (Get-Process -Id $ProcId -ErrorAction SilentlyContinue) {
+        Write-Host "  [$Label] WARNING: PID $ProcId could not be terminated." -ForegroundColor Red
+    }
+    else {
+        Write-Host "  [$Label] stopped PID $ProcId ($($proc.ProcessName))" -ForegroundColor Green
+        $script:stopped.Add($ProcId) | Out-Null
     }
 }
 
-# 1. Stop processes by port
-foreach ($port in $targetPorts) {
-    Write-Host "[Port $port] Searching listeners..." -ForegroundColor Yellow
-    $connections = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
-    if ($connections) {
-        $pids = $connections | Select-Object -ExpandProperty OwningProcess -Unique
-        foreach ($procId in $pids) {
-            Stop-ProcessGracefully -ProcessId $procId -Label "Port $port"
+# --- 1. PID ファイル ------------------------------------------------------- #
+if (Test-Path $PidFile) {
+    Write-Host "[pidfile] Reading $PidFile ..." -ForegroundColor Yellow
+    foreach ($line in (Get-Content $PidFile -ErrorAction SilentlyContinue)) {
+        if ($line -match '^\s*([A-Za-z]+)\s*=\s*(\d+)\s*$') {
+            Stop-OneProcess -ProcId ([int]$Matches[2]) -Label $Matches[1]
         }
-    } else {
-        Write-Host "  [Port $port] No listeners found." -ForegroundColor Gray
+    }
+    Remove-Item $PidFile -ErrorAction SilentlyContinue
+}
+else {
+    Write-Host "[pidfile] not found (services were not started by start_local.ps1)" -ForegroundColor DarkGray
+}
+
+# --- 2. ポートから逆引き --------------------------------------------------- #
+foreach ($port in $targetPorts) {
+    Write-Host "[port $port] Looking for listeners ..." -ForegroundColor Yellow
+    $listeners = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+    if ($listeners) {
+        foreach ($procId in ($listeners | Select-Object -ExpandProperty OwningProcess -Unique)) {
+            Stop-OneProcess -ProcId ([int]$procId) -Label "port$port"
+        }
+    }
+    else {
+        Write-Host "  [port $port] no listener." -ForegroundColor DarkGray
     }
 }
 
-# 2. Stop residual AutoNovel worker processes (Huey consumer, uvicorn without port match)
-Write-Host "[Processes] Searching residual AutoNovel processes..." -ForegroundColor Yellow
+# --- 3. コマンドライン一致（ワーカーなど） --------------------------------- #
+Write-Host "[scan] Looking for residual AutoNovel processes ..." -ForegroundColor Yellow
 try {
     $candidates = Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | Where-Object {
         $_.CommandLine -and (
             $_.CommandLine -match "huey_consumer" -or
-            ($_.CommandLine -match "uvicorn" -and $_.CommandLine -match "src\.backend\.server")
+            $_.CommandLine -match "run_worker\.py" -or
+            ($_.CommandLine -match "uvicorn" -and $_.CommandLine -match "src\.backend\.server") -or
+            ($_.CommandLine -match "vite" -and $_.CommandLine -match "autonovel")
         )
     }
-    foreach ($candidate in $candidates) {
-        Stop-ProcessGracefully -ProcessId $candidate.ProcessId -Label "Process"
+    if ($candidates) {
+        foreach ($c in $candidates) {
+            Stop-OneProcess -ProcId ([int]$c.ProcessId) -Label "scan"
+        }
     }
-    if (-not $candidates) {
-        Write-Host "  [Processes] No residual processes found." -ForegroundColor Gray
+    else {
+        Write-Host "  [scan] nothing found." -ForegroundColor DarkGray
     }
-} catch {
-    Write-Host "  [Processes] Could not enumerate processes: $_" -ForegroundColor DarkYellow
+}
+catch {
+    Write-Host "  [scan] could not enumerate processes: $_" -ForegroundColor DarkYellow
 }
 
 Write-Host ""

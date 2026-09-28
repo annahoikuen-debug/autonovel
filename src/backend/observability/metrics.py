@@ -504,6 +504,72 @@ reflective_rag_query_refinements_total = Counter(
 )
 
 
+# ── v5.3 伏線KPI（長編耐性の定量化） ─────────────────────────────
+# v5.2 までは伏線に関する Prometheus メトリクスが 1 つ도存在せず、
+# 「伏線がどれだけ回収されているか」を機械的に測れなかった。
+# ロードマップの主要KPI「伏線回収率」の観測基盤になる。
+
+foreshadowing_planted_total = Counter(
+    "foreshadowing_planted_total",
+    "Number of foreshadowings planted (by scope)",
+    ["scope"],
+)
+
+foreshadowing_status_transitions_total = Counter(
+    "foreshadowing_status_transitions_total",
+    "Foreshadowing state machine transitions (from, to)",
+    ["from_status", "to_status"],
+)
+
+foreshadowing_transitions_rejected_total = Counter(
+    "foreshadowing_transitions_rejected_total",
+    "Foreshadowing state machine transitions rejected by guards",
+    ["reason"],
+)
+
+foreshadowing_rescheduled_total = Counter(
+    "foreshadowing_rescheduled_total",
+    "Foreshadowings rescheduled to a later payoff episode",
+    ["book_id"],
+)
+
+foreshadowing_overdue_gauge = Gauge(
+    "foreshadowing_overdue",
+    "Number of unresolved foreshadowings past their target episode",
+    ["book_id"],
+)
+
+foreshadowing_collection_rate = Gauge(
+    "foreshadowing_collection_rate",
+    "Ratio of resolved foreshadowings to terminal-state foreshadowings",
+    ["book_id"],
+)
+
+foreshadowing_active_gauge = Gauge(
+    "foreshadowing_active",
+    "Number of unresolved (planted/progressed) foreshadowings",
+    ["book_id"],
+)
+
+longform_episode_completion_total = Counter(
+    "longform_episode_completion_total",
+    "Episode generation outcomes in long-form runs",
+    ["outcome"],
+)
+
+longform_context_tokens = Histogram(
+    "longform_context_tokens",
+    "Estimated prompt context tokens assembled per episode in the 3-layer memory",
+    ["layer"],
+)
+
+longform_context_chars = Histogram(
+    "longform_context_chars",
+    "Character count of assembled 3-layer context per episode",
+    ["layer"],
+)
+
+
 def reset():
     """テスト用リセット関数"""
     from src.backend.observability.health import metrics as h_metrics

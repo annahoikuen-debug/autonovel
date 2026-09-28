@@ -71,6 +71,10 @@ class SceneWriter(BaseAgent):
         }
 
         # 文脈構築エージェントで追加情報を取得
+        # v5.3 / Step 9: `repo` / `session` を必ず渡す。
+        # これが無いと `ContextBuilderAgent.execute` は
+        # 「repo is required in artifacts」で早期 return し、
+        # `writing_ctx` が空のまま伏線・3層記憶がプロンプトに届かない。
         ctx = AgentContext(
             book_id=book_id,
             branch_id=branch_id,
@@ -79,9 +83,19 @@ class SceneWriter(BaseAgent):
                 "target_word_count": scene.target_word_count,
                 "scene_context": scene_context,
                 "compressor": self.compressor,
+                "repo": self.repo,
+                "session": getattr(self.repo, "session", None),
+                "style_tag": scene_context.get("style_tag"),
             },
         )
         result = await self.context_builder.execute(ctx)
+        if result.error:
+            logger.warning(
+                "SceneWriter.build_scene_context: context_builder error (book_id=%s ep=%s): %s",
+                book_id,
+                ep_num,
+                result.error,
+            )
         writing_ctx = result.artifacts.get("writing_context", {})
 
         return {**scene_context, **writing_ctx}

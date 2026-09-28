@@ -26,6 +26,42 @@ class PromptComposer:
         """セクションを追加する"""
         self.sections[name] = content
 
+    @staticmethod
+    def _format_three_layer_context(three_layer: Any) -> str:
+        """3層ローリング記憶をプロンプト注入用のテキストへ整形する。
+
+        `EpisodeContextBuilder.build_context` の戻り値は
+        `{"layer1_bible": {...}, "layer2_summary": {...}, "layer3_previous": {...}}`
+        形式の辞書。v5.2 までは組み立てられるだけでプロンプトへ届いていなかった。
+
+        Args:
+            three_layer: 3層コンテキスト辞書（None / 空なら空文字）
+
+        Returns:
+            プロンプトに挿入可能なテキスト
+        """
+        if not three_layer or not isinstance(three_layer, dict):
+            return ""
+
+        def _text_of(layer: Any) -> str:
+            if isinstance(layer, dict):
+                return str(layer.get("text") or "")
+            return str(layer or "")
+
+        parts: list[str] = []
+        layer1 = _text_of(three_layer.get("layer1_bible"))
+        if layer1:
+            parts.append(f"【Layer1: 世界観・キャラクター設定（不変）】\n{layer1}")
+        layer2 = _text_of(three_layer.get("layer2_summary"))
+        if layer2:
+            parts.append(f"【Layer2: 過去の確定事実タイムライン】\n{layer2}")
+        layer3 = _text_of(three_layer.get("layer3_previous")) or _text_of(
+            three_layer.get("layer3_raw")
+        )
+        if layer3:
+            parts.append(f"【Layer3: 直前エピソードの原文】\n{layer3}")
+        return "\n\n".join(parts)
+
     def build(self) -> str:
         """セクションを結合してプロンプトを構築する"""
         return "\n\n".join(self.sections.values())
@@ -94,6 +130,10 @@ class PromptComposer:
             density_level=context.get("density_level", "Standard"),
             style_tag=context.get("style_tag"),
             foreshadowing_context=foreshadowing_context,
+            # v5.3: 契約伏線（伏線ステートマシンの target_episode == 本話）
+            contract_foreshadowings=context.get("contract_foreshadowings") or [],
+            # v5.3: 3層ローリング記憶（Layer1 バイブル / Layer2 過去ダイジェスト / Layer3 直前本文）
+            three_layer_ctx=self._format_three_layer_context(context.get("three_layer_context")),
         )
 
         regeneration_directive = context.get("regeneration_directive")

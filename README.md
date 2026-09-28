@@ -1,14 +1,12 @@
-# AutoNovel (オートノベル)
-© 2026 HerbMatsui-spec. All rights reserved.
-
 <div align="center">
 
-**AI小説執筆・フォーマット・エクスポート支援ツール**
+# 🖋️ AutoNovel（オートノベル）
 
-*FastAPI + React 18/TypeScript + Huey Task Queue + SQLAlchemy 2.0 + PostgreSQL 16 / Redis 7 / ChromaDB*
+**「条件を入れたら、小説が届く」── 企画から納品までを一連の流れでサポートする AI 小説支援ツール**
 
-[![Version](https://img.shields.io/badge/version-5.2.1-brightgreen?logo=semver)](https://github.com/herbmatsui-spec/autonovel/releases/tag/v5.2.1)
+<img src="docs/images/hero.svg" alt="AutoNovel の全体像: 設定を入れる → AI が執筆する → 納品物を受け取る" width="100%">
 
+[![Version](https://img.shields.io/badge/version-5.3.0-brightgreen?logo=semver)](https://github.com/herbmatsui-spec/autonovel/releases/tag/v5.3.0)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![React 18](https://img.shields.io/badge/react-18.3-61dafb?logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -20,318 +18,505 @@
 [![Type Checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue)](https://mypy-lang.org/)
 [![Vitest](https://img.shields.io/badge/tested_with-vitest-729B1B?logo=vitest&logoColor=white)](https://vitest.dev/)
 
-<br />
-
-<p align="center">
-  <img src="docs/demo.gif" alt="AutoNovel UI & Workflow Demo" width="900" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-</p>
-
-*▲ AutoNovel v5.2.1: デモアニメーション（説明用）。実際のAI生成品質・所要時間・外部サービス接続を示すものではありません。*
+</div>
 
 ---
 
-## 📋 何ができるのか？（概要）
+## 📖 1分でわかる AutoNovel
 
-AutoNovel は、AI を活用して Web 小説を **企画から執筆、校正、挿絵生成、納品まで** をサポートするツールです。プログラミングや AI の専門知識がなくても、ブラウザ上の簡単なフォームに情報を入力するだけで、小説の本文を生成し、設定集・プロット概要・データダンプをまとめた ZIP ファイルとしてダウンロードできます。
+プログラミングや AI の専門知識が無くても、**ブラウザのフォームに条件を入れただけ**で小説の本文が生成され、
+そのまま **納品用 ZIP** としてダウンロードできます。
 
-### 主な特徴
+| 入れたいもの | 実際に入れるもの |
+|---|---|
+| 主人公 | 名前・性格・特殊能力（例: アルト／熱血／古代魔導剣術） |
+| 物語の空気 | ジャンル・キーワード（異世界転生、ダンジョン…） |
+| きっかけ | 1 行のプロンプト（例: 封印された古代の魔剣を抜いた） |
 
-- **かんたんモード**：ジャンル・主人公設定だけで本文を生成
-- **二段階プロット展開（Coarse-to-Fine Expansion）**：大局骨子（テンション・事件・引き）と執筆直前の微視的演出（五感・心理・ビート詳細）を分離し、LLMの認知負荷を激減させ描写解像度を劇的に向上
-- **投機的プリフェッチ（Speculative Prefetch）**：執筆中に次話の演出ビートをバックグラウンド事前展開し、待機時間をゼロ化
-- **Blind Peer Review（盲検査読）**：3案企画ガチャ等で他案出力を参照せず独立採点可能、自動マスク適用
-- **マルチレイヤー専門オーディター**：一貫性・創造性・読者フック・感情曲線・文体・事実性・構造・マルチメディアの8専門家並列監査
-- **Reflective RAG（反射的RAG）**：BM25キーワード抽出＋GraphRAG文脈適合性チェックによる反復クエリ精緻化ループ（最大3回反復で収束）
-- **統合パイプライン（AutoWorkflowPipeline）**：FullAutoWorkflow / EasyModeWorkflow を単一パイプラインに完全委譲、重複排除
-- **統一 CLI (`autonovel`)**：環境診断、執筆バランス調整、エクスポート等を単一のモダンコマンドに統合
-- **商用拡張基盤**：Stripe Webhook 決済/クレジット管理、JWT/RBAC 認証、動的プラグインシステム (`PluginRegistry`)、OpenTelemetry / Sentry 監視
-- **初心者向け自己完結 Web デモ**：バックエンド不要でブラウザから即座に体験可能 (`web/demo/index.html`)
-- **ワンクリック納品**：本文・設定・プロット・データを 1 つの ZIP にまとめて出力
-- **上級者 Studio**：本文編集・次話展開提案・設定参照・矛盾診断・マルチメディア管理
-- **投稿サイト整形**：なろう・カクヨム・アルファポリス向けに本文を自動変換
-- **eBook エクスポート**：縦書き・EPUB 3 準拠の電子書籍ファイルを出力（外部依存あり）
-- **マルチメディアアセット**：シーン画像・立ち絵・表紙（機能ガード付き・デモ用プレースホルダー）
-- **GraphRAG ナレッジグラフ**（Apache AGE 未使用、pgvector/ChromaDB ベース）
-- **品質監査**：静的ルール解析＋定性判定（LLM 未設定時は固定フォールバック）
-- **設定の一元化**：LLM・画像・音声プロバイダの用途別切替
+<div align="center">
+
+| 🎯 まずは触ってみたい | 🛠 本格的に使い分けたい | 📦 最後に受け取るもの |
+|---|---|---|
+| ブラウザだけで完結するデモをすぐ開く | 3 つの入口を使い分ける | 本文・設定集・プロット・データを 1 つの ZIP で受け取る |
+| インストール不要・サーバー不要 | テーマ別プリセット・8 専門オーディター監査 | なろう・カクヨム・EPUB へ自動整形 |
+
+</div>
 
 ---
 
-## 🚀 クイックスタート & 起動ガイド
+## 🎯 3つの入口 ── どれから始めても同じ作品に書き足せます
 
-### 🌐 初心者向け自己完結 Web デモ（サーバー起動不要）
+<img src="docs/images/entries.svg" alt="3つの入口: かんたん執筆 / 共創ウィザード / Studio" width="100%">
 
-まずはインストールなしでツールの操作感を体験したい場合、ブラウザで直接デモを開くことができます：
-- **`web/demo/index.html`** をお好みのブラウザ（Chrome, Edge, Firefox等）でダブルクリックして開くだけです。
-- 企画ガチャ、逆算プロットビルダー、かんたん執筆モック、納品パッケージ（ZIP）ダウンロードの全フローを即座に体験できます。
+| 入口 | URL | 向いている人 | 手順 |
+|---|---|---|---|
+| ⚡ かんたん執筆 | `/` | はじめて書きたい人 | 2 手順（約 1 分） |
+| ✨ 共創ウィザード | `/wizard` | 物語の骨組みから作りたい人 | 3 手順（方針 → 構成 → 執筆） |
+| 🚀 Studio | `/studio` | 仕上げや設定を担う人 | 既存作品からすぐ |
+
+- **初回アクセス** すると `/welcome`（入口選択）が自動で表示されます。「あとで決める」を押すと かんたん執筆 へ直行します。
+- **ヘッダーのメニュー** からいつでも 3 つの入口へ移動でき、いまいる入口がハイライトされます。
+- **入口のつなぎ方**
+  - かんたん執筆 → 「Studio へ昇格」でそのまま Studio へ
+  - 共創ウィザード → Step3 で「もう 1 話書く」か「Studio で細部を手入れする」を選ぶ
+  - Studio → 既存作品をそのまま開いて編集
+
+<details>
+<summary><b>🖱 かんたん執筆の操作ステップ（クリックで展開）</b></summary>
+
+```mermaid
+flowchart LR
+    A["① 設定入力<br/>ジャンル・主人公・能力<br/>・冒頭プロンプト"] --> B["② 本文生成<br/>🪄 かんたん執筆開始"]
+    B --> C["③ プレビュー＆提案<br/>本文＋次話のAI提案 3案"]
+    C --> D["④ 納品ZIP保存<br/>📦 export_1.zip"]
+    C -.->|「Studio へ昇格」| S["🚀 Studio"]
+```
+
+1. **基本設定と主人公プロファイル** ── ジャンル（ハイファンタジー／ダークファンタジー／異世界転生／現代ダンジョン等）、主人公の名前・性格・特殊能力、冒頭／前話プロンプトを入力
+2. **生成を実行** ── 「🪄 かんたん執筆開始」。レート制限チェック後、非同期キューへ投入されプログレスバーが進捗を表示
+3. **プレビューと次話展開** ── 右ペインに本文、下部に「💡 次話へのAI提案（3案）」。クリックで次話プロンプトに即セット
+4. **納品パッケージ** ── 「📦 納品パッケージ (ZIP) ダウンロード」で `export_1.zip` を取得
+
+</details>
+
+<details>
+<summary><b>✨ 共創ウィザード（/wizard）の操作</b></summary>
+
+- **Step1 方針を決める** ── ジャンル・synopsis・各種パラメータを入力すると AI が各話の骨組みを生成
+- **Step2 構成を確かめる** ── 話ごとのタイトル・あらすじ・伏線を確認・編集して保存
+- **Step3 執筆する** ── 本文がストリーミングで画面に流れ込む（進捗バー付き）
+  - 「リテイク」で同じ話を書き直す / 「次の一話を執筆する」で次の話へ
+  - 書き終えたら「もう 1 話書く」か「Studio で細部を手入れする」を選ぶ
+
+</details>
+
+<details>
+<summary><b>🚀 Studio のレイアウト</b></summary>
+
+- **左ペイン** ── 主人公設定・世界観パラメータ・ジャンル設定の参照
+- **中央ペイン** ── 本文編集用リッチエディタ＆次の展開提案（Next Beats）
+- **右ペイン** ── GraphRAG 専属 AI 編集者（設定 Q&A とリアルタイム矛盾診断）
+- **タブ 3 グループ** ── 執筆（エディタ / IF 分岐ルート）、点検（矛盾診断 / マルチメディア）、公開（商用投稿）
+
+</details>
 
 ---
 
-### Windows ワンクリック起動（正式対応）
+## ⚙️ 1話の本文ができるまで ── 執筆パイプライン
 
-1. **`アプリ起動_ローカル.bat`** (軽量 / ローカル Python + SQLite 構成) をダブルクリックするだけです。
-   - Docker を起動せず、ローカルの Python 仮想環境 (`.venv`) と SQLite で起動します。
-   - 内部で `scripts\start_local.ps1` が呼び出され、以下を自動実行します:
-     1. 環境自己診断 (`scripts\check_env.py` 相当の検査)
+<img src="docs/images/pipeline.svg" alt="執筆パイプライン: 準備 → 執筆 → 監査 → 書き出し" width="100%">
+
+### 🔹 二段階プロット展開（Coarse-to-Fine Expansion）
+
+1 話ぶんの原稿を **「大筋」と「描写」を別々の工程に分ける** ことが AutoNovel の中核です。
+
+| 段階 | 決めるもの | 効果 |
+|---|---|---|
+| **Coarse**（大局骨子） | テンション推移・事件・次話への引き | 物語全体の整合性を保つ |
+| **Fine**（執筆直前の演出） | 五感・心理状態・ビート詳細 | 描写解像度が上がり、LLM の認知負荷が減る |
+
+この分離により、1 回のプロンプトに相反する指示を詰め込むことがなくなり、**長編的な原稿でも設定が崩れません**。
+
+### 🔹 投機的プリフェッチ（Speculative Prefetch）
+
+執筆中の裏側で **次話の演出ビートを事前展開** しておくため、「次の一話」を押したときの待機時間がほぼゼロになります。
+
+### 🔹 マルチレイヤー専門オーディター
+
+8 名の専門オーディターが **並列で原稿を読み**、スコアを集約します。
+
+| オーディター | 見るもの |
+|---|---|
+| 一貫性 Auditor | 設定・キャラの矛盾 |
+| 創造性 Auditor | 単調さ・型どおりの繰り返し |
+| 読者フック Auditor | 次話へ読み手を引き込む要素 |
+| 感情曲線 Auditor | 感情の振り幅の付き方 |
+| 文体 Auditor | 語り口の揺れ |
+| 事実性 Auditor | 時系列・数字の破綻 |
+| 構造 Auditor | 話構成の組み立て |
+| マルチメディア Auditor | 挿絵・音声との整合 |
+
+さらに **Blind Peer Review（盲検読）**：3 案企画ガチャなどで、他案の出力を伏せた状態で独立に採点できます。
+
+### 🔹 Reflective RAG（反射的 RAG）
+
+BM25 キーワード抽出と GraphRAG 文脈適合性チェックを組み合わせた **反復クエリ精緻化ループ**（最大 3 回で収束）で、
+長編物語でも必要な設定を正確に拾えます。
+
+---
+
+## 🗜️ 4層圧縮 ── 「情報を捨てずに、会話量を減らす」
+
+<img src="docs/images/compression.svg" alt="4層圧縮モジュール" width="100%">
+
+LLM プロンプト・過去の文脈・キャラクター設定を 4 層で段階的に圧縮し、**トークン使用量を削減しながら伏線や主要キャラクターを確実に保持** します。
+
+| Layer | 役割 | 出力 |
+|---|---|---|
+| 1. キーワード抽出 | 固有名詞・専門語を重み付きで抜き出す | `RawTextLayerOutput` |
+| 2. サブグラフ | キーワードを頂点、共起・依存を辺としたグラフにまとめ、薄い関係を剪定 | `SubgraphLayerOutput` |
+| 3. 抽象化 | 事実と概念に分け、カテゴリでまとめる | `AbstractionLayerOutput` |
+| 4. トリミング | シーン種別（戦闘／日常／心理 等）に応じて残す情報を選ぶ | `TrimmedContextOutput` |
+
+```python
+from src.core.container.app import AppContainer
+
+container = AppContainer()
+compressor  = container.compressor()        # FourLayerCompressor
+writing     = container.writing_service()   # 執筆ドメインの中核
+```
+
+主な設定値（既定値は `src/services/compression/models.py`）：
+
+| パラメータ | 既定値 | 意味 |
+|---|---|---|
+| `max_tokens` | 1500 | 出力トークン上限 |
+| `target_reduction_ratio` | 0.6 | 目標圧縮率 |
+| `top_keywords` | 20 | 抽出キーワード数の上限 |
+| `max_hops` | 2 | サブグラフ探索の最大ホップ数 |
+| `relevance_threshold` | 0.5 | エッジ保持の関連性閾値 |
+| `scene_type` | `general` | 既定シーンタイプ |
+| `preserve_categories` | 主要キャラ／核心設定／伏線 | 優先保持カテゴリ |
+
+> 執筆コアロジックは `src/domain/writing/` に集約されています。旧 `src/services/writing_service.py` などは後方互換用シムです。
+> 詳細は [docs/architecture.md](docs/architecture.md) を参照してください。
+
+---
+
+## 🏗️ システム構成
+
+```mermaid
+flowchart TB
+    subgraph Browser["🌐 ブラウザ"]
+        UI["React 18 + TypeScript<br/>Vite dev server (port 5173)"]
+    end
+
+    subgraph API["🐍 FastAPI (port 8200)"]
+        R["API ルーター群（45 モジュール）<br/>books / episodes / export / graph / billing など"]
+        WS["WebSocket<br/>本文のストリーミング"]
+        GUARD["JWT / RBAC / レートリミット"]
+    end
+
+    subgraph WORKER["🧵 Huey Task Queue"]
+        W1["easy_mode / full_auto<br/>illustration / audit ワークフロー"]
+    end
+
+    subgraph CORE["🧠 AutoWorkflowPipeline"]
+        C1["二段階プロット展開"]
+        C2["4層圧縮 + Reflective RAG"]
+        C3["8 専門オーディター<br/>+ Blind Peer Review"]
+    end
+
+    subgraph DATA["🗄️ 永続化"]
+        DB[("PostgreSQL 16<br/>（ローカル起動は SQLite）")]
+        VEC[("ChromaDB / pgvector<br/>ナレッジグラフ")]
+        FS[["ストレージ<br/>本文・挿絵・音声"]]
+    end
+
+    subgraph LLM["🤖 外部プロバイダ"]
+        P1["OpenAI / Gemini / Claude<br/>Ollama / vLLM"]
+        P2["画像生成: DALL·E 3 / SD WebUI / ComfyUI"]
+        P3["音声合成: ElevenLabs"]
+    end
+
+    UI -->|"REST / SSE"| R
+    UI <-->|"ストリーム"| WS
+    R --> GUARD
+    R -->|"enqueue"| WORKER
+    W1 --> CORE
+    CORE --> DB
+    CORE --> VEC
+    CORE --> FS
+    CORE --> P1
+    CORE --> P2
+    CORE --> P3
+    WS -.-> CORE
+```
+
+| 層 | 採用技術 | 役割 |
+|---|---|---|
+| フロントエンド | React 18 / TypeScript / Vite / TipTap | 3 つの入口・編集・設定・矛盾診断 |
+| API | FastAPI 0.141 / WebSocket | 45 個の API ルーター、ストリーミング配信 |
+| タスクキュー | Huey（SQLite / Redis 7） | 長時間生成をバックグラウンドで処理 |
+| パイプライン | `AutoWorkflowPipeline` | 執筆・監査・書き出しの統合編成 |
+| 永続化 | SQLAlchemy 2.0 / Alembic / PostgreSQL 16 | 作品・話・設定・監査結果 |
+| 検索 | ChromaDB / pgvector / BM25 | ナレッジグラフと文脈検索 |
+| 運用 | Docker Compose / OpenTelemetry / Sentry | 開発・本番の両建て |
+
+---
+
+## 🚀 クイックスタート
+
+<div align="center">
+
+| ① まず触ってみる | ② ローカルで動かす | ③ コンテナで動かす |
+|---|---|---|
+| **ブラウザデモ**<br>インストール不要 | **Windows ワンクリック**<br>ローカル Python + SQLite | **Docker Compose**<br>PostgreSQL + Redis |
+
+</div>
+
+### ① ブラウザデモ（インストール不要・サーバー不要）
+
+`web/demo/index.html` を Chrome / Edge / Firefox などで **ダブルクリック** するだけです。
+
+企画ガチャ、逆算プロットビルダー、かんたん執筆モック、納品パッケージ（ZIP）ダウンロードを即座に体験できます。
+詳細は [web/demo/README_DEMO.md](web/demo/README_DEMO.md) を参照してください。
+
+### ② Windows ワンクリック起動（正式対応）
+
+1. **`アプリ起動_ローカル.bat`** をダブルクリック（軽量 / ローカル Python + SQLite 構成）
+   - Docker を使わず、ローカルの仮想環境 `.venv` と SQLite で起動します
+   - 内部で `scripts\start_local.ps1` が呼ばれ、以下を自動実行します
+     1. 環境自己診断
      2. `.venv` の自動作成と依存インストール
      3. `scripts\init_db.py` による安全な Alembic マイグレーション（既存 DB は保護）
-     4. Backend (Uvicorn :8200) + Huey Worker + Frontend (Vite :5173) の協調起動
-   - 起動完了後、ブラウザで `http://localhost:5173` が開きます。
-   - 停止する場合は **`アプリ停止.bat`** をダブルクリックしてください（ポート 8200/5173 のプロセスを安全に終了）。
+     4. Backend（Uvicorn `:8200`）+ Huey Worker + Frontend（Vite `:5173`）の協調起動
+2. ブラウザで **<http://localhost:5173>** が開きます
+3. 停止するときは **`アプリ停止.bat`** をダブルクリック（ポート 8200 / 5173 を安全に解放）
 
-> **事前診断だけ実行したい場合**:
+> 診断だけ・起動計画だけを確認したい場合：
 > ```powershell
-> autonovel check-env
-> # または python scripts/check_env.py
-> ```
->
-> **起動計画だけ確認したい場合（プロセス起動なし）**:
-> ```powershell
-> powershell -ExecutionPolicy Bypass -File scripts/start_local.ps1 -DryRun
+> autonovel check-env                      # 環境自己診断
+> powershell -File scripts/start_local.ps1 -DryRun   # プロセス起動なしの計画表示
 > ```
 
----
-
-### 💻 統一 CLI `autonovel` の使い方
-
-AutoNovel は単一の統一コマンド `autonovel` で各種管理・診断・執筆支援を実行できます：
+### ③ ローカル手動セットアップ（開発者向け）
 
 ```powershell
-# バージョン確認
-autonovel --version
-
-# 環境自己診断（Pythonバージョン、依存関係、DB接続検査）
-autonovel check-env
-
-# データベース初期化・マイグレーション
-autonovel init-db
-
-# 執筆物質バランサー（DSP / CSP / Grammar）
-autonovel balance --type dsp --book-id 1
-
-# 小説エクスポート（ZIP形式 / なろう / カクヨム / EPUB）
-autonovel export --book-id 1 --format zip
-```
-
----
-
-### Docker Compose による起動（開発環境）
-
-```powershell
-# 環境変数を設定（例: .env ファイルを作成）
-# 注意: .env が無い場合は start_docker.bat が .env.example からのコピーを促します。
-# 必要に応じて LLM_PROVIDER=mock などを設定してください。
-
-# コンテナのビルドと起動
-docker compose up --build
-
-# 起動後のアクセス先:
-# フロントエンド UI : http://localhost:5173
-# FastAPI Swagger UI: http://localhost:8200/docs
-```
-
-### ローカル手動環境構築（推奨）
-
-```powershell
-# ----------------------------------------------------
-# 1. Python 仮想環境の作成と依存ライブラリのインストール
-# ----------------------------------------------------
+# 1. バックエンド
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 py -m pip install --upgrade pip
 py -m pip install -e ".[dev,rag]"
 
-# ----------------------------------------------------
-# 2. フロントエンドの依存ライブラリのインストール
-# ----------------------------------------------------
-cd frontend
-npm install
-cd ..
+# 2. フロントエンド
+cd frontend; npm install; cd ..
 
-# ----------------------------------------------------
-# 3. ターミナル 1: バックエンド API 起動 (SQLite モード)
-# ----------------------------------------------------
+# 3. ターミナル 1 : API（SQLite モード）
 $env:HUEY_BACKEND = "sqlite"
 $env:DATABASE_URL = "sqlite:///./autonovel.db"
 py -m uvicorn src.backend.server:app --reload --port 8200
 
-# ----------------------------------------------------
-# 4. ターミナル 2: Huey キューワーカー起動
-# ----------------------------------------------------
+# 4. ターミナル 2 : Huey ワーカー
 $env:HUEY_BACKEND = "sqlite"
 $env:DATABASE_URL = "sqlite:///./autonovel.db"
 py -m huey.bin.huey_consumer src.backend.tasks.huey.huey
 
-# ----------------------------------------------------
-# 5. ターミナル 3: React フロントエンド開発サーバー起動
-# ----------------------------------------------------
-cd frontend
-npm run dev
-# ブラウザで http://localhost:5173 を開く
+# 5. ターミナル 3 : フロントエンド
+cd frontend; npm run dev      # → http://localhost:5173
+```
+
+### ④ Docker Compose
+
+```powershell
+Copy-Item .env.example .env    # 必要に応じて LLM_PROVIDER などを設定
+docker compose up --build
+```
+
+| アクセス先 | URL |
+|---|---|
+| フロントエンド UI | <http://localhost:5173> |
+| FastAPI Swagger UI | <http://localhost:8200/docs> |
+| ヘルスチェック | <http://localhost:8200/health> |
+
+---
+
+## 💻 コマンドリファレンス
+
+### 統一 CLI `autonovel`
+
+| コマンド | 説明 |
+|---|---|
+| `autonovel --version` | バージョン確認 |
+| `autonovel check-env` | 環境自己診断（Python・依存・DB 接続） |
+| `autonovel init-db` | データベース初期化・マイグレーション（既存 DB は保護） |
+| `autonovel balance --type dsp --book-id 1` | 執筆物質バランサー（`dsp` / `csp` / `grammar`） |
+| `autonovel export --book-id 1 --format zip` | エクスポート（`zip` / `narou` / `kakuyomu` / `epub`） |
+| `autonovel plugins` | プラグイン（`PluginRegistry`）の状態一覧 |
+
+```powershell
+autonovel --version
+autonovel check-env
+autonovel init-db
+autonovel balance --type dsp --book-id 1
+autonovel export --book-id 1 --format zip
+```
+
+### Makefile（開発）
+
+```bash
+make help           # 利用可能なコマンド一覧
+make install        # バックエンド依存をインストール
+make dev            # バックエンド・フロントエンドのセットアップ
+make test           # バックエンド pytest
+make lint           # ruff による静的解析
+make format-check   # ruff format チェック（line-length 100）
+make typecheck      # mypy による型検査
+make frontend-test  # フロントエンド vitest
+make frontend-lint  # フロントエンド ESLint + 型検査
+make test-migration # alembic 整合性チェック（往復）
+make verify         # 全品質ゲートを一括実行（PR 前必須）
+make clean          # キャッシュや一時 DB ファイルをクリーンアップ
 ```
 
 ---
 
+## 📦 納品パッケージ（ZIP）の構造
 
-## 🗜️ 4層圧縮統合
-
-4層圧縮は、LLMプロンプト、過去文脈、キャラクター情報、世界観設定などを階層的に圧縮し、トークン使用量を削減しながら重要な情報を保持します。この機能は以下のコンポーネントで利用可能です：
-
-- **WritingService (`src/domain/writing/coordinator.py`)**：執筆ドメインの中核として、二段階プロット展開（Coarse-to-Fine）や品質評価時に自動的に圧縮コンテキストを生成・利用します。
-- **ContextBuilderAgent**：圧縮結果を `artifacts` に格納し、次のエージェントに渡します。
-- **EpisodeWriter**：`build_context` 時に圧縮コンテキストを取得し、執筆に使用します。
-- **EasyMode パイプライン**：`create_easy_mode_pipeline` に `compressor` 引数を渡すことで圧縮を有効化できます。
-
-> **設計ノート**: 執筆コアロジックは `src/domain/writing/` に完全集約されており、旧 `src/services/writing_service.py` 等は後方互換用シムです。
-
-### 使用例（DI コンテナから取得）
-
-```python
-from src.core.container.app import AppContainer
-container = AppContainer()
-compressor = container.compressor()
-# 執筆ドメインサービスの取得
-writing_service = container.writing_service()
-```
-## 📖 実践操作マニュアル
-
-### 3 つの入口 — どこから始めるか
-
-AutoNovel には 3 つの入口があります。どれも同じ作品に書き足していくので、
-あとから別の入口へ移っても内容は失われません。
-
-| 入口 | URL | 向いている人 | 手順 |
-|---|---|---|---|
-| ⚡ かんたん執筆 | `/` | はじめて書きたい人 | 手順 2 つ（約 1 分） |
-| ✨ 共創ウィザード | `/wizard` | 物語の骨組みから作りたい人 | 手順 3 つ（方針 → 構成 → 執筆） |
-| 🚀 Studio | `/studio` | 仕上げや設定を担う人 | 既存作品からすぐ |
-
-**はじめて使うとき**: 初回起動時に `/welcome`（入口選択）が自動的に表示されます。
-3 つの入口が「誰向け・何ができるか・手順はいくらか」の形で並ぶので、理解したうえで
-好きなものを選んでください。「あとで決める」を押すとかんたん執筆へ直行します。
-2 回目以降は各入口へそのまま着地します。
-
-**どの画面からでも**: ヘッダーの `⚡ かんたん` / `✨ 共創ウィザード` / `🚀 Studio`
-から 3 つの入口へ移動できます。いまいる入口はハイライトされます。
-
-**入口のつなぎ方**:
-- かんたん執筆 → 「Studio へ昇格」で移行オーバーレイが出て、そのまま Studio へ
-- 共創ウィザード → Step3 で「もう 1 話書く」か「Studio で細部を手入れする」を選ぶ
-- Studio → 既存作品をそのまま開いて編集
-
-### かんたん執筆の操作ステップ
-
-```
-[ステップ1: 設定入力] ──> [ステップ2: 本文生成] ──> [ステップ3: プレビュー&提案] ──> [ステップ4: 納品ZIP保存]
-```
-
-1. **基本設定と主人公プロファイルの入力**:
-   - **ジャンル選択**: 「ハイファンタジー」「ダークファンタジー」「異世界転生」「現代ダンジョン」等から選択。
-   - **主人公の名前**: 例 `アルト`
-   - **性格・特徴**: 例 `熱血・仲間思い・冷静な判断力`
-   - **特殊能力・スキル**: 例 `古代魔導剣術・時空間把握`
-   - **冒頭 / 前話プロンプト**: 例 `薄暗い迷宮の最深部、少年アルトは封印されし古代の魔剣を抜いた。`
-
-2. **生成の実行**:
-   - 「🪄 かんたん執筆開始」ボタンをクリック。
-   - レート制限チェックを通過後、非同期キューへタスクが投入され、プログレスバーが進捗を表示します。
-
-3. **プレビューと次話展開の確認**:
-   - 生成が完了すると、右側ペインに生成された本文が表示されます。
-   - 下部に「💡 次話へのAI提案（3案）」が表示され、クリックすることで次話のプロンプトとして即座にセットできます。
-
-4. **納品パッケージのダウンロード**:
-   - 「📦 納品パッケージ (ZIP) ダウンロード」をクリックすると、`export_1.zip` が即座にダウンロードされます。
-
-### ✨ 共創ウィザードの使い方（/wizard）
-
-画面上部の進捗バーに、いまが 1/3・2/3・3/3 のどこかが常に見えます。
-
-1. **方針を決める**: ジャンル・synopsis・各種パラメータを入力すると AI が各話の骨組みを生成。
-2. **構成を確かめる**: 話ごとのタイトル・あらすじ・伏線を確認・編集し、内容を保存。
-3. **執筆する**: 本文がストリーミングで画面に流れ込みます（進捗バーで状況表示）。
-   - 「リテイク」で同じ話を書き直す
-   - 「次の一話を執筆する」で次の話へ
-   - 書き終えたら「もう 1 話書く」か「Studio で細部を手入れする」を選べます
-
-### 🚀 Studio の使い方
-
-- 左ペイン: 主人公設定・世界観パラメータ・ジャンル設定の参照。
-- 中央ペイン: 本文編集用リッチエディタ & 次の展開提案（Next Beats）。
-- 右ペイン: GraphRAG 専属 AI 編集者（設定Q&A & リアルタイム矛盾診断）。
-- タブは 3 グループに整理されています:
-  - **執筆**: エディタ / IF分岐ルート
-  - **点検**: 矛盾診断 / マルチメディア
-  - **公開**: 商用投稿
-
----
-
-## 📦 納品パッケージ (ZIP) の構造
-
-ダウンロードされるZIPファイル（例: `export_1.zip`）は、以下の4つのファイルで構成されます：
+`📦 納品パッケージ (ZIP) ダウンロード` を押すと、`export_<book_id>.zip` がダウンロードされます。
 
 ```
 export_1.zip
-├── 01_本文.txt                      # 生成された本文テキスト
-├── 02_キャラクター・世界観設定集.txt  # キャラクターシート ＆ 世界観設定 (Bible)
-├── 03_プロット概要.txt              # 各話のあらすじ・1行要約・カタルシス一覧
-└── 04_データダンプ.json             # 外部ツール・フロントエンド連携用完全JSON
+├── 01_本文.txt                        # 生成された本文（話タイトル付き）
+├── 02_キャラクター・世界観設定集.txt   # キャラクターシート ＆ 世界観設定（Bible）
+├── 03_プロット概要.txt                 # 各話のタイトル・あらすじ・1行要約
+└── 04_データダンプ.json                # 外部ツール・フロントエンド連携用の完全 JSON
 ```
 
----
+### 書き出し先の追加
 
-## 🔧 設定パラメータ & 環境変数リファレンス
-
-重要な環境変数は `.env.example` を参照してください。デフォルト値は `src/backend/config.py` で定義されています。
-
-| 環境変数名 | 説明 |
+| 形式 | 内容 |
 |---|---|
-| `LLM_PROVIDER` | 使用する推論エンジン (`mock`, `openai`, `gemini`, `claude`, `ollama`, `vllm`)。デフォルトは `mock`。 |
-| `OPENAI_API_KEY` | OpenAI APIキー (`LLM_PROVIDER=openai` 時に必須) |
-| `GEMINI_API_KEY` | Google Gemini APIキー (`LLM_PROVIDER=gemini` 時に必須) |
-| `ANTHROPIC_API_KEY` | Anthropic APIキー (`LLM_PROVIDER=claude` 時に必須) |
-| `IMAGE_PROVIDER` | 画像生成プロバイダ (`mock`, `dalle3`, `sd_webui`, `comfyui`) |
-| `TTS_PROVIDER` | 音声合成プロバイダ (`mock`, `elevenlabs`) |
-| `ENABLE_MULTIMEDIA` | マルチメディア生成を有効化 (`true`/`false`) |
-| `ENABLE_AUDIO_SYNTH` | 音声合成を有効化 (`true`/`false`) |
-| `HUEY_BACKEND` | タスクキュー種別 (`sqlite` または `redis`) |
-| `DATABASE_URL` | データベース接続URL (`sqlite:///./autonovel.db` など) |
+| ZIP / TXT | 上記 4 ファイル一式 |
+| なろう形式 | 投稿サイト向けに改行・文字制限を自動調整 |
+| カクヨム形式 | Kakuyomu 向けのルールセットで自動整形 |
+| EPUB 3 | 縦書き対応の電子書籍ファイル（外部依存あり） |
+| マンガ | 1 シート 24 コマ構成的低コスト生成パイプライン |
 
 ---
 
-## ⚠️ トラブルシューティング & 既知の問題
+## 🧰 機能一覧
+
+| カテゴリ | 機能 |
+|---|---|
+| **執筆** | かんたんモード、共創ウィザード、二段階プロット展開、投機的プリフェッチによる待機時間短縮、ストリーミング生成 |
+| **品質** | 8 専門オーディター、Blind Peer Review、Anti-AI 検出、執筆物質バランサー（DSP / CSP / Grammar）、静的ルール解析＋定性判定 |
+| **文脈** | Reflective RAG、4層圧縮、GraphRAG ナレッジグラフ（pgvector / ChromaDB ベース）、プロンプトバージョン管理・比較 |
+| **編集** | Studio リッチエディタ、IF 分岐ルート、次話展開提案（Next Beats）、リアルタイム矛盾診断、設定 Q&A |
+| **マルチメディア** | シーン画像・立ち絵・表紙の生成（機能ガード付き）、音声合成、1 シート 24 コマのマンガ生成 |
+| **納品** | ZIP 納品パッケージ、投稿サイト整形、EPUB 3 書き出し、データダンプ JSON |
+| **拡張** | Stripe Webhook 決済・クレジット、JWT / RBAC 認証、`PluginRegistry` 動的プラグイン、OpenTelemetry / Sentry 監視 |
+| **プリセット** | 異世界転生・転生チート・VRMMO・ダンジョン管理等 9 種類のジャンルテンプレ（世界観・キャラクター・文体・タイトル・フック・テンション設定つき） |
+
+---
+
+## 🔧 環境変数リファレンス
+
+重要な環境変数は [`.env.example`](.env.example) を参照してください。デフォルト値は `src/backend/config.py` で定義されています。
+
+| 環境変数名 | 説明 | 既定値 |
+|---|---|---|
+| `DATABASE_URL` | DB 接続 URL（`sqlite:///./autonovel.db` / `postgresql://…`） | SQLite |
+| `APP_ENV` | `development` / `testing` / `production`（本番では JWT 検証が有効） | `development` |
+| `HOST` / `PORT` | 待ち受けアドレスとポート | `0.0.0.0` / `8200` |
+| `LLM_PROVIDER` | 推論エンジン（`mock` / `openai` / `gemini` / `claude` / `ollama` / `vllm`） | `mock` |
+| `OPENAI_API_KEY` | OpenAI API キー（`LLM_PROVIDER=openai` 時に必須） | ─ |
+| `GEMINI_API_KEY` | Google Gemini API キー（`LLM_PROVIDER=gemini` 時に必須） | ─ |
+| `ANTHROPIC_API_KEY` | Anthropic API キー（`LLM_PROVIDER=claude` 時に必須） | ─ |
+| `IMAGE_PROVIDER` | 画像生成（`mock` / `dalle3` / `sd_webui` / `comfyui`） | `mock` |
+| `TTS_PROVIDER` | 音声合成（`mock` / `elevenlabs`） | `mock` |
+| `ENABLE_MULTIMEDIA` | マルチメディア生成の有効化（`true` / `false`） | `false` |
+| `ENABLE_AUDIO_SYNTH` | 音声合成の有効化（`true` / `false`） | `false` |
+| `HUEY_BACKEND` | タスクキュー（`sqlite` / `redis`） | `sqlite` |
+| `JWT_SECRET_KEY` | 本番必須。JWT の署名キー | ─ |
+| `CORS_ORIGINS` | 本番必須。許可オリジン | ─ |
+
+> `LLM_PROVIDER=mock` のままでも全画面を操作できます（生成結果はダミー）。実モデルを扱うときは `.env` に API キーを設定し、**API と Huey ワーカーの両方**を再起動してください。
+
+---
+
+## 📏 長編耐性の計測（v5.3 以降）
+
+AutoNovel の主要KPIは「**長編（20〜50話）で破綻なく完走する**」「**伏線回収率**」です。
+これらの数値は以下で確認できます（LLM 呼び出し不要・実測ではなくシミュレーション）。
+
+### 長編ベンチマーク
+
+```powershell
+python -m tests.benchmarks.long_form --eps 20,50,100 --check
+```
+
+| 話数 | 完走率 | 回収率 | 解決率 | Layer2 最大文字数 |
+|---:|---:|---:|---:|---:|
+| 20 | 100% | 100% | 100% | 819 |
+| 50 | 100% | 100% | 98% | 995 |
+| 100 | 100% | 100% | 99% | 995 |
+| 200 | 100% | 100% | 100% | 995 |
+
+`Layer2 最大文字数`が 50話以降でプラトーすることが、3層ローリング記憶が
+話数に比例してコンテキストを膨らませないことの証拠です。
+`--check` を付けると閾値違反時に終了コード 1 を返します（CI 用）。
+
+### 伏線KPI API
+
+```bash
+curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episode=20"
+```
+
+```json
+{
+  "planted": 12, "progressed": 3, "resolved": 9, "abandoned": 1,
+  "active": 15, "overdue": 2,
+  "collection_rate": 0.9,   // 終端状態のうち実際に回収された割合
+  "resolution_rate": 0.4    // 設置されたうち終端状態に達した割合
+}
+```
+
+同じ値は Prometheus メトリクス（`foreshadowing_collection_rate` /
+`foreshadowing_active` / `foreshadowing_overdue`）でも取得できます。
+
+### 伏線ステートマシン
+
+伏線は `planted → progressed → resolved` / `abandoned` の遷移ルールで管理され、
+終端状態からの巻き戻しは拒否されます。また「設置話より前の話で回収する」
+以及「回収期限を過ぎたまま放置する」ことも防がれています。
+
+---
+
+## ⚠️ トラブルシューティング
 
 | 現象 | 原因 | 対処法 |
 |---|---|---|
-| 進行バーが `pending` のまま完了しない | Huey ワーカープロセスが起動していないか、`--skip-migrations` フラグが正しく処理されない | ワーカーを手動で起動: `python -m huey.bin.huey_consumer src.backend.tasks.huey.huey` |
-| 本番 Docker Compose の起動時にコンテナが即座に終了する | `.env` ファイルに `POSTGRES_PASSWORD` または `REDIS_PASSWORD` が設定されていない | `.env.example` をコピーして `.env` を作成し、強固なパスワードを設定してください |
-| フロントエンドで「生成リクエストに失敗しました」または HTTP 429 が返る | 短時間に連続して執筆ボタンを押したため、IP単位のレートリミッターに抵触した | 60秒待機してから再試行してください |
-| LLM 設定を変更しても反映されない | 設定を変えたら API と ワーカーを再起動する必要がある | API サーバーと Huey ワーカーを再起動してください |
+| 進行バーが `pending` のまま完了しない | Huey ワーカープロセスが起動していない | `py -m huey.bin.huey_consumer src.backend.tasks.huey.huey` を手動起動 |
+| Docker Compose のコンテナが即座に終了する | `.env` に `POSTGRES_PASSWORD` / `REDIS_PASSWORD` が未設定 | `.env.example` をコピーして強固なパスワードを設定 |
+| 「生成リクエストに失敗しました」/ HTTP 429 | 短時間に連続して執筆ボタンを押したためレートリミットに抵触 | 60 秒待って再試行 |
+| LLM 設定を変更しても反映されない | 設定変更には API とワーカーの再起動が必要 | 両方再起動 |
+| 設定が読み込まれない | 未定義のキー名を設定している（`extra="ignore"` で黙って捨てられる） | `grep -E "^\s{4}[A-Z_]+:" src/backend/config.py` でキー名を確認 |
+| `.venv` 作成に失敗する | Python 3.12 が入っていない | `py -3.12 -m venv .venv` で明示的に指定 |
 
 ---
 
-## 📚 開発ワークフロー & コントリビューション
+## 📚 ドキュメント
 
-```bash
-make help          # 利用可能なコマンド一覧を表示
-make install       # バックエンドの依存ライブラリをインストール
-make dev           # バックエンド・フロントエンドの全環境セットアップ
-make test          # バックエンド pytest を実行
-make lint          # Ruff による静的コード解析
-make typecheck     # Mypy による型検査
-make frontend-test # フロントエンド Vitest を実行
-make frontend-lint # フロントエンド ESLint + 型検査を実行
-make verify        # 全品質ゲートを一括実行 (PR前必須)
-make clean         # キャッシュや一時DBファイルをクリーンアップ
-```
+| 文書 | 内容 |
+|---|---|
+| [CHANGELOG.md](CHANGELOG.md) | 変更履歴（Semantic Versioning 準拠） |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | コントリビューション手順 |
+| [SECURITY.md](SECURITY.md) | 脆弱性の報告手順 |
+| [docs/architecture.md](docs/architecture.md) | 4層圧縮モジュールの詳細設計 |
+| [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) | テスト戦略・網羅率方針 |
+| [docs/development_guide.md](docs/development_guide.md) | 開発ガイド |
+| [docs/rag_setup.md](docs/rag_setup.md) | RAG / ナレッジグラフのセットアップ |
+| [docs/publishing_guide.md](docs/publishing_guide.md) | 投稿サイト向けの書き出しガイド |
+| [docs/openapi.json](docs/openapi.json) | OpenAPI 仕様（自動生成） |
+| [plans/](plans/) | 設計・ロードマップ（`PLAN_*_36STEPS.md` ほか） |
 
-テスト戦略・網羅率の方針は [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) を、パイプライン統合の将来計画は [plans/PLAN_J3_PIPELINE_INTEGRATION_36STEPS.md](plans/PLAN_J3_PIPELINE_INTEGRATION_36STEPS.md) を参照してください。
+> **バージョンの正となるのは 1 か所だけ**です：`pyproject.toml` の `project.version`。
+> `frontend/package.json`・`docker-compose.prod.yml`・`src/cli/main.py`・`src/backend/__init__.py` はすべてそれに追随し、
+> `tests/regression/test_v5_version_consistency.py` が検証しています。
 
-> **現行バージョン**: v5.2.1。権威あるバージョンは `pyproject.toml` の `project.version` 1 か所が正であり、`frontend/package.json`・`docker-compose.prod.yml`・`src/cli/main.py`・`src/backend/__init__.py` はすべてそれに追随します（`tests/regression/test_v5_version_consistency.py` が検証）。直近のリリースノートは [CHANGELOG.md](CHANGELOG.md)。
+---
+
+## 📸 画面デモ
+
+<p align="center">
+  <img src="docs/demo.gif" alt="AutoNovel UI &amp; Workflow Demo" width="880" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+</p>
+
+*▲ v5.3.0 のデモアニメーション（説明用）。実際の AI 生成品質・所要時間・外部サービス接続を示すものではありません。*
 
 ---
 
 <div align="center">
-  <sub>Built with ❤️ for Novelists, Creators, and AI Engineers Worldwide.</sub>
-</div>
+  <sub>© 2026 HerbMatsui-spec. All rights reserved. — Built with ❤️ for Novelists, Creators, and AI Engineers Worldwide.</sub>
 </div>

@@ -168,13 +168,30 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
         await event_bus.start_redis()
 
     try:
+        # v5.3 / Step 2: LLM 呼び出しを計測付きで注入する。
+        # 従来は全スキルが素のアダプタを共有しており、1話あたりの
+        # LLM 回数・トークン・コストを算出できなかった（v6 効果検証の前提）。
+        from src.services.llm.tracked_adapter import build_tracked_adapters
+
+        tracked = build_tracked_adapters(
+            llm_adapter=llm_adapter,
+            planning_adapter=planning_adapter,
+            audit_adapter=audit_adapter,
+            models={
+                "writing": writing_model,
+                "planning": planning_model,
+                "audit": audit_model,
+            },
+        )
+
         # マニフェスト駆動パイプラインの動的構築 (Step 19)
         manifest_path = os.environ.get("SKILL_MANIFEST_PATH", "src/agents/skills/manifest.yaml")
         dependencies = {
             "repo": repo,
-            "llm": llm_adapter,
-            "planning_llm": planning_adapter,
-            "audit_llm": audit_adapter,
+            "llm": tracked["llm"],
+            "planning_llm": tracked["planning_llm"],
+            "audit_llm": tracked["audit_llm"],
+            "token_tracker": tracked["token_tracker"],
             "image_service": image_service,
             "reflective_rag": reflective_rag,
             "compressor": compressor,

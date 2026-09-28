@@ -1,0 +1,7 @@
+python.exe : Traceback (most recent call last):
+”­¶êŠ E:\ssssad\autonovel\scripts\start_local.ps1:61 •¶Žš:12
++     $out = & $Exe -c $probe 2>&1
++            ~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 

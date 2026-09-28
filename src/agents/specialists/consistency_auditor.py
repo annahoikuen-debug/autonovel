@@ -24,6 +24,39 @@ from src.agents.specialists.fallback_utils import (
 
 import re
 
+
+def _extract_foreshadowing_descriptions(foreshadowing_context: str) -> list[str]:
+    """プロンプト注入用の伏線テキストから説明文を抽出する。
+
+    `ContextBuilderAgent.format_unresolved_foreshadowings` が生成する
+    `- **{id}** (第N話提示 → 第M話回収予定): 『タイトル』説明 [現状: status]`
+    形式をパースする。
+
+    Args:
+        foreshadowing_context: 伏線コンテキスト文字列
+
+    Returns:
+        説明文のリスト（該当行が無ければ空リスト）
+    """
+    if not foreshadowing_context:
+        return []
+
+    desc_lines: list[str] = []
+    for line in foreshadowing_context.split("\n"):
+        if not line.strip().startswith("- **"):
+            continue
+        parts = line.split("**")
+        if len(parts) < 3:
+            continue
+        # parts[0] = "- ", parts[1] = foreshadow_id, parts[2] = 説明の残り
+        rest = parts[2]
+        bracket_pos = rest.find(" [")
+        desc = (rest[:bracket_pos] if bracket_pos != -1 else rest).strip()
+        if desc:
+            desc_lines.append(desc)
+    return desc_lines
+
+
 CONSISTENCY_SYSTEM_PROMPT = """あなたは小説の設定・論理一貫性（Consistency）を厳格に審査する専門編集オーディターです。
 与えられた「World Bible設定」と「執筆ドラフト本文」を照合し、以下の観点で論理矛盾を精査してください:
 1. キャラクターの生死・負傷・能力制限の整合性（死亡したはずの人物の理由なき再登場等）
@@ -92,27 +125,7 @@ class ConsistencyAuditor(SpecialistAuditor):
 
         # Foreshadowing consistency check
         if foreshadowing_context:
-# Extract foreshadowing descriptions from the context
-            # Look for lines that start with "- **" and extract the description between the first and second "**"
-            # Example: "- **{fs.foreshadow_id}** (第{fs.introduced_in_ep}話提示 → 第{target}話回収予定): {fs.description} [キャラ: {', '.join(fs.related_characters) or 'なし'}]"
-            # We want to extract the description part before the first and second "**"
-            # We'll use a simple approach: split by lines and look for lines containing "**"
-            desc_lines = []
-            for line in foreshadowing_context.split('\n'):
-                if line.strip().startswith('- **'):
-                    # Extract the text between the first and second "**"
-                    parts = line.split('**')
-                    if len(parts) >= 3:
-                        # parts[0] is "- ", parts[1] is the foreshadow_id, parts[2] is the rest
-                        # The description is in parts[2] until the first " [" or the end of the string
-                        rest = parts[2]
-                        # Find the first " [" or end of line
-                        bracket_pos = rest.find(' [')
-                        if bracket_pos != -1:
-                            desc = rest[:bracket_pos].strip()
-                        else:
-                            desc = rest.strip()
-                        desc_lines.append(desc)
+            desc_lines = _extract_foreshadowing_descriptions(foreshadowing_context)
             # Check if any of the descriptions appear in the draft (case-insensitive)
             draft_lower = draft.lower()
             found_any = False

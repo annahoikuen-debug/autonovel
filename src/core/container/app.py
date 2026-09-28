@@ -263,18 +263,13 @@ class AppContainer(InfraContainer):
     rag_pipeline_service = rag_service
 
     # DAG パイプラインのプロバイダー
-    dag_pipeline: providers.Singleton = providers.Singleton(
-        lambda: (
-            # Builder を作成し、SPI ファクトリーを渡す
-            __import__("src.backend.workflows.dag_builder", fromlist=["DefaultAutoWorkflowBuilder"])
-            .DefaultAutoWorkflowBuilder(
-                llm_factory=InfraContainer.llm_provider_factory,
-                vector_store_factory=InfraContainer.vector_store_provider_factory,
-                image_provider_factory=InfraContainer.image_provider_factory,
-            )
-            .build()
-        )
-    )
+    # 削除済み: 元の `dag_pipeline` は `InfraContainer.llm_provider_factory`
+    # (フェイクのGemini実装) を注入し、かつ `DefaultAutoWorkflowBuilder.build()` は
+    # ハンドラ無しのノードのみを追加するため何も実行しないスタブだった。
+    # フェイク経路をDIグラフに残さないため、プロバイダー登録ごと削除する。
+    # 本番の生成フローは `src/backend/tasks/generation_tasks.py` の Huey タスクで実行される。
+    # DAG を実際に使用する場合は、接続可能な LLM ファクトリーを
+    # 明示的に渡す実装を再導入すること。
 
 
 # 後方互換エイリアス

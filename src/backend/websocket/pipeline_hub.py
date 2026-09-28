@@ -35,6 +35,10 @@ class PipelineEventHub:
                 if not self._subscribers[book_id]:
                     del self._subscribers[book_id]
 
+    def subscriber_count(self, book_id: int) -> int:
+        """現在購読中の接続数を返す（Caller側でのリソース枯渇ガード用）。"""
+        return len(self._subscribers.get(book_id, ()))
+
     async def broadcast(self, event: PipelineEvent) -> None:
         async with self._lock:
             self._latest_snapshots[event.book_id] = {

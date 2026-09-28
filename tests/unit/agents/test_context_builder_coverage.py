@@ -215,7 +215,8 @@ async def test_execute_plot_dict_passthrough_and_model_dump():
     assert wc["density_level"] == "Extreme"  # tension 85
     # foreshadowing dict without title uses default "不明"
     assert "伏線" in wc["foreshadowing_ctx"]
-    assert "FS-1" not in wc["foreshadowing_ctx"]  # id is not rendered
+    # v5.3: IDを明示的に描画する（LLMが回収報告できるようにするため）
+    assert "FS-1" in wc["foreshadowing_ctx"]
 
     # model_dump raising falls back to attrs
     bad_plot = MagicMock()
@@ -351,11 +352,20 @@ def test_format_unresolved_foreshadowings_dict_and_model():
     assert "伏線A" in result
     assert "第2話" in result
     assert "第5話" in result
-    assert "回収目標" in result
+    assert "回収予定" in result
 
-    model = SimpleNamespace(title="伏線C", planted_episode=1, description="d")
+    model = SimpleNamespace(id=42, title="伏線C", planted_episode=1, description="d",
+                            target_episode=None, status="planted")
     result2 = ContextBuilderAgent.format_unresolved_foreshadowings([model])
     assert "伏線C" in result2
+    assert "- **42**" in result2
+
+    # id を持たないオブジェクト（プロット由来の未登録情報）も Graceful に描画される
+    model_no_id = SimpleNamespace(title="伏線D", planted_episode=4, description="d",
+                                  target_episode=None, status="planted")
+    result3 = ContextBuilderAgent.format_unresolved_foreshadowings([model_no_id])
+    assert "伏線D" in result3
+    assert "- **" not in result3
 
 
 # ============================================================================

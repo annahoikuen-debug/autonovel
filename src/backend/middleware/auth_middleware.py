@@ -18,6 +18,7 @@ from starlette.responses import JSONResponse, Response
 
 from src.backend.config import settings
 from src.backend.security.jwt import decode_token
+from src.backend.security.stream_token import verify_stream_token
 
 logger = logging.getLogger(__name__)
 
@@ -49,14 +50,60 @@ PUBLIC_EXACT_PATHS: set[str] = {
 }
 
 # 公開許可パスプレフィックス（静的アセット等）
+# 検証方法: 完全一致、または「プレフィックス + 区切りスラッシュ」で始まる場合のみ。
+# 単純な startswith だと `/api/streaming-xxx` のように境界で切れたパスまで
+# まとめて公開されるため、必ず区切りを明示して判定する。
 PUBLIC_PREFIXES: tuple[str, ...] = (
     "/static/",
     "/assets/",
     "/favicon",
     "/docs",
     "/redoc",
-    "/api/stream",
 )
+
+# ストリーム系エンドポイントのパス。ブラウザの EventSource / WebSocket は
+# カスタムヘッダーを付けられないため、ここだけは短命・bookスコープの
+# ストリームトークンをクエリパラメータで受け付ける。
+# かつては "/api/stream" を PUBLIC_PREFIXES に丸ごと登録しており、
+# 当該プレフィックス配下の全エンドポイントが default-deny の網から
+# 完全に外れていた（最も守るべき最も広い範囲）。
+STREAM_PATH_PREFIX = "/api/stream/"
+
+
+def _matches_public_prefix(path: str) -> bool:
+    """path が公開プレフィックスのいずれかに該当するか（スラッシュ境界を考慮）。"""
+    for prefix in PUBLIC_PREFIXES:
+        if path == prefix:
+            return True
+        if prefix.endswith("/"):
+            if path.startswith(prefix):
+                return True
+        elif path.startswith(prefix + "/"):
+            return True
+    return False
+
+
+def _extract_stream_book_id(path: str) -> int | None:
+    """`/api/stream/writing/{book_id}/{ep_num}` 等から book_id を取り出す。"""
+    if not path.startswith(STREAM_PATH_PREFIX):
+        return None
+    segments = [s for s in path[len(STREAM_PATH_PREFIX):].split("/") if s]
+    # writing/{book_id}/{ep_num} / pipeline/{book_id}
+    if not segments:
+        return None
+    candidate = segments[1] if segments[0] in ("writing", "pipeline") else segments[0]
+    try:
+        return int(candidate)
+    except ValueError:
+        return None
+
+
+def is_public_path(path: str) -> bool:
+    """公開パスとして無認証で通してもよいか."""
+    normalized = path.rstrip("/")
+    if normalized in PUBLIC_EXACT_PATHS:
+        return True
+    return _matches_public_prefix(path)
 
 
 def is_safe_api_key_match(provided: str, expected: str) -> bool:
@@ -77,7 +124,6 @@ class GlobalAuthMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next: Callable[[Request], Response]) -> Response:
         path = request.url.path
-        normalized_path = path.rstrip("/")
 
         # 1. 開発/テスト用バイパス (AUTH_DISABLED=True またはテスト時の dependency_overrides)
         if settings.AUTH_DISABLED:
@@ -103,9 +149,19 @@ class GlobalAuthMiddleware(BaseHTTPMiddleware):
         if request.method == "OPTIONS":
             return await call_next(request)
 
-        # 3. 公開ホワイトリスト判定 (完全一致 or プレフィックス一致)
-        if normalized_path in PUBLIC_EXACT_PATHS or any(path.startswith(prefix) for prefix in PUBLIC_PREFIXES):
+        # 3. 公開ホワイトリスト判定 (完全一致 or スラッシュ境界を考慮したプレフィックス一致)
+        if is_public_path(path):
             return await call_next(request)
+
+        # 3b. ストリーム経路: 短命・bookスコープのストリームトークンのみ受理する。
+        # EventSource/WebSocket はブラウザからヘッダーを付けられないため
+        # クエリパラメータを許可するが、通常の access JWT は受け入れない
+        # (クエリ経由で長期有効な認証情報がログに残るのを防ぐため)。
+        if path.startswith(STREAM_PATH_PREFIX):
+            stream_book_id = _extract_stream_book_id(path)
+            stream_token = request.query_params.get("token", "")
+            if stream_book_id is not None and verify_stream_token(stream_token, stream_book_id):
+                return await call_next(request)
 
         # 4. 認証ヘッダーの取得と検証
         auth_header = request.headers.get("Authorization", "")

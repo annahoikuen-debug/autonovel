@@ -183,6 +183,23 @@ class EpisodeWriter(BaseAgent):
 
         clean_text, self.last_metadata = NovelOutputSplitter.split_novel_output(composed_text)
 
+        # v5.3 / Step 8: beat-to-scene 経路でもエピソード後処理を実行する。
+        # `use_beat_to_scene` は既定 True のため、ここを通らないと
+        # 伏線自動回収とダイジェスト永続化が永久に未実行になる。
+        # メタデータはシーン単位では出力させない（`scene_hook.j2` が
+        # 「メタ情報は不要」と指示しているため）、エピソード統合後に
+        # 1 回だけ回収判定する。
+        await self._post_episode_finalize(
+            book_id=book_id,
+            branch_id=context.get("branch_id", 1),
+            ep_num=ep_num,
+            written_text=clean_text,
+            writing_metadata=self.last_metadata,
+            repo=context.get("repo"),
+            session=context.get("session"),
+            writing_context=context,
+        )
+
         # 次話プロットの非同期投機的プリフェッチ (Plan J2)
         if self.plot_expander and hasattr(self.plot_expander, "prefetch_next_episode_plot"):
             try:
@@ -196,6 +213,85 @@ class EpisodeWriter(BaseAgent):
                     self.logger.debug(f"Ep.{ep_num}: 次話プリフェッチエラー (無視): {e}")
 
         return clean_text
+
+    async def _post_episode_finalize(
+        self,
+        book_id: int,
+        branch_id: int,
+        ep_num: int,
+        written_text: str,
+        writing_metadata: Any,
+        repo: Any = None,
+        session: Any = None,
+        writing_context: dict[str, Any] | None = None,
+    ) -> list[str]:
+        """エピソード終了後の共通後処理（伏線回収 + ダイジェスト永続化）。
+
+        ``run()`` と ``write_beat_to_scene()`` の双方がこれを呼び、
+        執筆経路がどれであれ長編耐性の機構が必ず働くことを保証する。
+
+        Args:
+            book_id: 作品ID
+            branch_id: ブランチID
+            ep_num: エピソード番号
+            written_text: 生成された本文
+            writing_metadata: LLM が返したメタデータ（無ければ None）
+            repo: リポジトリ（無ければ伏線回収はスキップ）
+            session: DB セッション（無ければ `repo.session` を使う）
+            writing_context: 執筆コンテキスト（契約伏線IDの取得に使用）
+
+        Returns:
+            回収された伏線タイトルのリスト
+        """
+        if not written_text:
+            return []
+
+        resolved_titles: list[str] = []
+
+        # 1) 伏線自動回収
+        resolved_repo = repo if repo is not None else getattr(self, "repo", None)
+        resolved_session = (
+            session
+            if session is not None
+            else getattr(resolved_repo, "session", None)
+        )
+        if resolved_repo is not None and resolved_session is not None:
+            try:
+                # v5.3: プロンプトに渡した契約伏線と同一の ID を渡す。
+                # これにより EnsembleJudge の is_contracted が正しく判定され、
+                # 「本話で回収必須の伏線」を高精度で判定できる。
+                # 注意: ここに `or None` を付けると空リストが潰れ、
+                # 「契約情報なし(None)」と「契約0件([])」が区別できなくなる。
+                # そのまま渡すこと（Step 17）。
+                contract_ids = [
+                    f.get("id")
+                    for f in ((writing_context or {}).get("contract_foreshadowings") or [])
+                    if isinstance(f, dict) and f.get("id") is not None
+                ]
+
+                foreshadowing_repo = DbForeshadowingRepository(resolved_session)
+                foreshadowing_service = ForeshadowingService(foreshadowing_repo)
+                resolved_titles = await foreshadowing_service.check_and_resolve(
+                    book_id=book_id,
+                    episode_num=ep_num,
+                    draft_text=written_text,
+                    writing_metadata=writing_metadata,
+                    contract_ids=contract_ids,
+                )
+                if resolved_titles and hasattr(self, "logger"):
+                    self.logger.info(
+                        f"Ep.{ep_num}: 伏線自動回収 - {', '.join(resolved_titles)}"
+                    )
+            except Exception as e:
+                if hasattr(self, "logger"):
+                    self.logger.warning(f"Ep.{ep_num}: 伏線自動回収でエラー: {e}")
+
+        # 2) 事実ダイジェスト永続化
+        await self._persist_episode_digest(
+            resolved_session, book_id, ep_num, written_text
+        )
+
+        return resolved_titles
 
     def detect_resolved_foreshadowings(
         self, content: str, pending_list: List[ForeshadowingEntity]
@@ -351,27 +447,20 @@ class EpisodeWriter(BaseAgent):
         written_text = await self.write(book_id, ep_num, writing_context)
         writing_metadata = getattr(self, "last_metadata", None)
 
-        # Step 8: 本文生成後に伏線自動回収を実行
-        try:
-            repo = ctx.artifacts.get("repo")
-            session = ctx.artifacts.get("session") or getattr(repo, "session", None)
-            if repo and session:
-                foreshadowing_repo = DbForeshadowingRepository(session)
-                foreshadowing_service = ForeshadowingService(foreshadowing_repo)
-                resolved_titles = await foreshadowing_service.check_and_resolve(
-                    book_id=book_id,
-                    episode_num=ep_num,
-                    draft_text=written_text,
-                    writing_metadata=writing_metadata,
-                )
-                if resolved_titles:
-                    if hasattr(self, "logger"):
-                        self.logger.info(f"Ep.{ep_num}: 伏線自動回収 - {', '.join(resolved_titles)}")
-        except Exception as e:
-            if hasattr(self, "logger"):
-                self.logger.warning(f"Ep.{ep_num}: 伏線自動回収でエラー: {e}")
+        # v5.3 / Step 8: 最終後処理は `_post_episode_finalize` に集約した。
+        # `write_beat_to_scene` も同じヘルパーを呼ぶため、執筆経路が
+        # どちらであっても伏線回収とダイジェスト永続化が必ず実行される。
+        await self._post_episode_finalize(
+            book_id=book_id,
+            branch_id=ctx.branch_id,
+            ep_num=ep_num,
+            written_text=written_text,
+            writing_metadata=writing_metadata,
+            repo=ctx.artifacts.get("repo"),
+            session=ctx.artifacts.get("session"),
+            writing_context=writing_context,
+        )
 
-        # Return the result with the written text in artifacts
         # エピソード終了後に感情残基を抽出・永続化
         try:
             extractor = self._get_emotional_extractor()
@@ -392,3 +481,34 @@ class EpisodeWriter(BaseAgent):
             should_retry=False,
             error=None,
         )
+
+    async def _persist_episode_digest(
+        self,
+        session: Any,
+        book_id: int,
+        ep_num: int,
+        written_text: str,
+    ) -> None:
+        """本話の事実ダイジェストを生成・保存する（失敗しても執筆は継続する）"""
+        if session is None or not written_text:
+            return
+        try:
+            from src.services.context_compression.digest_service import (
+                EpisodeDigestRepository,
+                EpisodeDigestService,
+            )
+
+            service = EpisodeDigestService(
+                repo=EpisodeDigestRepository(session),
+                llm=getattr(self, "llm", None),
+            )
+            digest = await service.summarize_and_save(
+                book_id=book_id,
+                episode_num=ep_num,
+                draft_text=written_text,
+            )
+            if hasattr(self, "logger"):
+                self.logger.info(f"Ep.{ep_num}: 事実ダイジェスト保存完了 ({len(digest)}字)")
+        except Exception as e:
+            if hasattr(self, "logger"):
+                self.logger.warning(f"Ep.{ep_num}: 事実ダイジェスト保存でエラー: {e}")

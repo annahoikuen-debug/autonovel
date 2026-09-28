@@ -1,4 +1,18 @@
-"""Backward-compatible facade for the legacy engine."""
+"""
+engine.py — 後方互換 shim（非推奨）
+
+このモジュールは旧来の `UltimateHegemonyEngine` という名前でエクスポートしていたが、
+そのロジックはすべて以下に移行済み:
+
+  - エージェント管理   → src.agents.orchestrator.Orchestrator
+  - エンジンアダプタ   → src.backend.orchestrator_engine_adapter.OrchestratorEngineAdapter
+  - 生成サービス       → src.services.auto_workflow_pipeline
+  - LLM ゲートウェイ  → src.llm.resilient_gateway.ResilientLLMGateway
+
+新規コードでは上記を直接 import してください。
+このファイルは既存テスト・外部コードとの互換性のため当面維持しますが、
+次のメジャーバージョンで削除予定です。
+"""
 
 from __future__ import annotations
 
@@ -6,11 +20,20 @@ import warnings
 from typing import Any
 
 from src.agents.orchestrator import Orchestrator
+from src.backend.orchestrator_engine_adapter import OrchestratorEngineAdapter
 from src.llm.circuit_breaker import LLMCircuitBreaker
 from src.llm.resilient_gateway import ResilientLLMGateway
 
 
 class UltimateHegemonyEngine(Orchestrator):
+    """
+    **非推奨**: 新規コードでは `OrchestratorEngineAdapter` または
+    `Orchestrator` を直接使用してください。
+
+    このクラスは旧エンジンとの後方互換 shim として残っています。
+    内部実装はすべて `Orchestrator` に委譲されます。
+    """
+
     def __init__(
         self,
         api_key: str | None = None,
@@ -32,7 +55,7 @@ class UltimateHegemonyEngine(Orchestrator):
         **legacy: Any,
     ) -> None:
         warnings.warn(
-            "UltimateHegemonyEngine is deprecated. Use Orchestrator directly.",
+            "UltimateHegemonyEngine is deprecated. Use OrchestratorEngineAdapter or Orchestrator directly.",
             DeprecationWarning,
             stacklevel=2,
         )
@@ -40,7 +63,7 @@ class UltimateHegemonyEngine(Orchestrator):
             if nodes is None:
                 nodes = args[0]
             if len(args) > 1:
-                raise TypeError("UltimateHegemonyEngine accepts at most one positional nodes argument")
+                raise TypeError("UltimateHegemonyEngine はノード引数を 1 つだけ受け付けます")
 
         self.api_key = api_key
         self.repo = repo
@@ -57,7 +80,6 @@ class UltimateHegemonyEngine(Orchestrator):
             self.plot_service = plot_service
         elif repo is not None:
             from src.services.plot_service import PlotService
-
             self.plot_service = PlotService(repo=repo)
         else:
             self.plot_service = None
@@ -81,6 +103,10 @@ class UltimateHegemonyEngine(Orchestrator):
             dag_scheduler=dag_scheduler,
             use_dag_scheduler=use_dag_scheduler,
         )
+
+    # ------------------------------------------------------------------ #
+    # レガシー依存の lazy lookup
+    # ------------------------------------------------------------------ #
 
     def _legacy_dep(self, name: str) -> Any:
         if name not in self._legacy:
@@ -224,7 +250,6 @@ class UltimateHegemonyEngine(Orchestrator):
         reporter: Any | None = None,
     ) -> Any:
         from src.backend.workflows.reverse_plot_workflow import ReversePlotGenerationWorkflow
-
         workflow = ReversePlotGenerationWorkflow(self.repo, self.pm, self.generate_json)
         return await workflow.execute(
             reporter,
@@ -235,5 +260,7 @@ class UltimateHegemonyEngine(Orchestrator):
 
 
 class HookGenerationStep:
+    """**非推奨**: 骨格実装のみ。新規コードでは hooks モジュールを使用してください。"""
+
     async def execute(self, ctx: Any, engine: Any, reporter: Any) -> bool:
         return True

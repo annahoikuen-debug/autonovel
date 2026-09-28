@@ -184,8 +184,9 @@ def sanitize_for_plain_text(text: str) -> str:
     """プレーンテキスト向けにテキストをサニタイズ（UTF-8 BOMなし、LF改行）。"""
     text, _ = process_content_for_platform(text, "txt")
     # BOMがあれば削除（UTF-8 BOM: EF BB BF）
-    if text.startswith("\ufeff"):
-        text = text[1:]
+    # process_content_for_platform("txt") が既にBOMを除去するため、この行は到達不可（防御的コード）
+    if text.startswith("﻿"):
+        text = text[1:]  # pragma: no cover
     return text
 
 

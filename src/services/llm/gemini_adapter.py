@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
+import importlib
 import logging
 from collections.abc import AsyncIterator
-from typing import Any
-
-from google import genai
-from google.genai import types
+from typing import Any, TYPE_CHECKING
 
 from src.backend.config import settings
 from src.services.llm.base import (
@@ -17,7 +15,29 @@ from src.services.llm.base import (
 )
 from src.services.llm.retry import with_retry
 
+if TYPE_CHECKING:
+    from google import genai
+    from google.genai import types
+
 logger = logging.getLogger(__name__)
+
+
+def _genai_types() -> Any:
+    """``google.genai.types`` を遅延ロードして返す。
+
+    google-genai SDK の import は数秒を要し、API サーバーの起動時には
+    実際に Gemini を呼び出すまで不要。起動を遅くしないよう遅延させる。
+    """
+    return importlib.import_module("google.genai.types")
+
+
+def __getattr__(name: str) -> Any:
+    """``genai`` / ``types`` を遅延公開する (PEP 562)。"""
+    if name == "genai":
+        return importlib.import_module("google.genai")
+    if name == "types":
+        return _genai_types()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class GeminiAdapter(BaseLLMAdapter):
@@ -40,10 +60,11 @@ class GeminiAdapter(BaseLLMAdapter):
         if self._client is None:
             # Gemini API は常にリモートなので、キー未設定はそのまま渡すと
             # 不透明な 400/401 になる。明確な設定エラーに翻訳する。
-            # 不透明な 400/401 になる。明確な設定エラーに翻訳する。
             ensure_api_key_configured(
                 self.api_key, provider="Gemini", env_var="GEMINI_API_KEY"
             )
+            from google import genai  # 遅延 import（起動時間短縮のため）
+
             self._client = genai.Client(api_key=self.api_key)
         return self._client
 
@@ -71,7 +92,7 @@ class GeminiAdapter(BaseLLMAdapter):
             response = await client.aio.models.generate_content(
                 model=self.model_name,
                 contents=full_prompt,
-                config=types.GenerateContentConfig(**config_kwargs),
+                config=_genai_types().GenerateContentConfig(**config_kwargs),
             )
             return response.text or ""
 
@@ -92,7 +113,7 @@ class GeminiAdapter(BaseLLMAdapter):
         response_stream = await client.aio.models.generate_content_stream(
             model=self.model_name,
             contents=full_prompt,
-            config=types.GenerateContentConfig(
+            config=_genai_types().GenerateContentConfig(
                 max_output_tokens=max_tokens,
                 temperature=temperature,
             ),

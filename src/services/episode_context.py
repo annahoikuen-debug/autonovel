@@ -31,7 +31,7 @@ class EpisodeContextBuilder:
         self.db = db
         self._episode_history: list[dict[str, Any]] = []
 
-    def build_context(
+    async def build_context(
         self,
         book_id: int,
         ep_num: int,
@@ -39,7 +39,13 @@ class EpisodeContextBuilder:
         previous_episode: dict[str, Any] | None = None,
         previous_episode_text: str | None = None,
     ) -> Any:
-        """コンテキストをビルド（同期・非同期両対応）"""
+        """コンテキストをビルドする。
+
+        v5.3 / Step 10: 常に coroutine を返す（`async def` に統一）。
+        従来は `db is None` のとき dict を返す同期分岐があり、
+        呼び出し側の `await` が `TypeError: 'dict' object can't be awaited`
+        になっていた（M7）。
+        """
         if self.db is None:
             return self._sync_build_context(
                 book_id=book_id,
@@ -47,7 +53,7 @@ class EpisodeContextBuilder:
                 target_word_count=target_word_count,
                 previous_episode=previous_episode,
             )
-        return self._async_build_context(
+        return await self._async_build_context(
             book_id=book_id,
             ep_num=ep_num,
             target_word_count=target_word_count,
@@ -89,6 +95,16 @@ class EpisodeContextBuilder:
             }
 
         self._add_to_history(ep_num, context)
+
+        # v5.3 / Step 10: 3層コンテキストのキーを必ず返す。
+        # 従来は Layer1/2/3 のキーが一切無く、`PromptComposer
+        # ._format_three_layer_context` が無言で空文字を返していた。
+        # DB 非接続時は「層情報を取得できない」ことを明示する。
+        unavailable = {"text": "", "available": False}
+        context.setdefault("layer1_bible", unavailable)
+        context.setdefault("layer2_summary", unavailable)
+        context.setdefault("layer3_previous", unavailable)
+        context.setdefault("layer3_raw", "")
         return context
 
     async def _async_build_context(
@@ -115,6 +131,10 @@ class EpisodeContextBuilder:
             "layer1_bible": layer1_bible,
             "layer2_summary": layer2_summary,
             "layer3_raw": layer3_raw,
+            # v5.3: プロンプト注入用の整形済みテキスト層。
+            # v5.2 までは `three_layer_context` が組み立てられるだけで
+            # PromptComposer まで届かず、3層記憶が実運用で未使用だった。
+            "layer3_previous": {"text": layer3_raw},
             "previous_episode": {
                 "summary": layer2_summary.get("last_episode_summary", "") if layer2_summary else "",
                 "ending": layer3_raw[-500:] if layer3_raw else "",
@@ -204,9 +224,33 @@ class EpisodeContextBuilder:
             "token_estimate": len(bible_text) // 2,
         }
 
-    async def _build_layer2_summary(self, book_id: int, current_ep: int) -> dict[str, Any]:
-        """Layer 2: 全話要約＋未回収伏線一覧を構築"""
+    # ── v5.3 長編耐性: Layer 2 のトークンバジェット制御 ─────────────
+
+    #: 直近◯話は全文ダイジェスト（可読性優先）
+    RECENT_FULL_DIGEST_EPISODES = 10
+
+    #: これより古い話は省略マーカーで圧縮（最初◯話は設定の原点として保持）
+    PRESERVE_INITIAL_EPISODES = 2
+
+    #: Layer 2 に割り当てる最大文字数（3層合計バジェットの一部）
+    LAYER2_MAX_CHARS = 4000
+
+    async def _build_layer2_summary(
+        self, book_id: int, current_ep: int, max_chars: int | None = None
+    ) -> dict[str, Any]:
+        """Layer 2: 全話要約＋未回収伏線一覧を構築
+
+        v5.3: 無制限に過去話全文（各100字）を積み上げていた仕様を
+        トークンバジェット付きに変更。話数がどれだけ増えても文字数が一定に収まる。
+
+        Args:
+            book_id: 作品ID
+            current_ep: 現在の話数
+            max_chars: Layer 2 の最大文字数（既定は LAYER2_MAX_CHARS）
+        """
         from src.backend.database.models import Chapter as ChapterModel
+
+        budget = max_chars if max_chars is not None else self.LAYER2_MAX_CHARS
 
         chapter_list = await self._safe_execute(
             select(ChapterModel)
@@ -215,13 +259,27 @@ class EpisodeContextBuilder:
             .order_by(ChapterModel.ep_num)
         )
 
-        episode_summaries = []
-        for ch in chapter_list:
-            if getattr(ch, "content", None):
-                summary = ch.content[:100].replace("\n", " ") + "..."
-            else:
-                summary = "(本文未登録)"
-            episode_summaries.append(f"第{getattr(ch, 'ep_num', '?')}話: {summary}")
+        def _brief(ch: Any) -> str:
+            content = getattr(ch, "content", None)
+            return content[:100].replace("\n", " ") + "..." if content else "(本文未登録)"
+
+        # 直近◯話は全文ダイジェスト、より古い話は省略マーカーで圧縮
+        if len(chapter_list) > self.RECENT_FULL_DIGEST_EPISODES:
+            head = chapter_list[: self.PRESERVE_INITIAL_EPISODES]
+            omitted = chapter_list[self.PRESERVE_INITIAL_EPISODES : -self.RECENT_FULL_DIGEST_EPISODES]
+            tail = chapter_list[-self.RECENT_FULL_DIGEST_EPISODES :]
+            episode_summaries = [f"第{getattr(ch, 'ep_num', '?')}話: {_brief(ch)}" for ch in head]
+            if omitted:
+                first = getattr(omitted[0], "ep_num", "?")
+                last = getattr(omitted[-1], "ep_num", "?")
+                episode_summaries.append(
+                    f"……（第{first}話〜第{last}話の確定事実は省略）……"
+                )
+            episode_summaries += [f"第{getattr(ch, 'ep_num', '?')}話: {_brief(ch)}" for ch in tail]
+        else:
+            episode_summaries = [
+                f"第{getattr(ch, 'ep_num', '?')}話: {_brief(ch)}" for ch in chapter_list
+            ]
 
         foreshadowing_list = await self._safe_execute(
             select(ForeshadowingModel)
@@ -236,17 +294,26 @@ class EpisodeContextBuilder:
             for f in foreshadowing_list
         ]
 
-        summary_text = "【過去エピソード要約】\n" + "\n".join(episode_summaries) if episode_summaries else "【過去エピソード要約】\n(過去エピソードなし)"
-
-        if unresolved_foreshadowings:
-            summary_text += "\n\n【未回収伏線一覧】\n" + "\n".join(unresolved_foreshadowings)
-        else:
-            summary_text += "\n\n【未回収伏線一覧】\n(なし)"
-
         last_episode_summary = ""
         if chapter_list:
             last_ch = chapter_list[-1]
             last_episode_summary = last_ch.content[:200] if last_ch.content else ""
+
+        # v5.3: 未回収伏線セクションは長さ制限なしで重要（回収率に直結するため、
+        # ここだけは省略せず残す）。余剰があれば過去話要約側を削る。
+        fs_section = (
+            "\n\n【未回収伏線一覧】\n" + "\n".join(unresolved_foreshadowings)
+            if unresolved_foreshadowings
+            else "\n\n【未回収伏線一覧】\n(なし)"
+        )
+        history_section = (
+            "【過去エピソード要約】\n" + "\n".join(episode_summaries)
+            if episode_summaries
+            else "【過去エピソード要約】\n(過去エピソードなし)"
+        )
+        if len(history_section) > budget:
+            history_section = history_section[:budget].rstrip() + "……（以下略）"
+        summary_text = history_section + fs_section
 
         return {
             "episode_summaries": episode_summaries,
@@ -263,4 +330,5 @@ class EpisodeContextBuilder:
             "text": summary_text,
             "last_episode_summary": last_episode_summary,
             "token_estimate": len(summary_text) // 2,
+            "layer2_chars": len(summary_text),
         }

@@ -9,7 +9,12 @@ from src.models.report import TokenUsageReport
 
 
 class TokenTracker:
-    """トークン使用量を追跡するサービス"""
+    """トークン使用量を追跡するサービス
+
+    v5.3 / Step 2: 本番スキル経路でも計測できるよう、
+    ``add_usage`` に ``task_type``（planning / writing / audit など）を追加し、
+    スキル別・モデル別の集計とUSDコスト算出を提供する。
+    """
 
     def __init__(self):
         """初期状態を作成"""
@@ -22,6 +27,10 @@ class TokenTracker:
         self.end_time: float | None = None
         self.last_model_name: str | None = None
         self.last_agent_name: str | None = None
+        #: タスク種別ごとの使用量（v5.3 追加）
+        self.usage_by_task: dict[str, dict[str, Any]] = {}
+        #: タスク種別ごとの LLM 呼び出し回数（v5.3 追加）
+        self.call_count_by_task: dict[str, int] = {}
 
     def start(self):
         """追跡を開始"""
@@ -34,6 +43,7 @@ class TokenTracker:
         ep_num: int | None = None,
         model_name: str | None = None,
         agent_name: str | None = None,
+        task_type: str | None = None,
     ):
         """使用量を加算
 
@@ -43,6 +53,8 @@ class TokenTracker:
             ep_num: エピソード番号（任意）
             model_name: 使用モデル名（任意）
             agent_name: エージェント名（任意）
+            task_type: タスク種別（任意）。``planning`` / ``writing`` / ``audit``
+                など。指定すると種別ごとの.calls とトークンが集計される。
         """
         self.input_tokens += input_tokens
         self.output_tokens += output_tokens
@@ -53,6 +65,39 @@ class TokenTracker:
         if agent_name:
             self.last_agent_name = agent_name
 
+        if task_type:
+            bucket = self.usage_by_task.setdefault(
+                task_type,
+                {
+                    "input_tokens": 0,
+                    "output_tokens": 0,
+                    "total_tokens": 0,
+                    "cost_usd": 0.0,
+                    "models": {},
+                },
+            )
+            bucket["input_tokens"] += input_tokens
+            bucket["output_tokens"] += output_tokens
+            bucket["total_tokens"] += input_tokens + output_tokens
+            bucket["cost_usd"] = round(
+                bucket["cost_usd"] + self.estimate_cost_usd(
+                    input_tokens, output_tokens, model_name
+                ),
+                8,
+            )
+            if model_name:
+                model_bucket = bucket["models"].setdefault(
+                    model_name,
+                    {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "calls": 0},
+                )
+                model_bucket["input_tokens"] += input_tokens
+                model_bucket["output_tokens"] += output_tokens
+                model_bucket["total_tokens"] += input_tokens + output_tokens
+                model_bucket["calls"] += 1
+            self.call_count_by_task[task_type] = (
+                self.call_count_by_task.get(task_type, 0) + 1
+            )
+
         if ep_num is not None:
             self.episode_usages.append(
                 {
@@ -62,8 +107,52 @@ class TokenTracker:
                     "total_tokens": input_tokens + output_tokens,
                     "model_name": model_name,
                     "agent_name": agent_name,
+                    "task_type": task_type,
                 }
             )
+
+    @staticmethod
+    def estimate_cost_usd(
+        input_tokens: int, output_tokens: int, model_name: str | None
+    ) -> float:
+        """1Mトークンあたりの単価からUSDコストを推定する。
+
+        ``src/config/cost_optimization.py`` の ``MODEL_PRICING`` を参照する。
+        未知のモデルは 0.0 を返す（推定而非」を明示的にゼロで示す）。
+        """
+        if not model_name:
+            return 0.0
+        try:
+            from src.config.cost_optimization import MODEL_PRICING
+
+            pricing = MODEL_PRICING.get(model_name)
+            if pricing is None:
+                return 0.0
+            return round(
+                (input_tokens / 1_000_000) * pricing.get("input", 0.0)
+                + (output_tokens / 1_000_000) * pricing.get("output", 0.0),
+                8,
+            )
+        except Exception:  # pragma: no cover - 設定不備でも計測は止めない
+            return 0.0
+
+    def get_total_cost_usd(self) -> float:
+        """計測済み全体の推定USDコストを返す。"""
+        return round(sum(b["cost_usd"] for b in self.usage_by_task.values()), 8)
+
+    def get_task_breakdown(self) -> dict[str, dict[str, Any]]:
+        """タスク種別ごとのaggregations（呼び出し回数・トークン・コスト）を返す。"""
+        return {
+            task: {
+                "calls": self.call_count_by_task.get(task, 0),
+                "input_tokens": bucket["input_tokens"],
+                "output_tokens": bucket["output_tokens"],
+                "total_tokens": bucket["total_tokens"],
+                "cost_usd": bucket["cost_usd"],
+                "models": dict(bucket["models"]),
+            }
+            for task, bucket in self.usage_by_task.items()
+        }
 
     def increment_episode_count(self):
         """エピソード数をインクリメント"""
@@ -112,6 +201,8 @@ class TokenTracker:
         self.end_time = None
         self.last_model_name = None
         self.last_agent_name = None
+        self.usage_by_task = {}
+        self.call_count_by_task = {}
 
     async def log_cost_consumption(
         self,
