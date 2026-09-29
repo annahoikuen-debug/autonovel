@@ -1,4 +1,7 @@
 from typing import Any, List, Optional
+import inspect
+import logging
+import os
 
 from src.agents.base import BaseAgent
 from src.agents.context_builder_agent import ContextBuilderAgent
@@ -19,6 +22,98 @@ from prompts.manager import PromptManager
 from src.pipeline.emotional_residue import EmotionalResidueExtractor
 from src.stores.vector_store import RedisVectorStore
 from src.pipeline.character_dict import load_character_dict
+
+logger = logging.getLogger(__name__)
+
+
+def _is_episode_digest_enabled() -> bool:
+    """`ENABLE_EPISODE_DIGEST` フィーチャーフラグを読む（既定 on）。
+
+    ダイジェスト生成は話ごとに1回のブロッキング LLM 呼出（約2500字入力）を伴う。
+    コスト重視の運用では `ENABLE_EPISODE_DIGEST=0` により無効化できる
+    （この場合 Layer2 は本文冒頭100字へフォールバックする）。
+    """
+    raw = os.getenv("ENABLE_EPISODE_DIGEST", "1").strip().lower()
+    return raw not in ("0", "false", "no", "off")
+
+
+def _resolve_digest_llm(llm: Any) -> Any:
+    """ダイジェスト生成用に tier1（軽量）モデルを割り当てる。
+
+    要約は構成系の軽量タスクなので、執筆用モデル（tier2/3）で回すと
+    コストが無駄になる。`resolve_optimized_model` が
+    使えない環境では渡された llm をそのまま使う。
+    """
+    if llm is None:
+        return None
+    try:
+        from src.llm.model_router import resolve_optimized_model
+
+        model_name = resolve_optimized_model("summary")
+    except Exception as e:
+        logger.debug("Falling back to the given LLM for digest generation: %s", e)
+        return llm
+
+    if not hasattr(llm, "generate"):
+        return llm
+
+    class _Tier1DigestLLM:
+        """`generate(prompt=...)` だけを tier1 モデルへ差し替える薄いラッパー。"""
+
+        def __init__(self, inner: Any, model_name: str):
+            self._inner = inner
+            self._model_name = model_name
+
+        def generate(self, prompt: str, **kwargs: Any) -> Any:
+            res = self._inner.generate(prompt=prompt, model_name=self._model_name, **kwargs)
+            if inspect.isawaitable(res):
+                return res
+            return res
+
+    return _Tier1DigestLLM(llm, model_name)
+
+
+async def _resolve_total_episodes(
+    session: Any, book_id: int, writing_context: dict[str, Any] | None = None
+) -> int | None:
+    """作品全体の予定話数（`Book.target_eps`）を解決する。
+
+    v5.3 / Step 33: `check_and_resolve(total_episodes=...)` は Step 15 で
+    追加されたが、本番の呼び出し元が一度も値を渡しておらず、実行時の
+    `max_episode` は常に None だった（＝延期不能を検出できない）。
+    コンテキストに明示値があればそれを優先し、無ければ DB を読む。
+    """
+    explicit = (writing_context or {}).get("total_episodes")
+    if isinstance(explicit, int) and explicit > 0:
+        return explicit
+    if session is None or book_id is None:
+        return None
+    try:
+        from sqlalchemy import select
+
+        from src.backend.database.models import Book as BookModel
+
+        res = await session.execute(
+            select(BookModel.target_eps).where(BookModel.id == book_id)
+        )
+        row = res.first()
+        value = row[0] if row is not None else None
+        return int(value) if isinstance(value, int) and value > 0 else None
+    except Exception as e:
+        logger.debug("Failed to resolve Book.target_eps for book %s: %s", book_id, e)
+        return None
+
+
+def _resolve_session(repo: Any, session: Any) -> Any:
+    """伏線・ダイジェスト・3層記憶で共通して使うセッション解決。
+
+    v5.3 までは伏線側が `or repo.session`、ダイジェスト側が
+    `artifacts.get("session")` のみで、`repo.session` しか持たない呼び出し元では
+    ダイジェストだけ空振りしていた。ここに一本化する。
+    """
+    if session is not None:
+        return session
+    return getattr(repo, "session", None)
 
 
 class EpisodeWriter(BaseAgent):
@@ -250,11 +345,7 @@ class EpisodeWriter(BaseAgent):
 
         # 1) 伏線自動回収
         resolved_repo = repo if repo is not None else getattr(self, "repo", None)
-        resolved_session = (
-            session
-            if session is not None
-            else getattr(resolved_repo, "session", None)
-        )
+        resolved_session = _resolve_session(resolved_repo, session)
         if resolved_repo is not None and resolved_session is not None:
             try:
                 # v5.3: プロンプトに渡した契約伏線と同一の ID を渡す。
@@ -269,6 +360,14 @@ class EpisodeWriter(BaseAgent):
                     if isinstance(f, dict) and f.get("id") is not None
                 ]
 
+                # v5.3 / Step 33: 作品全体の予定話数（`Book.target_eps`）を
+                # 延期の上限として渡す。production の呼び出し元が
+                # `total_episodes` を渡さないため `max_episode` が常に None に
+                # なり、100話本でも延期不能が正しく判定されていなかった。
+                total_episodes = await _resolve_total_episodes(
+                    resolved_session, book_id, (writing_context or {})
+                )
+
                 foreshadowing_repo = DbForeshadowingRepository(resolved_session)
                 foreshadowing_service = ForeshadowingService(foreshadowing_repo)
                 resolved_titles = await foreshadowing_service.check_and_resolve(
@@ -277,6 +376,7 @@ class EpisodeWriter(BaseAgent):
                     draft_text=written_text,
                     writing_metadata=writing_metadata,
                     contract_ids=contract_ids,
+                    total_episodes=total_episodes,
                 )
                 if resolved_titles and hasattr(self, "logger"):
                     self.logger.info(
@@ -489,8 +589,20 @@ class EpisodeWriter(BaseAgent):
         ep_num: int,
         written_text: str,
     ) -> None:
-        """本話の事実ダイジェストを生成・保存する（失敗しても執筆は継続する）"""
+        """本話の事実ダイジェストを生成・保存する（失敗しても執筆は継続する）
+
+        v5.3 / Step 32: ダイジェスト生成は話ごとに1回のブロッキング LLM 呼出
+        （約2500字入力）を伴うため、1話あたりのコストに直結する。
+        `ENABLE_EPISODE_DIGEST=0` で無効化できるようにし、モデルも
+        tier1（構成・要約向けの軽量モデル）へ差し替える。
+        """
         if session is None or not written_text:
+            return
+        if not _is_episode_digest_enabled():
+            if hasattr(self, "logger"):
+                self.logger.info(
+                    f"Ep.{ep_num}: 事実ダイジェスト生成は ENABLE_EPISODE_DIGEST=0 で無効化されています"
+                )
             return
         try:
             from src.services.context_compression.digest_service import (
@@ -500,7 +612,7 @@ class EpisodeWriter(BaseAgent):
 
             service = EpisodeDigestService(
                 repo=EpisodeDigestRepository(session),
-                llm=getattr(self, "llm", None),
+                llm=_resolve_digest_llm(getattr(self, "llm", None)),
             )
             digest = await service.summarize_and_save(
                 book_id=book_id,

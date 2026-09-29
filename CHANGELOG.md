@@ -2,7 +2,102 @@
 
 本プロジェクトの変更履歴。[Semantic Versioning](https://semver.org/lang/ja/) に準拠。
 
+## [6.0.0] - 2026-09-28 - V6 コスト・レイテンシ最適化＋v5.3 配線の是正
+
+「v5.3 で計画した長編機構が、実際には配線が未接続だった」という欠陥を是正し、
+同時に v6 のコスト最適化（tier ルーティング・ダイジェスト cost 制御）を実効化した。
+
+### 修正（v5.3 配線の未接続）
+
+- **メタデータ指示テンプレートの JSON が不正**
+  - `writing_metadata_instruction.j2` の
+    `"action": "resolved または progressed または mentioned_only"` と
+    `"word_count_estimate": 本文の推定文字数（整数）` は JSON リテラルとして無効。
+    LLM がそのまま echo すると `WritingMetadata` 全体が `None` に化け、
+    伏線回収の報告が全話ぶん失われていた。
+    実 enum 値を1つだけ出力し、候補は注釈へ移動、推定文字数は整数例に置換。
+- **背景（継続中）の未回収伏線がプロンプトから消えていた**
+  - `final_writing_prompt.j2` の `{% if %}/{% elif %}` により
+    契約伏線か背景伏線のどちらか一方しか描画されなかった。
+    両方を描画できるように変更。
+  - `prompts/manager.py` の `"background_foreshadowings": []` ハードコードを
+    実供給に置換。契約伏線と重複排除し、直近20件へ上限、
+    残りは「他N件あり（うち期限超過M件）」の1行サマリに圧縮。
+- **`foreshadowing_ctx` が dead-letter だった**
+  - `PromptComposer.compose_writing_prompt` が `context["foreshadowing_ctx"]` を
+    渡さず RAG のみ使用していた。ctx を優先し、空のときだけ RAG へ
+    フォールバックするよう変更。
+  - `compose_scene_prompt`（Step 8 項目2 の未実施分）にも契約伏線と3層記憶を渡す。
+- **Layer2 が予算の 5 倍に膨張していた**
+  - `_build_layer2_summary` は未回収伏線セクションを予算クランプの**後**に連結していた
+    （60話・伏線79本の条件で実測 21,149 字 / 予算 4,000 字）。
+  - 予算を過去話要約／未回収伏線の 50/50 に分割し、両方をクランプ。
+    期限超過を最優先（`target_episode` 昇順）、残りは1行サマリへ圧縮。
+    期限超過の Signals は必ず保持。
+  - 実測（200話・未回収150本）で **3,318 字**（従来 21,149 字 → 予算 4,000 字内）。
+- **Layer2 のデータ源が `episode_digests` でなかった**
+  - `episode_digests` を優先し、無ければ本文冒頭100字へフォールバック。
+  - セッション解決の不一致（伏線側は `or repo.session`、ダイジェスト側は
+    `artifacts.get("session")` のみ）を共通ヘルパー `_resolve_session` に統合。
+- **伏線判定の例外隔離と KPI レポーター未接続**
+  - `check_and_resolve` のループに per-item `try/except` を追加
+    （1件の DB エラーで当該話全体が判定全滅していた）。
+  - `report_planted` / `report_transition` / `report_rescheduled` を
+    実呼び出し箇所に結線（`DbForeshadowingRepository.add` と
+    `ForeshadowingService` の遷移・延期・回収放棄）。
+  - `abandon()` の本番経路を新設。作品末尾で延期不能になった伏線を
+    `abandoned` へ遷移させる（無かったため `collection_rate` が
+    原理的に 1.0 / 0.0 しか取れなかった）。
+  - `total_episodes` を `Book.target_eps` から解決して
+    `check_and_resolve` に渡す（`max_episode` が常に `None` だった）。
+  - 死んだ `kpi.terminal_statuses` を削除。
+  - `datetime.utcnow()` → `datetime.now(timezone.utc)`（M17）。
+
+### 追加
+
+- **`ENABLE_EPISODE_DIGEST` フィーチャーフラグ**（既定 on）
+  - ダイジェスト生成は1話につき1回のブロッキング LLM 呼出
+    （入力 ≒2,636 字 / ≒1,318 token）を伴うため、無効化できるようにした。
+  - ダイジェスト用モデルに tier1（`gemini-2.0-flash`）を割り当てる。
+- **ダイジェスト cost の実測**（1話あたり）
+
+  | 条件 | 実測 cost |
+  |---|---:|
+  | tier1（`gemini-2.0-flash`、v6.0.0 の既定） | **約 0.00013 USD** |
+  | tier2（`claude-3-5-haiku`、従来相当） | 約 0.00108 USD |
+
+  入力 2,636 字・出力 13 字の前提。tier 割り当ての効果はそのまま cost 差になる。
+- **`web/demo/README_DEMO.md` を復元**
+  - README がリンクしていたが実体が存在せず、
+    `tests/regression/test_v5_version_consistency.py::test_documents_referenced_by_readme_exist`
+    を失敗させていた。
+
+### テスト
+
+- `tests/contract/test_v53_prompt_contract.py`（新規、11 テスト）:
+  メタデータ JSON の妥当性 / echo した `WritingMetadata` のパース /
+  不正エントリ1件の隔離 / 契約・背景ブロックの同時描画 /
+  背景の上限と省略サマリ / `foreshadowing_ctx` の到達 / 3層記憶の描画。
+- `tests/e2e/test_v53_long_form_wiring_e2e.py`（新規、5 テスト）:
+  モック LLM + 実 SQLite で `EpisodeWriter.run()` まで走らせ、
+  伏線 `planted → resolved` / 契約伏線の最終プロンプト到達 /
+  ダイジェスト1行永続化 / 3層記憶のプロンプト到達 /
+  作品末尾での回収放棄を実経路で検証。
+
+### 修正（テスト資産）
+
+- `tests/perf/test_v6_audit_failure_rate.py` に残っていた
+  `test_tmp_probe_for_baseline_script`（意図的に `assert False`）を削除。
+
 ## [5.3.0] - 2026-09-28 - V5.3 長編耐性（伏線ステートマシン実体化・3層記憶配線・KPI計測）
+
+> ⚠️ **履歴の訂正**: 5.3.0 の初回リリース時点では、
+> 本エントリに書かれた多くの配線は**未接続**でした。すなわち
+> 「伏線IDの描画」「背景伏線ブロック」「3層記憶の Layer2 バジェット」
+> 「ダイジェスト永続化」「KPI レポーター」は、コードは存在するが
+>   本番経路から到達しない、または期待どおりの挙動になっていませんでした。
+> 詳細は v6.0.0 の「修正（v5.3 配線の未接続）」を参照してください。
+> 以下の記述は**設計意図**として記録しています。
 
 ロードマップの主要KPI「**長編（20〜50話）で破綻なく完走する**」「**伏線回収率**」を
 目標に、v5.2 まで*配線されていなかった*長編機構を実体化した。

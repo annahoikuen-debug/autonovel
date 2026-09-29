@@ -1,0 +1,7 @@
+service backend exited
+î≠ê∂èÍèä E:\ssssad\autonovel\scripts\start_local.ps1:415 ï∂éö:17
++                 throw "service $($svc.Name) exited"
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (service backend exited:String) [], RuntimeException
+    + FullyQualifiedErrorId : service backend exited
+ 

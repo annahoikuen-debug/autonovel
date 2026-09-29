@@ -1,4 +1,3 @@
-{# Instruction template to enforce [METADATA_JSON] output at the end of prose generation #}
 【重要：執筆メタデータ出力指示】
 本文の生成が完了した後、末尾に必ず以下の区切り記号とJSONブロックを出力してください。
 本文中にこのメタデータを混ぜず、本文の最後の段落の後に改行を挟んで出力してください。
@@ -8,28 +7,31 @@
 {
   "episode_number": {{ episode_number }},
   "foreshadowings": [
-    {% if contract_foreshadowings %}
     {% for f in contract_foreshadowings %}
     {
       "foreshadowing_id": {{ f.id }},
-      "action": "resolved または progressed または mentioned_only",
-      "rationale": "なぜその判定にしたのかの理由（1文）",
-      "excerpt": "該当する本文の引用部分"
+      "action": "resolved",
+      "rationale": "その場で見せた回収の描写を1文で要約した文章",
+      "excerpt": "実際に伏線を回収した本文の引用"
     }{% if not loop.last %},{% endif %}
     {% endfor %}
-    {% else %}
-    {# 契約伏線がない場合でも、本文中で扱った伏線があれば記載 #}
-    {% endif %}
   ],
-  "word_count_estimate": 本文の推定文字数（整数）,
-  "unresolved_notes": [
-    "意図的に残した謎や次回以降へ持ち越す事項があれば記載"
-  ]
+  "word_count_estimate": 2400,
+  "unresolved_notes": []
 }
 [/METADATA_JSON]
 ```
 
-※ action の厳密な判定基準：
+※ 上記の JSON は「型見本」です。数値・文字列をそのまま結論として出力せず、
+  実際の本話の中身を当てはめてください（特に `word_count_estimate` は必ず整数）。
+
+※ `foreshadowings` には上記に列挙した契約伏線IDのみを記載すること。
+  本話で扱わなかった伏線は要素ごと省略すること（action は取り得る値を注釈から選ぶ）。
+
+※ action の厳密な判定基準（上記サンプルの "resolved" 以外の2値も許容する）:
 - "resolved": この話の中で伏線の謎が解明された、または因果が完結した場合のみ。
 - "progressed": 伏線の手がかりが提示された、または真相に一歩近づいた場合。
 - "mentioned_only": アイテム名や人物名が単に会話や地の文に登場しただけで、物語上の進展がない場合。
+
+※ `unresolved_notes` には、意図的に残した謎や次回以降へ持ち越す事項があれば
+  文字列を1件ずつ列入すること（該当が無ければ空配列のままでよい）。

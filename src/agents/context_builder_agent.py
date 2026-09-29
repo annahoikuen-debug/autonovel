@@ -494,6 +494,13 @@ class ContextBuilderAgent(SkillAgent):
             unresolved = await repo.get_unresolved(book_id)
             contract = await service.get_contract_foreshadowings(book_id, ep_num)
             return list(unresolved), list(contract)
+        except TypeError as e:
+            # 同期 session を await した等の型不一致は握り潰さず可視化する。
+            if hasattr(self, "logger"):
+                self.logger.warning(
+                    f"Session type mismatch while loading foreshadowings: {e}"
+                )
+            return [], []
         except Exception as e:  # pragma: no cover - DB 未接続時のフォールバック
             if hasattr(self, "logger"):
                 self.logger.debug(f"Failed to load foreshadowings from DB: {e}")

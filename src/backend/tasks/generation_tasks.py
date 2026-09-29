@@ -105,7 +105,11 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
     style_tag = payload.get("style_tag")
 
     # LLM アダプタ取得（用途別モデル対応）
-    from src.llm.model_router import resolve_model_for_purpose
+    from src.llm.model_router import resolve_model_for_purpose, resolve_optimized_model
+    from src.config.cost_optimization import (
+        is_model_routing_enabled,
+        resolve_episode_tier,
+    )
 
     llm_config = payload.get("llm_config") or {}
     provider = llm_config.get("provider")
@@ -115,6 +119,25 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
     writing_model = resolve_model_for_purpose("writing", llm_config)
     planning_model = resolve_model_for_purpose("planning", llm_config)
     audit_model = resolve_model_for_purpose("audit", llm_config)
+
+    # v6 / Step 26-27: tier ルーティング（ENABLE_MODEL_ROUTING、既定 OFF）。
+    # OFF の間は上記 resolve_model_for_purpose の結果がそのまま使われるため、
+    # 環境変数を落とすだけでロールバックできる。
+    routing_enabled = is_model_routing_enabled()
+    episode_tier = resolve_episode_tier(ep_num=ep_num, payload=payload)
+    if routing_enabled and not llm_config:
+        climax = episode_tier == "tier3_premium"
+        planning_model = resolve_optimized_model(
+            "planning", is_climax=climax, ep_num=ep_num
+        )
+        audit_model = resolve_optimized_model("audit", is_climax=False, ep_num=ep_num)
+        writing_model = resolve_optimized_model(
+            "writing", is_climax=climax, ep_num=ep_num
+        )
+        logger.info(
+            "v6 tier routing: ep=%s tier=%s writing=%s planning=%s audit=%s",
+            ep_num, episode_tier, writing_model, planning_model, audit_model,
+        )
 
     llm_adapter = get_llm_adapter(
         provider=provider,

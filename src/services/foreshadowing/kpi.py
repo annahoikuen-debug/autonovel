@@ -13,7 +13,6 @@ from dataclasses import asdict, dataclass
 from typing import Any, Optional
 
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
-from src.models.foreshadowing_status import ForeshadowingStatus
 
 logger = logging.getLogger(__name__)
 
@@ -134,8 +133,3 @@ class ForeshadowingKpiService:
             m.foreshadowing_rescheduled_total.labels(book_id=str(book_id)).inc()
         except Exception as e:  # pragma: no cover
             logger.debug(f"Failed to report rescheduled foreshadowing: {e}")
-
-
-def terminal_statuses() -> tuple[str, ...]:
-    """終端状態の値一覧（KPI計算の共通定義）"""
-    return tuple(s.value for s in ForeshadowingStatus if s.is_terminal)

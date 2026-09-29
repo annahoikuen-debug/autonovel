@@ -17,6 +17,7 @@ from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRe
 from src.models.foreshadowing_status import ForeshadowingStatus, ForeshadowingScope
 from src.models.writing_metadata import WritingMetadata
 from src.services.foreshadowing.ensemble_judge import EnsembleJudge
+from src.services.foreshadowing.kpi import ForeshadowingKpiService
 from src.services.foreshadowing.rescheduler import ForeshadowingRescheduler
 from src.services.nlp.foreshadowing_predicate_analyzer import ForeshadowingPredicateAnalyzer
 
@@ -68,83 +69,144 @@ class ForeshadowingService:
             return []
 
         resolved_titles: list[str] = []
+        kpi = ForeshadowingKpiService(self.repo)
 
         for f in unresolved:
             f_id = getattr(f, "id", None)
             if f_id is None:
                 continue
 
-            target_ep = getattr(f, "target_episode", None)
-            # 契約済み = 今回のビートシートでIDが明示されたか、
-            # あるいは「回収予定話数が本話」か。
-            # `target_ep is None` のときに契約済みとみなす旧挙動は、
-            # 契約情報を持たない全伏線を無条件に「本话回収必須」扱いしていたため撤廃する。
-            in_contract = bool(contract_ids and f_id in contract_ids)
-            is_contracted = in_contract or (
-                target_ep is not None and target_ep == episode_num
-            )
-
-
-            # Metadata report matching
-            meta_report = None
-            if writing_metadata and writing_metadata.foreshadowings:
-                meta_report = next(
-                    (r for r in writing_metadata.foreshadowings if r.foreshadowing_id == f_id),
-                    None,
+            try:
+                # v5.3 / Step 33: per-item の例外隔離。
+                # 従来は1件の DB エラーで当該話全体の判定が全滅していた。
+                # 長編では1话に数十本の伏線が並び、1件の失敗で
+                # 残りの回収判定が失われると長編の伏線管理が破綻する。
+                outcome = await self._evaluate_one(
+                    f=f,
+                    book_id=book_id,
+                    episode_num=episode_num,
+                    draft_text=draft_text,
+                    writing_metadata=writing_metadata,
+                    contract_ids=contract_ids,
+                    total_episodes=total_episodes,
+                    kpi=kpi,
                 )
-
-            # Syntactic predicate analysis
-            keywords = [f.title]
-            if hasattr(f, "keywords") and f.keywords:
-                keywords.extend(f.keywords)
-            keywords = list(dict.fromkeys(keywords))
-
-            syntax_analysis = self.predicate_analyzer.analyze_foreshadowing(
-                foreshadowing_id=f_id,
-                keywords=keywords,
-                text=draft_text,
-            )
-
-            # Ensemble voting
-            judgment = EnsembleJudge.evaluate(
-                foreshadowing_id=f_id,
-                is_contracted=is_contracted,
-                metadata_report=meta_report,
-                syntax_analysis=syntax_analysis,
-            )
-
-            if judgment.status == "RESOLVED":
-                success = await self.repo.resolve(f_id, episode_num)
-                if success:
-                    resolved_titles.append(f.title)
-                    logger.info(
-                        f"伏線「{f.title}」を RESOLVED に更新 ({judgment.rationale})"
-                    )
-            elif judgment.status == "PROGRESSED":
-                success = await self.repo.progress(f_id)
-                if success:
-                    logger.info(
-                        f"伏線「{f.title}」を PROGRESSED に更新 ({judgment.rationale})"
-                    )
-                else:
-                    # progressed → progressed などの拒否は意図的なガード命中であり
-                    # 異常ではない。回復済み伏線の巻き戻り等は rowcount=0 で弾かれるが、
-                    # ここでは静かに「変化なし」と記録する（WARNING は出さない）。
-                    logger.info(
-                        f"伏線「{f.title}」は既に PROGRESSED（変化なし）"
-                        f" ({judgment.rationale})"
-                    )
-
-            # Reschedule if target episode passed or contracted but not resolved
-            if judgment.should_reschedule:
-                await ForeshadowingRescheduler.reschedule_foreshadowing(
-                    foreshadowing_id=f_id,
-                    current_episode=episode_num,
-                    repo=self.repo,
-                    max_episode=total_episodes,
+            except Exception as e:
+                logger.warning(
+                    f"伏線 id={f_id} の判定をスキップしました（他伏線は継続処理）: {e}"
                 )
+                continue
+
+            if outcome:
+                resolved_titles.append(outcome)
 
         return resolved_titles
+
+    async def _evaluate_one(
+        self,
+        f: Any,
+        book_id: int,
+        episode_num: int,
+        draft_text: str,
+        writing_metadata: Optional[WritingMetadata],
+        contract_ids: Optional[list[int]],
+        total_episodes: Optional[int],
+        kpi: "ForeshadowingKpiService",
+    ) -> Optional[str]:
+        """伏線1本の判定・更新・延期を行う。回収された場合はタイトルを返す。"""
+        f_id = getattr(f, "id", None)
+        target_ep = getattr(f, "target_episode", None)
+        # 契約済み = 今回のビートシートでIDが明示されたか、
+        # あるいは「回収予定話数が本話」か。
+        # `target_ep is None` のときに契約済みとみなす旧挙動は、
+        # 契約情報を持たない全伏線を無条件に「本话回収必須」扱いしていたため撤廃する。
+        in_contract = bool(contract_ids and f_id in contract_ids)
+        is_contracted = in_contract or (
+            target_ep is not None and target_ep == episode_num
+        )
+
+        # Metadata report matching
+        meta_report = None
+        if writing_metadata and writing_metadata.foreshadowings:
+            meta_report = next(
+                (r for r in writing_metadata.foreshadowings if r.foreshadowing_id == f_id),
+                None,
+            )
+
+        # Syntactic predicate analysis
+        keywords = [f.title]
+        if hasattr(f, "keywords") and f.keywords:
+            keywords.extend(f.keywords)
+        keywords = list(dict.fromkeys(keywords))
+
+        syntax_analysis = self.predicate_analyzer.analyze_foreshadowing(
+            foreshadowing_id=f_id,
+            keywords=keywords,
+            text=draft_text,
+        )
+
+        # Ensemble voting
+        judgment = EnsembleJudge.evaluate(
+            foreshadowing_id=f_id,
+            is_contracted=is_contracted,
+            metadata_report=meta_report,
+            syntax_analysis=syntax_analysis,
+        )
+
+        prior_status = str(getattr(f, "status", "") or "planted")
+        resolved_title: Optional[str] = None
+
+        if judgment.status == "RESOLVED":
+            success = await self.repo.resolve(f_id, episode_num)
+            if success:
+                resolved_title = f.title
+                await kpi.report_transition(prior_status, ForeshadowingStatus.RESOLVED.value)
+                logger.info(
+                    f"伏線「{f.title}」を RESOLVED に更新 ({judgment.rationale})"
+                )
+        elif judgment.status == "PROGRESSED":
+            success = await self.repo.progress(f_id)
+            if success:
+                await kpi.report_transition(
+                    prior_status, ForeshadowingStatus.PROGRESSED.value
+                )
+                logger.info(
+                    f"伏線「{f.title}」を PROGRESSED に更新 ({judgment.rationale})"
+                )
+            else:
+                # progressed → progressed などの拒否は意図的なガード命中であり
+                # 異常ではない。回復済み伏線の巻き戻り等は rowcount=0 で弾かれるが、
+                # ここでは静かに「変化なし」と記録する（WARNING は出さない）。
+                logger.info(
+                    f"伏線「{f.title}」は既に PROGRESSED（変化なし）"
+                    f" ({judgment.rationale})"
+                )
+
+        # Reschedule if target episode passed or contracted but not resolved
+        if judgment.should_reschedule:
+            new_target = await ForeshadowingRescheduler.reschedule_foreshadowing(
+                foreshadowing_id=f_id,
+                current_episode=episode_num,
+                repo=self.repo,
+                max_episode=total_episodes,
+            )
+            if new_target is not None:
+                await kpi.report_rescheduled(book_id)
+            elif total_episodes is not None and episode_num >= total_episodes:
+                # v5.3 / Step 33: 「延期不能」＝ 作品末尾まで到達しても回収できない。
+                # これを放置すると terminal(回収放棄) への遷移が永久に無く、
+                # KPI の collection_rate が原理的に 1.0 / 0.0 しか取れなくなる。
+                if await self.repo.abandon(f_id):
+                    await kpi.report_transition(
+                        prior_status, ForeshadowingStatus.ABANDONED.value
+                    )
+                    logger.info(
+                        "伏線「%s」は作品末尾（第%s話）まで回収できなかったため回収放棄としました",
+                        f.title,
+                        total_episodes,
+                    )
+
+        return resolved_title
 
     async def get_writing_context(self, book_id: int, episode_num: int) -> dict[str, list[dict[str, Any]]]:
         """話数進捗に応じた未回収伏線をプロンプト注入用に分離して取得する。

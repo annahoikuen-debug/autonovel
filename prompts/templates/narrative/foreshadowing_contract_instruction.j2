@@ -16,6 +16,9 @@
 === 【背景・継続中の未回収伏線（留意事項）】 ===
 以下の伏線は現在進行中（未回収）です。本話で完全回収する必要はありませんが、必要に応じて手がかりの提示や言及を行って構いません。
 {% for f in background_foreshadowings %}
-- [伏線ID: {{ f.id }}] 『{{ f.title }}』: {{ f.description }}（第{{ f.planted_episode }}話設置）
+- [伏線ID: {{ f.id }}] 『{{ f.title }}』: {{ f.description }}（第{{ f.planted_episode }}話設置{% if f.target_episode %}・第{{ f.target_episode }}話回収予定{% endif %}）
 {% endfor %}
+{% if background_truncation_note %}
+※ {{ background_truncation_note }}。回収期限の近い・超過しているものを優先して参照せよ。
+{% endif %}
 {% endif %}

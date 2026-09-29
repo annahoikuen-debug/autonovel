@@ -28,8 +28,13 @@
 ※ {{ pov_character_name }} が知り得ない情報は地の文で記述せず、外部からの観察や推測として描写せよ。視点漏れ (POV Leak) を厳格に排除すること。
 {% endif %}
 {% if foreshadowing_contract_context %}
+
 {{ foreshadowing_contract_context }}
-{% elif foreshadowing_context %}
+{% endif %}
+{% if foreshadowing_context %}
+{% if foreshadowing_contract_context %}
+
+{% endif %}
 {{ foreshadowing_context }}
 {% endif %}
 {% if three_layer_ctx %}

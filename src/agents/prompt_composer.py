@@ -93,10 +93,13 @@ class PromptComposer:
                 )
 
         script_text = context.get("script", "")
-        # Get foreshadowing context if context_retriever is available on the agent
-        foreshadowing_context = ""
+        # v5.3 / Step 30: `foreshadowing_ctx`（伏線ID付き一覧）を第一優先で使う。
+        # 従来は空文字で初期化し RAG のみに依存しており、
+        # ContextBuilderAgent が組み立てた伏線ID付きテキストが dead-letter になっていた。
+        # RAG へのフォールバックは、この値が空のときだけ行う。
+        foreshadowing_context = context.get("foreshadowing_ctx", "") or ""
         context_retriever = getattr(self.agent, "context_retriever", None)
-        if context_retriever and book_id is not None:
+        if not foreshadowing_context and context_retriever and book_id is not None:
             plot_data = context.get("plot", {})
             plot_outline = plot_data.get("detailed_blueprint", "")
             if not plot_outline:
@@ -134,6 +137,11 @@ class PromptComposer:
             contract_foreshadowings=context.get("contract_foreshadowings") or [],
             # v5.3: 3層ローリング記憶（Layer1 バイブル / Layer2 過去ダイジェスト / Layer3 直前本文）
             three_layer_ctx=self._format_three_layer_context(context.get("three_layer_context")),
+            # v5.3 / Step 29: 背景（継続中）の未回収伏線。契約伏線と重複排除して
+            # PromptManager 側で上限・省略サマリを行う。
+            unresolved_foreshadowings=await self._load_unresolved_foreshadowings(
+                book_id, ep_num, context
+            ),
         )
 
         regeneration_directive = context.get("regeneration_directive")
@@ -168,6 +176,82 @@ class PromptComposer:
                 self.agent.logger.warning("Failed to render raw_emotion_instruction: %s", e)
 
         return prompt
+
+    @staticmethod
+    def _format_contract_foreshadowings(contract_foreshadowings: Any) -> str:
+        """契約伏線（このシーンで触る/回収する伏線）をシーンプロンプト用に整形する。
+
+        Args:
+            contract_foreshadowings: 契約伏線辞書リスト（空なら空文字）
+
+        Returns:
+            シーンプロンプトへ挿入可能なテキスト
+        """
+        if not contract_foreshadowings:
+            return ""
+        lines = ["【本話の回収ミッション（契約伏線）】"]
+        for f in contract_foreshadowings:
+            if not isinstance(f, dict):
+                continue
+            target = f.get("target_episode")
+            lines.append(
+                f"- [伏線ID: {f.get('id')}] 『{f.get('title', '')}』: "
+                f"{f.get('description', '')}"
+                f"（第{f.get('planted_episode', '?')}話設置"
+                f"{f'・第{target}話回収予定' if target else ''}）"
+            )
+        if len(lines) == 1:
+            return ""
+        return "\n".join(lines)
+
+    async def _load_unresolved_foreshadowings(
+        self,
+        book_id: int | None,
+        ep_num: int,
+        context: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        """未回収伏線（背景ブロック用）を DB から取得する。
+
+        v5.3 / Step 29: 従来 `background_foreshadowings` は空リスト固定で、
+        契約伏線があると継続中の未回収伏線が丸ごとプロンプトから消えていた。
+
+        コンテキストに既に `_foreshadowing_source` があればそれを使い、
+        無ければセッション（`context["session"]` → `agent.repo.session`）経由で
+        取得する。DB が使えない場合は空リスト（従来挙動）にフォールバックする。
+        """
+        provided = context.get("unresolved_foreshadowings")
+        if provided is not None:
+            return list(provided)
+
+        if book_id is None:
+            return []
+        session = context.get("session") or getattr(getattr(self.agent, "repo", None), "session", None)
+        if session is None:
+            return []
+        try:
+            from src.infrastructure.repositories.foreshadowing_repo import (
+                DbForeshadowingRepository,
+            )
+
+            records = await DbForeshadowingRepository(session).get_unresolved(book_id)
+        except Exception as e:
+            if hasattr(self.agent, "logger"):
+                self.agent.logger.warning(
+                    f"Ep.{ep_num}: 未回収伏線（背景）の取得に失敗: {e}"
+                )
+            return []
+        return [
+            {
+                "id": r.id,
+                "title": r.title,
+                "description": r.description,
+                "planted_episode": r.planted_episode,
+                "target_episode": r.target_episode,
+                "status": r.status,
+                "scope": getattr(r, "scope", "short_term"),
+            }
+            for r in records
+        ]
 
     async def compose_scene_prompt(
         self,
@@ -223,6 +307,16 @@ class PromptComposer:
             except Exception:
                 char_flaw = "完璧を求めすぎて動けなくなる"
 
+        # v5.3 / Step 30: シーン単位のプロンプトにも契約伏線と3層記憶を渡す。
+        # 従来はシーン分岐に伏線IDも3層記憶も一切届かず、
+        # エピソード単位のプロンプトだけが伏線回収の契約を受けていた
+        # （Step 8 項目2 が未実装のまま残っていた分）。
+        foreshadowing_hints = (
+            context.get("foreshadowing_hints")
+            or context.get("foreshadowing_ctx")
+            or ""
+        )
+
         # プロンプトレンダリング
         prompt = tmpl.render(
             scene_data=scene,
@@ -231,7 +325,13 @@ class PromptComposer:
             writing_context_summary=writing_context_summary,
             story_arc_summary=context.get("story_arc_summary", ""),
             character_states=context.get("character_states", ""),
-            foreshadowing_hints=context.get("foreshadowing_hints", ""),
+            foreshadowing_hints=foreshadowing_hints,
+            contract_foreshadowing_ctx=self._format_contract_foreshadowings(
+                context.get("contract_foreshadowings")
+            ),
+            three_layer_ctx=self._format_three_layer_context(
+                context.get("three_layer_context")
+            ),
             active_conflicts=context.get("active_conflicts", ""),
             cliffhanger_requirements=context.get("cliffhanger_requirements", ""),
             pov_character=context.get("pov_character_name", "主人公"),

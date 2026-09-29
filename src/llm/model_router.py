@@ -121,13 +121,51 @@ def resolve_model_for_purpose(purpose: str, override_config: Any | None = None) 
     return select_model(purpose)
 
 
-def resolve_optimized_model(task_type: str, is_climax: bool = False, user_plan: str = "free") -> str:
+#: 軽い tier を適用するタスク種別（構成・監査・スクリーニング）
+LIGHT_TASK_TYPES = ("planning", "audit", "screening", "config", "summary", "plot_expansion")
+
+
+def resolve_tier(
+    task_type: str,
+    is_climax: bool = False,
+    user_plan: str = "free",
+    ep_num: int | None = None,
+    is_foreshadowing_payoff: bool = False,
+) -> str:
+    """タスク種別と要求品質から **tier 名**（tier1_light / ...）を返す。
+
+    v6 / Step 27: 従来は ``is_climax`` のみが上位モデルの条件だったため、
+    本番経路で実際に算出される「第1話・クライマックス・重要伏線回収」を
+    ここに集約し、tier 割り当てを実効化した。
+
+    Args:
+        task_type: タスク種別（``planning`` / ``audit`` / ``writing`` など）
+        is_climax: クライマックス話か
+        user_plan: プラン（``free`` / ``pro`` / ``enterprise``）
+        ep_num: エピソード番号（第1話なら tier3）
+        is_foreshadowing_payoff: 重要伏線回収か
+    """
+    if task_type in LIGHT_TASK_TYPES:
+        return "tier1_light"
+
+    if is_climax or is_foreshadowing_payoff:
+        return "tier3_premium"
+    if ep_num is not None and int(ep_num) == 1:
+        return "tier3_premium"
+    if user_plan in ["pro", "enterprise"]:
+        return "tier3_premium"
+    return "tier2_standard"
+
+
+def resolve_optimized_model(
+    task_type: str,
+    is_climax: bool = False,
+    user_plan: str = "free",
+    ep_num: int | None = None,
+    is_foreshadowing_payoff: bool = False,
+) -> str:
     """
     リクエストの要求品質とタスク種別から最適モデルを動的解決。
     3層ハイブリッドルーティングを実装。
     """
-    if task_type in ["planning", "audit", "screening"]:
-        return ROUTING_TIERS["tier1_light"]
-    if is_climax or user_plan in ["pro", "enterprise"]:
-        return ROUTING_TIERS["tier3_premium"]
-    return ROUTING_TIERS["tier2_standard"]
+    return ROUTING_TIERS[resolve_tier(task_type, is_climax, user_plan, ep_num, is_foreshadowing_payoff)]

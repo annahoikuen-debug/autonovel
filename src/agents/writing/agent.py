@@ -141,6 +141,10 @@ class WritingAgent(SkillAgent):
                 },
 )
 
+        except AttributeError:
+            # 契約違反（リポジトリに必須メソッドが無い等）は programming error。
+            # 握り潰さず上位へ伝播させる。
+            raise
         except Exception as e:
             self.emit_event("writing.error", {
                 "book_id": book_id,

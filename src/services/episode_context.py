@@ -235,6 +235,63 @@ class EpisodeContextBuilder:
     #: Layer 2 に割り当てる最大文字数（3層合計バジェットの一部）
     LAYER2_MAX_CHARS = 4000
 
+    #: 過去話要約と未回収伏線一覧の文字数配分（合計 = LAYER2_MAX_CHARS）
+    HISTORY_BUDGET_RATIO = 0.5
+    FORESHADOWING_BUDGET_RATIO = 0.5
+
+    #: 未回収伏線セクションに無理に収める最大行数（超過分はサマリ1行に圧縮）
+    MAX_FORESHADOWING_LINES = 12
+
+    #: 1行あたりの文字数（伏線1行の描画を見積もるための係数）
+    FORESHADOWING_LINE_CHARS = 60
+
+    #: 過去話1行の見積もり文字数
+    HISTORY_LINE_CHARS = 110
+
+    @staticmethod
+    def _resolve_session(ctx: Any) -> Any:
+        """3層記憶のセッション解決を一本化する。
+
+        v5.3 までは伏線側で `ctx.artifacts.get("session") or repo.session`、
+        ダイジェスト側で `artifacts.get("session")` のみを使っており、
+        `repo.session` しか持たない呼び出し元ではダイジェストだけ空振りしていた。
+        ここは共通ヘルパーへ集約し、どの経路でも同じセッションを解決する。
+        """
+        artifacts = getattr(ctx, "artifacts", None) or {}
+        if not isinstance(artifacts, dict):
+            return None
+        session = artifacts.get("session")
+        if session is not None:
+            return session
+        repo = artifacts.get("repo") or getattr(ctx, "repo", None)
+        return getattr(repo, "session", None)
+
+    async def _load_episode_digests(self, book_id: int, current_ep: int) -> dict[int, str]:
+        """`episode_digests` テーブルから `{ep_num: digest_text}` を取得する。
+
+        Layer2 のデータ源はダイジェストが正（本文冒頭100字はフォールバック）。
+        ダイジェストは Step 32 で本文から LLM 生成・永続化されるが、
+        既存作品やダイジェスト無効化（ENABLE_EPISODE_DIGEST=0）では空になり得る。
+        """
+        if self.db is None:
+            return {}
+        try:
+            from src.services.context_compression.digest_service import (
+                EpisodeDigestRepository,
+            )
+
+            records = await EpisodeDigestRepository(self.db).get_digests(book_id)
+        except Exception as e:
+            logger.debug("Failed to load episode digests for book %s: %s", book_id, e)
+            return {}
+        return {
+            int(r.episode_num): (r.digest_text or "")
+            for r in records
+            if getattr(r, "episode_num", None) is not None
+            and int(r.episode_num) < current_ep
+            and (r.digest_text or "").strip()
+        }
+
     async def _build_layer2_summary(
         self, book_id: int, current_ep: int, max_chars: int | None = None
     ) -> dict[str, Any]:
@@ -251,6 +308,8 @@ class EpisodeContextBuilder:
         from src.backend.database.models import Chapter as ChapterModel
 
         budget = max_chars if max_chars is not None else self.LAYER2_MAX_CHARS
+        history_budget = int(budget * self.HISTORY_BUDGET_RATIO)
+        foreshadowing_budget = int(budget * self.FORESHADOWING_BUDGET_RATIO)
 
         chapter_list = await self._safe_execute(
             select(ChapterModel)
@@ -259,7 +318,19 @@ class EpisodeContextBuilder:
             .order_by(ChapterModel.ep_num)
         )
 
+        # v5.3 / Step 32: データ源は `episode_digests`（話ごとに生成・永続化される
+        # 100字の確定事実ダイジェスト）を優先し、未登録の話だけ本文冒頭へ
+        # フォールバックする。従来は常に `Chapter.content[:100]` を読んでおり、
+        # コメントが「Layer2 は episode_digests をデータ源とする」と述べていた
+        # 実態と食い違っていた。
+        digests = await self._load_episode_digests(book_id, current_ep)
+
         def _brief(ch: Any) -> str:
+            ep_num = getattr(ch, "ep_num", None)
+            if ep_num is not None:
+                digest = digests.get(int(ep_num))
+                if digest:
+                    return digest.replace("\n", " ")
             content = getattr(ch, "content", None)
             return content[:100].replace("\n", " ") + "..." if content else "(本文未登録)"
 
@@ -288,31 +359,73 @@ class EpisodeContextBuilder:
             .order_by(ForeshadowingModel.planted_episode)
         )
 
-        unresolved_foreshadowings = [
-            f"  - 「{f.title}」（第{f.planted_episode}話設置"
-            f"{f', 第{f.target_episode}話回収目標' if f.target_episode else ''}）"
-            for f in foreshadowing_list
-        ]
+        def _target_of(f: Any) -> int | None:
+            target = getattr(f, "target_episode", None)
+            return target if isinstance(target, int) else None
+
+        def _fs_line(f: Any) -> str:
+            overdue = (
+                " ⚠期限超過"
+                if _target_of(f) is not None and _target_of(f) < current_ep
+                else ""
+            )
+            return (
+                f"  - 「{f.title}」（第{f.planted_episode}話設置"
+                f"{f', 第{f.target_episode}話回収目標' if f.target_episode else ''}"
+                f"{overdue}）"
+            )
+
+        # v5.3 / Step 31: 未回収伏線セクションは「予算クランプの後」に連結していたため
+        # 実測 21149 字 / 予算 4000 字という長編破綻を起こしていた。
+        # ここでは (1) 予算を過去話要約と 50/50 に分ける、(2) 伏線側もクランプする、
+        # (3) 期限超過の情報（長編破綻の最重要シグナル）を必ず残す。
+        fs_header = "\n\n【未回収伏線一覧】\n"
+        # 省略サマリ1行分を先に確保しておく（「期限超過M件」の Signals を失わないため）
+        summary_reserve = 48
+        available = max(0, foreshadowing_budget - len(fs_header) - summary_reserve)
+
+        def _is_overdue(f: Any) -> bool:
+            return _target_of(f) is not None and _target_of(f) < current_ep
+
+        # 期限超過を最優先、残りは target_episode 昇順（回収期限が近い順）
+        ordered = sorted(
+            foreshadowing_list, key=lambda f: (0 if _is_overdue(f) else 1, _target_of(f) or 10**9)
+        )
+        total_overdue = sum(1 for f in foreshadowing_list if _is_overdue(f))
+
+        kept: list[str] = []
+        used = 0
+        for f in ordered:
+            line = _fs_line(f)
+            cost = len(line) + 1
+            if used + cost <= available:
+                kept.append(line)
+                used += cost
+        omitted_count = len(ordered) - len(kept)
+        omitted_overdue = total_overdue - sum(
+            1 for f in ordered[: len(kept)] if _is_overdue(f)
+        )
+
+        fs_body = "\n".join(kept) if kept else "(なし)"
+        if omitted_count:
+            # 省略が発生したらサマリ行を必ず残す（期限超過本数の信号的情報を失わない）
+            fs_body += f"\n……他{omitted_count}件の未回収伏線あり（うち期限超過{omitted_overdue}件）……"
+        elif total_overdue:
+            fs_body += f"\n※ うち期限超過の伏線が{total_overdue}件あります。"
+        fs_section = fs_header + fs_body
 
         last_episode_summary = ""
         if chapter_list:
             last_ch = chapter_list[-1]
             last_episode_summary = last_ch.content[:200] if last_ch.content else ""
 
-        # v5.3: 未回収伏線セクションは長さ制限なしで重要（回収率に直結するため、
-        # ここだけは省略せず残す）。余剰があれば過去話要約側を削る。
-        fs_section = (
-            "\n\n【未回収伏線一覧】\n" + "\n".join(unresolved_foreshadowings)
-            if unresolved_foreshadowings
-            else "\n\n【未回収伏線一覧】\n(なし)"
-        )
         history_section = (
             "【過去エピソード要約】\n" + "\n".join(episode_summaries)
             if episode_summaries
             else "【過去エピソード要約】\n(過去エピソードなし)"
         )
-        if len(history_section) > budget:
-            history_section = history_section[:budget].rstrip() + "……（以下略）"
+        if len(history_section) > history_budget:
+            history_section = history_section[:history_budget].rstrip() + "……（以下略）"
         summary_text = history_section + fs_section
 
         return {
@@ -331,4 +444,12 @@ class EpisodeContextBuilder:
             "last_episode_summary": last_episode_summary,
             "token_estimate": len(summary_text) // 2,
             "layer2_chars": len(summary_text),
+            "history_chars": len(history_section),
+            "foreshadowing_chars": len(fs_section),
+            "foreshadowing_omitted": omitted_count,
+            "foreshadowing_overdue": sum(
+                1
+                for f in foreshadowing_list
+                if _target_of(f) is not None and _target_of(f) < current_ep
+            ),
         }

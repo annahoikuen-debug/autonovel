@@ -123,4 +123,8 @@ frontend/vite.config.ts.timestamp-*.mjs
 
 # 実行時ログ（クラッシュ調査用。コミット対象ではない）
 logs/*.jsonl
+# start_local.ps1 が出すサービスログと PID ファイル
+logs/*.log
+logs/*.pids
+logs/e2e_*.log
 

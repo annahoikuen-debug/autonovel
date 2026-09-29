@@ -14,6 +14,11 @@ class TokenTracker:
     v5.3 / Step 2: 本番スキル経路でも計測できるよう、
     ``add_usage`` に ``task_type``（planning / writing / audit など）を追加し、
     スキル別・モデル別の集計とUSDコスト算出を提供する。
+
+    v6 / Step 27: ``add_usage`` に ``tier`` を追加し、tier ごとの
+    コスト比較（``get_tier_breakdown``）を可能にした。``tier`` 未指定時は
+    ``model_name`` から ``ROUTING_TIERS`` を逆引きして自動分類する。
+    既存の呼び出し（``tier`` を渡さない）は従来どおりの集計になる。
     """
 
     def __init__(self):
@@ -31,6 +36,10 @@ class TokenTracker:
         self.usage_by_task: dict[str, dict[str, Any]] = {}
         #: タスク種別ごとの LLM 呼び出し回数（v5.3 追加）
         self.call_count_by_task: dict[str, int] = {}
+        #: tier ごとの使用量（v6 / Step 27 追加）。tier 別のコスト比較用。
+        self.usage_by_tier: dict[str, dict[str, Any]] = {}
+        #: tier ごとの LLM 呼び出し回数（v6 / Step 27 追加）
+        self.call_count_by_tier: dict[str, int] = {}
 
     def start(self):
         """追跡を開始"""
@@ -44,6 +53,7 @@ class TokenTracker:
         model_name: str | None = None,
         agent_name: str | None = None,
         task_type: str | None = None,
+        tier: str | None = None,
     ):
         """使用量を加算
 
@@ -55,6 +65,9 @@ class TokenTracker:
             agent_name: エージェント名（任意）
             task_type: タスク種別（任意）。``planning`` / ``writing`` / ``audit``
                 など。指定すると種別ごとの.calls とトークンが集計される。
+            tier: コスト最適化の tier（``tier1_light`` / ``tier2_standard`` /
+                ``tier3_premium``、任意）。未指定かつ ``task_type`` があるときは
+                ``model_name`` から逆引きする（v6 / Step 27）。
         """
         self.input_tokens += input_tokens
         self.output_tokens += output_tokens
@@ -64,6 +77,9 @@ class TokenTracker:
             self.last_model_name = model_name
         if agent_name:
             self.last_agent_name = agent_name
+
+        if tier is None and task_type:
+            tier = self._infer_tier(model_name)
 
         if task_type:
             bucket = self.usage_by_task.setdefault(
@@ -98,6 +114,14 @@ class TokenTracker:
                 self.call_count_by_task.get(task_type, 0) + 1
             )
 
+        if task_type or tier:
+            self._record_tier(
+                tier or "unrouted",
+                input_tokens,
+                output_tokens,
+                model_name,
+            )
+
         if ep_num is not None:
             self.episode_usages.append(
                 {
@@ -108,8 +132,60 @@ class TokenTracker:
                     "model_name": model_name,
                     "agent_name": agent_name,
                     "task_type": task_type,
+                    "tier": tier,
                 }
             )
+
+    @staticmethod
+    def _infer_tier(model_name: str | None) -> str | None:
+        """モデルIDから tier 名を逆引きする（``src.config.cost_optimization``）。"""
+        if not model_name:
+            return None
+        try:
+            from src.config.cost_optimization import tier_for_model
+
+            return tier_for_model(model_name)
+        except Exception:  # pragma: no cover - 設定不備でも計測は止めない
+            return None
+
+    def _record_tier(
+        self,
+        tier: str,
+        input_tokens: int,
+        output_tokens: int,
+        model_name: str | None,
+    ) -> None:
+        """tier バケットへ使用量とコストを加算する。"""
+        bucket = self.usage_by_tier.setdefault(
+            tier,
+            {
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "total_tokens": 0,
+                "cost_usd": 0.0,
+                "calls": 0,
+                "models": {},
+            },
+        )
+        bucket["input_tokens"] += input_tokens
+        bucket["output_tokens"] += output_tokens
+        bucket["total_tokens"] += input_tokens + output_tokens
+        bucket["cost_usd"] = round(
+            bucket["cost_usd"]
+            + self.estimate_cost_usd(input_tokens, output_tokens, model_name),
+            8,
+        )
+        bucket["calls"] += 1
+        if model_name:
+            model_bucket = bucket["models"].setdefault(
+                model_name,
+                {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "calls": 0},
+            )
+            model_bucket["input_tokens"] += input_tokens
+            model_bucket["output_tokens"] += output_tokens
+            model_bucket["total_tokens"] += input_tokens + output_tokens
+            model_bucket["calls"] += 1
+        self.call_count_by_tier[tier] = self.call_count_by_tier.get(tier, 0) + 1
 
     @staticmethod
     def estimate_cost_usd(
@@ -152,6 +228,25 @@ class TokenTracker:
                 "models": dict(bucket["models"]),
             }
             for task, bucket in self.usage_by_task.items()
+        }
+
+    def get_tier_breakdown(self) -> dict[str, dict[str, Any]]:
+        """tier ごとの使用量（呼び出し回数・トークン・コスト）を返す。
+
+        v6 / Step 27: ``tier1_light`` / ``tier2_standard`` / ``tier3_premium``
+        のコストを定量比較するためのAPI。ルーティングが無効な呼び出しは
+        ``unrouted`` バケットに集約される。
+        """
+        return {
+            tier: {
+                "calls": self.call_count_by_tier.get(tier, 0),
+                "input_tokens": bucket["input_tokens"],
+                "output_tokens": bucket["output_tokens"],
+                "total_tokens": bucket["total_tokens"],
+                "cost_usd": bucket["cost_usd"],
+                "models": dict(bucket["models"]),
+            }
+            for tier, bucket in self.usage_by_tier.items()
         }
 
     def increment_episode_count(self):
@@ -203,6 +298,8 @@ class TokenTracker:
         self.last_agent_name = None
         self.usage_by_task = {}
         self.call_count_by_task = {}
+        self.usage_by_tier = {}
+        self.call_count_by_tier = {}
 
     async def log_cost_consumption(
         self,

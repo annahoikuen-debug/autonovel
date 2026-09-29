@@ -458,10 +458,6 @@ def test_all_pass_rate_matches_estimate(measurements: list[AuditMeasurement], ca
     assert total == CORPUS_SIZE
 
 
-def test_tmp_probe_for_baseline_script():
-    assert False, "TEMP PROBE: baseline スクリプトの exit 1 経路確認用"
-
-
 def test_regeneration_ratio_measurement(measurements: list[AuditMeasurement], capsys) -> None:
     """テスト3: 全滅時に再執筆が発生する話数の割合を実測する（V6 想定 67%）。"""
     total = len(measurements)

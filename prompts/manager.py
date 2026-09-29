@@ -738,12 +738,28 @@ class PromptManager:
         # 常に false になっており、LLM が回収結果を報告する手段が存在しなかった。
         contract_foreshadowings = kwargs.get("contract_foreshadowings") or []
         foreshadowing_contract_context = kwargs.get("foreshadowing_contract_context", "")
-        if contract_foreshadowings and not foreshadowing_contract_context:
+
+        # v5.3 / Step 29: 「背景（継続中）の未回収伏線」ブロックを実供給する。
+        # 従来は `background_foreshadowings: []` をハードコードしており、
+        # 契約伏線がある Dulとも `{% if %}/{% elif %}` により
+        # 継続中の未回収伏線 N-2 本がプロンプトから消えていた。
+        background_foreshadowings, background_truncation_note = (
+            self._select_background_foreshadowings(
+                unresolved_foreshadowings=kwargs.get("unresolved_foreshadowings") or [],
+                contract_foreshadowings=contract_foreshadowings,
+                current_episode=ep_num,
+            )
+        )
+
+        if (contract_foreshadowings or background_foreshadowings) and not (
+            foreshadowing_contract_context
+        ):
             foreshadowing_contract_context = await self.render_async(
                 "foreshadowing_contract_instruction.j2",
                 {
                     "contract_foreshadowings": contract_foreshadowings,
-                    "background_foreshadowings": [],
+                    "background_foreshadowings": background_foreshadowings,
+                    "background_truncation_note": background_truncation_note,
                 },
                 book_id=book_id,
             )
@@ -792,6 +808,69 @@ class PromptManager:
         }
 
         return await self.render_async("final_writing_prompt.j2", context, book_id=book_id)
+
+    #: 背景（継続中）未回収伏線をプロンプトへ渡す上限（長編では数十〜数百本に膨れる）
+    MAX_BACKGROUND_FORESHADOWINGS = 20
+
+    @classmethod
+    def _select_background_foreshadowings(
+        cls,
+        unresolved_foreshadowings: list,
+        contract_foreshadowings: list,
+        current_episode: int,
+    ) -> tuple[list[Dict[str, Any]], str]:
+        """契約伏線に含まれない未回収伏線（背景）を選び、件数を要約する。
+
+        Args:
+            unresolved_foreshadowings: 未回収伏線（dict / ORM オブジェクト均可）
+            contract_foreshadowings: 本話で回収が契約された伏線
+            current_episode: 現在話数（期限超過の判定に使う）
+
+        Returns:
+            (背景伏線リスト, 省略サマリ文字列)
+        """
+        def _get(f: Any, key: str, default: Any = None) -> Any:
+            if isinstance(f, dict):
+                return f.get(key, default)
+            return getattr(f, key, default)
+
+        contract_ids = {f for f in (_get(c, "id") for c in contract_foreshadowings or []) if f is not None}
+
+        def _normalized(f: Any) -> Dict[str, Any]:
+            return {
+                "id": _get(f, "id"),
+                "title": _get(f, "title", "") or "",
+                "description": _get(f, "description", "") or "",
+                "planted_episode": _get(f, "planted_episode", "?"),
+                "target_episode": _get(f, "target_episode"),
+                "status": _get(f, "status", ""),
+                "scope": _get(f, "scope", "short_term"),
+            }
+
+        background = [
+            _normalized(f)
+            for f in (unresolved_foreshadowings or [])
+            if _get(f, "id") not in contract_ids
+        ]
+        # 期限超過（最重要シグナル）を最優先し、残りは設置話数の新しい順に並べる
+        background.sort(
+            key=lambda f: (
+                0 if (f["target_episode"] is not None and f["target_episode"] < current_episode) else 1,
+                -(f["planted_episode"] if isinstance(f["planted_episode"], int) else 0),
+            )
+        )
+
+        omitted = background[cls.MAX_BACKGROUND_FORESHADOWINGS:]
+        shown = background[: cls.MAX_BACKGROUND_FORESHADOWINGS]
+        note = ""
+        if omitted:
+            overdue = sum(
+                1
+                for f in omitted
+                if f["target_episode"] is not None and f["target_episode"] < current_episode
+            )
+            note = f"他{len(omitted)}件あり（うち期限超過{overdue}件）"
+        return shown, note
 
     async def build_rebuild_plot_outline_prompt(
         self,

@@ -7,7 +7,7 @@ ForeshadowingModel (ORM) を直接操作し、伏線の CRUD・未回収検索�
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from sqlalchemy import and_, func, not_, or_, select, update
@@ -63,8 +63,14 @@ class DbForeshadowingRepository:
     # ── CRUD ────────────────────────────────────────────
 
     async def add(self, book_id: int, title: str, description: str,
-                  planted_episode: int, target_episode: Optional[int] = None) -> ForeshadowingModel:
-        """伏線を新規設置する"""
+                  planted_episode: int, target_episode: Optional[int] = None,
+                  scope: Optional[ForeshadowingScope] = None) -> ForeshadowingModel:
+        """伏線を新規設置する
+
+        v5.3 / Step 33: 設置時に `foreshadowing_planted_total` を記録する。
+        `ForeshadowingKpiService.report_planted` は本番の呼び出し箇所が無く、
+        設置件数のメトリクスが常に 0 だった。
+        """
         record = ForeshadowingModel(
             book_id=book_id,
             title=title,
@@ -73,9 +79,24 @@ class DbForeshadowingRepository:
             target_episode=target_episode,
             status=ForeshadowingStatus.PLANTED.value,
         )
+        if scope is not None:
+            record.scope = scope.value
         self.db.add(record)
         await self.db.flush()
+        await self._report_planted(record)
         return record
+
+    async def _report_planted(self, record: ForeshadowingModel) -> None:
+        """設置メトリクスを記録する（失敗しても設置処理は継続する）"""
+        try:
+            from src.services.foreshadowing.kpi import ForeshadowingKpiService
+
+            scope = getattr(record, "scope", None) or ForeshadowingScope.SHORT_TERM.value
+            await ForeshadowingKpiService(self).report_planted(
+                book_id=record.book_id, scope=str(scope)
+            )
+        except Exception as e:  # pragma: no cover - メトリクス非対応環境
+            logger.debug(f"Failed to report planted foreshadowing: {e}")
 
     async def get_by_id(self, foreshadowing_id: int) -> Optional[ForeshadowingModel]:
         """ID指定で伏線を取得"""
@@ -202,7 +223,8 @@ class DbForeshadowingRepository:
         """
         values: dict = {
             "status": target_status.value,
-            "updated_at": datetime.utcnow(),
+            # M17: `datetime.utcnow()` は非推奨（naive datetime）。aware に統一する。
+            "updated_at": datetime.now(timezone.utc),
         }
         if extra_values:
             values.update(extra_values)
@@ -282,7 +304,7 @@ class DbForeshadowingRepository:
         stmt = (
             update(ForeshadowingModel)
             .where(and_(*conditions))
-            .values(target_episode=target_episode, updated_at=datetime.utcnow())
+            .values(target_episode=target_episode, updated_at=datetime.now(timezone.utc))
         )
         result = await self.db.execute(stmt)
         if result.rowcount > 0:
