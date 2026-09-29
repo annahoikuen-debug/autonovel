@@ -14,11 +14,10 @@ DEFAULT_TARGET_AUDIT_SCORE: Final[float] = 95.0
 MAX_LLM_RETRIES: Final[int] = 3
 LLM_RETRY_DELAY_SEC: Final[float] = 1.0
 
-# Pipeline 話数マッピング
-EP_HUMILIATION: Final[int] = 2
-EP_TRIGGER: Final[int] = 3
-EP_MUSOU_START: Final[int] = 4
-EP_FINAL: Final[int] = 8
+# 話数マッピングは絶対値ではなく相対値で表す（config/story_spine の span）。
+# 旧: EP_HUMILIATION=2 / EP_TRIGGER=3 / EP_MUSOU_START=4 / EP_FINAL=8 / EP_CLIMAX=7
+# これらは 8話固定の前提で、40話や100話の構成にそのまま適用すると構造が破綻する。
+# 絶対の話数が必要な箇所は resolve_spine() が相対 span から導出する。
 TENSION_THRESHOLD: Final[int] = 75
 
 # 設定デフォルト値 (schemas/config.py から)
@@ -73,5 +72,3 @@ RATE_LIMIT_WINDOW_SECONDS: Final[int] = 60
 RATE_LIMIT_STORE_MAX_ENTRIES: Final[int] = 10000
 MAX_CONCURRENT_API_CALLS: Final[int] = 5
 
-# Pipeline 話数マッピング（追加）
-EP_CLIMAX: Final[int] = 7

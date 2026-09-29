@@ -1,0 +1,912 @@
+# STORY_SPINE: 構造核 38 パターン（契約凍結 2026-09-29）。
+# 既存 31 種は config/data/archetypes.json の PLOT_STRUCTURES から転記。
+# 新規 7 種は .plan_f1 親提案 §3.3.2 の定義。
+# span はすべて相対位置 [start, end)。絶対話数を持ち込まないこと。
+
+exile_rise:
+  name: "追放→成り上がり（王道ざまぁ）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "不当な追放と屈辱"
+  mid_crisis: "旧勢力の妨害と拮抗"
+  climax_type: "圧倒的逆転と断罪"
+  endings: ["社会的成功と完全な立場逆転"]
+  tropes: ["ざまぁ", "断罪", "成り上がり"]
+  beats:
+    - {key: humiliation, span: [0.00, 0.05]}
+    - {key: revelation, span: [0.05, 0.12]}
+    - {key: first_win, span: [0.12, 0.25]}
+    - {key: expansion, span: [0.25, 0.42]}
+    - {key: midpoint_reversal, span: [0.45, 0.52]}
+    - {key: dark_night, span: [0.52, 0.64]}
+    - {key: decision, span: [0.64, 0.72]}
+    - {key: truth_reveal, span: [0.72, 0.82]}
+    - {key: climax, span: [0.82, 0.94]}
+    - {key: aftermath, span: [0.94, 0.97]}
+    - {key: volume_hook, span: [0.97, 1.00]}
+
+peerless_reincarnation:
+  name: "無双転生（規格外覚醒）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "前世の知識と規格外ステータスの自覚"
+  mid_crisis: "力の制御と周囲の過剰評価によるトラブル"
+  climax_type: "敵対勢力（魔王軍など）の主力の一撃粉砕"
+  endings: ["英雄としての認知と新生活の確立"]
+  tropes: ["無双", "転生", "規格外"]
+  beats:
+    - {key: inciting, span: [0.00, 0.08]}
+    - {key: revelation, span: [0.08, 0.18]}
+    - {key: first_win, span: [0.18, 0.30]}
+    - {key: expansion, span: [0.30, 0.44]}
+    - {key: midpoint_reversal, span: [0.44, 0.53]}
+    - {key: rising_tension, span: [0.53, 0.63]}
+    - {key: turn_of_tide, span: [0.63, 0.72]}
+    - {key: last_stand, span: [0.72, 0.82]}
+    - {key: climax, span: [0.82, 0.93]}
+    - {key: aftermath, span: [0.93, 0.97]}
+    - {key: volume_hook, span: [0.97, 1.00]}
+
+avenger_dark:
+  name: "復讐のダークヒーロー（闇の粛清）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "裏切りによる全て（仲間・名誉）の喪失"
+  mid_crisis: "冷酷な復讐劇と、立ちはだかる「偽りの正義」"
+  climax_type: "仇敵の完全な精神的・物理的崩壊"
+  endings: ["目的を遂げた暗闇への旅立ち"]
+  tropes: ["復讐", "ダークヒーロー", "因果応報"]
+  beats:
+    - {key: inciting, span: [0.00, 0.08]}
+    - {key: betrayal, span: [0.08, 0.18]}
+    - {key: promise, span: [0.18, 0.28]}
+    - {key: first_win, span: [0.28, 0.38]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: dark_night, span: [0.52, 0.63]}
+    - {key: turn_of_tide, span: [0.63, 0.74]}
+    - {key: truth_reveal, span: [0.74, 0.82]}
+    - {key: final_choice, span: [0.82, 0.88]}
+    - {key: climax, span: [0.88, 0.96]}
+    - {key: residue, span: [0.96, 1.00]}
+
+bottom_up_growth:
+  name: "最弱から最強へ（泥臭い努力）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "才能ゼロと評された絶望のスタート"
+  mid_crisis: "泥臭い修行と強敵との限界突破バトル"
+  climax_type: "階級や才能の壁を打ち破る大金星"
+  endings: ["「最強」の称号と仲間からの絶大な信頼"]
+  tropes: ["努力", "下克上", "限界突破"]
+  beats:
+    - {key: humiliation, span: [0.00, 0.06]}
+    - {key: training, span: [0.06, 0.22]}
+    - {key: first_win, span: [0.22, 0.33]}
+    - {key: rising_tension, span: [0.33, 0.44]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: failure, span: [0.52, 0.62]}
+    - {key: all_is_lost, span: [0.62, 0.72]}
+    - {key: decision, span: [0.72, 0.78]}
+    - {key: last_stand, span: [0.78, 0.86]}
+    - {key: climax, span: [0.86, 0.95]}
+    - {key: aftermath, span: [0.95, 1.00]}
+
+master_disciple:
+  name: "隠居師匠の再始動（伝説の再来）"
+  axis: "B"
+  engine: "connection"
+  source: "existing"
+  market_hint: ["light_novel", "web"]
+  summary: "かつて世界を救った英雄の静かな隠居"
+  mid_crisis: "才能ある弟子との出会いと、再び迫る世界の危機"
+  climax_type: "弟子の成長と、師匠の「本気」の力の解放"
+  endings: ["次世代への継承と、新たな伝説の始まり"]
+  tropes: ["師匠", "実力隠し", "世代交代"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.07]}
+    - {key: inciting, span: [0.07, 0.16]}
+    - {key: deepening, span: [0.16, 0.30]}
+    - {key: promise, span: [0.30, 0.40]}
+    - {key: comic_relief, span: [0.40, 0.48]}
+    - {key: midpoint_reversal, span: [0.48, 0.57]}
+    - {key: stakes_raise, span: [0.57, 0.66]}
+    - {key: decision, span: [0.66, 0.75]}
+    - {key: last_stand, span: [0.75, 0.84]}
+    - {key: climax, span: [0.84, 0.93]}
+    - {key: aftermath, span: [0.93, 1.00]}
+
+secret_identity:
+  name: "能ある鷹は爪を隠す（実力隠蔽）"
+  axis: "B"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "凡人を装う超実力者としての日常"
+  mid_crisis: "正体がバレそうになる緊迫感と身近な危機"
+  climax_type: "誰も勝てない絶望的状況での「正体表白」と無双"
+  endings: ["正体を知った一部の仲間との新たな秘密の共有"]
+  tropes: ["実力隠し", "能ある鷹", "正体表白"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.08]}
+    - {key: daily_loop, span: [0.08, 0.24]}
+    - {key: deepening, span: [0.24, 0.38]}
+    - {key: foreshadow, span: [0.38, 0.46]}
+    - {key: midpoint_reversal, span: [0.48, 0.56]}
+    - {key: stakes_raise, span: [0.56, 0.66]}
+    - {key: turn_of_tide, span: [0.66, 0.74]}
+    - {key: truth_reveal, span: [0.74, 0.83]}
+    - {key: climax, span: [0.83, 0.94]}
+    - {key: aftermath, span: [0.94, 1.00]}
+
+dungeon_conqueror:
+  name: "ダンジョン攻略記（深層の真実）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "未踏破の超難関ダンジョンへの挑戦開始"
+  mid_crisis: "未知の罠、凶悪なボス、ライバルギルドの裏切り"
+  climax_type: "最深部における「世界の真実」を守るボスとの死闘"
+  endings: ["伝説の遺物の獲得とギルドの殿堂入り"]
+  tropes: ["ダンジョン", "ハクスラ", "世界の真実"]
+  beats:
+    - {key: inciting, span: [0.00, 0.08]}
+    - {key: promise, span: [0.08, 0.18]}
+    - {key: first_win, span: [0.18, 0.30]}
+    - {key: rising_tension, span: [0.30, 0.42]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: betrayal, span: [0.52, 0.62]}
+    - {key: dark_night, span: [0.62, 0.72]}
+    - {key: decision, span: [0.72, 0.79]}
+    - {key: truth_reveal, span: [0.79, 0.86]}
+    - {key: last_stand, span: [0.86, 0.91]}
+    - {key: climax, span: [0.91, 0.97]}
+    - {key: residue, span: [0.97, 1.00]}
+
+guild_rebuilder:
+  name: "落ちこぼれギルドの再興（零細から躍進）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "借金まみれで解散寸前の弱小ギルドの引き継ぎ"
+  mid_crisis: "大手ギルドからの理不尽な買収工作と人材不足"
+  climax_type: "ギルド対抗戦または大型クエストでの大逆転勝利"
+  endings: ["地域No.1ギルドへの成長と強固な絆の獲得"]
+  tropes: ["ギルド運営", "組織再建", "大逆転"]
+  beats:
+    - {key: inciting, span: [0.00, 0.08]}
+    - {key: promise, span: [0.08, 0.18]}
+    - {key: daily_loop, span: [0.18, 0.30]}
+    - {key: gossip, span: [0.30, 0.40]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: stakes_raise, span: [0.52, 0.62]}
+    - {key: rising_tension, span: [0.62, 0.72]}
+    - {key: decision, span: [0.72, 0.79]}
+    - {key: last_stand, span: [0.79, 0.87]}
+    - {key: climax, span: [0.87, 0.95]}
+    - {key: aftermath, span: [0.95, 1.00]}
+
+summon_hero_betrayal:
+  name: "召喚勇者の反逆（理不尽脱却）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "異世界召喚されたが、無能と判定され捨てられる"
+  mid_crisis: "魔境サバイバルと、召喚した王国の卑劣な陰謀の察知"
+  climax_type: "王国と魔王軍の双方を出し抜く第三勢力としての君臨"
+  endings: ["理不尽な世界システムからの脱却と真の自由"]
+  tropes: ["召喚", "人間不信", "第三勢力"]
+  beats:
+    - {key: inciting, span: [0.00, 0.08]}
+    - {key: humiliation, span: [0.08, 0.16]}
+    - {key: promise, span: [0.16, 0.26]}
+    - {key: first_win, span: [0.26, 0.36]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: betrayal, span: [0.52, 0.60]}
+    - {key: dark_night, span: [0.60, 0.70]}
+    - {key: decision, span: [0.70, 0.77]}
+    - {key: final_choice, span: [0.77, 0.85]}
+    - {key: climax, span: [0.85, 0.94]}
+    - {key: volume_hook, span: [0.94, 1.00]}
+
+tournament_champion:
+  name: "武闘大会無双（最強の証明）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "天下分け目の大武闘会の開幕と、無名としての参戦"
+  mid_crisis: "卑怯な工作を行う本命候補や、宿命のライバルとの激突"
+  climax_type: "満員の観客の前での、最強の王者との極限バトル"
+  endings: ["大会優勝と、世界中への名声の轟き"]
+  tropes: ["トーナメント", "ライバル", "頂上決戦"]
+  beats:
+    - {key: inciting, span: [0.00, 0.08]}
+    - {key: training, span: [0.08, 0.22]}
+    - {key: first_win, span: [0.22, 0.32]}
+    - {key: rising_tension, span: [0.32, 0.44]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: betrayal, span: [0.52, 0.62]}
+    - {key: all_is_lost, span: [0.62, 0.71]}
+    - {key: decision, span: [0.71, 0.78]}
+    - {key: last_stand, span: [0.78, 0.86]}
+    - {key: climax, span: [0.86, 0.95]}
+    - {key: aftermath, span: [0.95, 1.00]}
+
+slow_life:
+  name: "スローライフ（ほのぼの飯テロ）"
+  axis: "B"
+  engine: "comfort"
+  source: "existing"
+  market_hint: ["web", "general"]
+  summary: "穏やかな日常の始まりと辺境新生活"
+  mid_crisis: "軽いトラブル（魔物の迷い込み等）と優しい解決"
+  climax_type: "大きな発見や特産品によるコミュニティの深化"
+  endings: ["静かな充実感と日常への回帰"]
+  tropes: ["飯テロ", "のんびり最強", "田舎暮らし"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.10]}
+    - {key: inciting, span: [0.10, 0.20]}
+    - {key: daily_loop, span: [0.20, 0.36]}
+    - {key: comic_relief, span: [0.36, 0.44]}
+    - {key: deepening, span: [0.44, 0.52]}
+    - {key: midpoint_reversal, span: [0.52, 0.59]}
+    - {key: stakes_raise, span: [0.59, 0.68]}
+    - {key: decision, span: [0.68, 0.76]}
+    - {key: payoff, span: [0.76, 0.86]}
+    - {key: climax, span: [0.86, 0.94]}
+    - {key: denouement, span: [0.94, 0.99]}
+    - {key: coda, span: [0.99, 1.00]}
+
+gourmet_conqueror:
+  name: "美食開拓（異世界飯テロ）"
+  axis: "D"
+  engine: "comfort"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "食文化の乏しい異世界で、現代知識による料理の再現"
+  mid_crisis: "食材の入手困難や、既存の権威ある料理人からの嫉妬"
+  climax_type: "国王や大貴族を唸らせる「至高の一皿」の披露"
+  endings: ["伝説の料理人としての店の大繁盛"]
+  tropes: ["グルメ", "料理", "胃袋掌握"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: daily_loop, span: [0.10, 0.28]}
+    - {key: gossip, span: [0.28, 0.38]}
+    - {key: first_win, span: [0.38, 0.48]}
+    - {key: midpoint_reversal, span: [0.48, 0.56]}
+    - {key: rising_tension, span: [0.56, 0.66]}
+    - {key: turn_of_tide, span: [0.66, 0.74]}
+    - {key: climax, span: [0.74, 0.86]}
+    - {key: payoff, span: [0.86, 0.94]}
+    - {key: denouement, span: [0.94, 0.99]}
+    - {key: coda, span: [0.99, 1.00]}
+
+territory_management:
+  name: "ホワイト領地経営（僻地開発）"
+  axis: "D"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "貧困を極める不毛な僻地への領主としての赴任"
+  mid_crisis: "飢饉、隣国の小競り合い、既得権益の反発"
+  climax_type: "科学・魔法技術を統合した大インフラ改革の成功"
+  endings: ["誰もが憧れる豊かで平和な先進都市の完成"]
+  tropes: ["内政", "領地経営", "技術革新"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: daily_loop, span: [0.10, 0.28]}
+    - {key: expansion, span: [0.28, 0.42]}
+    - {key: comic_relief, span: [0.42, 0.48]}
+    - {key: midpoint_reversal, span: [0.48, 0.56]}
+    - {key: stakes_raise, span: [0.56, 0.66]}
+    - {key: rising_tension, span: [0.66, 0.75]}
+    - {key: final_choice, span: [0.75, 0.82]}
+    - {key: climax, span: [0.82, 0.91]}
+    - {key: payoff, span: [0.91, 0.97]}
+    - {key: denouement, span: [0.97, 1.00]}
+
+alchemy_workshop:
+  name: "万能錬金術師の工房（特需創出）"
+  axis: "D"
+  engine: "comfort"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "独自の錬金術でひっそりとアトリエを開業"
+  mid_crisis: "粗悪な偽物の流通や、悪徳商会からの圧力"
+  climax_type: "流行病や戦争を防ぐ「奇跡の薬」の超短期大量錬成"
+  endings: ["国家公認の錬金術師としての名声と穏やかな経営"]
+  tropes: ["錬金術", "ものづくり", "工房経営"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: training, span: [0.10, 0.24]}
+    - {key: daily_loop, span: [0.24, 0.38]}
+    - {key: first_win, span: [0.38, 0.47]}
+    - {key: midpoint_reversal, span: [0.47, 0.55]}
+    - {key: rising_tension, span: [0.55, 0.65]}
+    - {key: turn_of_tide, span: [0.65, 0.74]}
+    - {key: climax, span: [0.74, 0.85]}
+    - {key: payoff, span: [0.85, 0.93]}
+    - {key: denouement, span: [0.93, 0.99]}
+    - {key: coda, span: [0.99, 1.00]}
+
+pet_tamer:
+  name: "もふもふ聖獣飼育記（ペット溺愛）"
+  axis: "C"
+  engine: "connection"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "規格外の「テイム」能力の覚醒と、最初の聖獣との出会い"
+  mid_crisis: "聖獣を狙う密猟組織や、凶暴化した魔獣の襲来"
+  climax_type: "心を通わせた聖獣たちとの共闘による危機の回避"
+  endings: ["賑やかで愛らしいもふもふパラダイスの完成"]
+  tropes: ["テイマー", "聖獣", "もふもふ"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: promise, span: [0.10, 0.20]}
+    - {key: deepening, span: [0.20, 0.36]}
+    - {key: comic_relief, span: [0.36, 0.44]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: stakes_raise, span: [0.52, 0.62]}
+    - {key: turn_of_tide, span: [0.62, 0.72]}
+    - {key: last_stand, span: [0.72, 0.83]}
+    - {key: climax, span: [0.83, 0.93]}
+    - {key: aftermath, span: [0.93, 1.00]}
+
+craftsman_legend:
+  name: "魔導具職人のこだわり（名工誕生）"
+  axis: "D"
+  engine: "comfort"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "どんな物でも修復・改造できる職人としての独立"
+  mid_crisis: "失われた伝説の遺物の修復依頼と、それを狙う組織"
+  climax_type: "命がけの作業と、遺物の真の機能の覚醒"
+  endings: ["歴史を塗り替える至高の名工としての確立"]
+  tropes: ["職人", "魔導具", "遺物修復"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.10]}
+    - {key: inciting, span: [0.10, 0.20]}
+    - {key: training, span: [0.20, 0.34]}
+    - {key: daily_loop, span: [0.34, 0.46]}
+    - {key: midpoint_reversal, span: [0.46, 0.54]}
+    - {key: failure, span: [0.54, 0.63]}
+    - {key: all_is_lost, span: [0.63, 0.72]}
+    - {key: decision, span: [0.72, 0.79]}
+    - {key: climax, span: [0.79, 0.88]}
+    - {key: payoff, span: [0.88, 0.95]}
+    - {key: denouement, span: [0.95, 0.99]}
+    - {key: coda, span: [0.99, 1.00]}
+
+modern_knowledge:
+  name: "現代知識による産業革命（文明開化）"
+  axis: "D"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["light_novel", "web"]
+  summary: "紙、砂糖、ガラス等、現代の知識による新技術の開発"
+  mid_crisis: "技術の盗用や、古い商業ギルドからの妨害工作"
+  climax_type: "国際見本市や王室コンペでの圧倒的勝利"
+  endings: ["異世界の産業構造を塗り替える大企業の創設"]
+  tropes: ["現代知識", "文明無双", "商会無双"]
+  beats:
+    - {key: inciting, span: [0.00, 0.09]}
+    - {key: revelation, span: [0.09, 0.18]}
+    - {key: first_win, span: [0.18, 0.30]}
+    - {key: expansion, span: [0.30, 0.44]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: rising_tension, span: [0.52, 0.63]}
+    - {key: turn_of_tide, span: [0.63, 0.73]}
+    - {key: last_stand, span: [0.73, 0.83]}
+    - {key: climax, span: [0.83, 0.93]}
+    - {key: aftermath, span: [0.93, 0.97]}
+    - {key: volume_hook, span: [0.97, 1.00]}
+
+villainess_destruction_avoid:
+  name: "悪役令嬢の破滅回避（フラグ破壊）"
+  axis: "C"
+  engine: "connection"
+  source: "existing"
+  market_hint: ["light_novel", "web"]
+  summary: "乙女ゲームの悪役令嬢への転生と、破滅フラグの自覚"
+  mid_crisis: "ヒロインや攻略対象たちとのすれ違いと、シナリオの強制力"
+  climax_type: "断罪イベントでの華麗な身の潔白の証明と逆転"
+  endings: ["望んでいた平穏（または真の恋）の獲得"]
+  tropes: ["悪役令嬢", "破滅フラグ", "断罪回避"]
+  beats:
+    - {key: inciting, span: [0.00, 0.09]}
+    - {key: humiliation, span: [0.09, 0.17]}
+    - {key: promise, span: [0.17, 0.27]}
+    - {key: comic_relief, span: [0.27, 0.35]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: stakes_raise, span: [0.52, 0.62]}
+    - {key: turn_of_tide, span: [0.62, 0.72]}
+    - {key: truth_reveal, span: [0.72, 0.82]}
+    - {key: final_choice, span: [0.82, 0.88]}
+    - {key: climax, span: [0.88, 0.96]}
+    - {key: denouement, span: [0.96, 1.00]}
+
+contract_marriage:
+  name: "契約結婚の真実（不器用な二人の愛）"
+  axis: "C"
+  engine: "connection"
+  source: "existing"
+  market_hint: ["light_novel", "web"]
+  summary: "利害一致による、愛のない契約結婚の締結"
+  mid_crisis: "周囲の詮索、元婚約者の嫌がらせ、不器用な距離感"
+  climax_type: "どちらか一方の危機を、もう一方が全力で救う事件"
+  endings: ["契約を超えた、本物の夫婦としての結ばれ"]
+  tropes: ["契約結婚", "すれ違い", "純愛"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: promise, span: [0.10, 0.20]}
+    - {key: daily_loop, span: [0.20, 0.34]}
+    - {key: comic_relief, span: [0.34, 0.42]}
+    - {key: deepening, span: [0.42, 0.50]}
+    - {key: midpoint_reversal, span: [0.50, 0.58]}
+    - {key: stakes_raise, span: [0.58, 0.67]}
+    - {key: turn_of_tide, span: [0.67, 0.76]}
+    - {key: final_choice, span: [0.76, 0.84]}
+    - {key: climax, span: [0.84, 0.93]}
+    - {key: denouement, span: [0.93, 1.00]}
+
+doted_saint:
+  name: "不遇な聖女の溺愛（立場逆転 of 愛）"
+  axis: "B"
+  engine: "connection"
+  source: "existing"
+  market_hint: ["light_novel", "web"]
+  summary: "偽聖女として虐げられ、国から追放される"
+  mid_crisis: "隣国の冷徹な皇帝に拾われるが、最初は警戒される日常"
+  climax_type: "主人公の真の聖なる力が開花し、国や人々を救う"
+  endings: ["皇帝からの無自覚な甘い溺愛と、前国の崩壊"]
+  tropes: ["聖女", "追放", "溺愛"]
+  beats:
+    - {key: humiliation, span: [0.00, 0.09]}
+    - {key: inciting, span: [0.09, 0.18]}
+    - {key: deepening, span: [0.18, 0.32]}
+    - {key: comic_relief, span: [0.32, 0.40]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: stakes_raise, span: [0.52, 0.62]}
+    - {key: decision, span: [0.62, 0.72]}
+    - {key: truth_reveal, span: [0.72, 0.82]}
+    - {key: final_choice, span: [0.82, 0.88]}
+    - {key: climax, span: [0.88, 0.96]}
+    - {key: denouement, span: [0.96, 1.00]}
+
+academy_cinderella:
+  name: "学園シンデレラ（身分差の恋）"
+  axis: "C"
+  engine: "connection"
+  source: "existing"
+  market_hint: ["light_novel", "web"]
+  summary: "貴族だらけのエリート学園に入学した特待生の庶民"
+  mid_crisis: "学内のカーストによるいじめと、孤高のプリンスとの接近"
+  climax_type: "舞踏会や学園の危機における、見事な知性と気品の証明"
+  endings: ["身分差の壁を壊し、公認のカップルへ"]
+  tropes: ["学園", "シンデレラ", "格差恋愛"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: humiliation, span: [0.10, 0.18]}
+    - {key: promise, span: [0.18, 0.28]}
+    - {key: deepening, span: [0.28, 0.42]}
+    - {key: comic_relief, span: [0.42, 0.49]}
+    - {key: midpoint_reversal, span: [0.49, 0.57]}
+    - {key: stakes_raise, span: [0.57, 0.66]}
+    - {key: turn_of_tide, span: [0.66, 0.75]}
+    - {key: final_choice, span: [0.75, 0.83]}
+    - {key: climax, span: [0.83, 0.92]}
+    - {key: payoff, span: [0.92, 0.98]}
+    - {key: coda, span: [0.98, 1.00]}
+
+love_comedy_density:
+  name: "じれじれ両片想い（尊さ最大）"
+  axis: "C"
+  engine: "connection"
+  source: "existing"
+  market_hint: ["light_novel", "web"]
+  summary: "近すぎる距離感の幼馴染や同僚との、進まない関係"
+  mid_crisis: "魅力的なライバルの出現と、お互いの配置換え・焦燥感"
+  climax_type: "勘違いの解消と、劇的な場所での告白"
+  endings: ["恥ずかしがりながらも幸せいっぱいの交際開始"]
+  tropes: ["ラブコメ", "両片想い", "幼馴染"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: daily_loop, span: [0.10, 0.26]}
+    - {key: comic_relief, span: [0.26, 0.36]}
+    - {key: deepening, span: [0.36, 0.46]}
+    - {key: midpoint_reversal, span: [0.46, 0.54]}
+    - {key: gossip, span: [0.54, 0.63]}
+    - {key: stakes_raise, span: [0.63, 0.71]}
+    - {key: turn_of_tide, span: [0.71, 0.79]}
+    - {key: final_choice, span: [0.79, 0.86]}
+    - {key: climax, span: [0.86, 0.94]}
+    - {key: denouement, span: [0.94, 1.00]}
+
+death_loop:
+  name: "死に戻り（絶望と執念）"
+  axis: "B"
+  engine: "enigma"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "圧倒的な理不尽な死とループ現象の発覚"
+  mid_crisis: "繰り返しの中での情報収集と精神の摩耗"
+  climax_type: "すべてのピースが繋がる「唯一の正解ルート」の発見"
+  endings: ["ループからの完全な脱出と救済"]
+  tropes: ["ループ", "絶望からの逆転", "知識の蓄積"]
+  beats:
+    - {key: inciting, span: [0.00, 0.09]}
+    - {key: betrayal, span: [0.09, 0.17]}
+    - {key: training, span: [0.17, 0.32]}
+    - {key: daily_loop, span: [0.32, 0.44]}
+    - {key: midpoint_reversal, span: [0.48, 0.56]}
+    - {key: stakes_raise, span: [0.56, 0.65]}
+    - {key: dark_night, span: [0.65, 0.74]}
+    - {key: truth_reveal, span: [0.74, 0.84]}
+    - {key: final_choice, span: [0.84, 0.89]}
+    - {key: climax, span: [0.89, 0.97]}
+    - {key: residue, span: [0.97, 1.00]}
+
+vr_streamer:
+  name: "異世界VR配信（ネットバズ無双）"
+  axis: "D"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "新作VRゲームの開始と、趣味の配信活動の開始"
+  mid_crisis: "ユニークスキルの獲得による炎上騒ぎや、悪質ギルドの妨害"
+  climax_type: "公式大会やレイドボス戦での神懸かりプレイでの大バズり"
+  endings: ["同接100万人超えのトップ配信者への君臨"]
+  tropes: ["VRMMO", "ライブ配信", "バズり"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.08]}
+    - {key: inciting, span: [0.08, 0.17]}
+    - {key: stream_reaction, span: [0.17, 0.30]}
+    - {key: first_win, span: [0.30, 0.40]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: rising_tension, span: [0.52, 0.62]}
+    - {key: turn_of_tide, span: [0.62, 0.72]}
+    - {key: last_stand, span: [0.72, 0.83]}
+    - {key: climax, span: [0.83, 0.93]}
+    - {key: stream_reaction, span: [0.93, 1.00]}
+
+brain_battle:
+  name: "頭脳戦デスゲーム（心理ブラフ）"
+  axis: "D"
+  engine: "enigma"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "命がけの知略ゲームへの強制参加"
+  mid_crisis: "裏切り者だらけの心理戦と、一歩間違えれば即死の極限状況"
+  climax_type: "相手の裏の裏をかく、壮大なブラフによるチェックメイト"
+  endings: ["ゲームの支配者（運営）への宣戦布告と生還"]
+  tropes: ["デスゲーム", "心理戦", "ブラフ"]
+  beats:
+    - {key: inciting, span: [0.00, 0.09]}
+    - {key: promise, span: [0.09, 0.19]}
+    - {key: failure, span: [0.19, 0.30]}
+    - {key: deepening, span: [0.30, 0.42]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: betrayal, span: [0.52, 0.60]}
+    - {key: dark_night, span: [0.60, 0.70]}
+    - {key: decision, span: [0.70, 0.78]}
+    - {key: final_choice, span: [0.78, 0.85]}
+    - {key: climax, span: [0.85, 0.94]}
+    - {key: residue, span: [0.94, 1.00]}
+
+detective_mystery:
+  name: "異世界ミステリー（論理の勝利）"
+  axis: "D"
+  engine: "enigma"
+  source: "existing"
+  market_hint: ["general", "light_novel"]
+  summary: "不可解な密室殺人事件や怪奇事件の発生"
+  mid_crisis: "容疑者たちの嘘、第二の犠牲者、引導"
+  climax_type: "全員を集めた解決編での完璧な論理展開による犯人特定"
+  endings: ["事件の裏にある悲しい真相の解決と、探偵としての名声"]
+  tropes: ["探偵", "ミステリー", "謎解き"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: failure, span: [0.10, 0.30]}
+    - {key: deepening, span: [0.30, 0.46]}
+    - {key: interlude, span: [0.46, 0.49]}
+    - {key: midpoint_reversal, span: [0.49, 0.57]}
+    - {key: dark_night, span: [0.57, 0.70]}
+    - {key: truth_reveal, span: [0.70, 0.86]}
+    - {key: climax, span: [0.86, 0.96]}
+    - {key: denouement, span: [0.96, 1.00]}
+
+army_rational:
+  name: "鉄血の軍事戦略（合理的勝利）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "劣勢の戦場への若き指揮官としての参戦"
+  mid_crisis: "無能な上層部の命令、圧倒的物量の敵軍、味方の精神崩壊"
+  climax_type: "地形と心理を計算し尽くした「奇策」による大勝利"
+  endings: ["英雄としての昇進と、次の戦場への警戒"]
+  tropes: ["知略", "ミリタリー", "合理的思考"]
+  beats:
+    - {key: inciting, span: [0.00, 0.09]}
+    - {key: promise, span: [0.09, 0.20]}
+    - {key: training, span: [0.20, 0.33]}
+    - {key: rising_tension, span: [0.33, 0.45]}
+    - {key: midpoint_reversal, span: [0.45, 0.53]}
+    - {key: stakes_raise, span: [0.53, 0.63]}
+    - {key: all_is_lost, span: [0.63, 0.73]}
+    - {key: decision, span: [0.73, 0.80]}
+    - {key: last_stand, span: [0.80, 0.88]}
+    - {key: climax, span: [0.88, 0.96]}
+    - {key: aftermath, span: [0.96, 1.00]}
+
+shadow_organization:
+  name: "影の結社プレイ（勘違い覇権）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "「闇の組織」の設定を冗談で作ったら、現実化する"
+  mid_crisis: "主人公の適当な発言を部下が超解釈し、世界の巨悪と衝突"
+  climax_type: "勘違いが積み重なった結果、主人公がクールに大ボス撃破"
+  endings: ["組織の覇権がさらに広がり、本人は内心焦る日常"]
+  tropes: ["勘違い", "影の支配者", "黒幕"]
+  beats:
+    - {key: inciting, span: [0.00, 0.09]}
+    - {key: promise, span: [0.09, 0.20]}
+    - {key: gossip, span: [0.20, 0.32]}
+    - {key: comic_relief, span: [0.32, 0.40]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: rising_tension, span: [0.52, 0.62]}
+    - {key: turn_of_tide, span: [0.62, 0.72]}
+    - {key: last_stand, span: [0.72, 0.83]}
+    - {key: climax, span: [0.83, 0.93]}
+    - {key: volume_hook, span: [0.93, 1.00]}
+
+onmyo_exorcism:
+  name: "最強陰陽師（現代怪異退治）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "現代に蔓延る怪異を祓う、隠れた最強陰陽師の暗躍"
+  mid_crisis: "巨大な怨霊の目覚めと、一般人（ヒロイン等）への迫る危機"
+  climax_type: "呪歌詠唱と式神を駆使した、壮絶な結界大決戦"
+  endings: ["怪異の鎮滅と、いつもの平穏な日常への回帰"]
+  tropes: ["陰陽師", "現代怪異", "式神無双"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.08]}
+    - {key: inciting, span: [0.08, 0.17]}
+    - {key: revelation, span: [0.17, 0.27]}
+    - {key: first_win, span: [0.27, 0.38]}
+    - {key: midpoint_reversal, span: [0.44, 0.52]}
+    - {key: stakes_raise, span: [0.52, 0.63]}
+    - {key: dark_night, span: [0.63, 0.72]}
+    - {key: decision, span: [0.72, 0.79]}
+    - {key: truth_reveal, span: [0.79, 0.86]}
+    - {key: last_stand, span: [0.86, 0.91]}
+    - {key: climax, span: [0.91, 0.98]}
+    - {key: residue, span: [0.98, 1.00]}
+
+space_odyssey:
+  name: "宇宙船サバイバル（極限開拓）"
+  axis: "A"
+  engine: "enigma"
+  source: "existing"
+  market_hint: ["general", "web"]
+  summary: "未知の惑星への不時着と、宇宙船AIとの孤独な生活"
+  mid_crisis: "酸素や資源の枯渇、荒野、通信不能の絶望"
+  climax_type: "船の修復と、惑星の危機（火山の噴火など）からの大脱出"
+  endings: ["母星への通信回線の回復と、新たな宇宙の旅路へ"]
+  tropes: ["SF", "サバイバル", "AI相棒"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.10]}
+    - {key: inciting, span: [0.10, 0.20]}
+    - {key: daily_loop, span: [0.20, 0.32]}
+    - {key: foreshadow, span: [0.32, 0.44]}
+    - {key: midpoint_reversal, span: [0.48, 0.56]}
+    - {key: stakes_raise, span: [0.56, 0.66]}
+    - {key: dark_night, span: [0.66, 0.76]}
+    - {key: decision, span: [0.76, 0.82]}
+    - {key: truth_reveal, span: [0.82, 0.89]}
+    - {key: climax, span: [0.89, 0.97]}
+    - {key: coda, span: [0.97, 1.00]}
+
+reincarnation_cheat:
+  name: "転生チート（ステータス無双）"
+  axis: "A"
+  engine: "conflict"
+  source: "existing"
+  market_hint: ["web", "light_novel"]
+  summary: "転生と隠されたステータス覚醒"
+  mid_crisis: "隠された真の力を発揮する場面"
+  climax_type: "真の力の完全解放と認知"
+  endings: ["世界に認められた新たな立場の確立"]
+  tropes: ["無自覚無双", "ステータス偽装", "スキル強奪"]
+  beats:
+    - {key: inciting, span: [0.00, 0.09]}
+    - {key: revelation, span: [0.09, 0.19]}
+    - {key: first_win, span: [0.19, 0.30]}
+    - {key: expansion, span: [0.30, 0.43]}
+    - {key: midpoint_reversal, span: [0.43, 0.52]}
+    - {key: rising_tension, span: [0.52, 0.63]}
+    - {key: turn_of_tide, span: [0.63, 0.73]}
+    - {key: truth_reveal, span: [0.73, 0.83]}
+    - {key: climax, span: [0.83, 0.94]}
+    - {key: aftermath, span: [0.94, 0.97]}
+    - {key: volume_hook, span: [0.97, 1.00]}
+
+court_intrigue:
+  name: "宮廷・陰謀（中枢への掌握）"
+  axis: "A"
+  engine: "enigma"
+  source: "new"
+  market_hint: ["general", "light_novel"]
+  summary: "辺境の政変に関わり、帝都中枢へ招集される"
+  mid_crisis: "推した派閥が帝都で潰され、主人公が孤立する"
+  climax_type: "帝位周辺の実権を確保し、政敵を公の場で崩す"
+  endings: ["central_seizure", "pyrrhic_victory"]
+  tropes: ["宮廷", "陰謀", "中枢掌握"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: daily_loop, span: [0.10, 0.26]}
+    - {key: gossip, span: [0.26, 0.38]}
+    - {key: promise, span: [0.38, 0.47]}
+    - {key: midpoint_reversal, span: [0.47, 0.56]}
+    - {key: betrayal, span: [0.56, 0.65]}
+    - {key: stakes_raise, span: [0.65, 0.74]}
+    - {key: decision, span: [0.74, 0.81]}
+    - {key: truth_reveal, span: [0.81, 0.88]}
+    - {key: climax, span: [0.88, 0.97]}
+    - {key: residue, span: [0.97, 1.00]}
+
+professional_procedure:
+  name: "職業手続き（医療/法曹/報道）"
+  axis: "D"
+  engine: "enigma"
+  source: "new"
+  market_hint: ["general", "light_novel"]
+  summary: "現場の新人が、所属行业の手順だけで一件を片づける"
+  mid_crisis: "手順を厳守する perawatanが、外の素人たちに妨げられる"
+  climax_type: "手順と記録で責任の所在を確定し、事件を永久に解く"
+  endings: ["procedural_resolution", "institutional_vindication"]
+  tropes: ["職業劇", "手順", "記録"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.09]}
+    - {key: inciting, span: [0.09, 0.19]}
+    - {key: training, span: [0.19, 0.33]}
+    - {key: daily_loop, span: [0.33, 0.44]}
+    - {key: deepening, span: [0.44, 0.50]}
+    - {key: midpoint_reversal, span: [0.50, 0.58]}
+    - {key: failure, span: [0.58, 0.66]}
+    - {key: all_is_lost, span: [0.66, 0.75]}
+    - {key: final_choice, span: [0.75, 0.83]}
+    - {key: climax, span: [0.83, 0.92]}
+    - {key: payoff, span: [0.92, 1.00]}
+
+sports_growth:
+  name: "スポーツ/競技（大会周期）"
+  axis: "A"
+  engine: "conflict"
+  source: "new"
+  market_hint: ["web", "light_novel"]
+  summary: "平凡な選手が大会の最終枠に唐突に立つ"
+  mid_crisis: "主力の故障と先代の厳しさが同時に襲う"
+  climax_type: "決勝の逆転で代表枠を掴み、地位を確立する"
+  endings: ["champion_crown", "team_legacy"]
+  tropes: ["競技", "チーム", "逆転"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.09]}
+    - {key: training, span: [0.09, 0.24]}
+    - {key: first_win, span: [0.24, 0.34]}
+    - {key: comic_relief, span: [0.34, 0.42]}
+    - {key: midpoint_reversal, span: [0.48, 0.56]}
+    - {key: stakes_raise, span: [0.56, 0.66]}
+    - {key: failure, span: [0.66, 0.74]}
+    - {key: decision, span: [0.74, 0.81]}
+    - {key: last_stand, span: [0.81, 0.88]}
+    - {key: climax, span: [0.88, 0.96]}
+    - {key: aftermath, span: [0.96, 1.00]}
+
+horror_dread:
+  name: "恐怖（全容不明が主駆動）"
+  axis: "B"
+  engine: "enigma"
+  source: "new"
+  market_hint: ["single_shot", "general"]
+  summary: "日常の外側から説明のできない何かが入り込む"
+  mid_crisis: "調べるほど全容が遠のき、証言どうしが矛盾する"
+  climax_type: "説明できないものに対し、説明せず身をもって受ける"
+  endings: ["survival_with_unknowing", "endless_uncertainty"]
+  tropes: ["恐怖", "全容不明", "日常侵食"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.10]}
+    - {key: inciting, span: [0.10, 0.22]}
+    - {key: rising_tension, span: [0.22, 0.40]}
+    - {key: comic_relief, span: [0.40, 0.45]}
+    - {key: midpoint_reversal, span: [0.45, 0.55]}
+    - {key: stakes_raise, span: [0.55, 0.66]}
+    - {key: dark_night, span: [0.66, 0.78]}
+    - {key: decision, span: [0.78, 0.85]}
+    - {key: climax, span: [0.85, 0.95]}
+    - {key: residue, span: [0.95, 1.00]}
+
+healing_care:
+  name: "癒し手・支援者の蓄積と放出"
+  axis: "B"
+  engine: "comfort"
+  source: "new"
+  market_hint: ["web", "general"]
+  summary: "主人公が任され、他者の傷を預かる"
+  mid_crisis: "ケアの反復の中で、主人公自身の傷が表面化する"
+  climax_type: "蓄積した恵みを、自分の傷ごと差し出して解消する"
+  endings: ["warm_resolution", "bittersweet"]
+  tropes: ["癒し手", "蓄積", "恩返し"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: daily_loop, span: [0.10, 0.35]}
+    - {key: deepening, span: [0.35, 0.52]}
+    - {key: midpoint_reversal, span: [0.52, 0.60]}
+    - {key: all_is_lost, span: [0.60, 0.72]}
+    - {key: final_choice, span: [0.72, 0.82]}
+    - {key: climax, span: [0.82, 0.91]}
+    - {key: payoff, span: [0.91, 0.96]}
+    - {key: coda, span: [0.96, 1.00]}
+
+ensemble_fracture:
+  name: "群像の崩壊と再統合"
+  axis: "C"
+  engine: "connection"
+  source: "new"
+  market_hint: ["general", "light_novel"]
+  summary: "複数の視点が均衡し、互いの役割を補い合っていた"
+  mid_crisis: "価値観の食い違いが表面化し、均衡が破綻する"
+  climax_type: "決裂した役割を別の均衡で組み直し、群像を一つに戻す"
+  endings: ["fragile_reunion", "costly_partition"]
+  tropes: ["群像", "均衡", "再統合"]
+  beats:
+    - {key: cold_open, span: [0.00, 0.10]}
+    - {key: inciting, span: [0.10, 0.20]}
+    - {key: promise, span: [0.20, 0.32]}
+    - {key: comic_relief, span: [0.32, 0.40]}
+    - {key: midpoint_reversal, span: [0.40, 0.50]}
+    - {key: betrayal, span: [0.50, 0.60]}
+    - {key: stakes_raise, span: [0.60, 0.70]}
+    - {key: dark_night, span: [0.70, 0.79]}
+    - {key: turn_of_tide, span: [0.79, 0.86]}
+    - {key: climax, span: [0.86, 0.95]}
+    - {key: payoff, span: [0.95, 1.00]}
+
+transformation_isekai:
+  name: "身体/性の変容（変容→適応→受容）"
+  axis: "B"
+  engine: "connection"
+  source: "new"
+  market_hint: ["general", "light_novel"]
+  summary: "主人公が身体ごと別の存在に変えられる"
+  mid_crisis: "変容を拒む世界と自分の葛藤が同時に深まる"
+  climax_type: "変容そのものを自分のものとして受け入れる"
+  endings: ["self_acceptance", "double_awakening"]
+  tropes: ["変容", "受容", "自己認識"]
+  beats:
+    - {key: inciting, span: [0.00, 0.10]}
+    - {key: revelation, span: [0.10, 0.20]}
+    - {key: daily_loop, span: [0.20, 0.36]}
+    - {key: deepening, span: [0.36, 0.48]}
+    - {key: midpoint_reversal, span: [0.48, 0.57]}
+    - {key: stakes_raise, span: [0.57, 0.66]}
+    - {key: all_is_lost, span: [0.66, 0.76]}
+    - {key: decision, span: [0.76, 0.83]}
+    - {key: final_choice, span: [0.83, 0.89]}
+    - {key: climax, span: [0.89, 0.97]}
+    - {key: denouement, span: [0.97, 1.00]}

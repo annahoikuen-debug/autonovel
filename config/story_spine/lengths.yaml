@@ -1,0 +1,69 @@
+# STORY_SPINE: 長さ階層 6 段（契約凍結 2026-09-29）。
+# 文字数は frontend/src/constants/manuscript.ts の実在プリセットから昇格したもの。
+# 新しい数字を作らない。eps_range / target_chars はすべて既存値。
+short:
+  label: 単発短編
+  target_chars: 12000
+  eps_range: [1, 3]
+  chars_per_ep: [4000, 12000]
+  arc_count: [1, 1]
+  min_beats: 5
+  foreshadow_scopes: [short]
+  hook_window_eps: 1
+  ending_contract: 閉じた結末。話末の引きは不要
+  source: shousetsu-gekkan
+novella:
+  label: 中編
+  target_chars: 30000
+  eps_range: [4, 10]
+  chars_per_ep: [3000, 4000]
+  arc_count: [1, 1]
+  min_beats: 8
+  foreshadow_scopes: [short, mid]
+  hook_window_eps: 1
+  ending_contract: 閉じた結末。1部構成
+  source: shousetsu-subaru
+single_volume:
+  label: 単行本1巻
+  target_chars: 55000
+  eps_range: [15, 20]
+  chars_per_ep: [3000, 4000]
+  arc_count: [2, 3]
+  min_beats: 12
+  foreshadow_scopes: [short, mid]
+  hook_window_eps: 1
+  ending_contract: 1巻内で長期伏線を回収し、1巻末の引き
+  source: dengeki-bunko
+web_volume:
+  label: Web連載1巻
+  target_chars: 100000
+  eps_range: [40, 40]
+  chars_per_ep: [2500, 2500]
+  arc_count: [3, 4]
+  min_beats: 18
+  foreshadow_scopes: [short, mid]
+  hook_window_eps: 3
+  ending_contract: 毎話末尾フック必須。話末の引きで次巻へ
+  source: kakuyomu
+long_serial:
+  label: 長編連載
+  target_chars: 250000
+  eps_range: [100, 300]
+  chars_per_ep: [2000, 2500]
+  arc_count: [4, 8]
+  min_beats: 24
+  foreshadow_scopes: [short, mid, long]
+  hook_window_eps: 3
+  ending_contract: 4部以上。中期伏線を有効化し、巻を跨いで持ち越す
+  source: narou
+series:
+  label: シリーズ
+  target_chars: 1000000
+  eps_range: [300, 1000]
+  chars_per_ep: [2000, 2500]
+  arc_count: [5, 12]
+  min_beats: 30
+  foreshadow_scopes: [short, mid, long]
+  hook_window_eps: 5
+  ending_contract: 5部以上。巻単位の_goal と持ち越し
+  source: new

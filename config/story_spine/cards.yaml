@@ -1,0 +1,195 @@
+# STORY_SPINE: テンプレートカード 24 枚（契約凍結 2026-09-29）。
+# 38×6×4 を全部公開しない。ユーザーが座標を組み立てずに済む代表集合。
+# 12 / 13 / 17 / 21 番は短編・中編で、旧プリセットに無い層。
+tpl_exile_web:
+  label: 追放ざまぁ（Web連載・1巻40話）
+  blurb: 不当な追放から反転へ、Web 1巻の典型的な構成。
+  pattern: exile_rise
+  length: web_volume
+  market: web
+  style_key: hot_blooded
+  source: existing
+tpl_exile_ln:
+  label: 追放ざまぁ（ライトノベル単行本）
+  blurb: 追放の屈辱を序盤で描き切り、反転までを1巻に収める。
+  pattern: exile_rise
+  length: single_volume
+  market: light_novel
+  style_key: hot_blooded
+  source: existing
+tpl_reinc_cheat_web:
+  label: 転生チート（Web連載・1巻40話）
+  blurb: 隠されたステータスの自覚から、最上階まで昇るまで。
+  pattern: reincarnation_cheat
+  length: web_volume
+  market: web
+  style_key: hot_blooded
+  source: existing
+tpl_villainess_ln:
+  label: 悪役令嬢の破滅回避（ライトノベル）
+  blurb: 破滅フラグの自覚から身分をひっくり返すまで。
+  pattern: villainess_destruction_avoid
+  length: single_volume
+  market: light_novel
+  style_key: romantic
+  source: existing
+tpl_isekai_dungeon:
+  label: ダンジョン攻略記（Web長編）
+  blurb: 最深部の「世界の真実」まで進み切る長編。
+  pattern: dungeon_conqueror
+  length: long_serial
+  market: web
+  style_key: hot_blooded
+  source: existing
+tpl_modern_knowledge:
+  label: 現代知識の産業革命（ライトノベル）
+  blurb: 紙と砂糖から、産業の骨格を組み直す。
+  pattern: modern_knowledge
+  length: single_volume
+  market: light_novel
+  style_key: cool_headed
+  source: existing
+tpl_stream_web:
+  label: 異世界VR配信（Web長編）
+  blurb: 配信反応を駆動力に据えたネットバズ構成。
+  pattern: vr_streamer
+  length: long_serial
+  market: web
+  style_key: comedy
+  source: existing
+tpl_misunderstanding:
+  label: じれじれ両片想い（ライトノベル）
+  blurb: 進まない関係を、日常のささいなすれ違いで描く。
+  pattern: love_comedy_density
+  length: single_volume
+  market: light_novel
+  style_key: comedy
+  source: existing
+tpl_mystery_short:
+  label: 異世界ミステリー（中編）
+  blurb: 密室殺人からの論理的な追跡を10話以内に完走。
+  pattern: detective_mystery
+  length: novella
+  market: general
+  style_key: cool_headed
+  source: existing
+tpl_mystery_ln:
+  label: 異世界ミステリー（単行本）
+  blurb: 解決編までを、近代推理の写法で書き切る。
+  pattern: detective_mystery
+  length: single_volume
+  market: general
+  style_key: cool_headed
+  source: existing
+tpl_slow_life_web:
+  label: スローライフ（Web長編）
+  blurb: ほのぼの飯テロを、弛みなく長続きさせる。
+  pattern: slow_life
+  length: long_serial
+  market: web
+  style_key: healing
+  source: existing
+tpl_cooking:
+  label: 美食開拓（単発短編）
+  blurb: 至高の一皿を、1話〜3話の短編で完成させる。
+  pattern: gourmet_conqueror
+  length: short
+  market: general
+  style_key: healing
+  source: existing
+tpl_craft:
+  label: 魔導具職人のこだわり（中編）
+  blurb: 遺物の修復を、名人としての誕生まで描く。
+  pattern: craftsman_legend
+  length: novella
+  market: general
+  style_key: healing
+  source: existing
+tpl_territory:
+  label: ホワイト領地経営（Web長編）
+  blurb: 不毛な僻地から先進都市へ、内政の歩みを描く。
+  pattern: territory_management
+  length: long_serial
+  market: web
+  style_key: cool_headed
+  source: existing
+tpl_guild:
+  label: 落ちこぼれギルドの再興（ライトノベル）
+  blurb: 借金まみれのギルドを地域No.1へ持ち上げる。
+  pattern: guild_rebuilder
+  length: long_serial
+  market: light_novel
+  style_key: hot_blooded
+  source: existing
+tpl_military:
+  label: 鉄血の軍事戦略（ライトノベル長編）
+  blurb: 地形と心理を計算し尽くした奇策で勝利する。
+  pattern: army_rational
+  length: long_serial
+  market: light_novel
+  style_key: cool_headed
+  source: existing
+tpl_horror_short:
+  label: 恐怖短編（単発投稿）
+  blurb: 全容不明の恐怖を、新人賞1本の範囲で表現する。
+  pattern: horror_dread
+  length: short
+  market: single_shot
+  style_key: dark
+  source: new
+tpl_healing_web:
+  label: 癒し手・支援者（Web連載・1巻40話）
+  blurb: 蓄積した恵みを、自分の傷ごと差し出して返す話。
+  pattern: healing_care
+  length: web_volume
+  market: web
+  style_key: healing
+  source: new
+tpl_procedure_ln:
+  label: 職業手続き（ライトノベル単行本）
+  blurb: 手順と記録だけで、責任の所在を確定させる。
+  pattern: professional_procedure
+  length: single_volume
+  market: light_novel
+  style_key: cool_headed
+  source: new
+tpl_isekai_court:
+  label: 宮廷・陰謀（一般長編）
+  blurb: 周辺から中心へ、宮廷の中枢を掌握するまで。
+  pattern: court_intrigue
+  length: long_serial
+  market: general
+  style_key: cool_headed
+  source: new
+tpl_isekai_isekai_short:
+  label: 身体変容イセカイ（中編）
+  blurb: 変容から適応、受容までを10話前後の尺度で完走。
+  pattern: transformation_isekai
+  length: novella
+  market: general
+  style_key: dark
+  source: new
+tpl_ensemble_ln:
+  label: 群像の崩壊と再統合（ライトノベル）
+  blurb: 複数視点の均衡が破綻し、別の均衡で戻るまで。
+  pattern: ensemble_fracture
+  length: single_volume
+  market: light_novel
+  style_key: healing
+  source: new
+tpl_sports_web:
+  label: スポーツ/競技（Web連載・1巻40話）
+  blurb: 大会周期で区切る、1シーズン単位の成長物語。
+  pattern: sports_growth
+  length: web_volume
+  market: web
+  style_key: hot_blooded
+  source: new
+tpl_deathloop_ln:
+  label: 死に戻り（ライトノベル単行本）
+  blurb: ループの蓄積を、唯一の正解ルートまでつなげる。
+  pattern: death_loop
+  length: single_volume
+  market: light_novel
+  style_key: dark
+  source: existing
