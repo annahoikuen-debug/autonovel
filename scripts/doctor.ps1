@@ -88,6 +88,7 @@ Section "3. Python candidates (which one can actually start the backend?)"
 # --------------------------------------------------------------------------- #
 $required = @("fastapi", "uvicorn", "huey", "sqlalchemy", "alembic", "pydantic")
 $usable = $null
+$broken = New-Object System.Collections.Generic.List[string]
 
 $candidates = @()
 if (Test-Path ".venv\Scripts\python.exe") { $candidates += ,@{ Label = ".venv"; Exe = (Resolve-Path ".venv\Scripts\python.exe").Path } }
@@ -111,20 +112,30 @@ foreach ($c in $candidates) {
         if (-not $usable) { $usable = $c }
     }
     else {
-        # 他の Python が使えるなら、これは警告に留める（ランチャーは自動で切り替える）。
-        # どの Python も使えないときだけ致命的な問題として扱う。
-        $line = ("{0,-12} {1}  -> missing: {2}" -f $c.Label, $ver, ($missing -join ", "))
-        if ($usable) { Warn $line }
-        else { Bad $line }
+        # 壊れた候補は一旦控えておき、他の Python が使えるかどうかを見てから
+        # 警告 / 致命的な問題 に振り分ける（先に評価した候補を Bad にすると、
+        # 後ろに使える Python があっても全体会因为で誤検知する）。
+        $broken.Add(("{0,-12} {1}  -> missing: {2}" -f $c.Label, $ver, ($missing -join ", "))) | Out-Null
     }
 }
 
+foreach ($line in $broken) {
+    if ($usable) { Warn $line }
+    else { Bad $line }
+}
+
 if (-not $candidates.Count) { Bad "no python interpreter found" }
-if ($usable) { Ok "launcher will use: $($usable.Exe) [$($usable.Label)]" }
+if ($usable) {
+    Ok "launcher will use: $($usable.Exe) [$($usable.Label)]"
+    if ($broken.Count -gt 0) {
+        Info "start_local.ps1 will skip the broken candidate(s) above automatically."
+    }
+}
 else {
     Bad "no interpreter can import the backend dependencies"
     Info 'fix: .venv\Scripts\python.exe -m pip install -e ".[dev]"   (or: py -m pip install -e ".[dev]")'
     Info "or  : start_local.ps1 (without -SkipInstall) creates/repairs .venv automatically"
+    Info "or  : start_local.ps1 -RecreateVenv"
 }
 
 # --------------------------------------------------------------------------- #
@@ -225,8 +236,9 @@ Section "7. Machine resources (startup speed depends heavily on these)"
 $os = Get-CimInstance Win32_OperatingSystem
 $freeGB = [math]::Round($os.FreePhysicalMemory / 1MB, 2)
 $totalGB = [math]::Round($os.TotalVisibleMemorySize / 1MB, 2)
-if ($freeGB -lt 1.5) { Bad "free RAM is only ${freeGB}GB / ${totalGB}GB - the backend can die with MemoryError" }
-elseif ($freeGB -lt 3) { Warn "free RAM is ${freeGB}GB / ${totalGB}GB - startup may be slow or unstable" }
+if ($freeGB -lt 0.8) { Bad "free RAM is only ${freeGB}GB / ${totalGB}GB - the backend cannot import (MemoryError)" }
+elseif ($freeGB -lt 2.0) { Warn "free RAM is only ${freeGB}GB / ${totalGB}GB - the backend may die with MemoryError. Close other apps or enable the system-managed pagefile." }
+elseif ($freeGB -lt 4.0) { Warn "free RAM is ${freeGB}GB / ${totalGB}GB - startup may be slow" }
 else { Ok "free RAM ${freeGB}GB / ${totalGB}GB" }
 
 # ルートがネットワーク/外付けドライブにないかを確認する

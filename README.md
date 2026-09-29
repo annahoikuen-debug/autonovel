@@ -265,20 +265,34 @@ flowchart TB
 ### ② Windows ワンクリック起動（正式対応）
 
 1. **`アプリ起動_ローカル.bat`** をダブルクリック（軽量 / ローカル Python + SQLite 構成）
-   - Docker を使わず、ローカルの仮想環境 `.venv` と SQLite で起動します
+   - Docker を使わず、ローカル Python と SQLite で起動します
    - 内部で `scripts\start_local.ps1` が呼ばれ、以下を自動実行します
-     1. 環境自己診断
-     2. `.venv` の自動作成と依存インストール
-     3. `scripts\init_db.py` による安全な Alembic マイグレーション（既存 DB は保護）
-     4. Backend（Uvicorn `:8200`）+ Huey Worker + Frontend（Vite `:5173`）の協調起動
+     1. **起動に使う Python の自動判定**（実際に `fastapi` / `uvicorn` / `huey` … を import できるものを選ぶ。空の `.venv` を優先してしまう事故を防ぐ）
+     2. 依存が無い場合は `.venv` の自動作成とインストール
+     3. `frontend\node_modules\.bin\vite.cmd` の確認と、必要なら `npm install`
+     4. `scripts\init_db.py` による安全な Alembic マイグレーション（既存 DB は保護）
+     5. Backend（Uvicorn `:8200`）+ Huey Worker + Frontend（Vite `:5173`）の協調起動
+     6. **ヘルスチェックが通るまで待ってから**ブラウザを開く
 2. ブラウザで **<http://localhost:5173>** が開きます
-3. 停止するときは **`アプリ停止.bat`** をダブルクリック（ポート 8200 / 5173 を安全に解放）
+3. 停止するときは **`アプリ停止.bat`** をダブルクリック（PID ファイル → ポート → コマンドラインの 3 段構えで安全に解放）
+
+> **起動しないときは [`起動診断.bat`](起動診断.bat) を先に実行してください。**
+> Python・依存関係・`.env`・DB・ポート・メモリ・import 時間を一括で診断し、
+> 原因と修正コマンドを表示します。
+
+> 起動したサービスの状態は `logs/` に残ります。
 
 > 診断だけ・起動計画だけを確認したい場合：
 > ```powershell
-> autonovel check-env                      # 環境自己診断
-> powershell -File scripts/start_local.ps1 -DryRun   # プロセス起動なしの計画表示
+> powershell -ExecutionPolicy Bypass -File scripts/doctor.ps1        # 起動前診断
+> powershell -ExecutionPolicy Bypass -File scripts/doctor.ps1 -Deep  # import 分析つき
+> autonovel check-env                                                 # 環境自己診断
+> powershell -File scripts/start_local.ps1 -DryRun                   # プロセス起動なしの計画表示
+> powershell -File scripts/start_local.ps1 -RecreateVenv             # .venv を作り直す
+> powershell -File scripts/start_local.ps1 -NoWorker -NoBrowser      # バックエンドのみ
 > ```
+
+> 詳しい症状別の対処は **[docs/STARTUP_TROUBLESHOOTING.md](docs/STARTUP_TROUBLESHOOTING.md)** にまとめています。
 
 ### ③ ローカル手動セットアップ（開発者向け）
 
@@ -519,8 +533,17 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 
 ## ⚠️ トラブルシューティング
 
+まず **[`起動診断.bat`](起動診断.bat)**（= `scripts/doctor.ps1`）を実行してください。
+10 項目を自動チェックして原因と修正コマンドを表示します。
+詳細な症状別対処は [docs/STARTUP_TROUBLESHOOTING.md](docs/STARTUP_TROUBLESHOOTING.md)。
+
 | 現象 | 原因 | 対処法 |
 |---|---|---|
+| 3 つのサービスが何も言われずに即死する | 依存・パス・環境の問題（詳細は `logs/*.err.log` に出ています） | `起動診断.bat` を実行 |
+| `ModuleNotFoundError: No module named 'fastapi'` | 起動に使う Python にバックエンド依存が無い | `py -m pip install -e ".[dev]"` |
+| `'vite' が内部または外部コマンドとして認識されていません` | `npm install` が中断され `node_modules\.bin\vite.cmd` が無い | `cd frontend; npm install` |
+| uvicorn が `MemoryError` で落ちる | 空きメモリ不足／ページファイルが固定 | 他アプリを閉じる、ページファイルをシステム管理に、`-NoWorker` でワーカーを止める |
+| 起動に 60 秒以上かかる | ストレージが USB HDD などで I/O ボトルネック | 内蔵 SSD へ移す、`python -m compileall -q src` |
 | 進行バーが `pending` のまま完了しない | Huey ワーカープロセスが起動していない | `py -m huey.bin.huey_consumer src.backend.tasks.huey.huey` を手動起動 |
 | Docker Compose のコンテナが即座に終了する | `.env` に `POSTGRES_PASSWORD` / `REDIS_PASSWORD` が未設定 | `.env.example` をコピーして強固なパスワードを設定 |
 | 「生成リクエストに失敗しました」/ HTTP 429 | 短時間に連続して執筆ボタンを押したためレートリミットに抵触 | 60 秒待って再試行 |
@@ -540,6 +563,7 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 | [docs/architecture.md](docs/architecture.md) | 4層圧縮モジュールの詳細設計 |
 | [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) | テスト戦略・網羅率方針 |
 | [docs/development_guide.md](docs/development_guide.md) | 開発ガイド |
+| [docs/STARTUP_TROUBLESHOOTING.md](docs/STARTUP_TROUBLESHOOTING.md) | 起動手順・起動できないときの対処・起動速度の最適化 |
 | [docs/rag_setup.md](docs/rag_setup.md) | RAG / ナレッジグラフのセットアップ |
 | [docs/publishing_guide.md](docs/publishing_guide.md) | 投稿サイト向けの書き出しガイド |
 | [docs/openapi.json](docs/openapi.json) | OpenAPI 仕様（自動生成） |
