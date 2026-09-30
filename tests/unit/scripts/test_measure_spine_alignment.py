@@ -1,6 +1,7 @@
 """計測スクリプトが機械可読な JSON を返し、実測値であることを保証すること。"""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -8,10 +9,14 @@ from pathlib import Path
 SCRIPT = "scripts/measure_spine_alignment.py"
 
 
-def _run(*args: str) -> tuple[int, str, str]:
+def _run(*args: str, env: dict | None = None) -> tuple[int, str, str]:
+    run_env = os.environ.copy()
+    if env:
+        run_env.update(env)
     result = subprocess.run(
         [sys.executable, SCRIPT, *args],
         capture_output=True, text=True, cwd=Path.cwd(), timeout=120,
+        env=run_env,
     )
     return result.returncode, result.stdout, result.stderr
 
@@ -55,9 +60,12 @@ def test_subprocess_without_json_flag_also_works():
 
 def test_empty_database_does_not_crash():
     """書籍が0件でもクラッシュしないこと（計測で本番を落とさない）。"""
-    payload = json.loads(_run("--json")[1])
+    code, out, err = _run("--json")
+    assert code == 0, err
+    payload = json.loads(out)
     assert payload["book_count"] == 0
     assert payload["books"] == []
+    assert payload.get("db_reachable") is True, "DB が疎通していない（握り潰しの可能性）"
 
 
 def test_output_is_reproducible():

@@ -6,28 +6,33 @@ import pytest
 @pytest.fixture
 def no_llm(monkeypatch):
     """すべての LLM 経路を爆発させる。呼ばれたらテストが落ちる。"""
+    patched: list[str] = []
 
     def _boom(*a, **k):
         raise AssertionError("resolve_spine が LLM を呼んだ（設計原則 D2 違反）")
 
-    targets = (
+    targets = [
         "src.llm.resilient_gateway.ResilientLLMGateway.generate_text",
         "src.llm.resilient_gateway.ResilientLLMGateway.generate_json",
-        "src.llm.resilient_gateway.ResilientLLMGateway.ainvoke",
-        "src.llm.provider.get_default_provider",
-        "src.agents.llm_resilient.invoke_llm",
-    )
-    patched = []
+        "src.llm.resilient_gateway.ResilientLLMGateway._generate",
+    ]
     for target in targets:
-        mod_path, _, attr = target.rpartition(".")
         try:
-            mod = __import__(mod_path, fromlist=["_"])
-        except Exception:
-            continue
-        if hasattr(mod, attr):
-            monkeypatch.setattr(mod, attr, _boom, raising=False)
+            monkeypatch.setattr(target, _boom, raising=True)
             patched.append(target)
+        except (ImportError, AttributeError):
+            continue
+    # 1 つもパッチできていない = no-op を検出する
+    assert patched, (
+        "パッチ対象が見つからない。no_llm fixture が no-op になっており、"
+        "『LLM を呼ばない』の証明になっていない"
+    )
     return patched
+
+
+def test_no_llm_fixture_is_not_vacuous(no_llm):
+    """no_llm fixture が実際にターゲットをモックできていることを検証。"""
+    assert len(no_llm) >= 3, f"想定より少ないパッチ対象: {no_llm}"
 
 
 def test_resolve_spine_makes_no_llm_call(no_llm):

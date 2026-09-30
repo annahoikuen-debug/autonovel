@@ -40,16 +40,16 @@ def _load_books(pattern_keys: tuple[str, ...]) -> list[dict]:
         from src.backend.database.uow import UnitOfWork
     except Exception as exc:  # import 自体ができない環境
         print(f"[warn] DB モジュールを読み込めませんでした: {exc}", file=sys.stderr)
-        return []
+        return [], False
 
     try:
         import asyncio
 
-        async def _run() -> list[dict]:
+        async def _run() -> tuple[list[dict], bool]:
             out: list[dict] = []
             async with UnitOfWork(AppContainer.db()) as uow:
                 if uow.session is None:
-                    return out
+                    return out, False
                 result = await uow.session.execute(
                     select(Plot).order_by(Plot.book_id, Plot.ep_num)
                 )
@@ -62,12 +62,12 @@ def _load_books(pattern_keys: tuple[str, ...]) -> list[dict]:
                             "tension": int(row.tension or 0),
                         }
                     )
-            return out
+            return out, True
 
         return asyncio.run(_run())
     except Exception as exc:
         print(f"[warn] DB に接続できませんでした: {exc}", file=sys.stderr)
-        return []
+        return [], False
 
 
 def _group_by_book(rows: list[dict]) -> dict[int, list[dict]]:
@@ -90,7 +90,7 @@ def measure(pattern_keys: tuple[str, ...] = DEFAULT_PATTERNS) -> dict:
     """K1-K3 を実測して dict で返す。"""
     from src.services.structure_validator import validate
 
-    rows = _load_books(pattern_keys)
+    rows, db_reachable = _load_books(pattern_keys)
     books = _group_by_book(rows)
 
     per_book: list[dict] = []
@@ -136,6 +136,7 @@ def measure(pattern_keys: tuple[str, ...] = DEFAULT_PATTERNS) -> dict:
 
     return {
         "patterns": list(pattern_keys),
+        "db_reachable": db_reachable,
         "books": per_book,
         "book_count": len(per_book),
         "k1_alignment": round(statistics.fmean([b["k1_alignment"] for b in per_book]), 3)

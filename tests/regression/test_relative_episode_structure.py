@@ -15,10 +15,16 @@ from src.backend.engine_narrative import PacingGraph
 def test_instruction_depends_only_on_relative_position(eps):
     """同じ相対位置なら同じ指示であること。
 
-    相対位置は (ep-1)/total_eps なので、(k, N) と (2k, 2N) は同値になる。
+    相対位置は (ep-1)/total_eps なので、(k, N) と (2k-1, 2N) は同値になる。
     ep=1 は意図的に特別扱いされているので比較対象にしない。
     """
-    for k, m in ((2, 3), (3, 5), (4, 7)):
+    fractions = [0.1, 0.25, 0.45, 0.65, 0.8, 0.95]
+    pairs = {(2, 3), (3, 5), (4, 7)}
+    for frac in fractions:
+        k = max(2, int(eps * frac))
+        if k < eps:
+            pairs.add((k, 2 * k - 1))
+    for k, m in pairs:
         a = PacingGraph.get_instruction(k, total_eps=eps)["instruction"]
         b = PacingGraph.get_instruction(m, total_eps=2 * eps)["instruction"]
         assert a == b, f"eps={eps}: ({k},{eps}) と ({m},{2 * eps}) は同位置なのに指示が違う"
