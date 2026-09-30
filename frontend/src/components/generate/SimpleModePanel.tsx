@@ -3,7 +3,7 @@ import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
 import type { CharacterParams as Character } from "../../types";
 import type { GenerationState } from "../../types";
-import { GENRE_OPTIONS, GenreOption } from "../../constants/genres";
+import { GENRE_OPTIONS, FALLBACK_GENRE_OPTIONS, GenreOption } from "../../constants/genres";
 
 export interface SpineTemplateCard {
   card_id?: string;
@@ -89,6 +89,7 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
   const [lengths, setLengths] = useState<any[]>([]);
   const [genreOptions, setGenreOptions] = useState<GenreOption[]>(GENRE_OPTIONS);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [styleKey, setStyleKey] = useState<string>("style_web_standard");
 
   useEffect(() => {
     let isMounted = true;
@@ -110,6 +111,7 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
             value: g.key || g.value,
             label: g.label || g.name || g.key,
             presetKey: g.preset_key ?? null,
+            pattern: g.pattern ?? null,
           }));
           if (mapped.length > 0) setGenreOptions(mapped);
         }
@@ -123,16 +125,13 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
   }, []);
 
   const handleSelectCard = (card: SpineTemplateCard) => {
-    const cardId = card.card_id || card.id || card.pattern;
-    setSelectedCardId(cardId);
+    setSelectedCardId(card.card_id ?? null);
 
     // 話数の自動入力 (length.eps_range の中央または既定値)
     let eps = 40;
-    if (lengths.length > 0) {
-      const lenObj = lengths.find((l) => (l.key || l.id) === card.length);
-      if (lenObj?.eps_range && Array.isArray(lenObj.eps_range)) {
-        eps = Math.round((lenObj.eps_range[0] + lenObj.eps_range[1]) / 2);
-      }
+    const lenObj = lengths.find((l) => (l.key || l.id) === card.length);
+    if (lenObj?.eps_range && Array.isArray(lenObj.eps_range)) {
+      eps = Math.round((lenObj.eps_range[0] + lenObj.eps_range[1]) / 2);
     } else if (card.length === "web_volume") {
       eps = 40;
     } else if (card.length === "short") {
@@ -140,15 +139,26 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
     }
     setTargetEpisodes(eps);
 
-    // ジャンル解決
-    if (card.pattern.includes("exile") || card.pattern.includes("reincarnation") || card.pattern.includes("dungeon")) {
-      setCharacter((prev: Character) => ({ ...prev, genre: "HighFantasy" }));
-    } else if (card.pattern.includes("mystery") || card.pattern.includes("detective") || card.pattern.includes("brain")) {
-      setCharacter((prev: Character) => ({ ...prev, genre: "Mystery" }));
-    } else if (card.pattern.includes("horror")) {
-      setCharacter((prev: Character) => ({ ...prev, genre: "Horror" }));
-    } else if (card.pattern.includes("love") || card.pattern.includes("marriage") || card.pattern.includes("saint")) {
-      setCharacter((prev: Character) => ({ ...prev, genre: "Romance" }));
+    // 1話文字数の自動入力
+    if (lenObj?.chars_per_ep && Array.isArray(lenObj.chars_per_ep)) {
+      setContentLengthLimit(Math.round((lenObj.chars_per_ep[0] + lenObj.chars_per_ep[1]) / 2));
+    } else if (card.length === "web_volume") {
+      setContentLengthLimit(2500);
+    } else if (card.length === "short") {
+      setContentLengthLimit(4000);
+    }
+
+    // 文体スタイルの自動入力
+    if (card.style_key) {
+      setStyleKey(card.style_key);
+    }
+
+    // GENRE_REGISTRY に基づくジャンル解決
+    const matchedGenre =
+      genreOptions.find((g) => g.pattern === card.pattern) ||
+      FALLBACK_GENRE_OPTIONS.find((g) => g.pattern === card.pattern);
+    if (matchedGenre) {
+      setCharacter((prev: Character) => ({ ...prev, genre: matchedGenre.value }));
     }
   };
 
@@ -181,7 +191,7 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
             }}
           >
             {cards.map((card) => {
-              const cid = card.card_id || card.id || card.label;
+              const cid = card.card_id;
               const isSelected = selectedCardId === cid;
               return (
                 <div
@@ -196,10 +206,10 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
                     transition: "all 0.15s ease",
                   }}
                 >
-                  <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{card.label}</div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted, #888)", marginTop: "2px" }}>
+                  <span className="card-title" style={{ display: "block", fontWeight: 600, fontSize: "0.9rem" }}>{card.label}</span>
+                  <span className="card-meta" style={{ display: "block", fontSize: "0.75rem", color: "var(--text-muted, #888)", marginTop: "2px" }}>
                     {card.length} / {card.market}
-                  </div>
+                  </span>
                 </div>
               );
             })}
@@ -209,14 +219,40 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
 
       {/* 目標話数入力 */}
       <div className="form-group">
-        <label className="label">目標話数</label>
+        <label className="label" htmlFor="target-episodes">目標話数</label>
         <input
+          id="target-episodes"
           type="number"
           className="input"
           value={targetEpisodes}
           onChange={(e) => setTargetEpisodes(parseInt(e.target.value, 10) || 1)}
           min={1}
           max={300}
+        />
+      </div>
+
+      {/* 1話あたりの目標文字数 */}
+      <div className="form-group">
+        <label className="label">1話あたりの目標文字数</label>
+        <input
+          type="number"
+          className="input"
+          value={contentLengthLimit}
+          onChange={(e) => setContentLengthLimit(parseInt(e.target.value, 10) || 2000)}
+          step={100}
+          min={500}
+          max={10000}
+        />
+      </div>
+
+      {/* 文体スタイル */}
+      <div className="form-group">
+        <label className="label">文体スタイル</label>
+        <input
+          type="text"
+          className="input"
+          value={styleKey}
+          onChange={(e) => setStyleKey(e.target.value)}
         />
       </div>
 

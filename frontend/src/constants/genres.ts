@@ -5,17 +5,18 @@ export interface GenreOption {
   value: string;
   label: string;
   presetKey: string | null;
+  pattern?: string | null;
 }
 
 export const FALLBACK_GENRE_OPTIONS: GenreOption[] = [
-  { value: "HighFantasy", label: "ハイファンタジー", presetKey: "cheat_tensei" },
-  { value: "Scifi", label: "SF", presetKey: "cheat_tensei" },
-  { value: "Romance", label: "恋愛・悪役令嬢", presetKey: "aku_reijo" },
-  { value: "Mystery", label: "ミステリー・頭脳戦", presetKey: "zarma" },
-  { value: "Horror", label: "ホラー・ダーク", presetKey: "cheat_tensei" },
-  { value: "Modern", label: "現代・日常", presetKey: "modern_cheat" },
-  { value: "History", label: "歴史・戦記", presetKey: "cheat_tensei" },
-  { value: "Youth", label: "青春・学園", presetKey: "slow_life" },
+  { value: "HighFantasy", label: "ハイファンタジー", presetKey: "cheat_tensei", pattern: "exile_rise" },
+  { value: "Scifi", label: "SF", presetKey: "cheat_tensei", pattern: "space_opera" },
+  { value: "Romance", label: "恋愛・悪役令嬢", presetKey: "aku_reijo", pattern: "villainess_noble" },
+  { value: "Mystery", label: "ミステリー・頭脳戦", presetKey: "zarma", pattern: "detective_mystery" },
+  { value: "Horror", label: "ホラー・ダーク", presetKey: "cheat_tensei", pattern: "psychological_horror" },
+  { value: "Modern", label: "現代・日常", presetKey: "modern_cheat", pattern: "modern_daily" },
+  { value: "History", label: "歴史・戦記", presetKey: "cheat_tensei", pattern: "historical_war" },
+  { value: "Youth", label: "青春・学園", presetKey: "slow_life", pattern: "youth_school" },
 ];
 
 export const GENRE_OPTIONS: GenreOption[] = FALLBACK_GENRE_OPTIONS;
@@ -31,6 +32,7 @@ export async function fetchGenreOptions(): Promise<GenreOption[]> {
         value: g.key || g.value,
         label: g.label || g.name || g.key,
         presetKey: g.preset_key ?? null,
+        pattern: g.pattern ?? null,
       }));
     }
     return FALLBACK_GENRE_OPTIONS;
