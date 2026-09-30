@@ -29,7 +29,7 @@ def test_climax_cluster_scales_with_length(eps):
     """クライマックスクラスタが「終盤」に固定されていること。"""
     hits = [
         ep for ep in range(1, eps + 1)
-        if "クライマックス" in PacingGraph.get_instruction(ep, total_eps=eps)["instruction"]
+        if "【クライマックス】" in PacingGraph.get_instruction(ep, total_eps=eps)["instruction"]
     ]
     assert hits, f"eps={eps} でクライマックスが見つからない"
     assert max(hits) / eps >= 0.70, f"eps={eps}: クライマックスが {max(hits) / eps:.0%} 位置"

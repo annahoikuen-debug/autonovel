@@ -31,6 +31,9 @@ class PlanningStateMachine:
         self.current_step = max(1, self.current_step - 1)
 
 
+from config.story_spine.beat import BEAT_VOCABULARY as _V
+
+
 class PacingGraph:
     """物語の各話における情報密度や温度感（Pacing）を定義。
 
@@ -39,16 +42,21 @@ class PacingGraph:
     total_eps を変えると同じ構造が壊れていた。境界は STORY_SPINE の span と整合させる。
     """
 
-    _HOOK_END = 0.18  # revelation の終了（導入の終わり）
-    _FIRST_EXPLOSION_START = 0.12  # first_win の開始
-    _FIRST_EXPLOSION_END = 0.30  # first_win の終了
-    _CLIMAX_START = 0.74  # last_stand の開始
-    _CLIMAX_END = 0.94  # climax の終了
+    _HOOK_END = _V["revelation"].span[1]
+    _FIRST_EXPLOSION_START = _V["first_win"].span[0]
+    _FIRST_EXPLOSION_END = _V["first_win"].span[1]
+    _CLIMAX_START = _V["last_stand"].span[0]
+    _CLIMAX_END = _V["climax"].span[1]
+    _FINALE_START = (
+        _V["aftermath"].span[0]
+        if "aftermath" in _V
+        else (_V.get("coda") or _V.get("residue")).span[0]
+    )
 
     @staticmethod
     def get_instruction(ep_num: int, total_eps: int = 50, is_light: bool = False) -> dict[str, Any]:
         total_eps = max(1, int(total_eps))
-        pos = (ep_num - 1) / total_eps  # 0.0 - 1.0 の相対位置
+        pos = (ep_num - 1) / total_eps
         pg = PacingGraph
 
         if ep_num == 1:
@@ -63,6 +71,16 @@ class PacingGraph:
                 "density": "情報密度: 低",
                 "temp": 0.8,
             }
+
+        # 短編（total_eps <= 3）の最終話はクライマックス（フィナーレの余地なし）
+        if total_eps <= 3 and ep_num == total_eps:
+            return {
+                "instruction": "【クライマックス】これまでの伏線を全回収せよ。物語のすべてがここに集約される。",
+                "density": "情報密度: 特高",
+                "multiplier": 1.5,
+                "temp": 0.9,
+            }
+
         if pos <= pg._HOOK_END:
             return {
                 "instruction": "【導入】能力の特異性とヒロインとの関係性を描写。小さなトラブルを代償や機転で解決させよ。",
@@ -82,7 +100,7 @@ class PacingGraph:
                 "multiplier": 1.5,
                 "temp": 0.9,
             }
-        if pos >= 1.0 - 2.0 / total_eps:
+        if pos >= pg._FINALE_START:
             return {
                 "instruction": "【グランドフィナーレ】余韻を残しつつ、読者が満足できる大団円を。",
                 "density": "情報密度: 高",
