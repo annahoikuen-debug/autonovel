@@ -103,6 +103,23 @@ def _is_mandatory(node: _Node, index: int, total: int) -> bool:
     return index == 0 or index == total - 1
 
 
+def _dedup_nodes(nodes: list[_Node]) -> list[_Node]:
+    seen: set[str] = set()
+    for node in nodes:
+        if node.key in seen:
+            candidates = [m for m in node.members if m in BEAT_VOCABULARY]
+            rep = _group_rep(node.key)
+            group = next((g for g in _MERGE_GROUPS if node.key in g or (rep and rep in g)), ())
+            candidates.extend([g for g in group if g in BEAT_VOCABULARY])
+            all_keys = {n.key for n in nodes}
+            for cand in candidates:
+                if cand not in seen and cand not in all_keys:
+                    node.key = cand
+                    break
+        seen.add(node.key)
+    return nodes
+
+
 def _compress(nodes: list[_Node], eps: int) -> list[_Node]:
     """len(nodes) > eps の間、隣接 beat を併合する。3不変条件は保つ。
 
@@ -143,7 +160,7 @@ def _compress(nodes: list[_Node], eps: int) -> list[_Node]:
             # 4) これ以上は削れない。このまま返す（例外は投げない）
             logger.warning("圧縮しきれず %d beats / %d eps のまま", len(nodes), eps)
             break
-    return nodes
+    return _dedup_nodes(nodes)
 
 
 def _cumulative_bounds(nodes: list[_Node]) -> list[float]:
@@ -258,29 +275,58 @@ def _enforce_invariants(
         instances[idx] = _as(instances[idx], mid_def)
     if market_key == "web" and eps >= 2 and instances[-1].key != "volume_hook":
         # Web 連載は話末の引きで終わる。最終話 (ep == eps) を volume_hook に譲る。
-        last = instances[-1]
         hook = BeatInstance(
             eps, eps, hook_def.key, hook_def.label,
             hook_def.role, hook_def.duty, hook_def.tension, hook_def.artifact,
         )
-        if last.ep_end > last.ep_start:
-            # 末尾 beat が複数話なら詰めてから hook を足す
-            instances[-1] = replace(last, ep_end=eps - 1)
-            instances.append(hook)
+        last = instances[-1]
+        if last.key not in _ALWAYS_KEEP:
+            if last.ep_start >= eps:
+                instances[-1] = _as(last, hook_def)
+            else:
+                instances[-1] = replace(last, ep_end=eps - 1)
+                instances.append(hook)
         else:
-            # 末尾 beat が最終話1話だけなら、重要でない 1 話 beat を削って hook に譲る。
-            while (
-                len(instances) > 1
-                and instances[-1].key not in _ALWAYS_KEEP
-                and instances[-1].ep_start >= instances[-1].ep_end
-                and instances[-1].ep_end >= eps
-            ):
-                instances.pop()
-            tail = instances[-1]
-            if tail.ep_start >= eps:
-                return instances  # 譲れる余地がない
-            instances[-1] = replace(tail, ep_end=eps - 1)
-            instances.append(hook)
+            # 末尾が climax
+            if last.ep_end > last.ep_start:
+                # climax が複数話なら末尾 1 話を hook に譲る
+                instances[-1] = replace(last, ep_end=eps - 1)
+                instances.append(hook)
+            else:
+                # climax が 1 話のみ。手前に縮められる beat があれば後ろへ詰める
+                shifted = False
+                for j in range(len(instances) - 2, -1, -1):
+                    if instances[j].ep_end > instances[j].ep_start:
+                        instances[j] = replace(instances[j], ep_end=instances[j].ep_end - 1)
+                        for k in range(j + 1, len(instances)):
+                            instances[k] = replace(
+                                instances[k],
+                                ep_start=instances[k].ep_start - 1,
+                                ep_end=instances[k].ep_end - 1,
+                            )
+                        instances.append(hook)
+                        shifted = True
+                        break
+                if not shifted:
+                    if len(instances) > 3 and instances[-2].key not in _ALWAYS_KEEP:
+                        instances[-2] = _as(instances[-2], climax_def)
+                        instances[-1] = hook
+                    else:
+                        instances.append(hook)
+
+    # 同一 key の重複を排除
+    seen_keys: set[str] = set()
+    for idx, inst in enumerate(instances):
+        if inst.key in seen_keys:
+            rep = _group_rep(inst.key)
+            group = next((g for g in _MERGE_GROUPS if inst.key in g or (rep and rep in g)), ())
+            all_keys = {i.key for i in instances}
+            for cand in group:
+                if cand not in seen_keys and cand not in all_keys and cand in BEAT_VOCABULARY:
+                    instances[idx] = _as(inst, BEAT_VOCABULARY[cand])
+                    break
+        seen_keys.add(instances[idx].key)
+
     return instances
 
 
