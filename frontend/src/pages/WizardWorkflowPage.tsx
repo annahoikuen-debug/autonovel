@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Step1PlotInput } from '../components/wizard/Step1PlotInput';
 import { Step2StructureReview, OutlineItem } from '../components/wizard/Step2StructureReview';
 import { Step3InteractiveWriting } from '../components/wizard/Step3InteractiveWriting';
+import { BeatSheetViewer } from '../components/planning/BeatSheetViewer';
 import { saveWizardBook, BeatItem, WizardBookData } from '../api/wizard';
 
 type PlotData = {
@@ -14,6 +15,7 @@ type PlotData = {
   systemAssist: number;
   costSeverity: number;
   beats: BeatItem[];
+  patternKey?: string;
 };
 
 const STEPS = [
@@ -257,13 +259,19 @@ export const WizardWorkflowPage: React.FC<WizardWorkflowPageProps> = ({ onNaviga
 
       {currentStep === 1 && <Step1PlotInput onNext={handleStep1Complete} />}
       {currentStep === 2 && (
-        <Step2StructureReview
-          outlines={outlines}
-          onBack={() => setCurrentStep(1)}
-          onConfirm={handleStep2Confirm}
-          onUpdateOutlines={setOutlines}
-          isSaving={isSaving}
-        />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <BeatSheetViewer
+            bookId={bookId ?? 1}
+            patternKey={plotData?.patternKey || 'exile_rise'}
+          />
+          <Step2StructureReview
+            outlines={outlines}
+            onBack={() => setCurrentStep(1)}
+            onConfirm={handleStep2Confirm}
+            onUpdateOutlines={setOutlines}
+            isSaving={isSaving}
+          />
+        </div>
       )}
       {currentStep === 3 && (
         <>

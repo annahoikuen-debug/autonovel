@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from 'react';
 
+export interface MissingBeat {
+  key: string;
+  label: string;
+  present: boolean;
+  expected_phase: number;
+}
+
 export interface StructureValidationResult {
   pattern_key?: string;
+  resolved_pattern_key?: string;
   structure_key?: string;
   is_healthy?: boolean;
   alignment?: number;
-  missing_beats?: string[];
-  climax?: { ok: boolean; peak_phase?: number; ideal_phase?: number };
-  pacing?: { ok: boolean; skew?: number };
-  problems?: string[];
+  missing_beats?: MissingBeat[];
+  climax?: { ok: boolean; reason?: string; climax_phase?: number | null };
+  pacing?: { ok: boolean; reason?: string; skew?: number };
+  problems?: Array<string | { key: string; reason: string }>;
 }
 
 export interface BeatSheetViewerProps {
@@ -67,15 +75,22 @@ export const BeatSheetViewer: React.FC<BeatSheetViewerProps> = ({
           </p>
         </div>
         {validation && (
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              validation.is_healthy
-                ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
-                : 'bg-amber-950 text-amber-300 border border-amber-700'
-            }`}
-          >
-            {validation.is_healthy ? '✅ 構造健全' : '⚠️ 改善推奨'}
-          </span>
+          <div className="flex items-center gap-2">
+            {validation.alignment !== undefined && (
+              <span className="px-3 py-1 bg-sky-950 border border-sky-700 text-sky-300 rounded-full text-xs font-semibold">
+                充足度: {(validation.alignment * 100).toFixed(1)}%
+              </span>
+            )}
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                validation.is_healthy
+                  ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                  : 'bg-amber-950 text-amber-300 border border-amber-700'
+              }`}
+            >
+              {validation.is_healthy ? '✅ 構造健全' : '⚠️ 改善推奨'}
+            </span>
+          </div>
         )}
       </div>
 
@@ -97,7 +112,7 @@ export const BeatSheetViewer: React.FC<BeatSheetViewerProps> = ({
             <div className="p-3 bg-slate-800/60 rounded-lg border border-slate-700">
               <span className="text-xs text-slate-400">適用パターン</span>
               <div className="font-semibold text-sky-300 mt-0.5">
-                {validation.pattern_key || patternKey}
+                {validation.resolved_pattern_key || validation.pattern_key || patternKey}
               </div>
             </div>
             <div className="p-3 bg-slate-800/60 rounded-lg border border-slate-700">
@@ -135,10 +150,10 @@ export const BeatSheetViewer: React.FC<BeatSheetViewerProps> = ({
                 <div className="flex flex-wrap gap-2">
                   {validation.missing_beats.map((beat) => (
                     <span
-                      key={beat}
+                      key={beat.key}
                       className="px-2.5 py-1 bg-amber-950/70 border border-amber-700/60 text-amber-200 text-xs rounded font-mono"
                     >
-                      {beat}
+                      {beat.label} (期待: {(beat.expected_phase * 100).toFixed(0)}%)
                     </span>
                   ))}
                 </div>
@@ -149,6 +164,20 @@ export const BeatSheetViewer: React.FC<BeatSheetViewerProps> = ({
               </p>
             )}
           </div>
+
+          {/* 課題リスト（あれば） */}
+          {validation.problems && validation.problems.length > 0 && (
+            <div className="p-3 bg-amber-950/40 border border-amber-800/60 rounded-lg">
+              <span className="text-xs font-semibold text-amber-300">検出された構造上の課題:</span>
+              <ul className="text-xs text-amber-200 mt-1 list-disc list-inside space-y-0.5">
+                {validation.problems.map((p, idx) => (
+                  <li key={idx}>
+                    {typeof p === 'string' ? p : `${p.key}: ${p.reason}`}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
     </div>
