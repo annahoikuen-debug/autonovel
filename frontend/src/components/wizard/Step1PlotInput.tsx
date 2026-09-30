@@ -55,9 +55,6 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
         if (data.growth_curves && Array.isArray(data.growth_curves) && data.growth_curves.length > 0) {
           setGrowthCurves(data.growth_curves);
           setGrowthCurve(data.growth_curves[0]);
-        } else if (data.story_archetypes && Array.isArray(data.story_archetypes) && data.story_archetypes.length > 0) {
-          setGrowthCurves(data.story_archetypes);
-          setGrowthCurve(data.story_archetypes[0]);
         }
         if (data.genres) {
           const raw = Array.isArray(data.genres) ? data.genres : Object.values(data.genres);
@@ -80,8 +77,8 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
   }, []);
 
   const handleSelectCard = (card: any) => {
-    const cid = card.card_id || card.id || card.label;
-    setSelectedCardId(cid);
+    const cid = card.card_id ?? card.id;
+    setSelectedCardId(cid ?? null);
     setPatternKey(card.pattern || '');
     setLengthKey(card.length || '');
     setMarketKey(card.market || '');
@@ -181,7 +178,7 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
           <label className="block text-sm font-medium mb-1 text-slate-300">🎯 構造テンプレートカード（選択すると構成が自動セットされます）</label>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1">
             {cards.map((card) => {
-              const cid = card.card_id || card.id || card.label;
+              const cid = card.card_id ?? card.id;
               const isSelected = selectedCardId === cid;
               return (
                 <div

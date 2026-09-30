@@ -37,6 +37,9 @@ export interface WizardBookData {
   system_assist: number;
   cost_severity: number;
   beats: BeatItem[];
+  pattern_key?: string;
+  length_key?: string;
+  market_key?: string;
 }
 
 export interface SaveWizardBookResponse {

@@ -16,16 +16,16 @@ test:  ## pytest を実行 (バックエンド)
 	py -m pytest -q --tb=short
 
 lint:  ## ruff チェック
-	py -m ruff check src tests
+	py -m ruff check src tests config scripts
 
 format-check:  ## ruff format チェック (line-length 100, black 互換)
-	py -m ruff format --check src tests
+	py -m ruff format --check src tests config scripts
 
 typecheck:  ## mypy (strict 化は将来フェーズ)
 	py -m mypy src --ignore-missing-imports
 
 black-check:  ## black --check (pyproject.toml の line-length=100 と一致)
-	py -m black --check src tests
+	py -m black --check src tests config scripts
 
 openapi:  ## OpenAPI 仕様を docs/openapi.json へ生成
 	py scripts/generate_openapi.py --output docs/openapi.json
