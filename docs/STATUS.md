@@ -187,7 +187,7 @@ W6 の実害は「遅い」ことではなく **「無駄な課金が静かに�
 | 静的ルールの重大度 | `Issue.severity`（既定 `minor`、最終フィールド追加で位置引数3つ生成を保持） | `src/audit/static_rules.py` |
 | 三段階トリアージ | `TRIAGE_MINOR/MEDIUM/MAJOR` の純関数 2 つ（`Issue` のみに依存、LLM 禁止） | `src/audit/triage.py` |
 | 段落的文字オフセット | `ParagraphIndexer` がオフセットを返す（コメントアウトされていた W5-05 の再確立） | `src/services/prose/paragraph_indexer.py` |
-| 弱段落の特定 | `TargetedDiagnostic` の TODO スタブを実装（`ClosedLoopPDCARunner` の段落パッチ経路が到達可能に） | `src/services/audit/targeted_diagnostic.py` |
+| 弱段落の特定 | `TargetedDiagnostic` の未実装スタブを実装（`ClosedLoopPDCARunner` の段落パッチ経路が到達可能に） | `src/services/audit/targeted_diagnostic.py` |
 | 決定論的スパン置換 | `SpanPatchApplier`（`apply` / `apply_all`） | `src/services/prose/span_patch_applier.py` |
 | 検証付き LLM スパンパッチ | `LocalPolisher.polish_span`（差し替えを検証してから本文へ反映） | `src/generation/local_polish.py` |
 | 修復計画の三段階判定 | `plan_repair(text, outcomes, static_issues)` → `none` / `span` / `scene` | `src/audit/repair_planner.py` |
@@ -258,7 +258,7 @@ W6 の実害は「遅い」ことではなく **「無駄な課金が静かに�
 | K1 | 構成充足度（生成後 `structure_validator` スコア） | 計測不能 | 全書籍で算出可能 | `null`（対象書籍0件） | `measure_spine_alignment.py --json` |
 | K2 | 中点反転の相対位置が 0.40〜0.60 に収まる率 | 未知 | 90% | `null`（対象書籍0件） | 同上 |
 | K3 | クライマックス位置が 0.75〜0.92 に収まる率 | 未知 | 90% | `null`（対象書籍0件） | 同上 |
-| K4 | テンプレート展開の LLM 追加コスト | — | 0 円 | 0 円（`resolve_spine` は LLM を呼ばない） | `tests/unit/story_spine/test_resolver_no_llm.py`（7件緑） |
+| K4 | テンプレート展開の LLM 追加コスト | — | 0 円 | 0 円（`resolve_spine` は LLM を呼ばない） | `tests/unit/story_spine/test_resolver_no_llm.py`（**4件**緑） |
 | K5 | 100話構成が完走する | 不可（`le=40` で弾かれる） | 可能 | 可能 | `tests/regression/test_relative_episode_structure.py`（18件緑） |
 | K6 | 1話短編に構造が入る話数 | 0 | 100% | 100%（38パターン全て） | `tests/unit/story_spine/test_resolver_compression.py` |
 | K7 | genre→preset 解決率 | `"fan"` が `None` | 100% | 100%（旧4系統の値全て解決） | `tests/regression/test_genre_resolution_unified.py`（26件緑） |
