@@ -13,7 +13,10 @@ class BeatSheet(BaseModel):
 
 
 class EpisodeBeat(BaseModel):
-    ep_num: int = Field(..., ge=1, le=40, description="話数 (1-40)")
+    # 上限は設けない。40話以下という前提は STORY_SPINE 導入以前のもので、
+    # 長編連載（100〜300話）が Pydantic 検証で弾かれる原因になっていた。
+    # 話数の制約は LENGTH_PROFILE（config/story_spine/lengths.yaml）が持つ。
+    ep_num: int = Field(..., ge=1, description="話数（1 以上）")
     phase: str = Field(..., description="ビートシートのフェーズ (開幕フック、初期成功・拠点確立など)")
     mission: str = Field(..., description="その話の具体的なミッション・目的")
     tension_target: float = Field(..., ge=0.0, le=1.0, description="目標とするテンション値 (0.0-1.0)")

@@ -24,9 +24,9 @@ def test_datetime_utc_preservation():
         sync_url = async_url.replace("postgresql+asyncpg:", "postgresql:")
     else:
         sync_url = async_url
-    
+
     engine = create_engine(sync_url)
-    
+
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
     session = Session()

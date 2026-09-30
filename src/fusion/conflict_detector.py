@@ -17,10 +17,10 @@ class ConflictDetector:
 
     def detect(self, source_vectors: List[SourceVector]) -> List[Conflict]:
         """与えられた複数の SourceVector から矛盾を検出する。
-        
+
         Args:
             source_vectors: 収集された SourceVector リスト
-            
+
         Returns:
             検出された Conflict のリスト
         """

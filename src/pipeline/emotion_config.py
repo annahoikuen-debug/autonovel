@@ -20,14 +20,14 @@ def _load_raw_config() -> dict[str, Any]:
 
 class EmotionLexicon:
     """感情語彙辞書・パターン保持クラス"""
-    
+
     def __init__(self, raw_config: dict[str, Any]):
         self.lexicon: dict[str, dict[str, list[str]]] = raw_config["emotion_lexicon"]
         self.dependency_patterns: list[list] = raw_config["dependency_patterns"]
         self.polarity_flip_verbs: list[str] = raw_config["polarity_flip_verbs"]
         self.intensifiers: list[str] = raw_config["intensifiers"]
         self.attenuators: list[str] = raw_config["attenuators"]
-        
+
         # 感情タイプ検証
         expected_types = {e.value for e in EmotionType}
         actual_types = set(self.lexicon.keys())

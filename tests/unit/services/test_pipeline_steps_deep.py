@@ -32,7 +32,7 @@ async def test_plan_step_execute_success():
         end_ep=None,
         easy_parameters={},
     )
-    
+
     engine = MagicMock()
     engine.planner = MagicMock()
     engine.planner.create_hegemony_plan = AsyncMock(
@@ -40,15 +40,15 @@ async def test_plan_step_execute_success():
     )
     engine.planner.plan_auditor = MagicMock()
     engine.planner.plan_auditor.audit_bible_completeness = AsyncMock(return_value=True)
-    
+
     reporter = MagicMock()
     reporter.state.should_stop = MagicMock(return_value=False)
     reporter.update_progress = MagicMock()
     reporter.report = MagicMock()
-    
+
     step = PlanStep()
     result = await step.execute(ctx, engine, reporter)
-    
+
     assert result is True
     assert ctx.book_id == 1
     assert ctx.title == "Test Title"
@@ -74,18 +74,18 @@ async def test_plan_step_execute_failure_due_to_planner_error():
         end_ep=None,
         easy_parameters={},
     )
-    
+
     engine = MagicMock()
     engine.planner = MagicMock()
     engine.planner.create_hegemony_plan = AsyncMock(side_effect=Exception("Planner failed"))
-    
+
     reporter = MagicMock()
     reporter.state.should_stop = MagicMock(return_value=False)
     reporter.update_progress = MagicMock()
     reporter.report = MagicMock()
-    
+
     step = PlanStep()
-    
+
     with pytest.raises(Exception, match="Planner failed"):
         await step.execute(ctx, engine, reporter)
 
@@ -108,7 +108,7 @@ async def test_plan_step_execute_skipped_due_to_stop_signal():
         end_ep=None,
         easy_parameters={},
     )
-    
+
     engine = MagicMock()
     engine.planner = MagicMock()
     engine.planner.create_hegemony_plan = AsyncMock(
@@ -116,15 +116,15 @@ async def test_plan_step_execute_skipped_due_to_stop_signal():
     )
     engine.planner.plan_auditor = MagicMock()
     engine.planner.plan_auditor.audit_bible_completeness = AsyncMock(return_value=True)
-    
+
     reporter = MagicMock()
     reporter.state.should_stop = MagicMock(return_value=True)  # ストップシグナル
     reporter.update_progress = MagicMock()
     reporter.report = MagicMock()
-    
+
     step = PlanStep()
     result = await step.execute(ctx, engine, reporter)
-    
+
     # ストップシグナルがある場合でも、プランナーは呼び出されるが、結果はFalseになるはず
     # 実際の実装では、planner.create_hegemony_plan が呼ばれた後に should_stop をチェックする
     assert result is False  # ストップシグナルがあると False を返す
@@ -156,22 +156,22 @@ async def test_write_step_execute_success():
         is_easy_mode=False,
         easy_parameters={},
     )
-    
+
     engine = MagicMock()
     engine.writer = MagicMock()
-    
+
     # _shared_ops.execute_with_retry のモック
     with pytest.MonkeyPatch().context() as m:
         m.setattr("src.backend.workflows._shared_ops.execute_with_retry", AsyncMock(return_value=(25000, [])))
-        
+
         reporter = MagicMock()
         reporter.state.should_stop = MagicMock(return_value=False)
         reporter.update_progress = MagicMock()
         reporter.report = MagicMock()
-        
+
         step = WriteStep()
         result = await step.execute(ctx, engine, reporter)
-        
+
         assert result is True
         assert ctx.chars_count == 25000
         assert ctx.failed_episodes == []
@@ -198,15 +198,15 @@ async def test_write_step_execute_no_book_id():
         is_easy_mode=False,
         easy_parameters={},
     )
-    
+
     engine = MagicMock()
     reporter = MagicMock()
     reporter.state.should_stop = MagicMock(return_value=False)
     reporter.update_progress = MagicMock()
     reporter.report = MagicMock()
-    
+
     step = WriteStep()
     result = await step.execute(ctx, engine, reporter)
-    
+
     assert result is False  # book_id が None の場合はすぐに False を返す
     reporter.update_progress.assert_not_called()

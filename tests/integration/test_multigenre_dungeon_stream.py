@@ -15,17 +15,17 @@ from src.models.social_reaction import StreamComment, ForumPost
 async def test_modern_dungeon_stream_full_flow():
     """現代ダンジョン配信ジャンルの企画からコメント付き執筆までのE2Eテスト"""
     # 1. モックLLMのセットアップ - 各コンポーネント用に独立したモックを使用
-    
+
     # OpeningBoosterAgent用のモックレスポンス（リトライ込みで十分な数を用意）
     opening_responses = [
         "底辺配信者・同接1人の絶望。未知の隠し部屋でユニークスキル覚醒。配信切り忘れで引く。",
         "同接急増・コメント欄の阿鼻叫喚。ありえないボス瞬殺。トレンド1位突入で引く。",
         "大手配信者の接触・スカウト。マイペースな無自覚配信。衝撃の次回予告で引く。",
     ] * 5  # リトライ分を含めて十分な数を用意
-    
+
     # EpisodeWriter用のモックレスポンス
     episode_response = "第4話：ダンジョン深層への潜入。新たなスキルの組み合わせで未知のモンスターを倒す。"
-    
+
     # SocialReactionGenerator用のモックレスポンス
     stream_comments_json = '{"comments": [{"user": "視聴者1", "text": "すげええええ！", "timestamp": "2026-09-19T00:00:00"}, {"user": "視聴者2", "text": "同接10万突破wwww", "timestamp": "2026-09-19T00:00:01"}]}'
     forum_thread_json = '{"posts": [{"name": "イッチ", "body": "ドラゴン瞬殺した配信者www"}, {"name": "名無し", "body": "草"}]}'
@@ -33,10 +33,10 @@ async def test_modern_dungeon_stream_full_flow():
     # 各コンポーネント用に独立したモックLLMを作成
     opening_llm = AsyncMock()
     opening_llm.generate_text.side_effect = opening_responses
-    
+
     episode_llm = AsyncMock()
     episode_llm.generate_text.return_value = episode_response
-    
+
     social_llm = AsyncMock()
     social_llm.generate_text.side_effect = [stream_comments_json, forum_thread_json]
 

@@ -13,14 +13,14 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             # Log the exception
             logger.error(f"Unhandled exception: {exc}", exc_info=True)
-            
+
             # Optionally, send to Sentry if available
             try:
                 import sentry_sdk
                 sentry_sdk.capture_exception(exc)
             except ImportError:
                 pass  # Sentry not available, ignore
-            
+
             # Return a generic error message
             return JSONResponse(
                 status_code=500,

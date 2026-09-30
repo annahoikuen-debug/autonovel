@@ -20,7 +20,6 @@ from src.models.writing_metadata import WritingMetadata
 from src.services.prose.novel_output_splitter import NovelOutputSplitter
 from prompts.manager import PromptManager
 from src.pipeline.emotional_residue import EmotionalResidueExtractor
-from src.stores.vector_store import RedisVectorStore
 from src.pipeline.character_dict import load_character_dict
 
 logger = logging.getLogger(__name__)
@@ -138,7 +137,7 @@ class EpisodeWriter(BaseAgent):
         self.compressor = compressor
         self.vector_store = vector_store
         self.plot_expander = plot_expander
-        
+
         # 感情残基抽出器（遅延初期化）
         self._emotional_extractor: Optional[EmotionalResidueExtractor] = None
         self._character_dict_path = character_dict_path
@@ -146,7 +145,7 @@ class EpisodeWriter(BaseAgent):
         # Beat-to-Scene 分割執筆用のオーケストレーター（遅延初期化）
         self._scene_orchestrator: Optional[SceneWriterOrchestrator] = None
         self.last_metadata: Optional[WritingMetadata] = None
-    
+
     def _get_emotional_extractor(self) -> Optional[EmotionalResidueExtractor]:
         """感情残基抽出器を遅延初期化して取得"""
         if self._emotional_extractor is None and self.vector_store:
@@ -157,8 +156,7 @@ class EpisodeWriter(BaseAgent):
                     character_dict=char_dict,
                 )
             except Exception as e:
-                if hasattr(self, "logger"):
-                    self.logger.warning(f"感情残基抽出器初期化失敗: {e}")
+                logger.warning(f"感情残基抽出器初期化失敗: {e}")
                 return None
         return self._emotional_extractor
 
@@ -210,8 +208,7 @@ class EpisodeWriter(BaseAgent):
                 if detailed_plot:
                     context["plot"] = detailed_plot
             except Exception as e:
-                if hasattr(self, "logger"):
-                    self.logger.warning(f"Ep.{ep_num}: JITプロット展開エラー (既存プロット継続): {e}")
+                logger.warning(f"Ep.{ep_num}: JITプロット展開エラー (既存プロット継続): {e}")
 
         orchestrator = self._get_scene_orchestrator()
 
@@ -246,8 +243,7 @@ class EpisodeWriter(BaseAgent):
                 )
                 composed_text = refinement_result.refined_text
         except Exception as e:
-            if hasattr(self, "logger"):
-                self.logger.warning(f"Ep.{ep_num}: プロセ精練失敗: {e}")
+            logger.warning(f"Ep.{ep_num}: プロセ精練失敗: {e}")
 
         # ダンジョン配信ジャンルの場合、配信コメントブロックを追加
         if genre in ["dungeon_stream", "streaming_fantasy", "modern_fantasy"]:
@@ -270,30 +266,19 @@ class EpisodeWriter(BaseAgent):
 
                     composed_text = composed_text + comment_block
 
-                    if hasattr(self, "logger"):
-                        self.logger.info(f"Ep.{ep_num}: 配信コメントブロックを追加 ({len(comments)}件生成)")
+                    logger.info(f"Ep.{ep_num}: 配信コメントブロックを追加 ({len(comments)}件生成)")
             except Exception as e:
-                if hasattr(self, "logger"):
-                    self.logger.warning(f"Ep.{ep_num}: 配信コメント生成でエラー: {e}")
+                logger.warning(f"Ep.{ep_num}: 配信コメント生成でエラー: {e}")
 
         clean_text, self.last_metadata = NovelOutputSplitter.split_novel_output(composed_text)
 
-        # v5.3 / Step 8: beat-to-scene 経路でもエピソード後処理を実行する。
-        # `use_beat_to_scene` は既定 True のため、ここを通らないと
-        # 伏線自動回収とダイジェスト永続化が永久に未実行になる。
+        # T6 Step 1: エピソード後処理（伏線自動回収 + ダイジェスト永続化）は
+        # **`run()` のみ**が実行する。ここ（`write_beat_to_scene`）でも呼んでいたため、
+        # `use_beat_to_scene=True`（既定経路）では 1話あたり **2回** 走っていた。
+        # ダイジェスト生成は 1話1回のブロッキング LLM 呼出（約2500字入力）のため、
+        # コストが2倍になっていた。`write()` は本文生成のみを責務とする。
         # メタデータはシーン単位では出力させない（`scene_hook.j2` が
-        # 「メタ情報は不要」と指示しているため）、エピソード統合後に
-        # 1 回だけ回収判定する。
-        await self._post_episode_finalize(
-            book_id=book_id,
-            branch_id=context.get("branch_id", 1),
-            ep_num=ep_num,
-            written_text=clean_text,
-            writing_metadata=self.last_metadata,
-            repo=context.get("repo"),
-            session=context.get("session"),
-            writing_context=context,
-        )
+        # 「メタ情報は不要」と指示しているため）、`run()` が統合後に1回だけ回収判定する。
 
         # 次話プロットの非同期投機的プリフェッチ (Plan J2)
         if self.plot_expander and hasattr(self.plot_expander, "prefetch_next_episode_plot"):
@@ -304,8 +289,7 @@ class EpisodeWriter(BaseAgent):
                     branch_id=context.get("branch_id", 1),
                 )
             except Exception as e:
-                if hasattr(self, "logger"):
-                    self.logger.debug(f"Ep.{ep_num}: 次話プリフェッチエラー (無視): {e}")
+                logger.debug(f"Ep.{ep_num}: 次話プリフェッチエラー (無視): {e}")
 
         return clean_text
 
@@ -322,8 +306,9 @@ class EpisodeWriter(BaseAgent):
     ) -> list[str]:
         """エピソード終了後の共通後処理（伏線回収 + ダイジェスト永続化）。
 
-        ``run()`` と ``write_beat_to_scene()`` の双方がこれを呼び、
-        執筆経路がどれであれ長編耐性の機構が必ず働くことを保証する。
+        **呼び出し点は `run()` の1箇所のみ**（T6 Step 1）。
+        `write_beat_to_scene()` も `run()` を通るため、これで
+        どちらの執筆経路でも長編耐性の機構が必ず1回だけ働く。
 
         Args:
             book_id: 作品ID
@@ -378,18 +363,26 @@ class EpisodeWriter(BaseAgent):
                     contract_ids=contract_ids,
                     total_episodes=total_episodes,
                 )
-                if resolved_titles and hasattr(self, "logger"):
-                    self.logger.info(
+                if resolved_titles:
+                    logger.info(
                         f"Ep.{ep_num}: 伏線自動回収 - {', '.join(resolved_titles)}"
                     )
             except Exception as e:
-                if hasattr(self, "logger"):
-                    self.logger.warning(f"Ep.{ep_num}: 伏線自動回収でエラー: {e}")
+                logger.warning(f"Ep.{ep_num}: 伏線自動回収でエラー: {e}")
 
         # 2) 事実ダイジェスト永続化
-        await self._persist_episode_digest(
-            resolved_session, book_id, ep_num, written_text
-        )
+        # 伏線回収側と異なり、ここは例外が伝播すると**話全体が失敗**する。
+        # ダイジェストは Layer2 の品質向上 (±100字要約) のための補助であり、
+        # これを失ってまで1話-rollbackする理由がない。T6 Step 11:
+        # 隔離 + 警告に揃え、握り潰しも無言化も避ける。
+        try:
+            await self._persist_episode_digest(
+                resolved_session, book_id, ep_num, written_text
+            )
+        except Exception as e:
+            logger.warning(
+                f"Ep.{ep_num}: ダイジェスト永続化でエラー（本文と伏線回収は保持）: {e}"
+            )
 
         return resolved_titles
 
@@ -528,11 +521,9 @@ class EpisodeWriter(BaseAgent):
                     # 本文の終わりにコメントブロックを追加
                     result = result + comment_block
 
-                    if hasattr(self, "logger"):
-                        self.logger.info(f"Ep.{ep_num}: 配信コメントブロックを追加 ({len(comments)}件生成)")
+                    logger.info(f"Ep.{ep_num}: 配信コメントブロックを追加 ({len(comments)}件生成)")
             except Exception as e:
-                if hasattr(self, "logger"):
-                    self.logger.warning(f"Ep.{ep_num}: 配信コメント生成でエラー: {e}")
+                logger.warning(f"Ep.{ep_num}: 配信コメント生成でエラー: {e}")
 
         clean_result, self.last_metadata = NovelOutputSplitter.split_novel_output(str(result))
         return clean_result
@@ -547,9 +538,10 @@ class EpisodeWriter(BaseAgent):
         written_text = await self.write(book_id, ep_num, writing_context)
         writing_metadata = getattr(self, "last_metadata", None)
 
-        # v5.3 / Step 8: 最終後処理は `_post_episode_finalize` に集約した。
-        # `write_beat_to_scene` も同じヘルパーを呼ぶため、執筆経路が
-        # どちらであっても伏線回収とダイジェスト永続化が必ず実行される。
+        # T6 Step 1: エピソード後処理の**唯一の実行点**。
+        # `write()` は `use_beat_to_scene=True`（既定）でも `False` でも
+        # 必ずここを通るため、ここで1回だけ呼べば両経路をカバーできる。
+        # （以前は `write_beat_to_scene()` 側でも呼んでいたため二重実行になっていた）
         await self._post_episode_finalize(
             book_id=book_id,
             branch_id=ctx.branch_id,
@@ -566,11 +558,9 @@ class EpisodeWriter(BaseAgent):
             extractor = self._get_emotional_extractor()
             if extractor and written_text:
                 extractor.extract_and_persist(f"ep{ep_num}", written_text)
-                if hasattr(self, "logger"):
-                    self.logger.info(f"Ep.{ep_num}: 感情残基抽出完了")
+                logger.info(f"Ep.{ep_num}: 感情残基抽出完了")
         except Exception as e:
-            if hasattr(self, "logger"):
-                self.logger.warning(f"Ep.{ep_num}: 感情残基抽出でエラー: {e}")
+            logger.warning(f"Ep.{ep_num}: 感情残基抽出でエラー: {e}")
 
         return AgentResult(
             next_agent=None,
@@ -599,10 +589,9 @@ class EpisodeWriter(BaseAgent):
         if session is None or not written_text:
             return
         if not _is_episode_digest_enabled():
-            if hasattr(self, "logger"):
-                self.logger.info(
-                    f"Ep.{ep_num}: 事実ダイジェスト生成は ENABLE_EPISODE_DIGEST=0 で無効化されています"
-                )
+            logger.info(
+                f"Ep.{ep_num}: 事実ダイジェスト生成は ENABLE_EPISODE_DIGEST=0 で無効化されています"
+            )
             return
         try:
             from src.services.context_compression.digest_service import (
@@ -619,8 +608,6 @@ class EpisodeWriter(BaseAgent):
                 episode_num=ep_num,
                 draft_text=written_text,
             )
-            if hasattr(self, "logger"):
-                self.logger.info(f"Ep.{ep_num}: 事実ダイジェスト保存完了 ({len(digest)}字)")
+            logger.info(f"Ep.{ep_num}: 事実ダイジェスト保存完了 ({len(digest)}字)")
         except Exception as e:
-            if hasattr(self, "logger"):
-                self.logger.warning(f"Ep.{ep_num}: 事実ダイジェスト保存でエラー: {e}")
+            logger.warning(f"Ep.{ep_num}: 事実ダイジェスト保存でエラー: {e}")

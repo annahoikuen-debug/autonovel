@@ -12,7 +12,7 @@ class TestRedisConfig:
         """Redis設定が読み込めること"""
         with open("config/redis.yaml", "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
-        
+
         assert "redis" in config
         r = config["redis"]
         assert r["host"] == "localhost"

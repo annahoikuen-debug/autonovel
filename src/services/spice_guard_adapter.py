@@ -39,29 +39,31 @@ class SpiceGuardAdapter:
     - Step から呼びやすいメソッドを提供
     """
 
-    # 表示ジャンル名 -> 内部プリセット名マッピング
-    GENRE_TO_PRESET = {
-        "ファンタジー": "zarma",
-        "恋愛": "aku_reijo",
-        "SF": "cheat_tensei",
-        "歴史": "slow_life",
-        "現代": "modern_cheat",
-        "官能/ロマンス": "pure_love_erotic",
-        "異世界": "zarma",
-        "追放ざまぁ": "zarma",
-        "悪役令嬢": "aku_reijo",
-        "チート転生": "cheat_tensei",
-        "スローライフ": "slow_life",
-        "ダンジョン運営": "dungeon_admin",
-        "現代チート": "modern_cheat",
-        "TS転生": "ts_tensei",
-        "VRMMO": "vrmmo",
-        "ループ": "loop",
-    }
+    # ジャンル→プリセットの対応は `config.story_spine.genre_registry.GENRE_REGISTRY`
+    # に一本化した（`preset_loader` と重複していた辞書を削除）。
+    # 旧字典は `GENRE_TO_PRESET` というクラス属性として公開する。システムやプラグインからの
+    # 参照を壊さないため、互換ラッパとして残す。
+    @classmethod
+    def _legacy_genre_table(cls) -> dict[str, str]:
+        from config.story_spine.genre_registry import GENRE_REGISTRY
+
+        table: dict[str, str] = {}
+        for entry in GENRE_REGISTRY.values():
+            for alias in entry["aliases"]:
+                table.setdefault(alias, entry["preset_key"])
+            table.setdefault(entry["label"], entry["preset_key"])
+        return table
 
     def __init__(self, genre: str):
+        from config.story_spine.genre_registry import resolve_preset_key
+
         self.genre = genre
-        self.preset_name = self.GENRE_TO_PRESET.get(genre, "zarma")
+        self.preset_name = resolve_preset_key(genre)
+        if self.preset_name is None:
+            logger.warning(
+                "GENRE_REGISTRY に %r が無い。既定プリセット 'zarma' を使う", genre
+            )
+            self.preset_name = "zarma"
         self._guard = None
         self._preset = None
 

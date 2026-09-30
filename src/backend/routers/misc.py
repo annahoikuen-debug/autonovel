@@ -85,10 +85,15 @@ async def get_narrative_metrics_trend(book_id: int, branch_id: int):
 @router.get("/api/config/planning_options")
 async def get_planning_options():
     """
-    フロントエンド向けの企画立案用オプション（ジャンル、アーキタイプ、文体など）を返す。
+    フロントエンド向けの企画立案用オプション（ジャンル、アーキタイプ、文体、構造テンプレート）を返す。
+
+    旧実装は存在しない定数を import していたため、このエンドポイントは常に
+    ImportError で HTTP 500 を返していた。構造テンプレートの供給元は
+    STORY_SPINE（`config/story_spine/`）に一本化する。
     """
     from config.archetypes_new import EASY_GENRES, STORY_ARCHETYPES
-    from config.constants import PLANNING_PRESETS
+    from config.story_spine import BEAT_VOCABULARY, CARDS, LENGTHS, MARKETS, PATTERNS
+    from config.story_spine.genre_registry import genre_payload
     from src.config import STYLE_DEFINITIONS
 
     # STYLE_DEFINITIONSから必要な部分のみ抽出
@@ -98,8 +103,25 @@ async def get_planning_options():
     }
 
     return {
+        # --- 既存キー（フロントが使っているため削除しない） ---
         "easy_genres": EASY_GENRES,
         "story_archetypes": list(STORY_ARCHETYPES.keys()),
         "style_definitions": styles,
-        "planning_presets": PLANNING_PRESETS,
+        # --- STORY_SPINE（構造テンプレート） ---
+        "cards": CARDS,
+        "lengths": LENGTHS,
+        "markets": MARKETS,
+        "patterns": PATTERNS,
+        "genres": genre_payload(),
+        "beat_vocabulary": {
+            b.key: {
+                "key": b.key,
+                "label": b.label,
+                "role": b.role,
+                "tension": b.tension,
+                "artifact": b.artifact,
+                "span": list(b.span),
+            }
+            for b in BEAT_VOCABULARY.values()
+        },
     }

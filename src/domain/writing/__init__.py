@@ -22,7 +22,7 @@ from src.domain.writing.state_guard import StateGuard, ValidationResult
 class WritingService:
     """
     統合執筆サービスファサード。
-    
+
     WritingCoordinator, QualityLoop, StateGuard を束ね、
     後方互換性を持つ単一の公開APIを提供する。
     """
@@ -84,7 +84,7 @@ class WritingService:
         self._coordinator = WritingCoordinator(**coordinator_kwargs)
         self._quality_loop = QualityLoop(**quality_loop_kwargs)
         self._state_guard = StateGuard(**state_guard_kwargs)
-        
+
         # Backward compatibility: expose internal agents
         self.context_builder_agent = context_builder_agent
         self.illustration_agent = illustration_agent

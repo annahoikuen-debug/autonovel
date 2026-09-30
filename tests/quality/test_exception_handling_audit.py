@@ -42,7 +42,7 @@ def find_silent_exceptions(filepath: Path) -> list[tuple[int, str]]:
                 is_broad = True
             elif isinstance(node.type, ast.Name) and node.type.id in ("Exception", "BaseException"):
                 is_broad = True
-            
+
             if is_broad and is_silent_pass(node):
                 silent_catches.append((node.lineno, "except Exception: pass (silent swallow)"))
     return silent_catches

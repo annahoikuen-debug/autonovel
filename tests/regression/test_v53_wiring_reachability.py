@@ -76,7 +76,7 @@ class TestRepositoryContract:
         called = _repo_calls_in("agents/writing/generator.py")
         assert called, "generator.py で self.repo.* の呼び出しが見つからない（解析前提の変化）"
         missing = sorted(m for m in called if not hasattr(BookRepository, m))
-        assert not missing is TARGETS["repository_chapter_contract_satisfied"] or not missing, (
+        assert missing is not TARGETS["repository_chapter_contract_satisfied"] or not missing, (
             f"BookRepository に存在しないメソッドを呼んでいる: {missing}"
             f"（expected_missing={missing if not TARGETS['repository_chapter_contract_satisfied'] else []}）"
         ) if TARGETS["repository_chapter_contract_satisfied"] else bool(missing) is False or None
@@ -159,13 +159,32 @@ class TestBeatToSceneWiring:
         assert hasattr(EpisodeWriter, "write_beat_to_scene")
 
     def test_beat_to_scene_wired_to_foreshadowing(self) -> None:
-        """beat-to-scene 経路が伏線回収まで配線されているか（Step 8 の完了判定）。"""
+        """beat-to-scene 経路が伏線回収まで配線されているか（Step 8 の完了判定）。
+
+        T6 Step 1 以降、後処理の**実行点は `run()` の1箇所のみ**に集約されている
+        （`write_beat_to_scene()` と `run()` の両方から呼ぶと、1話1回の
+        ブロッキング LLM 呼出であるダイジェスト生成が話ごとに2回走る）。
+        したがって「`run()` から到達であること」と
+        「`write_beat_to_scene()` からは二重に呼ばれないこと」の両方を検証する。
+        """
         from src.agents.writing.episode_writer import EpisodeWriter
 
-        src = inspect.getsource(EpisodeWriter.write_beat_to_scene)
-        wired = "check_and_resolve" in src or "_post_episode_finalize" in src
-        assert wired is TARGETS["final_writing_prompt_reachable"], (
-            "beat-to-scene 経路の伏線配線状態が想定と不一致"
+        run_src = inspect.getsource(EpisodeWriter.run)
+        assert "_post_episode_finalize" in run_src, (
+            "`run()` が唯一の実行点として後処理を呼び出していない"
+        )
+
+        beat_src = inspect.getsource(EpisodeWriter.write_beat_to_scene)
+        assert "_post_episode_finalize" not in beat_src, (
+            "`write_beat_to_scene()` からも呼ぶと1話2回になり、"
+            "ダイジェスト生成のコストが2倍になる"
+        )
+
+        # `write()` は `use_beat_to_scene` の両分岐で `run()` へ到達する前提であること
+        write_src = inspect.getsource(EpisodeWriter.write)
+        assert "write_beat_to_scene" in write_src, (
+            "`write()` が `write_beat_to_scene()` へ委譲していない。"
+            "T6 Step 1 の単一実行点では、既定分岐が `run()` を素通りする"
         )
 
 

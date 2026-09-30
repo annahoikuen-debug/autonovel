@@ -404,7 +404,7 @@ def test_graph_router(client):
     # book_id なしの場合は 422
     response = client.get("/api/graph")
     assert response.status_code in (200, 401, 422)
-    
+
     # book_id ありの場合
     response = client.get("/api/graph?book_id=1")
     assert response.status_code in (200, 401)

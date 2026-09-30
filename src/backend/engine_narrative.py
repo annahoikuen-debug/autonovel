@@ -32,12 +32,24 @@ class PlanningStateMachine:
 
 
 class PacingGraph:
-    """物語の各話における情報密度や温度感（Pacing）を定義"""
+    """物語の各話における情報密度や温度感（Pacing）を定義。
+
+    位置は **相対値**（0.0-1.0）で保持し、絶対話数で書かない。
+    旧実装は `ep_num == 5` / `24 <= ep_num <= 26` という絶対比較が混在しており、
+    total_eps を変えると同じ構造が壊れていた。境界は STORY_SPINE の span と整合させる。
+    """
+
+    _HOOK_END = 0.18  # revelation の終了（導入の終わり）
+    _FIRST_EXPLOSION_START = 0.12  # first_win の開始
+    _FIRST_EXPLOSION_END = 0.30  # first_win の終了
+    _CLIMAX_START = 0.74  # last_stand の開始
+    _CLIMAX_END = 0.94  # climax の終了
 
     @staticmethod
     def get_instruction(ep_num: int, total_eps: int = 50, is_light: bool = False) -> dict[str, Any]:
-        mid_twist_ep = total_eps // 2
-        late_twist_ep = int(total_eps * 0.8)
+        total_eps = max(1, int(total_eps))
+        pos = (ep_num - 1) / total_eps  # 0.0 - 1.0 の相対位置
+        pg = PacingGraph
 
         if ep_num == 1:
             if is_light:
@@ -51,51 +63,50 @@ class PacingGraph:
                 "density": "情報密度: 低",
                 "temp": 0.8,
             }
-        elif ep_num == mid_twist_ep:
-            return {
-                "instruction": "【🚨大どんでん返し（中盤）🚨】これまでの前提を覆す衝撃の事実が発覚。信頼していた味方の予期せぬ裏切りや、世界の前提がひっくり返る展開を描け。",
-                "density": "情報密度: 高",
-                "is_plot_twist": True,
-                "temp": 0.85,
-            }
-        elif ep_num == late_twist_ep:
-            return {
-                "instruction": "【🚨大どんでん返し（終盤）🚨】真の黒幕の正体発覚や、これまでのすべての真実が根底から覆るクライマックス前夜の衝撃の転換点を描け。",
-                "density": "情報密度: 高",
-                "is_plot_twist": True,
-                "temp": 0.9,
-            }
-        elif 2 <= ep_num <= 4:
+        if pos <= pg._HOOK_END:
             return {
                 "instruction": "【導入】能力の特異性とヒロインとの関係性を描写。小さなトラブルを代償や機転で解決させよ。",
                 "density": "情報密度: 中",
                 "temp": 0.8,
             }
-        elif ep_num == 5:
+        if pg._FIRST_EXPLOSION_START <= pos <= pg._FIRST_EXPLOSION_END:
             return {
-                "instruction": "【第1の爆発】1〜4話の伏線を一気に回収。最初の明確なカタルシスを描け。",
+                "instruction": "【第1の爆発】序盤の伏線を一気に回収。最初の明確なカタルシスを描け。",
                 "density": "情報密度: 高",
                 "temp": 0.85,
             }
-        elif 24 <= ep_num <= 26:
+        if pg._CLIMAX_START <= pos <= pg._CLIMAX_END:
             return {
-                "instruction": "【第1部クライマックス】最大級のカタルシス。これまでの伏線を全回収せよ。",
+                "instruction": "【クライマックス】これまでの伏線を全回収せよ。物語のすべてがここに集約される。",
                 "density": "情報密度: 特高",
                 "multiplier": 1.5,
                 "temp": 0.9,
             }
-        elif ep_num >= total_eps - 2:
+        if pos >= 1.0 - 2.0 / total_eps:
             return {
                 "instruction": "【グランドフィナーレ】余韻を残しつつ、読者が満足できる大団円を。",
                 "density": "情報密度: 高",
                 "temp": 0.85,
             }
-        else:
+        if pos <= 0.5:
             return {
                 "instruction": "【展開・溜め回】物語を着実に進行させよ。新たな謎の提示、キャラの深掘り。",
                 "density": "標準",
                 "temp": 0.75,
             }
+        if pos <= pg._CLIMAX_START:
+            return {
+                "instruction": "【🚨大どんでん返し（終盤）🚨】真の黒幕の正体発覚や、これまでのすべての真実が根底から覆る"
+                "クライマックス前夜の衝撃の転換点を描け。",
+                "density": "情報密度: 高",
+                "is_plot_twist": True,
+                "temp": 0.9,
+            }
+        return {
+            "instruction": "【終盤の追い込み】主人公が最後の手段に踏み込む。取捨選択を迫る重い場面を描け。",
+            "density": "情報密度: 中高",
+            "temp": 0.85,
+        }
 
 
 class NarrativeController:

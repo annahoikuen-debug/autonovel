@@ -114,7 +114,7 @@ class TestFullNovelWithCompression:
             mock_result = Mock()
             mock_result.scalars = Mock(return_value=Mock(all=Mock(return_value=[])))
             mock_session.execute = AsyncMock(return_value=mock_result)
-            
+
             ctx = AgentContext(
                 book_id=1,
                 branch_id=1,
@@ -126,20 +126,20 @@ class TestFullNovelWithCompression:
                     "session": mock_session,
                 }
             )
-            
+
             # WritingService の _build_context_with_compression メソッドをテスト
             writing_context = await writing_service._build_context_with_compression(ctx)
-            
+
             assert writing_context is not None
             # 圧縮結果が含まれることを確認
             assert "compressed_context" in writing_context
             assert "compression_stats" in writing_context
-            
+
             stats = writing_context["compression_stats"]
             assert "reduction_ratio" in stats
             assert "final_tokens" in stats
             assert "from_cache" in stats
-            
+
             # 実際の生成もテスト（例外が発生しないことを確認）
             gen_result = await writing_service.generate_with_quality_assurance(ctx)
             assert gen_result is not None
@@ -152,18 +152,18 @@ class TestFullNovelWithCompression:
         mock_result = Mock()
         mock_result.scalars = Mock(return_value=Mock(all=Mock(return_value=[])))
         mock_session.execute = AsyncMock(return_value=mock_result)
-        
+
         ctx = AgentContext(
             book_id=1,
             branch_id=1,
             ep_num=1,
             artifacts={"repo": Mock(), "target_word_count": 3000, "session": mock_session}
         )
-        
+
         # _build_context_with_compression を使って圧縮率をテスト
         writing_context = await writing_service._build_context_with_compression(ctx)
         stats = writing_context.get("compression_stats", {})
-        
+
         reduction = stats.get("reduction_ratio", 0)
         # 実際の圧縮率はテキスト内容により変動するため、0.0-1.0 の範囲内であることを確認
         assert 0.0 <= reduction <= 1.0, f"圧縮率が範囲外: {reduction:.2f}"
@@ -176,14 +176,14 @@ class TestFullNovelWithCompression:
         mock_result = Mock()
         mock_result.scalars = Mock(return_value=Mock(all=Mock(return_value=[])))
         mock_session.execute = AsyncMock(return_value=mock_result)
-        
+
         ctx = AgentContext(
             book_id=1,
             branch_id=1,
             ep_num=1,
             artifacts={"repo": Mock(), "target_word_count": 3000, "session": mock_session}
         )
-        
+
         # _build_context_with_compression が正常に動作することを確認
         writing_context = await writing_service._build_context_with_compression(ctx)
         assert writing_context is not None
@@ -200,7 +200,7 @@ class TestFullNovelWithCompression:
                 ep_num=ep_num,
                 artifacts={"repo": Mock(), "target_word_count": 3000}
             )
-            
+
             # 例外が発生しないこと
             result = await writing_service.generate_with_quality_assurance(ctx)
             assert result is not None
@@ -255,7 +255,7 @@ class TestEpisodeWriterCompressionE2E:
         mock_result = Mock()
         mock_result.scalars = Mock(return_value=Mock(all=Mock(return_value=[])))
         mock_session.execute = AsyncMock(return_value=mock_result)
-        
+
         # Create ctx with repo in artifacts (what ContextBuilderAgent.execute requires)
         ctx = AgentContext(
             book_id=1,
@@ -268,7 +268,7 @@ class TestEpisodeWriterCompressionE2E:
                 "session": mock_session,
             }
         )
-        
+
         # ContextBuilderAgent.execute が正常に動作することを確認
         result = await context_builder_agent.execute(ctx)
         assert result is not None

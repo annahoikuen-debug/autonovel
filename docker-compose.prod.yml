@@ -18,7 +18,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: autonovel-backend:5.3.0
+    image: autonovel-backend:6.0.0
     environment:
       # APP_ENV を明示しない場合 Settings.APP_ENV は development にフォールバックし、
       # validate_production_secrets() が無効化される。その結果 get_jwt_secret_key() が
@@ -78,7 +78,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: autonovel-backend:5.3.0
+    image: autonovel-backend:6.0.0
     command: ["python", "-m", "huey.bin.huey_consumer", "src.backend.tasks.huey.huey", "-w", "2", "-k", "thread"]
     environment:
       # backend が唯一のマイグレーション実行者のため、worker はスキップする。
@@ -118,7 +118,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: production
-    image: autonovel-frontend:5.3.0
+    image: autonovel-frontend:6.0.0
     ports:
       - "8080:80"
     depends_on:
@@ -137,7 +137,7 @@ services:
     build:
       context: ./docker/postgres
       dockerfile: Dockerfile
-    image: autonovel-db:5.3.0
+    image: autonovel-db:6.0.0
     container_name: autonovel_db
     environment:
       - POSTGRES_USER=autonovel

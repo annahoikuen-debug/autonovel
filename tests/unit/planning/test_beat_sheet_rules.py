@@ -10,7 +10,7 @@ def test_beat_sheet_covers_all_episodes():
         # 範囲内のすべての話数をカバー集合に追加
         for ep in range(start, end + 1):
             covered.add(ep)
-    
+
     # 1話から40話までがすべてカバーされているか
     expected = set(range(1, 41))
     assert covered == expected, f"カバー不足または重複: 不足={expected - covered}, 重複={covered - expected}"

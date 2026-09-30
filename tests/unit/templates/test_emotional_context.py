@@ -30,12 +30,12 @@ class TestEmotionalContextTemplate:
         """基本レンダリング"""
         # get_top_pairsをモック用に簡易実装
         top_pairs = sample_vector.get_top_pairs(5)
-        
+
         rendered = template.render(
             top_pairs=top_pairs,
             vector=sample_vector,
         )
-        
+
         assert "直前話からの引き継ぎ感情" in rendered
         assert "A→B" in rendered
         assert "B→A" in rendered
@@ -47,22 +47,22 @@ class TestEmotionalContextTemplate:
         """空ベクトルのレンダリング"""
         vec = EmotionalVector(episode_id="ep01")
         top_pairs = vec.get_top_pairs(5)
-        
+
         rendered = template.render(
             top_pairs=top_pairs,
             vector=vec,
         )
-        
+
         assert "感情データなし" in rendered
 
     def test_format_values(self, template, sample_vector):
         """値のフォーマット確認"""
         top_pairs = sample_vector.get_top_pairs(5)
-        
+
         rendered = template.render(
             top_pairs=top_pairs,
             vector=sample_vector,
         )
-        
+
         # 小数点1桁でフォーマットされること
         assert "0.3" in rendered or "0.8" in rendered

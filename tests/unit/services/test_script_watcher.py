@@ -56,14 +56,14 @@ class TestScriptWatcher:
         """ハッシュ計算テスト"""
         file_path = temp_dir / "test.md"
         file_path.write_text("test content", encoding="utf-8")
-        
+
         hash1 = watcher._compute_hash(file_path)
         assert len(hash1) == 64  # SHA256 hex
-        
+
         # 同じ内容なら同じハッシュ
         hash2 = watcher._compute_hash(file_path)
         assert hash1 == hash2
-        
+
         # 内容変更でハッシュ変化
         file_path.write_text("different content", encoding="utf-8")
         hash3 = watcher._compute_hash(file_path)
@@ -73,7 +73,7 @@ class TestScriptWatcher:
         """エピソード番号なしファイルはスキップ"""
         file_path = temp_dir / "readme.md"
         file_path.write_text("# Readme\n", encoding="utf-8")
-        
+
         result = watcher._process_file(file_path)
         assert result is False
 
@@ -92,10 +92,10 @@ A「行くぞ」
 [beat:fear+0.6 cause="ep14 betrayal"]
 """
         file_path.write_text(content, encoding="utf-8")
-        
+
         result = watcher._process_file(file_path)
         assert result is True
-        
+
         # ベクトルストアに保存されたか確認
         stored = mock_vector_store.get_latest("annotation", ("A", "B"))
         assert stored is not None
@@ -114,19 +114,19 @@ beats:
 ---
 """
         file_path.write_text(content, encoding="utf-8")
-        
+
         # 初回処理
         result1 = watcher._process_file(file_path)
         assert result1 is True
-        
+
         # 同じ内容で再処理 → スキップされる
         result2 = watcher._process_file(file_path)
         assert result2 is False
-        
+
         # 内容変更
         content2 = content.replace("0.5", "0.8")
         file_path.write_text(content2, encoding="utf-8")
-        
+
         # 再処理 → 変更検出される
         result3 = watcher._process_file(file_path)
         assert result3 is True
@@ -145,7 +145,7 @@ beats:
 ---""", encoding="utf-8"
         )
         (temp_dir / "readme.md").write_text("# Readme", encoding="utf-8")
-        
+
         processed = watcher.scan_once()
         assert processed == 1
 
@@ -161,10 +161,10 @@ beats:
     cause: "test"
 ---"""
         file_path.write_text(content, encoding="utf-8")
-        
+
         # 初回処理
         watcher._process_file(file_path)
-        
+
         # 強制処理（ハッシュ無視）
         result = watcher.force_process(file_path)
         assert result is True
@@ -182,10 +182,10 @@ beats:
     cause: "test"
 ---"""
         file_path.write_text(content, encoding="utf-8")
-        
+
         result = watcher._process_file(file_path)
         assert result is False
-        
+
         # 永続化されていないことを確認
         stored = mock_vector_store.get_latest("annotation", ("X", "B"))
         assert stored is None
@@ -215,7 +215,7 @@ class TestCreateScriptWatcher:
             character_dict={"A", "B"},
             poll_interval=0.1,
         )
-        
+
         assert isinstance(watcher, ScriptWatcher)
         assert watcher.config.script_root == temp_dir
         assert watcher.config.poll_interval == 0.1

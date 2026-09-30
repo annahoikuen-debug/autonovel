@@ -19,10 +19,10 @@ class ValidationResult:
 
 class BeatValidator:
     """感情ビートの検証・整合性チェック"""
-    
+
     def __init__(self, character_dict: Optional[set[str]] = None):
         self.character_dict = character_dict or load_character_dict()
-        
+
         # 表向き/内心の組み合わせルール
         # hidden=True の場合、表向きの逆の感情は警告
         self.contradiction_pairs = {
@@ -32,43 +32,43 @@ class BeatValidator:
         }
 
     def validate(
-        self, 
-        beats: list[EmotionalBeat], 
+        self,
+        beats: list[EmotionalBeat],
         character_dict: Optional[set[str]] = None,
     ) -> ValidationResult:
         """ビートリストを検証"""
         errors = []
         warnings = []
         dict_to_use = character_dict or self.character_dict
-        
+
         for beat in beats:
             # 1. キャラ名存在チェック
             if beat.source not in dict_to_use:
                 errors.append(f"Beat {beat.beat_id}: Unknown source character '{beat.source}'")
             if beat.target not in dict_to_use:
                 errors.append(f"Beat {beat.beat_id}: Unknown target character '{beat.target}'")
-            
+
             # 2. delta範囲チェック（クランプ前の元の値を想定。EmotionalBeatでクランプ済みなのでここではスキップ）
             # 実際の実装ではクランプ前の値をチェックする必要がある
-            
+
             # 3. confidence範囲チェック（同上）
-            
+
             # 4. 同一シーン・同一ペア・同一感情の重複チェック
-            
+
             # 5. hidden=true の場合の矛盾チェック
             if beat.hidden:
                 self._check_hidden_contradiction(beat, dict_to_use, warnings)
-            
+
             # 6. cause 未記入チェック
             if not beat.cause or beat.cause.strip() == "":
                 warnings.append(f"Beat {beat.beat_id}: Empty cause field")
-        
+
         # 7. シーン内の重複チェック（同一感情）
         self._check_duplicates(beats, warnings)
-        
+
         # 8. 異なる感情間の矛盾チェック（hidden vs overt）
         self._check_cross_emotion_contradictions(beats, warnings)
-        
+
         return ValidationResult(
             is_valid=len(errors) == 0,
             errors=errors,
@@ -76,12 +76,12 @@ class BeatValidator:
         )
 
     def _check_hidden_contradiction(
-        self, 
-        beat: EmotionalBeat, 
+        self,
+        beat: EmotionalBeat,
         character_dict: set[str],
         warnings: list[str],
     ) -> None:
-        """hidden=true の場合、同じ episode/scene/source/target で 
+        """hidden=true の場合、同じ episode/scene/source/target で
         異なる感情の表向きビートとの矛盾をチェック"""
         # _check_duplicates で同一感情の場合はチェック済み
         # ここでは異なる感情での矛盾をチェック
@@ -91,10 +91,10 @@ class BeatValidator:
         """重複・矛盾チェック"""
         # キー: (episode, scene, source, target, emotion)
         seen = {}
-        
+
         for beat in beats:
             key = (beat.episode, beat.scene, beat.source, beat.target, beat.emotion)
-            
+
             if key in seen:
                 existing = seen[key]
                 # 同一キーの重複
@@ -114,15 +114,15 @@ class BeatValidator:
                 seen[key] = beat
 
     def _check_contradiction_pair(
-        self, 
-        hidden_beat: EmotionalBeat, 
-        overt_beat: EmotionalBeat, 
+        self,
+        hidden_beat: EmotionalBeat,
+        overt_beat: EmotionalBeat,
         warnings: list[str],
     ) -> None:
         """表向きと内心の感情矛盾をチェック"""
         hidden_emo = hidden_beat.emotion
         overt_emo = overt_beat.emotion
-        
+
         # 既知の矛盾ペア
         if (hidden_emo, overt_emo) in self.contradiction_pairs or \
            (overt_emo, hidden_emo) in self.contradiction_pairs:
@@ -131,7 +131,7 @@ class BeatValidator:
                 f"hidden={hidden_emo.value}({hidden_beat.delta:+.2f}) "
                 f"vs overt={overt_emo.value}({overt_beat.delta:+.2f})"
             )
-        
+
         # 同じ感情で符号が逆
         if hidden_emo == overt_emo and hidden_beat.delta * overt_beat.delta < -0.1:
             warnings.append(
@@ -140,8 +140,8 @@ class BeatValidator:
             )
 
     def _check_cross_emotion_contradictions(
-        self, 
-        beats: list[EmotionalBeat], 
+        self,
+        beats: list[EmotionalBeat],
         warnings: list[str],
     ) -> None:
         """異なる感情間での hidden/overt 矛盾をチェック"""
@@ -152,11 +152,11 @@ class BeatValidator:
             if key not in pairs:
                 pairs[key] = []
             pairs[key].append(beat)
-        
+
         for key, pair_beats in pairs.items():
             hidden_beats = [b for b in pair_beats if b.hidden]
             overt_beats = [b for b in pair_beats if not b.hidden]
-            
+
             for h_beat in hidden_beats:
                 for o_beat in overt_beats:
                     # 異なる感情での矛盾チェック

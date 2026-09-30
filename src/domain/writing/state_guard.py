@@ -26,10 +26,10 @@ class StateGuard:
     def validate_project_context(self, project_ctx: Any) -> ValidationResult:
         """
         プロジェクトコンテキストの妥当性を検証する。
-        
+
         Args:
             project_ctx: プロジェクトコンテキストオブジェクト
-            
+
         Returns:
             ValidationResult: 検証結果
         """
@@ -71,12 +71,12 @@ class StateGuard:
     ) -> bool:
         """
         チャプターシーケンスの整合性を確保する。
-        
+
         Args:
             book_id: 書籍ID
             start_ep: 開始エピソード番号
             end_ep: 終了エピソード番号
-            
+
         Returns:
             bool: 整合性が取れていればTrue
         """
@@ -120,10 +120,10 @@ class StateGuard:
     def validate_writing_context(self, ctx: dict[str, Any]) -> ValidationResult:
         """
         執筆コンテキストの妥当性を検証する。
-        
+
         Args:
             ctx: 執筆コンテキスト辞書
-            
+
         Returns:
             ValidationResult: 検証結果
         """

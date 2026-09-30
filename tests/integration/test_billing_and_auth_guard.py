@@ -88,7 +88,7 @@ class TestAuthProtection:
         """認証済みアクセスは許可されること。"""
         async with TestingSessionLocal() as session:
             user = await create_test_user(session)
-        
+
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             # 認証ヘッダー付きでアクセス
@@ -107,12 +107,12 @@ class TestCreditLifecycle:
         """クレジット付与→消費→残高確認のサイクル。"""
         async with TestingSessionLocal() as session:
             user = await create_test_user(session, credits=50)
-            
+
             # クレジットサービスで残高確認
             credit_service = CreditService(session)
             initial_balance = await credit_service.get_balance(user.id)
             assert initial_balance == 50
-            
+
             # クレジット付与
             new_balance = await credit_service.grant_credits(
                 user_id=user.id,
@@ -121,7 +121,7 @@ class TestCreditLifecycle:
                 description="Test grant",
             )
             assert new_balance == 150
-            
+
             # クレジット消費
             result = await credit_service.deduct_credits(
                 user_id=user.id,
@@ -130,7 +130,7 @@ class TestCreditLifecycle:
                 description="Test deduction",
             )
             assert result is True
-            
+
             # 残高確認
             final_balance = await credit_service.get_balance(user.id)
             assert final_balance == 120
@@ -141,10 +141,10 @@ class TestCreditLifecycle:
         async with TestingSessionLocal() as session:
             user = await create_test_user(session, credits=10)
             credit_service = CreditService(session)
-            
+
             # 所持クレジット以上の消費を試みる
             from src.services.billing.credit_service import InsufficientCreditsError
-            
+
             with pytest.raises(InsufficientCreditsError):
                 await credit_service.deduct_credits(
                     user_id=user.id,
@@ -152,7 +152,7 @@ class TestCreditLifecycle:
                     transaction_type="consumption",
                     description="Should fail",
                 )
-            
+
             # 残高は変わらない
             balance = await credit_service.get_balance(user.id)
             assert balance == 10
@@ -165,7 +165,7 @@ class TestBillingIntegration:
     async def test_monthly_credit_grant_amounts(self):
         """月次クレジット付与額がプラン設定と一致すること。"""
         from src.config.billing_plans import STRIPE_PRICE_TO_PLAN
-        
+
         # 各プランの月次クレジットが正しく設定されているか確認
         for price_id, config in STRIPE_PRICE_TO_PLAN.items():
             credits = get_credits_for_price_id(price_id)
@@ -179,18 +179,18 @@ class TestPerformanceRegression:
     async def test_api_response_time_threshold(self):
         """API応答時間が閾値を超えないこと（簡易チェック）。"""
         import time
-        
+
         async with TestingSessionLocal() as session:
             user = await create_test_user(session)
-        
+
         transport = ASGITransport(app=app)
         async with AsyncClient(transport=transport, base_url="http://test") as ac:
             headers = get_auth_headers(user)
-            
+
             start = time.time()
             res = await ac.get("/api/cost/summary", headers=headers)
             elapsed = time.time() - start
-            
+
             # 応答時間が 5 秒以内（CI環境では緩めに設定）
             assert elapsed < 5.0, f"API response too slow: {elapsed:.2f}s"
 
@@ -204,7 +204,7 @@ class TestEdgeCases:
         async with TestingSessionLocal() as session:
             user = await create_test_user(session, credits=10)
             credit_service = CreditService(session)
-            
+
             result = await credit_service.deduct_credits(
                 user_id=user.id,
                 amount=0,
@@ -219,7 +219,7 @@ class TestEdgeCases:
         async with TestingSessionLocal() as session:
             user = await create_test_user(session, credits=10)
             credit_service = CreditService(session)
-            
+
             with pytest.raises(ValueError) as exc_info:
                 await credit_service.deduct_credits(
                     user_id=user.id,

@@ -27,7 +27,7 @@ class TestCharacterExtractor:
         text = "AはBに向かって剣を構えた。主人公はヒロインを守ろうとした。"
         doc = nlp(text)
         mentions = extractor.extract(doc)
-        
+
         texts = [m.text for m in mentions]
         assert "A" in texts
         assert "B" in texts
@@ -39,11 +39,11 @@ class TestCharacterExtractor:
         text = "Aは言った。「私は行く」。Bはそれに答えた。「君も来い」。"
         doc = nlp(text)
         mentions = extractor.extract(doc)
-        
+
         texts = [m.text for m in mentions]
         assert "私" in texts
         assert "君" in texts
-        
+
         # 代名詞フラグ確認
         pronoun_mentions = [m for m in mentions if m.is_pronoun]
         assert len(pronoun_mentions) >= 2
@@ -54,7 +54,7 @@ class TestCharacterExtractor:
         text = "主は立ち上がった。"
         doc = nlp(text)
         mentions = extractor.extract(doc)
-        
+
         # 部分マッチは実装依存なので、完全一致の場合のみテスト
         text2 = "主人公は立ち上がった。"
         doc2 = nlp(text2)
@@ -68,7 +68,7 @@ class TestCharacterExtractor:
         text = "AとAが戦う。"
         doc = nlp(text)
         mentions = extractor.extract(doc)
-        
+
         # 同じ位置の重複がないこと
         spans = [(m.start_char, m.end_char) for m in mentions]
         assert len(spans) == len(set(spans))
@@ -83,6 +83,6 @@ class TestCharacterExtractor:
         text = "田中太郎は佐藤花子に会った。"
         doc = nlp(text)
         mentions = extractor.extract(doc)
-        
+
         # 固有表現抽出は空白モデルでは動かないが、エラーにならないこと
         assert isinstance(mentions, list)

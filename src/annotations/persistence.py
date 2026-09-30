@@ -12,7 +12,7 @@ from src.stores.event_log import EventLogStore
 
 class AnnotationPersistence:
     """感情ビートを各ストアに永続化"""
-    
+
     def __init__(
         self,
         vector_store: VectorStore,
@@ -25,29 +25,29 @@ class AnnotationPersistence:
 
     def persist_beats(self, beats: list[EmotionalBeat], episode: int) -> int:
         """ビートリストを全ストアに保存
-        
+
         Returns:
             保存したビート数
         """
         if not beats:
             return 0
-        
+
         # VectorStore: エピソード単位でベクトル生成・保存
         vector = self._beats_to_vector(beats, episode)
         if self.vector_store:
             key = f"ep{episode}"
             self.vector_store.upsert("annotation", key, vector)
-        
+
         # GraphStore: エッジとして保存
         if self.graph_store:
             for beat in beats:
                 self._persist_to_graph(beat, episode)
-        
+
         # EventLogStore: 個別シグナルとして追記
         if self.log_store:
             for beat in beats:
                 self.log_store.append(beat.to_signal())
-        
+
         return len(beats)
 
     def _beats_to_vector(self, beats: list[EmotionalBeat], episode: int) -> EmotionalVector:
@@ -61,7 +61,7 @@ class AnnotationPersistence:
                 emotion = EmotionType(beat.emotion)
             else:
                 emotion = beat.emotion
-            
+
             signal = EmotionalSignal(
                 source=beat.source,
                 target=beat.target,
@@ -80,7 +80,7 @@ class AnnotationPersistence:
         """GraphStoreにエッジ保存"""
         if not self.graph_store:
             return
-        
+
         props = {
             "affection": 0.0,
             "tension": 0.0,
@@ -94,7 +94,7 @@ class AnnotationPersistence:
             "disgust": 0.0,
         }
         props[beat.emotion.value] = beat.delta
-        
+
         props.update({
             "cause": beat.cause,
             "episode": episode,
@@ -103,7 +103,7 @@ class AnnotationPersistence:
             "hidden": beat.hidden,
             "source_type": "annotation",
         })
-        
+
         self.graph_store.upsert_edge(
             source=beat.source,
             target=beat.target,

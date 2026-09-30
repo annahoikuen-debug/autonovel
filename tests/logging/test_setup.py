@@ -15,7 +15,7 @@ def test_logs_are_json():
         setup_logging()
         # Log a test message
         logger.info("Test message", key="value")
-        
+
         # Get the output
         output = mock_stdout.getvalue().strip()
         # The output should be a JSON string
@@ -23,7 +23,7 @@ def test_logs_are_json():
             log_entry = json.loads(output)
         except json.JSONDecodeError:
             raise AssertionError(f"Log output is not valid JSON: {output}")
-        
+
         # Check the content in the record field
         record = log_entry["record"]
         assert record["message"] == "Test message"

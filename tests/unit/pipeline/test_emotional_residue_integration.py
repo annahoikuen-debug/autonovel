@@ -52,7 +52,7 @@ class TestEmotionalResidueIntegration:
         characters = char_extractor.extract(doc)
         signals = signal_extractor.extract_signals(doc, characters, "ep01")
         vector = aggregate_signals(signals)
-        
+
         tension_value = vector.get_value("A", "B", EmotionType.TENSION)
         # 対峙・殺気 → tension 正の値
         assert tension_value >= 0  # 空白モデルでは依存構造ないため0の可能性
@@ -64,7 +64,7 @@ class TestEmotionalResidueIntegration:
         characters = char_extractor.extract(doc)
         signals = signal_extractor.extract_signals(doc, characters, "ep01")
         vector = aggregate_signals(signals)
-        
+
         # 両方向のペアが抽出される（依存構造があれば）
         assert isinstance(vector.get_pair_emotions("A", "B"), dict)
         assert isinstance(vector.get_pair_emotions("C", "D"), dict)
@@ -76,7 +76,7 @@ class TestEmotionalResidueIntegration:
         characters = char_extractor.extract(doc)
         signals = signal_extractor.extract_signals(doc, characters, "ep01")
         vector = aggregate_signals(signals)
-        
+
         top = vector.get_top_pairs(2)
         assert len(top) <= 2
         if top:
@@ -88,9 +88,9 @@ class TestEmotionalResidueIntegration:
         vector = EmotionalVector(episode_id="ep01")
         from src.pipeline.emotional_residue import EmotionalSignal
         vector.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.5, 0.8, "...", "ep01"))
-        
+
         data = vector.to_dict()
         restored = EmotionalVector.from_dict(data)
-        
+
         assert restored.episode_id == "ep01"
         assert restored.get_value("A", "B", EmotionType.AFFECTION) == 0.5

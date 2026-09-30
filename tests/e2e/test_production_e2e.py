@@ -35,7 +35,7 @@ def test_full_generation_flow():
     try:
         # Wait for the API to be healthy
         wait_for_health()
-        
+
         # Generation request
         test_payload = {
             "title": "Test Story",
@@ -45,7 +45,7 @@ def test_full_generation_flow():
         resp = requests.post("http://localhost:8000/api/generate", json=test_payload, timeout=10)
         resp.raise_for_status()
         job_id = resp.json()["job_id"]
-        
+
         # Poll for completion
         max_polls = 30
         poll_interval = 5
@@ -60,14 +60,14 @@ def test_full_generation_flow():
             time.sleep(poll_interval)
         else:
             raise TimeoutError("Job did not complete in time")
-        
+
         # Result verification (assuming the job result endpoint)
         resp = requests.get(f"http://localhost:8000/api/jobs/{job_id}/result", timeout=10)
         resp.raise_for_status()
         result = resp.json()
         assert result["status"] == "success"
         assert len(result["text"]) > 100
-        
+
         # Download
         zip_resp = requests.get(f"http://localhost:8000/api/download/{job_id}", timeout=10)
         assert zip_resp.status_code == 200

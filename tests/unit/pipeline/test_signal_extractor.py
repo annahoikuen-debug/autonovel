@@ -30,7 +30,7 @@ class TestPolarityClassification:
         text = "AはBを信頼している"
         doc = nlp(text)
         verb = [t for t in doc if t.pos_ == "VERB"][0]
-        
+
         emo, value = classify_emotion(verb, text, lexicon)
         assert emo == "affection"
         assert value > 0
@@ -40,7 +40,7 @@ class TestPolarityClassification:
         text = "AはBを恐怖している"
         doc = nlp(text)
         verb = [t for t in doc if t.pos_ == "VERB"][0]
-        
+
         emo, value = classify_emotion(verb, text, lexicon)
         assert emo == "fear"
         assert value > 0  # fearは正の値で表現
@@ -50,7 +50,7 @@ class TestPolarityClassification:
         text = "AはBを裏切った"
         doc = nlp(text)
         verb = [t for t in doc if t.pos_ == "VERB"][0]
-        
+
         emo, value = classify_emotion(verb, text, lexicon)
         # 裏切る→好感度が負になる、または嫌悪/怒りが正になる
         assert value < 0 or emo in ("disgust", "anger")
@@ -95,9 +95,9 @@ class TestSignalExtractor:
         text = "Aは本を読んだ。"
         doc = nlp(text)
         characters = char_extractor.extract(doc)
-        
+
         signals = extractor.extract_signals(doc, characters, "ep01")
-        
+
         # 本を読むは感情語彙にないため、シグナルなしまたは値0
         non_zero = [s for s in signals if s.value != 0]
         assert len(non_zero) == 0
@@ -107,9 +107,9 @@ class TestSignalExtractor:
         text = "Aは自分を信頼している。"
         doc = nlp(text)
         characters = char_extractor.extract(doc)
-        
+
         signals = extractor.extract_signals(doc, characters, "ep01")
-        
+
         # 自分→自分は除外される
         self_signals = [s for s in signals if s.source == s.target]
         assert len(self_signals) == 0
@@ -119,9 +119,9 @@ class TestSignalExtractor:
         text = "AはBを深く信頼している。"  # 増幅修飾語「深く」含む
         doc = nlp(text)
         characters = char_extractor.extract(doc)
-        
+
         signals = extractor.extract_signals(doc, characters, "ep01")
-        
+
         if signals:
             assert 0.1 <= signals[0].confidence <= 1.0
 
@@ -130,9 +130,9 @@ class TestSignalExtractor:
         text = "AはBを裏切った。"
         doc = nlp(text)
         characters = char_extractor.extract(doc)
-        
+
         signals = extractor.extract_signals(doc, characters, "ep01")
-        
+
         if signals:
             assert signals[0].cause is not None
             assert len(signals[0].cause) > 0

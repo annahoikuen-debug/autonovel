@@ -28,7 +28,7 @@ async def test_expand_commercial_beats_success():
     with patch("src.backend.routers.plots.LLMGateway") as mock_llm_class:
         mock_llm = AsyncMock()
         mock_llm_class.return_value = mock_llm
-        
+
         # LLMの応答をモック（有効なJSON）
         mock_response = MagicMock()
         mock_response.story_content = '''[

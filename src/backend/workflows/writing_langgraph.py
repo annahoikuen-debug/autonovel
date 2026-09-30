@@ -611,7 +611,7 @@ class WritingGraphManager:
     async def node_healing(self, state: WritingGraphState):
         """修復ノード - v5.0 1パッチPDCA対応"""
         logger.info(f"LangGraph: Healing Ep.{state['ep_num']}")
-        
+
         # v5.0 1パッチPDCA: UnifiedAuditorが提示した局所修正パッチがある場合は全文再生成を行わずに適用
         actionable_patch = state.get("actionable_patch")
         if actionable_patch and state.get("draft_content"):

@@ -98,24 +98,24 @@ async def get_budget_consumption_ratio(
     from sqlalchemy import select
     book_result = await db.execute(select(Book).where(Book.id == book_id))
     book = book_result.scalar_one_or_none()
-    
+
     if book is None:
         raise HTTPException(status_code=404, detail="Book not found")
-    
+
     # 権限チェック: 管理者または書籍の所有者のみアクセス可能
     if current_user.role != "admin" and book.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Access denied")
-    
+
     # コストリポジトリを使用して実際の消費コストと予算を取得
     cost_repo = CostRepository(db)
-    
+
     # 実際の消費コストを取得
     aggregate_result = await cost_repo.aggregate(book_id)
     total_cost_usd = aggregate_result["total_cost_usd"]
-    
+
     # 予算を取得
     budget_usd = await cost_repo.get_budget(book_id)
-    
+
     # 予算消費率を計算
     if budget_usd <= 0:
         ratio = 0.0

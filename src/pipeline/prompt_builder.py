@@ -31,34 +31,34 @@ def build_emotional_context_prompt(
     top_n: int = 5,
 ) -> str:
     """前話の感情コンテキストプロンプト生成
-    
+
     Args:
         episode_id: 現在のエピソード番号（前話から取得するため -1 される）
         vector_store: ベクトルストア
         namespace: 取得するネームスペース
         top_n: 表示する主要ペア数
-        
+
     Returns:
         感情コンテキスト文字列
     """
     prev_episode = episode_id - 1
     if prev_episode < 1:
         return ""
-    
+
     # エピソードID形式: "ep{num}"
     ep_key = f"ep{prev_episode}"
-    
+
     # ベクトル取得
     # 全キーから該当エピソードのベクトルを取得
     keys = vector_store.get_namespace_keys(namespace)
     ep_keys = [k for k in keys if k == ep_key or k.startswith(f"{ep_key}:")]
-    
+
     if not ep_keys:
         return ""
-    
+
     # 最新のベクトル取得（単一キーの場合）
     vector = vector_store.get_latest(namespace, ("", ""))  # ペア指定なしで全取得試行
-    
+
     # キー指定で取得を試行
     for key in ep_keys:
         vec = vector_store._get_by_key(namespace, key) if hasattr(vector_store, '_get_by_key') else None
@@ -67,14 +67,14 @@ def build_emotional_context_prompt(
             break
     else:
         return ""
-    
+
     if not vector or not vector.signals:
         return ""
-    
+
     # テンプレート描画
     template = get_jinja_env().get_template("emotional_context.j2")
     top_pairs = vector.get_top_pairs(top_n)
-    
+
     return template.render(
         top_pairs=top_pairs,
         vector=vector,
@@ -103,14 +103,14 @@ def build_fused_emotional_context_prompt(
     top_n: int = 5,
 ) -> str:
     """融合済み感情コンテキストプロンプト生成（Week 4 融合レイヤー版）
-    
+
     Args:
         episode_id: 現在のエピソード番号（前話 episode_id - 1 から引き継ぐ）
         fusion_engine: FusionEngine インスタンス（推奨）
         vector_store: VectorStore（fusion_engine 未指定時に生成用）
         namespaces: 参照ネームスペース一覧
         top_n: 上位表示件数
-        
+
     Returns:
         融合済み感情コンテキスト文字列
     """

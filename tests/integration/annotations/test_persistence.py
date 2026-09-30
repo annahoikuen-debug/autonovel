@@ -28,10 +28,10 @@ class TestAnnotationPersistence:
         class MockGraphStore:
             def __init__(self):
                 self.edges = []
-            
+
             def upsert_edge(self, source, target, props):
                 self.edges.append((source, target, props))
-        
+
         return MockGraphStore()
 
     @pytest.fixture
@@ -40,10 +40,10 @@ class TestAnnotationPersistence:
         class MockLogStore:
             def __init__(self):
                 self.signals = []
-            
+
             def append(self, signal):
                 self.signals.append(signal)
-        
+
         return MockLogStore()
 
     @pytest.fixture
@@ -65,9 +65,9 @@ class TestAnnotationPersistence:
         """VectorStoreへの保存"""
         persistence = AnnotationPersistence(vector_store)
         count = persistence.persist_beats(sample_beats, 14)
-        
+
         assert count == 2
-        
+
         # 保存確認
         stored = vector_store.get_latest("annotation", ("A", "B"))
         assert stored is not None
@@ -77,7 +77,7 @@ class TestAnnotationPersistence:
         """GraphStoreへの保存"""
         persistence = AnnotationPersistence(vector_store, mock_graph_store)
         persistence.persist_beats(sample_beats, 14)
-        
+
         assert len(mock_graph_store.edges) == 2
         edge = mock_graph_store.edges[0]
         assert edge[0] == "A"  # source
@@ -89,7 +89,7 @@ class TestAnnotationPersistence:
         """EventLogStoreへの保存"""
         persistence = AnnotationPersistence(vector_store, None, mock_log_store)
         persistence.persist_beats(sample_beats, 14)
-        
+
         assert len(mock_log_store.signals) == 2
         signal = mock_log_store.signals[0]
         assert signal.source == "A"
@@ -106,13 +106,13 @@ class TestAnnotationPersistence:
         """既存データの上書き"""
         persistence = AnnotationPersistence(vector_store)
         persistence.persist_beats(sample_beats, 14)
-        
+
         # 同じエピソードで異なる値で上書き
         new_beats = [
             EmotionalBeat(14, 3, "A", "B", EmotionType.FEAR, 0.3, "new cause"),
         ]
         persistence.persist_beats(new_beats, 14)
-        
+
         stored = vector_store.get_latest("annotation", ("A", "B"))
         assert stored.get_value("A", "B", EmotionType.FEAR) == 0.3
 
@@ -120,7 +120,7 @@ class TestAnnotationPersistence:
         """便利関数 persist_annotations"""
         count = persist_annotations(sample_beats, 14, vector_store)
         assert count == 2
-        
+
         stored = vector_store.get_latest("annotation", ("A", "B"))
         assert stored is not None
         assert stored.get_value("A", "B", EmotionType.FEAR) == 0.8
@@ -130,10 +130,10 @@ class TestAnnotationPersistence:
         persistence = AnnotationPersistence(vector_store)
         persistence.persist_beats(sample_beats, 14)
         persistence.persist_beats(sample_beats, 15)
-        
+
         ep14 = vector_store.get_latest("annotation", ("A", "B"))
         ep15 = vector_store.get_latest("annotation", ("A", "B"))
-        
+
         # 同じキーだが異なるエピソードとして保存される（キー形式: ep{num}）
         # 実装ではキーは "ep{episode}" なので上書きされる
         # これは仕様としてOK
@@ -146,22 +146,22 @@ class TestBeatsToVector:
         """同一ペア・同一感情の重み付き平均"""
         import fakeredis
         from src.stores.vector_store import RedisVectorStore
-        
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         vector_store = RedisVectorStore(skip_connection_check=True)
         vector_store.client = redis_client
-        
+
         class MockGraphStore:
             pass
-        
+
         beats = [
             EmotionalBeat(14, 3, "A", "B", EmotionType.FEAR, 0.8, "cause1", confidence=0.9),
             EmotionalBeat(14, 3, "A", "B", EmotionType.FEAR, 0.4, "cause2", confidence=0.6),
         ]
-        
+
         persistence = AnnotationPersistence(vector_store, MockGraphStore())
         vector = persistence._beats_to_vector(beats, 14)
-        
+
         # 重み付き平均: (0.8*0.9 + 0.4*0.6) / 1.5 = 0.72/1.5 = 0.48
         expected = (0.8 * 0.9 + 0.4 * 0.6) / 1.5
         actual = vector.get_value("A", "B", EmotionType.FEAR)

@@ -87,33 +87,33 @@ class TestEpisodeContext3Layer:
             else:
                 result.scalars.return_value.all.return_value = []
             return result
-        
+
         mock_db.execute.side_effect = mock_execute
-        
+
         builder = EpisodeContextBuilder(mock_db)
         context = await builder.build_context(book_id=1, ep_num=1)
-        
+
         # 基本構造の検証
         assert context["book_id"] == 1
         assert context["ep_num"] == 1
         assert context["is_first"] is True
         assert context["target_word_count"] == 3000
-        
+
         # Layer 1: バイブル
         assert "layer1_bible" in context
         assert context["layer1_bible"]["token_estimate"] > 0
         assert len(context["layer1_bible"]["characters"]) == 3
         assert "アルス" in context["layer1_bible"]["text"]
-        
+
         # Layer 2: 要約（第1話なので空）
         assert "layer2_summary" in context
         assert context["layer2_summary"]["episode_summaries"] == []
         assert context["layer2_summary"]["unresolved_foreshadowings"] == []
-        
+
         # Layer 3: 直前文脈（第1話なので空）
         assert "layer3_raw" in context
         assert context["layer3_raw"] == ""
-        
+
         # 後方互換性
         assert "previous_episode" in context
         assert context["previous_episode"] == {}
@@ -135,26 +135,26 @@ class TestEpisodeContext3Layer:
             else:
                 result.scalars.return_value.all.return_value = []
             return result
-        
+
         mock_db.execute.side_effect = mock_execute
-        
+
         previous_text = "アルスとセリアは古代遺跡の奥深くへと進んでいた。空気は重く、不気味な静寂に包まれている。"
-        
+
         builder = EpisodeContextBuilder(mock_db)
         context = await builder.build_context(
-            book_id=1, 
-            ep_num=4, 
+            book_id=1,
+            ep_num=4,
             previous_episode_text=previous_text
         )
-        
+
         # 基本構造
         assert context["ep_num"] == 4
         assert context["is_first"] is False
-        
+
         # Layer 1: バイブル（キャラ3人）
         assert len(context["layer1_bible"]["characters"]) == 3
         assert context["layer1_bible"]["token_estimate"] > 0
-        
+
         # Layer 2: 要約（3話分＋伏線3本）
         assert len(context["layer2_summary"]["episode_summaries"]) == 3
         assert len(context["layer2_summary"]["unresolved_foreshadowings"]) == 3
@@ -164,10 +164,10 @@ class TestEpisodeContext3Layer:
         assert "謎の剣の正体" in context["layer2_summary"]["text"]
         assert "セリアの秘密" in context["layer2_summary"]["text"]
         assert "ガルドの真の目的" in context["layer2_summary"]["text"]
-        
+
         # Layer 3: 直前生文
         assert context["layer3_raw"] == previous_text
-        
+
         # 後方互換性
         assert "previous_episode" in context
         assert context["previous_episode"]["ending"] == previous_text[-500:]
@@ -183,12 +183,12 @@ class TestEpisodeContext3Layer:
             else:
                 result.scalars.return_value.all.return_value = []
             return result
-        
+
         mock_db.execute.side_effect = mock_execute
-        
+
         builder = EpisodeContextBuilder(mock_db)
         context = await builder.build_context(book_id=1, ep_num=1)
-        
+
         # キャラ3人分の概算トークン数（日本語は1文字≒0.5トークン程度）
         # 1キャラ約100文字 → 300文字 → 約150トークン程度
         token_est = context["layer1_bible"]["token_estimate"]
@@ -210,12 +210,12 @@ class TestEpisodeContext3Layer:
             else:
                 result.scalars.return_value.all.return_value = []
             return result
-        
+
         mock_db.execute.side_effect = mock_execute
-        
+
         builder = EpisodeContextBuilder(mock_db)
         context = await builder.build_context(book_id=1, ep_num=4)
-        
+
         # 3話要約（各約100文字）＋ 伏線3本 → 合計約500-1000文字 → 約250-500トークン
         token_est = context["layer2_summary"]["token_estimate"]
         assert 100 < token_est < 5000  # 数千トークン以内
@@ -230,18 +230,18 @@ class TestEpisodeContext3Layer:
             else:
                 result.scalars.return_value.all.return_value = []
             return result
-        
+
         mock_db.execute.side_effect = mock_execute
-        
+
         builder = EpisodeContextBuilder(mock_db)
         long_text = "あ" * 5000  # 5000文字の長文
-        
+
         context = await builder.build_context(
-            book_id=1, 
-            ep_num=5, 
+            book_id=1,
+            ep_num=5,
             previous_episode_text=long_text
         )
-        
+
         assert context["layer3_raw"] == long_text
         # 後方互換用 ending は最後の500文字のみ
         assert context["previous_episode"]["ending"] == long_text[-500:]
@@ -253,12 +253,12 @@ class TestEpisodeContext3Layer:
             result = MagicMock()
             result.scalars.return_value.all.return_value = []
             return result
-        
+
         mock_db.execute.side_effect = mock_execute
-        
+
         builder = EpisodeContextBuilder(mock_db)
         context = await builder.build_context(book_id=1, ep_num=1)
-        
+
         assert context["layer1_bible"]["characters"] == []
         assert context["layer1_bible"]["text"] == "キャラクター設定なし"
 
@@ -272,9 +272,9 @@ class TestEpisodeContext3Layer:
         resolved_foreshadowing.planted_episode = 1
         resolved_foreshadowing.target_episode = 2
         resolved_foreshadowing.status = "resolved"
-        
+
         all_foreshadowings = mock_foreshadowings + [resolved_foreshadowing]
-        
+
         async def mock_execute(query):
             result = MagicMock()
             if "characters" in str(query).lower() or "CharacterModel" in str(query):
@@ -289,12 +289,12 @@ class TestEpisodeContext3Layer:
             else:
                 result.scalars.return_value.all.return_value = []
             return result
-        
+
         mock_db.execute.side_effect = mock_execute
-        
+
         builder = EpisodeContextBuilder(mock_db)
         context = await builder.build_context(book_id=1, ep_num=4)
-        
+
         # 実装では WHERE status IN ('planted', 'progressed') でフィルタされるため、
         # モックが全件返してもビルダー側ではアクティブな伏線のみ取得される想定
         # ここではモックが全件返す仕様なので、実装のフィルタが効いているかは
@@ -308,11 +308,11 @@ class TestEpisodeContext3Layer:
     async def test_compatibility_methods_exist(self, mock_db):
         """互換性メソッドが存在することを検証（リグレッション防止）"""
         builder = EpisodeContextBuilder(mock_db)
-        
+
         assert hasattr(builder, "get_history")
         assert hasattr(builder, "clear_history")
         assert hasattr(builder, "set_final_episode")
-        
+
         # 空実装であることを確認
         assert builder.get_history() == []
         builder.clear_history()  # エラーにならない

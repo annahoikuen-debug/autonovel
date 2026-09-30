@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Any
 
 from pydantic import BaseModel
@@ -10,6 +11,10 @@ from src.agents.skill_base import SkillAgent
 from src.agents.orchestrator import AgentContext, AgentResult, AgentName
 from src.services.compression.models import ProtectedContext, SceneFlowHistory
 from src.services.episode_context import EpisodeContextBuilder
+
+# T6 Step 2: `if hasattr(self, "logger")` は `SkillAgent` に属性が無いため恒久的に
+# False であり、警告を無言化していた。モジュールレベル `logger` を単一の解決先とする。
+logger = logging.getLogger(__name__)
 
 
 class ContextBuilderInput(BaseModel):
@@ -496,14 +501,12 @@ class ContextBuilderAgent(SkillAgent):
             return list(unresolved), list(contract)
         except TypeError as e:
             # 同期 session を await した等の型不一致は握り潰さず可視化する。
-            if hasattr(self, "logger"):
-                self.logger.warning(
-                    f"Session type mismatch while loading foreshadowings: {e}"
-                )
+            logger.warning(
+                f"Session type mismatch while loading foreshadowings: {e}"
+            )
             return [], []
         except Exception as e:  # pragma: no cover - DB 未接続時のフォールバック
-            if hasattr(self, "logger"):
-                self.logger.debug(f"Failed to load foreshadowings from DB: {e}")
+            logger.debug(f"Failed to load foreshadowings from DB: {e}")
             return [], []
 
     @staticmethod
@@ -562,10 +565,9 @@ class ContextBuilderAgent(SkillAgent):
         try:
             return await repo.get_plot(book_id, ep_num, branch_id=branch_id)
         except Exception as e:
-            if hasattr(self, "logger"):
-                self.logger.debug(
-                    f"Plot not found for book={book_id}, branch={branch_id}, ep={ep_num}: {e}"
-                )
+            logger.debug(
+                f"Plot not found for book={book_id}, branch={branch_id}, ep={ep_num}: {e}"
+            )
             return None
 
     async def _get_book(self, repo: Any, book_id: int) -> Any | None:
@@ -575,8 +577,7 @@ class ContextBuilderAgent(SkillAgent):
         try:
             return await repo.get_book(book_id)
         except Exception as e:
-            if hasattr(self, "logger"):
-                self.logger.debug(f"Book not found for book_id={book_id}: {e}")
+            logger.debug(f"Book not found for book_id={book_id}: {e}")
             return None
 
     async def _get_chars(self, repo: Any, book_id: int) -> list[Any]:
@@ -586,8 +587,7 @@ class ContextBuilderAgent(SkillAgent):
         try:
             return await repo.get_all_characters(book_id)
         except Exception as e:
-            if hasattr(self, "logger"):
-                self.logger.debug(f"Characters not found for book_id={book_id}: {e}")
+            logger.debug(f"Characters not found for book_id={book_id}: {e}")
             return []
 
     async def _get_prev_chapter(
@@ -599,10 +599,9 @@ class ContextBuilderAgent(SkillAgent):
         try:
             return await repo.get_chapter(branch_id, ep_num - 1)
         except Exception as e:
-            if hasattr(self, "logger"):
-                self.logger.debug(
-                    f"Previous chapter not found for book={book_id}, branch={branch_id}, ep={ep_num}: {e}"
-                )
+            logger.debug(
+                f"Previous chapter not found for book={book_id}, branch={branch_id}, ep={ep_num}: {e}"
+            )
             return None
 
     async def _get_active_chars(self, chars: list[Any], plot: Any) -> list[Any]:
@@ -626,8 +625,7 @@ class ContextBuilderAgent(SkillAgent):
                 return [c for c in chars if getattr(c, "name", None) in active_names]
             return chars
         except Exception as e:
-            if hasattr(self, "logger"):
-                self.logger.debug(f"Active char extraction failed: {e}")
+            logger.debug(f"Active char extraction failed: {e}")
             return chars
 
     def _build_char_static_ctx(self, chars: list[Any], detailed: bool = False) -> str:
@@ -865,10 +863,9 @@ class ContextBuilderAgent(SkillAgent):
             and getattr(self, "_plot_expander") is not None
         ):
             try:
-                if hasattr(self, "logger"):
-                    self.logger.info(
-                        f"Plot missing for Ep.{ep_num}, attempting on-demand generation..."
-                    )
+                logger.info(
+                    f"Plot missing for Ep.{ep_num}, attempting on-demand generation..."
+                )
                 arcs: list[Any] = []
                 bible = await self._get_bible(repo, book_id)
                 if bible and hasattr(bible, "arcs"):
@@ -885,11 +882,9 @@ class ContextBuilderAgent(SkillAgent):
                 )
                 if results:
                     plot = results[0]
-                    if hasattr(self, "logger"):
-                        self.logger.info(f"On-demand plot generated for Ep.{ep_num}")
+                    logger.info(f"On-demand plot generated for Ep.{ep_num}")
             except Exception as e:
-                if hasattr(self, "logger"):
-                    self.logger.warning(f"On-demand plot generation failed for Ep.{ep_num}: {e}")
+                logger.warning(f"On-demand plot generation failed for Ep.{ep_num}: {e}")
         return plot
 
     async def _get_bible(self, repo: Any, book_id: int) -> Any | None:
@@ -899,6 +894,5 @@ class ContextBuilderAgent(SkillAgent):
         try:
             return await repo.get_latest_bible(book_id)
         except Exception as e:
-            if hasattr(self, "logger"):
-                self.logger.debug(f"Bible not found for book_id={book_id}: {e}")
+            logger.debug(f"Bible not found for book_id={book_id}: {e}")
             return None

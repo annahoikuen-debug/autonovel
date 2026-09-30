@@ -27,7 +27,7 @@ except ImportError:
     # Fallback for when marketing schemas are not yet implemented
     from pydantic import BaseModel
     from typing import Optional
-    
+
     class CatchphraseItem(BaseModel):
         catchphrase: str
         score: float = 50.0

@@ -65,6 +65,25 @@ def _make_skill_node(inst: SkillAgent, nxt: str | None) -> AgentNode:
     return _node
 
 
+def _make_execute_node(inst: SkillAgent, nxt: str | None) -> AgentNode:
+    """`execute()` を直接呼ぶ版のノードクロージャ（T6 Step 4）。
+
+    `IllustrationAgent` は公開 API `run(request=...)` のために
+    `SkillAgent.run(ctx)` を**非互換シグネチャで上書き**している。
+    Orchestrator のノードプロトコルは `Callable[[AgentContext], Awaitable[AgentResult]]`
+    なので、そのまま `.run` を登録すると `TypeError` になる。
+
+    `execute(ctx)` を直接呼ぶことで、上書きされた `run` へ依存せず
+    正しいプロトコルに乗せられる。連鎖の埋め方は `_make_skill_node` と同一。
+    """
+    async def _node(ctx: AgentContext) -> AgentResult:
+        res = await inst.execute(ctx)
+        if res.next_agent is None and nxt is not None and not res.error:
+            res.next_agent = nxt
+        return res
+    return _node
+
+
 class Orchestrator:
     def __init__(
         self,

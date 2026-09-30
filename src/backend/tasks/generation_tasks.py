@@ -20,7 +20,11 @@ from src.backend.database.repository import BookRepository
 from src.backend.observability.health import metrics
 from src.backend.tasks.huey import huey
 from src.backend.database.models import BookDbModel
-from src.agents.orchestrator import AgentContext, AgentResult
+from src.agents.orchestrator import (
+    AgentContext,
+    AgentResult,
+    _make_execute_node,
+)
 from src.services.billing.credit_service import CreditService
 
 logger = logging.getLogger(__name__)
@@ -247,12 +251,29 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
             }
             audit_node = AuditAggregatorNode(event_bus=event_bus, repo=repo, llm=audit_adapter)
 
+            # T6 Step 4 (K4): IllustrationAgent は `request` が無いため
+            # 正常な no-op として `next_agent=None` を返す（Step 11 の判断）。
+            # 素に `.run` を登録すると
+            #  (1) `next_agent=None` のため `orchestrator.py:808` でループが終了し、
+            #      **後続の MarketingAgent に到達しない**
+            #  (2) `IllustrationAgent` は公開 API `run(request=...)` のために
+            #      `SkillAgent.run(ctx)` を非互換シグネチャで上書きしているため、
+            #      ノードプロトコル `Callable[[AgentContext], ...]` に合わない
+            # `_make_execute_node` は `execute(ctx)` を直接呼ぶ既存パターンで、
+            # 「next_agent 未指定なら次ノードを埋める」連鎖を一箇所に集約する。
+            # （manifest 経路は `_make_skill_node` 経由で IllustrationSkill が
+            #   終端ノード `runs_before: []` のままなので影響を受けない）
+            illustration_agent = IllustrationAgent(
+                image_service=image_service, repo=repo, llm=llm_adapter
+            )
+            illustration_node = _make_execute_node(
+                illustration_agent, AgentName.MARKETING
+            )
+
             if enrichment_enabled:
                 nodes[AgentName.ENRICHMENT] = EnrichmentAgent(repo=repo, llm=llm_adapter).run
                 nodes[AgentName.AUDIT] = audit_node.run
-                nodes[AgentName.ILLUSTRATION] = IllustrationAgent(
-                    image_service=image_service, repo=repo, llm=llm_adapter
-                ).run
+                nodes[AgentName.ILLUSTRATION] = illustration_node
             else:
                 async def enrichment_passthrough(ctx: AgentContext) -> AgentResult:
                     return AgentResult(
@@ -261,9 +282,7 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
                     )
                 nodes[AgentName.ENRICHMENT] = enrichment_passthrough
                 nodes[AgentName.AUDIT] = audit_node.run
-                nodes[AgentName.ILLUSTRATION] = IllustrationAgent(
-                    image_service=image_service, repo=repo, llm=llm_adapter
-                ).run
+                nodes[AgentName.ILLUSTRATION] = illustration_node
             nodes[AgentName.MARKETING] = MarketingAgent(repo=repo, llm=llm_adapter).run
             orchestrator = Orchestrator(nodes, event_bus=event_bus, correlation_id=correlation_id)
             start_agent = AgentName.PLANNING

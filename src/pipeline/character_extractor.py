@@ -22,7 +22,7 @@ class CharacterMention:
 
 class CharacterExtractor:
     """脚本からキャラクター名・言及を抽出"""
-    
+
     def __init__(self, character_dict: Optional[set[str]] = None):
         self.character_dict = character_dict or set()
         # 一般的な人称代名詞
@@ -33,7 +33,7 @@ class CharacterExtractor:
 
     def extract(self, doc: Doc, character_dict: Optional[set[str]] = None) -> list[CharacterMention]:
         """ドキュメントからキャラクターメンション抽出
-        
+
         優先順位:
         1. 固有表現抽出 (PERSON)
         2. キャラ辞書マッチ
@@ -42,7 +42,7 @@ class CharacterExtractor:
         dict_to_use = character_dict or self.character_dict
         mentions = []
         seen_spans = set()  # 重複除去用
-        
+
         # 1. 固有表現 (PERSON) 抽出
         for ent in doc.ents:
             if ent.label_ in ("PERSON", "PER", "Character"):
@@ -58,7 +58,7 @@ class CharacterExtractor:
                         normalized_name=self._normalize_name(ent.text, dict_to_use),
                     ))
                     seen_spans.add(span_key)
-        
+
         # 2. キャラ辞書マッチ（固有表現で取れなかったもの）
         if dict_to_use:
             text = doc.text
@@ -86,7 +86,7 @@ class CharacterExtractor:
                         ))
                         seen_spans.add(span_key)
                     start = end
-        
+
         # 3. 代名詞検出（簡易：トークンベース）
         for token in doc:
             if token.text in self.all_pronouns:
@@ -102,7 +102,7 @@ class CharacterExtractor:
                         entity_type="PRONOUN",
                     ))
                     seen_spans.add(span_key)
-        
+
         # 位置順でソート
         mentions.sort(key=lambda m: m.start_char)
         return mentions
@@ -128,19 +128,19 @@ class CharacterExtractor:
         """指定スパンの直前の発言者を推定（簡易ヒューリスティック）"""
         # スパン直前のテキストから発言者を探す
         text = doc.text[:span_start]
-        
+
         # セリフ記号「」で区切って最後の発言者を探す
         import re
         # 「キャラ名「セリフ」」パターンを全て抽出
         pattern = r'([^「\n]+)「[^」]*」'
         matches = list(re.finditer(pattern, text))
-        
+
         if matches:
             last_match = matches[-1]
             speaker = last_match.group(1).strip()
             if speaker in self.character_dict:
                 return speaker
-        
+
         return None
 
 

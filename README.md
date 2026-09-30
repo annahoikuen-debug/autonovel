@@ -6,7 +6,7 @@
 
 <img src="docs/images/hero.svg" alt="AutoNovel の全体像: 設定を入れる → AI が執筆する → 納品物を受け取る" width="100%">
 
-[![Version](https://img.shields.io/badge/version-5.3.0-brightgreen?logo=semver)](https://github.com/herbmatsui-spec/autonovel/releases/tag/v5.3.0)
+[![Version](https://img.shields.io/badge/version-6.0.0-brightgreen?logo=semver)](https://github.com/herbmatsui-spec/autonovel/releases/tag/v6.0.0)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![React 18](https://img.shields.io/badge/react-18.3-61dafb?logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -513,6 +513,17 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 | ダイジェスト cost（tier1 / gemini-2.0-flash） | **約 0.00013 USD/話** | v6.0.0 でダイジェスト用 tier 割り当てを実装。 |
 | ダイジェスト cost（tier2 / claude-3-5-haiku だった場合） | 約 0.00108 USD/話 | 約 8 倍。tier 割り当ての効果はそのままコスト差になる。 |
 | ダイジェスト生成の wall clock | 執筆プロンプト 1 回に対して +1 回 | 直列化されるため、モデル応答時間が 1話分上加わる。 |
+
+> **T6 Step 1 で修正**: v5.3.0〜v6.0.0 の初期実装では
+> `_post_episode_finalize` が `run()` と `write_beat_to_scene()` の両方から呼ばれ、
+> **1話につきダイジェスト生成が2回**走っていました（既定経路）。
+> 実行点は `run()` の1箇所に集約済みで、上記のコストは**1話1回**のものです。
+> 回帰防止: `tests/unit/writing/test_episode_finalize_called_once.py`
+>
+> **1話全体の LLM 呼出回数**は 10 回（実測・目標 4-5回は**未達**）、
+> うち 5 回（50%）が監査フェーズです。詳細は `docs/STATUS.md` §5 参照。
+>
+> 1話あたりのコスト内訳は `scripts/report_episode_cost.py --db <sqlite> --json` で出力できます。
 
 - ダイジェスト生成を止めたい場合は環境変数で無効化できます:
   ```bash

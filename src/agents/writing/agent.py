@@ -355,8 +355,17 @@ class WritingAgent(SkillAgent):
         diff_ratio = abs(rewritten_len - orig_len) / max(1, orig_len)
 
         # 章を更新
+        # T6 Step 8: `update_chapter_content` の実シグネチャは
+        # `(branch_id, ep_num, content)` だが、従来は
+        # `chapter.id` を `branch_id` に、`rewritten_text` を `ep_num` に
+        # 渡していたため `content` が欠落して **TypeError**（無言の失敗）になっていた。
+        # この関数は `branch_id` 引数を持たないため、章から解決する。
+        # 従来 `get_chapter` を branch_id=1 固定で呼んでいたため、1 が同じブランチを指す。
+        branch_id = getattr(chapter, "branch_id", None)
+        if branch_id is None:
+            branch_id = 1
         if self.repo and hasattr(self.repo, 'update_chapter_content'):
-            res = self.repo.update_chapter_content(chapter.id, rewritten_text)
+            res = self.repo.update_chapter_content(branch_id, ep_num, rewritten_text)
             if inspect.isawaitable(res):
                 await res
 
@@ -501,8 +510,11 @@ class WritingAgent(SkillAgent):
         diff_ratio = abs(rewritten_len - orig_len) / max(1, orig_len)
 
         # 章を更新
+        # T6 Step 8: 実シグネチャは `(branch_id, ep_num, content)`。
+        # 従来は `chapter.id` を `branch_id` に、`rewritten_text` を `ep_num` に
+        # 渡しており `content` が欠落して TypeError になっていた。
         if self.repo and hasattr(self.repo, 'update_chapter_content'):
-            res = self.repo.update_chapter_content(chapter.id, rewritten_text)
+            res = self.repo.update_chapter_content(branch_id, ep_num, rewritten_text)
             if inspect.isawaitable(res):
                 await res
 

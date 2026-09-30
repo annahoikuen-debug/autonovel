@@ -13,7 +13,7 @@ def client():
     app.add_middleware(ErrorHandlerMiddleware)
     init_sentry(app)
     init_otel(app)
-    
+
     @app.get("/")
     def root():
         from opentelemetry import trace
@@ -24,7 +24,7 @@ def client():
     @app.get("/trigger-error")
     def trigger_error():
         raise RuntimeError("Test error")
-    
+
     return TestClient(app, raise_server_exceptions=False)
 
 @patch("src.monitoring.sentry.sentry_sdk.capture_exception")

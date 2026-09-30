@@ -69,7 +69,7 @@ class TestEmotionalBeat:
             cause="ep14 betrayal", confidence=0.9, hidden=True,
         )
         signal = beat.to_signal()
-        
+
         assert isinstance(signal, EmotionalSignal)
         assert signal.source == "A"
         assert signal.target == "B"
@@ -88,10 +88,10 @@ class TestEmotionalBeat:
             cause="ep14 betrayal", confidence=0.8, hidden=True,
             metadata={"note": "important"},
         )
-        
+
         data = original.to_dict()
         restored = EmotionalBeat.from_dict(data, episode=14, scene=3)
-        
+
         assert restored.episode == 14
         assert restored.scene == 3
         assert restored.source == "A"
@@ -110,7 +110,7 @@ class TestEmotionalBeat:
             "delta": 0.5, "cause": "test",
         }
         beat = EmotionalBeat.from_dict(data, episode=1, scene=1)
-        
+
         assert beat.confidence == 1.0
         assert beat.hidden is False
         assert beat.beat_id is not None
@@ -121,7 +121,7 @@ class TestParsedScript:
 
     def test_parsed_script_creation(self):
         from src.annotations.beat import ParsedScript
-        
+
         beats = [
             EmotionalBeat(1, 1, "A", "B", EmotionType.AFFECTION, 0.5, "test"),
         ]

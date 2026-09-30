@@ -172,7 +172,7 @@ async def get_graph_data(
     session: AsyncSession = Depends(database.get_async_db),
 ) -> dict[str, Any]:
     """フロントエンドの相関図可視化 (Force-Graph 等) 用にノードとエッジ一覧を取得する.
-    
+
     book_id を指定して、RDBMS (foreshadowings, characters, character_relations) から
     実際の作品データに基づくグラフを動的に生成して返却する。
     """
@@ -181,18 +181,18 @@ async def get_graph_data(
     # RDBMSベースの伏線グラフ生成
     foreshadowing_repo = DbForeshadowingRepository(session)
     foreshadowing_service = ForeshadowingService(foreshadowing_repo)
-    
+
     try:
         # 伏線グラフを取得
         graph_response: ForeshadowingGraphResponse = await foreshadowing_service.get_foreshadowing_graph(book_id)
-        
+
         # キャラクター情報も追加
         from sqlalchemy import select
         characters = await session.execute(
             select(CharacterModel).where(CharacterModel.book_id == book_id)
         )
         character_list = characters.scalars().all()
-        
+
         character_nodes = []
         character_edges = []
         for char in character_list:
@@ -220,11 +220,11 @@ async def get_graph_data(
                             properties={"relation": "character_foreshadowing"},
                         )
                     )
-        
+
         # すべてのノードとエッジを結合
         all_nodes = graph_response.nodes + character_nodes
         all_edges = graph_response.edges + character_edges
-        
+
         # キャラクター関係も追加
         from src.backend.database.models_relation import CharacterRelationModel
         char_relations = await session.execute(
@@ -239,13 +239,13 @@ async def get_graph_data(
                     properties={"description": rel.description} if rel.description else {},
                 )
             )
-        
+
         return ForeshadowingGraphResponse(
             graph_name=gname,
             nodes=all_nodes,
             edges=all_edges,
         ).model_dump()
-        
+
     except Exception as e:
         logger.error(f"Failed to generate graph for book_id={book_id}: {e}")
         # エラー時はフォールバックデータを返す

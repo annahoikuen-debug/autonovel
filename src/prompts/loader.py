@@ -21,7 +21,7 @@ class PromptLoader:
     def __init__(self, base_path: Optional[str] = None):
         """
         プロンプトローダーを初期化。
-        
+
         Args:
             base_path: プロンプトファイルのベースディレクトリ。
                       Noneの場合は、このファイルの親ディレクトリの親の「prompts」を使用。
@@ -33,17 +33,17 @@ class PromptLoader:
             self.base_path = current_file.parent.parent.parent / "prompts"
         else:
             self.base_path = Path(base_path)
-        
+
         # 解決済みベースパス（パス検証に使う）
         self._resolved_base = self.base_path.resolve()
-        
+
         # キャッシュ: {(template_name, version): (template_string, mtime)}
         self._cache: Dict[tuple, tuple] = {}
         self._cache_lock = threading.Lock()
-        
+
         # 利用可能なバージョンを検出
         self._available_versions = self._detect_versions()
-    
+
     def _detect_versions(self) -> list:
         """利用可能なバージョンディレクトリを検出"""
         versions = []
@@ -58,7 +58,7 @@ class PromptLoader:
         if (self.base_path / "latest").exists():
             versions.append("latest")
         return sorted(list(set(versions)))
-    
+
     def _validate_segments(self, template_name: str, version: str) -> None:
         """テンプレート名/バージョン名は base_path 配下に解決されなければならない。
 
@@ -71,7 +71,7 @@ class PromptLoader:
                     f"Unsafe {label}: {value!r} "
                     "(allowed: letters, digits, dot, underscore, hyphen)"
                 )
-    
+
     def _get_template_path(self, template_name: str, version: str) -> Path:
         """テンプレートファイルのフルパスを取得（ベース外への脱出を拒否）"""
         self._validate_segments(template_name, version)
@@ -83,7 +83,7 @@ class PromptLoader:
                 f"Resolved template path escapes base_path: {candidate}"
             ) from exc
         return candidate
-    
+
     def _is_cache_fresh(self, cache_key: tuple, template_path: Path) -> bool:
         """キャッシュの mtime がDiskの mtime と一致するか（＝無効化されていないか）"""
         with self._cache_lock:
@@ -95,7 +95,7 @@ class PromptLoader:
             return os.path.getmtime(template_path) == cached_mtime
         except OSError:
             return False
-    
+
     def load(
         self, template_name: str, version: str = "latest", *, strict: bool = True
     ) -> str:
@@ -215,12 +215,12 @@ if __name__ == "__main__":
     # 簡単な動作テスト
     loader = PromptLoader()
     print("利用可能なバージョン:", loader._available_versions)
-    
+
     # システムプロンプトをロード
     system_prompt = loader.load("system")
     print("\n--- システムプロンプト (raw) ---")
     print(system_prompt[:200] + "..." if len(system_prompt) > 200 else system_prompt)
-    
+
     # レンダリングテスト
     rendered = loader.render(
         "system",

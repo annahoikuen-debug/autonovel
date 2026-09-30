@@ -97,7 +97,7 @@ class FusionEngine:
             pair = (src, tgt)
             if pair not in pairs_dict:
                 pairs_dict[pair] = EmotionalVector(episode_id=f"ep{episode}")
-            
+
             sig = EmotionalSignal(
                 source=src,
                 target=tgt,

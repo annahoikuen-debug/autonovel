@@ -38,28 +38,20 @@ def load_preset_for_pipeline(genre: str, archetype_key: str) -> dict[str, Any]:
 
 
 def _load_easy_mode_preset(genre: str) -> dict[str, Any]:
-    """EasyMode プリセット読み込み (ジャンル名 -> 内部プリセット名変換)"""
-    # ジャンル名からプリセット名へのマッピング
-    genre_to_preset = {
-        "ファンタジー": "zarma",
-        "恋愛": "aku_reijo",
-        "SF": "cheat_tensei",
-        "歴史": "slow_life",
-        "現代": "modern_cheat",
-        "官能/ロマンス": "pure_love_erotic",
-        "異世界": "zarma",
-        "追放ざまぁ": "zarma",
-        "悪役令嬢": "aku_reijo",
-        "チート転生": "cheat_tensei",
-        "スローライフ": "slow_life",
-        "ダンジョン運営": "dungeon_admin",
-        "現代チート": "modern_cheat",
-        "TS転生": "ts_tensei",
-        "VRMMO": "vrmmo",
-        "ループ": "loop",
-    }
+    """EasyMode プリセット読み込み (ジャンル名 -> 内部プリセット名変換)
 
-    preset_name = genre_to_preset.get(genre, "zarma")
+    ジャンル→プリセットの対応は `config.story_spine.genre_registry.GENRE_REGISTRY`
+    に一本化した（旧来は本ファイル・`spice_guard_adapter`・`easy_mode` の 3 箇所に
+    ほぼ同じ辞書が 3 つあり、微かにズレていた）。
+    """
+    from config.story_spine.genre_registry import resolve_preset_key
+
+    preset_name = resolve_preset_key(genre)
+    if preset_name is None:
+        logger.warning(
+            "GENRE_REGISTRY に %r が無い。既定プリセット 'zarma' を使う", genre
+        )
+        preset_name = "zarma"
 
     try:
         from src.presets.loader import load_preset as load_em_preset

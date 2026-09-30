@@ -2,9 +2,26 @@
 局所パッチ（Single-shot Polish） - 指摘された特定シーンのみの再生成
 """
 
+import inspect
+import logging
 import re
-from typing import Tuple
+from typing import Any, Tuple
 from src.audit.unified_llm_auditor import call_llm_api
+
+logger = logging.getLogger(__name__)
+
+
+async def _generate(llm: Any, prompt: str) -> str:
+    """注入 LLM を呼んでテキストを返す（async/sync どちらの llm にも対応）。"""
+    for attr in ("generate_text", "generate"):
+        fn = getattr(llm, attr, None)
+        if fn is None:
+            continue
+        out = fn(prompt)
+        if inspect.isawaitable(out):
+            out = await out
+        return out if isinstance(out, str) else str(out)
+    raise TypeError(f"注入 LLM に generate_text / generate が無い: {type(llm)}")
 
 
 def sanitize_polished_text(raw_text: str) -> str:
@@ -51,62 +68,91 @@ def sanitize_polished_text(raw_text: str) -> str:
 
 class LocalPolisher:
     """局所パッチを実行するクラス - 特定範囲のみのテキスト再生成"""
-    
+
     def polish(self, text: str, target_range: Tuple[int, int], improvement_instruction: str) -> str:
         """
         指定された範囲のテキストのみを改善（局所パッチ）
-        
+
+        同期版。LLM 呼び出しはモジュールグローバル ``call_llm_api`` を使う。
+        T6 Step 7 以降、本番経路では ``polish_with_llm()`` が使われ、
+        注入された（計測可能な）LLM を経由する。この版は
+        後方互換のため残している。
+
         Args:
             text: 元のテキスト
             target_range: (start_index, end_index) - 改善対象の範囲（end_indexは排他的）
             improvement_instruction: 改善のための指示（例: "より感情豊かに書き直して"）
-            
+
         Returns:
             str: 局所パッチ適用後のテキスト
         """
         start_idx, end_idx = target_range
-        
-        # 範囲の妥当性をチェック
         if start_idx < 0 or end_idx > len(text) or start_idx >= end_idx:
-            # 範囲が無効な場合は元のテキストを返す
             return text
-        
-        # 対象範囲のテキストを抽出
-        target_text = text[start_idx:end_idx]
-        
-        # 前後の文脈を取得（プロンプトに含めるため）
-        # 前方文脈：対象範囲の開始位置から前の50文字か、文頭まで
-        context_start = max(0, start_idx - 50)
-        before_context = text[context_start:start_idx]
-        
-        # 後方文脈：対象範囲の終了位置から後の50文字か、文末まで
-        context_end = min(len(text), end_idx + 50)
-        after_context = text[end_idx:context_end]
-        
-        # プロンプトを構築
-        prompt = self._create_polish_prompt(
-            before_context, target_text, after_context, improvement_instruction
-        )
-        
         try:
-            # LLMを呼び出して改善されたテキストを生成
-            improved_text = call_llm_api(prompt)
-            sanitized = sanitize_polished_text(improved_text)
-            
-            # サニタイズ結果が空の場合は置換せず元のテキストを維持
-            if not sanitized:
-                return text
-
-            # 生成されたテキストを元のテキストに組み込む
-            # 前半 + 改善テキスト + 後半
-            polished_text = text[:start_idx] + sanitized + text[end_idx:]
-            
-            return polished_text
+            improved_text = call_llm_api(
+                self._build_prompt(text, target_range, improvement_instruction)
+            )
         except Exception:
             # LLM呼び出しに失敗した場合は元のテキストを返す
+            logger.warning("局所パッチの LLM 呼び出しに失敗しました", exc_info=True)
             return text
-    
-    def _create_polish_prompt(self, before_context: str, target_text: str, 
+        return self._apply(text, target_range, improved_text)
+
+    async def polish_with_llm(
+        self,
+        text: str,
+        target_range: Tuple[int, int],
+        improvement_instruction: str,
+        llm: Any,
+    ) -> str:
+        """注入された LLM で局所パッチを適用する（T6 Step 7）。
+
+        旧実装はモジュールグローバル ``call_llm_api`` を直接呼ぶため、
+        ``tracked_adapter``（token/cost 計測付き）を**バイパス**していた。
+        結果として、この経路の LLM コストは計測に一切乗っていなかった。
+        """
+        start_idx, end_idx = target_range
+        # 範囲が不正なら LLM を呼ばない（無駄なコストを避ける）
+        if start_idx < 0 or end_idx > len(text) or start_idx >= end_idx:
+            return text
+        prompt = self._build_prompt(text, target_range, improvement_instruction)
+        improved_text = await _generate(llm, prompt)
+        return self._apply(text, target_range, improved_text)
+
+    def _build_prompt(
+        self, text: str, target_range: Tuple[int, int], improvement_instruction: str
+    ) -> str:
+        """対象範囲・前後文脈・指示からプロンプトを組み立てる。"""
+        start_idx, end_idx = target_range
+        if start_idx < 0 or end_idx > len(text) or start_idx >= end_idx:
+            return ""
+        target_text = text[start_idx:end_idx]
+        context_start = max(0, start_idx - 50)
+        before_context = text[context_start:start_idx]
+        context_end = min(len(text), end_idx + 50)
+        after_context = text[end_idx:context_end]
+        return self._create_polish_prompt(
+            before_context, target_text, after_context, improvement_instruction
+        )
+
+    def _apply(
+        self, text: str, target_range: Tuple[int, int], improved_text: str
+    ) -> str:
+        """生成結果をサニタイズして原文へ組み込む。失敗時は原文を返す。"""
+        start_idx, end_idx = target_range
+        if start_idx < 0 or end_idx > len(text) or start_idx >= end_idx:
+            return text
+        try:
+            sanitized = sanitize_polished_text(improved_text or "")
+            if not sanitized:
+                return text
+            return text[:start_idx] + sanitized + text[end_idx:]
+        except Exception:
+            logger.warning("局所パッチの適用に失敗しました", exc_info=True)
+            return text
+
+    def _create_polish_prompt(self, before_context: str, target_text: str,
                             after_context: str, improvement_instruction: str) -> str:
         """
         局所パッチ用のプロンプトを構築

@@ -13,21 +13,21 @@ class MangaPipelineConfig:
     model_id: str = "gemini-3.1-flash-lite-image"
     api_key: str = ""
     cost_per_image_usd: float = 0.034
-    
+
     # グリッド設定（24コマ: 4列×6行）
     grid_cols: int = 4
     grid_rows: int = 6
     total_panels: int = 24
-    
+
     # 出力パス設定
     output_base_dir: Path = Path("output/manga")
     char_ref_dir: Path = Path("data/manga/char_ref")
-    
+
     # 超解像設定
     upscale_factor: int = 4
     target_upscale_width: int = 4096
     use_gpu_upscaler: bool = True
-    
+
     # 写植設定（オプション）
     enable_typesetting: bool = False
     default_font_name: str = "msgothic.ttc"  # Windows標準フォント

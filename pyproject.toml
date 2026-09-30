@@ -1,6 +1,6 @@
 [project]
 name = "autonovel"
-version = "5.3.0"
+version = "6.0.0"
 description = "AutoNovel - 小説生成エンジン (FastAPI + React + Huey + SQLAlchemy)"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -189,3 +189,19 @@ ignore = ["E501", "E402"]
 
 [tool.ruff.lint.per-file-ignores]
 "*" = ["E402"]
+# `__init__.py` は公開 API の再エクスポートが主目的であり、
+# そこに見える未使用 import は「公開されている」ことが正当な理由。
+# 削除すると `from pkg import Name` が壊れるため、T6 Step 10 で F401 を除外した。
+"**/__init__.py" = ["E402", "F401"]
+# `__all__` に列挙済みの import は ruff が再エクスポートと判定できない。
+"**/api.py" = ["E402", "F401"]
+
+# T6 Step 10 の残存（2026-09-29 時点、652件 → W系1646件は解消済み）:
+#   F401 483 / F841 59 / F811 36 / E741 21 / F821 19 / E712 17
+#   F541 9 / E701 6 / E711 1 / F403 1
+# F401 を機械削除すると `models.py` の再エクスポートが壊れ、
+# `src.narrative_balancer` 全体が ImportError になることを確認済み。
+# よって F401 は**意図的な import** を人の目で判断する項目として残す。
+# 残りは `tests/regression/test_lint_budget.py` で上限を固定し、
+# 増やさないことを機械的に強制する。
+

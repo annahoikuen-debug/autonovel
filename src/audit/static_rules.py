@@ -20,27 +20,27 @@ class Issue:
 
 class StaticRuleAuditor:
     """高速静的ルールオーディター - 文字数・禁則・フォーマット等の形式チェックを実行"""
-    
+
     def __init__(self):
         # Load platform-independent default limits
         # These could be made configurable via config files
         self.default_max_chapter_chars = 5000  # Default max chars per chapter
         self.default_max_title_chars = 100     # Default max title chars
         self.default_min_paragraphs = 1        # Minimum paragraphs
-        
+
         # Forbidden patterns (basic implementation)
         self.forbidden_patterns = [
             # Add common forbidden patterns here
             # For now, we'll rely on existing validation in compliance_validator
         ]
-        
+
     def audit(self, text: str) -> List[Issue]:
         """
         テキストに対して静的ルールベースの形式チェックを実行
-        
+
         Args:
             text: 検査対象のテキスト
-            
+
         Returns:
             List[Issue]: 検出された問題のリスト
         """
@@ -48,7 +48,7 @@ class StaticRuleAuditor:
 
         # 改行コードの正規化 (CRLF/CR -> LF) で文字オフセットのずれを防止
         text = text.replace('\r\n', '\n').replace('\r', '\n')
-        
+
         # 1. 文字数チェック (基本的な実装)
         if len(text) > self.default_max_chapter_chars:
             issues.append(Issue(
@@ -57,7 +57,7 @@ class StaticRuleAuditor:
                 location=(0, len(text)),
                 suggestion=f"文字数を{self.default_max_chapter_chars}文字以内に収めてください"
             ))
-        
+
         # 2. 章タイトルフォーマットチェック
         lines = text.split('\n')
         if lines and len(lines[0]) > self.default_max_title_chars:
@@ -67,7 +67,7 @@ class StaticRuleAuditor:
                 location=(0, len(lines[0])),
                 suggestion=f"章タイトルを{self.default_max_title_chars}文字以内に収めてください"
             ))
-        
+
         # 3. 段落数チェック
         paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
         if len(paragraphs) < self.default_min_paragraphs:
@@ -77,7 +77,7 @@ class StaticRuleAuditor:
                 location=None,
                 suggestion=f"少なくとも{self.default_min_paragraphs}段落を含めてください"
             ))
-        
+
         # 4. 禁則チェック (基本的な実装)
         for pattern in self.forbidden_patterns:
             matches = list(re.finditer(pattern, text))
@@ -88,7 +88,7 @@ class StaticRuleAuditor:
                 location=(match.start(), match.end()),
                 suggestion="禁則パターンを修正してください"
             ))
-        
+
         # 5. 行頭禁則チェック (行頭に閉じ括弧や句読点がないか)
         line_start_forbidden = frozenset('、。・：；？！」「』】〕〉》')
         current_offset = 0
@@ -101,5 +101,5 @@ class StaticRuleAuditor:
                     suggestion="行頭の禁則文字を削除または文頭に移動してください"
                 ))
             current_offset += len(line) + 1  # +1 for newline
-         
+
         return issues

@@ -30,31 +30,23 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-# UI 上のジャンル文字列 → preset key マッピング
-# 優先度順に評価 (最初に hit した preset を採用)
-GENRE_TO_PRESET: list[tuple[str, str]] = [
-    ("ざまぁ", "zarma"),
-    ("令嬢", "aku_reijo"),
-    ("VRMMO", "vrmmo"),
-    ("ダンジョン", "dungeon_admin"),
-    ("スローライフ", "slow_life"),
-    ("追放", "slow_life"),
-    ("ループ", "loop"),
-    ("テンセイ", "cheat_tensei"),
-    ("現代チート", "modern_cheat"),
-    ("異世界転生", "cheat_tensei"),
-    ("ダークファンタジー", "cheat_tensei"),
-]
+# UI 上のジャンル文字列 → preset key マッピングは
+# `config.story_spine.genre_registry.GENRE_REGISTRY` に一本化した。
+# 旧実装は日本語キーワードの部分一致だけで、EasyMode が送る `fan` / `sf` /
+# `romance` / `mystery` / `horror` / `other` に1つも一致せず、必ず None を返していた
+# （スタイルプリセットが1つも効かない状態で EasyMode が走っていた）。
+# 旧11キーワードの優先順位は `GENRE_REGISTRY.LEGACY_KEYWORD_PRIORITY` に移設済み。
+from config.story_spine import genre_registry as _genre_registry
+
+# 旧11キーワードの優先順位はレジストリ側に移設済み。互換のため名前を維持する。
+GENRE_TO_PRESET: list[tuple[str, str]] = list(_genre_registry.LEGACY_KEYWORD_PRIORITY)
 
 
 def resolve_genre_to_preset(genre: str) -> str | None:
-    """UI ジャンル文字列から preset key を解決する。"""
-    if not genre:
-        return None
-    for keyword, preset_key in GENRE_TO_PRESET:
-        if keyword in genre:
-            return preset_key
-    return None
+    """UI ジャンル文字列から preset key を解決する（GENRE_REGISTRY に委譲）。"""
+    from config.story_spine.genre_registry import resolve_preset_key
+
+    return resolve_preset_key(genre)
 
 
 async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
@@ -256,7 +248,7 @@ async def generate_content(
             if hasattr(input_data.character_params, "model_dump")
             else dict(input_data.character_params)
 )
-        
+
         # 生成パラメータ準備
         params: dict[str, Any] = {
             "chapter_history": input_data.chapter_history,
@@ -275,24 +267,24 @@ async def generate_content(
             "end_ep": input_data.end_ep,
             "compressor": FourLayerCompressor(config=CompressionConfig()),
         }
-        
+
         # タスクをキューに投入 (Huey 非同期タスク呼び出し)
         from src.backend.tasks.generation_tasks import generate_chapter_orchestrated_task
-        
+
         task_result = generate_chapter_orchestrated_task(params)
         huey_task_id = str(task_result.id)
         params["task_id"] = huey_task_id
-        
+
         # DB レコードを作成
         repo = BookRepository(session)
         if repo.is_async:
             await repo.create_task_async(task_id=huey_task_id, status="running")
         else:
             repo.create_task(task_id=huey_task_id, status="running")
-        
+
         metrics.increment("tasks_enqueued")
         logger.info("Enqueued generation task: task_id=%s", huey_task_id)
-        
+
         return GenerationResponse(
             task_id=huey_task_id,
             output="",

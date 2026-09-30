@@ -80,14 +80,14 @@ def _beats_to_domain(beats_dto: List[BeatDTO], episode: int) -> List:
     """DTOをドメインモデルに変換"""
     from src.annotations.beat import EmotionalBeat
     from src.pipeline.emotional_residue import EmotionType
-    
+
     domain_beats = []
     for dto in beats_dto:
         try:
             emotion_type = EmotionType(dto.emotion)
         except ValueError:
             emotion_type = EmotionType.AFFECTION
-        
+
         beat = EmotionalBeat(
             episode=dto.episode,
             scene=dto.scene,
@@ -113,24 +113,24 @@ async def persist_annotations(
     """アノテーション永続化エンドポイント"""
     # 権限チェック
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
-    
+
     # DTOをドメインモデルに変換
     domain_beats = _beats_to_domain(req.beats, req.episode)
-    
+
     # キャラクター辞書取得
     char_dict = load_character_dict()
-    
+
     # 検証
     validator = BeatValidator(char_dict)
     result = validator.validate(domain_beats)
-    
+
     if not result.is_valid:
         return PersistResponse(persisted=0, errors=result.errors)
-    
+
     # ストア取得・永続化
     vector_store, graph_store, log_store = _get_stores()
     persistence = AnnotationPersistence(vector_store, graph_store, log_store)
-    
+
     try:
         count = persistence.persist_beats(domain_beats, req.episode)
         return PersistResponse(persisted=count, errors=result.warnings)
@@ -148,9 +148,9 @@ async def get_annotation_history(
 ):
     """アノテーション履歴取得"""
     await verify_book_ownership(book_id, current_user, AppContainer.db())
-    
+
     vector_store, _, log_store = _get_stores()
-    
+
     # VectorStoreから履歴取得（annotation namespace）
     if source and target:
         # 特定ペアの履歴
@@ -173,7 +173,7 @@ async def get_annotation_history(
                         "cause": vec.causes.get((source, target, emo)),
                     })
         return {"history": history}
-    
+
     # 全履歴（指定エピソード）
     keys = vector_store.get_namespace_keys("annotation")
     matching = [k for k in keys if k.startswith(f"ep{episode}")]
@@ -201,19 +201,19 @@ async def rollback_annotation(
 ):
     """指定ビートのロールバック（論理削除・再計算トリガー）"""
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
-    
+
     vector_store, graph_store, log_store = _get_stores()
-    
+
     try:
         # LogStoreから該当ビートを論理削除（source_type=annotationでフィルタ）
         deleted = log_store.delete_by_beat_id(req.episode, req.beat_id)
-        
+
         if deleted == 0:
             raise HTTPException(status_code=404, detail="指定されたビートが見つかりません")
-        
+
         # VectorStoreからも削除
         vector_store.delete("annotation", f"ep{req.episode}:{req.beat_id}")
-        
+
         # GraphStoreからも削除
         # ここでソース・ターゲットが必要だが、beat_idから推定するか、
         # 全エッジからbeat_idで検索して削除する
@@ -224,7 +224,7 @@ async def rollback_annotation(
                 graph_store._edges[(src, tgt)] = [e for e in edges if e.get("beat_id") != req.beat_id]
                 if len(graph_store._edges.get((src, tgt), [])) == 0:
                     del graph_store._edges[(src, tgt)]
-        
+
         # 再計算トリガー（非同期で実行）
         # ここでは完了フラグのみ返す
         return {

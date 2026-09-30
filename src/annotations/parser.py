@@ -51,63 +51,63 @@ def parse_beats(
     character_dict: Optional[set[str]] = None,
 ) -> tuple[str, list[EmotionalBeat]]:
     """脚本からインラインビートタグを抽出し、クリーンテキストとビートリストを返す
-    
+
     Args:
         text: 脚本テキスト
         episode: エピソード番号
         scene: シーン番号
         character_dict: キャラクター辞書（発言者推定用）
-        
+
     Returns:
         (クリーンテキスト, 抽出ビートリスト)
     """
     if character_dict is None:
         character_dict = load_character_dict()
-    
+
     beats = []
     clean_lines = []
     beat_id_counter = 0
     current_offset = 0
-    
+
     for line in text.split('\n'):
         # その行のタグを全て抽出
         line_beats = []
         last_end = 0
         clean_line_parts = []
-        
+
         for match in BEAT_PATTERN.finditer(line):
             emotion_str, delta_str, cause, hidden_flag = match.groups()
             start, end = match.span()
-            
+
             # タグ前のテキストを保持
             clean_line_parts.append(line[last_end:start])
             last_end = end
-            
+
             # delta パース
             try:
                 delta = float(delta_str)
             except ValueError:
                 continue
-            
+
             # 感情タイプ正規化
             emotion = normalize_emotion(emotion_str)
-            
+
             # 原因デフォルト
             if not cause:
                 cause = f"ep{episode} inline annotation"
-            
+
             # hidden フラグ
             hidden = bool(hidden_flag)
-            
+
             # 発言者推定（タグ位置）
             tag_pos = current_offset + match.start()
             speaker = _estimate_speaker(text, tag_pos, character_dict)
             target = _estimate_target(text, tag_pos, character_dict, speaker)
-            
+
             if not speaker or not target:
                 # 推定できない場合はスキップ
                 continue
-            
+
             beat = EmotionalBeat(
                 episode=episode,
                 scene=scene,
@@ -122,12 +122,12 @@ def parse_beats(
             line_beats.append(beat)
             beats.append(beat)
             beat_id_counter += 1
-        
+
         # 残りのテキスト追加
         clean_line_parts.append(line[last_end:])
         clean_lines.append(''.join(clean_line_parts))
         current_offset += len(line) + 1  # 1 for '\n'
-    
+
     return '\n'.join(clean_lines), beats
 
 
@@ -154,7 +154,7 @@ def _estimate_speaker(
             for char in character_dict:
                 if char in speaker or speaker in char:
                     return char
-    
+
     for line in reversed(lines):
         line = line.strip()
         if line in character_dict:
@@ -197,7 +197,7 @@ def _estimate_target(
         if char != speaker:
             if char in prefix[-500:]:
                 found_chars.append(char)
-    
+
     if found_chars:
         return found_chars[-1]
 
@@ -211,7 +211,7 @@ def _estimate_target(
     for char in sorted(list(character_dict)):
         if char != speaker:
             return char
-    
+
     return None
 
 

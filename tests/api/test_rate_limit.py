@@ -8,11 +8,11 @@ def client():
     app = FastAPI()
     # Set a low rate limit for testing: 5 requests per minute
     app.add_middleware(RateLimitMiddleware, requests_per_minute=5)
-    
+
     @app.post("/api/generate", status_code=202)
     def generate():
         return {"job_id": "test_job"}
-    
+
     return TestClient(app)
 
 def test_rate_limit_allows_n_requests(client):

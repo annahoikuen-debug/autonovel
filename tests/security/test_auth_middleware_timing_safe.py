@@ -24,7 +24,7 @@ async def test_timing_safe_api_key_match(mock_settings):
     """Valid API Key in X-API-Key header should pass via compare_digest."""
     middleware = AuthMiddleware(app=MagicMock())
     call_next = AsyncMock(return_value=Response(status_code=200))
-    
+
     scope = {
         "type": "http",
         "method": "GET",
@@ -44,7 +44,7 @@ async def test_timing_safe_api_key_mismatch(mock_settings):
     """Invalid API Key in X-API-Key header should be rejected."""
     middleware = AuthMiddleware(app=MagicMock())
     call_next = AsyncMock(return_value=Response(status_code=200))
-    
+
     scope = {
         "type": "http",
         "method": "GET",
@@ -63,7 +63,7 @@ async def test_timing_safe_bearer_api_key_match(mock_settings):
     """Valid API Key passed as Bearer token should pass via compare_digest."""
     middleware = AuthMiddleware(app=MagicMock())
     call_next = AsyncMock(return_value=Response(status_code=200))
-    
+
     scope = {
         "type": "http",
         "method": "GET",

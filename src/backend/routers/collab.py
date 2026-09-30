@@ -35,7 +35,7 @@ class CommentRequest(BaseModel):
 async def _verify_book_access(uow: UnitOfWork, book_id: int, current_user: User) -> None:
     """
     リクエストのユーザーがブックの所有者または管理者であることを検証する。
-    
+
     `book.user_id` が NULL (所有者未設定) の作品については、コラボレーションメンバーに
     含まれているかを所有権の代わりに確認する。所有者が設定済みの場合は
     所有者本人のみを許す。

@@ -36,11 +36,11 @@ def call_llm_api(prompt: str, system_prompt: Optional[str] = None) -> str:
     """
     LLM APIを呼び出す関数。
     テストではこの関数をモックする。未モック時は実アダプタ連携を試みる。
-    
+
     Args:
         prompt: ユーザープロンプト
         system_prompt: システムプロンプト（オプション）
-        
+
     Returns:
         str: LLMからの生のレスポンス（文字列）
     """
@@ -77,11 +77,11 @@ def call_llm_api(prompt: str, system_prompt: Optional[str] = None) -> str:
 
 class UnifiedLLMAuditor:
     """統合LLMオーディター - 1回のLLMコールで複数観点を評価"""
-    
+
     def __init__(self):
         """Unified LLM Auditorを初期化"""
         pass
-        
+
     def audit(self, text: str) -> List[Issue]:
         """
         テキストに対して統合LLMオーディットを実行
@@ -109,7 +109,7 @@ class UnifiedLLMAuditor:
 
         # レスポンスをパースしてIssueオブジェクトのリストを返す
         return self._parse_llm_response(response)
-        
+
     def _construct_audit_prompt(self, text: str) -> str:
         """
         統合監査用のプロンプトを構築
@@ -120,7 +120,7 @@ class UnifiedLLMAuditor:
 以下のテキストについて、8つの観点で評価し、問題がある場合は指摘してください：
 
 1. プロットの一貫性
-2. キャラクターの魅力  
+2. キャラクターの魅力
 3. 文体の適切さ
 4. 感情の起伏
 5. オリジナリティ
@@ -138,7 +138,7 @@ class UnifiedLLMAuditor:
 
 issue_typeには以下のいずれかを使用してください：
 - plot_inconsistency
-- character_appeal  
+- character_appeal
 - style_appropriateness
 - emotional_variety
 - originality
@@ -149,7 +149,7 @@ issue_typeには以下のいずれかを使用してください：
 問題がない場合は空の配列 [] を返してください。
 """
         return prompt.strip()
-        
+
     def _extract_json_string(self, response: str) -> str:
         """Markdownコードブロックや前後の説明文からJSON文字列を抽出"""
         if not response:
@@ -158,7 +158,7 @@ issue_typeには以下のいずれかを使用してください：
         code_block = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", response, re.IGNORECASE)
         if code_block:
             return code_block.group(1).strip()
-        
+
         # 2. [ ... ] 配列を抽出
         array_match = re.search(r"\[\s*\{[\s\S]*\}\s*\]", response)
         if array_match:

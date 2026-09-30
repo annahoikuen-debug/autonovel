@@ -30,10 +30,10 @@ class Arbitrator:
 
     def fuse(self, source_vectors: List[SourceVector]) -> FusedVector:
         """複数の SourceVector を融合する。
-        
+
         Args:
             source_vectors: 収集された SourceVector リスト
-            
+
         Returns:
             融合後の FusedVector
         """

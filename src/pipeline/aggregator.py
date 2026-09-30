@@ -9,22 +9,22 @@ from src.pipeline.emotional_residue import EmotionalSignal, EmotionalVector, Emo
 
 def aggregate_signals(signals: list[EmotionalSignal]) -> EmotionalVector:
     """複数シグナルを集約してEmotionalVector生成
-    
+
     同一(source, target, emotion)の重み付き平均（confidence重み）でマージ。
     値は -1.0~1.0 にクランプ。
     """
     if not signals:
         return EmotionalVector(episode_id="unknown")
-    
+
     # エピソードIDは最初のシグナルから取得
     episode_id = signals[0].episode_id
-    
+
     vector = EmotionalVector(episode_id=episode_id)
-    
+
     # 一時的に全シグナルを追加（EmotionalVector.set_signalが重み付き平均を行う）
     for signal in signals:
         vector.set_signal(signal)
-    
+
     return vector
 
 
@@ -32,14 +32,14 @@ def merge_vectors(vectors: list[EmotionalVector]) -> EmotionalVector:
     """複数のEmotionalVectorをマージ"""
     if not vectors:
         return EmotionalVector(episode_id="unknown")
-    
+
     merged = EmotionalVector(episode_id=vectors[0].episode_id)
-    
+
     for vec in vectors:
         for (source, target, emotion), value in vec.signals.items():
             confidence = vec.confidences.get((source, target, emotion), 0.5)
             cause = vec.causes.get((source, target, emotion))
-            
+
             signal = EmotionalSignal(
                 source=source,
                 target=target,
@@ -51,7 +51,7 @@ def merge_vectors(vectors: list[EmotionalVector]) -> EmotionalVector:
                 cause=cause,
             )
             merged.set_signal(signal)
-    
+
     return merged
 
 
@@ -67,7 +67,7 @@ def get_dominant_emotion(vector: EmotionalVector, source: str, target: str) -> O
     pair_emotions = vector.get_pair_emotions(source, target)
     if not pair_emotions:
         return None
-    
+
     dominant = max(pair_emotions.items(), key=lambda x: abs(x[1]))
     return dominant
 
@@ -76,7 +76,7 @@ def get_emotional_summary(vector: EmotionalVector, top_n: int = 5) -> list[dict]
     """感情サマリ生成（プロンプト用）"""
     top_pairs = vector.get_top_pairs(top_n)
     summary = []
-    
+
     for (source, target), emotions in top_pairs:
         entry = {
             "source": source,
@@ -92,7 +92,7 @@ def get_emotional_summary(vector: EmotionalVector, top_n: int = 5) -> list[dict]
         if dom:
             entry["dominant"] = {"emotion": dom[0].value, "value": round(dom[1], 2)}
         summary.append(entry)
-    
+
     return summary
 
 

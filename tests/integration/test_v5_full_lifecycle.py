@@ -27,7 +27,7 @@ async def test_v5_full_novel_lifecycle():
         cliffhanger=CliffhangerDef(type="Shocking Truth", description="黒幕の正体"),
     )
     fore = ForeshadowingCreateRequest(book_id=1, title="銀の鍵", description="鍵の由来", planted_episode=1)
-    
+
     assert proj.name and char.surface_persona and chap.cliffhanger.type == "Shocking Truth"
 
     # 2. 執筆本文の監査 (Two-Tier Auditor: 静的語尾・NG検査 + 定性判定)

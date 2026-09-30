@@ -20,26 +20,26 @@ class SocialReactionGenerator:
         self.llm = llm
 
     async def generate_stream_comments(
-        self, 
-        highlight_description: str, 
+        self,
+        highlight_description: str,
         count: int = 25
     ) -> List[StreamComment]:
         """
         配信コメントブロックを生成
-        
+
         Args:
             highlight_description: 本文のハイライトシーンの説明
             count: 生成するコメント数（デフォルト25件）
-            
+
         Returns:
             StreamCommentオブジェクトのリスト
         """
         prompt = self._build_stream_prompt(highlight_description, count)
-        
+
         try:
             raw_response = await self.llm.generate_text(purpose="social_reaction", prompt=prompt)
             comments_data = json.loads(str(raw_response).strip())
-            
+
             comments = []
             for item in comments_data.get("comments", []):
                 comments.append(StreamComment(
@@ -47,36 +47,36 @@ class SocialReactionGenerator:
                     text=item.get("text", ""),
                     timestamp=item.get("timestamp")
                 ))
-            
+
             logger.info(f"Generated {len(comments)} stream comments")
             return comments
-            
+
         except Exception as e:
             logger.error(f"Failed to generate stream comments: {e}")
             # フォールバック: 簡易コメントを返す
             return self._generate_fallback_stream_comments(count)
 
     async def generate_forum_thread(
-        self, 
-        highlight_description: str, 
+        self,
+        highlight_description: str,
         post_count: int = 30
     ) -> List[ForumPost]:
         """
         掲示板スレッドを生成
-        
+
         Args:
             highlight_description: 本文のハイライトシーンの説明
             post_count: 生成するレス数（デフォルト30件）
-            
+
         Returns:
             ForumPostオブジェクトのリスト
         """
         prompt = self._build_forum_prompt(highlight_description, post_count)
-        
+
         try:
             raw_response = await self.llm.generate_text(purpose="social_reaction", prompt=prompt)
             threads_data = json.loads(str(raw_response).strip())
-            
+
             posts = []
             for i, item in enumerate(threads_data.get("posts", []), start=1):
                 posts.append(ForumPost(
@@ -84,10 +84,10 @@ class SocialReactionGenerator:
                     name=item.get("name", "名無し"),
                     body=item.get("body", "")
                 ))
-            
+
             logger.info(f"Generated {len(posts)} forum posts")
             return posts
-            
+
         except Exception as e:
             logger.error(f"Failed to generate forum thread: {e}")
             # フォールバック: 簡易スレッドを返す

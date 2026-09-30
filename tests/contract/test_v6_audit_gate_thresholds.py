@@ -14,12 +14,13 @@ v6 / Step 24: Step 23 で導入した**スコア集約式ゲート**が品質ゲ
 """
 
 from __future__ import annotations
-
 import asyncio
+import os
 import statistics
 import sys
 from pathlib import Path
 from typing import Any
+
 
 import pytest
 
@@ -274,6 +275,54 @@ FAILURE_PATTERNS: list[dict[str, bool]] = [
 ]
 
 
+def _measure_regeneration_ratio(gate_enabled: bool) -> float:
+    """指定ゲート設定での再執筆率を**実測**して返す（T6 Step 12）。
+
+    ``ENABLE_AUDIT_SCORE_GATE`` は `os.environ` を毎回読むため、
+    プロセス全体でこの関数内でだけ切り替える（他テストへの漏れを防ぐ）。
+    """
+    previous = os.environ.get("ENABLE_AUDIT_SCORE_GATE")
+    os.environ["ENABLE_AUDIT_SCORE_GATE"] = "true" if gate_enabled else "false"
+    try:
+        retries = 0
+        for pattern in FAILURE_PATTERNS:
+            agent = _build_agent(pattern)
+            result = asyncio.run(agent.execute(_ctx(agent)))
+            retries += bool(result.should_retry)
+        return retries / len(FAILURE_PATTERNS)
+    finally:
+        if previous is None:
+            os.environ.pop("ENABLE_AUDIT_SCORE_GATE", None)
+        else:
+            os.environ["ENABLE_AUDIT_SCORE_GATE"] = previous
+
+
+def _score_with_severity(severity: str) -> float:
+    """指定 severity の不合格が実際のスコア計算で何点になるかを返す。
+
+    `AuditAgent._build_failed_outcome`（プロダクションの重み付け）を
+    直接呼ぶことで、`_build_agent` のモック経路に依存せず
+    「severity が計算に効いているか」を観測する。
+    """
+    from src.agents.audit_agent import AuditCriterion
+
+    agent = _build_agent({"deai": True})
+    criterion = AuditCriterion(
+        audit_id="deai",
+        label="De-AI",
+        severity=severity,
+        learning_key="deai",
+    )
+    outcome = agent._build_failed_outcome(
+        criterion=criterion,
+        feedback="失敗",
+        learning_adjusted=False,
+        confidence_adjustment=0.0,
+        error=None,
+    )
+    return float(outcome["score"])
+
+
 def test_quality_score_not_degraded_vs_baseline() -> None:
     """集約化しても品質ゲートが緩まないことを統計的に確認する。
 
@@ -337,14 +386,27 @@ def test_quality_score_not_degraded_vs_baseline() -> None:
             "patched",
         ), f"{pattern}: 不合格なのに合格扱い: {result.artifacts['audit_status']}"
 
-    # 4) ベースライン（全滅式）との乖離: 再執筆率は下がるが、無検証の合格は無い
-    legacy_ratio = 1.0
-    score_ratio = (len(FAILURE_PATTERNS) - len(continued)) / len(FAILURE_PATTERNS)
-    assert score_ratio < legacy_ratio, (
-        f"集約ゲートの再執筆率 {score_ratio:.0%} がベースライン {legacy_ratio:.0%} "
-        "を下回っていない（ゲート集約の効果が出ていない）"
+    # 4) ベースライン（全滅式ゲート）との乖離を**実測**する
+    #    T6 Step 12: 以前は `legacy_ratio = 1.0` というハードコードで
+    #    「再執筆率が 1.0 より小さい」ことしかアサートしておらず、
+    #    ゲート集約の効果を検証していなかった。
+    #    ここでは実際に `ENABLE_AUDIT_SCORE_GATE=0`（旧 all-or-nothing）と
+    #    `=1`（新スコア集約）の両方で走らせて比率を比較する。
+    legacy_ratio = _measure_regeneration_ratio(gate_enabled=False)
+    score_ratio = _measure_regeneration_ratio(gate_enabled=True)
+    print(
+        f"[実測] 再執筆比率: all-or-nothing {legacy_ratio:.0%} "
+        f"→ score-aggregation {score_ratio:.0%}"
     )
-    assert continued, "全パターンが再執筆になった（ゲートが機能していない）"
+    assert legacy_ratio > score_ratio, (
+        f"スコア集約が再執筆率を下げていない: "
+        f"legacy {legacy_ratio:.0%} <= score {score_ratio:.0%}"
+    )
+    # 旧ゲートが「1件でも落ちたら全滅」であったことの確認（実測ベースライン）
+    assert legacy_ratio == 1.0, (
+        f"旧ゲートの実測ベースラインが 100% ではない: {legacy_ratio:.0%}。"
+        "FAILURE_PATTERNS やゲートの挙動が変わった可能性がある"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -352,9 +414,29 @@ def test_quality_score_not_degraded_vs_baseline() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_severity_weighting_ranks_failures() -> None:
-    """重篤さに応じた重み付けが「medium < high < critical」の順に効くこと。"""
+def test_severity_weighting_actually_affects_score() -> None:
+    """severity 重みが**実際のゲート計算**に効くことを観測で証明する。
 
+    T6 Step 12: 以前は `AUDIT_GATE_SEVERITY_WEIGHTS` の定数値だけを
+    アサートしており、プロダクション経路を一切通していなかった
+    （定数が書き換わってもテストは緑のままだった）。
+    ここでは実キーで `low`（軽微）と `critical`（重篤）の実スコア差を観測する。
+
+    注意: `AUDIT_GATE_PENALTY_SCORE` は「減点」ではなく**加点残**である。
+    `critical=0.0` は「100点から満額減点された」= 最も重い、という意味。
+    """
+    mild = _score_with_severity("low")
+    critical = _score_with_severity("critical")
+    print(
+        f"[実測] severity 別 score（加点残）: low={mild:.1f} "
+        f"critical={critical:.1f}"
+    )
+    assert critical < mild, (
+        "severity がスコア計算に反映されていない"
+        f"（low={mild:.1f}, critical={critical:.1f}）。"
+        "WEIGHT 定数の定義だけが変わっている疑いがある"
+    )
+    # 尚、定数の並び順そのものも併せて固定する（意味の入れ替え防止）
     assert (
         AUDIT_GATE_SEVERITY_WEIGHTS["low"]
         < AUDIT_GATE_SEVERITY_WEIGHTS["medium"]

@@ -41,11 +41,10 @@ DEBUFF_PROFILES = {
     "strong": {"effect": 0.5, "duration": 15},
 }
 
-PLOT_STRUCTURES = {
-    "hero_journey": ["departure", "initiation", "return"],
-    "three_act": ["setup", "confrontation", "resolution"],
-    "five_act": ["exposition", "rising_action", "climax", "falling_action", "denouement"],
-}
+# 旧 PLOT_STRUCTURES（hero_journey / three_act / five_act の3件）は削除した。
+# 参照元は 0 件で、構造の供給元は `config/story_spine/patterns.yaml`（38パターン）に
+# 一本化している。三幕/起承転結そのものは `src/services/structure_validator.py` が
+# STRUCTURE_DEFINITIONS として保持しているため、必要ならそちらを使う。
 
 STORY_ARCHETYPES = {
     "overcoming_the_monster": {},

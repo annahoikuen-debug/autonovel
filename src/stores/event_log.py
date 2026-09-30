@@ -159,34 +159,34 @@ class EventLogStore:
 
     def delete_by_beat_id(self, episode: int, beat_id: str) -> int:
         """指定 beat_id・エピソードのエントリを削除する（物理削除）。
-        
+
         Args:
             episode: エピソード番号
             beat_id: ビートID
-            
+
         Returns:
             削除された行数
         """
         if not self.path.exists():
             return 0
-        
+
         deleted = 0
         kept_entries = []
-        
+
         for entry in self._iter_entries():
             entry_ep = self._extract_episode(entry.get("episode_id", ""))
             entry_beat_id = entry.get("beat_id", "")
-            
+
             if entry_ep == episode and entry_beat_id == beat_id:
                 deleted += 1
             else:
                 kept_entries.append(entry)
-        
+
         # ファイルを書き直し
         with self.path.open("w", encoding="utf-8") as f:
             for entry in kept_entries:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
-        
+
         return deleted
 
 

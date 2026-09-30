@@ -33,7 +33,7 @@ class TestUnifiedAuditorEquivalence(unittest.TestCase):
 
             # 静的ルール（行頭禁則）とLLMオーディターの両方の指摘が含まれること
             self.assertGreater(len(issues), 0)
-            
+
             types = [issue.type for issue in issues]
             # 静的ルールまたはLLMのいずれかの指摘タイプが含まれていること
             self.assertTrue(any(t in types for t in ["line_start_forbidden", "character_voice"]))

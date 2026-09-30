@@ -59,10 +59,10 @@ class TestPublishingExportLifecycle:
                     "platform": platform,
                 },
             )
-            
+
             if response.status_code == 401:
                 pytest.skip("Authentication required")
-            
+
             assert response.status_code == 200
             data = response.json()
             formatted_results[platform] = data
@@ -76,7 +76,7 @@ class TestPublishingExportLifecycle:
                 assert "《《重要》》" in data["body"]
             elif platform == "alphapolis":
                 assert "#真紅(しんく)#" in data["body"]
-            
+
             # 文字数カウントが返却されていること
             assert data["total_characters"] > 0
 
@@ -98,10 +98,10 @@ class TestPublishingExportLifecycle:
                     "platform": "narou",
                 },
             )
-            
+
             if response.status_code == 401:
                 pytest.skip("Authentication required")
-            
+
             assert response.status_code == 200
             data = response.json()
             assert data["title"] == title
@@ -118,10 +118,10 @@ class TestPublishingExportLifecycle:
                 "platform": "invalid_platform",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code in (400, 422)
         if response.status_code == 400:
             assert "platform must be one of" in response.json()["detail"]
@@ -137,10 +137,10 @@ class TestPublishingExportLifecycle:
                 "platform": "narou",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code in (400, 422)
         if response.status_code == 400:
             assert "title and body cannot be empty" in response.json()["detail"]
@@ -157,10 +157,10 @@ class TestPublishingExportLifecycle:
                 "platform": "narou",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["total_characters"] > 10000
@@ -177,10 +177,10 @@ class TestPublishingExportLifecycle:
                 "platform": "kakuyomu",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "😀🎉🌸" in data["body"]
@@ -198,10 +198,10 @@ class TestPublishingExportLifecycle:
                 "platform": "NAROU",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["platform"] == "narou"
@@ -211,7 +211,7 @@ class TestPublishingExportLifecycle:
         """前書き・後書きの保持テスト"""
         foreword = "これは前書きです。応援よろしくお願いします！"
         afterword = "ここまでお読みいただき、ありがとうございました。"
-        
+
         response = await client.post(
             "/api/export/copy/",
             json={
@@ -222,10 +222,10 @@ class TestPublishingExportLifecycle:
                 "platform": "narou",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert data["foreword"] == foreword
@@ -242,18 +242,18 @@ class TestPublishingExportLifecycle:
                 "platform": "narou",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # 必須フィールドの存在確認
         required_fields = ["title", "foreword", "body", "afterword", "total_characters", "platform"]
         for field in required_fields:
             assert field in data, f"Missing required field: {field}"
-        
+
         # 型の確認
         assert isinstance(data["title"], str)
         assert isinstance(data["foreword"], str)
@@ -303,13 +303,13 @@ class TestRegressionPrevention:
                 "platform": "narou",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # 連続空行が2行以内に制限されること
         assert "\n\n\n" not in data["body"]
         # 行頭字下げ（全角スペース）が適用されること
@@ -326,10 +326,10 @@ class TestRegressionPrevention:
                 "platform": "kakuyomu",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "|漢字《かんじ》" in data["body"]
@@ -345,10 +345,10 @@ class TestRegressionPrevention:
                 "platform": "alphapolis",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code == 200
         data = response.json()
         assert "#漢字(かんじ)#" in data["body"]
@@ -366,13 +366,13 @@ class TestRegressionPrevention:
                 "platform": "narou",
             },
         )
-        
+
         if response.status_code == 401:
             pytest.skip("Authentication required")
-        
+
         assert response.status_code == 200
         data = response.json()
-        
+
         # 台詞行は字下げされない（"「"で始まる）
         # 通常行は字下げされる（全角スペース）
         lines = data["body"].split("\n")

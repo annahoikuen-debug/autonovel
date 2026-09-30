@@ -13,14 +13,14 @@ class TestEmotionLexicon:
     def test_lexicon_loads_correctly(self):
         lexicon = load_emotion_lexicon()
         assert isinstance(lexicon, EmotionLexicon)
-        
+
         # 全感情タイプが存在すること
         expected_emotions = {
             "affection", "tension", "fear", "trust", "intimacy",
             "jealousy", "anger", "sadness", "surprise", "disgust"
         }
         assert set(lexicon.lexicon.keys()) == expected_emotions
-        
+
         # 各感情に positive/negative があること
         for emo_type, lex in lexicon.lexicon.items():
             assert "positive" in lex
@@ -34,7 +34,7 @@ class TestEmotionLexicon:
         patterns = load_dependency_patterns()
         assert isinstance(patterns, list)
         assert len(patterns) > 0
-        
+
         # パターン構造: [subj_dep, obj_dep, emotion_type, weight]
         for pattern in patterns:
             assert len(pattern) == 4
@@ -67,7 +67,7 @@ class TestEmotionLexicon:
         lexicon1 = load_emotion_lexicon()
         lexicon2 = load_emotion_lexicon()
         assert lexicon1 is lexicon2
-        
+
         patterns1 = load_dependency_patterns()
         patterns2 = load_dependency_patterns()
         assert patterns1 is patterns2
@@ -76,7 +76,7 @@ class TestEmotionLexicon:
         """YAMLファイルが存在し、正しくパースできること"""
         with open("config/emotion_lexicon.yaml", "r", encoding="utf-8") as f:
             data = yaml.safe_load(f)
-        
+
         assert "emotion_lexicon" in data
         assert "dependency_patterns" in data
         assert "polarity_flip_verbs" in data

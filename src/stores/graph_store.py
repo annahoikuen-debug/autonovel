@@ -113,12 +113,12 @@ class InMemoryGraphStore(GraphStore):
         key = (source, target)
         if key not in self._edges:
             return False
-        
+
         if beat_id is None:
             # 全削除
             del self._edges[key]
             return True
-        
+
         # beat_idでフィルタ
         original_len = len(self._edges[key])
         self._edges[key] = [e for e in self._edges[key] if e.get("beat_id") != beat_id]

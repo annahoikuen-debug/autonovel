@@ -7,11 +7,11 @@ from src.api.middleware.error_handler import ErrorHandlerMiddleware
 def client():
     app = FastAPI()
     app.add_middleware(ErrorHandlerMiddleware)
-    
+
     @app.get("/trigger-error")
     def trigger_error():
         raise RuntimeError("Test error")
-    
+
     return TestClient(app)
 
 def test_returns_generic_error_message(client):

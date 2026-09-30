@@ -163,7 +163,7 @@ class TestCompressionOutputSchema:
     def test_empty_text_handled_gracefully(self, compressor):
         """空文字列入力でエラーにならず空結果返却"""
         result = compressor.compress("")
-        
+
         assert isinstance(result, CompressedContextResult)
         assert result.final_context_text == ""
         assert result.final_token_count == 0
@@ -180,9 +180,9 @@ class TestCompressionOutputSchema:
             critical_keywords=["重要キーワード"],
             pinned_entities={"絶対外せない"},
         )
-        
+
         result = compressor.compress(sample_text, protected_context=protected)
-        
+
         # 圧縮後のテキストに主要キャラクターが含まれる可能性が高い
         # （実装詳細依存のため、エラーなく実行されることを確認）
         assert isinstance(result, CompressedContextResult)
@@ -194,7 +194,7 @@ class TestCompressionConfigSchema:
     def test_default_config_values(self):
         """デフォルト設定値の確認"""
         config = CompressionConfig()
-        
+
         assert config.max_tokens == 1500
         assert config.target_reduction_ratio == 0.6
         assert config.top_keywords == 20
@@ -208,7 +208,7 @@ class TestCompressionConfigSchema:
     def test_sudachi_config_defaults(self):
         """SudachiConfig デフォルト値の確認"""
         config = CompressionConfig()
-        
+
         assert config.sudachi.split_mode == "C"
         assert config.sudachi.include_proper is True
         assert config.sudachi.include_compound is True

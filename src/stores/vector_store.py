@@ -66,7 +66,7 @@ class RedisVectorStore(VectorStore):
         )
         self.default_ttl = default_ttl
         self.namespace_ttls = namespace_ttls or {}
-        
+
         # 接続テスト（スキップ可能）
         if not skip_connection_check:
             try:
@@ -87,7 +87,7 @@ class RedisVectorStore(VectorStore):
         redis_key = self._make_key(namespace, key)
         data = json.dumps(vector.to_dict(), ensure_ascii=False)
         ttl = self._get_ttl(namespace)
-        
+
         try:
             if ttl > 0:
                 self.client.set(redis_key, data, ex=ttl)
@@ -148,7 +148,7 @@ class RedisVectorStore(VectorStore):
 
         latest_key = max(parseable, key=extract_ep_num)
         vector = self._get_by_key(namespace, latest_key)
-        
+
         if vector:
             # 指定ペアの感情のみを含む新しいベクトルを返す
             pair_emotions = vector.get_pair_emotions(pair[0], pair[1])

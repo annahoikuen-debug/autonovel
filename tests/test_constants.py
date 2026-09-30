@@ -1,9 +1,20 @@
 from config import constants
 
 
-def test_episode_constants():
-    assert constants.EP_FINAL == 8
-    assert constants.EP_CLIMAX == 7
+def test_episode_constants_are_gone():
+    """8話固定の EP_* 定数は STORY_SPINE 導入で削除された。
+
+    絶対話数で構造を固定していたことが、話数を変えると構造が壊れる原因だった。
+    位置は相対値（config/story_spine の span）で表現する。
+    """
+    for name in (
+        "EP_HUMILIATION",
+        "EP_TRIGGER",
+        "EP_MUSOU_START",
+        "EP_FINAL",
+        "EP_CLIMAX",
+    ):
+        assert not hasattr(constants, name), f"{name} が復活している"
 
 
 def test_rate_limit_constants():
@@ -22,8 +33,6 @@ def test_constants_are_final():
     # Final アノテーションが付与されているため再代入は静的解析で検出されるが、
     # ここでは値が存在し期待通りであることを確認する。
     for name in (
-        "EP_FINAL",
-        "EP_CLIMAX",
         "RATE_LIMIT_MAX_REQUESTS",
         "RATE_LIMIT_WINDOW_SECONDS",
         "RATE_LIMIT_STORE_MAX_ENTRIES",

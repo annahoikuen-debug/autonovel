@@ -16,6 +16,37 @@ ROUTING_TIERS = {
     "tier3_premium": "claude-3-5-sonnet",   # クライマックス・第1話・重要伏線回収
 }
 
+
+class UnknownModelPricingError(KeyError):
+    """``MODEL_PRICING`` に無いモデルが要求されたことを表す。
+
+    T6 Step 5: 従来 `TokenTracker.estimate_cost_usd` は未知モデルに対して
+    黙って 0.0 を返していた。モデルルーティングを有効化すると、
+    未登録モデルへ切り替わった瞬間に**コスト計測が $0 として無言化する**ため、
+    「ルーティングの効果を数値で検証できない」状態になる。
+    """
+
+    def __init__(self, model_name: str) -> None:
+        self.model_name = model_name
+        super().__init__(
+            f"モデル {model_name!r} の価格が MODEL_PRICING に登録されていません。"
+            f" 登録済み: {sorted(MODEL_PRICING)}"
+        )
+
+
+def resolve_pricing(model_name: str) -> dict[str, float]:
+    """モデル名から 1M トークンあたりのUSD単価を返す。
+
+    Raises:
+        UnknownModelPricingError: 未知モデルの場合（0.0 を返さない）
+    """
+    if not model_name:
+        raise UnknownModelPricingError(model_name)
+    pricing = MODEL_PRICING.get(model_name)
+    if pricing is None:
+        raise UnknownModelPricingError(model_name)
+    return pricing
+
 #: モデルID → tier 名の逆引き（token_tracker の tier バケット用）
 TIER_BY_MODEL: dict[str, str] = {
     model: tier for tier, model in ROUTING_TIERS.items()

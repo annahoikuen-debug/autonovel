@@ -8,7 +8,7 @@ def setup_logging():
     """
     # Remove default logger
     logger.remove()
-    
+
     # Add stdout sink with JSON format
     logger.add(
         sys.stdout,
@@ -18,7 +18,7 @@ def setup_logging():
         backtrace=True,
         diagnose=True,
     )
-    
+
     # Optional: file logging with rotation
     logger.add(
         "logs/app.log",
@@ -30,5 +30,5 @@ def setup_logging():
         serialize=True,
         enqueue=True,  # For async safety
     )
-    
+
     return logger

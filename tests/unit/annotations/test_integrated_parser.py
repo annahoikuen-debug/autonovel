@@ -26,10 +26,10 @@ beats:
     cause: "ep14 event"
 ---
 シーン本文"""
-        
+
         parser = BeatParser(char_dict)
         result = parser.parse_script(text, episode=14, scene=1)
-        
+
         assert len(result.beats) == 1
         assert result.beats[0].source == "A"
         assert result.frontmatter_beats == result.beats
@@ -38,10 +38,10 @@ beats:
     def test_inline_only(self, char_dict):
         """インラインのみ"""
         text = 'A「行くぞ」\n[beat:fear+0.6 cause="test"]'
-        
+
         parser = BeatParser(char_dict)
         result = parser.parse_script(text, episode=15, scene=1)
-        
+
         assert len(result.beats) == 1
         assert result.beats[0].source == "A"
         assert result.frontmatter_beats == []
@@ -59,10 +59,10 @@ beats:
 ---
 A「行くぞ」
 [beat:fear+0.3 cause="inline"]"""
-        
+
         parser = BeatParser(char_dict)
         result = parser.parse_script(text, episode=15, scene=1)
-        
+
         # フロントマターの値が採用される（delta=0.8）
         assert len(result.beats) == 1
         beat = result.beats[0]
@@ -81,10 +81,10 @@ beats:
     delta: 0.8
 ---
 [beat:affection+0.5 cause="inline"]"""
-        
+
         parser = BeatParser(char_dict)
         result = parser.parse_script(text, episode=15, scene=1)
-        
+
         # 異なる感情なので両方保持
         assert len(result.beats) == 2
         emotions = {b.emotion.value for b in result.beats}
@@ -102,10 +102,10 @@ beats:
     scene: 1
 ---
 [beat:fear+0.5 cause="inline scene2"]"""
-        
+
         parser = BeatParser(char_dict)
         result = parser.parse_script(text, episode=15, scene=1)
-        
+
         # sceneが異なるので両方保持（inlineはscene=1でパースされるが、frontmatterはscene=1指定）
         # 実際にはinlineはscene=1, frontmatterもscene=1なので衝突
         # このテストは「同じキーならフロントマター優先」を確認
@@ -114,9 +114,9 @@ beats:
     def test_convenience_function(self, char_dict):
         """便利関数 parse_script"""
         text = 'A「行くぞ」\n[beat:fear+0.6]'
-        
+
         result = parse_script(text, episode=15, scene=1, character_dict=char_dict)
-        
+
         assert len(result.beats) == 1
         assert result.beats[0].source == "A"
 
@@ -124,7 +124,7 @@ beats:
         """空スクリプト"""
         parser = BeatParser(char_dict)
         result = parser.parse_script("", episode=1)
-        
+
         assert result.beats == []
         assert result.clean_text == ""
 
@@ -134,10 +134,10 @@ beats:
 invalid: yaml: [
 ---
 [beat:fear+0.6]"""
-        
+
         parser = BeatParser(char_dict)
         result = parser.parse_script(text, episode=15, scene=1)
-        
+
         # フロントマター失敗してもインラインは動作
         assert len(result.inline_beats) == 1
         assert result.inline_beats[0].emotion.value == "fear"
@@ -148,18 +148,18 @@ class TestParsedScript:
 
     def test_parsed_script_fields(self):
         from src.annotations.beat import ParsedScript
-        
+
         beats = [EmotionalBeat(1, 1, "A", "B", EmotionType.FEAR, 0.5, "test")]
         fm_beats = [EmotionalBeat(1, 1, "A", "B", EmotionType.AFFECTION, 0.3, "fm")]
         inline_beats = [EmotionalBeat(1, 1, "A", "B", EmotionType.FEAR, 0.5, "inline")]
-        
+
         parsed = ParsedScript(
             clean_text="clean",
             beats=beats,
             frontmatter_beats=fm_beats,
             inline_beats=inline_beats,
         )
-        
+
         assert parsed.clean_text == "clean"
         assert len(parsed.beats) == 1
         assert len(parsed.frontmatter_beats) == 1

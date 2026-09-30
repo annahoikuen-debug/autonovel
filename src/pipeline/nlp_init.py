@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 @functools.lru_cache(maxsize=1)
 def get_nlp(model_name: str = "ja_ginza") -> Language:
     """NLPパイプラインを取得（シングルトン・キャッシュ付き）
-    
+
     Args:
         model_name: 使用するspaCyモデル名 ("ja_ginza" または "ja_core_news_lg")
-        
+
     Returns:
         読み込み済みのspaCy Languageオブジェクト
-        
+
     Raises:
         OSError: モデルが見つからない場合
     """

@@ -12,7 +12,7 @@ class ContentProcessor:
         """HTML/Script タグの除去、Unicode NFKC 正規化、および三点リーダー・ダッシュの体裁統一"""
         if not content:
             return ""
-        
+
         # 1. 危険なスクリプトタグや不正なHTMLタグの除去
         text = re.sub(r"<\s*script[^>]*>.*?<\s*/\s*script\s*>", "", content, flags=re.DOTALL | re.IGNORECASE)
         text = re.sub(r"<\s*(style|iframe|object|embed)[^>]*>.*?<\s*/\s*\1\s*>", "", text, flags=re.DOTALL | re.IGNORECASE)

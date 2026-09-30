@@ -34,7 +34,7 @@ async def _run_writing_pipeline(
     """実際の執筆パイプラインを実行し、各フェーズで進捗をyieldする"""
     async with UnitOfWork(AppContainer.db()) as uow:
         await verify_book_ownership(book_id, user, uow)
-        
+
         # 書籍情報を取得してジャンルを特定
         book = await uow.books.get_by_id(book_id)
         book_genre = getattr(book, "genre", "") or "fantasy"
@@ -53,7 +53,7 @@ async def _run_writing_pipeline(
                     self.summary = ""
                     self.killer_phrase = ""
             chapter = MockChapter()
-        
+
         # コンテキスト構築フェーズ
         yield {
             "phase": "ContextBuilding",
@@ -61,17 +61,17 @@ async def _run_writing_pipeline(
             "message": "未回収伏線・キャラ心理葛藤・前話要約を抽出中...",
             "timestamp": time.time(),
         }
-        
+
         # 実際のコンテキスト構築処理をここで行う（簡易版）
         await asyncio.sleep(0.1)  # 実際の処理のプレースホルダ
-        
+
         yield {
             "phase": "ContextBuilding",
             "progress": 25,
             "message": "コンテキスト構築完了、五感ビートプロンプト生成中...",
             "timestamp": time.time(),
         }
-        
+
         # 執筆フェーズ
         yield {
             "phase": "Drafting",
@@ -79,7 +79,7 @@ async def _run_writing_pipeline(
             "message": "五感ビートとクリフハンガーに沿って執筆中...",
             "timestamp": time.time(),
         }
-        
+
         # 実際の執筆処理
         context = {
             "ep_num": chapter.ep_num,
@@ -96,7 +96,7 @@ async def _run_writing_pipeline(
             "continuation": True,
             "build_platform": "streamlit_demo",
         }
-        
+
         writer = EpisodeWriter()
         try:
             result = await writer.write(book_id=book_id, ep_num=chapter.ep_num, context=context)
@@ -138,14 +138,14 @@ async def _run_writing_pipeline(
                 created_at=datetime.now(),
                 branch_id=branch_id,
             )
-        
+
         yield {
             "phase": "Drafting",
             "progress": 65,
             "message": "執筆完了、二層監査（静的口調検査＋定性品質判定）開始...",
             "timestamp": time.time(),
         }
-        
+
         # 監査フェーズ
         yield {
             "phase": "Auditing",
@@ -153,25 +153,25 @@ async def _run_writing_pipeline(
             "message": "静的口調検査（文体・禁則・用語統一）実行中...",
             "timestamp": time.time(),
         }
-        
+
         await asyncio.sleep(0.1)  # 実際の監査処理のプレースホルダ
-        
+
         yield {
             "phase": "Auditing",
             "progress": 85,
             "message": "定性品質判定（構成・感情・没入感）実行中...",
             "timestamp": time.time(),
         }
-        
+
         await asyncio.sleep(0.1)  # 実際の監査処理のプレースホルダ
-        
+
         yield {
             "phase": "Auditing",
             "progress": 95,
             "message": "監査完了、品質スコア計算中...",
             "timestamp": time.time(),
         }
-        
+
         # 完了フェーズ
         yield {
             "phase": "Complete",

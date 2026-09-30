@@ -7,6 +7,61 @@
 「v5.3 で計画した長編機構が、実際には配線が未接続だった」という欠陥を是正し、
 同時に v6 のコスト最適化（tier ルーティング・ダイジェスト cost 制御）を実効化した。
 
+### T6 是正計画（`plans/PLAN_T6_REMEDIATION_18STEPS.md`、2026-09-29）
+
+上記の実装評価で残った欠陥の是正。**二重実行**と**無言化**が中心的な問題だった。
+
+- **ダイジェスト生成の二重実行**（コスト実害）
+  - `_post_episode_finalize` が `run()` と `write_beat_to_scene()` の両方から呼ばれ、
+    既定経路（`use_beat_to_scene=True`）では**1話につき2回**走っていた。
+    1話1回のブロッキング LLM 呼出のため、実コストが2倍になっていた。
+    実行点を `run()` の1箇所に集約。
+  - 回帰防止: `tests/unit/writing/test_episode_finalize_called_once.py`（4件）
+- **警告ログの恒久的無言化**
+  - `if hasattr(self, "logger"):` が25箇所あったが、`SkillAgent` には
+    `self.logger` 属性が無く**常に False**。伏線回収・ダイジェスト永続化・
+    セッション型不一致などの警告が一度も出力されていなかった。
+    モジュールレベル `logger` へ置換（`context_builder_agent.py` には
+    `logger` の定義自体が無く、置換後は `NameError` になるため追加）。
+  - 回帰防止: `tests/unit/agents/test_logger_guards_regression.py`（5件）
+- ** IllustrationAgent の後続チェーン断線**（K4）
+  - `IllustrationAgent` は公開 API `run(request=...)` のために
+    `SkillAgent.run(ctx)` を**非互換シグネチャで上書き**しており、
+    そのままノード登録すると `TypeError` かつ `next_agent=None` で
+    後続 `MarketingAgent` に到達しなかった。
+    `execute(ctx)` を直接呼ぶ `_make_execute_node` を追加して連鎖を回復。
+- **未知モデルのコストが無言で $0 になっていた**
+  - `MODEL_PRICING` に無いモデルは黙って 0.0 を返しており、
+    モデルルーティングを有効化すると**コスト計測が無言でゼロ化**していた。
+    `resolve_pricing` / `UnknownModelPricingError` を追加し、
+    tracker 側は後方互換のため 0 を返しつつ**1度だけ警告**する。
+- **`update_chapter_content` の引数シグネチャ不整合**
+  - 実シグネチャは `(branch_id, ep_num, content)` だが、
+    `chapter.id` を `branch_id` に、`rewritten_text` を `ep_num` に渡しており
+    `content` が欠落して**書き直しが TypeError で無言に失敗**していた（2箇所）。
+- **`LocalPolisher` が計測 LLM をバイパス**
+  - モジュールグローバル `call_llm_api` を直接呼ぶ同期メソッドで
+    `tracked_adapter` を完全に迂回していた。`polish_with_llm()` を追加し、
+    `AuditAgent.try_local_patch`（async 化）から注入 LLM を渡すようにした。
+- **ダイジェスト永続化の失敗が話全体を落としていた**
+  - 伏線回収側は隔離済みだったが、ダイジェスト側は例外が伝播していた。
+    警告付きで隔離し、1話を丸ごと失うことを避免。
+- **バージョンの自己矛盾**
+  - `CHANGELOG` に `[6.0.0]` があるのに `pyproject.toml` / CLI / backend /
+    frontend / docker-compose / README が `5.3.0` のままだった。**6.0.0 に統一**。
+- **効果測定表の作成**（親計画 Step 36 の未達分）
+  - `docs/STATUS.md` §5 に実測値と出典を記載。
+    1話LLM呼出 **10回（目標 4-5 で未達）**、再執筆率 **100% → 11%**（実測比較）、
+    監査レイテンシは**スタブ LLM では測定不能**（I/O待ちなし）と正直に明記。
+    未計測項目は `未計測` と記載し、推測値を置いていない。
+- **lint**
+  - 純整形系（W291/W292/W293）**1,646 件を解消**。
+  - F401（483件）は機械削除すると
+    `src/narrative_balancer` の再エクスポートが壊れ **ImportError** になることが
+    実測で判明したため、**意図的な import として残置**。
+    残存数を `tests/regression/test_lint_budget.py` で上限固定し、
+    再エクスポート Names が消えないことも固定した。
+
 ### 修正（v5.3 配線の未接続）
 
 - **メタデータ指示テンプレートの JSON が不正**

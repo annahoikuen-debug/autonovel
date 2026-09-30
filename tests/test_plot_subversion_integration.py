@@ -41,17 +41,17 @@ class TestPlotSubversionIntegration:
         """SubversionEngine の基本機能が PlotEpisode 経由で動くこと"""
         ep = PlotEpisode(ep_num=1)
         ep.subversion.plan_schedule(10)
-        
+
         # schedule が生成される
         assert len(ep.subversion.schedule) > 0
-        
+
         # apply_to_arc が動く
         class MockArc:
             thematic_milestone = ""
         arc = MockArc()
         ep.subversion.apply_to_arc(arc, 3)
         assert "裏切り" in arc.thematic_milestone
-        
+
         # apply_to_beat が動く
         class MockBeat:
             mission = ""

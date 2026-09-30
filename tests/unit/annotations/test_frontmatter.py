@@ -25,9 +25,9 @@ beats:
 ---
 A「行くぞ」
 B「待ちなさい」"""
-        
+
         clean, beats = parse_frontmatter(text)
-        
+
         assert len(beats) == 1
         beat = beats[0]
         assert beat.source == "A"
@@ -54,9 +54,9 @@ beats:
     delta: -0.2
 ---
 本文"""
-        
+
         clean, beats = parse_frontmatter(text)
-        
+
         assert len(beats) == 2
         assert beats[0].emotion == EmotionType.AFFECTION
         assert beats[0].delta == 0.3
@@ -67,7 +67,7 @@ beats:
         """フロントマターなし"""
         text = "普通の本文です。"
         clean, beats = parse_frontmatter(text)
-        
+
         assert beats == []
         assert clean == text
 
@@ -79,9 +79,9 @@ beats:
     invalid: yaml: here
 ---
 本文"""
-        
+
         clean, beats = parse_frontmatter(text)
-        
+
         assert beats == []
         assert clean == text
 
@@ -91,9 +91,9 @@ beats:
 other_key: value
 ---
 本文"""
-        
+
         clean, beats = parse_frontmatter(text)
-        
+
         assert beats == []
         assert "本文" in clean
 
@@ -107,9 +107,9 @@ beats:
     delta: 0.6
     cause: "test"
 本文"""
-        
+
         clean, beats = parse_frontmatter(text)
-        
+
         assert beats == []
         assert clean == text
 
@@ -122,9 +122,9 @@ beats:
                 cause="test", confidence=0.9, hidden=True,
             )
         ]
-        
+
         fm_text = serialize_frontmatter(beats)
-        
+
         assert fm_text.startswith("---\n")
         assert fm_text.endswith("---\n")
         assert "beats:" in fm_text
@@ -145,13 +145,13 @@ beats:
     hidden: true
 ---
 本文"""
-        
+
         clean, beats = parse_frontmatter(original)
         serialized = serialize_frontmatter(beats)
-        
+
         # 再パースして同じビートが得られるか
         clean2, beats2 = parse_frontmatter(serialized + "本文")
-        
+
         assert len(beats2) == len(beats)
         assert beats2[0].source == beats[0].source
         assert beats2[0].target == beats[0].target
@@ -173,7 +173,7 @@ beats:
     cause: "ep14 event"
 ---
 シーン本文"""
-        
+
         clean, beats = parse_frontmatter(text)
         assert len(beats) == 1
         assert beats[0].delta == 0.8

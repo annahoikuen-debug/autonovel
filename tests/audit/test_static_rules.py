@@ -12,7 +12,7 @@ def test_too_long_chapter_detected():
     text = "あ" * 5001
     auditor = StaticRuleAuditor()
     issues = auditor.audit(text)
-    
+
     assert any(issue.type == "length_exceeded" for issue in issues)
     assert any("文字数が上限を超えています" in issue.message for issue in issues)
 
@@ -24,7 +24,7 @@ def test_title_length_exceeded_detected():
     text = f"{long_title}\n\nこれは本文です。"
     auditor = StaticRuleAuditor()
     issues = auditor.audit(text)
-    
+
     assert any(issue.type == "title_length_exceeded" for issue in issues)
     assert any("章タイトルが長すぎます" in issue.message for issue in issues)
 
@@ -36,7 +36,7 @@ def test_paragraph_count_insufficient():
     text = ""  # 0段落
     auditor = StaticRuleAuditor()
     issues = auditor.audit(text)
-    
+
     # 空文字列の場合、段落数は0になるはず
     assert any(issue.type == "paragraph_count_insufficient" for issue in issues)
 
@@ -46,7 +46,7 @@ def test_line_start_forbidden_punct_detected():
     text = "、これはテストです。\nこれは二行目です。"
     auditor = StaticRuleAuditor()
     issues = auditor.audit(text)
-    
+
     assert any(issue.type == "line_start_forbidden_punct" for issue in issues)
     assert any("行頭に禁則文字があります" in issue.message for issue in issues)
 
@@ -56,7 +56,7 @@ def test_no_issues_when_valid():
     text = "これは有効なテキストです。\n\n適切な段落構造があります。"
     auditor = StaticRuleAuditor()
     issues = auditor.audit(text)
-    
+
     # 長さなどの制限を超えていないことを前提に、Issueが空であることを確認
     # 注意: このテキストは5000文字未満かつ適切な形式なので、Issueが検出されないはず
     length_exceeded_issues = [issue for issue in issues if issue.type == "length_exceeded"]

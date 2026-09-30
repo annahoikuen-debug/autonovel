@@ -29,7 +29,7 @@ class TestFinalWritingPrompt:
             char_dynamic_ctx="",
             prev_ctx="",
         )
-        
+
         assert "直前話からの引き継ぎ感情" in rendered
         assert "A→B: 恐怖(0.8) [原因: ep14裏切り]" in rendered
 
@@ -46,7 +46,7 @@ class TestFinalWritingPrompt:
             char_dynamic_ctx="",
             prev_ctx="",
         )
-        
+
         assert "直前話からの引き継ぎ感情" not in rendered
 
     def test_emotional_context_none_when_missing(self, template):
@@ -61,5 +61,5 @@ class TestFinalWritingPrompt:
             char_dynamic_ctx="",
             prev_ctx="",
         )
-        
+
         assert "直前話からの引き継ぎ感情" not in rendered

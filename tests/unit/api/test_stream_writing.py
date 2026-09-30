@@ -10,7 +10,7 @@ async def test_stream_writing_endpoint():
     # Create a mock user for testing
     test_user = User(id=1, email="test@example.com", hashed_password="test", display_name="testuser")
     app.dependency_overrides[get_current_user] = lambda: test_user
-    
+
     try:
         async with AsyncClient(transport=transport, base_url="http://test") as client:
             from src.backend.routers.stream_writing import router

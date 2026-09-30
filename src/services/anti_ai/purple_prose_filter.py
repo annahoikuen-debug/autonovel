@@ -13,7 +13,7 @@ from typing import Dict, List, Tuple, Pattern, Match
 
 class PurpleProseFilter:
     """Stream-based filter that limits density of purple prose elements.
-    
+
     Tracks counts per episode and applies limits:
     - Aggressive physical reactions (teeth grinding, tongue clicking, etc.): max 2 per episode
     - Metaphorical expressions (ように, まるで, etc.): max 3 per 1000 characters
@@ -44,17 +44,17 @@ class PurpleProseFilter:
         max_metaphor_per_1k_chars: int = 3,
     ) -> None:
         """Initialize the purple prose filter.
-        
+
         Args:
             max_aggressive_per_episode: Maximum allowed aggressive reactions per episode
             max_metaphor_per_1k_chars: Maximum allowed metaphors per 1000 characters
         """
         self.max_aggressive_per_episode = max_aggressive_per_episode
         self.max_metaphor_per_1k_chars = max_metaphor_per_1k_chars
-        
+
         # Reset counters for new episode
         self.reset()
-        
+
         # Pre-compile all patterns for efficiency
         self._aggressive_regexes: List[Tuple[Pattern[str], str]] = [
             (pattern, replacement) for pattern, replacement in self.AGGRESSIVE_PATTERNS
@@ -71,36 +71,36 @@ class PurpleProseFilter:
 
     def process(self, text: str) -> str:
         """Process text stream and apply purple prose limits.
-        
+
         Args:
             text: Input text chunk to process
-            
+
         Returns:
             Filtered text with excessive purple prose elements limited/replaced
         """
         if not text:
             return text
-            
+
         # Update character count for metaphor density calculation
         self._character_count += len(text)
-        
+
         # Calculate current metaphor budget based on characters processed
         metaphor_budget = max(
-            0, 
-            self.max_metaphor_per_1k_chars - 
+            0,
+            self.max_metaphor_per_1k_chars -
             (self._metaphor_count * 1000 // max(self._character_count, 1))
         )
-        
+
         # Process aggressive patterns first
         processed_text = self._apply_pattern_limits(
-            text, 
+            text,
             self._aggressive_regexes,
             self._aggressive_count,
             self.max_aggressive_per_episode,
             lambda: setattr(self, '_aggressive_count', self._aggressive_count + 1),
             "aggressive"
         )
-        
+
         # Process metaphor patterns with dynamic budget
         processed_text = self._apply_pattern_limits(
             processed_text,
@@ -110,7 +110,7 @@ class PurpleProseFilter:
             lambda: setattr(self, '_metaphor_count', self._metaphor_count + 1),
             "metaphor"
         )
-        
+
         return processed_text
 
     def _apply_pattern_limits(
@@ -123,7 +123,7 @@ class PurpleProseFilter:
         pattern_type: str
     ) -> str:
         """Apply limits to a set of patterns in the text.
-        
+
         Args:
             text: Input text
             pattern_replacements: List of (pattern, replacement) tuples
@@ -131,7 +131,7 @@ class PurpleProseFilter:
             max_allowed: Maximum allowed matches
             increment_counter: Function to call when a match is within limits
             pattern_type: Type of pattern ("aggressive" or "metaphor") for debugging
-            
+
         Returns:
             Text with pattern limits applied
         """
@@ -141,27 +141,27 @@ class PurpleProseFilter:
             for pattern, replacement in pattern_replacements:
                 result = pattern.sub(replacement, result)
             return result
-        
+
         # We need to process matches one by one to apply limits correctly
         # Find all matches with their positions
         all_matches: List[Tuple[int, int, str, str]] = []  # (start, end, matched_text, replacement)
-        
+
         for pattern, replacement in pattern_replacements:
             for match in pattern.finditer(text):
                 all_matches.append((match.start(), match.end(), match.group(0), replacement))
-        
+
         # Sort by position to process in order
         all_matches.sort(key=lambda x: x[0])
-        
+
         # Apply limits: keep first N matches, replace/rest excess
         result_parts: List[str] = []
         last_end = 0
         matches_processed = 0
-        
+
         for start, end, matched_text, replacement in all_matches:
             # Add text before this match
             result_parts.append(text[last_end:start])
-            
+
             # Check if we're within limits
             if (current_count + matches_processed) < max_allowed:
                 # Within limits: keep original or apply transformation
@@ -177,23 +177,23 @@ class PurpleProseFilter:
                 if replacement:
                     result_parts.append(replacement)
                 # If replacement is empty, we don't add anything (removes the match)
-            
+
             last_end = end
-        
+
         # Add remaining text after last match
         result_parts.append(text[last_end:])
-        
+
         # Update counters
         if pattern_type == "aggressive":
             self._aggressive_count += matches_processed
         elif pattern_type == "metaphor":
             self._metaphor_count += matches_processed
-            
+
         return "".join(result_parts)
 
     def get_stats(self) -> Dict[str, int]:
         """Get current filter statistics.
-        
+
         Returns:
             Dictionary with counts for monitoring and debugging
         """

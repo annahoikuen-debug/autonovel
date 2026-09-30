@@ -73,9 +73,9 @@ class TestPlanningSubversion:
             "start_ep": 1,
             "subversion_enabled": True,
         }
-        
+
         result = await agent.execute(ctx)
-        
+
         # Check that subversion_engine is in artifacts
         assert "subversion_engine" in result.artifacts
         engine_data = result.artifacts["subversion_engine"]
@@ -98,7 +98,7 @@ class TestPlanningSubversion:
             "proposal_gacha": True,
             "subversion_seed": "test_seed",
         }
-        
+
         # We need to mock generate_proposals_isolated to avoid complex sandbox setup
         with patch.object(agent, 'generate_proposals_isolated', new_callable=AsyncMock) as mock_proposals:
             mock_proposals.return_value = {

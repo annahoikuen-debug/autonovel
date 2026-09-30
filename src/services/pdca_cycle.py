@@ -110,7 +110,7 @@ class ClosedLoopPDCARunner:
             # A. Identify weak paragraphs from the latest audit
             latest_audit = self.aggregator.aggregate(genre=genre)
             target_paras: List[ParagraphTarget] = self.diagnostic.identify_weak_paragraphs(latest_audit)
-            
+
             new_draft = None
             if target_paras:
                 # B. Index the current draft to get paragraphs and context
@@ -141,11 +141,11 @@ class ClosedLoopPDCARunner:
                     suggs = latest_audit.raw[lowest_dim].suggestions
                 sugg_str = "、".join(suggs) if suggs else "描写と構成の改善"
                 pdca_directives = f"【閉ループPDCA改善指示 - サイクル{cycle} (重点: {lowest_dim})】\n{sugg_str}"
-                
+
                 ctx["pdca_cycle"] = cycle
                 ctx["pdca_directives"] = pdca_directives
                 ctx["lowest_dimension"] = lowest_dim
-                
+
                 import inspect
                 if inspect.iscoroutinefunction(self.writer):
                     new_draft = await self.writer(ctx)

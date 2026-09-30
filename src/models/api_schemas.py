@@ -319,6 +319,10 @@ class ExpandBeatsRequest(AuthenticatedRequest):
     growth_curve: str = Field(default="最初からカンスト(無双)", min_length=1, description="成長曲線モデル")
     system_assist: int = Field(default=70, ge=0, le=100, description="システム支援度 (0-100)")
     cost_severity: int = Field(default=2, ge=1, le=5, description="代償・リスク過酷度 (1-5)")
+    # STORY_SPINE: 構造テンプレートの指定（空文字なら既定値を使う）
+    pattern_key: str = Field(default="", description="構造パターン (空なら exile_rise)")
+    length_key: str = Field(default="", description="長さ階層 (空なら web_volume)")
+    market_key: str = Field(default="", description="媒体規格 (空なら web)")
     beats: list[BeatItemSchema] = Field(default_factory=list, description="確定済みビート一覧（wizard-save時）")
 
 

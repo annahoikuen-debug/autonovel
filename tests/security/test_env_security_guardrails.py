@@ -31,7 +31,7 @@ def test_gitignore_contains_env():
     assert gitignore_path.exists(), ".gitignore must exist"
     content = gitignore_path.read_text(encoding="utf-8")
     lines = [line.strip() for line in content.splitlines()]
-    
+
     assert ".env" in lines, ".gitignore must ignore '.env'"
     assert ".env.local" in lines, ".gitignore must ignore '.env.local'"
 
@@ -41,13 +41,13 @@ def test_env_example_has_no_real_secrets():
     env_example_path = REPO_ROOT / ".env.example"
     assert env_example_path.exists(), ".env.example must exist"
     content = env_example_path.read_text(encoding="utf-8")
-    
+
     suspicious_patterns = [
         r"sk-[a-zA-Z0-9]{20,}",  # OpenAI API keys
         r"ghp_[a-zA-Z0-9]{20,}",  # GitHub personal access tokens
         r"(?:password|secret)\s*=\s*['\"]?(?!your_|change_me|autonovel_dev_password_change_me)[a-zA-Z0-9!@#$%^&*()_+]{8,}['\"]?",
     ]
-    
+
     for pattern in suspicious_patterns:
         match = re.search(pattern, content, re.IGNORECASE)
         assert not match, f"Found suspicious secret pattern in .env.example: {match.group(0)}"

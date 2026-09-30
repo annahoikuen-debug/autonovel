@@ -78,17 +78,17 @@ async def generate_catchphrases(
 ):
     """カクヨム用キャッチコピーを生成するエンドポイント"""
     await validate_api_key_or_raise(req.api_key)
-    
+
     # コンテナからMarketingAgentを直接取得
     from src.core.container.app import AppContainer
     container = AppContainer(api_key=req.api_key)
     marketing_agent = container.marketing()
-    
+
     # キャッチコピーを生成
     catchphrases = await marketing_agent.generate_viral_catchphrases(
         project_settings=req.project_settings,
         candidate_count=req.candidate_count,
     )
-    
+
     # 結果を返す
     return catchphrases

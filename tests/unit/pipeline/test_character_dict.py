@@ -29,11 +29,11 @@ class TestCharacterDict:
         """保存→読み込みラウンドトリップ"""
         with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as f:
             temp_path = f.name
-        
+
         try:
             original = {"A", "B", "C", "テストキャラ"}
             save_character_dict(original, temp_path)
-            
+
             loaded = load_character_dict(temp_path)
             assert loaded == original
         finally:
@@ -45,7 +45,7 @@ class TestCharacterDict:
             path = Path(tmpdir) / "subdir" / "chars.yaml"
             save_character_dict({"X", "Y"}, str(path))
             assert path.exists()
-            
+
             loaded = load_character_dict(str(path))
             assert loaded == {"X", "Y"}
 
@@ -55,7 +55,7 @@ class TestCharacterDict:
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w") as f:
             json.dump({"characters": ["J1", "J2"]}, f)
             temp_path = f.name
-        
+
         try:
             loaded = load_character_dict(temp_path)
             assert loaded == {"J1", "J2"}

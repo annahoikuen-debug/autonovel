@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class BeatParser:
     """インラインタグとフロントマターを統合パース"""
-    
+
     def __init__(self, character_dict: Optional[set[str]] = None):
         self.character_dict = character_dict
 
@@ -23,15 +23,15 @@ class BeatParser:
         clean_text, frontmatter_beats = parse_frontmatter(
             script, default_episode=episode, default_scene=scene
         )
-        
+
         # 2. 残りテキストからインラインタグをパース
         inline_clean, inline_beats = parse_beats(
             clean_text, episode, scene, self.character_dict
         )
-        
+
         # 3. 統合（フロントマター優先でマージ）
         all_beats = self._merge_beats(frontmatter_beats, inline_beats)
-        
+
         return ParsedScript(
             clean_text=inline_clean,
             beats=all_beats,
@@ -45,18 +45,18 @@ class BeatParser:
         inline_beats: list,
     ) -> list[EmotionalBeat]:
         """ビートリストをマージ（フロントマター優先）
-        
+
         同一 (episode, scene, source, target, emotion) の場合、
         フロントマターの値を採用し、インラインはスキップ（警告ログ）
         """
         merged = {}
         conflicts = []
-        
+
         # フロントマターを先に登録（高優先度）
         for beat in frontmatter_beats:
             key = (beat.episode, beat.scene, beat.source, beat.target, beat.emotion)
             merged[key] = beat
-        
+
         # インラインを後から登録（既存キーならスキップ）
         for beat in inline_beats:
             key = (beat.episode, beat.scene, beat.source, beat.target, beat.emotion)
@@ -68,14 +68,14 @@ class BeatParser:
                 )
             else:
                 merged[key] = beat
-        
+
         if conflicts:
             logger.info(f"Resolved {len(conflicts)} beat conflicts (frontmatter priority)")
-        
+
         return list(merged.values())
 
 
-def parse_script(script: str, episode: int, scene: int = 1, 
+def parse_script(script: str, episode: int, scene: int = 1,
                  character_dict: Optional[set[str]] = None) -> ParsedScript:
     """便利関数: スクリプトをパースしてParsedScript返却"""
     parser = BeatParser(character_dict)

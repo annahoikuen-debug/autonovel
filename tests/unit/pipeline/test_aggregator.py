@@ -21,9 +21,9 @@ class TestAggregator:
             EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.8, 0.6, "...", "ep01"),
             EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.2, 0.9, "...", "ep01"),
         ]
-        
+
         vector = aggregate_signals(signals)
-        
+
         # 重み付き平均: (0.8*0.6 + 0.2*0.9) / 1.5 = 0.66 / 1.5 = 0.44
         expected = (0.8 * 0.6 + 0.2 * 0.9) / 1.5
         assert abs(vector.get_value("A", "B", EmotionType.AFFECTION) - expected) < 0.01
@@ -36,9 +36,9 @@ class TestAggregator:
             EmotionalSignal("A", "B", EmotionType.TENSION, 0.7, 0.6, "...", "ep01"),
             EmotionalSignal("B", "A", EmotionType.FEAR, 0.3, 0.7, "...", "ep01"),
         ]
-        
+
         vector = aggregate_signals(signals)
-        
+
         assert vector.get_value("A", "B", EmotionType.AFFECTION) == 0.5
         assert vector.get_value("A", "B", EmotionType.TENSION) == 0.7
         assert vector.get_value("B", "A", EmotionType.FEAR) == 0.3
@@ -53,12 +53,12 @@ class TestAggregator:
         """複数ベクトルのマージ"""
         vec1 = EmotionalVector(episode_id="ep01")
         vec1.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.5, 0.8, "...", "ep01"))
-        
+
         vec2 = EmotionalVector(episode_id="ep02")
         vec2.set_signal(EmotionalSignal("A", "B", EmotionType.TENSION, 0.7, 0.6, "...", "ep02"))
-        
+
         merged = merge_vectors([vec1, vec2])
-        
+
         assert merged.get_value("A", "B", EmotionType.AFFECTION) == 0.5
         assert merged.get_value("A", "B", EmotionType.TENSION) == 0.7
 
@@ -68,9 +68,9 @@ class TestAggregator:
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.3, 0.8, "...", "ep01"))
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.TENSION, 0.8, 0.6, "...", "ep01"))
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.FEAR, -0.5, 0.7, "...", "ep01"))
-        
+
         dominant = get_dominant_emotion(vec, "A", "B")
-        
+
         assert dominant is not None
         assert dominant[0] == EmotionType.TENSION  # 絶対値最大
         assert dominant[1] == 0.8
@@ -87,15 +87,15 @@ class TestAggregator:
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.5, 0.8, "...", "ep01"))
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.TENSION, 0.8, 0.6, "...", "ep01"))
         vec.set_signal(EmotionalSignal("C", "D", EmotionType.FEAR, 0.1, 0.5, "...", "ep01"))  # 閾値未満
-        
+
         summary = get_emotional_summary(vec, top_n=2)
-        
+
         assert len(summary) == 2
         # C->Dは閾値0.1未満なのでemotionsが空、またはエントリ自体が除外される可能性
         # 実装では微小値はemotionsから除外されるがエントリは残る
         pair_keys = [(e["source"], e["target"]) for e in summary]
         assert ("A", "B") in pair_keys
-        
+
         # dominantチェック
         ab_entry = next(e for e in summary if e["source"] == "A" and e["target"] == "B")
         assert ab_entry["dominant"] is not None

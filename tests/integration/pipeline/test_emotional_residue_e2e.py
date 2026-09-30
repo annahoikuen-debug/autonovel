@@ -41,10 +41,10 @@ class TestEmotionalResidueE2E:
         Bは目を伏せ、小さく頷いた。
         """
         vector = extractor.extract_and_persist("ep01", script)
-        
+
         assert vector.episode_id == "ep01"
         assert isinstance(vector.signals, dict)
-        
+
         # Redisに保存確認 (キー形式: ep{episode_id})
         stored = vector_store.get_latest("pipeline", ("A", "B"))
         # 空白モデルでは依存構造解析不可のためシグナルなしの可能性
@@ -54,7 +54,7 @@ class TestEmotionalResidueE2E:
         """複数エピソードで別キー保存"""
         extractor.extract_and_persist("ep01", "AはBを信頼した。")
         extractor.extract_and_persist("ep02", "BはAを恐れた。")
-        
+
         # 両方のエピソードが保存される
         keys = vector_store.get_namespace_keys("pipeline")
         assert len(keys) >= 2
@@ -66,11 +66,11 @@ class TestEmotionalResidueE2E:
         """ネームスペース分離確認"""
         # pipeline namespaceに保存
         extractor.extract_and_persist("ep01", "テスト")
-        
+
         # 別namespaceには影響なし
         rule_keys = vector_store.get_namespace_keys("rule_engine")
         ann_keys = vector_store.get_namespace_keys("annotation")
-        
+
         # pipelineのみにキーがある
         pipeline_keys = vector_store.get_namespace_keys("pipeline")
         assert len(pipeline_keys) >= 1

@@ -31,11 +31,11 @@ class VectorCollector:
         episode: Optional[int] = None,
     ) -> List[SourceVector]:
         """指定ペアに対して、利用可能なネームスペースから最新の感情ベクトルを収集する。
-        
+
         Args:
             pair: (主体キャラクター, 対象キャラクター)
             episode: 指定がある場合、そのエピソードのベクトルを探す
-            
+
         Returns:
             収集された SourceVector のリスト
         """

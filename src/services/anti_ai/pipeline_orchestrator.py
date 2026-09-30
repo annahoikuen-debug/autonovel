@@ -16,13 +16,13 @@ from src.services.anti_ai.syntax_refiner import SyntaxRefiner
 
 class ProseDetoxPipeline:
     """Multi-stage pipeline for purple prose detoxification.
-    
+
     Stages:
     1. Stream Guard: Fast regex-based filtering with episode limits
     2. Density Gate: Paragraph scoring to determine when to refine
     3. Syntax Refiner: Sentence-level refinement for flagged content
     """
-    
+
     def __init__(
         self,
         stream_guard: Optional[PurpleProseFilter] = None,
@@ -34,7 +34,7 @@ class ProseDetoxPipeline:
         verb_strength_threshold: float = 0.3,
     ) -> None:
         """Initialize the pipeline.
-        
+
         Args:
             stream_guard: Stream guard filter (creates default if None)
             density_scorer: Density scorer (creates default if None)
@@ -47,46 +47,46 @@ class ProseDetoxPipeline:
         self.stream_guard = stream_guard or PurpleProseFilter()
         self.density_scorer = density_scorer or DensityScorer()
         self.syntax_refiner = syntax_refiner or SyntaxRefiner()
-        
+
         self.aggressive_threshold = aggressive_threshold
         self.metaphor_threshold = metaphor_threshold
         self.sensory_threshold = sensory_threshold
         self.verb_strength_threshold = verb_strength_threshold
-        
+
         # Pipeline state
         self._episode_id: Optional[str] = None
         self._processing_times: Dict[str, float] = {}
         self._auto_episode_seq = 0
-    
+
     def reset_episode(self, episode_id: str) -> None:
         """Reset pipeline for a new episode.
-        
+
         Args:
             episode_id: Unique identifier for the episode
         """
         self._episode_id = episode_id
         self.stream_guard.reset()
         self._processing_times = {}
-    
+
     def process(
-        self, 
-        text: str, 
+        self,
+        text: str,
         episode_id: Optional[str] = None,
         metadata: Optional[Dict] = None
     ) -> Tuple[str, Dict]:
         """Process text through the full detox pipeline.
-        
+
         Args:
             text: Input text to process
             episode_id: Episode identifier for limit tracking
             metadata: Optional metadata (user plan, episode tags, etc.)
-            
+
         Returns:
             Tuple of (processed_text, pipeline_metrics)
         """
         if not text:
             return text, self._get_empty_metrics()
-        
+
         # Set episode ID if provided
         if episode_id is not None:
             if self._episode_id != episode_id:
@@ -97,15 +97,15 @@ class ProseDetoxPipeline:
             # 別エピソードが ID を共有し、stream_guard の状態が混入していた。
             self._auto_episode_seq += 1
             self.reset_episode(f"episode_auto_{self._auto_episode_seq}")
-        
+
         metadata = metadata or {}
         start_time = time.time()
-        
+
         # Stage 1: Stream Guard (fast, always-on)
         stage1_start = time.time()
         stream_filtered = self.stream_guard.process(text)
         stage1_time = (time.time() - stage1_start) * 1000  # ms
-        
+
         # Stage 2: Density Gate (check if we need refinement)
         stage2_start = time.time()
         score = self.density_scorer.score_paragraph(stream_filtered)
@@ -117,11 +117,11 @@ class ProseDetoxPipeline:
             self.verb_strength_threshold
         )
         stage2_time = (time.time() - stage2_start) * 1000  # ms
-        
+
         # Stage 3: Syntax Refiner (conditional, slower)
         stage3_time = 0.0
         syntax_refined = stream_filtered
-        
+
         if should_refine:
             stage3_start = time.time()
             # Get current counts from stream guard for context
@@ -132,9 +132,9 @@ class ProseDetoxPipeline:
                 stats["metaphor_count"]
             )
             stage3_time = (time.time() - stage3_start) * 1000  # ms
-        
+
         total_time = (time.time() - start_time) * 1000  # ms
-        
+
         # Update processing times
         self._processing_times = {
             "stream_guard": stage1_time,
@@ -142,7 +142,7 @@ class ProseDetoxPipeline:
             "syntax_refiner": stage3_time,
             "total": total_time
         }
-        
+
         # Prepare metrics
         metrics = {
             "episode_id": self._episode_id,
@@ -167,12 +167,12 @@ class ProseDetoxPipeline:
                 "meets_latency_target": total_time < 200  # 200ms target
             }
         }
-        
+
         if metadata:
             metrics["metadata"] = metadata
-            
+
         return syntax_refined, metrics
-    
+
     def _get_empty_metrics(self) -> Dict:
         """Get empty metrics structure for empty input."""
         return {
@@ -184,10 +184,10 @@ class ProseDetoxPipeline:
             "syntax_refiner": {"time_ms": 0.0, "applied": False},
             "pipeline": {"total_time_ms": 0.0, "meets_latency_target": True}
         }
-    
+
     def get_processing_times(self) -> Dict[str, float]:
         """Get the last recorded processing times.
-        
+
         Returns:
             Dictionary with processing times for each stage in milliseconds
         """
@@ -196,17 +196,17 @@ class ProseDetoxPipeline:
 
 # Convenience function for simple usage
 def detox_prose(
-    text: str, 
+    text: str,
     episode_id: str = "default",
     **kwargs
 ) -> Tuple[str, Dict]:
     """Convenience function for one-off prose detoxification.
-    
+
     Args:
         text: Input text to process
         episode_id: Episode identifier
         **kwargs: Additional arguments passed to ProseDetoxPipeline
-        
+
     Returns:
         Tuple of (processed_text, metrics)
     """
@@ -217,12 +217,12 @@ def detox_prose(
 if __name__ == "__main__":
     # Simple test
     test_text = """
-    彼は歯を食いしばり、まるで獣のように怒りに震えた。 
+    彼は歯を食いしばり、まるで獣のように怒りに震えた。
     血の気が引くほどの恐怖で、奥歯を軋ませながら必死にこらえた。
     視線は氷のように冷たく、激痛が脳を焼くようだった。
     しかし、彼は諦めなかった。なぜなら、約束していたからだ。
     """
-    
+
     processed, metrics = detox_prose(test_text, episode_id="test_001")
     print("Original:")
     print(test_text)

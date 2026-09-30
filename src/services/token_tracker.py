@@ -2,10 +2,16 @@
 src/services/token_tracker.py — トークン使用量追跡サービス
 """
 
+import logging
 import time
 from typing import Any
 
 from src.models.report import TokenUsageReport
+
+logger = logging.getLogger(__name__)
+
+#: T6 Step 5: 未知モデルの警告を1度だけ出すための記録
+_WARNED_UNKNOWN_MODELS: set[str] = set()
 
 
 class TokenTracker:
@@ -193,24 +199,39 @@ class TokenTracker:
     ) -> float:
         """1Mトークンあたりの単価からUSDコストを推定する。
 
-        ``src/config/cost_optimization.py`` の ``MODEL_PRICING`` を参照する。
-        未知のモデルは 0.0 を返す（推定而非」を明示的にゼロで示す）。
+        ``src/config/cost_optimization.py`` の ``resolve_pricing`` を参照する。
+
+        T6 Step 5: 未知モデルは **0.0 を返しつつ警告を出す**。
+        計測を止めない（本番を落とさない）ことを優先しつつ、
+        「$0 = 無料」ではなく「単価未登録」であることが可視化される。
+        警告は無言化を避けるため **1 モデルにつき1回** のみ出力する。
         """
         if not model_name:
             return 0.0
-        try:
-            from src.config.cost_optimization import MODEL_PRICING
+        from src.config.cost_optimization import (
+            MODEL_PRICING,
+            UnknownModelPricingError,
+            resolve_pricing,
+        )
 
-            pricing = MODEL_PRICING.get(model_name)
-            if pricing is None:
-                return 0.0
-            return round(
-                (input_tokens / 1_000_000) * pricing.get("input", 0.0)
-                + (output_tokens / 1_000_000) * pricing.get("output", 0.0),
-                8,
-            )
-        except Exception:  # pragma: no cover - 設定不備でも計測は止めない
+        try:
+            pricing = resolve_pricing(model_name)
+        except UnknownModelPricingError:
+            if model_name not in _WARNED_UNKNOWN_MODELS:
+                _WARNED_UNKNOWN_MODELS.add(model_name)
+                logger.warning(
+                    "未知モデル %s の単価が未登録のためコストを $0 として計上します"
+                    "（無料ではなく計測不能）。MODEL_PRICING に追加してください: %s",
+                    model_name,
+                    sorted(MODEL_PRICING),
+                )
             return 0.0
+
+        return round(
+            (input_tokens / 1_000_000) * pricing.get("input", 0.0)
+            + (output_tokens / 1_000_000) * pricing.get("output", 0.0),
+            8,
+        )
 
     def get_total_cost_usd(self) -> float:
         """計測済み全体の推定USDコストを返す。"""

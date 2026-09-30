@@ -12,23 +12,23 @@ class FallbackGenerator:
     def __init__(self, primary_generator: Optional[Callable] = None):
         """
         フォールバックジェネレーターを初期化。
-        
+
         Args:
             primary_generator: プライマリジェネレーター関数。
                              Noneの場合は常にフォールバックを使用する。
         """
         self.primary_generator = primary_generator
         self.logger = logger
-    
+
     def generate(self, genre: str, length: int, keywords: str = "") -> str:
         """
         ストーリーを生成する。プライマリジェネレーターが失敗した場合はフォールバックを使用する。
-        
+
         Args:
             genre: ストーリーのジャンル
             length: 目標文字数
             keywords: キーワード（カンマ区切り）
-            
+
         Returns:
             生成されたストーリーテキスト
         """
@@ -40,10 +40,10 @@ class FallbackGenerator:
                     f"プライマリジェネレーターが失敗しました: {e}. フォールバックを使用します。",
                     exc_info=True
                 )
-        
+
         # フォールバック: 静的ルールベースのストーリーを生成
         return self._generate_fallback_story(genre, length, keywords)
-    
+
     def _generate_fallback_story(self, genre: str, length: int, keywords: str) -> str:
         """
         静的ルールベースのフォールバックストーリーを生成。
@@ -57,11 +57,11 @@ class FallbackGenerator:
             "ミステリー": "静かな田舎町で起こった連続殺人事件。探偵は証拠を集め、容疑者の証言を丁寧に分析して真相に迫る。",
             "歴史": "江戸時代末期、維新志士として生きる主人公は、新しい時代への変革を願いながら日々を過ごした。"
         }
-        
+
         base_story = templates.get(genre, "これはサンプルストーリーです。")
         # 必要な長さになるまで繰り返す
         repeated = (base_story * ((length // len(base_story)) + 1))[:length]
-        
+
         # キーワードを含める簡易的な処理（実際にはもっと高度にするかもしれない）
         if keywords:
             keyword_list = [k.strip() for k in keywords.split(",") if k.strip()]
@@ -74,7 +74,7 @@ class FallbackGenerator:
                 # 長さを調整（オーバーしたら切る）
                 if len(repeated) > length:
                     repeated = repeated[:length]
-        
+
         return repeated
 
 
@@ -86,9 +86,9 @@ if __name__ == "__main__":
     # 簡単な動作テスト
     import logging
     logging.basicConfig(level=logging.INFO)
-    
+
     generator = FallbackGenerator()
-    
+
     # フォールバックのみを使用するテスト
     result = generator.generate("ファンタジー", 500, "魔法, 剣")
     print("生成結果:")

@@ -27,7 +27,7 @@ class EmotionalBeat:
         # 値のクランプ（バリデーション後のため、ここでは警告のみ）
         self.delta = max(-1.0, min(1.0, self.delta))
         self.confidence = max(0.0, min(1.0, self.confidence))
-        
+
         # 基本バリデーション
         if not self.source or not self.target:
             raise ValueError("source and target must not be empty")

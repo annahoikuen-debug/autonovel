@@ -7,11 +7,11 @@ from src.security.headers import SecurityHeadersMiddleware
 def client():
     app = FastAPI()
     app.add_middleware(SecurityHeadersMiddleware)
-    
+
     @app.get("/")
     def read_root():
         return {"Hello": "World"}
-    
+
     return TestClient(app)
 
 def test_security_headers_present(client):

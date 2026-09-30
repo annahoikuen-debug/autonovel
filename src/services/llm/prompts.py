@@ -76,3 +76,59 @@ NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE = """【ジャンル】: {genre}
 
 上記の確定事実と過去の文脈を決して矛盾させず、指定された【作家性DNA・文体】を忠実に再現して、続く魅力的な本文を執筆してください。
 """
+
+# ---------------------------------------------------------------------------
+# STORY_SPINE: 構造指示の段階適用（B8）
+#
+# `SPINE_QUALITY` で切り替える。**既定は "off"** で、既存書籍の再生成結果を
+# 一文字も変えない。段階:
+#   off  : 何も注入しない（既存プロンプトとバイト単位で同一）
+#   soft : 参考情報として duty を1行足す（既存プロンプトは壊さない）
+#   hard : この話で必ず果たすことを義務として指定する
+# ---------------------------------------------------------------------------
+
+SPINE_QUALITY_ENV = "SPINE_QUALITY"
+SPINE_QUALITY_LEVELS = ("off", "soft", "hard")
+
+
+def get_spine_quality() -> str:
+    """適用レベルを取得する。未知の値・未設定は安全側の "off" に倒す。"""
+    import os
+
+    raw = (os.getenv(SPINE_QUALITY_ENV, "off") or "off").strip().lower()
+    return raw if raw in SPINE_QUALITY_LEVELS else "off"
+
+
+def build_spine_section(spine=None, quality: str | None = None, ep_num: int = 1) -> str:
+    """プロンプトに注入する構造指示を組み立てる。
+
+    quality が "off" のときは **常に空文字** を返す。空文字を埋めれば
+    `NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE` の出力は従来と完全に一致する。
+    """
+    level = (quality or get_spine_quality()).strip().lower()
+    if level not in SPINE_QUALITY_LEVELS or level == "off" or spine is None:
+        return ""
+    try:
+        beat = spine.at(ep_num)
+    except Exception:
+        return ""
+    if beat is None:
+        return ""
+
+    if level == "soft":
+        return f"【構造の参考】{beat.label}: {beat.duty}"
+    return (
+        f"【この話で必ず果たすこと】{beat.label}（目標テンション {beat.tension:.2f} / "
+        f"種別 {beat.artifact}）: {beat.duty}"
+    )
+
+
+def build_spine_summary(spine, max_items: int = 12) -> str:
+    """作品全体の構造を1行に圧縮する（プロンプトの構造確定フェーズ用）。"""
+    if spine is None or not getattr(spine, "beats", None):
+        return ""
+    parts = []
+    for b in spine.beats[:max_items]:
+        span = f"{b.ep_start}" if b.ep_start == b.ep_end else f"{b.ep_start}-{b.ep_end}"
+        parts.append(f"{span}話:{b.label}")
+    return " / ".join(parts)

@@ -248,23 +248,15 @@ class EpisodeContextBuilder:
     #: 過去話1行の見積もり文字数
     HISTORY_LINE_CHARS = 110
 
-    @staticmethod
-    def _resolve_session(ctx: Any) -> Any:
-        """3層記憶のセッション解決を一本化する。
-
-        v5.3 までは伏線側で `ctx.artifacts.get("session") or repo.session`、
-        ダイジェスト側で `artifacts.get("session")` のみを使っており、
-        `repo.session` しか持たない呼び出し元ではダイジェストだけ空振りしていた。
-        ここは共通ヘルパーへ集約し、どの経路でも同じセッションを解決する。
-        """
-        artifacts = getattr(ctx, "artifacts", None) or {}
-        if not isinstance(artifacts, dict):
-            return None
-        session = artifacts.get("session")
-        if session is not None:
-            return session
-        repo = artifacts.get("repo") or getattr(ctx, "repo", None)
-        return getattr(repo, "session", None)
+    # T6 Step 3: ここに `_resolve_session` の重複実装を置いていたが削除した。
+    # 当初の目的（M8: 伏線側 `or repo.session` とダイジェスト側
+    # `artifacts.get("session")` の食い違い解消）は
+    # `src/agents/writing/episode_writer.py` のモジュールレベル
+    # `_resolve_session(repo, session)` で**実際に達成済み**であり、
+    # 伏線・ダイジェスト双方へ同じ解決結果を渡している。
+    # かつ本クラスは `ctx` を一切受け取らず、
+    # セッションは `__init__(session)` で注入される `self.db` であるため、
+    # `ctx.artifacts` 前提のこの実装は構造上呼び出せなかった（死んだコード）。
 
     async def _load_episode_digests(self, book_id: int, current_ep: int) -> dict[int, str]:
         """`episode_digests` テーブルから `{ep_num: digest_text}` を取得する。

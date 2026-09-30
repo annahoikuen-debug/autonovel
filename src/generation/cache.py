@@ -17,7 +17,7 @@ class GenerationCache:
     def __init__(self, default_ttl: Optional[float] = None, max_size: int = 1000):
         """
         キャッシュを初期化。
-        
+
         Args:
             default_ttl: デフォルトのTTL（秒）。Noneの場合はTTLなし（無期限）。
             max_size: キャッシュに保持する最大要素数。超えた場合はLRUで破棄。
@@ -28,17 +28,17 @@ class GenerationCache:
         self._max_size = max(1, max_size)
         self._hits = 0
         self._misses = 0
-    
+
     def _is_expired(self, expiry: Optional[float]) -> bool:
         """エントリが期限切れかどうかをチェック"""
         if expiry is None:
             return False
         return time.time() > expiry
-    
+
     def set(self, key: Any, value: Any, ttl: Optional[float] = None) -> None:
         """
         キーと値をキャッシュに保存する。
-        
+
         Args:
             key: キャッシュキー（ハッシュ可能なオブジェクト）
             value: キャッシュする値
@@ -47,9 +47,9 @@ class GenerationCache:
         with self._lock:
             if ttl is None:
                 ttl = self._default_ttl
-            
+
             expiry = time.time() + ttl if ttl is not None else None
-            
+
             if key in self._cache:
                 self._cache[key] = (value, expiry, 0)
                 self._cache.move_to_end(key)
@@ -61,14 +61,14 @@ class GenerationCache:
 
             self._cache[key] = (value, expiry, 0)
             self._cache.move_to_end(key)
-    
+
     def get(self, key: Any) -> Tuple[bool, Any]:
         """
         キーから値を取得する。
-        
+
         Args:
             key: キャッシュキー
-            
+
         Returns:
             (found, value) のタプル。
             found: True if key exists and not expired, False otherwise.
@@ -79,27 +79,27 @@ class GenerationCache:
             if entry is None:
                 self._misses += 1
                 return False, None
-            
+
             value, expiry, hit_count = entry
             if self._is_expired(expiry):
                 # 期限切れなら削除してミスとする
                 del self._cache[key]
                 self._misses += 1
                 return False, None
-            
+
             # ヒットカウントを増やし、アクセス順を最新に更新
             self._cache[key] = (value, expiry, hit_count + 1)
             self._cache.move_to_end(key)
             self._hits += 1
             return True, value
-    
+
     def delete(self, key: Any) -> bool:
         """
         キーを削除する。
-        
+
         Args:
             key: 削除するキー
-            
+
         Returns:
             True if key existed and was deleted, False otherwise.
         """
@@ -108,18 +108,18 @@ class GenerationCache:
                 del self._cache[key]
                 return True
             return False
-    
+
     def clear(self) -> None:
         """キャッシュをクリアする"""
         with self._lock:
             self._cache.clear()
             self._hits = 0
             self._misses = 0
-    
+
     def hit_rate(self) -> float:
         """
         キャッシュヒット率を返す（0.0〜1.0）。
-        
+
         Returns:
             ヒット率。ヒット+ミスが0の場合は0.0を返す。
         """
@@ -127,7 +127,7 @@ class GenerationCache:
         if total == 0:
             return 0.0
         return self._hits / total
-    
+
     def stats(self) -> dict:
         """キャッシュの統計情報を返す"""
         with self._lock:
@@ -147,24 +147,24 @@ default_cache = GenerationCache()
 if __name__ == "__main__":
     # 簡単な動作テスト
     cache = GenerationCache(default_ttl=10.0)  # 10秒TTL
-    
+
     # テスト: ミスからヒットへ
     key = ("prompt_hash", "param_hash")
     value = "Generated text"
-    
+
     found, val = cache.get(key)
     print(f"初期取得: found={found}, value={val}")  # False, None
-    
+
     cache.set(key, value)
     found, val = cache.get(key)
     print(f"保存後取得: found={found}, value={val}")  # True, "Generated text"
     print(f"ヒット率: {cache.hit_rate():.2f}")  # 0.5 (1ヒット, 1ミス)
-    
+
     # 別キーはミス
     found, val = cache.get(("other", "hash"))
     print(f"別キー取得: found={found}, value={val}")  # False, None
     print(f"ヒット率: {cache.hit_rate():.2f}")  # 0.333... (1ヒット, 2ミス)
-    
+
     # TTLテスト
     print("\n--- TTLテスト ---")
     short_cache = GenerationCache(default_ttl=0.1)  # 0.1秒TTL

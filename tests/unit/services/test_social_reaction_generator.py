@@ -19,10 +19,10 @@ async def test_generate_stream_comments_success():
             {"user": "ユーザー2", "text": "同接50人突破wwww", "timestamp": "2026-09-19T00:00:01"}
         ]
     }'''
-    
+
     generator = SocialReactionGenerator(llm=mock_llm)
     comments = await generator.generate_stream_comments("主人公がドラゴンを倒した", 2)
-    
+
     # 結果の検証
     assert len(comments) == 2
     assert isinstance(comments[0], StreamComment)
@@ -39,10 +39,10 @@ async def test_generate_stream_comments_fallback():
     # モックのセットアップ（例外を発生させる）
     mock_llm = AsyncMock()
     mock_llm.generate_text.side_effect = Exception("LLM Error")
-    
+
     generator = SocialReactionGenerator(llm=mock_llm)
     comments = await generator.generate_stream_comments("テストシーン", 3)
-    
+
     # フォールバックコメントが生成されることを確認
     assert len(comments) == 3
     assert all(isinstance(c, StreamComment) for c in comments)
@@ -60,10 +60,10 @@ async def test_generate_forum_thread_success():
             {"name": "名無しさん", "body": "草"}
         ]
     }'''
-    
+
     generator = SocialReactionGenerator(llm=mock_llm)
     posts = await generator.generate_forum_thread("主人公がドラゴンを倒した", 2)
-    
+
     # 結果の検証
     assert len(posts) == 2
     assert isinstance(posts[0], ForumPost)
@@ -82,10 +82,10 @@ async def test_generate_forum_thread_fallback():
     # モックのセットアップ（例外を発生させる）
     mock_llm = AsyncMock()
     mock_llm.generate_text.side_effect = Exception("LLM Error")
-    
+
     generator = SocialReactionGenerator(llm=mock_llm)
     posts = await generator.generate_forum_thread("テストシーン", 3)
-    
+
     # フォールバックスレッドが生成されることを確認
     assert len(posts) == 3
     assert all(isinstance(p, ForumPost) for p in posts)

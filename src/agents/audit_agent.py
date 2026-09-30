@@ -703,7 +703,7 @@ class AuditAgent(SkillAgent):
                 mappings[current] = suggested
         return mappings
 
-    def try_local_patch(
+    async def try_local_patch(
         self,
         drafted_text: str,
         unified_report: Any = None,
@@ -757,10 +757,15 @@ class AuditAgent(SkillAgent):
 
             start = drafted_text.find(quote)
             polisher = LocalPolisher()
-            improved = polisher.polish(
+            # T6 Step 7: 注入された（計測可能な）LLM を渡す。
+            # 旧実装はモジュールグローバル `call_llm_api` を直接呼ぶため
+            # `tracked_adapter` をバイパスし、この経路の LLM コストが
+            # 計測に一切乗っていなかった。
+            improved = await polisher.polish_with_llm(
                 drafted_text,
                 (start, start + len(quote)),
                 "監査で指摘された箇所を本文のトーンと文脈に合わせて書き直してください。",
+                self._audit_llm,
             )
             if improved and improved != drafted_text:
                 return {
@@ -973,7 +978,7 @@ class AuditAgent(SkillAgent):
 
             # Step 25: 全文再執筆の前に局所パッチを優先（1パッチPDCA）
             patch_result = (
-                self.try_local_patch(drafted_text, unified_report)
+                await self.try_local_patch(drafted_text, unified_report)
                 if gate["requires_regeneration"]
                 else None
             )

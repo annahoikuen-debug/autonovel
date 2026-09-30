@@ -11,10 +11,10 @@ import yaml
 @functools.lru_cache(maxsize=1)
 def load_character_dict(path: Optional[str] = None) -> set[str]:
     """キャラクタ辞書を読み込み（シングルトン・キャッシュ付き）
-    
+
     Args:
         path: YAML/JSONファイルパス。Noneの場合はデフォルト場所を探索
-        
+
     Returns:
         キャラクター名のセット
     """
@@ -32,11 +32,11 @@ def load_character_dict(path: Optional[str] = None) -> set[str]:
         else:
             # 見つからない場合は空セット返却
             return set()
-    
+
     path_obj = Path(path)
     if not path_obj.exists():
         return set()
-    
+
     with open(path, "r", encoding="utf-8") as f:
         if path.endswith((".yaml", ".yml")):
             data = yaml.safe_load(f)
@@ -45,7 +45,7 @@ def load_character_dict(path: Optional[str] = None) -> set[str]:
             data = json.load(f)
         else:
             raise ValueError(f"Unsupported format: {path}")
-    
+
     # リスト形式を想定
     if isinstance(data, list):
         return set(data)
@@ -59,9 +59,9 @@ def save_character_dict(characters: set[str], path: str) -> None:
     """キャラクタ辞書を保存"""
     path_obj = Path(path)
     path_obj.parent.mkdir(parents=True, exist_ok=True)
-    
+
     data = {"characters": sorted(characters)}
-    
+
     with open(path, "w", encoding="utf-8") as f:
         yaml.dump(data, f, allow_unicode=True, sort_keys=False)
 

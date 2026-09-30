@@ -12,7 +12,7 @@ async def test_gemini_adapter_unified_genai_call():
     mock_client = MagicMock()
     mock_response = MagicMock()
     mock_response.text = "Generated novel text."
-    
+
     mock_client.aio.models.generate_content = AsyncMock(return_value=mock_response)
 
     adapter = GeminiAdapter(api_key="dummy-key")

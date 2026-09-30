@@ -60,7 +60,7 @@ class TestParseBeats:
         """基本的なタグパース"""
         text = 'A\u300c\u884c\u3050\u305e\u300d\n[beat:fear+0.6 cause="ep14 betrayal"]\nB\u300c\u5f85\u3061\u306a\u3055\u3044\u300d'
         clean, beats = parse_beats(text, episode=15, scene=1, character_dict=char_dict)
-        
+
         assert len(beats) == 1
         beat = beats[0]
         assert beat.episode == 15
@@ -75,7 +75,7 @@ class TestParseBeats:
         """同一行に複数タグ"""
         text = '[beat:aff+0.3][beat:ten-0.2] A\u300c\u884c\u304f\u300d'
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=char_dict)
-        
+
         assert len(beats) == 2
         assert beats[0].emotion.value == "affection"
         assert beats[0].delta == 0.3
@@ -86,7 +86,7 @@ class TestParseBeats:
         """負のdelta"""
         text = 'A\u300c\u4fe1\u7528\u3067\u304d\u306a\u3044\u300d[beat:aff-0.5 cause="betrayal"]'
         clean, beats = parse_beats(text, episode=10, scene=2, character_dict=char_dict)
-        
+
         assert len(beats) == 1
         assert beats[0].delta == -0.5
         assert beats[0].cause == "betrayal"
@@ -95,7 +95,7 @@ class TestParseBeats:
         """hiddenフラグ"""
         text = 'A\u300c\u5e73\u6c17\u3060\u300d[beat:fea+0.8 hidden]'
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=char_dict)
-        
+
         assert len(beats) == 1
         assert beats[0].hidden is True
 
@@ -103,7 +103,7 @@ class TestParseBeats:
         """cause省略時のデフォルト"""
         text = 'A\u300c\u884c\u304f\u300d[beat:ten+0.3]'
         clean, beats = parse_beats(text, episode=5, scene=1, character_dict=char_dict)
-        
+
         assert len(beats) == 1
         assert "ep5 inline annotation" in beats[0].cause
 
@@ -111,7 +111,7 @@ class TestParseBeats:
         """感情エイリアス"""
         text = 'A\u300c\u884c\u304f\u300d[beat:fea+0.5]'
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=char_dict)
-        
+
         assert len(beats) == 1
         assert beats[0].emotion == EmotionType.FEAR
 
@@ -119,7 +119,7 @@ class TestParseBeats:
         """発言者推定の動作確認"""
         text = 'A\u300c\u884c\u3050\u305e\u300d\n[beat:fear+0.6]'
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=char_dict)
-        
+
         assert len(beats) == 1
         assert beats[0].source == "A"
 
@@ -127,7 +127,7 @@ class TestParseBeats:
         """辞書なしでも動作（空セット）"""
         text = 'A\u300c\u884c\u304f\u300d[beat:fear+0.5]'
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=set())
-        
+
         # 辞書が空だと推定できないため beats は空
         assert beats == []
         assert "[beat:" not in clean
@@ -136,7 +136,7 @@ class TestParseBeats:
         """タグ以外のテキストが保持される"""
         text = 'A\u300c\u884c\u3050\u305e\u300d\n[beat:fear+0.6]\nB\u300c\u5f85\u3061\u306a\u3055\u3044\u300d'
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=char_dict)
-        
+
         assert 'A\u300c\u884c\u3050\u305e\u300d' in clean
         assert 'B\u300c\u5f85\u3061\u306a\u3055\u3044\u300d' in clean
         assert "[beat:" not in clean

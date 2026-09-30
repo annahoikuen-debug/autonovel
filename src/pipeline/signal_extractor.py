@@ -22,7 +22,7 @@ class DependencyPattern:
 
 class SignalExtractor:
     """依存構造から感情シグナルを抽出"""
-    
+
     def __init__(
         self,
         lexicon: EmotionLexicon,
@@ -30,7 +30,7 @@ class SignalExtractor:
     ):
         self.lexicon = lexicon
         self.patterns = patterns or self._default_patterns()
-        
+
         # 極性反転動詞・修飾語
         self.flip_verbs = set(lexicon.polarity_flip_verbs)
         self.intensifiers = set(lexicon.intensifiers)
@@ -53,15 +53,15 @@ class SignalExtractor:
     ) -> list[EmotionalSignal]:
         """ドキュメントから感情シグナル抽出"""
         signals = []
-        
+
         # キャラ名→トークン位置マップ作成
         char_tokens = self._build_char_token_map(doc, characters)
-        
+
         # 各文を処理
         for sent in doc.sents:
             sent_signals = self._extract_from_sentence(sent, char_tokens, episode_id)
             signals.extend(sent_signals)
-        
+
         return signals
 
     def _build_char_token_map(
@@ -83,34 +83,34 @@ class SignalExtractor:
     ) -> list[EmotionalSignal]:
         """単一文からシグナル抽出"""
         signals = []
-        
+
         # ROOT動詞を探す
         root_verbs = [t for t in sent if t.dep_ == "ROOT" and t.pos_ == "VERB"]
         if not root_verbs:
             # 動詞がない場合は形容詞もチェック
             root_verbs = [t for t in sent if t.dep_ == "ROOT" and t.pos_ in ("ADJ", "ADJ_SAT")]
-        
+
         for root in root_verbs:
             # 主語と目的語を取得
             subjs = self._get_subjects(root, char_tokens)
             objs = self._get_objects(root, char_tokens)
-            
+
             for subj_token, subj_name in subjs:
                 for obj_token, obj_name in objs:
                     if subj_name == obj_name:
                         continue  # 自分自身への感情はスキップ
-                    
+
                     # 感情判定
                     emotion_type, value = self._classify_emotion(root, sent.text)
                     if value == 0.0:
                         continue
-                    
+
                     # 信頼度計算
                     confidence = self._calculate_confidence(root, sent.text, subj_token, obj_token)
-                    
+
                     # 原因抽出（動詞のレマ＋主要引数）
                     cause = self._extract_cause(root, subj_name, obj_name)
-                    
+
                     signal = EmotionalSignal(
                         source=subj_name,
                         target=obj_name,
@@ -122,7 +122,7 @@ class SignalExtractor:
                         cause=cause,
                     )
                     signals.append(signal)
-        
+
         return signals
 
     def _get_subjects(self, root: Token, char_tokens: dict[int, str]) -> list[tuple[Token, str]]:
@@ -154,17 +154,17 @@ class SignalExtractor:
     ) -> float:
         """信頼度計算（0.0-1.0）"""
         base_conf = 0.5
-        
+
         # 依存関係が明確なら加点
         if subj.dep_ == "nsubj" and obj.dep_ in ("dobj", "iobj"):
             base_conf += 0.2
         elif subj.dep_ == "nsubj" and obj.dep_ == "obl":
             base_conf += 0.1
-        
+
         # 極性反転動詞ならやや減点（解釈が難しいため）
         if verb.lemma_ in self.flip_verbs:
             base_conf -= 0.1
-        
+
         # 修飾語による調整
         sent_lower = sent_text.lower()
         for intensifier in self.intensifiers:
@@ -175,7 +175,7 @@ class SignalExtractor:
             if attenuator in sent_lower:
                 base_conf -= 0.1
                 break
-        
+
         return max(0.1, min(1.0, base_conf))
 
     def _extract_cause(self, verb: Token, subj: str, obj: str) -> str:

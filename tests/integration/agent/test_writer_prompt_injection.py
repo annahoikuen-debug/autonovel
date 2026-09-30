@@ -31,20 +31,20 @@ class TestWriterPromptInjection:
         """プロンプトに感情コンテキストが含まれること"""
         # ベクトル保存
         mock_vector_store.upsert("pipeline", "ep14", sample_vector)
-        
+
         # PromptManagerのモック
         from prompts.manager import PromptManager
-        
+
         # 実際のPromptManagerをインスタンス化（依存関係をモック）
         with patch("prompts.manager.RedisVectorStore", return_value=mock_vector_store):
             with patch("prompts.manager.load_character_dict", return_value={"A", "B"}):
                 with patch("prompts.manager.build_emotional_context_prompt") as mock_build:
                     mock_build.return_value = "[直前話からの引き継ぎ感情]\nA→B: 恐怖(0.8) [原因: ep14裏切り]"
-                    
+
                     pm = PromptManager()
                     pm.registry = AsyncMock()
                     pm.registry.render_async = AsyncMock(return_value="RENDERED_PROMPT")
-                    
+
                     result = await pm.build_final_writing_prompt(
                         ep_num=15,
                         plot_data={},
@@ -52,10 +52,10 @@ class TestWriterPromptInjection:
                         target_word_count=2000,
                         book_id=1,
                     )
-                    
+
                     # 感情コンテキスト生成関数が呼ばれたことを確認
                     mock_build.assert_called_once()
-                    
+
                     # レンダリング時にemotional_contextが渡されたことを確認
                     call_args = pm.registry.render_async.call_args
                     assert call_args is not None
@@ -67,17 +67,17 @@ class TestWriterPromptInjection:
     async def test_no_emotional_context_when_unavailable(self):
         """感情残基モジュールが利用不可の場合"""
         from prompts.manager import PromptManager, EMOTIONAL_RESIDUE_AVAILABLE
-        
+
         # 一時的に利用不可に設定
         original = EMOTIONAL_RESIDUE_AVAILABLE
         import prompts.manager
         prompts.manager.EMOTIONAL_RESIDUE_AVAILABLE = False
-        
+
         try:
             pm = PromptManager()
             pm.registry = AsyncMock()
             pm.registry.render_async = AsyncMock(return_value="RENDERED_PROMPT")
-            
+
             result = await pm.build_final_writing_prompt(
                 ep_num=15,
                 plot_data={},
@@ -85,7 +85,7 @@ class TestWriterPromptInjection:
                 target_word_count=2000,
                 book_id=1,
             )
-            
+
             # emotional_contextが空文字で渡されること
             call_args = pm.registry.render_async.call_args
             context = call_args[0][1]
