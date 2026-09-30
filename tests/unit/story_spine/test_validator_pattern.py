@@ -30,6 +30,7 @@ def test_pattern_key_uses_spine_beats():
 def test_unknown_pattern_falls_back():
     r = validate([{"chapter_number": 1, "tension": 1}], pattern_key="nope")
     assert r["pattern_key"] == "nope"
+    assert r["resolved_pattern_key"] == "exile_rise"
     assert r["required_beat_count"] > 0, "未知パターンでも既定パターンで評価する"
 
 
@@ -48,7 +49,7 @@ def test_alignment_is_one_for_a_faithful_spine():
     spine = resolve_spine("exile_rise", "web_volume", "web", 40)
     chapters = [{"chapter_number": ep, "tension": int(spine.at(ep).tension * 10)} for ep in range(1, 41)]
     r = validate(chapters, pattern_key="exile_rise")
-    assert r["alignment"] > 0.0
+    assert r["alignment"] == 1.0
     assert r["total_chapters"] == 40
 
 
