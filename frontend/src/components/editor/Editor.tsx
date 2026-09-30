@@ -29,6 +29,8 @@ import { CountMode } from "../../types/manuscript";
 import { useManuscriptCount } from "../../hooks/useManuscriptCount";
 import { ManuscriptCountBadge } from "./ManuscriptCountBadge";
 import { ManuscriptTargetIndicator } from "./ManuscriptTargetIndicator";
+import { resolvePresetId } from "../../constants/manuscript";
+import { useLengthPresets } from "../../contexts/LengthPresetContext";
 
 
 interface EditorProps {
@@ -89,8 +91,18 @@ export const Editor: React.FC<EditorProps> = ({
     const [countMode, setCountMode] = useState<CountMode>(() => {
       return (localStorage.getItem("autonovel.countMode") as CountMode) || "body";
     });
+    const { presets: lengthPresets } = useLengthPresets();
     const [targetPresetId, setTargetPresetId] = useState<string>(() => {
-      return localStorage.getItem("autonovel.targetPresetId") || "shousetsu-gekkan";
+      const stored = localStorage.getItem("autonovel.targetPresetId");
+      const resolved = resolvePresetId(stored);
+      if (stored !== resolved) {
+        try {
+          localStorage.setItem("autonovel.targetPresetId", resolved);
+        } catch {
+          // localStorage disabled or quota exceeded
+        }
+      }
+      return resolved;
     });
     const [customTargetChars, setCustomTargetChars] = useState<number>(() => {
       const saved = localStorage.getItem("autonovel.customTargetChars");
@@ -531,6 +543,7 @@ export const Editor: React.FC<EditorProps> = ({
                 onPresetChange={handleTargetPresetChange}
                 customTargetChars={customTargetChars}
                 onCustomTargetChange={handleCustomTargetChange}
+                presets={lengthPresets}
               />
             </div>
           </div>

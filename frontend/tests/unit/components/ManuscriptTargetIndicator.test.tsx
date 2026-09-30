@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ManuscriptTargetIndicator } from '@/components/editor/ManuscriptTargetIndicator';
 import { ManuscriptCountResult } from '@/types/manuscript';
-import { checkTarget } from '@/utils/manuscriptCount';
+import { MANUSCRIPT_PRESETS } from '@/constants/manuscript';
 
 const mockCount: ManuscriptCountResult = {
   body: 10800,
@@ -67,9 +67,9 @@ describe('ManuscriptTargetIndicator', () => {
     render(
       <ManuscriptTargetIndicator
         count={overCount}
-        selectedPresetId="shousetsu-gekkan"
+        selectedPresetId="custom"
         onPresetChange={onPresetChange}
-        customTargetChars={10000}
+        customTargetChars={12000}
         onCustomTargetChange={onCustomTargetChange}
       />
     );
@@ -78,13 +78,16 @@ describe('ManuscriptTargetIndicator', () => {
   });
 
   it('shows max over state for presets with maxPages', () => {
+    const dengekiPreset = MANUSCRIPT_PRESETS.find((p) => p.id === 'dengeki-bunko')!;
+    const maxPages = dengekiPreset.maxPages ?? 138;
+    const currentPages = maxPages + 3;
     const maxCount: ManuscriptCountResult = {
-      body: 41000,
-      withRuby: 45000,
-      publishing: 102.5,
-      pages: 103,
-      lines: 1025,
-      readingTimeMinutes: 103,
+      body: dengekiPreset.targetChars + 1000,
+      withRuby: dengekiPreset.targetChars + 2000,
+      publishing: currentPages - 0.5,
+      pages: currentPages,
+      lines: currentPages * 10,
+      readingTimeMinutes: currentPages,
     };
     
     const onPresetChange = vi.fn();
@@ -100,8 +103,7 @@ describe('ManuscriptTargetIndicator', () => {
       />
     );
     
-    // dengeki-bunko has maxPages: 100, current pages: 103
-    expect(screen.getByTestId('target-progress-text')).toHaveTextContent('上限 100枚 超過 (現在 103枚)');
+    expect(screen.getByTestId('target-progress-text')).toHaveTextContent(`上限 ${maxPages}枚 超過 (現在 ${currentPages}枚)`);
   });
 
   it('shows custom input when custom preset selected', () => {
@@ -163,21 +165,21 @@ describe('ManuscriptTargetIndicator', () => {
     expect(onPresetChange).toHaveBeenCalledWith('shousetsu-subaru');
   });
 
-  it('shows narou preset with no target (unlimited)', () => {
+  it('shows preset with no target (unlimited)', () => {
     const onPresetChange = vi.fn();
     const onCustomTargetChange = vi.fn();
     
     render(
       <ManuscriptTargetIndicator
         count={mockCount}
-        selectedPresetId="narou"
+        selectedPresetId="custom"
         onPresetChange={onPresetChange}
-        customTargetChars={10000}
+        customTargetChars={0}
         onCustomTargetChange={onCustomTargetChange}
       />
     );
     
-    // narou has targetChars: 0, should not show progress bar
+    // custom with targetChars: 0, should not show progress bar
     expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 });
