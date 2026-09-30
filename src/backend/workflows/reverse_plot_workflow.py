@@ -11,9 +11,6 @@ from src.shared.utils import StatusReporter
 from src.models.plot import ArcBlueprint, CatharsisPattern
 from pydantic import BaseModel
 
-if False:  # TYPE_CHECKING
-    from config.story_spine.beat import Spine
-
 logger = logging.getLogger(__name__)
 
 
@@ -44,13 +41,6 @@ EMOTIONAL_GOAL_TO_CATHARSIS = {
     "bittersweet": {"type": "中カタルシス", "tensionPeak": 80, "pattern": "wave"},
     "twist": {"type": "スパイク型", "tensionPeak": 90, "pattern": "spike"},
     "heartwarming": {"type": "小カタルシス連鎖", "tensionPeak": 70, "pattern": "gradual"},
-}
-
-HOOK_TO_EP1_TEMPLATE = {
-    "isekai_awakening": {"tension": 40, "beats": ["awakening", "discovery", "first_use"]},
-    "daily_break": {"tension": 60, "beats": ["peace", "incident", "decision"]},
-    "mystery_hook": {"tension": 50, "beats": ["discovery", "investigation", "clue"]},
-    "fated_meeting": {"tension": 55, "beats": ["encounter", "conflict", "realization"]},
 }
 
 ARC_SUMMARIES = {
@@ -143,7 +133,7 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
             arc_range = get_length("web_volume").get("arc_count", [num_arcs, num_arcs])
         except Exception:
             arc_range = [num_arcs, num_arcs]
-        num_arcs = max(1, min(num_arcs, int(arc_range[1])))
+        num_arcs = max(1, min(int(num_arcs), int(arc_range[1]), target_episodes))
         eps_per_arc = max(1, target_episodes // num_arcs)
 
         arcs = []
@@ -160,6 +150,17 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
                     summary=summaries[min(i, len(summaries) - 1)],
                 )
             )
+        for arc in arcs:
+            if arc.end_ep > target_episodes:
+                logger.warning(
+                    "Arc %d end_ep %d exceeds target_episodes %d, clamping",
+                    arc.arc_num,
+                    arc.end_ep,
+                    target_episodes,
+                )
+                arc.end_ep = target_episodes
+            if arc.start_ep > arc.end_ep:
+                arc.start_ep = arc.end_ep
         return arcs
 
     def _design_episodes(
@@ -169,7 +170,9 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
         sacrifice = answers.get("sacrifice", "peace")
         opening_hook = answers.get("openingHook", "isekai_awakening")
 
-        catharsis_map = EMOTIONAL_GOAL_TO_CATHARSIS[emotional_goal]
+        catharsis_map = EMOTIONAL_GOAL_TO_CATHARSIS.get(
+            emotional_goal, EMOTIONAL_GOAL_TO_CATHARSIS["triumph"]
+        )
 
         # テンションと各話の役割は STORY_SPINE が単一のソースになる。
         # （旧実装は `_calc_tension` で自前計算しており、構造テンプレと二重実装になっていた）
@@ -221,7 +224,9 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
 
     def _design_catharsis(self, answers: dict, target_episodes: int) -> CatharsisPattern:
         emotional_goal = answers.get("emotionalGoal", "triumph")
-        catharsis_map = EMOTIONAL_GOAL_TO_CATHARSIS[emotional_goal]
+        catharsis_map = EMOTIONAL_GOAL_TO_CATHARSIS.get(
+            emotional_goal, EMOTIONAL_GOAL_TO_CATHARSIS["triumph"]
+        )
 
         if catharsis_map["pattern"] == "explosion":
             catharsis_points = [target_episodes]
