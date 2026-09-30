@@ -258,7 +258,7 @@ W6 の実害は「遅い」ことではなく **「無駄な課金が静かに�
 | K1 | 構成充足度（生成後 `structure_validator` スコア） | 計測不能 | 全書籍で算出可能 | `null`（対象書籍0件） | `measure_spine_alignment.py --json` |
 | K2 | 中点反転の相対位置が 0.40〜0.60 に収まる率 | 未知 | 90% | `null`（対象書籍0件） | 同上 |
 | K3 | クライマックス位置が 0.75〜0.92 に収まる率 | 未知 | 90% | `null`（対象書籍0件） | 同上 |
-| K4 | テンプレート展開の LLM 追加コスト | — | 0 円 | 0 円（`resolve_spine` は LLM を呼ばない） | `tests/unit/story_spine/test_resolver_no_llm.py`（**4件**緑） |
+| K4 | テンプレート展開の LLM 追加コスト | — | 0 円 | 0 円（`resolve_spine` は LLM を呼ばない） | `tests/unit/story_spine/test_resolver_no_llm.py`（**5件**緑） |
 | K5 | 100話構成が完走する | 不可（`le=40` で弾かれる） | 可能 | 可能 | `tests/regression/test_relative_episode_structure.py`（18件緑） |
 | K6 | 1話短編に構造が入る話数 | 0 | 100% | 100%（38パターン全て） | `tests/unit/story_spine/test_resolver_compression.py` |
 | K7 | genre→preset 解決率 | `"fan"` が `None` | 100% | 100%（旧4系統の値全て解決） | `tests/regression/test_genre_resolution_unified.py`（26件緑） |
