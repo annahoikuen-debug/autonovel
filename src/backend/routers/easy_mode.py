@@ -49,6 +49,21 @@ def resolve_genre_to_preset(genre: str) -> str | None:
     return resolve_preset_key(genre)
 
 
+def resolve_pattern_key(genre: Any, explicit: str | None = None) -> str:
+    """ジャンルから STORY_SPINE パターンキーを解く。未知は exile_rise。"""
+    if explicit:
+        return explicit
+    from config.story_spine import PATTERNS
+    from config.story_spine.genre_registry import resolve_genre
+
+    entry = resolve_genre(genre if isinstance(genre, str) else None)
+    p = (entry or {}).get("pattern")
+    if p and p in PATTERNS:
+        return p
+    logger.warning("ジャンル %r に pattern 未定義のため exile_rise を使用", genre)
+    return "exile_rise"
+
+
 async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
     """LLM アダプタを利用して非同期に小説本文と次話提案を生成する (GraphRAG 統合済み)。"""
     start_time = time.time()
@@ -144,11 +159,7 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
         from config.story_spine import resolve_spine
         from src.services.llm.prompts import build_spine_section
 
-        if not pattern_key:
-            from config.story_spine.genre_registry import resolve_genre
-
-            g_entry = resolve_genre(genre)
-            pattern_key = (g_entry.get("pattern") if g_entry else None) or "exile_rise"
+        pattern_key = resolve_pattern_key(genre, explicit=pattern_key)
 
         spine = resolve_spine(
             pattern_key=pattern_key,

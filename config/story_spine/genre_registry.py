@@ -51,6 +51,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "fantasy",
         "preset_key": "cheat_tensei",
+        "pattern": "peerless_reincarnation",
         "rating": "r15",
     },
     "Scifi": {
@@ -65,6 +66,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "scifi",
         "preset_key": "cheat_tensei",
+        "pattern": "space_odyssey",
         "rating": "all",
     },
     "Romance": {
@@ -77,6 +79,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "romance",
         "preset_key": "aku_reijo",
+        "pattern": "love_comedy_density",
         "rating": "all",
     },
     "EroticRomance": {
@@ -87,6 +90,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "romance",
         "preset_key": "pure_love_erotic",
+        "pattern": "doted_saint",
         "rating": "r18",
     },
     "Mystery": {
@@ -98,6 +102,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "mystery",
         "preset_key": "loop",
+        "pattern": "detective_mystery",
         "rating": "all",
     },
     "Horror": {
@@ -109,6 +114,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "horror",
         "preset_key": "zarma",
+        "pattern": "horror_dread",
         "rating": "r18",
     },
     "Modern": {
@@ -122,6 +128,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "modern",
         "preset_key": "modern_cheat",
+        "pattern": "modern_knowledge",
         "rating": "all",
     },
     "History": {
@@ -133,6 +140,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "history",
         "preset_key": "slow_life",
+        "pattern": "court_intrigue",
         "rating": "all",
     },
     "Youth": {
@@ -144,6 +152,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "youth",
         "preset_key": "loop",
+        "pattern": "sports_growth",
         "rating": "all",
     },
     "Other": {
@@ -156,6 +165,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "other",
         "preset_key": "zarma",
+        "pattern": "exile_rise",
         "rating": "all",
     },
     "Zarma": {
@@ -167,6 +177,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "fantasy",
         "preset_key": "zarma",
+        "pattern": "exile_rise",
         "rating": "r15",
     },
     "AkuReijo": {
@@ -178,6 +189,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "romance",
         "preset_key": "aku_reijo",
+        "pattern": "villainess_destruction_avoid",
         "rating": "r15",
     },
     "SlowLife": {
@@ -189,6 +201,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "fantasy",
         "preset_key": "slow_life",
+        "pattern": "slow_life",
         "rating": "all",
     },
     "DungeonAdmin": {
@@ -199,6 +212,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "fantasy",
         "preset_key": "dungeon_admin",
+        "pattern": "dungeon_conqueror",
         "rating": "all",
     },
     "Vrmmo": {
@@ -209,6 +223,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "fantasy",
         "preset_key": "vrmmo",
+        "pattern": "vr_streamer",
         "rating": "all",
     },
     "Loop": {
@@ -219,6 +234,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "fantasy",
         "preset_key": "loop",
+        "pattern": "death_loop",
         "rating": "all",
     },
     "TsTensei": {
@@ -229,6 +245,7 @@ GENRE_REGISTRY: dict[str, dict[str, Any]] = {
         ],
         "domain": "fantasy",
         "preset_key": "ts_tensei",
+        "pattern": "transformation_isekai",
         "rating": "r15",
     },
 }
