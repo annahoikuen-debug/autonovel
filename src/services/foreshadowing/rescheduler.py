@@ -16,6 +16,10 @@ class ForeshadowingRescheduler:
     #: ビートシートは 40话超でも最後のビートを返すので、この幅なら十分。
     UNBOUNDED_SCAN_LIMIT = 200
 
+    #: 連鎖延期で1回の呼び出し当たり処理する依存伏線の上限（W5 Step 7）。
+    #: 巨大な依存グラフで1回の延期が200 UPDATE を叩くことを防ぐ。
+    MAX_CASCADE = 10
+
     @classmethod
     def find_next_suitable_episode(
         cls, current_episode: int, max_episode: int | None = None
@@ -110,3 +114,72 @@ class ForeshadowingRescheduler:
         except Exception as e:
             logger.warning(f"Failed to reschedule foreshadowing id={foreshadowing_id}: {e}")
             return None
+
+    @classmethod
+    async def cascade_reschedule(
+        cls,
+        rows: list[dict],
+        foreshadowing_id: int,
+        current_episode: int,
+        repo: DbForeshadowingRepository,
+        max_episode: int | None = None,
+    ) -> list[tuple[int, int]]:
+        """延期時に、**依存する伏線も一緒に延期する**（W5 Step 7 / W5-03）。
+
+        「A を第30話へ延期したら、A を前提とする B は第12話のまま放置される」
+        という因果矛盾を防ぐ。依存関係は `causal_dag.dependents_of` で求める
+        （決定論的。LLM は使わない）。
+
+        Args:
+            rows: 伏線行（`{"id", "description", "status", ...}` のリスト）
+            foreshadowing_id: 延期した本体
+            current_episode: 現在話数
+            repo: リポジトリ
+            max_episode: 作品全体の予定話数（None = 上限なし）
+
+        Returns:
+            `[(foreshadowing_id, new_target_episode), ...]`（実際に更新できた分だけ）。
+            フラグ `FORESHADOW_CASCADE_RESCHEDULE` が OFF なら **常に空リスト**。
+        """
+        from src.services.foreshadowing import flags
+
+        if not flags.is_cascade_reschedule_enabled():
+            return []
+
+        updater = getattr(repo, "update_target_episode", None)
+        if updater is None:
+            logger.warning(
+                "Cascade reschedule skipped: repository %s has no update_target_episode",
+                type(repo).__name__,
+            )
+            return []
+
+        from src.services.foreshadowing.causal_dag import dependents_of
+
+        dependents = dependents_of(rows, foreshadowing_id)[: cls.MAX_CASCADE]
+        if not dependents:
+            return []
+
+        updated: list[tuple[int, int]] = []
+        for dep in dependents:
+            new_ep = cls.find_next_suitable_episode(current_episode, max_episode)
+            if new_ep is None:
+                # 延期不能は `ForeshadowingService._evaluate_one` の責務（放棄判断）。
+                continue
+            try:
+                ok = await updater(dep, new_ep)
+            except Exception as e:
+                # CAS 拒否・DB エラーは例外にしない（1本失敗で全体が止まらない）。
+                logger.warning("Cascade reschedule failed for id=%s: %s", dep, e)
+                continue
+            if not ok:
+                continue
+            updated.append((dep, new_ep))
+
+        if updated:
+            logger.info(
+                "Cascade rescheduled %d dependent foreshadowing(s) from ep=%s",
+                len(updated),
+                current_episode,
+            )
+        return updated

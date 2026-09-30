@@ -578,7 +578,7 @@ vr_streamer:
     - {key: turn_of_tide, span: [0.62, 0.72]}
     - {key: last_stand, span: [0.72, 0.83]}
     - {key: climax, span: [0.83, 0.93]}
-    - {key: stream_reaction, span: [0.93, 1.00]}
+    - {key: payoff, span: [0.93, 1.00]}
 
 brain_battle:
   name: "頭脳戦デスゲーム（心理ブラフ）"

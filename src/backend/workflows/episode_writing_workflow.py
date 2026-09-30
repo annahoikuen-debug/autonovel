@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Any
 
 from src.shared.utils import StatusReporter
@@ -6,6 +7,36 @@ from src.shared.utils import StatusReporter
 from .base_workflow import BaseWorkflow
 
 logger = logging.getLogger(__name__)
+
+#: 投機実行の最低監査スコアの既定値。
+_DEFAULT_MIN_AUDIT_SCORE = 90.0
+
+
+def _is_truthy_env(name: str, default: str = "0") -> bool:
+    raw = os.environ.get(name, default).strip().lower()
+    return raw in ("1", "true", "yes", "on")
+
+
+def should_speculate(last_audit_score: float | None, auto_mode: bool) -> bool:
+    """投機的プリフェッチを実行してよいかを判定する（純関数 / PLAN_W6 Step 11）。
+
+    従来は「常に次の3話分」を無条件に走らせていたため、リテイク実績が高くても
+    無駄な課金が起きていた。判定材料が乏しい場合は必ず False（安全側の既定）。
+    """
+    if not _is_truthy_env("ENABLE_SPECULATIVE_PREFETCH", "0"):
+        return False
+    if not auto_mode:
+        return False
+    if last_audit_score is None:
+        return False
+    try:
+        threshold = float(os.environ.get("PREFETCH_MIN_AUDIT_SCORE", "90.0"))
+    except (TypeError, ValueError):
+        threshold = _DEFAULT_MIN_AUDIT_SCORE
+    try:
+        return float(last_audit_score) >= threshold
+    except (TypeError, ValueError):
+        return False
 
 
 class EpisodeWritingWorkflow(BaseWorkflow):
@@ -74,7 +105,20 @@ class EpisodeWritingWorkflow(BaseWorkflow):
         """
         執筆完了後に Semantic Cache のプリフェッチ機能を起動し、
         次のエピソード群のEmbeddingを先行計算してキャッシュをウォームアップする。
+
+        PLAN_W6 Step 8:
+        - `SemanticCacheManager` を **毎回作り直さず** インスタンス単位で使い回す
+          （L1=1000件 / L2-B=500件 が毎回ゼロからになる構造的欠陥の解消）。
+        - `asyncio.create_task` の **戻り値ハンドルを `self._prefetch_tasks` に保持**する
+          （handle-less タスクはリテイク時に殺せない）。
+        - 新たな投機処理は書かない。`prefetch_by_pattern` は Step 4 で既定 OFF。
+        - Step 11: 投機は「高確度かつ自動モード」のときだけ（既定では走らない）。
         """
+        if not should_speculate(
+            getattr(self, "last_audit_score", None), bool(getattr(self, "auto_mode", False))
+        ):
+            logger.debug("[PREFETCH] Speculative prefetch is not allowed; skipping")
+            return
         try:
             from src.services.semantic_cache import SemanticCacheManager
 
@@ -88,7 +132,11 @@ class EpisodeWritingWorkflow(BaseWorkflow):
                 logger.debug("[PREFETCH] VectorStore or Client not available, skipping prefetch")
                 return
 
-            cache_manager = SemanticCacheManager(vector_store=vector_store, client=client)
+            # 初回だけ生成して使い回す（ウォームアップの効果を構造的に残す）
+            cache_manager = getattr(self, "_semantic_cache", None)
+            if cache_manager is None:
+                cache_manager = SemanticCacheManager(vector_store=vector_store, client=client)
+                self._semantic_cache = cache_manager
 
             # 次の3エピソード分のプリフェッチを非同期実行
             prefetch_task_types = ["drafting", "polishing"]
@@ -97,7 +145,7 @@ class EpisodeWritingWorkflow(BaseWorkflow):
             # バックグラウンドでプリフェッチを実行（執筆をブロックしない）
             import asyncio
 
-            asyncio.create_task(
+            task = asyncio.create_task(
                 cache_manager.prefetch_by_pattern(
                     book_id=book_id,
                     ep_range_start=next_ep,
@@ -105,6 +153,14 @@ class EpisodeWritingWorkflow(BaseWorkflow):
                     task_types=prefetch_task_types,
                 )
             )
+            # ハンドルを保持する（リテイク / 停止時に殺せるようにする）
+            prefetch_tasks = getattr(self, "_prefetch_tasks", None)
+            if prefetch_tasks is None:
+                prefetch_tasks = set()
+                self._prefetch_tasks = prefetch_tasks
+            prefetch_tasks.add(task)
+            task.add_done_callback(prefetch_tasks.discard)
+
             reporter.report(
                 f"🚀 Prefetch triggered for ep{next_ep}-ep{next_ep + 2} (background)", "debug"
             )

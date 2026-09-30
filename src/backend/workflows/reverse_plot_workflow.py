@@ -2,13 +2,17 @@
 
 from __future__ import annotations
 import logging
-import math
 from typing import Any, List
 
 from .base_workflow import BaseWorkflow
+from config.story_spine.loader import get_length
+from src.services.spine_resolver import resolve_spine
 from src.shared.utils import StatusReporter
 from src.models.plot import ArcBlueprint, CatharsisPattern
 from pydantic import BaseModel
+
+if False:  # TYPE_CHECKING
+    from config.story_spine.beat import Spine
 
 logger = logging.getLogger(__name__)
 
@@ -125,12 +129,22 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
             "catharsisPattern": catharsis_dict,
         }
 
+    def _spine_for(self, target_episodes: int) -> "Spine":
+        """逆プロット用の Spine を解決する（LLM を呼ばない）。"""
+        return resolve_spine("exile_rise", "web_volume", "web", target_episodes)
+
     def _design_arcs(self, answers: dict, target_episodes: int) -> List[ArcBlueprint]:
         conflict = answers.get("coreConflict", "ideal_vs_reality")
         arc_template = CONFLICT_TO_ARC_TEMPLATE.get(conflict, {"arcs": 3, "pattern": "standard"})
 
         num_arcs = arc_template["arcs"]
-        eps_per_arc = target_episodes // num_arcs
+        # 部(arc)の区切りは LENGTH_PROFILE が持つ（自前の割り算をやめる）
+        try:
+            arc_range = get_length("web_volume").get("arc_count", [num_arcs, num_arcs])
+        except Exception:
+            arc_range = [num_arcs, num_arcs]
+        num_arcs = max(1, min(num_arcs, int(arc_range[1])))
+        eps_per_arc = max(1, target_episodes // num_arcs)
 
         arcs = []
         summaries = ARC_SUMMARIES.get(conflict, ["序盤", "中盤", "終盤"])
@@ -153,22 +167,38 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
     ) -> List[PlotEpisodeInit]:
         emotional_goal = answers.get("emotionalGoal", "triumph")
         sacrifice = answers.get("sacrifice", "peace")
-        _ = answers.get("openingHook", "isekai_awakening")
+        opening_hook = answers.get("openingHook", "isekai_awakening")
 
         catharsis_map = EMOTIONAL_GOAL_TO_CATHARSIS[emotional_goal]
 
+        # テンションと各話の役割は STORY_SPINE が単一のソースになる。
+        # （旧実装は `_calc_tension` で自前計算しており、構造テンプレと二重実装になっていた）
+        spine = self._spine_for(target_episodes)
+        # 逆プロットで選ばれた「つかみ」を第1話の指示に必ず反映する
+        # （旧実装は `_ = answers.get("openingHook")` で捨てていた）
+        first_duty = spine.at(1).duty if spine.at(1) else "つかみを提示する。"
+        hook_duty = f"[つかみ:{opening_hook}] {first_duty}"
+
         episodes = []
         for ep in range(1, target_episodes + 1):
-            progress = ep / target_episodes
-            tension = self._calc_tension(progress, catharsis_map["pattern"])
+            beat = spine.at(ep)
+            # Spine の tension は 0.0-1.0。既存フィールドは 0-100 の int なので換算する。
+            tension = round((beat.tension if beat else 0.5) * 100)
             is_catharsis = self._is_catharsis_ep(ep, target_episodes, catharsis_map["pattern"])
+
+            if ep == 1:
+                summary = hook_duty
+            elif beat is not None:
+                summary = f"[{beat.label}] {beat.duty}"
+            else:
+                summary = self._ep_summary(ep, target_episodes, answers)
 
             episodes.append(
                 PlotEpisodeInit(
                     ep_num=ep,
                     title=f"第{ep}話",
-                    one_line_summary=self._ep_summary(ep, target_episodes, answers),
-                    tension=int(tension),
+                    one_line_summary=summary,
+                    tension=tension,
                     catharsis=int(tension * 0.8) if is_catharsis else 0,
                     is_catharsis=is_catharsis,
                     thematic_milestone=self._milestone(ep, target_episodes, answers),
@@ -178,16 +208,6 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
                 )
             )
         return episodes
-
-    def _calc_tension(self, progress: float, pattern: str) -> float:
-        if pattern == "explosion":
-            return 30 + 65 * (progress**2)
-        elif pattern == "wave":
-            return 40 + 40 * math.sin(progress * math.pi * 2.5)
-        elif pattern == "spike":
-            return 30 + 60 * progress + 20 * math.sin(progress * math.pi * 4)
-        else:  # gradual
-            return 30 + 50 * progress
 
     def _is_catharsis_ep(self, ep: int, total: int, pattern: str) -> bool:
         if pattern == "explosion":
@@ -203,7 +223,6 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
         emotional_goal = answers.get("emotionalGoal", "triumph")
         catharsis_map = EMOTIONAL_GOAL_TO_CATHARSIS[emotional_goal]
 
-        catharsis_points = []
         if catharsis_map["pattern"] == "explosion":
             catharsis_points = [target_episodes]
         elif catharsis_map["pattern"] == "wave":
@@ -213,13 +232,17 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
         else:
             catharsis_points = [target_episodes]
 
+        # テンション波も Spine の値を単一のソースとする
+        spine = self._spine_for(target_episodes)
+        tension_wave = [
+            int(round((spine.at(ep).tension if spine.at(ep) else 0.5) * 100))
+            for ep in range(1, target_episodes + 1)
+        ]
+
         return CatharsisPattern(
             pattern_type=catharsis_map["pattern"],
             catharsis_points=catharsis_points,
-            tension_wave=[
-                int(self._calc_tension(i / target_episodes, catharsis_map["pattern"]))
-                for i in range(1, target_episodes + 1)
-            ],
+            tension_wave=tension_wave,
         )
 
     def _ep_summary(self, ep: int, total: int, answers: dict) -> str:

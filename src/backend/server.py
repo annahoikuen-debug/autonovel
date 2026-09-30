@@ -102,7 +102,26 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.warning("IMAGE_PROVIDER is 'sd_webui' but SD_WEBUI_URL is not configured.")
     elif settings.IMAGE_PROVIDER == "comfyui" and not settings.COMFYUI_URL:
         logger.warning("IMAGE_PROVIDER is 'comfyui' but COMFYUI_URL is not configured.")
-    yield
+
+    # PLAN_W6 Step 7: shutdown 枝。プロセス終了時にバックグラウンドタスクが
+    # 中断されると RAG 検索中の DB 接続がリークするため、明示的に取り消す。
+    try:
+        yield
+    finally:
+        try:
+            from src.services.semantic_cache import cancel_all_prefetch
+
+            cancelled = await cancel_all_prefetch()
+            logger.info("shutdown: cancelled %d prefetch task(s)", cancelled)
+        except Exception as e:
+            logger.warning("Failed to cancel prefetch tasks during shutdown: %s", e)
+        try:
+            from src.core.executor_manager import executor_manager
+
+            executor_manager.shutdown()
+        except Exception as e:
+            logger.warning("Failed to shutdown executor manager during shutdown: %s", e)
+        logger.info("shutdown: background tasks cancelled")
 
 
 app = FastAPI(title=f"{settings.APP_NAME} Backend", version=settings.APP_VERSION, lifespan=lifespan)

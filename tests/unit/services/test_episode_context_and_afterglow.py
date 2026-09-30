@@ -1,5 +1,6 @@
 """src/services/episode_context.py と src/services/erotic_afterglow_evaluator.py の単体テスト."""
 
+import pytest
 
 from src.services.episode_context import EpisodeContextBuilder
 from src.services.erotic_afterglow_evaluator import AfterglowEvaluator
@@ -11,62 +12,71 @@ class TestEpisodeContextBuilder:
     def setup_method(self):
         self.builder = EpisodeContextBuilder()
 
-    def test_build_context_first_episode(self):
-        ctx = self.builder.build_context(book_id=1, ep_num=1)
+    @pytest.mark.asyncio
+    async def test_build_context_first_episode(self):
+        ctx = await self.builder.build_context(book_id=1, ep_num=1)
         assert ctx["book_id"] == 1
         assert ctx["ep_num"] == 1
         assert ctx["is_first"] is True
         assert ctx["is_last"] is False
         assert ctx["target_word_count"] == 3000
 
-    def test_build_context_with_previous(self):
+    @pytest.mark.asyncio
+    async def test_build_context_with_previous(self):
         prev = {"title": "第1話", "ending": "終わり", "summary": "要約", "key_events": ["event"]}
-        ctx = self.builder.build_context(book_id=1, ep_num=2, previous_episode=prev)
+        ctx = await self.builder.build_context(book_id=1, ep_num=2, previous_episode=prev)
         assert ctx["is_first"] is False
         assert ctx["previous_episode"]["title"] == "第1話"
         assert ctx["previous_episode"]["key_events"] == ["event"]
 
-    def test_build_context_prev_defaults(self):
+    @pytest.mark.asyncio
+    async def test_build_context_prev_defaults(self):
         # prev.get("title", f"第{ep_num-1}話") のデフォルトフォールバックを検証するため
         # get に渡す prev は None キーではなく、キー自体が存在しない状態にする
         prev = {"ending": "", "summary": "", "key_events": []}
-        ctx = self.builder.build_context(book_id=1, ep_num=5, previous_episode=prev)
+        ctx = await self.builder.build_context(book_id=1, ep_num=5, previous_episode=prev)
         assert ctx["previous_episode"]["title"] == "第4話"
         assert ctx["previous_episode"]["key_events"] == []
 
-    def test_build_context_no_prev_not_first(self):
-        ctx = self.builder.build_context(book_id=1, ep_num=3, previous_episode=None)
+    @pytest.mark.asyncio
+    async def test_build_context_no_prev_not_first(self):
+        ctx = await self.builder.build_context(book_id=1, ep_num=3, previous_episode=None)
         # ヒストリー未登録のため空の概要が返る
         assert ctx["previous_episode"]["title"] == ""
         assert "ending" in ctx["previous_episode"]
 
-    def test_history_max_10(self):
+    @pytest.mark.asyncio
+    async def test_history_max_10(self):
         for i in range(1, 13):
-            self.builder.build_context(book_id=1, ep_num=i, previous_episode={"title": f"t{i}"})
+            await self.builder.build_context(book_id=1, ep_num=i, previous_episode={"title": f"t{i}"})
         history = self.builder.get_history()
         assert len(history) == 10
         assert history[-1]["ep_num"] == 12
         assert history[0]["ep_num"] == 3
 
-    def test_clear_history(self):
-        self.builder.build_context(book_id=1, ep_num=1)
+    @pytest.mark.asyncio
+    async def test_clear_history(self):
+        await self.builder.build_context(book_id=1, ep_num=1)
         self.builder.clear_history()
         assert self.builder.get_history() == []
 
-    def test_set_final_episode(self):
-        self.builder.build_context(book_id=1, ep_num=5)
+    @pytest.mark.asyncio
+    async def test_set_final_episode(self):
+        await self.builder.build_context(book_id=1, ep_num=5)
         self.builder.set_final_episode(5)
         history = self.builder.get_history()
         assert history[0]["context"]["is_last"] is True
 
-    def test_set_final_episode_not_found(self):
-        self.builder.build_context(book_id=1, ep_num=1)
+    @pytest.mark.asyncio
+    async def test_set_final_episode_not_found(self):
+        await self.builder.build_context(book_id=1, ep_num=1)
         self.builder.set_final_episode(99)  # 存在しないエピソード、エラーなし
         assert self.builder.get_history()[0]["context"]["is_last"] is False
 
-    def test_get_last_episode_summary_from_history(self):
-        self.builder.build_context(book_id=1, ep_num=1)
-        self.builder.build_context(
+    @pytest.mark.asyncio
+    async def test_get_last_episode_summary_from_history(self):
+        await self.builder.build_context(book_id=1, ep_num=1)
+        await self.builder.build_context(
             book_id=1, ep_num=2, previous_episode={"title": "T1", "ending": "E1", "summary": "S1"}
         )
         # ep3 を前話なしで生成すると ep2 の context から概要が拾われる

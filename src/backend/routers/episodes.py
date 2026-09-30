@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends
 
 from src.backend.auth import get_current_user, require_valid_api_key
@@ -14,11 +16,36 @@ from src.models.api_schemas import (
     RetryFailedRequest,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(
     prefix="/api/episodes",
     tags=["episodes"],
     dependencies=[Depends(get_current_user)],
 )
+
+
+async def _cancel_prefetch_for_book(book_id: int | None) -> int:
+    """書籍単位のプリフェッチをすべて取り消す（PLAN_W6 Step 10）。
+
+    リトライは「已完成分」を破棄して書き直すため，その之前に出ていた投機プリフェッチは
+    すべて無駄になる。レジストリの実キーは `"{book_id}_{ep}"` なので、
+    `cancel_prefix` のスコープ一致でまとめて殺す。
+    プリフェッチ取り消しが失敗しても API は落とさない（ログのみ）。
+    """
+    if book_id is None:
+        return 0
+    try:
+        from src.services.rag_prefetch_service import RagPrefetchService
+
+        svc = RagPrefetchService()
+        cancelled = await svc._registry.cancel_prefix(f"{book_id}")
+        if cancelled:
+            logger.info("[W6] cancelled %d prefetch task(s) for book %s", cancelled, book_id)
+        return cancelled
+    except Exception as e:
+        logger.warning("[W6] failed to cancel prefetch for book %s: %s", book_id, e)
+        return 0
 
 
 @router.get("/chapters/{book_id}")
@@ -128,6 +155,10 @@ async def retry_failed_episodes(
     if req.api_key:
         require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
+
+    # PLAN_W6 Step 10: リトライ前に、進行中の投機プリフェッチをすべて取り消す。
+    await _cancel_prefetch_for_book(req.book_id)
+
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("retry_failed")

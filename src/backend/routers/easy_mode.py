@@ -130,8 +130,38 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
     style_bias_section = style_profile.to_prompt_instruction() if style_profile else ""
 
     content_length_limit = int(payload.get("content_length_limit") or 2000)
-    _ = int(payload.get("target_episodes") or 1)
+    target_episodes = int(payload.get("target_episodes") or 1)
     llm_config = payload.get("llm_config") or {}
+
+    # STORY_SPINE (B8): 構造指示の段階的注入（既定 spine_quality="off" 時は完全空文字でバイト同一性を保証）
+    pattern_key = payload.get("pattern_key") or ""
+    length_key = payload.get("length_key") or ""
+    market_key = payload.get("market_key") or ""
+    spine_quality = payload.get("spine_quality") or None
+
+    spine_section = ""
+    try:
+        from config.story_spine import resolve_spine
+        from src.services.llm.prompts import build_spine_section
+
+        if not pattern_key:
+            from config.story_spine.genre_registry import resolve_genre
+
+            g_entry = resolve_genre(genre)
+            pattern_key = (g_entry.get("pattern") if g_entry else None) or "exile_rise"
+
+        spine = resolve_spine(
+            pattern_key=pattern_key,
+            length_key=length_key or "web_volume",
+            market_key=market_key or "web",
+            total_eps=target_episodes,
+        )
+        built = build_spine_section(spine, quality=spine_quality, ep_num=chapter_id)
+        if built:
+            spine_section = f"\n{built}"
+    except Exception as exc:
+        logger.warning("Spine resolution in easy_mode skipped: %s", exc)
+        spine_section = ""
 
     # GraphRAG を反映したユーザープロンプトの構築
     user_prompt = NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE.format(
@@ -144,6 +174,7 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
         vector_context=vector_context,
         history_context=history_context,
         current_chapter=current_chapter,
+        spine_section=spine_section,
     )
     if content_length_limit:
         user_prompt += f"\n\n【執筆指示】1話あたりの目標文字数は約{content_length_limit}文字（目安: {max(500, content_length_limit - 300)}〜{content_length_limit + 300}文字）で執筆してください。"

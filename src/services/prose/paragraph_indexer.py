@@ -23,25 +23,37 @@ class ParagraphIndexer:
     def index_paragraphs(self, text: str) -> List[Dict[str, any]]:
         """
         Split text into paragraphs, assign indices, and return list of dicts.
-        Each dict contains: index, text, and optionally start/end positions.
+        Each dict contains: index, text, and character offsets start/end.
         Args:
             text: The full text to index.
         Returns:
-            List of paragraph dictionaries with keys: 'index', 'text'.
+            List of paragraph dictionaries with keys: 'index', 'text', 'start', 'end'.
         """
+        if not text or not text.strip():
+            return []
+
         # Split by blank lines (multiple newlines) and remove empty lines
         raw_paragraphs = re.split(r'\n\s*\n', text.strip())
         paragraphs = [p.strip() for p in raw_paragraphs if p.strip()]
 
         # Adjust paragraph boundaries to target size (optional, for now we keep as split)
         # For simplicity, we'll just use the split paragraphs and assign indices.
+        # strip() で削られた先頭分をオフセットに加算する
+        base = len(text) - len(text.lstrip())
+        cursor = base
         indexed = []
         for i, para in enumerate(paragraphs):
+            # 元テキスト上で貪欲に探す（見つからない場合は -1 = Step 5 のガード用）
+            start = text.find(para, cursor)
+            if start < 0:
+                start = end = -1
+            else:
+                end = start + len(para)
+                cursor = end
             indexed.append({
                 'index': i,
                 'text': para,
-                # We could also store character offsets if needed for in-place replacement
-                # 'start': start_pos,
-                # 'end': end_pos,
+                'start': start,
+                'end': end,
             })
         return indexed

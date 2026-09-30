@@ -4,7 +4,7 @@
 - **作成日**: 2026-09-29
 - **対象バージョン**: AutoNovel v5.3.0 → v6.0.0
 - **親計画**: [PLAN_V6_COST_LATENCY_OPTIMIZATION.md](PLAN_V6_COST_LATENCY_OPTIMIZATION.md) §2 / PLAN_T6 R07・R10
-- **ステータス**: 未着手
+- **ステータス**: **完了**（2026-09-30 / Step 1〜12 実装済み・pytest 緑）
 - **目的**: 1話目の執筆中に裏で走る「次話」の投機処理を、
   **①LLM を一切呼ばない静的ナレッジのウォームアップ限定** ②**全経路 cancellable** に改了、
   リテイク・編集・中断時に**課金される無駄をゼロにする**。
@@ -1138,10 +1138,41 @@ C:\Python314\python.exe -m pytest tests/unit/workflows/test_should_speculate.py 
 | 項目 | 場所 | 理由 |
 |---|---|---|
 | `orchestrated.py:129-140` の `cancel_orchestrated_task` からの invalidate | `src/backend/routers/orchestrated.py` | Step 10 のスコープ外（1ファイル原則） |
+| **ハンドル未保存の `asyncio.create_task` が 2 箇所残存** | `src/backend/routers/orchestrated.py:210`（`lambda e: asyncio.create_task(...)`）／ `src/backend/workflows/_shared_ops.py:43` | Step 12 §4-3 の全件目視確認で判明。レジストリに載せるかは各ファイル所有者（orchestrated / PLAN_T6）の判断 |
 | `_shared_ops.trigger_prefetch`（呼び出し元ゼロ）の削除 | `src/backend/workflows/_shared_ops.py:22-56` | 死んでいるが**削除は PLAN_T6 の責務** |
 | `src/core/llm_gateway.py:58-78` の同名 `SemanticCacheManager`（4行スタブ）の混在 | `src/core/llm_gateway.py` / `src/core/container/app.py:51-60` | 名称衝突は別計画（命名整理） |
 | `graphrag_sync_service` / `backend/background.py` の `threading.Event` を `CancellationToken` に統一 | `src/backend/background.py:120` | thread↔asyncio 境界の整理が必要 |
-| `get_project_intelligence` の未定義 | `src/services/rag_prefetch_service.py:87` | engine 側に定義が無いため常に空振り（Step 3 で無害化済み） |
+| `get_project_intelligence` の未定義 | `src/services/rag_prefetch_service.py` | engine 側に定義が無いため常に空振り（Step 3 で無害化済み） |
+
+### 4.1 実装実績（Step 12 で確定した事実）
+
+- 投機実行は **既定では一切走らない**。`ENABLE_SPECULATIVE_PREFETCH=0`（既定）と
+  `ENABLE_SEMANTIC_PREFETCH_DRAFT=0`（既定）の **二重ゲート**。
+- `RagPrefetchService` のレジストリは **モジュールレベル共有**（`_SHARED_REGISTRY`）にした。
+  `RagPrefetchService()` は呼び出しごとに生成されるため、インスタンス単位のレジストリだと
+  `routers/episodes.py` からの書籍単位の取り消しが空振りする。
+- `cancel_prefix` は `"7"` が `"70_1"` に誤爆しないよう、区切り文字（`:` / `_` / `/`）の
+  境界でだけ部分一致させる（キャッシュキーが `"{book_id}_{ep}"` のため）。
+- `close_background_tasks()` は命名の一貫性のための別名で、返り値は取り消した本数。
+
+### 4.2 総合回帰の結果（2026-09-30）
+
+| コマンド | 結果 |
+|:---|:---|
+| `pytest tests/unit/services/prefetch/ -q` | **緑**（新規 5 ファイル） |
+| `pytest tests/contract/ -q` | **緑**（128 passed / 1 skipped。W6 追加分 7 件を含む） |
+| `pytest tests/unit/core/test_cancellation_token.py tests/unit/workflows tests/unit/writing tests/unit/backend -q` | 435 passed / 4 skipped / **3 failed**（失敗 3 件は**変更前 baseline と同一**） |
+| `pytest tests/unit/ -q` | 6948 passed / 18 skipped / **51 failed + 3 errors**（下記） |
+| `pytest tests/integration/test_reflective_rag_context_builder.py tests/integration/test_semantic_rag_compression_e2e.py -q` | 4 passed / **1 failed**（下記） |
+| `ruff check src/services/prefetch/ src/core/cancellation.py --select E9,F63,F7,F82` | **0 エラー** |
+| `grep -rn "asyncio.coroutine" src/` | コード中のヒット **0 件**（docstring 2 行のみ） |
+
+**残存失敗はすべて本計画と無関係**（W6 が触れていないモジュール。T6/F1 並行作業および従来からの failures）:
+
+- `tests/unit/backend/`: `test_get_current_user_with_real_session_no_await_error` / `test_module_level_report_exception_helper` / `test_unauthorized_response_contains_cors_headers`（**Step 7 着手前に採取した baseline と同一の 3 件**）
+- `tests/unit/workflows/test_writing_graph_flow.py::test_writing_graph_complete_flow`: langgraph の msgpack checkpointer が `MagicMock` を直列化できず、**Python プロセスが access violation で落ちる**（W6 は `writing_langgraph.py` に一切触れていない）
+- `tests/integration/test_reflective_rag_context_builder.py::test_context_builder_with_reflective_rag_success`: `reflective_rag.py:638` の `'coroutine' object is not iterable`
+- 上記以外（compression / episode_context / pgvector_store / auth_middleware / huey_queue / pdca_writing_agent など 38 件）: **単独実行でも同様に失敗**するため、W6 とは無関係の既存 failures。
 
 ## 5. 期待効果
 

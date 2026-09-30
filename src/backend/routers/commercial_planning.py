@@ -40,6 +40,10 @@ class BeatSheetGenerateRequest(BaseModel):
     synopsis: str
     genre: str = "fantasy"
     target_episodes: int = 40
+    # STORY_SPINE: 構造テンプレートの指定（既定値は既存挙動と同じ exile_rise）
+    pattern_key: str = "exile_rise"
+    length_key: str = "web_volume"
+    market_key: str = "web"
 
 
 @router.get("/{book_id}", response_model=BeatSheetResponse)
@@ -108,31 +112,32 @@ async def generate_beat_sheet(
             db.refresh(book)
             book_id = book.id
 
-        # 40話分のビートシート構成を標準テンション曲線に基づき展開
-        phases = ["起 (Setup)", "承 (Confrontation)", "転 (Climax)", "結 (Resolution)"]
+        # 構造は STORY_SPINE が単一のソースになる。
+        # 旧実装はここに 4 幕（起/承/転/結）をハードコードしており、
+        # COMMERCIAL_40EP_BEATS（7 phase）と真逆に矛盾していた。
+        from src.services.spine_resolver import resolve_spine
+
+        spine = resolve_spine(
+            request.pattern_key, request.length_key, request.market_key,
+            request.target_episodes,
+        )
         items: List[BeatSheetItem] = []
 
         # 既存プロットがあれば一旦削除して再生成
         db.query(Plot).filter(Plot.book_id == book_id).delete()
 
         for ep in range(1, request.target_episodes + 1):
-            phase_idx = min(3, (ep - 1) * 4 // request.target_episodes)
-            phase = phases[phase_idx]
-
-            # 4幕構成に応じたテンション曲線
-            progress = ep / float(request.target_episodes)
-            if progress < 0.25:
-                tension = 0.3 + 0.2 * (progress / 0.25)
-            elif progress < 0.75:
-                tension = 0.5 + 0.3 * ((progress - 0.25) / 0.5)
-            elif progress < 0.90:
-                tension = 0.8 + 0.2 * ((progress - 0.75) / 0.15)
-            else:
-                tension = 0.9 - 0.4 * ((progress - 0.90) / 0.10)
+            beat = spine.at(ep)
+            phase = beat.label if beat else "展開"
+            tension = beat.tension if beat else 0.5
 
             title = f"{request.title} 第{ep}話"
-            mission = f"{phase}: エピソード{ep}の主要ミッションと葛藤"
-            visual_focus = f"第{ep}話 象徴的シーン演出"
+            mission = beat.duty if beat else "物語を着実に進行させる。"
+            visual_focus = (
+                f"第{ep}話 {phase}の象徴的シーン演出"
+                if beat
+                else f"第{ep}話 象徴的シーン演出"
+            )
 
             plot_record = Plot(
                 book_id=book_id,

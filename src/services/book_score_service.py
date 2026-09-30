@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import logging
+import os
 from datetime import datetime
-from typing import Any, Dict, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
 
 from src.agents.orchestrator import AgentContext
 from src.infrastructure.database.models.book_score import BookScore as BookScoreModel
@@ -24,7 +25,33 @@ class ScoringUnavailableError(RuntimeError):
 
 #: 判定不能な次元に対して用いる中立スコア。
 #: 閾値を下回らせないため 100.0 (満点) を用い、減点理由には含めない。
+#: 注意: この値は *次元スコア* の表示値にのみ使われる。
+#: 総合スコアへの寄与は :func:`_skip_unavailable_weight` の設定に従う
+#: （既定 ON なら欠測次元は重み付き平均から除外される）。
 NEUTRAL_SCORE = 100.0
+
+#: 5 次元のキーと、_get_weights() がキーを返さなかったときの既定重み。
+DEFAULT_DIMENSION_WEIGHTS: Dict[str, float] = {
+    "structure": 25,
+    "coherency": 25,
+    "factual_grounding": 20,
+    "visual_textual_synergy": 15,
+    "reader_experience": 15,
+}
+
+#: 判定不能（ScoringUnavailableError）な次元を総合スコアの重み付き平均から除外するかの環境変数。
+#: 未設定（既定）または truthy なら除外する。 falsy を渡すと旧挙動
+#: （NEUTRAL_SCORE=100 を重み付きで加算し、障害が「高評価」に化ける）に戻る。
+ENV_SKIP_UNAVAILABLE_WEIGHT = "BOOK_SCORE_SKIP_UNAVAILABLE_WEIGHT"
+_FALSY_VALUES = {"0", "false", "off", "no", ""}
+
+
+def _skip_unavailable_weight() -> bool:
+    """欠測次元を重み付き平均から除外するか（既定 True）。"""
+    raw = os.getenv(ENV_SKIP_UNAVAILABLE_WEIGHT)
+    if raw is None:
+        return True
+    return raw.strip().lower() not in _FALSY_VALUES
 
 
 class BookScoreCalculator:
@@ -177,6 +204,7 @@ class BookScoreCalculator:
         # 各次元スコアを計算（0-100 の範囲で正規化）
         structure = await self._score_structure(book_id, chapter_number, ctx)
         coherency = await self._score_coherency(book_id, chapter_number, ctx)
+        unavailable_dims: Set[str] = set()
         try:
             factual = await self._score_factual(book_id, chapter_number, ctx)
         except ScoringUnavailableError as e:
@@ -187,17 +215,34 @@ class BookScoreCalculator:
                 book_id, chapter_number, e
             )
             factual = NEUTRAL_SCORE
+            unavailable_dims.add("factual_grounding")
         visual_textual = await self._score_visual_textual(book_id, chapter_number, ctx)
         reader_exp = await self._score_reader_experience(book_id, chapter_number, ctx)
 
         # 重み付け合計（各スコアは0-100、重みはパーセント）
-        overall = (
-            structure * weights.get("structure", 25) / 100
-            + coherency * weights.get("coherency", 25) / 100
-            + factual * weights.get("factual_grounding", 20) / 100
-            + visual_textual * weights.get("visual_textual_synergy", 15) / 100
-            + reader_exp * weights.get("reader_experience", 15) / 100
-        )
+        #
+        # 実バグF: 判定不能な次元を NEUTRAL_SCORE(=100) のまま重み付き合計に足すと、
+        # 「評価できなかった」という障害が「高評価」に化けて総合スコアを持ち上げる。
+        # そこで既定では欠測次元を分子・分母の両方から除外し、
+        # 『評価できた次元の重み付き平均』に再正規化する。
+        # 旧挙動が必要な場合は環境変数 BOOK_SCORE_SKIP_UNAVAILABLE_WEIGHT で戻せる。
+        skip_unavailable = _skip_unavailable_weight()
+        dimensions: List[Tuple[str, float]] = [
+            ("structure", structure),
+            ("coherency", coherency),
+            ("factual_grounding", factual),
+            ("visual_textual_synergy", visual_textual),
+            ("reader_experience", reader_exp),
+        ]
+        weighted_sum = 0.0
+        weight_total = 0.0
+        for dim, value in dimensions:
+            if skip_unavailable and dim in unavailable_dims:
+                continue
+            weight = weights.get(dim, DEFAULT_DIMENSION_WEIGHTS[dim])
+            weighted_sum += value * weight
+            weight_total += weight
+        overall = weighted_sum / weight_total if weight_total > 0 else 0.0
 
         book_score = BookScore(
             overall_score=round(overall, 2),

@@ -1,12 +1,15 @@
+import pytest
+
 from src.services.episode_context import EpisodeContextBuilder
 
 def test_init():
     builder = EpisodeContextBuilder()
     assert builder._episode_history == []
 
-def test_build_context_first_episode():
+@pytest.mark.asyncio
+async def test_build_context_first_episode():
     builder = EpisodeContextBuilder()
-    context = builder.build_context(book_id=1, ep_num=1)
+    context = await builder.build_context(book_id=1, ep_num=1)
     assert context["book_id"] == 1
     assert context["ep_num"] == 1
     assert context["is_first"]
@@ -17,7 +20,8 @@ def test_build_context_first_episode():
     assert builder._episode_history[0]["ep_num"] == 1
     assert builder._episode_history[0]["context"] == context
 
-def test_build_context_with_previous_episode():
+@pytest.mark.asyncio
+async def test_build_context_with_previous_episode():
     builder = EpisodeContextBuilder()
     previous = {
         "title": "前話のタイトル",
@@ -25,7 +29,7 @@ def test_build_context_with_previous_episode():
         "summary": "前話のあらすじ",
         "key_events": ["イベント1", "イベント2"]
     }
-    context = builder.build_context(book_id=1, ep_num=2, previous_episode=previous)
+    context = await builder.build_context(book_id=1, ep_num=2, previous_episode=previous)
     assert context["book_id"] == 1
     assert context["ep_num"] == 2
     assert not context["is_first"]
@@ -41,12 +45,13 @@ def test_build_context_with_previous_episode():
     assert builder._episode_history[0]["ep_num"] == 2
     assert builder._episode_history[0]["context"] == context
 
-def test_build_context_without_previous_episode_not_first():
+@pytest.mark.asyncio
+async def test_build_context_without_previous_episode_not_first():
     builder = EpisodeContextBuilder()
     # First, add a dummy history to simulate previous episode
     builder._episode_history = [{"ep_num": 1, "context": {"ep_num": 1, "book_id": 1, "is_first": True, "is_last": False, "target_word_count": 3000}}]
     # Now build for ep_num=2 without providing previous_episode
-    context = builder.build_context(book_id=1, ep_num=2)
+    context = await builder.build_context(book_id=1, ep_num=2)
     assert context["book_id"] == 1
     assert context["ep_num"] == 2
     assert not context["is_first"]
@@ -113,12 +118,13 @@ def test_clear_history():
     builder.clear_history()
     assert builder._episode_history == []
 
-def test_set_final_episode():
+@pytest.mark.asyncio
+async def test_set_final_episode():
     builder = EpisodeContextBuilder()
     # Create three episodes using build_context to ensure they have the expected keys
-    ctx1 = builder.build_context(book_id=1, ep_num=1)
-    ctx2 = builder.build_context(book_id=1, ep_num=2)
-    ctx3 = builder.build_context(book_id=1, ep_num=3)
+    ctx1 = await builder.build_context(book_id=1, ep_num=1)
+    ctx2 = await builder.build_context(book_id=1, ep_num=2)
+    ctx3 = await builder.build_context(book_id=1, ep_num=3)
     # Manually set history to these contexts
     builder._episode_history = [
         {"ep_num": 1, "context": ctx1},

@@ -23,6 +23,11 @@ class GeneratePlotDTO(BaseModel):
     genre: str = Field(default="")
     target_episodes: int = Field(default=50, ge=1, le=500)
     structure_type: str = Field(default="three_act")  # "three_act", "five_act", "hero_journey", "kishotenketsu"
+    # STORY_SPINE: 構造テンプレートの指定。空文字なら既定（exile_rise / web_volume / web）を使う。
+    # 旧実装は `structure_type` だけが定義され、どこからも populate されなかった。
+    pattern_key: str = Field(default="", description="構造パターン (空なら exile_rise)")
+    length_key: str = Field(default="", description="長さ階層 (空なら web_volume)")
+    market_key: str = Field(default="", description="媒体規格 (空なら web)")
     seed_plot_points: Optional[list[dict]] = None
 
     model_config = MODEL_CONFIG_DEFAULTS

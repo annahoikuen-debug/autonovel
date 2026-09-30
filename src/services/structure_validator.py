@@ -177,9 +177,11 @@ def check_spine_invariants(spine, eps: int) -> list[dict[str, Any]]:
         )
     if "midpoint_reversal" not in keys:
         problems.append({"key": "midpoint_reversal", "ok": False, "reason": "中点反転が無い"})
-    if keys[-1] not in ("climax", "volume_hook", "coda"):
+    # 結びは climax でも diminishing/coda 系でもよい。必要なのは「締め」が存在すること。
+    last = spine.beats[-1]
+    if last.key != "climax" and last.role != "close":
         problems.append(
-            {"key": "climax", "ok": False, "reason": f"最後が {keys[-1]!r}（決着に結びついていない）"}
+            {"key": "climax", "ok": False, "reason": f"最後が {last.key!r}（締めにならない）"}
         )
 
     covered = {ep for b in spine.beats for ep in range(b.ep_start, b.ep_end + 1)}

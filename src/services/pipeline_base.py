@@ -70,6 +70,8 @@ class WorkflowContext(BaseModel):
     episodes_detail: list[dict[str, Any]] = Field(default_factory=list)
     foreshadowings: List[Foreshadowing] = Field(default_factory=list)
     current_volume: int = 1
+    # STORY_SPINE: 実際に増える巻カウンタ。`current_volume` は後方互換のため残す。
+    volume_index: int = 1
     current_episode: int = 0
     hooks: List[Hook] = Field(default_factory=list)
     hook_generation_index: int = 0

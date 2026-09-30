@@ -266,8 +266,9 @@ class TestSemanticCacheManager:
         self.mock_vector_store.delete_by_id.assert_not_called()
 
     @pytest.mark.asyncio
+    @patch.dict("os.environ", {"ENABLE_SEMANTIC_PREFETCH_DRAFT": "1"})
     async def test_prefetch_next(self):
-        """Test prefetching next episode prompts."""
+        """Test prefetching next episode prompts (投機生成は既定 OFF なのでフラグを立てる)。"""
         with patch("prompts.manager.PromptManager") as mock_pm_class:
             mock_pm = MagicMock()
             mock_pm.build_drafting_prompt = AsyncMock(return_value="drafting prompt")

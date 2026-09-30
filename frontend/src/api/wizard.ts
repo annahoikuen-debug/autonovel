@@ -13,6 +13,9 @@ export interface ExpandBeatsRequest {
   growth_curve: string;
   system_assist: number;
   cost_severity: number;
+  pattern_key?: string;
+  length_key?: string;
+  market_key?: string;
 }
 
 export interface BeatItem {

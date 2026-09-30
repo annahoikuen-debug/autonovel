@@ -29,6 +29,7 @@ async def get_templates() -> list[dict[str, Any]]:
 async def validate_structure(
     book_id: int,
     structure: str = Query("three_act", description="three_act | kishotenketsu | hero_journey"),
+    pattern: str | None = Query(None, description="STORY_SPINE パターンキー (exile_rise 等)"),
 ) -> dict[str, Any]:
     """作品のプロット構造を検証する。"""
     from sqlalchemy import select
@@ -44,4 +45,4 @@ async def validate_structure(
             for p in result.scalars().all()
         ]
 
-    return validate(plots, structure)
+    return validate(plots, structure, pattern_key=pattern)

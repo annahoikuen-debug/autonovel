@@ -422,7 +422,12 @@ class PgVectorStore(BaseVectorStore):
         # IDでマップ化
         vector_map = {r["id"]: r for r in vector_results}
         text_map = {r["id"]: r for r in text_results}
-        all_ids = set(vector_map.keys()) | set(text_map.keys())
+        # 順序は **決定論的に** 決める。`set` を使うと PYTHONHASHSEED の
+        # ランダム化で反復順が変わり、rrf_score が同点のときの並び順が
+        # プロセスごとにぶれる（`hybrid_search` の結果が再現不能になる）ため。
+        # ベクトル検索順を先頭、全文検索だけの id を後ろに置く（= 安定ソート）。
+        all_ids = list(vector_map)
+        all_ids += [doc_id for doc_id in text_map if doc_id not in vector_map]
 
         # ランキング計算
         vector_rank = {r["id"]: i + 1 for i, r in enumerate(vector_results)}

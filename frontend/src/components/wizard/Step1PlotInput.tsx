@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { expandBeats, ExpandBeatsRequest, BeatItem } from '../../api/wizard';
+import { GENRE_OPTIONS, GenreOption } from '../../constants/genres';
 
 interface Step1Props {
   onNext: (data: {
@@ -12,12 +13,21 @@ interface Step1Props {
     systemAssist: number;
     costSeverity: number;
     beats: BeatItem[];
+    patternKey?: string;
+    lengthKey?: string;
+    marketKey?: string;
   }) => void;
 }
 
+const DEFAULT_GROWTH_CURVES = [
+  '最初からカンスト(無双)',
+  '徐々に成長(王道)',
+  '条件付き最強(ピーキー)',
+];
+
 export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
   const [title, setTitle] = useState('');
-  const [genre, setGenre] = useState('fantasy');
+  const [genre, setGenre] = useState('HighFantasy');
   const [synopsis, setSynopsis] = useState('');
   const [targetChapters, setTargetChapters] = useState(20);
   const [cheatScale, setCheatScale] = useState(4);
@@ -26,6 +36,64 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
   const [costSeverity, setCostSeverity] = useState(2);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // STORY_SPINE 連携
+  const [cards, setCards] = useState<any[]>([]);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  const [patternKey, setPatternKey] = useState<string>('');
+  const [lengthKey, setLengthKey] = useState<string>('');
+  const [marketKey, setMarketKey] = useState<string>('');
+  const [growthCurves, setGrowthCurves] = useState<string[]>(DEFAULT_GROWTH_CURVES);
+  const [genreOptions, setGenreOptions] = useState<GenreOption[]>(GENRE_OPTIONS);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch('/api/config/planning_options')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return;
+        if (data.growth_curves && Array.isArray(data.growth_curves) && data.growth_curves.length > 0) {
+          setGrowthCurves(data.growth_curves);
+          setGrowthCurve(data.growth_curves[0]);
+        } else if (data.story_archetypes && Array.isArray(data.story_archetypes) && data.story_archetypes.length > 0) {
+          setGrowthCurves(data.story_archetypes);
+          setGrowthCurve(data.story_archetypes[0]);
+        }
+        if (data.genres) {
+          const raw = Array.isArray(data.genres) ? data.genres : Object.values(data.genres);
+          const mapped = raw.map((g: any) => ({
+            value: g.key || g.value,
+            label: g.label || g.name || g.key,
+            presetKey: g.preset_key ?? null,
+          }));
+          if (mapped.length > 0) setGenreOptions(mapped);
+        }
+        if (data.cards) {
+          const rawCards = Array.isArray(data.cards) ? data.cards : Object.values(data.cards);
+          setCards(rawCards);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSelectCard = (card: any) => {
+    const cid = card.card_id || card.id || card.label;
+    setSelectedCardId(cid);
+    setPatternKey(card.pattern || '');
+    setLengthKey(card.length || '');
+    setMarketKey(card.market || '');
+
+    if (card.length === 'web_volume') {
+      setTargetChapters(40);
+    } else if (card.length === 'short') {
+      setTargetChapters(2);
+    } else if (card.length === 'single_volume') {
+      setTargetChapters(18);
+    }
+  };
 
   const validateForm = (): boolean => {
     if (!title.trim()) {
@@ -73,6 +141,9 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
         growth_curve: growthCurve,
         system_assist: systemAssist,
         cost_severity: costSeverity,
+        pattern_key: patternKey,
+        length_key: lengthKey,
+        market_key: marketKey,
       };
 
       const beats = await expandBeats(request);
@@ -87,6 +158,9 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
         systemAssist,
         costSeverity,
         beats,
+        patternKey,
+        lengthKey,
+        marketKey,
       });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'ビート生成に失敗しました';
@@ -100,6 +174,31 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
     <div className="wizard-step step1-container p-6 bg-slate-900 text-white rounded-xl shadow-lg">
       <h2 className="text-2xl font-bold mb-2 text-sky-400">Step 1: 企画アイデアと成長曲線の設計</h2>
       <p className="text-slate-400 mb-6 text-sm">主人公のチート度や成長曲線、リスク過酷度を設定し、読者を引き込む企画の骨格を作ります。</p>
+
+      {/* 構造テンプレートカード一覧 */}
+      {cards.length > 0 && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium mb-1 text-slate-300">🎯 構造テンプレートカード（選択すると構成が自動セットされます）</label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-40 overflow-y-auto p-1">
+            {cards.map((card) => {
+              const cid = card.card_id || card.id || card.label;
+              const isSelected = selectedCardId === cid;
+              return (
+                <div
+                  key={cid}
+                  onClick={() => handleSelectCard(card)}
+                  className={`p-2 rounded border cursor-pointer transition-colors text-xs ${
+                    isSelected ? 'border-sky-400 bg-sky-950/60' : 'border-slate-700 bg-slate-800/40 hover:bg-slate-800'
+                  }`}
+                >
+                  <div className="font-semibold">{card.label}</div>
+                  <div className="text-slate-400 text-[10px] mt-0.5">{card.length} / {card.market}</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         {error && (
@@ -129,10 +228,11 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
               onChange={(e) => setGenre(e.target.value)}
               disabled={isLoading}
             >
-              <option value="fantasy">異世界ハイファンタジー</option>
-              <option value="modern_fantasy">現代ダンジョン・バトル</option>
-              <option value="romance">悪役令嬢・恋愛</option>
-              <option value="scifi">近未来SF・サイバーパンク</option>
+              {genreOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -143,10 +243,11 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
               onChange={(e) => setGrowthCurve(e.target.value)}
               disabled={isLoading}
             >
-              <option value="最初からカンスト(無双)">最初からカンスト (無双・爽快感)</option>
-              <option value="段階的覚醒">段階的覚醒 (王道少年漫画)</option>
-              <option value="どん底下克上">どん底下克上 (追放・復讐・大逆転)</option>
-              <option value="頭脳戦特化">頭脳戦特化 (能力は弱いが機転で勝利)</option>
+              {growthCurves.map((curve) => (
+                <option key={curve} value={curve}>
+                  {curve}
+                </option>
+              ))}
             </select>
           </div>
         </div>

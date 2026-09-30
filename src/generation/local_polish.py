@@ -120,6 +120,32 @@ class LocalPolisher:
         improved_text = await _generate(llm, prompt)
         return self._apply(text, target_range, improved_text)
 
+    async def polish_span(
+        self,
+        text: str,
+        target_range: Tuple[int, int],
+        improvement_instruction: str,
+        llm: Any,
+    ) -> Tuple[str, bool]:
+        """注入 LLM で局所パッチを生成し、安全条件を満たしたときだけ採用する（W4 Step 6）。
+
+        既存の ``polish_with_llm`` は結果を無検証に本文へ埋め込むため、
+        ここでは ``SpanPatchApplier`` で壊れ（縮小・段落潰れ）を検査してから返す。
+
+        Returns:
+            (採用後のテキスト, 安全条件を満たして採用したか)
+        """
+        # 循環 import と既存 import を壊さないため、関数内 import にする
+        from src.services.prose.span_patch_applier import SpanPatchApplier
+
+        patched = await self.polish_with_llm(text, target_range, improvement_instruction, llm)
+        if patched == text:
+            return text, False
+        if SpanPatchApplier().validate(text, patched):
+            return patched, True
+        logger.warning("局所パッチが安全条件を満たさないため不採用としました")
+        return text, False
+
     def _build_prompt(
         self, text: str, target_range: Tuple[int, int], improvement_instruction: str
     ) -> str:

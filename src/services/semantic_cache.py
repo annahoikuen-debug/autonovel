@@ -3,6 +3,7 @@ import datetime
 import json
 import logging
 import math
+import os
 import uuid
 from typing import Any
 
@@ -32,6 +33,45 @@ def _spawn_background(coro: Any, name: str) -> asyncio.Task:
 
     task.add_done_callback(_handle_done)
     return task
+
+
+async def cancel_all_prefetch() -> int:
+    """`_BACKGROUND_TASKS` に入っているタスクを全て取り消す（PLAN_W6 Step 6）。
+
+    FastAPI の `lifespan` shutdown から呼ばれる。プロセス終了時に
+    バックグラウンドタスクが中断されると RAG 検索中の DB 接続がリークするとくため、
+    明示的に取り消す。返り値は実際に取り消した本数。例外は送出しない。
+    """
+    targets = [t for t in list(_BACKGROUND_TASKS) if not t.done()]
+    for t in targets:
+        t.cancel()
+    if targets:
+        await asyncio.gather(*targets, return_exceptions=True)
+    _BACKGROUND_TASKS.clear()
+    if targets:
+        logger.info("[SEMANTIC CACHE] cancelled %d background task(s) on shutdown", len(targets))
+    return len(targets)
+
+
+async def close_background_tasks() -> int:
+    """`cancel_all_prefetch` の別名（命名の一貫性用）。ロジックは増やさない。"""
+    return await cancel_all_prefetch()
+
+
+def is_draft_prefetch_enabled() -> bool:
+    """次話の執筆プロンプトを投機生成する機能。既定 OFF（PLAN_W6 Step 4）。
+
+    `prefetch_next` は **次話のプロンプト（本文未確定）を描画して** その embedding を温める。
+    リテイクで必ず無駄になり、しかも L1 を温めないため検索ヒット率向上が実質ゼロ、
+    embedding API コストだけが残る。よって既定で止める。
+    静的ナレッジのウォームアップは `RagPrefetchService` 側が担当する。
+    """
+    return os.environ.get("ENABLE_SEMANTIC_PREFETCH_DRAFT", "0").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+        "on",
+    )
 
 
 import hashlib
@@ -338,6 +378,9 @@ class SemanticCacheManager:
             genre: ジャンル
             temperature: 生成温度
         """
+        if not is_draft_prefetch_enabled():
+            return  # 静的なウォームアップは RagPrefetchService 側が担当する
+
         from prompts.manager import PromptManager
 
         pm = PromptManager()

@@ -22,6 +22,28 @@ SHORT_TERM_HORIZON = 3
 #: 全体の既定話数（40話商業ビートシートの上限）
 DEFAULT_TOTAL_EPISODES = 40
 
+#: 長期伏線を吸着させる節目の順序（W5 Step 4）。
+#: `_spread_target` の線形補間ではなく「物語の節目」を回収先にする。
+LONG_TERM_ANCHOR_ORDER = ("midpoint", "climax")
+
+
+def _use_short_horizon(use_short_term_horizon: bool | None) -> bool:
+    """短期ホライズン丸めの有効判定（`None` = フラグ `FORESHADOW_SHORT_HORIZON`）。"""
+    if use_short_term_horizon is None:
+        from src.services.foreshadowing.flags import is_short_horizon_enabled
+
+        return is_short_horizon_enabled()
+    return bool(use_short_term_horizon)
+
+
+def _use_anchor_snap(anchor_snap: bool | None) -> bool:
+    """アンカー吸着の有効判定（`None` = フラグ `FORESHADOW_ANCHOR_SNAP`）。"""
+    if anchor_snap is None:
+        from src.services.foreshadowing.flags import is_anchor_snap_enabled
+
+        return is_anchor_snap_enabled()
+    return bool(anchor_snap)
+
 
 @dataclass(frozen=True)
 class ForeshadowingPlan:
@@ -123,6 +145,9 @@ def _spread_target(planted_episode: int, payoff: dict, prev: dict) -> int:
 def plan_foreshadowing(
     planted_episode: int,
     total_episodes: int | None = DEFAULT_TOTAL_EPISODES,
+    use_short_term_horizon: bool | None = None,
+    anchor: str | None = None,
+    anchor_snap: bool | None = None,
 ) -> ForeshadowingPlan:
     """設置話から scope と回収予定話を決定する。
 
@@ -138,6 +163,9 @@ def plan_foreshadowing(
     Args:
         planted_episode: 伏線を設置する話数（1-indexed）
         total_episodes: 作品全体の予定話数（None = 上限なしとして扱う）
+        use_short_term_horizon: 短期ホライズンで丸めるか（`None` = フラグ既定OFF）
+        anchor: アンカー名（明示指定用。既定 `None`。挙動は変えない）
+        anchor_snap: 長期伏線を物語の節目へ吸着させるか（`None` = フラグ既定OFF）
 
     Returns:
         ForeshadowingPlan（scope / target_episode / horizon）
@@ -172,6 +200,24 @@ def plan_foreshadowing(
     # 作品最終話に撒いた場合など、クランプで horizon 0 になる経路を全て潰す。
     if target <= planted_episode:
         target = planted_episode + 1
+
+    # ── W5 Step 3: 短期ホライズン（planted + SHORT_TERM_HORIZON 以内に丸める）──
+    # 不変条件ガードの **後** に適用する（guard を壊さないため）。
+    if _use_short_horizon(use_short_term_horizon):
+        cap = min(planted_episode + SHORT_TERM_HORIZON, total)
+        if target > cap:
+            target = max(cap, planted_episode + 1)
+
+    # ── W5 Step 4: アンカー吸着（長期伏線のみ）──
+    # 線形補間の値より **前倒しはしない**（=`max`）。行き過ぎの回避が目的。
+    if _use_anchor_snap(anchor_snap) and scope is ForeshadowingScope.LONG_TERM:
+        from src.services.foreshadowing.anchors import anchor_episode
+
+        snap = min(anchor_episode(a) for a in LONG_TERM_ANCHOR_ORDER)
+        if snap > planted_episode:
+            target = max(target, min(snap, total))
+        if target <= planted_episode:
+            target = planted_episode + 1
 
     return ForeshadowingPlan(
         scope=scope,

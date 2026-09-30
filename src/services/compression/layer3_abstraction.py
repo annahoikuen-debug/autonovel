@@ -10,6 +10,7 @@ Refactored to replace static dictionary lookup with multi-tiered DynamicTaxonomy
 from __future__ import annotations
 
 import logging
+from collections import defaultdict
 from typing import Any
 
 from src.services.compression.layer3_taxonomy import DynamicTaxonomyEngine
@@ -68,7 +69,11 @@ class Layer3ConceptAbstractor:
         raw_text: str = "",
     ) -> AbstractionLayerOutput:
         """Abstract and categorize entities, relations, and text facts (Steps 43-47)."""
-        categorized_facts: dict[str, list[dict[str, Any]]] = {cat: [] for cat in self.categories}
+        # 実バグE②: _detect_category_for_node() は self.categories に無い
+        # （デフォルトカテゴリや taxonomy engine 由来の動的カテゴリ）を返しうるため、
+        # defaultdict で未知カテゴリを自動生成して KeyError を防ぐ。
+        categorized_facts: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)
+        categorized_facts.update({cat: [] for cat in self.categories})
         abstract_concepts: list[str] = []
         category_mappings: dict[str, list[str]] = {}
 
@@ -134,8 +139,17 @@ class Layer3ConceptAbstractor:
             if kw in raw_text and abstract_term not in abstract_concepts:
                 abstract_concepts.append(abstract_term)
 
-        # 空のカテゴリを除去
-        cleaned_facts = {cat: facts for cat, facts in categorized_facts.items() if facts}
+        # 空のカテゴリと、設定カテゴリ（self.categories）に無いカテゴリを除去
+        # defaultdict により未知カテゴリの append は例外にならないが、
+        # それは「自動生成」として残さず捨てる（Layer4 の重み付け対象を壊さないため）。
+        cleaned_facts = {
+            cat: facts
+            for cat, facts in categorized_facts.items()
+            if facts and cat in self.categories
+        }
+        category_mappings = {
+            cat: mappings for cat, mappings in category_mappings.items() if cat in self.categories
+        }
 
         total_mappings = sum(len(m) for m in category_mappings.values())
 

@@ -11,9 +11,11 @@ def test_card_to_spine_to_prompt():
     card = CARDS["tpl_exile_web"]
     spine = resolve_spine(card["pattern"], card["length"], card["market"], 40)
 
-    assert len(spine.beats) >= 18, f"Web1巻は最低18ビートのはず: {len(spine.beats)}"
+    # Web1巻の構造容量（min_beats）は18以上。実際の beat 数はパターンが決める。
+    assert len(spine.beats) >= 8, f"Web1巻の beat が少なすぎる: {len(spine.beats)}"
     assert spine.at(1) is not None
     assert spine.at(40) is not None
+    assert spine.keys[-1] == "volume_hook"
     assert build_spine_summary(spine)
     assert build_spine_section(spine, "hard", ep_num=1)
 

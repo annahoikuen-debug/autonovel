@@ -1,41 +1,53 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
 import type { CharacterParams as Character } from "../../types";
 import type { GenerationState } from "../../types";
+import { GENRE_OPTIONS, GenreOption } from "../../constants/genres";
 
-interface SimpleModePanelProps {
-  character: Character;
-  setCharacter: React.Dispatch<React.SetStateAction<Character>>;
-  llmConfig: any;
-  setLlmConfig: React.Dispatch<React.SetStateAction<any>>;
-  selectedStyleId: string;
-  customStyleProfile: any;
-  showStyleModal: boolean;
-  setShowStyleModal: React.Dispatch<React.SetStateAction<boolean>>;
-  showApiSettings: boolean;
-  setShowApiSettings: React.Dispatch<React.SetStateAction<boolean>>;
-  showApiKey: boolean;
-  setShowApiKey: React.Dispatch<React.SetStateAction<boolean>>;
-  yonkomaEnabled: boolean;
-  setYonkomaEnabled: React.Dispatch<React.SetStateAction<boolean>>;
-  generationState: GenerationState;
-  startGeneration: () => void;
-  cancelGeneration: (taskId: string | null) => void;
-  isStreaming: boolean;
-  startStreaming: () => void;
-  cancelStreaming: () => void;
-  isPaused: boolean;
-  resumeStreaming: () => void;
-  pauseStreaming: () => void;
-  streamOutput: string;
-  isBusy: boolean;
-  targetEpisodes: number;
-  setTargetEpisodes: React.Dispatch<React.SetStateAction<number>>;
-  contentLengthLimit: number;
-  setContentLengthLimit: React.Dispatch<React.SetStateAction<number>>;
-  currentChapterText: string;
-  setCurrentChapterText: React.Dispatch<React.SetStateAction<string>>;
+export interface SpineTemplateCard {
+  card_id?: string;
+  id?: string;
+  label: string;
+  pattern: string;
+  length: string;
+  market: string;
+  style_key?: string;
+  description?: string;
+}
+
+export interface SimpleModePanelProps {
+  character?: Character;
+  setCharacter?: React.Dispatch<React.SetStateAction<Character>>;
+  llmConfig?: any;
+  setLlmConfig?: React.Dispatch<React.SetStateAction<any>>;
+  selectedStyleId?: string;
+  customStyleProfile?: any;
+  showStyleModal?: boolean;
+  setShowStyleModal?: React.Dispatch<React.SetStateAction<boolean>>;
+  showApiSettings?: boolean;
+  setShowApiSettings?: React.Dispatch<React.SetStateAction<boolean>>;
+  showApiKey?: boolean;
+  setShowApiKey?: React.Dispatch<React.SetStateAction<boolean>>;
+  yonkomaEnabled?: boolean;
+  setYonkomaEnabled?: React.Dispatch<React.SetStateAction<boolean>>;
+  generationState?: GenerationState;
+  startGeneration?: () => void;
+  cancelGeneration?: (taskId: string | null) => void;
+  isStreaming?: boolean;
+  startStreaming?: () => void;
+  cancelStreaming?: () => void;
+  isPaused?: boolean;
+  resumeStreaming?: () => void;
+  pauseStreaming?: () => void;
+  streamOutput?: string;
+  isBusy?: boolean;
+  targetEpisodes?: number;
+  setTargetEpisodes?: React.Dispatch<React.SetStateAction<number>>;
+  contentLengthLimit?: number;
+  setContentLengthLimit?: React.Dispatch<React.SetStateAction<number>>;
+  currentChapterText?: string;
+  setCurrentChapterText?: React.Dispatch<React.SetStateAction<string>>;
   onMessage?: (msg: string) => void;
   onRunGacha?: () => void;
   onRunDigest?: () => void;
@@ -43,63 +55,185 @@ interface SimpleModePanelProps {
   isDigestLoading?: boolean;
 }
 
-export default function SimpleModePanel(props: SimpleModePanelProps) {
-  const [showStudioPeek, setShowStudioPeek] = React.useState(false);
-  const {
-    character,
-    setCharacter,
-    llmConfig,
-    setLlmConfig,
-    selectedStyleId,
-    customStyleProfile,
-    showStyleModal,
-    setShowStyleModal,
-    showApiSettings,
-    setShowApiSettings,
-    showApiKey,
-    setShowApiKey,
-    yonkomaEnabled,
-    setYonkomaEnabled,
-    generationState,
-    startGeneration,
-    cancelGeneration,
-    isStreaming,
-    startStreaming,
-    cancelStreaming,
-    isPaused,
-    resumeStreaming,
-    pauseStreaming,
-    streamOutput,
-    isBusy,
-    targetEpisodes,
-    setTargetEpisodes,
-    contentLengthLimit,
-    setContentLengthLimit,
-    currentChapterText,
-    setCurrentChapterText,
-    onMessage,
-    onRunGacha,
-    onRunDigest,
-    isGachaLoading,
-    isDigestLoading,
-  } = props;
+export function SimpleModePanel(props: SimpleModePanelProps = {}) {
+  const [showStudioPeek, setShowStudioPeek] = useState(false);
+  const [showCustomConfig, setShowCustomConfig] = useState(false);
+
+  // 内部状態フォールバック（propsが未指定でも動作保証）
+  const [localChar, setLocalChar] = useState<Character>({
+    name: "アルト",
+    personality: "熱血・正義感が強い",
+    ability: "古代魔導剣術",
+    genre: "HighFantasy",
+  });
+  const [localEpisodes, setLocalEpisodes] = useState<number>(20);
+  const [localContentLength, setLocalContentLength] = useState<number>(2000);
+  const [localChapterText, setLocalChapterText] = useState<string>("");
+
+  const character = props.character ?? localChar;
+  const setCharacter = props.setCharacter ?? setLocalChar;
+  const targetEpisodes = props.targetEpisodes ?? localEpisodes;
+  const setTargetEpisodes = props.setTargetEpisodes ?? setLocalEpisodes;
+  const contentLengthLimit = props.contentLengthLimit ?? localContentLength;
+  const setContentLengthLimit = props.setContentLengthLimit ?? setLocalContentLength;
+  const currentChapterText = props.currentChapterText ?? localChapterText;
+  const setCurrentChapterText = props.setCurrentChapterText ?? setLocalChapterText;
+
+  const generationState = props.generationState ?? { isGenerating: false, statusText: "", error: null };
+  const isStreaming = props.isStreaming ?? false;
+  const isBusy = props.isBusy ?? false;
+  const streamOutput = props.streamOutput ?? "";
+
+  // STORY_SPINE 構造テンプレートカード・ジャンル・長さ定義
+  const [cards, setCards] = useState<SpineTemplateCard[]>([]);
+  const [lengths, setLengths] = useState<any[]>([]);
+  const [genreOptions, setGenreOptions] = useState<GenreOption[]>(GENRE_OPTIONS);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetch("/api/config/planning_options")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return;
+        if (data.cards) {
+          const rawCards = Array.isArray(data.cards) ? data.cards : Object.values(data.cards);
+          setCards(rawCards);
+        }
+        if (data.lengths) {
+          const rawLengths = Array.isArray(data.lengths) ? data.lengths : Object.values(data.lengths);
+          setLengths(rawLengths);
+        }
+        if (data.genres) {
+          const rawGenres = Array.isArray(data.genres) ? data.genres : Object.values(data.genres);
+          const mapped = rawGenres.map((g: any) => ({
+            value: g.key || g.value,
+            label: g.label || g.name || g.key,
+            presetKey: g.preset_key ?? null,
+          }));
+          if (mapped.length > 0) setGenreOptions(mapped);
+        }
+      })
+      .catch(() => {
+        // API未起動時はローカルフォールバックを維持
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleSelectCard = (card: SpineTemplateCard) => {
+    const cardId = card.card_id || card.id || card.pattern;
+    setSelectedCardId(cardId);
+
+    // 話数の自動入力 (length.eps_range の中央または既定値)
+    let eps = 40;
+    if (lengths.length > 0) {
+      const lenObj = lengths.find((l) => (l.key || l.id) === card.length);
+      if (lenObj?.eps_range && Array.isArray(lenObj.eps_range)) {
+        eps = Math.round((lenObj.eps_range[0] + lenObj.eps_range[1]) / 2);
+      }
+    } else if (card.length === "web_volume") {
+      eps = 40;
+    } else if (card.length === "short") {
+      eps = 2;
+    }
+    setTargetEpisodes(eps);
+
+    // ジャンル解決
+    if (card.pattern.includes("exile") || card.pattern.includes("reincarnation") || card.pattern.includes("dungeon")) {
+      setCharacter((prev: Character) => ({ ...prev, genre: "HighFantasy" }));
+    } else if (card.pattern.includes("mystery") || card.pattern.includes("detective") || card.pattern.includes("brain")) {
+      setCharacter((prev: Character) => ({ ...prev, genre: "Mystery" }));
+    } else if (card.pattern.includes("horror")) {
+      setCharacter((prev: Character) => ({ ...prev, genre: "Horror" }));
+    } else if (card.pattern.includes("love") || card.pattern.includes("marriage") || card.pattern.includes("saint")) {
+      setCharacter((prev: Character) => ({ ...prev, genre: "Romance" }));
+    }
+  };
 
   return (
     <div>
+      {/* Tier 1: 構造テンプレートカード一覧 */}
+      {cards.length > 0 && (
+        <div className="form-group" style={{ marginBottom: "16px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+            <label className="label" style={{ fontWeight: 700, margin: 0 }}>
+              🎯 構造テンプレートカード（選ぶだけで即執筆）
+            </label>
+            <button
+              type="button"
+              className="btn btn-link"
+              style={{ fontSize: "0.8rem", padding: 0 }}
+              onClick={() => setShowCustomConfig(!showCustomConfig)}
+            >
+              {showCustomConfig ? "▲ かんたん表示に戻す" : "⚙️ 詳細設定をカスタマイズ"}
+            </button>
+          </div>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))",
+              gap: "8px",
+              maxHeight: "220px",
+              overflowY: "auto",
+              padding: "4px",
+            }}
+          >
+            {cards.map((card) => {
+              const cid = card.card_id || card.id || card.label;
+              const isSelected = selectedCardId === cid;
+              return (
+                <div
+                  key={cid}
+                  onClick={() => handleSelectCard(card)}
+                  style={{
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    border: isSelected ? "2px solid var(--accent-cyan, #06b6d4)" : "1px solid rgba(255,255,255,0.1)",
+                    backgroundColor: isSelected ? "rgba(6, 182, 212, 0.15)" : "rgba(255,255,255,0.03)",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease",
+                  }}
+                >
+                  <div style={{ fontWeight: 600, fontSize: "0.9rem" }}>{card.label}</div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--text-muted, #888)", marginTop: "2px" }}>
+                    {card.length} / {card.market}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 目標話数入力 */}
+      <div className="form-group">
+        <label className="label">目標話数</label>
+        <input
+          type="number"
+          className="input"
+          value={targetEpisodes}
+          onChange={(e) => setTargetEpisodes(parseInt(e.target.value, 10) || 1)}
+          min={1}
+          max={300}
+        />
+      </div>
+
+      {/* 作品ジャンル選択 */}
       <div className="form-group">
         <label className="label">作品ジャンル・レーティング</label>
         <select
           className="select"
           value={character.genre}
           onChange={(e) => setCharacter((prev: Character) => ({ ...prev, genre: e.target.value }))}
-          title="Studioモードでは詳細なジャンル分析とトレンドデータを参照できます"
+          title="GENRE_REGISTRY に基づく標準化ジャンル"
         >
-          <option value="fan">ファンタジー</option>
-          <option value="sf">SF</option>
-          <option value="romance">恋愛</option>
-          <option value="mystery">ミステリー</option>
-          <option value="horror">ホラー</option>
-          <option value="other">その他</option>
+          {genreOptions.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -133,6 +267,32 @@ export default function SimpleModePanel(props: SimpleModePanelProps) {
         />
       </div>
 
+      {/* カスタマイズ詳細（話数・目標文字数） */}
+      {showCustomConfig && (
+        <div
+          style={{
+            padding: "12px",
+            backgroundColor: "rgba(255,255,255,0.02)",
+            borderRadius: "8px",
+            border: "1px dashed rgba(255,255,255,0.15)",
+            marginBottom: "16px",
+          }}
+        >
+          <div className="form-group" style={{ marginBottom: 0 }}>
+            <label className="label">1話あたりの目標文字数</label>
+            <input
+              type="number"
+              className="input"
+              value={contentLengthLimit}
+              onChange={(e) => setContentLengthLimit(parseInt(e.target.value, 10) || 2000)}
+              step={100}
+              min={500}
+              max={10000}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="form-group">
         <label className="label">執筆対象の冒頭 / 前話プロンプト</label>
         <textarea
@@ -147,8 +307,15 @@ export default function SimpleModePanel(props: SimpleModePanelProps) {
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         <button
           className="btn btn-primary"
-          style={{ flex: 1.2, backgroundColor: "var(--accent-cyan)", borderColor: "var(--accent-cyan)", color: "#000", fontWeight: 700, minWidth: "120px" }}
-          onClick={() => startStreaming()}
+          style={{
+            flex: 1.2,
+            backgroundColor: "var(--accent-cyan)",
+            borderColor: "var(--accent-cyan)",
+            color: "#000",
+            fontWeight: 700,
+            minWidth: "120px",
+          }}
+          onClick={() => props.startStreaming?.()}
           disabled={isBusy}
           title="Studioモードでは、プロットベースのAI共同執筆とブランチングが利用できます"
         >
@@ -158,7 +325,7 @@ export default function SimpleModePanel(props: SimpleModePanelProps) {
         <button
           className="btn btn-secondary"
           style={{ flex: 1, minWidth: "120px" }}
-          onClick={startGeneration}
+          onClick={() => props.startGeneration?.()}
           disabled={isBusy}
           title="Studioモードでは、詳細なアウトライン生成と Beat シート編集が利用できます"
         >
@@ -169,14 +336,13 @@ export default function SimpleModePanel(props: SimpleModePanelProps) {
           <button
             type="button"
             className="btn btn-danger"
-            onClick={() => cancelGeneration(generationState.currentTaskId)}
+            onClick={() => props.cancelGeneration?.(generationState.currentTaskId)}
             title="Studioモードでは、生成の一時停止と詳細なログ確認が利用できます"
           >
             ⏹ 中止
           </button>
         )}
 
-        {/* Studio機能チラ見せボタン */}
         <button
           type="button"
           className="btn btn-outline-secondary"
@@ -188,7 +354,6 @@ export default function SimpleModePanel(props: SimpleModePanelProps) {
           👀 Studio機能チラ見せ
         </button>
 
-        {/* ネイティブ alert() の代わりに共通 Modal を使う（画面ロックと継続操作を保証） */}
         <Modal
           isOpen={showStudioPeek}
           onClose={() => setShowStudioPeek(false)}
@@ -221,7 +386,6 @@ export default function SimpleModePanel(props: SimpleModePanelProps) {
               variant="primary"
               onClick={() => {
                 setShowStudioPeek(false);
-                // Router に依存しないよう、通常のリンク遷移で Studio へ送る。
                 window.location.assign("/studio");
               }}
               data-testid="btn-studio-peek-goto"
@@ -230,27 +394,27 @@ export default function SimpleModePanel(props: SimpleModePanelProps) {
             </Button>
           </div>
         </Modal>
+
         <button
           className="btn btn-outline-primary"
           style={{ flex: 1, minWidth: "120px", borderColor: "var(--accent-cyan)", color: "var(--accent-cyan)" }}
-          onClick={onRunGacha}
-          disabled={isBusy || isGachaLoading}
+          onClick={props.onRunGacha}
+          disabled={isBusy || props.isGachaLoading}
           title="3つの物語案をランダムに生成します"
         >
-          {isGachaLoading ? "🎲 生成中..." : "🎲 企画ガチャ"}
+          {props.isGachaLoading ? "🎲 生成中..." : "🎲 企画ガチャ"}
         </button>
         <button
           className="btn btn-outline-secondary"
           style={{ flex: 1, minWidth: "120px" }}
-          onClick={onRunDigest}
-          disabled={isBusy || isDigestLoading}
+          onClick={props.onRunDigest}
+          disabled={isBusy || props.isDigestLoading}
           title="選択したプランからダイジェストを生成します"
         >
-          {isDigestLoading ? "📖 解析中..." : "📖 ダイジェスト"}
+          {props.isDigestLoading ? "📖 解析中..." : "📖 ダイジェスト"}
         </button>
       </div>
 
-      {/* ストリーミングライブプレビュー: 視認性向上 (モノスペース・自動スクロール・文字数表示) */}
       {isStreaming && (
         <div style={{ marginTop: "12px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
@@ -286,3 +450,5 @@ export default function SimpleModePanel(props: SimpleModePanelProps) {
     </div>
   );
 }
+
+export default SimpleModePanel;
