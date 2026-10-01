@@ -1,5 +1,6 @@
 import type { ManuscriptTargetPreset } from '../types/manuscript';
 import type { LengthProfile } from '../types/lengthProfile';
+import { apiFetch } from '../api/client';
 
 export const LEGACY_ID_BY_LENGTH_KEY: Record<string, string> = {
   short: 'shousetsu-gekkan',
@@ -70,7 +71,7 @@ export function toManuscriptPresets(profiles: LengthProfile[]): ManuscriptTarget
  */
 export async function fetchLengthProfiles(): Promise<LengthProfile[]> {
   try {
-    const res = await fetch('/api/config/planning_options');
+    const res = await apiFetch('/api/config/planning_options');
     if (!res.ok) return FALLBACK_LENGTH_PROFILES;
     const data = (await res.json()) as { lengths?: Record<string, LengthProfile> };
     const lengths = data.lengths ? Object.values(data.lengths) : [];

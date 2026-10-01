@@ -1,3 +1,5 @@
+import { apiFetch } from "./client";
+
 export interface ServerModelInfo {
   status: string;
   current_provider: string;
@@ -19,7 +21,7 @@ export interface ServerModelInfo {
 
 export async function fetchServerModelInfo(): Promise<ServerModelInfo | null> {
   try {
-    const res = await fetch("/api/system/models/info");
+    const res = await apiFetch("/api/system/models/info");
     if (!res.ok) {
       return null;
     }

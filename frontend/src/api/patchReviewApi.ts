@@ -1,3 +1,5 @@
+import { apiFetch } from "./client";
+
 const BASE = "/api/patches";
 
 async function handleResponse<T>(res: Response): Promise<T> {
@@ -87,19 +89,19 @@ export interface ReviseReviewRequest {
 export const patchReviewApi = {
   // Get pending reviews for a book
   getPendingReviews: async (bookId: number): Promise<PatchReview[]> => {
-    const res = await fetch(`${BASE}/${bookId}/reviews`);
+    const res = await apiFetch(`${BASE}/${bookId}/reviews`);
     return handleResponse<PatchReview[]>(res);
   },
 
   // Get review detail
   getReviewDetail: async (reviewId: number): Promise<PatchReview> => {
-    const res = await fetch(`${BASE}/reviews/${reviewId}`);
+    const res = await apiFetch(`${BASE}/reviews/${reviewId}`);
     return handleResponse<PatchReview>(res);
   },
 
   // Approve review
   approveReview: async (reviewId: number, data: ReviewActionRequest): Promise<{ message: string }> => {
-    const res = await fetch(`${BASE}/reviews/${reviewId}/approve`, {
+    const res = await apiFetch(`${BASE}/reviews/${reviewId}/approve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -109,7 +111,7 @@ export const patchReviewApi = {
 
   // Reject review
   rejectReview: async (reviewId: number, data: ReviewActionRequest): Promise<{ message: string }> => {
-    const res = await fetch(`${BASE}/reviews/${reviewId}/reject`, {
+    const res = await apiFetch(`${BASE}/reviews/${reviewId}/reject`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -119,7 +121,7 @@ export const patchReviewApi = {
 
   // Revise review (submit revised proposal)
   reviseReview: async (reviewId: number, data: ReviseReviewRequest): Promise<{ message: string }> => {
-    const res = await fetch(`${BASE}/reviews/${reviewId}/revise`, {
+    const res = await apiFetch(`${BASE}/reviews/${reviewId}/revise`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -132,13 +134,13 @@ export const patchReviewApi = {
 export const settingVersionApi = {
   // Get all setting versions for a book
   getSettingVersions: async (bookId: number): Promise<SettingVersion[]> => {
-    const res = await fetch(`${BASE}/${bookId}/setting-versions`);
+    const res = await apiFetch(`${BASE}/${bookId}/setting-versions`);
     return handleResponse<SettingVersion[]>(res);
   },
 
   // Get specific setting version
   getSettingVersion: async (bookId: number, versionNumber: number): Promise<SettingVersion> => {
-    const res = await fetch(`${BASE}/${bookId}/setting-versions/${versionNumber}`);
+    const res = await apiFetch(`${BASE}/${bookId}/setting-versions/${versionNumber}`);
     return handleResponse<SettingVersion>(res);
   },
 };

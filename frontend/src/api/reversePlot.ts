@@ -4,6 +4,7 @@ import {
   ReversePlotGenerateRequest,
 } from "../types/reversePlot";
 import { LLMConfigOverride } from "../types/easyMode";
+import { apiFetch } from "./client";
 
 const BASE = "/easy_mode";
 
@@ -22,7 +23,7 @@ export async function generateReversePlot(
     ...(hasLlmConfig ? { llm_config: llmConfig } : {}),
   };
 
-  const res = await fetch(`${BASE}/reverse-generate`, {
+  const res = await apiFetch(`${BASE}/reverse-generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
