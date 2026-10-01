@@ -2,12 +2,12 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
-from sqlalchemy import select
 
 from src.backend.auth import get_current_user, require_valid_api_key
-from src.backend.database.models import Book, Branch, User
+from src.backend.database.models import Book, User
 from src.backend.database.uow import UnitOfWork
 from src.backend.security.owner_guard import verify_book_ownership
+from src.backend.security.branch_guard import verify_branch_belongs_to_book
 from src.backend.task_helpers import create_task as _create_task
 from src.core.container import AppContainer
 from src.core.observability import TraceContext
@@ -100,35 +100,6 @@ async def upsert_chapter(
     }
 
 
-async def _verify_branch_belongs_to_book(uow: UnitOfWork, book_id: int, branch_id: int) -> None:
-    """``branch_id`` が検証済み ``book_id`` に属するかを確認する。
-
-    ``branch_id`` は 1 が全作品の既定値なので、「request が本人の作品である」
-    だけでは不十分。他人のブランチ ID を推測して渡されても、他作品の行には
-    一切触れないことを保証する。
-    """
-    if branch_id == 1:
-        # 1 は全作品の既定ブランチ。books.current_branch_id が別ブランチを指している
-        # なら、その作品で 1 を使うことは許さない。
-        book = await uow.books.get_book(book_id)
-        current = getattr(book, "current_branch_id", None) if book else None
-        if current is not None and current != 1:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="指定ブランチはこの作品に属していません",
-            )
-        return
-
-    owner = await uow.session.scalar(
-        select(Book.id).where(Branch.book_id == book_id).where(Branch.id == branch_id)
-    )
-    if owner is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="指定ブランチはこの作品に属していません",
-        )
-
-
 @router.delete("/chapters/{book_id}/{ep_num}", response_model=ChapterDeleteResponse)
 async def delete_chapter(
     book_id: int,
@@ -145,7 +116,7 @@ async def delete_chapter(
 
     async with UnitOfWork(AppContainer.db()) as uow:
         await verify_book_ownership(book_id, current_user, uow)
-        await _verify_branch_belongs_to_book(uow, book_id, branch_id)
+        await verify_branch_belongs_to_book(uow, book_id, branch_id)
         deleted = await uow.chapters.delete_chapter(book_id, ep_num, branch_id=branch_id)
 
     if deleted == 0:
