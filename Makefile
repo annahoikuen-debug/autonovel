@@ -13,7 +13,7 @@ dev: install  ## 開発用インストール (バック + フロント)
 	cd frontend && npm install
 
 test:  ## pytest を実行 (バックエンド)
-	py -m pytest -q --tb=short
+	py -m pytest -q --tb=short -m "not integration and not perf and not slow"
 
 lint:  ## ruff チェック
 	py -m ruff check src tests config scripts

@@ -36,3 +36,24 @@ def test_lint_ratchet_baseline_is_tracked():
     out = subprocess.run(["git", "ls-files", "config/ci_lint_baseline.json"],
                          capture_output=True, text=True)
     assert "config/ci_lint_baseline.json" in out.stdout, "ベースラインが追跡されていない"
+
+
+def test_pytest_marker_filter_actually_exists():
+    """``pytest.ini`` が宣言するマーカーが、実際の実行で除外されていること。"""
+    ini = open("pytest.ini", encoding="utf-8").read()
+    for marker in ("perf", "slow", "flaky"):
+        assert f"{marker}:" in ini, f"pytest.ini が {marker} を宣言していない"
+
+    wf = _src()
+    m = re.search(r"pytest -q -m \"([^\"]+)\"", wf)
+    assert m, "CI に -m フィルタが無い"
+    expr = m.group(1)
+    for marker in ("perf", "slow"):
+        assert marker in expr, f"CI が {marker} を除外していない: {expr}"
+
+
+def test_timeout_flag_is_installed_in_ci():
+    """``pytest.ini:16`` が前提とする pytest-timeout が CI で導入されていること。"""
+    wf = _src()
+    assert "pytest-timeout" in wf, "CI が pytest-timeout を導入していない"
+

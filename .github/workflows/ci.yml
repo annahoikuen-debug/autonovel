@@ -115,6 +115,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest-timeout
           pip install -e ".[dev]"
       - name: Run unit test suite
         run: pytest -q -m "not integration and not perf and not slow" --timeout=120
