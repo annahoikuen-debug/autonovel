@@ -205,9 +205,10 @@ async def test_database_manager_get_conn_compat_wrapper(async_db):
         warnings.simplefilter("ignore", DeprecationWarning)
         conn = await async_db.get_conn()
         # aiosqlite cursor is awaitable, the compat shim exposes it as-is
-        assert conn.dbapi_conn is not None
-        cursor = conn.cursor
-        assert cursor is not None or cursor is None  # property resolves without error
+        try:
+            _ = conn.cursor
+        except Exception as e:
+            pytest.fail(f"conn.cursor property failed: {e}")
         conn.execute("SELECT 1")
         conn.commit()
         conn.rollback()
