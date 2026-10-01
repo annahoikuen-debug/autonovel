@@ -51,19 +51,23 @@ async def test_with_retry_default_params():
         await with_retry(always_fail)
 
 
-async def test_with_retry_backoff_timing():
+async def test_with_retry_backoff_timing(monkeypatch):
     """指数バックオフで遅延が増える。"""
     async def failing_func():
         raise ValueError("fail")
 
-    # max_retries=2 なので 2回の失敗の後、delay が記録される
-    # 1回目の sleep: initial_delay = 1.0
-    # 2回目の sleep: delay *= backoff_factor = 2.0
+    slept: list[float] = []
+
+    async def fake_sleep(d: float):
+        slept.append(d)
+
+    monkeypatch.setattr("asyncio.sleep", fake_sleep)
+
     try:
-        await with_retry(failing_func, max_retries=2, initial_delay=1.0, backoff_factor=2.0)
+        await with_retry(failing_func, max_retries=3, initial_delay=0.5, backoff_factor=2.0)
     except ValueError:
         pass
 
-    # 実際の sleep 時間を計測するのは困難なため、関数が正しく呼ばれることを確認
-    # ここではリトライ回数と例外の発生を確認するだけ
-    assert True
+    assert len(slept) == 2, f"sleep が 2 回のはずが {len(slept)} 回"
+    assert slept[0] == pytest.approx(0.5)
+    assert slept[1] == pytest.approx(1.0)
