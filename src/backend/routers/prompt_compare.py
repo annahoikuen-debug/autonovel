@@ -10,15 +10,21 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 
-from src.backend.database.models import PromptVersion
+from src.backend.auth import get_current_user
+from src.backend.database.models import PromptVersion, User
 from src.backend.database.uow import UnitOfWork
+from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
 from src.services.prompt_comparison import build_comparison
 
-router = APIRouter(prefix="/api/prompt-compare", tags=["prompt-compare"])
+router = APIRouter(
+    prefix="/api/prompt-compare",
+    tags=["prompt-compare"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 class CompareRequest(BaseModel):
@@ -28,8 +34,13 @@ class CompareRequest(BaseModel):
 
 
 @router.get("/books/{book_id}/versions")
-async def list_versions(book_id: int, prompt_key: str = Query(...)) -> list[dict[str, Any]]:
+async def list_versions(
+    book_id: int,
+    prompt_key: str = Query(...),
+    current_user: User = Depends(get_current_user),
+) -> list[dict[str, Any]]:
     """作品の指定プロンプトキーのバージョン一覧を取得する。"""
+    await verify_book_ownership(book_id, current_user)
     async with UnitOfWork(AppContainer.db()) as uow:
         from sqlalchemy import select
 
@@ -49,8 +60,13 @@ async def list_versions(book_id: int, prompt_key: str = Query(...)) -> list[dict
 
 
 @router.post("/books/{book_id}/compare")
-async def compare(book_id: int, req: CompareRequest) -> dict[str, Any]:
+async def compare(
+    book_id: int,
+    req: CompareRequest,
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """複数バージョンの出力を比較し、勝者を決定する。"""
+    await verify_book_ownership(book_id, current_user)
     if not req.texts:
         from fastapi import HTTPException
 
@@ -86,8 +102,13 @@ async def compare(book_id: int, req: CompareRequest) -> dict[str, Any]:
 
 
 @router.post("/books/{book_id}/versions/{version_id}/activate")
-async def activate_version(book_id: int, version_id: int) -> dict[str, Any]:
+async def activate_version(
+    book_id: int,
+    version_id: int,
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """指定バージョンをアクティブ（採用）にする。"""
+    await verify_book_ownership(book_id, current_user)
     async with UnitOfWork(AppContainer.db()) as uow:
         await uow.prompt_versions.set_active_prompt_version(book_id, "", -1)
         # prompt_key を取得してから正しくセット
