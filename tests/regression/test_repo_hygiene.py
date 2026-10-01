@@ -36,6 +36,7 @@ FORBIDDEN: list[tuple[str, str, str]] = [
     ("output/probe_lines.txt", "output/probe_lines.txt", "scratch analysis file"),
     ("output/branches_missing.txt", "output/branches_missing.txt", "scratch analysis file"),
     ("output/failures_analysis.txt", "output/failures_analysis.txt", "scratch analysis file"),
+    ("tmp/*", "tmp/*", "temporary scratch file"),
 ]
 
 # Labels that must appear in .gitignore (one representative glob per class).
