@@ -77,3 +77,21 @@ def test_hard_gate_jobs_never_continue_on_error():
         assert "continue-on-error: true" not in block, f"{job} が continue-on-error"
 
 
+def test_frontend_job_runs_all_three_gates():
+    block = _job_block("frontend")
+    for cmd in ("npm run typecheck", "npm run lint", "npm run test:ci"):
+        assert cmd in block, f"frontend ジョブが {cmd} を実行していない"
+
+
+def test_makefile_verify_matches_ci_gates():
+    """Makefile の verify と CI が乖離していないこと。"""
+    mk = open("Makefile", encoding="utf-8").read()
+    assert "verify:" in mk, "Makefile に verify ターゲットが無い"
+    body = mk.split("verify:", 1)[1].split("\n\n")[0]
+    for target in ("lint", "typecheck", "test"):
+        assert target in body, (
+            f"verify が {target} を呼んでいない"
+        )
+
+
+
