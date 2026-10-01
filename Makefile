@@ -25,7 +25,7 @@ typecheck:  ## mypy (strict 化は将来フェーズ)
 	py -m mypy src --ignore-missing-imports
 
 black-check:  ## black --check (pyproject.toml の line-length=100 と一致)
-	py -m black --check src tests config scripts
+	py -m ruff format --check src tests config scripts
 
 openapi:  ## OpenAPI 仕様を docs/openapi.json へ生成
 	py scripts/generate_openapi.py --output docs/openapi.json
