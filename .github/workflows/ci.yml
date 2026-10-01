@@ -64,6 +64,12 @@ jobs:
           pip install pytest
       - name: Version consistency guardrail
         run: pytest tests/regression/test_v5_version_consistency.py -q -p no:cacheprovider
+      - name: Tenant FK integrity
+        run: pytest tests/regression/test_tenant_fk_integrity.py -q -p no:cacheprovider
+      - name: No tautological asserts
+        run: pytest tests/regression/test_H1_tautology_guard.py -q -p no:cacheprovider
+      - name: Route mount parity
+        run: pytest tests/security/test_server_route_mount_parity.py -q -p no:cacheprovider
       - name: CHANGELOG must document the released version
         run: |
           VERSION=$(python -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")

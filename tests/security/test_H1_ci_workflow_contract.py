@@ -57,3 +57,23 @@ def test_timeout_flag_is_installed_in_ci():
     wf = _src()
     assert "pytest-timeout" in wf, "CI が pytest-timeout を導入していない"
 
+
+def test_release_consistency_runs_more_than_version_check():
+    """hard gate として意味のあるテストが 1 本以上あること。"""
+    block = _job_block("release-consistency")
+    runs = re.findall(r"pytest\s+(\S+)", block)
+    assert len(runs) >= 1, "regression テストが 1 本も実行されていない"
+    # 静的チェック（外部依存なし）であることが保証されていること
+    assert "tests/regression" in block or "test_v5_version_consistency" in block
+    assert "test_tenant_fk_integrity.py" in block, "release-consistency が tenant_fk を検証していない"
+    assert "test_H1_tautology_guard.py" in block, "release-consistency が tautology を検証していない"
+    assert "test_server_route_mount_parity.py" in block, "release-consistency が route mount parity を検証していない"
+
+
+def test_hard_gate_jobs_never_continue_on_error():
+    """hard gate と宣言されているジョブに continue-on-error が無いこと。"""
+    for job in ("release-consistency", "test", "frontend", "static-analysis"):
+        block = _job_block(job)
+        assert "continue-on-error: true" not in block, f"{job} が continue-on-error"
+
+
