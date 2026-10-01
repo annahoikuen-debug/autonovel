@@ -73,7 +73,7 @@ async def generate_orchestrated(
 
     # ブックの所有権チェック
     repo = BookRepository(session)
-    book = await repo.get_book(input_data.book_id)
+    book = repo.get_book(input_data.book_id)
     if not book:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された作品が存在しません")
     if current_user.role != "admin" and getattr(book, "user_id", None) is not None:
@@ -151,7 +151,7 @@ async def export_orchestrated_package(
     from fastapi import Response
 
     repo = BookRepository(session)
-    book = await repo.get_book(book_id)
+    book = repo.get_book(book_id)
     if not book:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された作品が存在しません")
     if current_user.role != "admin" and getattr(book, "user_id", None) is not None:

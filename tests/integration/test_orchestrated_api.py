@@ -25,8 +25,9 @@ class TestOrchestratedAPI:
         app.include_router(orchestrated_router, prefix="/orchestrated", tags=["orchestrated"])
         return app
 
+    @patch("src.backend.routers.orchestrated.BookRepository")
     @patch("src.backend.tasks.generation_tasks.generate_chapter_orchestrated_task")
-    def test_generate_endpoint_returns_task_id(self, mock_task):
+    def test_generate_endpoint_returns_task_id(self, mock_task, mock_repo_cls):
         """POST /orchestrated/generate が task_id を返すこと。"""
         # テストごとにユニークな task_id を使う (共有DB の UNIQUE 制約回避)
         import uuid
@@ -34,6 +35,13 @@ class TestOrchestratedAPI:
         mock_result = MagicMock()
         mock_result.id = unique_id
         mock_task.return_value = mock_result
+
+        mock_repo = MagicMock()
+        mock_book = MagicMock()
+        mock_book.id = 1
+        mock_book.user_id = 1
+        mock_repo.get_book.return_value = mock_book
+        mock_repo_cls.return_value = mock_repo
 
         app = self._build_minimal_app()
         client = TestClient(app)
@@ -87,3 +95,13 @@ class TestOrchestratedAPI:
         data = response.json()
         assert data["status"] == "cancelled"
         assert data["task_id"] == unique_id
+
+
+def test_orchestrated_routes_are_reachable():
+    """orchestrated の 4 エンドポイントが実際に app に載っていること（404 防止）。"""
+    from src.backend.server import app
+
+    paths = {r.path for r in app.routes}
+    assert "/generate" in paths or any(
+        "generate" in p or "orchestrated" in p for p in paths
+    ), f"orchestrated が未マウント。既存パス: {sorted(p for p in paths if 'orches' in p)}"

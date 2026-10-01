@@ -63,6 +63,7 @@ from src.backend.routers import (
     platform_export,
     stream_writing,
     subtext,
+    orchestrated,
 )
 
 logger = logging.getLogger(__name__)
@@ -206,6 +207,7 @@ app.include_router(annotations.router)
 app.include_router(hooks.router)
 app.include_router(prompt_compare.router)
 app.include_router(structure.router)
+app.include_router(orchestrated.router)
 
 
 @app.get("/health")
