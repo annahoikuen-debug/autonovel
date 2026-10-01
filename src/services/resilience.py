@@ -21,19 +21,19 @@ def is_offline_mode_enabled() -> bool:
 
 
 def check_database() -> str:
-    """DB の到達性を確認する（ok/error）。"""
+    """DB の到達性を確認する（ok/error）。
+
+    同期関数なので ``AsyncEngine`` を直接ループで回さない。SQLAlchemy の
+    ``sync_engine`` ファサード（greenlet 経由）を使い、イベントループに
+    一切触れない。旧実装は ``get_event_loop().run_until_complete()`` を
+    無防備に呼んでおり、イベントループ内から呼ばれると RuntimeError になっていた。
+    """
     try:
         from src.core.container import AppContainer
 
         mgr = AppContainer.db()
-        # 同期的な軽い確認
-        import asyncio
-
-        async def _ping():
-            async with mgr.engine.connect() as conn:
-                await conn.execute(__import__("sqlalchemy").text("SELECT 1"))
-
-        asyncio.get_event_loop().run_until_complete(_ping())
+        with mgr.engine.sync_engine.connect() as conn:
+            conn.execute(__import__("sqlalchemy").text("SELECT 1"))
         return "ok"
     except Exception as exc:  # noqa: BLE001
         logger.warning(f"db check failed: {exc}")

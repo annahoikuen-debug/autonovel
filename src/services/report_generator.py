@@ -65,8 +65,12 @@ class ReportGenerator:
             created_at=datetime.now(),
         )
 
-    def add_quality_metrics(self, report: ProductionReport, text: str) -> ProductionReport:
+    async def add_quality_metrics(self, report: ProductionReport, text: str) -> ProductionReport:
         """レポートに品質メトリクスを追加
+
+        非同期にした理由: ``QualityScorer.score_all`` が coroutine を返すため。
+        旧実装は同期関数のまま ``asyncio.run`` を呼んでおり、イベントループ内から
+        呼ばれると RuntimeError になっていた（呼び出し元は 0 件）。
 
         Args:
             report: 制作レポート
@@ -75,9 +79,7 @@ class ReportGenerator:
         Returns:
             ProductionReport: 品質メトリクスが追加されたレポート
         """
-        import asyncio
-
-        quality_metrics = asyncio.run(self.quality_scorer.score_all(text))
+        quality_metrics = await self.quality_scorer.score_all(text)
         report.quality_metrics = quality_metrics
         return report
 
