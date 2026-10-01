@@ -1,7 +1,4 @@
-// easyModeFlow.test.tsx
-// NOTE: この環境では setup.ts 読み込み後に `import { test } from "vitest"` が
-// 解決されないケースがあるため、globals のみを使用する構成にしている。
-// (tests/basic.test.ts が globals で動作することを確認済み)
+import type { EasyModeGachaResponse } from "@/types/easyMode";
 
 // MSW によるAPIモック (gacha / digest / promote)
 const gachaResponse = {
