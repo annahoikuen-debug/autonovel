@@ -22,7 +22,9 @@ class TestOrchestratedAPI:
         app = FastAPI()
         from src.backend.routers.orchestrated import router as orchestrated_router
 
-        app.include_router(orchestrated_router, prefix="/orchestrated", tags=["orchestrated"])
+        # prefix は router 定義側（src/backend/routers/orchestrated.py）が持つ。
+        # ここで重ねると /orchestrated/orchestrated/* になるため渡さない。
+        app.include_router(orchestrated_router)
         return app
 
     @patch("src.backend.routers.orchestrated.BookRepository")
@@ -98,10 +100,34 @@ class TestOrchestratedAPI:
 
 
 def test_orchestrated_routes_are_reachable():
-    """orchestrated の 4 エンドポイントが実際に app に載っていること（404 防止）。"""
+    """orchestrated の 4 エンドポイントが app に載り、FE 契約パスで存在すること（404 防止）。
+
+    frontend/src/api/orchestratedApi.ts の BASE は "/orchestrated" なので、
+    server 側も /orchestrated/* で応答できる必要がある。
+    """
     from src.backend.server import app
 
     paths = {r.path for r in app.routes}
-    assert "/generate" in paths or any(
-        "generate" in p or "orchestrated" in p for p in paths
-    ), f"orchestrated が未マウント。既存パス: {sorted(p for p in paths if 'orches' in p)}"
+    expected = {
+        "/orchestrated/generate",
+        "/orchestrated/status/{task_id}",
+        "/orchestrated/task/{task_id}",
+        "/orchestrated/export/{book_id}",
+        "/orchestrated/events/{correlation_id}",
+    }
+    missing = sorted(expected - paths)
+    assert not missing, f"orchestrated が未マウント、または prefix が FE 契約と不一致: {missing}"
+
+
+def test_orchestrated_does_not_leak_unguarded_root_routes():
+    """orchestrated の全ルートが router 定義の prefix 配下にあること。
+
+    prefix を付けないと /generate や /status/{task_id} がルート直下に露出し、
+    illustrations ルーターの同名ルートと衝突して FE からは /orchestrated/* が 404 になる。
+    """
+    from src.backend.routers.orchestrated import router as orchestrated_router
+
+    leaked = sorted(
+        r.path for r in orchestrated_router.routes if not r.path.startswith("/orchestrated")
+    )
+    assert not leaked, f"orchestrated が prefix 配下に無いルートがある: {leaked}"

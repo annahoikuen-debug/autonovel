@@ -32,7 +32,10 @@ try:
 except ImportError:
     EventSourceResponse = Any  # type: ignore
 
-router = APIRouter(tags=["orchestrated"])
+# prefix は frontend/src/api/orchestratedApi.ts の `BASE = "/orchestrated"` 契約に一致させる。
+# prefix を付けないと /generate や /status/{task_id} がルート直下に露出し、
+# FE が叩く /orchestrated/* が 404 になる。
+router = APIRouter(prefix="/orchestrated", tags=["orchestrated"])
 logger = logging.getLogger(__name__)
 
 
