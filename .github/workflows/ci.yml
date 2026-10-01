@@ -24,7 +24,6 @@ jobs:
   # エラー数が 0 のルールセットが確定した時点で、そのルールだけを hard gate に格上げする。
   static-analysis:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -35,11 +34,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install "ruff==0.16.5" "mypy==2.3.1"
-      - name: ruff (record-only ratchet)
-        run: ruff check src tests --statistics --output-format=concise || true
-      - name: mypy (record-only ratchet)
+      - name: ruff ratchet (hard gate)
+        run: python scripts/ci_lint_ratchet.py
+      - name: ruff (statistics for trend)
+        run: ruff check src tests config scripts --statistics --output-format=concise || true
+      - name: mypy (record-only for now)
         run: mypy src || true
-      - name: ruff format check (record-only ratchet)
+      - name: ruff format check (record-only for now)
         run: ruff format --check src || true
 
   # ==========================================================================
