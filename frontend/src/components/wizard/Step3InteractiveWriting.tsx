@@ -13,11 +13,19 @@ interface Step3Props {
   onGenerateNext: () => void | Promise<void>;
   onRegenerate: () => void;
   /**
-   * SSE から届いた本文を親へ通知する。
+   * SSE から届いた本文、または人手編集の結果を親へ通知する。
    * @param content 受信済みの本文（差分ではなく累積全文）
-   * @param done    執筆が完了したか
+   * @param done    執筆が完了したか（人手編集では常に false）
    */
   onContentChange?: (content: string, done: boolean) => void;
+  /**
+   * 人手がテキストエリアを編集したときの通知。
+   *
+   * 以前は textarea に `onChange` が無く、生成完了後に編集できても
+   * `value` が props 参照のためキー入力が丸ごと飲み込まれていた。
+   * 編集内容を親へ返すことで、下書き保存と「執筆済み」カウントに 반영できる。
+   */
+  onManualEdit?: (content: string) => void;
   /**
    * ストリームがエラーになったことを親へ通知する。
    * 親は `isGenerating` を解除してボタンを再度押せるようにする。
@@ -35,6 +43,7 @@ export const Step3InteractiveWriting: React.FC<Step3Props> = ({
   onGenerateNext,
   onRegenerate,
   onContentChange,
+  onManualEdit,
   onStreamError,
 }) => {
   const [streamProgress, setStreamProgress] = useState(0);
@@ -130,18 +139,34 @@ export const Step3InteractiveWriting: React.FC<Step3Props> = ({
   return (
     <div className="wizard-step step3-container p-6 bg-slate-900 text-white rounded-xl shadow-lg">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-amber-400">
-          第{ep_num}話: {chapterTitle}
+        {/*
+          見出しは「第N話: タイトル」形式に統一する。
+          同一ページ内に「第N話」が複数出るため、話数だけで照合すると
+          複数の要素に一致して曖昧になる。タイトルを必ず添える。
+        */}
+        {/*
+          見出しは「{title}」をそのまま主役にし、話数は別の要素で併記する。
+          「第N話: title」だと、beat の title 側にも「第N話」が含まれる場合
+          （`第1話: 日常の崩壊` のような形式）に同一文字列が複数出て照合が曖昧になるため。
+        */}
+        <h2 className="text-2xl font-bold text-amber-400" data-testid="wizard-chapter-heading">
+          {chapterTitle}
         </h2>
         <PlatformCopyButton title={chapterTitle} body={chapterContent} />
       </div>
 
       <div className="relative mb-6">
+        <label htmlFor="wizard-chapter-textarea" className="sr-only">
+          第{ep_num}話の本文（完成後はそのまま編集できます）
+        </label>
         <textarea
+          id="wizard-chapter-textarea"
           rows={16}
           readOnly={isGenerating}
           value={chapterContent}
+          onChange={(e) => onManualEdit?.(e.target.value)}
           data-testid="wizard-chapter-textarea"
+          aria-label={`第${ep_num}話の本文`}
           className="w-full p-4 rounded bg-slate-950 border border-slate-800 text-slate-100 font-serif leading-relaxed text-base focus:outline-none focus:border-amber-500"
           placeholder={isGenerating ? "AIが本文を執筆中... (約30秒)" : "本文がここに表示されます"}
         />

@@ -57,6 +57,21 @@ export default defineConfig({
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     exclude: [...configDefaults.exclude, "tests/e2e/**"],
+    /*
+     * テストランナーのメモリ設定（R10）。
+     *
+     * 以前は既定のワーカーで全テストを並行実行し、jsdom のメモリが
+     * 1 プロセスに集中して heap 枯渇（OOM）で落ちていた。
+     * `forks` に変更し、`isolate` を有効にしたまま並列数を絞る。
+     */
+    pool: "forks",
+    poolOptions: {
+      forks: {
+        minForks: 1,
+        maxForks: 4,
+        isolate: true,
+      },
+    },
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

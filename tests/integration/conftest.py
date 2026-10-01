@@ -5,6 +5,7 @@ import os
 import pytest
 import time
 import redis
+from pathlib import Path
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 try:
@@ -19,6 +20,30 @@ except ImportError:
     HAS_TESTCONTAINERS = False
 from alembic.config import Config
 from alembic import command
+
+
+def pytest_collection_modifyitems(config, items):
+    """``tests/integration/`` 配下のテストに ``integration`` マーカーを付与する。
+
+    ``pytest.ini`` は ``integration`` マーカーを登録しているが、
+    実際のテストはどれも付けていなかったため
+    ``-m "not integration"`` は何も除外せず、外部サービス必須のテストが
+    CI の通常実行に混入していた（= `integration` という記述が嘘になっていた）。
+    ディレクトリ単位で機械的に付与することで、契約を実際の挙動に一致させる。
+
+    NOTE: pytest の ``pytest_collection_modifyitems`` は session スコープの hook で、
+    ``items`` にはこのディレクトリ以外のテストもすべて含まれる。
+    （だから素直に loop すると全テストが integration 扱いになり、
+    ``-m "not integration"`` で何も選ばなくなる）
+    そのため所属ディレクトリで必ず絞り込む。
+    """
+    here = Path(__file__).parent.resolve()
+    for item in items:
+        try:
+            if Path(str(item.path)).resolve().is_relative_to(here):
+                item.add_marker(pytest.mark.integration)
+        except (ValueError, OSError):
+            continue
 
 
 @pytest.fixture(scope="session")

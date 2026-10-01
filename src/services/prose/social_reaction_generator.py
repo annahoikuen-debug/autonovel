@@ -163,7 +163,7 @@ class SocialReactionGenerator:
         for i in range(count):
             comments.append(StreamComment(
                 user=f"視聴者{i % 10 + 1}",
-                text=f"わあああああああああああああああああああああああｗｗｗ",
+                text="わあああああああああああああああああああああああｗｗｗ",
             ))
         return comments
 
@@ -174,6 +174,6 @@ class SocialReactionGenerator:
             posts.append(ForumPost(
                 res_num=i+1,
                 name=f"名無しさん{i+1:4d}",
-                body=f"これはひどい... でもちょっと面白いかもｗｗｗ",
+                body="これはひどい... でもちょっと面白いかもｗｗｗ",
             ))
         return posts

@@ -73,9 +73,16 @@ async def _run_illustration_batch(book_id: int, settings: dict) -> dict[str, Any
 
 
 @huey.task()
-def illustrate_batch_task(book_id: int, settings: dict) -> dict[str, Any]:
-    """非同期で挿絵バッチを実行する Huey タスク。"""
-    task_id = f"illust_{uuid.uuid4().hex[:8]}"
+def illustrate_batch_task(book_id: int, settings: dict, task_id: str | None = None) -> dict[str, Any]:
+    """非同期で挿絵バッチを実行する Huey タスク。
+
+    ``task_id`` を渡すとそれをそのまま使う。渡されない場合は従来どおり採番する。
+    ルーターが即座に返す ``task_id`` とワーカーが記録する ``task_id`` が
+    ずれると ``GET /status/{task_id}`` が永久に 404 になるため、
+    ルーター側で採番した値を渡すのが正しい。
+    """
+    if not task_id:
+        task_id = f"illust_{uuid.uuid4().hex[:8]}"
     logger.info("Illustration batch task started: book_id=%s task_id=%s", book_id, task_id)
     _update_task(task_id, "processing")
     try:

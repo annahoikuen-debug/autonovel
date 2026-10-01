@@ -1,11 +1,15 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.auth import get_current_user
 from src.backend.database import get_async_db
-from src.backend.database.models import User
+from src.backend.database.models import Illustration, User
+from src.backend.database.uow import UnitOfWork
+from src.backend.security.owner_guard import verify_book_ownership
+from src.core.container import AppContainer
 from src.dependencies import get_illustration_workflow
 from src.models.illustration import (
     IllustrationModel,
@@ -171,7 +175,9 @@ async def generate_yonkoma(
 
 @router.post("/batch")
 async def batch_generate_illustrations(
-    params: dict[str, Any], workflow=Depends(get_illustration_workflow)
+    params: dict[str, Any],
+    current_user: User = Depends(get_current_user),
+    workflow=Depends(get_illustration_workflow),
 ):
     """バッチで挿絵を生成する (Huey タスクキューに投入)。
 
@@ -183,20 +189,85 @@ async def batch_generate_illustrations(
     from src.backend.tasks.illustration_tasks import illustrate_batch_task
 
     try:
-        book_id = params["book_id"]
+        # 文字列の book_id がそのまま Huey タスクへ流れるとクエリが壊れるため、
+        # 所有権検証。以前はここで int 化していなかった。
+        book_id = int(params["book_id"])
         settings = params.get("settings", {})
-        task_id = f"illust_{uuid.uuid4().hex[:8]}"
+        task_id = f"illust_{uuid.uuid4().hex[:12]}"
 
-        # タスクをキューに投入 (immediate=False のためワーカー側で実行)
-        illustrate_batch_task(book_id=book_id, settings=settings)
+        # 生成是有偿的: 他人の book_id を指定してタスクを積ませないよう所有者を確認する。
+        await verify_book_ownership(book_id, current_user, AppContainer.db())
+
+        # ワーカー側でも同じ task_id を使う（ずれると status が取れなくなる）
+        illustrate_batch_task(book_id=book_id, settings=settings, task_id=task_id)
 
         return {"task_id": task_id, "status": "queued"}
+    except HTTPException:
+        raise
+    except KeyError as e:
+        raise HTTPException(status_code=422, detail=f"必須パラメータがありません: {e}") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
+
+
+@router.get("/images/{book_id}/{scene_name}")
+async def get_scene_illustration(
+    book_id: int,
+    scene_name: str,
+    current_user: User = Depends(get_current_user),
+):
+    """シーンに対応する挿絵画像 URL を返す（Studio のプレビュー用）。
+
+    フロントは「まだ生成されていない」状態と「取得に失敗した」状態を区別したいので、
+    見つからない場合は 404 ではなく **200 + ``found: false``** を返す。
+    （404 にするとフロント側で例外処理が要り、「未生成」と「障害」が混同される）
+
+    Response:
+        {"found": true,  "image_url": "https://...", "illustration_id": 12}
+        {"found": false, "image_url": null,   "illustration_id": null}
+
+    ``scene_name`` はプロンプトに埋め込まれたシーン名を想定しているため、
+    完全一致に処分し、無ければ最も新しい挿絵へフォールバックする。
+    """
+    async with UnitOfWork(AppContainer.db()) as uow:
+        # IDOR 防止: 作品の所有権を必ず検証する
+        await verify_book_ownership(book_id, current_user, uow)
+
+        # 1) シーン名がプロンプトに含まれている挿絵を新しい順に探す
+        stmt = (
+            select(Illustration)
+            .where(
+                Illustration.book_id == book_id,
+                Illustration.image_url != "",
+            )
+            .order_by(Illustration.id.desc())
+        )
+        result = await uow.session.execute(stmt)
+        candidates = list(result.scalars().all())
+
+    normalized = scene_name.strip()
+    # image_url が空（prompt 生成のみ）の行は「画像あり」と見なさない。
+    # SQL 側でも絞っているが、二重で保証する。
+    usable = [row for row in candidates if (row.image_url or "").strip()]
+    matched = next(
+        (row for row in usable if normalized and normalized in (row.prompt or "")),
+        usable[0] if usable else None,
+    )
+
+    if matched is None:
+        return {"found": False, "image_url": None, "illustration_id": None}
+
+    return {
+        "found": True,
+        "image_url": matched.image_url,
+        "illustration_id": matched.id,
+    }
 
 
 @router.get("/status/{task_id}")
-async def get_illustration_status(task_id: str):
+async def get_illustration_status(
+    task_id: str, current_user: User = Depends(get_current_user)
+):
     """Huey タスクのステータス・結果を取得する。"""
     from src.backend.database.core import get_db_manager
     from src.backend.database.repository import BookRepository
@@ -204,7 +275,9 @@ async def get_illustration_status(task_id: str):
     db = get_db_manager()
     async with db.get_session() as session:
         repo = BookRepository(session)
-        task = repo.get_task(task_id)
+        # `get_task` は同期版で、AsyncSession を使うと coroutine が返り
+        # `task.status` で AttributeError（=常に 500）になっていた。
+        task = await repo.get_task_async(task_id)
         if task is None:
             raise HTTPException(status_code=404, detail=f"task {task_id} not found")
         result = None

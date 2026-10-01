@@ -234,6 +234,10 @@ class BookRepository(BaseRepository):
         `ChapterRepository.create_chapter` は upsert 仕様のため、
         委譲後に「重複行が増えない」ことが保証される。
 
+        ``killer_phrase`` / ``world_state`` / ``trinity_review_log`` は
+        値が無いときは渡さない。渡すと既存の生成済み値を消してしまうため
+        （``ChapterRepository.create_chapter`` は ``None`` を「未指定」として扱う）。
+
         Args:
             book_id: 作品ID
             branch_id: ブランチID
@@ -252,11 +256,11 @@ class BookRepository(BaseRepository):
             title=title,
             content=content,
             summary=summary or (content[:200] if content else ""),
-            killer_phrase=killer_phrase,
-            ai_insight=ai_insight,
-            world_state={},
-            trinity_review_log={},
-            created_at=datetime.now(timezone.utc).isoformat(),
+            killer_phrase=killer_phrase or None,
+            ai_insight=ai_insight or None,
+            world_state=None,
+            trinity_review_log=None,
+            created_at=datetime.now(timezone.utc),
             tension_delta=tension_delta,
             qol_delta=qol_delta,
             branch_id=branch_id,
@@ -266,10 +270,15 @@ class BookRepository(BaseRepository):
         """指定話数の章を取得する（無ければ None）。"""
         return await self._chapter_repo().get_chapter(branch_id=branch_id, ep_num=ep_num)
 
-    async def update_chapter_content(self, branch_id: int, ep_num: int, content: str) -> None:
-        """指定話数の本文を差し替える（再生成・局所パッチ適用で使用）。"""
-        await self._chapter_repo().update_chapter_content(
-            branch_id=branch_id, ep_num=ep_num, content=content
+    async def update_chapter_content(
+        self, branch_id: int, ep_num: int, content: str, book_id: int | None = None
+    ) -> int:
+        """指定話数の本文を差し替える（再生成・局所パッチ適用で使用）。
+
+        ``book_id`` を渡すと他作品の同番の章には及ばない。
+        """
+        return await self._chapter_repo().update_chapter_content(
+            branch_id=branch_id, ep_num=ep_num, content=content, book_id=book_id
         )
 
     async def get_latest_bible(self, book_id: int) -> Any:

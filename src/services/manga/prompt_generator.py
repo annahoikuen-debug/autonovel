@@ -38,7 +38,7 @@ class MangaPromptGenerator:
 
         prompt_parts = [
             "masterpiece manga sheet, full comic page, sequential manga story",
-            f"24 panels in a clean and organized 4x6 grid layout",
+            "24 panels in a clean and organized 4x6 grid layout",
             f"telling the story of Episode {episode.episode_number}: '{episode.title}'",
             f"{setting_clause}starring {char_names}",
             f"narrative progression: {episode.synopsis}",

@@ -11,6 +11,7 @@ import { getGenreBadgeConfig } from "../../constants/genres";
 import { MobileBottomNav } from "../mobile/MobileBottomNav";
 import { MobileChapterDrawer } from "../mobile/MobileChapterDrawer";
 import { MobileQuickActionBar } from "../mobile/MobileQuickActionBar";
+import { insertTextIntoActiveManuscript } from "../../utils/manuscriptInsertion";
 import { ENTRY_POINTS, EntryMeta } from "../../routes";
 
 export interface AppLayoutProps {
@@ -26,9 +27,6 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
     selectedBook,
     setSelectedBookId,
     refreshBooks,
-    hasCompletedWizard,
-    setWizardStep,
-    setIsWizardActive,
     chapters,
     currentEpNum,
     setCurrentEpNum,
@@ -100,11 +98,6 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
               const newBook = await createBook(payload);
               await refreshBooks();
               setSelectedBookId(newBook.id);
-
-              if (!hasCompletedWizard) {
-                setWizardStep(1);
-                setIsWizardActive(true);
-              }
             }}
           />
         </div>
@@ -212,12 +205,20 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
       {children || <Outlet />}
 
       {/* Mobile Navigation */}
+      {/*
+        クイック操作は「実際に本文へ反映できること」を条件に描画する。
+        挿入先に該当テキストエリアが無い場合は、成功したように見える
+        メッセージを出さず、正直に「本文を開いているときに使えます」と伝える。
+      */}
       <MobileQuickActionBar
         onInsertText={(txt) => {
-          handleMessage(`テキストに「${txt}」を挿入しました`);
+          const ok = insertTextIntoActiveManuscript(txt);
+          if (ok) {
+            handleMessage(`「${txt}」を本文に挿入しました`);
+          } else {
+            handleMessage("本文の入力欄を開いているときだけ使えます");
+          }
         }}
-        onAiContinue={() => handleMessage("AI続きの執筆を開始します...")}
-        onProofread={() => handleMessage("文章の校正を実行中...")}
       />
 
       <MobileChapterDrawer

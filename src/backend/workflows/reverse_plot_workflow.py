@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 import logging
-from typing import Any, List
+from typing import TYPE_CHECKING, Any, List
 
 from .base_workflow import BaseWorkflow
 from config.story_spine.loader import get_length
@@ -10,6 +10,9 @@ from src.services.spine_resolver import resolve_spine
 from src.shared.utils import StatusReporter
 from src.models.plot import ArcBlueprint, CatharsisPattern
 from pydantic import BaseModel
+
+if TYPE_CHECKING:
+    from config.story_spine.beat import Spine
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +122,7 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
             "catharsisPattern": catharsis_dict,
         }
 
-    def _spine_for(self, target_episodes: int) -> "Spine":
+    def _spine_for(self, target_episodes: int) -> Spine:
         """逆プロット用の Spine を解決する（LLM を呼ばない）。"""
         return resolve_spine("exile_rise", "web_volume", "web", target_episodes)
 

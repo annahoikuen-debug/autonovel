@@ -169,8 +169,14 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
 
   return (
     <div className="wizard-step step1-container p-6 bg-slate-900 text-white rounded-xl shadow-lg">
+      {/* 見出しは既存導線との後方互換のため `Step 1: ...` のまま据え置く */}
       <h2 className="text-2xl font-bold mb-2 text-sky-400">Step 1: 企画アイデアと成長曲線の設計</h2>
-      <p className="text-slate-400 mb-6 text-sm">主人公のチート度や成長曲線、リスク過酷度を設定し、読者を引き込む企画の骨格を作ります。</p>
+      <p className="text-slate-400 mb-6 text-sm">
+        主人公にどの程度の「 유리」を与えるか、どう成長させていくかを決めます。
+        <strong className="text-slate-200">
+          迷ったら上の「構造テンプレート」を1つ選ぶだけで設定が入ります。
+        </strong>
+      </p>
 
       {/* 構造テンプレートカード一覧 */}
       {cards.length > 0 && (
@@ -249,10 +255,17 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
           </div>
         </div>
 
+        {/*
+          スライダーには両端の説明と `aria-valuetext` を付けることで、
+          「いま何を調整しているのか」を数値を見なくても分かるようにする。
+        */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1">チート度 (1〜5): {cheatScale}</label>
+            <label htmlFor="cheat-scale" className="block text-sm font-medium mb-1">
+              チート度: {cheatScale} / 5
+            </label>
             <input
+              id="cheat-scale"
               type="range"
               min={1}
               max={5}
@@ -260,11 +273,19 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
               onChange={(e) => setCheatScale(Number(e.target.value))}
               className="w-full accent-sky-500"
               disabled={isLoading}
+              aria-describedby="cheat-scale-help"
+              aria-valuetext={`${cheatScale}。${cheatScale <= 2 ? '主人公は一般人' : cheatScale <= 3 ? '少し頼れる' : cheatScale <= 4 ? 'かなり有利' : '無敵に近い'}`}
             />
+            <p id="cheat-scale-help" className="text-xs text-slate-400 mt-1">
+              1: 主人公も一般人 / 3: 少し頼れる / 5: 無敵に近い
+            </p>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">代償・世界リスク過酷度 (1〜5): {costSeverity}</label>
+            <label htmlFor="cost-severity" className="block text-sm font-medium mb-1">
+              代償・世界の過酷さ: {costSeverity} / 5
+            </label>
             <input
+              id="cost-severity"
               type="range"
               min={1}
               max={5}
@@ -272,13 +293,21 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
               onChange={(e) => setCostSeverity(Number(e.target.value))}
               className="w-full accent-amber-500"
               disabled={isLoading}
+              aria-describedby="cost-severity-help"
+              aria-valuetext={`${costSeverity}。${costSeverity <= 2 ? '穏やか' : costSeverity <= 3 ? 'ある程度の闇' : '容赦ない世界'}`}
             />
+            <p id="cost-severity-help" className="text-xs text-slate-400 mt-1">
+              1: 穏やか / 3: ある程度の闇 / 5: 容赦ない世界
+            </p>
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">システム支援度 (0〜100): {systemAssist}</label>
+          <label htmlFor="system-assist" className="block text-sm font-medium mb-1">
+            主人公をやさしく助ける割合: {systemAssist}%
+          </label>
           <input
+            id="system-assist"
             type="range"
             min={0}
             max={100}
@@ -286,12 +315,20 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
             onChange={(e) => setSystemAssist(Number(e.target.value))}
             className="w-full accent-emerald-500"
             disabled={isLoading}
+            aria-describedby="system-assist-help"
+            aria-valuetext={`${systemAssist}%。${systemAssist <= 30 ? 'ほぼ独力でなんとか' : systemAssist <= 70 ? '助けがほどほどにある' : '常に手を差し伸べられる'}`}
           />
+          <p id="system-assist-help" className="text-xs text-slate-400 mt-1">
+            0: 主人公が独力でなんとか / 100: 常に手を差し伸べられる
+          </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-1">目標話数 (1〜100): {targetChapters}</label>
+          <label htmlFor="target-chapters" className="block text-sm font-medium mb-1">
+            目標話数: {targetChapters} 話
+          </label>
           <input
+            id="target-chapters"
             type="range"
             min={1}
             max={100}
@@ -299,6 +336,7 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
             onChange={(e) => setTargetChapters(Number(e.target.value))}
             className="w-full accent-purple-500"
             disabled={isLoading}
+            aria-valuetext={`${targetChapters} 話`}
           />
         </div>
 

@@ -5,6 +5,7 @@ database/repo_chapter.py - チャプター(Chapters)本文データ操作用の�
 """
 import json
 import re
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, or_, select, update
@@ -19,6 +20,58 @@ if TYPE_CHECKING:
 from src.backend.database.repositories.base import BaseRepository
 
 
+class _Unset:
+    """「この引数は渡されていない」を表す番兵。
+
+    生成済みメタデータ（``killer_phrase`` / ``ai_insight`` / ``world_state`` /
+    ``trinity_review_log``）を、部分更新のときに消さないようにするために使う。
+    既定値を ``""`` や ``{}`` にすると、upsert のたびに生成済み値が
+    上書きされて消えていた。
+    """
+
+    _instance: _Unset | None = None
+
+    def __new__(cls) -> _Unset:
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __repr__(self) -> str:
+        return "UNSET"
+
+    def __bool__(self) -> bool:
+        return False
+
+
+UNSET = _Unset()
+
+
+def _as_datetime(value: Any) -> datetime | None:
+    """``created_at`` を ``CompatibleDateTime`` が受け付ける datetime に正規化する。
+
+    ``CompatibleDateTime.process_bind_param`` は ``value.tzinfo`` を前提とするため、
+    ISO 文字列を代入すると StatementError になる。呼び出し側が
+    ``datetime.now(timezone.utc).isoformat()`` を渡して flush で落ちるのを防ぐ。
+    """
+    if value is None or value is UNSET:
+        return None
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=timezone.utc)
+    if isinstance(value, str):
+        parsed = datetime.fromisoformat(value)
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    raise TypeError(f"created_at に解釈できない型が渡されました: {type(value)!r}")
+
+
+def _as_json_text(value: Any) -> str:
+    """dict / list は JSON 文字列に、それ以外はそのまま文字列化する。"""
+    if isinstance(value, str):
+        return value or "{}"
+    if value is None:
+        return "{}"
+    return json.dumps(value, ensure_ascii=False)
+
+
 class ChapterRepository(BaseRepository):
     """Chaptersテーブルに関するDB操作をまとめたMixin"""
 
@@ -30,43 +83,74 @@ class ChapterRepository(BaseRepository):
         title: str,
         content: str,
         summary: str,
-        killer_phrase: str | None,
-        ai_insight: str,
-        world_state: Any,
-        trinity_review_log: Any,
-        created_at: str,
-        tension_delta: int = 0,
-        qol_delta: int = 0,
+        killer_phrase: Any = UNSET,
+        ai_insight: Any = UNSET,
+        world_state: Any = UNSET,
+        trinity_review_log: Any = UNSET,
+        created_at: Any = UNSET,
+        tension_delta: Any = UNSET,
+        qol_delta: Any = UNSET,
         branch_id: int = 1,
-    ) -> None:
+    ) -> bool:
+        """1 話を Upsert する。既存行があれば更新、無ければ作成する。
+
+        ``chapters`` の一意制約は ``UNIQUE(book_id, branch_id, ep_num)``。
+        ``branch_id`` は作品ごとには固有ではなく既定値 1 が全作品で使われるため、
+        照合には必ず ``book_id`` も含めること（``book_id`` を落とすと他作品の行を
+        巻き込んで上書きする，或者 ``MultipleResultsFound`` で落ちる）。
+
+        ``killer_phrase`` などの生成済みメタデータは「渡されていない」限り一切
+        触らないため、既存値を壊さない。``UNSET`` と ``None`` のどちらも
+        「渡されていない」として扱う（明示的に空にしたい場合は ``""`` を渡す）。
+        ``None`` を未指定扱いにしてあるのは、``None``/``""``/``"{}"`` を
+        そのまま渡す旧呼び出し側（例: ``BookRepository.save_chapter``）が
+        保存のたびに生成済み値を消していたのを、呼び出し側が壊なくても
+        直る必要があるため。
+
+        Returns:
+            既存行を更新したなら True、新規作成なら False。
+        """
         result = await self.session.execute(
-            select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num == ep_num)
+            select(Chapter)
+            .where(Chapter.book_id == book_id)
+            .where(Chapter.branch_id == branch_id)
+            .where(Chapter.ep_num == ep_num)
         )
         ch = result.scalar_one_or_none()
-        if not ch:
-            ch = Chapter(branch_id=branch_id, ep_num=ep_num)
+        created = ch is None
+        if created:
+            ch = Chapter(
+                book_id=book_id,
+                branch_id=branch_id,
+                ep_num=ep_num,
+                killer_phrase=None,
+                ai_insight="",
+                world_state="{}",
+                trinity_review_log="{}",
+            )
             self.session.add(ch)
-        ch.book_id = book_id
+
         ch.title = title
         ch.content = content
         ch.summary = (
             summary if isinstance(summary, str) else json.dumps(summary, ensure_ascii=False)
         )
-        ch.killer_phrase = killer_phrase
-        ch.ai_insight = ai_insight
-        ch.world_state = (
-            json.dumps(world_state, ensure_ascii=False)
-            if isinstance(world_state, (dict, list))
-            else (world_state or "{}")
-        )
-        ch.trinity_review_log = (
-            json.dumps(trinity_review_log, ensure_ascii=False)
-            if isinstance(trinity_review_log, (dict, list))
-            else (trinity_review_log or "{}")
-        )
-        ch.created_at = created_at
-        ch.tension_delta = tension_delta
-        ch.qol_delta = qol_delta
+        if killer_phrase is not UNSET and killer_phrase is not None:
+            ch.killer_phrase = killer_phrase
+        if ai_insight is not UNSET and ai_insight is not None:
+            ch.ai_insight = ai_insight
+        if world_state is not UNSET and world_state is not None:
+            ch.world_state = _as_json_text(world_state)
+        if trinity_review_log is not UNSET and trinity_review_log is not None:
+            ch.trinity_review_log = _as_json_text(trinity_review_log)
+        created_dt = _as_datetime(created_at)
+        if created_dt is not None:
+            ch.created_at = created_dt
+        if tension_delta is not UNSET:
+            ch.tension_delta = tension_delta
+        if qol_delta is not UNSET:
+            ch.qol_delta = qol_delta
+        return not created
 
     async def get_chapter(self, branch_id: int, ep_num: int) -> ChapterDbModel | None:
         result = await self.session.execute(
@@ -102,13 +186,27 @@ class ChapterRepository(BaseRepository):
 
     async def get_all_non_anchor_chapters(
         self,
-        book_id_or_branch_id: int,
+        book_id: int,
         branch_id: int | None = None,
         order_by: str = "ep_num",
         limit: int | None = None,
     ) -> list[ChapterDbModel]:
-        target_branch_id = branch_id if branch_id is not None else book_id_or_branch_id
-        stmt = select(Chapter).where(Chapter.branch_id == target_branch_id)
+        """指定作品のアンカーではない章をすべて取得する。
+
+        第1引数は **book_id** である（``src/core/interfaces.py`` の
+        ``get_all_non_anchor_chapters(self, book_id, ...)`` と同じ契約）。
+        ``branch_id`` 省略時は既定ブランチ 1 を使う。
+
+        ここを ``WHERE branch_id = book_id`` で絞り込むと、branch_id 1 を共有する
+        他作品の本編が混ざるため、必ず ``book_id`` も条件にすること。
+        """
+        target_branch_id = branch_id if branch_id is not None else 1
+        stmt = (
+            select(Chapter)
+            .where(Chapter.book_id == book_id)
+            .where(Chapter.branch_id == target_branch_id)
+            .where(Chapter.is_anchor.is_(False))
+        )
         if "desc" in order_by.lower():
             stmt = stmt.order_by(Chapter.ep_num.desc())
         else:
@@ -130,35 +228,60 @@ class ChapterRepository(BaseRepository):
 
     @retry_on_lock()
     async def delete_chapter(
-        self, book_id_or_branch_id: int, ep_num: int, branch_id: int | None = None
-    ) -> None:
-        target_branch_id = branch_id if branch_id is not None else book_id_or_branch_id
-        await self.session.execute(
+        self, book_id: int, ep_num: int, branch_id: int | None = None
+    ) -> int:
+        """指定作品の 1 話を削除する。
+
+        ``book_id`` を条件に含めるのは ``delete_chapter`` が所有者的検証済みの
+        book_id で呼ばれるためで、付けないと他作品の同番の章が消える。
+
+        Returns:
+            削除した行数（0 なら対象なし）。
+        """
+        target_branch_id = branch_id if branch_id is not None else 1
+        result = await self.session.execute(
             delete(Chapter)
+            .where(Chapter.book_id == book_id)
             .where(Chapter.branch_id == target_branch_id)
             .where(Chapter.ep_num == ep_num)
         )
+        return int(result.rowcount or 0)
 
     @retry_on_lock()
-    async def update_chapter_content(self, branch_id: int, ep_num: int, content: str) -> None:
-        await self.session.execute(
+    async def update_chapter_content(
+        self, branch_id: int, ep_num: int, content: str, book_id: int | None = None
+    ) -> int:
+        """1 話の本文を差し替える。
+
+        ``branch_id`` は作品間で共有される（既定 1）ため、HTTP 経由の書き込みでは
+        ``book_id`` を必ず渡して他作品へ及ばないようにする。
+        """
+        stmt = (
             update(Chapter)
             .where(Chapter.branch_id == branch_id)
             .where(Chapter.ep_num == ep_num)
-            .values(content=content)
         )
+        if book_id is not None:
+            stmt = stmt.where(Chapter.book_id == book_id)
+        result = await self.session.execute(stmt.values(content=content))
+        return int(result.rowcount or 0)
 
     @retry_on_lock()
     async def update_chapter_candidates(
-        self, branch_id: int, ep_num: int, candidates: list[Any]
-    ) -> None:
+        self, branch_id: int, ep_num: int, candidates: list[Any], book_id: int | None = None
+    ) -> int:
         """チャプターの候補案のみを更新する"""
-        await self.session.execute(
+        stmt = (
             update(Chapter)
             .where(Chapter.branch_id == branch_id)
             .where(Chapter.ep_num == ep_num)
-            .values(candidates=json.dumps(candidates, ensure_ascii=False))
         )
+        if book_id is not None:
+            stmt = stmt.where(Chapter.book_id == book_id)
+        result = await self.session.execute(
+            stmt.values(candidates=json.dumps(candidates, ensure_ascii=False))
+        )
+        return int(result.rowcount or 0)
 
     async def get_relevant_past_logs(
         self,

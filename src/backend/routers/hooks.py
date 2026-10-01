@@ -110,20 +110,29 @@ async def apply_hook_fix(
 
         # `update_chapter_content` は (branch_id, ep_num) のみで更新するため、
         # パス指定の book_id と一致しない章を上書きできないように必ず突き合わせる。
+        # 照合にも book_id を入れておかないと、branch_id を共有する他作品が存在する
+        # だけで scalar_one_or_none() が MultipleResultsFound になり 500 になる。
         if uow.session is not None:
             owner_check = await uow.session.execute(
-                select(Chapter.book_id)
+                select(Chapter.id)
+                .where(Chapter.book_id == book_id)
                 .where(Chapter.branch_id == branch_id)
                 .where(Chapter.ep_num == ep_num)
             )
-            target_book_id = owner_check.scalar_one_or_none()
-            if target_book_id is None or target_book_id != book_id:
+            if owner_check.scalar_one_or_none() is None:
                 raise HTTPException(
                     status_code=404,
                     detail="Chapter not found for this book/branch",
                 )
 
-        await uow.chapters.update_chapter_content(
-            branch_id=branch_id, ep_num=ep_num, content=new_tail
+        updated = await uow.chapters.update_chapter_content(
+            branch_id=branch_id, ep_num=ep_num, content=new_tail, book_id=book_id
         )
+
+    if updated == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Chapter not found for this book/branch",
+        )
+
     return {"status": "success", "book_id": book_id, "ep_num": ep_num, "branch_id": branch_id}

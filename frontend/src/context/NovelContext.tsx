@@ -4,6 +4,7 @@ import { LineScore } from "../types/quality";
 import { LLMConfigOverride } from "../types/easyMode";
 import { GeneratedPlotStructure } from "../types/reversePlot";
 import { fetchBooks, fetchBookById } from "../api/books";
+import { fetchChapters, StoredChapter } from "../api/chapters";
 
 interface NovelContextType {
   character: CharacterParams;
@@ -40,14 +41,6 @@ interface NovelContextType {
   setLineScores: React.Dispatch<React.SetStateAction<LineScore[]>>;
   hoveredNodeSummary: { summary: string; properties: Record<string, any> } | null;
   setHoveredNodeSummary: React.Dispatch<React.SetStateAction<{ summary: string; properties: Record<string, any> } | null>>;
-  wizardStep: number;
-  setWizardStep: React.Dispatch<React.SetStateAction<number>>;
-  isWizardActive: boolean;
-  setIsWizardActive: React.Dispatch<React.SetStateAction<boolean>>;
-  hasCompletedWizard: boolean;
-  setHasCompletedWizard: React.Dispatch<React.SetStateAction<boolean>>;
-  mode: "easy" | "studio";
-  setMode: React.Dispatch<React.SetStateAction<"easy" | "studio">>;
 }
 
 const defaultCharacter: CharacterParams = {
@@ -75,6 +68,25 @@ const defaultInitialChapters: ChapterItem[] = [
     status: "writing",
   },
 ];
+
+/**
+ * サーバの章データを画面用の形へ変換する。
+ *
+ * サーバ側に状態を持たないため、`status` は本文の有無から決める
+ * （本文が空ならまだ執筆前）。`StoredChapter` に `status` が無いまま
+ * 描画すると、ステータス色の参照が `undefined` で落ちる。
+ */
+const toChapterItem = (stored: StoredChapter): ChapterItem => {
+  const content = stored.content ?? "";
+  return {
+    ep_num: stored.ep_num,
+    title: stored.title,
+    summary: stored.summary,
+    content,
+    is_catharsis: false,
+    status: content.trim().length > 0 ? "writing" : "draft",
+  };
+};
 
 const NovelContext = createContext<NovelContextType | undefined>(undefined);
 
@@ -104,41 +116,12 @@ const [currentChapterText, setCurrentChapterText] = useState<string>(
   const [books, setBooks] = useState<BookItem[]>([]);
   const [lineScores, setLineScores] = useState<LineScore[]>([]);
   const [hoveredNodeSummary, setHoveredNodeSummary] = useState<{ summary: string; properties: Record<string, any> } | null>(null);
-  const [wizardStep, setWizardStep] = useState<number>(0);
-  const [isWizardActive, setIsWizardActive] = useState<boolean>(false);
-  const [hasCompletedWizard, setHasCompletedWizard] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("autonovel.wizard_completed") === "true";
-  });
-  // 共有UI設定（Easy/Studioモード間で同期）
-  const [selectedStyleId, setSelectedStyleId] = useState<string>(() => {
-    if (typeof window === "undefined") return "auto";
-    const saved = localStorage.getItem("autonovel.selectedStyleId");
-    return saved ?? "auto";
-  });
-  const [customStyleProfile, setCustomStyleProfile] = useState<any>(() => {
-    if (typeof window === "undefined") return null;
-    const saved = localStorage.getItem("autonovel.customStyleProfile");
-    return saved ? JSON.parse(saved) : null;
-  });
-  const [showApiSettings, setShowApiSettings] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("autonovel.showApiSettings") === "true";
-  });
-  const [showApiKey, setShowApiKey] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return localStorage.getItem("autonovel.showApiKey") === "true";
-  });
+  // 共有UI設定（selectedStyleId / customStyleProfile / showApiSettings / showApiKey）は
+  // かつてはここで localStorage と同期していたが、**context value に含めていなかった**ため
+  // 書き込むだけで読み出す主体が無く、デッドコードになっていた（R4）。
+  // 実際の状態は GeneratePanel / SimpleModePanel がローカルに持つため、ここでは持たない。
   const [selectedBook, setSelectedBook] = useState<BookItem | null>(null);
   const [isLoadingBooks, setIsLoadingBooks] = useState<boolean>(false);
-  const [mode, setMode] = useState<"easy" | "studio">(() => {
-    if (typeof window === "undefined") return "studio";
-    return (localStorage.getItem("autonovel.mode") as "easy" | "studio") || "studio";
-  });
-
-  useEffect(() => {
-    localStorage.setItem("autonovel.mode", mode);
-  }, [mode]);
 
   const selectedBookIdRef = useRef(selectedBookId);
   useEffect(() => {
@@ -160,7 +143,7 @@ const [currentChapterText, setCurrentChapterText] = useState<string>(
     }
   }, []);
 
-  // 作品切り替え時にその作品の章一覧を取得
+  // 作品切り替え時にその作品の情報と保存済みの章一覧を取得
   useEffect(() => {
     let cancelled = false;
     const loadChapters = async () => {
@@ -174,12 +157,20 @@ const [currentChapterText, setCurrentChapterText] = useState<string>(
         if (!cancelled) {
           setSelectedBook(book);
         }
-        // バックエンドから章一覧を取得（存在する場合）
-        // TODO: 実装後に章APIを呼ぶ
-      } catch (err) {
+      } catch {
         if (!cancelled) {
           setSelectedBook(null);
         }
+      }
+      try {
+        // サーバに保存済みの章を取り込む。これが無いとリロードで
+        // 章の追加/削除/並び替えが全て初期値の 1 話へ戻ってしまう。
+        const stored = await fetchChapters(selectedBookId);
+        if (cancelled) return;
+        setChapters(stored.map(toChapterItem));
+      } catch (err) {
+        // 読めなかったときは初期表示のままにする（通信不能で本文を消さない）
+        console.error("Failed to fetch chapters:", err);
       } finally {
         if (!cancelled) setIsLoadingBooks(false);
       }
@@ -200,58 +191,6 @@ const [currentChapterText, setCurrentChapterText] = useState<string>(
       // ignore storage error
     }
   }, [llmConfig]);
-
-  // selectedStyleId 変更時に localStorage へ同期
-  useEffect(() => {
-    try {
-      if (selectedStyleId) {
-        localStorage.setItem("autonovel.selectedStyleId", selectedStyleId);
-      } else {
-        localStorage.removeItem("autonovel.selectedStyleId");
-      }
-    } catch {
-      // ignore storage error
-    }
-  }, [selectedStyleId]);
-
-  // customStyleProfile 変更時に localStorage へ同期
-  useEffect(() => {
-    try {
-      if (customStyleProfile) {
-        localStorage.setItem("autonovel.customStyleProfile", JSON.stringify(customStyleProfile));
-      } else {
-        localStorage.removeItem("autonovel.customStyleProfile");
-      }
-    } catch {
-      // ignore storage error
-    }
-  }, [customStyleProfile]);
-
-  // showApiSettings 変更時に localStorage へ同期
-  useEffect(() => {
-    try {
-      if (showApiSettings) {
-        localStorage.setItem("autonovel.showApiSettings", "true");
-      } else {
-        localStorage.removeItem("autonovel.showApiSettings");
-      }
-    } catch {
-      // ignore storage error
-    }
-  }, [showApiSettings]);
-
-  // showApiKey 変更時に localStorage へ同期
-  useEffect(() => {
-    try {
-      if (showApiKey) {
-        localStorage.setItem("autonovel.showApiKey", "true");
-      } else {
-        localStorage.removeItem("autonovel.showApiKey");
-      }
-    } catch {
-      // ignore storage error
-    }
-  }, [showApiKey]);
 
   const isSwitchingEpRef = useRef(false);
 
@@ -350,14 +289,6 @@ const [currentChapterText, setCurrentChapterText] = useState<string>(
         setLineScores,
         hoveredNodeSummary,
         setHoveredNodeSummary,
-        wizardStep,
-        setWizardStep,
-        isWizardActive,
-        setIsWizardActive,
-        hasCompletedWizard,
-        setHasCompletedWizard,
-        mode,
-        setMode,
       }}
     >
       {children}

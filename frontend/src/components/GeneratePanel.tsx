@@ -146,19 +146,21 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
   const [showApiSettings, setShowApiSettings] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
 
-  // 文体（Style DNA）関連のステート
-  const [selectedStyleId, setSelectedStyleId] = useState<string>("auto");
-  const [customStyleProfile, setCustomStyleProfile] = useState<StyleProfile | null>(null);
-  const [stylePresets, setStylePresets] = useState<StylePresetSummary[]>([]);
+  /*
+   * 文体（Style DNA）関連のステートはここで持たない。
+   *
+   * かつては `selectedStyleId` / `customStyleProfile` をここで持って
+   * SimpleModePanel へ渡していたが、受け取るだけで誰も読まない props になっていた（R6）。
+   * 文体プリセットの選択は SimpleModePanel の `style-preset-select` が
+   * 生成フックへ直接渡すため、ここでは持たない。
+   */
   const [styleSampleText, setStyleSampleText] = useState("");
   const [distillLoading, setDistillLoading] = useState(false);
   const [distillResult, setDistillResult] = useState<StyleProfile | null>(null);
   const [showStyleModal, setShowStyleModal] = useState(false);
 
-  // ハンドラー
-  const handleStyleChange = (id: string) => {
-    setSelectedStyleId(id);
-  };
+  // 文体プリセットの選択は SimpleModePanel が `style-preset-select` から
+  // 生成フックへ直接渡すため、ここではハンドラーを持たない。
 
   const handleReversePlotComplete = (structure: GeneratedPlotStructure) => {
     setPlotStructure(structure);
@@ -269,14 +271,6 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
     }
   };
 
-  const handleRunDistill = () => {
-    // Implementation placeholder
-  };
-
-  const handleApplyCustomStyle = () => {
-    // Implementation placeholder
-  };
-
   const isBusy = generationState.isGenerating || isStreaming;
 
   // 提案7: 生成中のページ離脱警告（誤操作による生成中断を防止）
@@ -291,14 +285,6 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
           setCharacter={setCharacter}
           llmConfig={llmConfig}
           setLlmConfig={setLlmConfig}
-          selectedStyleId={selectedStyleId}
-          customStyleProfile={customStyleProfile}
-          showStyleModal={showStyleModal}
-          setShowStyleModal={setShowStyleModal}
-          showApiSettings={showApiSettings}
-          setShowApiSettings={setShowApiSettings}
-          showApiKey={showApiKey}
-          setShowApiKey={setShowApiKey}
           yonkomaEnabled={yonkomaEnabled}
           setYonkomaEnabled={setYonkomaEnabled}
           generationState={generationState}
@@ -346,14 +332,6 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
         setCharacter={setCharacter}
         llmConfig={llmConfig}
         setLlmConfig={setLlmConfig}
-        selectedStyleId={selectedStyleId}
-        customStyleProfile={customStyleProfile}
-        showStyleModal={showStyleModal}
-        setShowStyleModal={setShowStyleModal}
-        showApiSettings={showApiSettings}
-        setShowApiSettings={setShowApiSettings}
-        showApiKey={showApiKey}
-        setShowApiKey={setShowApiKey}
         yonkomaEnabled={yonkomaEnabled}
         setYonkomaEnabled={setYonkomaEnabled}
         generationState={generationState}
@@ -408,6 +386,21 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
               data-testid="btn-submode-reverse"
             >
               🔮 逆算プロットビルダー
+            </button>
+            {/*
+              ORCHESTRA（複数エージェント協働執筆）は実装済みだが、
+              setMode('orchestrated') を呼ぶ導線が無くパネルが到達不能だった。
+              ここ generalize して「monitor-fold の進捗表示」と実联系起来ようにする。
+            */}
+            <button
+              type="button"
+              className={`btn ${mode === "orchestrated" ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setMode("orchestrated")}
+              disabled={generationState.isGenerating}
+              data-testid="btn-submode-orchestrated"
+              title="複数のAIが役割分担して長編執筆します（Chest 書きには向きません）"
+            >
+              🧠 マルチエージェント執筆
             </button>
             <button
               type="button"

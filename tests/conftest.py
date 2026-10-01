@@ -7,6 +7,7 @@ import sys
 import tempfile
 from collections.abc import Generator
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
@@ -47,9 +48,16 @@ def pytest_configure(config):
 
 
 import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session
-from src.infrastructure.database.models.base_orm import Base
+
+# NOTE: SQLAlchemy と `Base` はモジュール直下では import しない。
+# これらを直下に置くと、pytest 本体だけが入った環境
+# （CI の `release-consistency` ジョブなど）で `tests/` 配下のどのテストを
+# 実行しても `tests/conftest.py` の import が失敗して collection error になる。
+# 実際の生成物を扱うフィクスチャの中で遅延 import する。
+if TYPE_CHECKING:
+    from sqlalchemy.orm import Session
+
+    from src.infrastructure.database.models.base_orm import Base
 
 
 # 各種外部サービス利用可能性フラグ（軽量チェック）
@@ -114,6 +122,7 @@ def real_db_manager(monkeypatch) -> Generator[Session, None, None]:
     ``DATABASE_URL`` を一時ファイル経由で差し替え、スキーマ生成後に
     有効な ``Session`` を ``yield`` する。終了時にファイルを削除する。
     """
+    from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
     import src.backend.database as db_module
@@ -143,6 +152,7 @@ def real_db_manager(monkeypatch) -> Generator[Session, None, None]:
     import src.backend.database.models  # noqa
     import src.backend.database.models_tenant  # noqa
     import src.infrastructure.database.models  # noqa
+    from src.infrastructure.database.models.base_orm import Base
 
     Base.metadata.create_all(test_engine)
 
@@ -279,6 +289,29 @@ def _optional_module_available(name: str) -> bool:
 
 _ORTOOLS_AVAILABLE = _optional_module_available("ortools")
 
+# ortools が無い環境で収集を見送るテストは、**実際に ortools を import するものだけ**。
+# 以前はパス名に "dsp" / "detector" / "balancer" などのキーワードが含まれるだけで
+# まとめて収集を飛ばしていたが、サブ文字列一致のため
+# `tests/unit/anti_ai/test_*_detector.py` や `tests/unit/fusion/test_conflict_detector.py`
+# （これらは AI 検知のテストで narrative_balancer とは無関係）を含め
+# 35 ファイルが無言で未収集になっていた。エラーも出ないため、
+# 中身のテストが壊れていても CI は緑のままだった。
+_ORTOOLS_REQUIRED_TESTS = frozenset(
+    {
+        "tests/unit/narrative_balancer/test_earley_incremental.py",
+        "tests/unit/test_csp_models.py",
+        "tests/unit/test_csp_config.py",
+    }
+)
+
+
+def _rel_path(collection_path) -> str:
+    """リポジトリルートからの相対パスを POSIX 区切りで返す。"""
+    try:
+        return Path(str(collection_path)).resolve().relative_to(Path(ROOT)).as_posix()
+    except (ValueError, OSError):
+        return Path(str(collection_path)).as_posix()
+
 
 def pytest_ignore_collect(collection_path, config):  # noqa: ANN001, ARG001
     """環境依存および非推奨テストの収集回避。"""
@@ -288,16 +321,9 @@ def pytest_ignore_collect(collection_path, config):  # noqa: ANN001, ARG001
     if "age_client" in lowered:
         return True
 
-    # ortools 依存テストの収集回避
-    if not _ORTOOLS_AVAILABLE:
-        balancer_keywords = (
-            "dsp", "csp", "grammar", "arbitrator", "priority_resolver",
-            "dp_table", "spectral_flatness", "balancer", "detector",
-            "global_cli", "global_scenarios",
-        )
-        if any(key in lowered for key in balancer_keywords):
-            if lowered.endswith(".py") and "test" in lowered:
-                return True
+    # ortools 依存テストの収集回避（実際に ortools を import するものだけ）
+    if not _ORTOOLS_AVAILABLE and _rel_path(collection_path) in _ORTOOLS_REQUIRED_TESTS:
+        return True
     return None
 
 
@@ -311,14 +337,5 @@ def pytest_collection_modifyitems(config, items):
                     reason="Legacy age_client tests are deprecated (replaced by Relational Memory)"
                 )
             )
-        if not _ORTOOLS_AVAILABLE:
-            if any(
-                key in lowered
-                for key in (
-                    "dsp", "csp", "grammar", "arbitrator", "balancer",
-                    "global_cli", "global_scenarios",
-                )
-            ):
-                item.add_marker(
-                    pytest.mark.skip(reason="ortools is not installed in environment")
-                )
+        if not _ORTOOLS_AVAILABLE and _rel_path(item.fspath) in _ORTOOLS_REQUIRED_TESTS:
+            item.add_marker(pytest.mark.skip(reason="ortools is not installed in environment"))

@@ -4,6 +4,16 @@ import { Button } from "../common/Button";
 import type { CharacterParams as Character } from "../../types";
 import type { GenerationState } from "../../types";
 import { GENRE_OPTIONS, FALLBACK_GENRE_OPTIONS, GenreOption } from "../../constants/genres";
+import { fetchStylePresets } from "../../api/styleApi";
+import type { StylePresetSummary } from "../../types/style";
+
+/** 文体プリセットのフォールバック（API 未起動・失敗時の選択肢） */
+const FALLBACK_STYLE_PRESETS: Array<{ id: string; label: string }> = [
+  { id: "auto", label: "AIにおまかせ（標準）" },
+  { id: "style_web_standard", label: "Web小説（読みやすい文体）" },
+  { id: "style_light_novel", label: "ライトノベル（会話中心）" },
+  { id: "style_dark_fantasy", label: "ダークファンタジー" },
+];
 
 export interface SpineTemplateCard {
   card_id?: string;
@@ -21,21 +31,19 @@ export interface SimpleModePanelProps {
   setCharacter?: React.Dispatch<React.SetStateAction<Character>>;
   llmConfig?: any;
   setLlmConfig?: React.Dispatch<React.SetStateAction<any>>;
-  selectedStyleId?: string;
-  customStyleProfile?: any;
-  showStyleModal?: boolean;
-  setShowStyleModal?: React.Dispatch<React.SetStateAction<boolean>>;
-  showApiSettings?: boolean;
-  setShowApiSettings?: React.Dispatch<React.SetStateAction<boolean>>;
-  showApiKey?: boolean;
-  setShowApiKey?: React.Dispatch<React.SetStateAction<boolean>>;
   yonkomaEnabled?: boolean;
   setYonkomaEnabled?: React.Dispatch<React.SetStateAction<boolean>>;
   generationState?: GenerationState;
-  startGeneration?: () => void;
+  /**
+   * 執筆を開始する。`styleKey` は画面で選んだ文体プリセット ID。
+   *
+   * 以前は引数なしだったため、文体選択が生成処理まで届かない状態だった。
+   * 「選んだ設定が反映される」ことを型で保証するため引数として受け取る。
+   */
+  startGeneration?: (styleKey?: string) => void;
   cancelGeneration?: (taskId: string | null) => void;
   isStreaming?: boolean;
-  startStreaming?: () => void;
+  startStreaming?: (styleKey?: string) => void;
   cancelStreaming?: () => void;
   isPaused?: boolean;
   resumeStreaming?: () => void;
@@ -89,7 +97,35 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
   const [lengths, setLengths] = useState<any[]>([]);
   const [genreOptions, setGenreOptions] = useState<GenreOption[]>(GENRE_OPTIONS);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
-  const [styleKey, setStyleKey] = useState<string>("style_web_standard");
+  /**
+   * 文体プリセット。
+   *
+   * 以前は内部キー（`style_web_standard` など）を直接打つテキストボックスで、
+   * 初見の利用者には理解できず、しかも値を API へ渡していないため変更しても
+   * 生成結果に影響しなかった。ここでは読みやすい選択式に変更している。
+   */
+  const [styleKey, setStyleKey] = useState<string>("auto");
+  const [stylePresets, setStylePresets] = useState<Array<{ id: string; label: string }>>(
+    FALLBACK_STYLE_PRESETS,
+  );
+
+  // 文体プリセットをバックエンドから取得する（失敗時は静的フォールバックを維持）
+  useEffect(() => {
+    let isMounted = true;
+    void fetchStylePresets()
+      .then((presets: StylePresetSummary[]) => {
+        if (!isMounted || presets.length === 0) return;
+        setStylePresets(
+          presets.map((p) => ({ id: p.id, label: p.name })),
+        );
+      })
+      .catch(() => {
+        // API 未起動時はフォールバックの選択肢をそのまま使う
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -245,15 +281,29 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
         />
       </div>
 
-      {/* 文体スタイル */}
+      {/*
+        文体スタイルは内部キーを叩く実装だったため、選択式に変更。
+        label は htmlFor で入力に紐付け、select には説明を添えて理解しやすくしている。
+      */}
       <div className="form-group">
-        <label className="label">文体スタイル</label>
-        <input
-          type="text"
-          className="input"
+        <label className="label" htmlFor="style-preset-select">文体の雰囲気</label>
+        <select
+          id="style-preset-select"
+          className="select"
           value={styleKey}
           onChange={(e) => setStyleKey(e.target.value)}
-        />
+          data-testid="style-preset-select"
+          title="AIが使う文章の特徴（語尾・長短・テンポ）を決めます"
+        >
+          {stylePresets.map((preset) => (
+            <option key={preset.id} value={preset.id}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+        <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "4px" }}>
+          文章の語尾や文章の長さの偏りを決めます。迷ったら「AIにおまかせ」で大丈夫です。
+        </p>
       </div>
 
       {/* 作品ジャンル選択 */}
@@ -340,32 +390,81 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
         />
       </div>
 
+      {/*
+        生成の進捗をテキストで常時見せる。
+        以前は `generationState.statusText` を描画する箇所が無く、
+        ボタンが「執筆中...」に変わるだけだったため、
+        「いま何が起きているのか」が分からないまま待つしかなかった。
+      */}
+      <div
+        role="status"
+        aria-live="polite"
+        data-testid="generation-status"
+        style={{
+          minHeight: "20px",
+          marginBottom: "8px",
+          fontSize: "0.85rem",
+          color: "var(--accent-cyan)",
+          fontWeight: 600,
+        }}
+      >
+        {generationState.isGenerating
+          ? (generationState.statusText || "🪄 執筆しています。そのままお待ちください…")
+          : ""}
+      </div>
+
+      {generationState.error && (
+        <div
+          role="alert"
+          data-testid="generation-error"
+          style={{
+            marginBottom: "12px",
+            padding: "8px 12px",
+            borderRadius: "8px",
+            border: "1px solid rgba(239,68,68,0.4)",
+            background: "rgba(239,68,68,0.12)",
+            color: "var(--accent-danger, #ef4444)",
+            fontSize: "0.85rem",
+          }}
+        >
+          ❌ {generationState.error}
+        </div>
+      )}
+
+      {/*
+        主CTAを 1 つに絞り、残りのサブ操作は視覚的に控えめにする。
+        以前は 5 つのボタンが同列・同サイズで「どれを押すべきか」判断できなかった。
+      */}
       <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
         <button
           className="btn btn-primary"
           style={{
-            flex: 1.2,
+            flex: 2,
             backgroundColor: "var(--accent-cyan)",
             borderColor: "var(--accent-cyan)",
             color: "#000",
             fontWeight: 700,
-            minWidth: "120px",
+            minWidth: "200px",
+            minHeight: "48px",
+            fontSize: "1.05rem",
           }}
-          onClick={() => props.startStreaming?.()}
+          onClick={() => props.startGeneration?.(styleKey)}
           disabled={isBusy}
-          title="Studioモードでは、プロットベースのAI共同執筆とブランチングが利用できます"
+          data-testid="btn-easy-generate"
+          title="選んだ設定でそのまま本文をつくります。まずこれを押してください"
         >
-          {isStreaming ? "⚡ ストリーミング執筆中..." : "⚡ リアルタイム速筆 (SSE)"}
+          {generationState.isGenerating ? "🪄 執筆中..." : "🪄 かんたん執筆開始"}
         </button>
 
         <button
           className="btn btn-secondary"
           style={{ flex: 1, minWidth: "120px" }}
-          onClick={() => props.startGeneration?.()}
+          onClick={() => props.startStreaming?.(styleKey)}
           disabled={isBusy}
-          title="Studioモードでは、詳細なアウトライン生成と Beat シート編集が利用できます"
+          data-testid="btn-streaming-generate"
+          title="一文字ずつ書き進めながら表示します。書き始めの感覚を確かめたいときに"
         >
-          {generationState.isGenerating ? "🪄 執筆中..." : "🪄 かんたん執筆開始"}
+          {isStreaming ? "⚡ 執筆中..." : "⚡ 逐次執筆"}
         </button>
 
         {generationState.isGenerating && !isStreaming && (

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useId, useRef } from "react";
 
 interface ModalProps {
   /** モーダルを表示するか */
@@ -24,6 +24,19 @@ interface ModalProps {
 }
 
 /**
+ * 開いているモーダルのスタック（一番上に積まれているものだけが Esc を受ける）。
+ *
+ * 以前は全モーダルが `window` の keydown を監視していたため、2 つ同時に開いていると
+ * 1 回の Esc で両方閉じてしまう。`GlobalModals` は複数のモーダルを同時に描画しうる。
+ */
+const openModalStack: object[] = [];
+
+/** body のスクロールロックの深さ（モーダルごとに 1 ずつ増やす） */
+let scrollLockDepth = 0;
+/** ロック直前の body.style.overflow（完全解除時に戻す） */
+let scrollLockPrevOverflow = "";
+
+/**
  * 共通モーダルコンポーネント。
  *
  * - オーバーレイ + カード型コンテンツの重複実装を統合
@@ -43,30 +56,116 @@ export const Modal: React.FC<ModalProps> = ({
   zIndex = 1000,
 }) => {
   const contentRef = useRef<HTMLDivElement>(null);
+  /** 開く前にフォーカスをどこへ置いていたか */
+  const previouslyFocusedRef = useRef<HTMLElement | null>(null);
+  /** このモーダルインスタンスをスタック上で識別するためのトークン */
+  const stackTokenRef = useRef<object>({});
+  const uid = useId();
 
-  // Esc キーで閉じる
+  // Esc キーで閉じる（同時に開いているモーダルのうち一番上のものだけ）
   useEffect(() => {
     if (!isOpen) return;
+    const token = stackTokenRef.current;
+    openModalStack.push(token);
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.stopPropagation();
-        onClose();
-      }
+      if (e.key !== "Escape") return;
+      if (openModalStack[openModalStack.length - 1] !== token) return;
+      e.preventDefault();
+      onClose();
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      const idx = openModalStack.lastIndexOf(token);
+      if (idx >= 0) openModalStack.splice(idx, 1);
+    };
   }, [isOpen, onClose]);
 
   // 開いた時にフォーカスをコンテンツへ移動（キーボード操作の起点）
+  // 閉じるとき / isOpen を保ったままアンマウントされたときの双方で、開く前の場所へ戻す
   useEffect(() => {
-    if (isOpen && contentRef.current) {
-      contentRef.current.focus();
-    }
+    if (!isOpen) return;
+    previouslyFocusedRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    contentRef.current?.focus();
+    return () => {
+      previouslyFocusedRef.current?.focus?.();
+      previouslyFocusedRef.current = null;
+    };
   }, [isOpen]);
+
+  // ダイアログの外のウィンドウキー操作を開かないようにする
+  // 参照カウント式にして、内側のモーダルを閉じたときに
+  // 外側のロックまで解けて背面がスクロールしないようにする
+  useEffect(() => {
+    if (!isOpen) return;
+    if (scrollLockDepth === 0) {
+      scrollLockPrevOverflow = document.body.style.overflow;
+    }
+    scrollLockDepth += 1;
+    document.body.style.overflow = "hidden";
+    return () => {
+      scrollLockDepth = Math.max(0, scrollLockDepth - 1);
+      if (scrollLockDepth === 0) {
+        document.body.style.overflow = scrollLockPrevOverflow;
+        scrollLockPrevOverflow = "";
+      }
+    };
+  }, [isOpen]);
+
+  const FOCUSABLE_SELECTOR =
+    'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  /**
+   * フォーカス可能かどうかの判定。
+   *
+   * `offsetParent` による判定は `position: fixed` の要素を「非表示」と誤判定し、
+   * jsdom では常に null（＝不可視）になるためトラップが永久に機能しなくなっていた。
+   * 計算スタイルで見ればどちらの問題も避けられる。
+   */
+  const isFocusable = (el: HTMLElement): boolean => {
+    if (el.hasAttribute("hidden") || el.getAttribute("aria-hidden") === "true") return false;
+    const style = window.getComputedStyle(el);
+    return style.display !== "none" && style.visibility !== "hidden";
+  };
+
+  /**
+   * Tab キーの行き来をダイアログ内に留める（フォーカストラップ）。
+   *
+   * ダイアログが開いている間、最後の要素で Tab すると最初の要素へ、
+   * 最初の要素で Shift+Tab すると最後の要素へ戻す。
+   */
+  const handleDialogKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "Tab" || !contentRef.current) return;
+    const focusables = Array.from(
+      contentRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+    ).filter(isFocusable);
+    if (focusables.length === 0) return;
+
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+
+    if (e.shiftKey) {
+      if (active === first || !contentRef.current.contains(active)) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else if (active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
 
   if (!isOpen) return null;
 
-  const labelledBy = ariaLabelledBy ?? (testId ? `${testId}-title` : undefined);
+  // a11y: ダイアログには必ずアクセシブルネームを与える。
+  // ariaLabelledBy / testId が無ければ見出しへ自動生成した id を振り、
+  // 文字列の title では aria-label で同じ名前を与える。
+  const headingId = ariaLabelledBy ?? (testId ? `${testId}-title` : `modal-title-${uid}`);
+  const titleText = typeof title === "string" && title.trim() !== "" ? title : undefined;
+  const labelledBy = ariaLabelledBy || testId || !titleText ? headingId : undefined;
+  const ariaLabel = labelledBy ? undefined : titleText;
 
   return (
     <div
@@ -95,6 +194,8 @@ export const Modal: React.FC<ModalProps> = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby={labelledBy}
+        aria-label={ariaLabel}
+        onKeyDown={handleDialogKeyDown}
         className="modal-content"
         style={{
           background: "var(--card-bg, #18181b)",
@@ -117,7 +218,7 @@ export const Modal: React.FC<ModalProps> = ({
           }}
         >
           <h2
-            id={labelledBy}
+            id={headingId}
             style={{
               margin: 0,
               fontSize: "1.2rem",

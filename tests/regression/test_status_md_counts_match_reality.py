@@ -13,7 +13,8 @@ from pathlib import Path
 
 import pytest
 
-STATUS = Path("docs/STATUS.md")
+ROOT_DIR = Path(__file__).resolve().parent.parent.parent
+STATUS = ROOT_DIR / "docs" / "STATUS.md"
 # 例: 「`tests/unit/story_spine/test_resolver_no_llm.py`（**7件**緑）」または「（7件緑）」
 CLAIM_RE = re.compile(r"`(?P<path>tests/[\w/\-\.]+\.py)`[^`\n]*?（(?:\*\*)?(?P<n>\d+)件(?:\*\*)?緑）")
 
@@ -21,10 +22,16 @@ CLAIM_RE = re.compile(r"`(?P<path>tests/[\w/\-\.]+\.py)`[^`\n]*?（(?:\*\*)?(?P<
 def _collect(path: str) -> int:
     proc = subprocess.run(
         [sys.executable, "-m", "pytest", path, "--collect-only", "-q", "-p", "no:cacheprovider"],
-        capture_output=True, text=True, timeout=180,
+        capture_output=True,
+        text=True,
+        timeout=600,
+        cwd=ROOT_DIR,
     )
-    if proc.returncode != 0:
-        pytest.skip(f"{path} を収集できない（既存の collection error）: {proc.stdout[-400:]}")
+    # 収集できないtofails。skip すると「収集が壊れている = そもそも検査不能」という
+    # 状態で Hawaiiian に this gate が黙って無効化され、doc の嘘が放置される。
+    assert proc.returncode == 0, (
+        f"{path} を収集できません（returncode={proc.returncode}）: {proc.stdout[-400:]}"
+    )
     m = re.search(r"(\d+) tests? collected", proc.stdout)
     return int(m.group(1)) if m else len(re.findall(r"::", proc.stdout))
 
@@ -34,12 +41,18 @@ def test_status_md_contains_measurable_claims():
     text = STATUS.read_text(encoding="utf-8")
     assert CLAIM_RE.findall(text), (
         "docs/STATUS.md に「（**N件**緑）」形式の自己申告が無い。"
-        "本テストが無意味になるoclude rior entiousな状態を検出する"
+        "本テストが無意味になっている状態を検出する"
     )
 
 
+@pytest.mark.timeout(1800)
 def test_status_md_test_counts_match_reality():
-    """自己申告の件数が `pytest --collect-only` の実測と一致すること。"""
+    """自己申告の件数が `pytest --collect-only` の実測と一致すること。
+
+    声明された各パスに対して pytest をサブプロセスで走らせるため、
+    実行時間が通常のテストより長い（CI は regression に `--timeout=120` を
+    渡すので、このテストだけ明示的に generous な timeout を持つ）。
+    """
     text = STATUS.read_text(encoding="utf-8")
     offenders = []
     for m in CLAIM_RE.finditer(text):

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from src.backend.auth import get_current_user
 from src.backend.database import get_db
 from src.backend.database.models import Book, Plot, User
+from src.backend.security.owner_guard import verify_book_ownership_sync
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,7 @@ async def get_beat_sheet(
     書籍IDに紐づく40話ビートシートを取得する。
     存在しない場合は404を返す。
     """
+    verify_book_ownership_sync(book_id, current_user, db)
     try:
         stmt = select(Plot).where(Plot.book_id == book_id).order_by(Plot.ep_num)
         result = db.execute(stmt)
@@ -101,16 +103,26 @@ async def generate_beat_sheet(
         book_id = request.book_id
         if book_id is None:
             # 新規ブックを仮作成
+            owner_id = getattr(current_user, "id", None)
+            if owner_id is None:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="書籍を作成するには認証が必要です",
+                )
             book = Book(
                 title=request.title,
                 genre=request.genre,
                 synopsis=request.synopsis,
-                user_id=getattr(current_user, "id", 1),
+                user_id=owner_id,
             )
             db.add(book)
             db.commit()
             db.refresh(book)
             book_id = book.id
+        else:
+            # 既存作品を書き換えてよいのは所有者だけ。
+            # これを確かめずに delete すると、他人のビートシートを全消去できてしまう。
+            verify_book_ownership_sync(book_id, current_user, db)
 
         # 構造は STORY_SPINE が単一のソースになる。
         # 旧実装はここに 4 幕（起/承/転/結）をハードコードしており、
@@ -165,6 +177,10 @@ async def generate_beat_sheet(
 
         db.commit()
         return BeatSheetResponse(items=items)
+    except HTTPException:
+        # 所有権検証の 403/404 を 500 に潰さない。
+        db.rollback()
+        raise
     except Exception as e:
         logger.error("Failed to generate beat sheet: %s", e, exc_info=True)
         db.rollback()
