@@ -125,3 +125,36 @@ def test_allowlist_entries_have_reasons():
         assert "TODO(H1-" in reason, (
             f"{path} の allowlist に TODO(H1-N) の番号が無い（§9: 数値外れ禁止）"
         )
+
+
+# --- M2: repository 層のループ所有権 ----------------------------------------
+
+
+def test_repository_layer_never_creates_a_new_event_loop():
+    """repository.py は独自のイベントループを作らない（ループ所有者を壊さないため）。
+
+    唯一許されるのは「ループが無いときだけ」``asyncio.run`` を使う fallback で、
+    その guarded 性は :func:`test_repository_async_fallback_is_loop_aware` が別途見る。
+    """
+    src = open("src/backend/database/repository.py", encoding="utf-8").read()
+    for forbidden in ("new_event_loop(", "run_until_complete(", "set_event_loop("):
+        assert forbidden not in src, f"repository.py が {forbidden} を含む（ループ所有者を壊す）"
+
+
+def test_repository_async_fallback_is_loop_aware():
+    """repository.py に残るループ依存コードは、必ずガード付きであること。
+
+    ``except RuntimeError`` の fallback として ``asyncio.run`` を使うのは
+    「ループが無いときだけ走る」ため正当。ガード無しで残してはいけない。
+    """
+    tree = ast.parse(open("src/backend/database/repository.py", encoding="utf-8").read())
+    for node in ast.walk(tree):
+        if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            continue
+        calls = [_call_name(c) for c in ast.walk(node) if isinstance(c, ast.Call)]
+        if not any(_is_suspect(n) for n in calls):
+            continue
+        assert any("get_running_loop" in n for n in calls), (
+            f"repository.py:{node.lineno} {node.name}() が "
+            "get_running_loop ガード無しでイベントループを生成している"
+        )
