@@ -1,5 +1,11 @@
 # AutoNovel プロジェクト精査レポート：README と実態の対比一覧表
 
+> ⚠️ **SUPERSEDED (2026-10-01)**: 本書は v5.0.3 時点の報告であり、現在は v6.0.0。
+> 本書に記載された「旧 `src/services/writing_service.py` は薄いシム」という記述は
+> 既に outdated であり、R2 で当該シム 2 本は削除済み。
+> 最新の精査結果は [`docs/H1_SECURITY_AUDIT.md`](H1_SECURITY_AUDIT.md) を参照。
+> 本書は「どう查明逐步演进したか」の履歴として価値があるため削除しない。
+
 作成日: 2026-09-24  
 対象リポジトリ: AutoNovel (`herbmatsui-spec/autonovel`)
 
