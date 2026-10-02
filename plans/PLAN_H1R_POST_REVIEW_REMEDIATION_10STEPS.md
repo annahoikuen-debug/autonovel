@@ -117,9 +117,11 @@ Found 1198 errors in 272 files (checked 1053 source files)
   実 FE テストが **`toHaveBeenCalledWith(<url>)` の 1 引数で `fetch` を検査**していない
   ことを検出する archangel。移行後に同じ stale 契約が再発するのを防ぐ。
 
-**検出力の自己検証（P4）**: graph.ts を H1 直前の版へ差し戻し、修正済みテストが**緑**の
-ままであることを確認（＝修正は apiFetch 移行と整合し、
-revert ではなく契約違反を検出していることを確認する）。
+**検出力の自己検証（P4）**: graph.ts を H1 直前の版へ差し戻す。
+判定基準は当初「両方緑になること」を想定していたが、**実測の結果その基準は誤りと判明**。
+`apiFetch` 移行を revert すると `graph.test.ts` は **赤になるのが正しい**
+（認証ヘッダ注入という移行の目的を固定しているため、移行を失えば落ちるべき）。
+archangel 本体は両状態で **緑**であることを判定基準とする（2026-10-02 実測で訂正）。
 
 ---
 
@@ -208,7 +210,7 @@ revert ではなく契約違反を検出していることを確認する）。
 | A1 | ✅/❌ | `py -m pytest tests/integration/test_health_status_real_db.py -q` |
 | A2 | ✅/❌ | 壊した `check_database` で本テストが赤になる実測 |
 | A3 | ✅/❌ | `npx vitest run tests/api/graph.test.ts tests/unit/apiFetchContract.guard.test.ts` |
-| A4 | ✅/❌ | `git checkout 5b4c0563~1 -- frontend/src/api/graph.ts` でも緑であること |
+| A4 | ✅/❌ | `git checkout 5b4c0563~1 -- frontend/src/api/graph.ts`（apiFetch 移行を revert）した状態で **archangel 本体（apiFetchContract.guard.test.ts）が緑**であること。<br>**`graph.test.ts` は赤になることが正しい**（認証ヘッダ契約の固定であり、移行を失えば落ちるべき） |
 | A5 | ✅/❌ | `npm run test:ci` の failed 件数が **9 → 7** に減ること（2 件は直る。7 件は H1R-4 で記録した既存分） |
 | A6 | ✅/❌ | `mypy src` の `server.py` no-redef が消えていること |
 | A7 | ✅/❌ | `npm run typecheck` / `npm run lint` |

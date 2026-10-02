@@ -25,7 +25,15 @@ Duration    約 300s
 | 状態 | files | tests |
 |:---|:---|:---|
 | H1 完了時点 | 6 failed | **9 failed** |
-| H1R-2 完了時点（現在） | 5 failed | **7 failed** |
+| H1R-2 完了時点（2026-10-02 実測） | **5 failed** | **7 failed** |
+
+```
+# H1R-2 完了時点の実測出力
+Test Files  5 failed | 64 passed (69)
+Tests       7 failed | 357 passed (364)
+```
+
+残る 7 件は §3 の FE-1〜FE-5 に対応し、すべて H1 原因ではない。
 
 ## 2. H1 原因（修正済み）
 
