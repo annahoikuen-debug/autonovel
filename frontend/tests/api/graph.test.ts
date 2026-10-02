@@ -12,6 +12,7 @@ describe("graph API client", () => {
       nodes: [],
       edges: [],
     };
+    localStorage.setItem("auth_token", "test-token");
     vi.spyOn(global, "fetch").mockResolvedValueOnce({
       ok: true,
       json: async () => mockData,
@@ -19,7 +20,19 @@ describe("graph API client", () => {
 
     const result = await fetchGraphData("custom_graph");
     expect(result).toEqual(mockData);
-    expect(global.fetch).toHaveBeenCalledWith("/api/graph?graph_name=custom_graph");
+    // apiFetch は必ず第 2 引数（headers / signal）を付ける。
+    // 第 1 引数のみで assert すると、生 fetch の古い契約に固定されてしまう
+    // （PLAN_H1R H1R-2 で実際に踏んだ）。
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/graph?graph_name=custom_graph",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
+    // 移行の目的である認証ヘッダの注入を検証する。
+    const [, init] = (global.fetch as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect((init.headers as Headers).get("Authorization")).toBe("Bearer test-token");
+    localStorage.removeItem("auth_token");
   });
 
   it("fetchGraphData throws error when response is not ok", async () => {
@@ -49,7 +62,12 @@ describe("graph API client", () => {
 
     const result = await fetchChapterChunks(1, 10);
     expect(result).toEqual(mockChunks);
-    expect(global.fetch).toHaveBeenCalledWith("/api/graph/chunks?chapter_id=1&limit=10");
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/graph/chunks?chapter_id=1&limit=10",
+      expect.objectContaining({
+        headers: expect.any(Headers),
+      })
+    );
   });
 
   it("fetchChapterChunks throws error when response is not ok", async () => {
