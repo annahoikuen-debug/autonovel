@@ -58,10 +58,23 @@ def test_repo_hygiene_forbidden_list_covers_tmp():
 
 
 def test_gitignore_covers_every_scratch_dir():
-    """``.gitignore`` が SCRATCH_DIRS をすべて無視する設定を持つこと。"""
-    ignored = open(".gitignore", encoding="utf-8").read()
-    missing = sorted(d for d in SCRATCH_DIRS if f"{d}/" not in ignored)
-    assert not missing, f".gitignore が無視していないスクラッチディレクトリ: {missing}"
+    """``.gitignore`` が SCRATCH_DIRS をすべて無視する設定を持つこと。
+
+    部分一致（substring）にすると ``output/coverage-*.json`` 1 行だけで
+    「output/ を無視している」と判定してしまうため、
+    パス単位のエントリを要求する。
+    """
+    lines = [
+        ln.split("#", 1)[0].strip() for ln in open(".gitignore", encoding="utf-8").read().splitlines()
+    ]
+    patterns = [ln for ln in lines if ln]
+    missing = [
+        d for d in SCRATCH_DIRS if not any(p == f"{d}/" or p.startswith(f"{d}/") for p in patterns)
+    ]
+    assert not missing, (
+        f".gitignore がパス単位エントリで無視していないスクラッチディレクトリ: {missing}\n"
+        f"  現在の関連パターン: {[p for p in patterns if p.split('/')[0] in SCRATCH_DIRS]}"
+    )
 
 
 def test_allowlist_entries_have_reasons():
