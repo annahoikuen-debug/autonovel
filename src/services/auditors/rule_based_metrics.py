@@ -16,7 +16,7 @@ def calculate_sentence_rhythm(text: str) -> RhythmScore:
         return RhythmScore(0, 0.0, 0.0, 50.0)
     lengths = [len(s) for s in sentences]
     avg = sum(lengths) / len(lengths)
-    variance = sum((l - avg) ** 2 for l in lengths) / len(lengths)
+    variance = sum((length - avg) ** 2 for length in lengths) / len(lengths)
     std_dev = math.sqrt(variance)
     # Web小説の理想: 平均25〜40文字、標準偏差15〜30（短文と長文のメリハリ）
     ideal_std = 20.0

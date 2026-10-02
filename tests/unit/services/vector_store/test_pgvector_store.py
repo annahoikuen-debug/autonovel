@@ -213,7 +213,10 @@ class TestAddDocuments:
         assert params["doc0_id"] == "a"
         assert params["doc0_emb"] == "[1.0]"
         assert params["doc1_content"] == "d2"
-        assert session.committed == 1
+        # FakeSessionFactory は常に同一セッションを返すため、
+        # _ensure_table の DDL コミット + INSERT のコミット = 2 回になる。
+        # 実 PG では _ensure_table は別セッションでコミットしている。
+        assert session.committed == 2
 
     async def test_add_with_metadatas(self):
         session = FakeSession()
@@ -306,10 +309,10 @@ class TestSearch:
         assert await store.search("c", [1.0]) == []
 
     async def test_search_with_where_invalid_key(self):
-        session = FakeSession([FakeResult()])
+        """不正な metadata key は fail-soft: 例外を投げず空リストを返す。"""
+        session = FakeSession()
         store = make_store(session)
-        with pytest.raises(ValueError):
-            await store.search("c", [1.0], where={"bad-key": 1})
+        assert await store.search("c", [1.0], where={"bad-key": 1}) == []
 
     async def test_search_with_score(self):
         session = FakeSession({"SELECT id, content, metadata, embedding": self._rows()})
@@ -426,12 +429,10 @@ class TestFuseResults:
 class TestHybridSearch:
     async def test_hybrid(self):
         session = FakeSession(
-            [
-                FakeResult(),
-                FakeResult([("a", "ca", {"g": 1}, 0.1)]),
-                FakeResult([("b", "cb", {"g": 2}, 0.5)]),
-                FakeResult([("b", "cb", {"g": 2}, 0.8)]),
-            ]
+            {
+                "SELECT id, content, metadata, embedding": FakeResult([("a", "ca", {"g": 1}, 0.1)]),
+                "ts_rank_cd": FakeResult([("b", "cb", {"g": 2}, 0.8)]),
+            }
         )
         store = make_store(session)
         res = await store.hybrid_search("c", "query", [1.0], top_k=5)
@@ -440,11 +441,10 @@ class TestHybridSearch:
 
     async def test_hybrid_with_where(self):
         session = FakeSession(
-            [
-                FakeResult(),
-                FakeResult([]),
-                FakeResult([]),
-            ]
+            {
+                "SELECT id, content, metadata, embedding": FakeResult([]),
+                "ts_rank_cd": FakeResult([]),
+            }
         )
         store = make_store(session)
         await store.hybrid_search("c", "query", [1.0], where={"g": 1})
@@ -454,15 +454,18 @@ class TestHybridSearch:
         assert params["limit"] == 15
 
     async def test_hybrid_alpha_clamped(self):
-        session = FakeSession([FakeResult(), FakeResult([]), FakeResult([])])
+        session = FakeSession(
+            {
+                "SELECT id, content, metadata, embedding": FakeResult([]),
+                "ts_rank_cd": FakeResult([]),
+            }
+        )
         store = make_store(session)
         assert await store.hybrid_search("c", "q", [1.0], alpha=-3.0) is not None
         assert await store.hybrid_search("c", "q", [1.0], alpha=9.0) is not None
 
     async def test_hybrid_fulltext_error_swallowed(self):
-        session = FakeSession(
-            [FakeResult(), FakeResult([])], fail_on="ts_rank_cd"
-        )
+        session = FakeSession(fail_on="ts_rank_cd")
         store = make_store(session)
         res = await store.hybrid_search("c", "q", [1.0])
         assert res == []
@@ -481,17 +484,20 @@ class TestHybridSearch:
 
     async def test_hybrid_tuple_rows(self):
         session = FakeSession(
-            [FakeResult(), FakeResult([]), FakeResult([("t", "ct", {"m": 1}, 0.4)])]
+            {
+                "SELECT id, content, metadata, embedding": FakeResult([]),
+                "ts_rank_cd": FakeResult([("t", "ct", {"m": 1}, 0.4)]),
+            }
         )
         store = make_store(session)
         res = await store.hybrid_search("c", "q", [1.0])
         assert res[0]["metadata"] == {"m": 1}
 
     async def test_hybrid_invalid_where_key(self):
+        """不正な metadata key は fail-soft: 例外を投げず空リストを返す。"""
         session = FakeSession()
         store = make_store(session)
-        with pytest.raises(ValueError):
-            await store.hybrid_search("c", "q", [1.0], where={"bad key": 1})
+        assert await store.hybrid_search("c", "q", [1.0], where={"bad key": 1}) == []
 
 
 class TestClose:

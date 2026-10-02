@@ -23,6 +23,31 @@ export class ApiTimeoutError extends Error {
   }
 }
 
+/**
+ * 呼び出し側の signal と内部タイムアウト用 signal をまとめて 1 つにまとめる。
+ *
+ * 以前は `options?.signal ?? controller.signal` と二者択一にしていたため、
+ * 呼び出し側が signal を渡すと内部タイムアウトの signal が宙吊りになっていた。
+ * 結果としてリクエストがハングすると誰も中断できず、ポーリング側の
+ * `while (Date.now() < deadline)` も再評価されないまま止まっていた。
+ */
+function combineSignals(primary: AbortSignal, secondary: AbortSignal): AbortSignal {
+  if (typeof AbortSignal.any === "function") {
+    return AbortSignal.any([primary, secondary]);
+  }
+  // jsdom など AbortSignal.any 未実装の環境向けのフォールバック
+  const merged = new AbortController();
+  const abort = () => merged.abort();
+  for (const signal of [primary, secondary]) {
+    if (signal.aborted) {
+      merged.abort();
+      break;
+    }
+    signal.addEventListener("abort", abort, { once: true });
+  }
+  return merged.signal;
+}
+
 export async function apiFetch(
   endpoint: string,
   options?: RequestInit,
@@ -41,7 +66,13 @@ export async function apiFetch(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   const isTest = typeof process !== "undefined" && process.env?.NODE_ENV === "test";
-  const signal = isTest ? undefined : (options?.signal ?? controller.signal);
+  // 呼び出し側の signal を渡された場合も内部タイムアウトを組み合わせる（ハングした
+  // リクエストが無期限に待たされ、ポーリングの打ち切りにも到達しないため）。
+  const signal = isTest
+    ? undefined
+    : options?.signal
+      ? combineSignals(options.signal, controller.signal)
+      : controller.signal;
 
   let response: Response;
   try {

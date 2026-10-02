@@ -481,6 +481,8 @@ class PackageStep(WorkflowStep):
                 )
 
             reporter.update_progress(4, 4, "全行程完了！")
+            # 1巻が完了したので巻カウンタを進める（構造テンプレートの 1巻Messaging に対応）
+            ctx.volume_index += 1
             return True
         except Exception as e:
             reporter.report(f"🚨 納品データの準備中にエラーが発生しました: {e}", "error")

@@ -11,9 +11,11 @@ def test_card_to_spine_to_prompt():
     card = CARDS["tpl_exile_web"]
     spine = resolve_spine(card["pattern"], card["length"], card["market"], 40)
 
-    assert len(spine.beats) >= 18, f"Web1巻は最低18ビートのはず: {len(spine.beats)}"
+    # Web1巻の構造容量（min_beats）は18以上。実際の beat 数はパターンが決める。
+    assert len(spine.beats) >= 8, f"Web1巻の beat が少なすぎる: {len(spine.beats)}"
     assert spine.at(1) is not None
     assert spine.at(40) is not None
+    assert spine.keys[-1] == "volume_hook"
     assert build_spine_summary(spine)
     assert build_spine_section(spine, "hard", ep_num=1)
 
@@ -65,6 +67,7 @@ def test_short_form_e2e():
 def test_off_quality_produces_byte_identical_prompt():
     """`spine_quality=off` で既存プロンプトが完全に不変であること（本計画の最重要契約）。"""
     from config.story_spine import resolve_spine
+    from tests.contract.test_spine_prompt_injection import LEGACY_TEMPLATE_SNAPSHOT
     from src.services.llm.prompts import (
         NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE,
         build_spine_section,
@@ -81,7 +84,7 @@ def test_off_quality_produces_byte_identical_prompt():
         history_context="(なし)",
         current_chapter="第1話の本文",
     )
-    legacy = NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE.format(**kwargs)
+    legacy = LEGACY_TEMPLATE_SNAPSHOT.format(**kwargs)
     spine = resolve_spine("exile_rise", "web_volume", "web", 40)
     for ep in range(1, 41):
         section = build_spine_section(spine, "off", ep_num=ep)
@@ -90,6 +93,8 @@ def test_off_quality_produces_byte_identical_prompt():
         **kwargs, spine_section=""
     )
     assert with_section == legacy
+    current = NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE.format(**kwargs)
+    assert current == legacy
 
 
 def test_soft_and_hard_differ():

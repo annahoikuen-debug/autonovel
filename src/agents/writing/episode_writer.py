@@ -145,6 +145,9 @@ class EpisodeWriter(BaseAgent):
         # Beat-to-Scene 分割執筆用のオーケストレーター（遅延初期化）
         self._scene_orchestrator: Optional[SceneWriterOrchestrator] = None
         self.last_metadata: Optional[WritingMetadata] = None
+        # PLAN_W6 Step 9: 次話プロットの投機タスクの **ハンドル** を保持する。
+        # 返り値を捨てると「最も並行度が高い処理」が管理不能になっていた。
+        self._plot_prefetch_tasks: set = set()
 
     def _get_emotional_extractor(self) -> Optional[EmotionalResidueExtractor]:
         """感情残基抽出器を遅延初期化して取得"""
@@ -283,15 +286,28 @@ class EpisodeWriter(BaseAgent):
         # 次話プロットの非同期投機的プリフェッチ (Plan J2)
         if self.plot_expander and hasattr(self.plot_expander, "prefetch_next_episode_plot"):
             try:
-                self.plot_expander.prefetch_next_episode_plot(
+                task = self.plot_expander.prefetch_next_episode_plot(
                     book_id=book_id,
                     next_ep=ep_num + 1,
                     branch_id=context.get("branch_id", 1),
                 )
+                # PLAN_W6 Step 9: 返り値（asyncio.Task）を握り潰さない。
+                self._track_plot_prefetch(task)
             except Exception as e:
                 logger.debug(f"Ep.{ep_num}: 次話プリフェッチエラー (無視): {e}")
 
         return clean_text
+
+    def _track_plot_prefetch(self, task: Any) -> None:
+        """投機プロットタスクのハンドルを保持する（完了後は自動的に片付く）。"""
+        if task is None:
+            return
+        holder = getattr(self, "_plot_prefetch_tasks", None)
+        if holder is None:
+            holder = set()
+            self._plot_prefetch_tasks = holder
+        holder.add(task)
+        task.add_done_callback(holder.discard)
 
     async def _post_episode_finalize(
         self,

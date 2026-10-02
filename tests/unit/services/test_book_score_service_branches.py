@@ -673,12 +673,19 @@ class TestCalculate:
         calc = make_calc()
         calc._get_weights = MagicMock(return_value={})
         score = await calc.calculate(1, 1)
-        # `weights.get("factual_grounding", 20)` -> 20, but the factual dimension raises
-        # without a repository and is replaced by NEUTRAL_SCORE (100.0).
-        expected = (
-            50.0 * 0.25 + 50.0 * 0.25 + 100.0 * 0.20 + 50.0 * 0.15 + 50.0 * 0.15
-        )
+        # `weights.get("factual_grounding", 20)` -> 20。repository 無しのとき factual は
+        # 評価できないので `ScoringUnavailableError` になり、NEUTRAL_SCORE(100.0) として
+        # **表示値だけ** 设置される（低スコアに偽装しない、という既存意図は維持）。
+        #
+        # 総合スコアは「評価できた次元の重み付き平均」であるため、欠測した factual を
+        # 分子・分母の両方から除外して再正規化する。旧実装は unavailable を満点 100 として
+        # 分子に足していたため、1 次元分だけスコアが 60 持ち上がった（障害の高評価化）。
+        # `test_calculate_without_repository_defaults_to_50` と同じ条件で 50.0 を期待する。
+        assert score.factual_grounding_score == NEUTRAL_SCORE
+        available = 0.25 + 0.25 + 0.15 + 0.15
+        expected = (50.0 * 0.25 + 50.0 * 0.25 + 50.0 * 0.15 + 50.0 * 0.15) / available
         assert score.overall_score == round(expected, 2)
+        assert score.overall_score == 50.0
 
 
 class TestPersistence:

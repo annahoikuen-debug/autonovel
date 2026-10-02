@@ -17,6 +17,9 @@ from src.agents.audit import (
     AbilityConsistencyChecker,
     PlotIntegrityMonitor,
 )
+from src.audit.repair_planner import plan_repair
+from src.audit.static_rules import StaticRuleAuditor
+from src.generation.pdca_controller import PDCAController
 from src.services.learning_data_service import LearningDataService
 
 logger = logging.getLogger(__name__)
@@ -105,6 +108,14 @@ DEFAULT_ENABLE_AUDIT_SCORE_GATE = True
 #: ``UnifiedAuditor.audit`` の合否ライン（70.0）と揃えている。
 DEFAULT_AUDIT_GATE_THRESHOLD = 70.0
 
+#: Advisory（警告通過）帯の下限閾値（0-100, W4 Step 9）。
+#: 「不合格だが致命でもない」状態（``AUDIT_GATE_ADVISORY_SEVERITIES`` のみが失敗し、
+#: 総合スコアがこの値以上）を再執筆ではなく警告通過へ落とす。
+DEFAULT_AUDIT_ADVISORY_THRESHOLD = 80.0
+
+#: この severity の失敗だけは「警告で通す」帯に昇格してよい。
+AUDIT_GATE_ADVISORY_SEVERITIES: tuple[str, ...] = ("medium", "low")
+
 #: severity ごとの重み（全滅式ゲートでは区別されなかった重篤さの差）。
 AUDIT_GATE_SEVERITY_WEIGHTS: dict[str, float] = {
     "critical": 3.0,
@@ -174,6 +185,41 @@ def is_unified_auditor_blocking() -> bool:
     return _env_flag("ENABLE_AUDIT_UNIFIED_BLOCKING", False)
 
 
+def is_span_patch_enabled() -> bool:
+    """段落単位スパンパッチ（``ENABLE_AUDIT_SPAN_PATCH``、既定 ON, W4 Step 8）。"""
+    return _env_flag("ENABLE_AUDIT_SPAN_PATCH", True)
+
+
+def is_async_polish_enabled() -> bool:
+    """検証付き ``polish_span`` の利用（``ENABLE_AUDIT_POLISH_ASYNC``、既定 ON, W4 Step 8）。"""
+    return _env_flag("ENABLE_AUDIT_POLISH_ASYNC", True)
+
+
+def is_repair_budget_enabled() -> bool:
+    """全滅再生成の予算封じ込め（``ENABLE_AUDIT_REPAIR_BUDGET``、既定 ON, W4 Step 10）。"""
+    return _env_flag("ENABLE_AUDIT_REPAIR_BUDGET", True)
+
+
+def get_advisory_threshold() -> float:
+    """警告通過帯の下限閾値（``AUDIT_ADVISORY_THRESHOLD``、既定 80.0, W4 Step 9）。"""
+    return _env_float("AUDIT_ADVISORY_THRESHOLD", DEFAULT_AUDIT_ADVISORY_THRESHOLD)
+
+
+#: Advisory 緩和が「手動で上げた ``AUDIT_GATE_THRESHOLD``」を消さないためのガード。
+#: 既定 ON。``ENABLE_AUDIT_ADVISORY_STRICT_GUARD=false`` で旧挙動へ戻せる。
+DEFAULT_ENABLE_AUDIT_ADVISORY_STRICT_GUARD = True
+
+
+def is_advisory_strict_guard_enabled() -> bool:
+    """手動の厳格化（``AUDIT_GATE_THRESHOLD`` 上昇）で advisory 緩和を止めるガード（既定 ON）。
+
+    ``ENABLE_AUDIT_ADVISORY_STRICT_GUARD=false`` で無効化できる。
+    """
+    return _env_flag(
+        "ENABLE_AUDIT_ADVISORY_STRICT_GUARD", DEFAULT_ENABLE_AUDIT_ADVISORY_STRICT_GUARD
+    )
+
+
 def evaluate_gate(outcomes: list[dict[str, Any]]) -> dict[str, Any]:
     """5監査を 0-100 に正規化し、severity 重み＋学習調整で集約する（モジュールヘルパ）。
 
@@ -203,6 +249,50 @@ def evaluate_gate(outcomes: list[dict[str, Any]]) -> dict[str, Any]:
         requires_regeneration = bool(failed)
         mode = "all_or_nothing"
 
+    # W4 Step 9: Advisory（警告通過）帯。
+    # 「不合格だが致命でもない」= failed の effective_severity がすべて
+    # AUDIT_GATE_ADVISORY_SEVERITIES に含まれ、かつ総合スコアが
+    # advisory_threshold 以上のときだけ再執筆を警告通過へ落とす。
+    #
+    # 帯は ``advisory_threshold < threshold`` のときだけ有効（= aggregate が
+    # [advisory_threshold, threshold) に落ちる場合だけ relief する）。これにより
+    # 意図的に上げた ``AUDIT_GATE_THRESHOLD``（= 手動の厳格化）が
+    # advisory に上書きされて取り消される事故を防ぐ。
+    #
+    # W4 Step 11 実バグB: 上記ガードだけでは ``AUDIT_GATE_THRESHOLD`` を
+    # 手動で上げた場合（例: 99.0）既定 advisory（80.0）との大小関係Established
+    # ``80 < 99`` となり、緩和が発火して「再執筆する」が「警告通過」に反転していた。
+    # 緩和は「threshold が既定値 ``DEFAULT_AUDIT_GATE_THRESHOLD`` のまま」のとき
+    # だけ許可し、手動の厳格化があれば緩和しない。
+    # 無効化は ``ENABLE_AUDIT_ADVISORY_STRICT_GUARD=false``。
+    advisory = False
+    advisory_reason = ""
+    strict_guard = (
+        is_advisory_strict_guard_enabled()
+        and threshold > DEFAULT_AUDIT_GATE_THRESHOLD
+        and get_advisory_threshold() == DEFAULT_AUDIT_ADVISORY_THRESHOLD
+    )
+    if (
+        mode == "score_aggregation"
+        and requires_regeneration
+        and not critical_failure
+        and failed
+        and not strict_guard
+        and get_advisory_threshold() < threshold
+        and aggregate >= get_advisory_threshold()
+        and all(
+            (o.get("effective_severity") in AUDIT_GATE_ADVISORY_SEVERITIES) for o in failed
+        )
+    ):
+        advisory_threshold = get_advisory_threshold()
+        requires_regeneration = False
+        advisory = True
+        advisory_reason = (
+            f"総合スコア {round(aggregate, 2)} が advisory 閾値 "
+            f"{advisory_threshold} 以上かつ失敗は "
+            f"{'/'.join(AUDIT_GATE_ADVISORY_SEVERITIES)} のみのため警告通過"
+        )
+
     return {
         "mode": mode,
         "aggregate_score": round(aggregate, 2),
@@ -211,6 +301,8 @@ def evaluate_gate(outcomes: list[dict[str, Any]]) -> dict[str, Any]:
         "critical_failure": critical_failure,
         "failed_count": len(failed),
         "scored_audit_ids": [o["audit_id"] for o in scored],
+        "advisory": advisory,
+        "advisory_reason": advisory_reason,
     }
 
 
@@ -269,6 +361,10 @@ class AuditAgent(SkillAgent):
         #: 直近1回の UnifiedAuditor レポート（パッチ抽出に使う）
         self.last_unified_report: Any = None
         self._emitted_events: list[dict[str, Any]] = []
+
+        # W4 Step 10: 全滅（Branch D）再生成の予算。1話につき1回だけ許可する。
+        # 2回目以降は「パッチ出来なかった → 警告通過」側へ落とす。
+        self._repair_budget = PDCAController(max_regenerations=1, max_local_patches=3)
 
     # ------------------------------------------------------------------
     # イベント
@@ -703,32 +799,97 @@ class AuditAgent(SkillAgent):
                 mappings[current] = suggested
         return mappings
 
+    async def _try_span_patch(
+        self,
+        drafted_text: str,
+        plan: Any,
+    ) -> dict[str, Any] | None:
+        """W4 Step 8: 段落単位のスパン置換（``RepairPlan.level == "span"`` のときだけ）。
+
+        ``LocalPolisher.polish_span`` が検証付きで採用した (``ok=True``) ときだけ
+        ``None`` 以外を返す。検証落ち・例外は ``None`` を返し、呼び出し側は
+        既存経路（``actionable_patch`` / ``LocalPolisher``）へフォールバックする。
+        """
+        from src.generation.local_polish import LocalPolisher
+        from src.services.prose.paragraph_indexer import ParagraphIndexer
+
+        if getattr(plan, "level", "") != "span":
+            return None
+        targets = tuple(getattr(plan, "targets", ()) or ())
+        if not targets:
+            return None
+
+        paragraphs = ParagraphIndexer().index_paragraphs(drafted_text)
+        by_index = {p["index"]: p for p in paragraphs if p.get("start", -1) >= 0}
+        target_index = int(targets[0])
+        span = by_index.get(target_index)
+        if span is None or span.get("end", -1) <= span.get("start", -1):
+            return None
+
+        patched, ok = await LocalPolisher().polish_span(
+            drafted_text,
+            (span["start"], span["end"]),
+            "監査で指摘された箇所を本文のトーンと文脈に合わせて書き直してください。",
+            self._audit_llm,
+        )
+        if not ok or not patched or patched == drafted_text:
+            return None
+        return {
+            "strategy": "span_polish",
+            "text": patched,
+            "replacements": 1,
+            "paragraph_index": target_index,
+            "triage_level": plan.level,
+        }
+
     async def try_local_patch(
         self,
         drafted_text: str,
         unified_report: Any = None,
+        failed_outcomes: list[dict[str, Any]] | None = None,
     ) -> dict[str, Any] | None:
         """全文再執筆の前に局所パッチを試みる（v5.0 1パッチPDCA と整合）。
 
         試行順（軽い・確度の高い順）:
 
         1. ``SafeReplacer`` — 決定的な 1パス置換（LLM 不要）
-        2. ``actionable_patch`` — UnifiedAuditor の提示パッチ（LLM 不要）
-        3. ``LocalPolisher`` — 対象範囲の再生成（LLM 使用）
+        2. ``span_polish`` — 段落単位のスパン置換（W4 Step 8, 検証付き LLM）
+        3. ``actionable_patch`` — UnifiedAuditor の提示パッチ（LLM 不要）
+        4. ``LocalPolisher`` — 対象範囲の再生成（LLM 使用）
 
         いずれも適用できないときのみ ``None`` を返し、呼び出し側は
         全文再執筆へフォールバックする。
         """
-        if not drafted_text or not is_local_patch_enabled():
+        if not drafted_text:
+            self.emit_event("audit.patch.skipped", {"reason": "empty_drafted_text"})
+            return None
+        if not is_local_patch_enabled():
+            self.emit_event("audit.patch.skipped", {"reason": "local_patch_disabled"})
             return None
 
         mappings = self._build_safe_replacer_mappings(unified_report)
+        # W4 Step 8: 三段階トリアージの判定（純関数・LLM 呼び出しなし）
+        plan = plan_repair(
+            drafted_text, failed_outcomes or [], StaticRuleAuditor().audit(drafted_text)
+        )
+        plan_level = str(getattr(plan, "level", "") or "rule")
+        span_rejected = False
         if mappings:
             try:
                 from src.services.safe_replace import SafeReplacer
 
                 patched = SafeReplacer(mappings).replace(drafted_text)
                 if patched and patched != drafted_text:
+                    self._repair_budget.record_local_patch()
+                    self.emit_event(
+                        "audit.patch.applied",
+                        {
+                            "strategy": "safe_replace",
+                            "replacements": len(mappings),
+                            "text_length": len(patched),
+                            "triage_level": plan_level,
+                        },
+                    )
                     return {
                         "strategy": "safe_replace",
                         "text": patched,
@@ -737,10 +898,42 @@ class AuditAgent(SkillAgent):
             except Exception:
                 logger.warning("SafeReplacer による局所パッチに失敗しました", exc_info=True)
 
+        # W4 Step 8: 三段階トリアージのうち「span」段階を既存2段の間に挿す。
+        if is_span_patch_enabled() and is_async_polish_enabled() and self._audit_llm is not None:
+            try:
+                span_result = await self._try_span_patch(drafted_text, plan)
+            except Exception:
+                logger.warning("span パッチに失敗しました", exc_info=True)
+                span_result = None
+                span_rejected = True
+            if span_result is not None:
+                self._repair_budget.record_local_patch()
+                self.emit_event(
+                    "audit.patch.applied",
+                    {
+                        "strategy": span_result["strategy"],
+                        "replacements": span_result["replacements"],
+                        "text_length": len(span_result["text"]),
+                        "triage_level": span_result.get("triage_level", "span"),
+                    },
+                )
+                return span_result
+            span_rejected = True
+
         qualitative = getattr(unified_report, "qualitative", None)
         actionable = str(getattr(qualitative, "actionable_patch", "") or "").strip()
         if actionable:
             # writing_langgraph.py:615 と同じ「1パッチPDCA」方針
+            self._repair_budget.record_local_patch()
+            self.emit_event(
+                "audit.patch.applied",
+                {
+                    "strategy": "actionable_patch",
+                    "replacements": 1,
+                    "text_length": len(drafted_text) + 2 + len(actionable),
+                    "triage_level": plan_level,
+                },
+            )
             return {
                 "strategy": "actionable_patch",
                 "text": drafted_text + "\n\n" + actionable,
@@ -748,9 +941,11 @@ class AuditAgent(SkillAgent):
             }
 
         if self._audit_llm is None:
+            self.emit_event("audit.patch.skipped", {"reason": "no_audit_llm"})
             return None
         quote = self._find_patchable_quote(drafted_text, unified_report)
         if not quote:
+            self.emit_event("audit.patch.skipped", {"reason": "no_patchable_quote"})
             return None
         try:
             from src.generation.local_polish import LocalPolisher
@@ -768,6 +963,16 @@ class AuditAgent(SkillAgent):
                 self._audit_llm,
             )
             if improved and improved != drafted_text:
+                self._repair_budget.record_local_patch()
+                self.emit_event(
+                    "audit.patch.applied",
+                    {
+                        "strategy": "local_polish",
+                        "replacements": 1,
+                        "text_length": len(improved),
+                        "triage_level": plan_level,
+                    },
+                )
                 return {
                     "strategy": "local_polish",
                     "text": improved,
@@ -775,6 +980,12 @@ class AuditAgent(SkillAgent):
                 }
         except Exception:
             logger.warning("LocalPolisher による局所パッチに失敗しました", exc_info=True)
+            self.emit_event("audit.patch.skipped", {"reason": "local_polish_exception"})
+            return None
+        self.emit_event(
+            "audit.patch.skipped",
+            {"reason": "span_patch_rejected" if span_rejected else "no_change"},
+        )
         return None
 
     @staticmethod
@@ -947,6 +1158,9 @@ class AuditAgent(SkillAgent):
 
             # Step 23: スコア集約式ゲート（全滅式は ENABLE_AUDIT_SCORE_GATE=false で復元）
             gate = self.evaluate_gate(outcomes)
+            # W4 Step 11: ゲート観測点に既存 audit_metrics を載せる（新規変数は作らない）
+            if self.last_gate_evaluation is not None:
+                self.last_gate_evaluation["audit_metrics"] = audit_metrics
             unified_report = self.last_unified_report
 
             # 全監査合格
@@ -977,8 +1191,10 @@ class AuditAgent(SkillAgent):
                 )
 
             # Step 25: 全文再執筆の前に局所パッチを優先（1パッチPDCA）
+            # W4 Step 8: どの是正手段を使うか判断するため failed outcome を渡す。
+            # `outcomes` は run_audit_phase の戻り値なので、そのまま outcome 相当。
             patch_result = (
-                await self.try_local_patch(drafted_text, unified_report)
+                await self.try_local_patch(drafted_text, unified_report, failed_outcomes)
                 if gate["requires_regeneration"]
                 else None
             )
@@ -1054,6 +1270,36 @@ class AuditAgent(SkillAgent):
                     },
                 )
 
+            # W4 Step 10: 予算切れなら「パッチ出来なかった → 警告通過」側に落とす。
+            # Orchestrator の max_backtracks_per_node=3 だと1話あたり最大4回
+            # 全文書きする。1話1回に封じ込める。
+            if is_repair_budget_enabled() and not self._repair_budget.should_regenerate_full_text():
+                self.emit_event("audit.completed", {
+                    "book_id": book_id,
+                    "ep_num": ep_num,
+                    "result": "repassed_budget_exhausted",
+                    "aggregate_score": gate["aggregate_score"],
+                })
+                return AgentResult(
+                    next_agent=AgentName.ILLUSTRATION,
+                    should_retry=False,
+                    is_backtrack=False,
+                    error=None,
+                    artifacts={
+                        "audit_feedback": (
+                            "Audit failed but full regeneration budget is exhausted"
+                        ),
+                        "requires_user_review": True,
+                        "patch_review_id": patch_review_id,
+                        "failed_audits": failed_audits,
+                        "audit_advisories": advisories,
+                        "learning_adjusted_audits": learning_adjusted_audits,
+                        "audit_status": "repassed_budget_exhausted",
+                        "audit_metrics": audit_metrics,
+                        "gate_evaluation": gate,
+                    },
+                )
+
             # Orchestratorのバックトラックメカニズムと統一するため、should_retry=Trueに設定
             # 次のエージェントはWRITING（再執筆）とし、is_backtrackフラグを設定
             feedback_list = [audit["feedback"] for audit in failed_audits if audit.get("feedback")]
@@ -1063,6 +1309,13 @@ class AuditAgent(SkillAgent):
                 regeneration_directive = (
                     f"【再生成指示 - 品質改善項目】\nスコア向上のため以下を反映して書き直してください: {sugg_text}"
                 )
+
+            # W4 Step 10/11: Branch D を通った分だけ予算を消費し、観測イベントを出す。
+            self._repair_budget.record_full_regeneration()
+            self.emit_event(
+                "audit.regeneration.full",
+                {"attempt": self._repair_budget.regeneration_count},
+            )
 
             self.emit_event("audit.completed", {
                 "book_id": book_id,

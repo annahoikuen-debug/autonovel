@@ -18,6 +18,13 @@
 [![Type Checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue)](https://mypy-lang.org/)
 [![Vitest](https://img.shields.io/badge/tested_with-vitest-729B1B?logo=vitest&logoColor=white)](https://vitest.dev/)
 
+> **静的解析ゲートの実態（2026-10-01 時点 / PLAN_H1）**
+> `ruff` は **劣化検出 ratchet 化済み**（`scripts/ci_lint_ratchet.py` が
+> `config/ci_lint_baseline.json` を超えたら CI を落とす hard gate）。
+> `mypy` と `ruff format --check` は **記録のみ（record-only）**。
+> エラー数 0 化は別計画（PLAN_H1 §9 N1）の対象外であり、
+> 上記バッジは「エラーがない」ではなく「ゲートが機能している」ことを意味しない。
+
 </div>
 
 ---

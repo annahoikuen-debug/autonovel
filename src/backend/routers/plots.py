@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, status
 
 from src.backend.auth import get_current_user, require_valid_api_key
 from src.backend.database.models import User
@@ -22,6 +24,8 @@ from src.models.api_schemas import (
     ExpandBeatsRequest,
     BeatItemSchema,
 )
+
+logger = logging.getLogger(__name__)
 
 # 商業ビート生成用システム指示
 PLANNER_SYSTEM_INSTRUCTION = """あなたは商業Web小説の構成プロデューサーです。
@@ -331,9 +335,6 @@ async def expand_commercial_beats(
     if req.api_key:
         require_valid_api_key(req.api_key)
 
-    from src.services.llm.prompts import build_spine_summary
-    from src.services.spine_resolver import resolve_spine
-
     # STORY_SPINE: 話数と構造から各話の役割を解決する（LLM を呼ばない）。
     # 12ステップ固定は 1話短編や 300話長編で成立しないため廃止した。
     spine = resolve_spine(
@@ -388,6 +389,8 @@ async def expand_commercial_beats(
 
 五感フォーカスは各話2-3種類をバランスよく配分してください。"""
 
+    degraded_reason: str | None = None
+
     try:
         res = await llm.generate_text(
             purpose_or_request="planning",
@@ -397,7 +400,6 @@ async def expand_commercial_beats(
         )
         raw_text = getattr(res, "story_content", "") or getattr(res, "content", "") or ""
         import json
-        import re
 
         try:
             cleaned = str(raw_text).strip()
@@ -407,18 +409,27 @@ async def expand_commercial_beats(
                 cleaned = cleaned.split("```")[1].split("```")[0].strip()
             beats_data = json.loads(cleaned)
             if not beats_data:
-                pass  # フォールバックへ
+                degraded_reason = "LLM が空の beats を返した"
             else:
                 # 12件への切り詰めは廃止。割当で決まった beat 数だけ受け付ける。
                 return beats_data[: len(spine.beats)]
         except Exception as e:
-            # JSONパースエラーの場合はフォールバック
-            pass
+            # JSON パースエラーは「生成失敗」ではなく「整形失敗」なので縮退してよい。
+            # ただし黙って消すと原因が追えなくなるため、必ずログに残す。
+            logger.warning("[plots] beat JSON の解析に失敗しました: %s", e, exc_info=True)
+            degraded_reason = f"beat JSON の解析に失敗: {e}"
     except Exception as e:
-        # LLM呼び出しエラーの場合はフォールバック
-        pass
+        # LLM 呼び出しの失敗（認証エラー・レート制限・プロバイダ障害・タイムアウト）は
+        # 縮退の根拠にならない。ここで握り潰して 200 を返すと、
+        # 「モデルが出力した」と「API キーが無効」でクライアントが区別できなくなる。
+        logger.error("[plots] beat 生成の LLM 呼び出しに失敗しました: %s", e, exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"beat 生成に失敗しました: {e}",
+        ) from e
 
-    # フォールバック: デフォルトの12ステップを返す
+    logger.warning("[plots] 縮退 beat を返します: %s", degraded_reason)
+
     # フォールバック: 12ステップ固定ではなく、解決済みの Spine から生成する。
     # 1話短編でも「発端 → 中点反転 → クライマックス」が必ず残る。
     _CLIFFHANGER_BY_ROLE = {

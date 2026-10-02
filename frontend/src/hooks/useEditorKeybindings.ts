@@ -1,5 +1,4 @@
-import { useEffect, useRef } from 'react';
-import { useNovelContext } from '../context/NovelContext';
+import { useCallback, useEffect } from 'react';
 
 interface EditorKeybindings {
   zenMode: string;
@@ -15,6 +14,14 @@ interface UseEditorKeybindingsProps {
   onAiProofread?: () => void;
   onToggleTheme?: () => void;
   onToggleManuscriptGrid?: () => void;
+  /**
+   * Ctrl+Shift+E で「かんたん執筆」へ移るためのコールバック。
+   *
+   * 以前は NovelContext の `mode` state を書き換えていたが、現在地は URL が
+   * 単一の情報源なので、当該 state を変えても画面は移動しなかった（ショートカットが
+   * 死んでいた）。呼び出し側から遷移を注入できるようにした。
+   */
+  onNavigateToEasyMode?: () => void;
   isZenMode?: boolean;
 }
 
@@ -24,13 +31,9 @@ export const useEditorKeybindings = ({
   onAiProofread,
   onToggleTheme,
   onToggleManuscriptGrid,
+  onNavigateToEasyMode,
   isZenMode = false,
 }: UseEditorKeybindingsProps) => {
-  const {
-    setMode,
-    mode,
-  } = useNovelContext();
-
   const keybindings: EditorKeybindings = {
     zenMode: 'F11',
     aiContinue: 'Ctrl+Space',
@@ -70,12 +73,10 @@ export const useEditorKeybindings = ({
       event.preventDefault();
       onToggleManuscriptGrid?.();
     }
-    // Check for Easy Mode toggle (Ctrl+Shift+E)
+    // Check for Easy Mode navigation (Ctrl+Shift+E)
     else if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key === 'e') {
       event.preventDefault();
-      if (mode !== 'easy') {
-        setMode('easy');
-      }
+      onNavigateToEasyMode?.();
     }
   };
 
@@ -89,7 +90,7 @@ export const useEditorKeybindings = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onZenModeToggle, onAiContinue, onAiProofread, onToggleTheme, onToggleManuscriptGrid, mode]);
+  }, [onZenModeToggle, onAiContinue, onAiProofread, onToggleTheme, onToggleManuscriptGrid, onNavigateToEasyMode]);
 
   // Mobile device support - show touch-friendly version of keybindings
   const getMobileKeybindings = () => {

@@ -20,20 +20,39 @@ def is_offline_mode_enabled() -> bool:
     return os.environ.get("OFFLINE_MODE", "false").lower() in ("1", "true", "yes")
 
 
+def _sync_engine_url(url: Any):
+    """AsyncEngine の URL を「本当に同期接続できる」URL へ変換する。
+
+    ``sqlite+aiosqlite://`` → ``sqlite://``、``postgresql+asyncpg://`` → ``postgresql://``。
+    ``AsyncEngine.sync_engine`` は greenlet ブリッジが前提のため、
+    イベントループの外から直接 ``connect()`` すると
+    ``greenlet_spawn has not been called`` で必ず失敗する。
+    """
+    return url.set(drivername=url.get_backend_name())
+
+
 def check_database() -> str:
-    """DB の到達性を確認する（ok/error）。"""
+    """DB の到達性を確認する（ok/error）。
+
+    同期関数なので ``AsyncEngine`` もイベントループも触らない。
+    URL から独立した**同期エンジン**を一時的に作って ``SELECT 1`` を実行する。
+
+    旧実装は ``asyncio.get_event_loop().run_until_complete()`` で asyncio 奖品象眼を
+    増やしていた。Python 3.14 では ``get_event_loop()`` が
+    ``There is no current event loop`` を投げるため、常に "error" を返していた。
+    """
     try:
+        from sqlalchemy import create_engine, text
+
         from src.core.container import AppContainer
 
         mgr = AppContainer.db()
-        # 同期的な軽い確認
-        import asyncio
-
-        async def _ping():
-            async with mgr.engine.connect() as conn:
-                await conn.execute(__import__("sqlalchemy").text("SELECT 1"))
-
-        asyncio.get_event_loop().run_until_complete(_ping())
+        engine = create_engine(_sync_engine_url(mgr.engine.url))
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("SELECT 1"))
+        finally:
+            engine.dispose()
         return "ok"
     except Exception as exc:  # noqa: BLE001
         logger.warning(f"db check failed: {exc}")

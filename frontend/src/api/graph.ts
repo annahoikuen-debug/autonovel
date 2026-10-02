@@ -9,7 +9,7 @@ export async function fetchGraphData(bookIdOrName?: number | string): Promise<Gr
   } else if (bookIdOrName) {
     query = `?graph_name=${encodeURIComponent(bookIdOrName)}`;
   }
-  const res = await fetch(`/api/graph${query}`);
+  const res = await apiFetch(`/api/graph${query}`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }
@@ -19,7 +19,7 @@ export async function fetchChapterChunks(chapterId?: number, limit = 20): Promis
   if (chapterId !== undefined) params.append("chapter_id", chapterId.toString());
   params.append("limit", limit.toString());
 
-  const res = await fetch(`/api/graph/chunks?${params.toString()}`);
+  const res = await apiFetch(`/api/graph/chunks?${params.toString()}`);
   if (!res.ok) throw new Error(await res.text());
   return res.json();
 }

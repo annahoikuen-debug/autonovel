@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useOptionalNavigate } from "../../hooks/useOptionalNavigate";
 import { useNovelContext } from "../../context/NovelContext";
 import { apiFetch, handleResponse } from "../../api/client";
 import { Editor } from "../editor/Editor";
 import { NextBeatsPanel } from "../editor/NextBeatsPanel";
 import { MultimediaPreviewPanel } from "../editor/MultimediaPreviewPanel";
-import { WizardStep } from "../wizard/WizardStep";
 import { EditorialSidebar } from "../editor/EditorialSidebar";
 import { ChapterOutlineTree } from "./ChapterOutlineTree";
 import { AssetPackPanel } from "../AssetPackPanel";
@@ -16,6 +16,7 @@ import { runHybridAudit } from "../../api/editor";
 import { CommercialPublishPanel } from "../commercial/CommercialPublishPanel";
 import { QualityDashboardModal } from "./QualityDashboardModal";
 import { fetchChapterBookScore } from "../../api/quality";
+import { fetchSceneIllustration } from "../../api/illustrations";
 import { WorkspaceLayoutMode } from "../../types/editorLayout";
 import { ZenWritingScreen } from "../editor/ZenWritingScreen";
 
@@ -126,23 +127,22 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
   onMessage,
   onOpenGraph,
 }) => {
+  /**
+   * 「かんたん執筆へ戻る」の遷移。
+   *
+   * `StudioWorkspace` は Router で囲わずに単体レンダリングされるケースがあるため、
+   * `useNavigate()` をそのまま呼ぶと Router context 外で例外になる。
+   * Router 内外で安全に解決できる {@link useOptionalNavigate} を使う。
+   */
+  const navigate = useOptionalNavigate("/");
   const {
     character,
-    setCharacter,
     currentChapterText,
     setCurrentChapterText,
     selectedBookId,
     selectedBook,
     currentEpNum,
     setCurrentEpNum,
-    isWizardActive,
-    setIsWizardActive,
-    wizardStep,
-    setWizardStep,
-    hasCompletedWizard,
-    setHasCompletedWizard,
-    mode,
-    setMode,
   } = useNovelContext();
 
   const [tab, setTab] = useState<StudioTab>(() => {
@@ -185,6 +185,19 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
 
   const [showLeftPane, setShowLeftPane] = useState(true);
   const [showRightPane, setShowRightPane] = useState(true);
+
+  /**
+   * `split`（執筆重視）は「左右サイドバーを隠してエディタを全幅にする」レイアウト。
+   *
+   * 以前は切替ボタンだけが実装されレイアウトが一切変わらず、デッド UI になっていた。
+   * ここでは `layoutMode` から実効ペイン状態を導出して、
+   * 「完全Studio」はどちらも出し、「執筆重視」はどちらも隠す。
+   * 明示トグルは「完全Studio」でだけ効く（split 中はトグル自体を隠すため矛盾しない）。
+   */
+  const isSplitLayout = layoutMode === "split";
+  const leftPaneVisible = showLeftPane && !isSplitLayout;
+  const rightPaneVisible = showRightPane && !isSplitLayout;
+
   const [leftPaneWidth, setLeftPaneWidth] = useState(260);
   const [rightPaneWidth, setRightPaneWidth] = useState(340);
   const [isResizingLeft, setIsResizingLeft] = useState(false);
@@ -260,23 +273,42 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
     };
   }, []);
 
+  /**
+   * シーン画像の解決。
+   *
+   * 以前は外部のプレースホルダーサービス（`placehold.co`）の URL を組み立てて
+   * 表示させていたため、オフライン時に壊れ画像になり、しかも外部サービスへ
+   * シーン名が送信されていた。
+   *
+   * 現在は以下の **実在する** 契約を使う:
+   *   `GET /images/{book_id}/{scene_name}`（`src/backend/routers/illustrations.py`）
+   *   → `{"found": bool, "image_url": str|null, "illustration_id": int|null}`
+   *
+   * 見つからない場合は 404 ではなく `found: false` が返るので、
+   * 「まだ生成されていない」を例外処理と区別して扱える。
+   */
   useEffect(() => {
-    const fetchImage = async () => {
-      if (!currentSceneName) {
+    let cancelled = false;
+
+    const resolveSceneImage = async () => {
+      if (!currentSceneName || !selectedBookId) {
         setCurrentImageUrl(undefined);
         return;
       }
       try {
-        // 実際の実装では /api/multimedia/images/{sceneName} のようなエンドポイントを呼び出す
-        // 現時点ではプレースホルダーを使用して表示を確認し、API連携の構造を構築する
-        setCurrentImageUrl(`https://placehold.co/600x400?text=${encodeURIComponent(currentSceneName)}`);
-      } catch (e) {
-        console.error("Failed to fetch scene image", e);
-        setCurrentImageUrl(undefined);
+        const url = await fetchSceneIllustration(selectedBookId, currentSceneName);
+        if (cancelled) return;
+        setCurrentImageUrl(url);
+      } catch {
+        // API 未起動・認証切れは「まだ画像がない」状態として扱う
+        if (!cancelled) setCurrentImageUrl(undefined);
       }
     };
-    void fetchImage();
-  }, [currentSceneName]);
+    void resolveSceneImage();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentSceneName, selectedBookId]);
 
   useEffect(() => {
     const fetchBudget = async () => {
@@ -377,11 +409,11 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
 
   const gridClass = [
     "studio-grid",
-    !showLeftPane && !showRightPane
+    !leftPaneVisible && !rightPaneVisible
       ? "studio-grid--collapsed-both"
-      : !showLeftPane
+      : !leftPaneVisible
         ? "studio-grid--collapsed-left"
-        : !showRightPane
+        : !rightPaneVisible
           ? "studio-grid--collapsed-right"
           : "",
   ]
@@ -406,11 +438,11 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
    * 表示中のペイン数と同じ本数だけ列を定義しないと
    * メイン領域が 0px 列に入り画面が潰れる。
    */
-  const gridTemplateColumns = showLeftPane
-    ? showRightPane
+  const gridTemplateColumns = leftPaneVisible
+    ? rightPaneVisible
       ? `${leftPaneWidth}px 1fr ${rightPaneWidth}px`
       : `${leftPaneWidth}px 1fr`
-    : showRightPane
+    : rightPaneVisible
       ? `1fr ${rightPaneWidth}px`
       : "1fr";
 
@@ -420,7 +452,7 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
         gridTemplateColumns
       }}>
         {/* 左ペイン: 作品・登場人物・設定概要 & 章ツリー */}
-        {showLeftPane ? (
+        {leftPaneVisible ? (
           <>
             <aside id="character-settings-pane" className="studio-pane studio-sidebar-left" style={{
               gap: "16px",
@@ -487,12 +519,15 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm("Easyモードに戻りますか？現在のStudioモードの設定は保存されます。")) {
-                        setMode("easy");
+                      if (window.confirm("かんたん執筆に戻りますか？現在のStudioの設定は保存されます。")) {
+                        // 旧実装は context の mode state だけを変えて画面を移動していなかったため、
+                        // ボタンを押しても Studio に留まっていた（デッドボタン）。
+                        // 現在地は URL が単一の情報源なので、ここで明示的に遷移する。
+                        navigate("/");
                       }
                     }}
                     className="pane-toggle-btn"
-                    title="Easyモードに戻る"
+                    title="かんたん執筆に戻る"
                     data-testid="btn-switch-to-easy-mode"
                   >
                     🏠
@@ -568,7 +603,7 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
 
         <main className="studio-pane" style={{ minHeight: "600px", flex: 1 }}>
           {/* ペイン展開用ツールバー（折りたたみ時） */}
-          {(!showLeftPane || !showRightPane) && (
+          {!isSplitLayout && (!showLeftPane || !showRightPane) && (
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
               {!showLeftPane ? (
                 <button
@@ -810,7 +845,7 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
         </main>
 
         {/* 右ペイン: GraphRAG 専属AI編集者サイドバー */}
-        {showRightPane ? (
+        {rightPaneVisible ? (
           <aside className="studio-pane">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
               <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
@@ -866,84 +901,12 @@ export const StudioWorkspace: React.FC<StudioWorkspaceProps> = ({
           />
         )}
       </div>
-      {isWizardActive && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          {wizardStep === 1 && (
-            <WizardStep
-              stepNumber={1}
-              totalSteps={6}
-              title="コンセプト設定"
-              description="まずは作品の方向性を決めましょう。左側のパネルでジャンルを選択し、主人公の名前や性格を入力してください。"
-              onNext={() => setWizardStep(2)}
-              onSkip={() => setIsWizardActive(false)}
-              targetElementId="character-settings-pane"
-            />
-          )}
-          {wizardStep === 2 && (
-            <WizardStep
-              stepNumber={2}
-              totalSteps={6}
-              title="プロット構築"
-              description="物語の骨組みを作りましょう。エディタ下部の「次なる展開を生成」パネルを使って、物語の構成案を具体化させてください。"
-              onNext={() => setWizardStep(3)}
-              onSkip={() => setIsWizardActive(false)}
-              targetElementId="next-beats-panel"
-            />
-          )}
-          {wizardStep === 3 && (
-            <WizardStep
-              stepNumber={3}
-              totalSteps={6}
-              title="初稿執筆"
-              description="いよいよ執筆です。プロットを参考に、まずは最初のシーンを書き進めてみましょう。AI推敲ツールバーを使って描写を肉付けすることも可能です。"
-              onNext={() => setWizardStep(4)}
-              onSkip={() => setIsWizardActive(false)}
-              targetElementId="editor-textarea"
-            />
-          )}
-          {wizardStep === 4 && (
-            <WizardStep
-              stepNumber={4}
-              totalSteps={6}
-              title="マルチメディア統合"
-              description="シーンに画像を追加しましょう。マルチメディアタブに切り替え、画像をアップロードまたはプロンプトから生成してください。生成された画像はエディタ内のマーカーと同期します。"
-              onNext={() => setWizardStep(5)}
-              onSkip={() => setIsWizardActive(false)}
-              targetElementId="studio-tab-multimedia"
-            />
-          )}
-          {wizardStep === 5 && (
-            <WizardStep
-              stepNumber={5}
-              totalSteps={6}
-              title="IF分岐と物語の分岐"
-              description="物語の分岐構造を作成します。IF分岐ルートタブを使って、選択肢によるストーリーの変化を設計してください。"
-              onNext={() => setWizardStep(6)}
-              onSkip={() => setIsWizardActive(false)}
-              targetElementId="studio-tab-branches"
-            />
-          )}
-          {wizardStep === 6 && (
-            <WizardStep
-              stepNumber={6}
-              totalSteps={6}
-              title="AI診断と品質チェック"
-              description="最後に、AIによる矛盾診断と品質スコアを確認しましょう。「矛盾診断レポート」タブと品質ダッシュボードを使って、作品の完成度を高めてください。"
-              onNext={() => {
-                setIsWizardActive(false);
-                setWizardStep(0);
-                setHasCompletedWizard(true);
-                localStorage.setItem("autonovel.wizard_completed", "true");
-              }}
-              onSkip={() => {
-                setIsWizardActive(false);
-                // Skip doesn't necessarily mean completed, but we can mark it as such if we want
-              }}
-              targetElementId="studio-tab-audit"
-            />
-          )}
-        </div>
-      )}
+      {/*
+        旧 6 ステップウィザードのオーバーレイは削除済み（PLAN_UI_UX_REMEDIATION S6）。
+        `/wizard` の 3 ステップ版 {@link WizardWorkflowPage} が単一の導線であり、
+        このオーバーレイが残ってENTRY_POINTS の「3 つの入口」という説明と実態が矛盾していた。
+        また step4-6 は実 DOM に存在しない id を指しておりハイライトも当たっていなかった。
+      */}
       {layoutMode === "zen" && (
         <ZenWritingScreen
           isVisible={true}

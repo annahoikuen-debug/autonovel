@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from sqlalchemy import and_, func, not_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -59,6 +59,11 @@ class DbForeshadowingRepository:
 
     def __init__(self, db: AsyncSession):
         self.db = db
+        # W5 Step 8: 直近1件の CAS 拒否理由。呼び出し側から
+        # 「どの理由が何回起きたか」を外から取れるようにする。
+        # スレッドセーフではない（Lock はあえて付けない。既存 InMemory 版との
+        # 非対称は本計画の対象外）。
+        self.last_rejection: dict[str, Any] = {}
 
     # ── CRUD ────────────────────────────────────────────
 
@@ -184,10 +189,14 @@ class DbForeshadowingRepository:
         target_status: ForeshadowingStatus,
         resolved_episode: Optional[int] = None,
     ) -> str:
-        """CAS 更新が rowcount=0 になった理由を特定する（拒否経路の診断専用 SELECT）。"""
+        """CAS 更新が rowcount=0 になった理由を特定する（拒否経路の診断専用 SELECT）。
+
+        戻り値は従来どおり `str` だが、**`self.last_rejection` にも保存**する
+        （W5-07: :callers が `False` だけを受け取れると、原因が外から消える）。
+        """
         current = await self.get_by_id(foreshadowing_id)
         if current is None:
-            return "not_found"
+            return self._store_rejection(foreshadowing_id, target_status, "not_found")
         try:
             current_status = ForeshadowingStatus(current.status)
         except ValueError:
@@ -195,14 +204,34 @@ class DbForeshadowingRepository:
         if current_status is not None and not ForeshadowingStatus.can_transition(
             current_status, target_status
         ):
-            return "illegal_transition"
+            return self._store_rejection(
+                foreshadowing_id, target_status, "illegal_transition"
+            )
         if (
             isinstance(resolved_episode, int)
             and isinstance(current.planted_episode, int)
             and resolved_episode < current.planted_episode
         ):
-            return "before_plant_episode"
-        return "concurrent_modification"
+            return self._store_rejection(
+                foreshadowing_id, target_status, "before_plant_episode"
+            )
+        return self._store_rejection(
+            foreshadowing_id, target_status, "concurrent_modification"
+        )
+
+    def _store_rejection(
+        self,
+        foreshadowing_id: int,
+        target_status: Optional[ForeshadowingStatus],
+        reason: str,
+    ) -> str:
+        """拒否理由を `last_rejection` に保存し、渡された `reason` をそのまま返す。"""
+        self.last_rejection = {
+            "id": foreshadowing_id,
+            "target_status": getattr(target_status, "value", target_status),
+            "reason": reason,
+        }
+        return reason
 
     async def _transition(
         self,
@@ -262,6 +291,7 @@ class DbForeshadowingRepository:
                 reason,
             )
         _record_rejection(reason)
+        self.last_rejection.setdefault("op", "transition")
         return False
 
     async def resolve(self, foreshadowing_id: int, episode_num: int) -> bool:
@@ -326,6 +356,8 @@ class DbForeshadowingRepository:
             reason,
         )
         _record_rejection(reason)
+        self._store_rejection(foreshadowing_id, None, reason)
+        self.last_rejection.setdefault("op", "update_target")
         return False
 
     # ── 集計 ─────────────────────────────────────────────

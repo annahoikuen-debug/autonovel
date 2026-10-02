@@ -317,6 +317,50 @@ class BaseExporter(ABC):
         body = ch.get("content") or ""
         return f"## {title}\n\n{body}\n"
 
+    def _front_matter(self, novel: Dict[str, Any]) -> List[str]:
+        """YAML フロントマターの行を返す（無ければ空リスト）。"""
+        front_matter = []
+        if novel.get("title"):
+            front_matter.append(f'title: "{novel["title"]}"')
+        if novel.get("synopsis"):
+            synopsis = novel["synopsis"].replace('"', '\\"').replace("\n", " ")
+            front_matter.append(f'description: "{synopsis}"')
+        tags = novel.get("tags")
+        if tags:
+            tags = ", ".join(tags) if isinstance(tags, list) else tags
+            front_matter.append(f"tags: [{tags}]")
+        return front_matter
+
+    def _render_markdown_stream(
+        self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
+    ) -> Generator[str, None, None]:
+        """Markdown 系（Markdown / EPUB / PDF）の共通レンダラ。
+
+        3 クラスがバイト単位で同一の本文を出力していたため、テンプレートへ集約した。
+        出力は 1 バイトも変えない（PLAN_H1 R3）。
+        """
+        front_matter = self._front_matter(novel)
+        if front_matter:
+            yield "---\n"
+            yield "\n".join(front_matter) + "\n"
+            yield "---\n\n"
+
+        yield f"# {novel.get('title', '無題')}\n"
+        if novel.get("synopsis"):
+            yield f"> {novel.get('synopsis')}\n\n"
+
+        for i, ch in enumerate(chapters):
+            body_raw = ch.get("content") or ""
+            body, warnings = process_content_for_platform(body_raw, self.platform)
+            if i == 0 and warnings:
+                warning_text = "\n".join([f"<!-- WARNING: {w} -->" for w in warnings])
+                yield warning_text + "\n"
+
+            title = ch.get("title") or f"第{ch.get('ep_num')}話"
+            if i > 0:
+                yield "---\n"  # 章間区切り
+            yield f"## {title}\n\n{body}\n"
+
     def apply_template_filters(
         self,
         text: str,
@@ -536,42 +580,7 @@ class MarkdownExporter(BaseExporter):
     def export_stream(
         self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
     ) -> Generator[str, None, None]:
-        # フロントマター (YAML) オプション対応
-        front_matter = []
-        if novel.get("title"):
-            front_matter.append(f'title: "{novel["title"]}"')
-        if novel.get("synopsis"):
-            # エスケープ処理（簡易的）
-            synopsis = novel["synopsis"].replace('"', '\\"').replace("\n", " ")
-            front_matter.append(f'description: "{synopsis}"')
-        # 作成日などがあれば追加（ここでは省略）
-        # タグ情報があれば追加
-        if novel.get("tags"):
-            tags = ", ".join(novel["tags"]) if isinstance(novel["tags"], list) else novel["tags"]
-            front_matter.append(f"tags: [{tags}]")
-
-        if front_matter:
-            yield "---\n"
-            yield "\n".join(front_matter) + "\n"
-            yield "---\n\n"
-
-        yield f"# {novel.get('title', '無題')}\n"
-        if novel.get("synopsis"):
-            yield f"> {novel.get('synopsis')}\n\n"
-
-        for i, ch in enumerate(chapters):
-            # 本文をマークダウン向けに整形
-            body_raw = ch.get("content") or ""
-            body, warnings = process_content_for_platform(body_raw, self.platform)
-            # 警告がある場合はログに出力するか、特別な方法で処理
-            if i == 0 and warnings:
-                warning_text = "\n".join([f"<!-- WARNING: {w} -->" for w in warnings])
-                yield warning_text + "\n"
-
-            title = ch.get("title") or f"第{ch.get('ep_num')}話"
-            if i > 0:
-                yield "---\n"  # 章間区切り
-            yield f"## {title}\n\n{body}\n"
+        yield from self._render_markdown_stream(novel, chapters)
 
 
 # ==========================================
@@ -590,42 +599,12 @@ class EpubExporter(BaseExporter):
     def export_stream(
         self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
     ) -> Generator[str, None, None]:
-        # フロントマター (YAML) オプション対応
-        front_matter = []
-        if novel.get("title"):
-            front_matter.append(f'title: "{novel["title"]}"')
-        if novel.get("synopsis"):
-            # エスケープ処理（簡易的）
-            synopsis = novel["synopsis"].replace('"', '\\"').replace("\n", " ")
-            front_matter.append(f'description: "{synopsis}"')
-        # 作成日などがあれば追加（ここでは省略）
-        # タグ情報があれば追加
-        if novel.get("tags"):
-            tags = ", ".join(novel["tags"]) if isinstance(novel["tags"], list) else novel["tags"]
-            front_matter.append(f"tags: [{tags}]")
-
-        if front_matter:
-            yield "---\n"
-            yield "\n".join(front_matter) + "\n"
-            yield "---\n\n"
-
-        yield f"# {novel.get('title', '無題')}\n"
-        if novel.get("synopsis"):
-            yield f"> {novel.get('synopsis')}\n\n"
-
-        for i, ch in enumerate(chapters):
-            # 本文をEPUB向けに整形
-            body_raw = ch.get("content") or ""
-            body, warnings = process_content_for_platform(body_raw, self.platform)
-            # 警告がある場合はログに出力するか、特別な方法で処理
-            if i == 0 and warnings:
-                warning_text = "\n".join([f"<!-- WARNING: {w} -->" for w in warnings])
-                yield warning_text + "\n"
-
-            title = ch.get("title") or f"第{ch.get('ep_num')}話"
-            if i > 0:
-                yield "---\n"  # 章間区切り
-            yield f"## {title}\n\n{body}\n"
+        # TODO(H1-9): EPUB は本来 XHTML コンテナであり、Markdown をそのまま入れるのは
+        # 不正解。実際の高品質な EPUB 生成は /api/export/ebook（multimedia）側が行う。
+        # この経路を直すときは tests/unit/services/exporters/test_base.py と
+        # test_base_exporters_ext.py の「EpubExporter が front matter と # を出力する」
+        # 前提 8 件も同時に更新すること。
+        yield from self._render_markdown_stream(novel, chapters)
 
 
 class PdfExporter(BaseExporter):
@@ -639,42 +618,16 @@ class PdfExporter(BaseExporter):
     def export_stream(
         self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
     ) -> Generator[str, None, None]:
-        # フロントマター (YAML) オプション対応
-        front_matter = []
-        if novel.get("title"):
-            front_matter.append(f'title: "{novel["title"]}"')
-        if novel.get("synopsis"):
-            # エスケープ処理（簡易的）
-            synopsis = novel["synopsis"].replace('"', '\\"').replace("\n", " ")
-            front_matter.append(f'description: "{synopsis}"')
-        # 作成日などがあれば追加（ここでは省略）
-        # タグ情報があれば追加
-        if novel.get("tags"):
-            tags = ", ".join(novel["tags"]) if isinstance(novel["tags"], list) else novel["tags"]
-            front_matter.append(f"tags: [{tags}]")
-
-        if front_matter:
-            yield "---\n"
-            yield "\n".join(front_matter) + "\n"
-            yield "---\n\n"
-
-        yield f"# {novel.get('title', '無題')}\n"
-        if novel.get("synopsis"):
-            yield f"> {novel.get('synopsis')}\n\n"
-
-        for i, ch in enumerate(chapters):
-            # 本文をPDF向けに整形
-            body_raw = ch.get("content") or ""
-            body, warnings = process_content_for_platform(body_raw, self.platform)
-            # 警告がある場合はログに出力するか、特別な方法で処理
-            if i == 0 and warnings:
-                warning_text = "\n".join([f"<!-- WARNING: {w} -->" for w in warnings])
-                yield warning_text + "\n"
-
-            title = ch.get("title") or f"第{ch.get('ep_num')}話"
-            if i > 0:
-                yield "---\n"  # 章間区切り
-            yield f"## {title}\n\n{body}\n"
+        # TODO(H1-9): **既知の欠陥** — PDF エクスポータが Markdown を返している。
+        # YAML フロントマターと "#" 見出しは PDF には無意味な文字列で、
+        # 拡張子 .pdf のファイルに Markdown が書き込まれる。
+        # 正しい実装は PDF ライブラリ（reportlab / fpdf）を要する外部依存のため、
+        # 本計画（PLAN_H1「新機能を1行も足さない」）の範囲外。
+        # 修正時は本クラスを NotImplementedError に置換し、
+        # tests/unit/services/exporters/test_base.py::test_pdf_exporter と
+        # tests/unit/services/exporters/test_base_exporters_ext.py の
+        # PdfExporter 前提 8 件を同時に更新すること。
+        yield from self._render_markdown_stream(novel, chapters)
 
 
 # ==========================================

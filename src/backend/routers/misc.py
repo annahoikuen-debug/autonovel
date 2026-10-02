@@ -102,13 +102,22 @@ async def get_planning_options():
         for k, v in STYLE_DEFINITIONS.items()
     }
 
+    growth_curves = list(
+        dict.fromkeys(
+            v.get("growth_curve")
+            for v in STORY_ARCHETYPES.values()
+            if isinstance(v, dict) and "growth_curve" in v
+        )
+    )
+
     return {
         # --- 既存キー（フロントが使っているため削除しない） ---
         "easy_genres": EASY_GENRES,
         "story_archetypes": list(STORY_ARCHETYPES.keys()),
+        "growth_curves": growth_curves,
         "style_definitions": styles,
         # --- STORY_SPINE（構造テンプレート） ---
-        "cards": CARDS,
+        "cards": [{"card_id": k, **v} for k, v in CARDS.items()],
         "lengths": LENGTHS,
         "markets": MARKETS,
         "patterns": PATTERNS,

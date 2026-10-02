@@ -25,6 +25,7 @@ from src.core.container import AppContainer
 from src.backend.database.core import get_db_manager
 from src.backend.database.repositories.branch import BranchRepository
 from src.backend.services.branch_merge_service import BranchMergeService
+from src.backend.security.branch_guard import verify_branch_belongs_to_book
 from src.backend.schemas.branch import (
     BranchForkRequest,
     BranchGraphResponse,
@@ -707,6 +708,7 @@ async def list_branch_nodes(
     session: AsyncSession = Depends(get_branch_session),
 ) -> dict[str, Any]:
     """ブランチのグラフに含まれるノード一覧を返す."""
+    await verify_branch_belongs_to_book(session, book_id, branch_id)
     repo = BranchRepository(session)
     graph = await repo.load_branch_graph(branch_id)
     if graph is None:
@@ -729,6 +731,7 @@ async def create_branch_node(
     """グラフに新ノードを追加."""
     if "id" not in node:
         raise HTTPException(status_code=422, detail="node.id is required")
+    await verify_branch_belongs_to_book(session, book_id, branch_id)
     repo = BranchRepository(session)
     graph = await repo.load_branch_graph(branch_id)
     if graph is None:
@@ -751,6 +754,7 @@ async def delete_branch_node(
     session: AsyncSession = Depends(get_branch_session),
 ) -> dict[str, Any]:
     """ノード削除（孤立チェック付き）."""
+    await verify_branch_belongs_to_book(session, book_id, branch_id)
     repo = BranchRepository(session)
     graph = await repo.load_branch_graph(branch_id)
     if graph is None:

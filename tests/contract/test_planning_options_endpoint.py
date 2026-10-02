@@ -29,11 +29,24 @@ def test_new_spine_keys_present():
 
 
 def test_new_spine_keys_have_expected_types():
-    """中身为空でも（TRACK-A の Wave2 完了前はそうなる）型は崩さない。"""
+    """中身为空でも型は崩さない。
+
+    F1（commit 7de64451）で `cards` は dict → list に変更された
+    （各カードに `card_id` を付与するため。FE の選択判定の前提）。
+    旧実装は `isinstance(result[key], dict)` のままで赤になった
+    （PLAN_G1_FINAL_INTEGRATION_REMEDIATION G3）。
+    """
     from src.backend.routers.misc import get_planning_options
 
     result = asyncio.run(get_planning_options())
-    for key in ("cards", "lengths", "markets", "patterns", "genres"):
+    # cards は list（F1 の契約。test_planning_options_contract.py と一致）
+    assert isinstance(result["cards"], list), (
+        "cards は list であるべき（dict だと FE が card_id を取り損なう）"
+    )
+    for item in result["cards"]:
+        assert "card_id" in item, f"card_id が無い: {item}"
+    # その他のキーは dict
+    for key in ("lengths", "markets", "patterns", "genres"):
         assert isinstance(result[key], dict), f"{key!r} は dict であるべき"
     assert isinstance(result["beat_vocabulary"], dict)
 

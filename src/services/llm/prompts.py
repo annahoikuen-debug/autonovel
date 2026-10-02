@@ -54,7 +54,19 @@ GRAPH_EXTRACTION_USER_PROMPT = """以下の小説の章テキストから、エ�
 {text}
 """
 
-NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE = """【ジャンル】: {genre}
+class PromptTemplateWithSpine(str):
+    """STORY_SPINE 対応プロンプトテンプレート。
+
+    spine_section が渡されない場合は自動的に空文字を補完し、既存コードの後方互換性を
+    100% 維持する（KeyError を防ぎ、未指定時はバイト単位で同一出力を保証する）。
+    """
+
+    def format(self, *args, **kwargs):
+        kwargs.setdefault("spine_section", "")
+        return super().format(*args, **kwargs)
+
+
+NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE = PromptTemplateWithSpine("""【ジャンル】: {genre}
 【主人公設定】:
 - 名前: {char_name}
 - 性格・特徴: {char_personality}
@@ -75,7 +87,7 @@ NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE = """【ジャンル】: {genre}
 {current_chapter}
 
 上記の確定事実と過去の文脈を決して矛盾させず、指定された【作家性DNA・文体】を忠実に再現して、続く魅力的な本文を執筆してください。
-"""
+{spine_section}""")
 
 # ---------------------------------------------------------------------------
 # STORY_SPINE: 構造指示の段階適用（B8）

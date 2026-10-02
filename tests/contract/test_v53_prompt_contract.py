@@ -226,7 +226,11 @@ class TestForeshadowingContractRendering:
             current_episode=12,
         )
         assert [f["id"] for f in shown] == [21]
-        assert note == ""
+        # W5 Step 11: 省略サマリに「直近の回収推奨」を載せるようになったため、
+        # 「契約IDが背景に残らない」契約は変えず、注記は新仕様を反映する。
+        assert "他" not in note  # 省略件はないので「他N件あり」は出ない
+        assert "回収推奨" in note
+        assert "第30話" in note
 
 
 class TestPromptComposerForeshadowingWiring:

@@ -4,7 +4,8 @@
 - **作成日**: 2026-09-29
 - **対象バージョン**: AutoNovel v5.3.0 → v6.0.0
 - **親計画**: [PLAN_V6_COST_LATENCY_OPTIMIZATION.md](PLAN_V6_COST_LATENCY_OPTIMIZATION.md) §2.1 / [PLAN_T6_REMEDIATION_18STEPS.md](PLAN_T6_REMEDIATION_18STEPS.md) R09
-- **ステータス**: 未着手
+- **ステータス**: 完了（2026-09-30 / Step 1〜11 実装済み）
+  > 注記: Step 1〜10 は本計画着手前から実装済み（`src/audit/triage.py` / `src/audit/repair_planner.py` / `src/services/prose/span_patch_applier.py` / `src/services/audit/targeted_diagnostic.py` が存在）。2026-09-30 に実装したのは Step 11 と付随するバグB修正のみ。
 - **目的**: `AuditAgent` の「1 オーディターでも落ちたらエピソード全文再執筆」を、
   **静的ルール即時置換 → 段落単位スパン置換 → シーン再生成** の三段階トリアージに置き換え、
   再生成LLMコストと文脈ドリフト（コンテキストドリフト）を同時に削減する。
@@ -1049,3 +1050,11 @@ C:\Python314\python.exe -m pytest tests/unit/agents/test_audit_patch_events.py -
 | 1話あたり本文生成 LLM 回数 | 最大 4 | 1（Step 8 が成功した場合） |
 | ローカルパッチ試行のイベントループブロック | 同期 LLM 呼出でブロック | **0**（Step 6） |
 | 再生成時の文脈ドリフト | 全文書き直し | スパン置換（Step 8） |
+
+### 4.1 実装実績（2026-09-30）
+
+- **Step 11**: `try_local_patch` の全 return 直前に `audit.patch.applied`（payload 4キー: `strategy` / `replacements` / `text_length` / `triage_level`）、`None` 返却の全経路に `audit.patch.skipped`（payload 1キー: `reason`）、Branch D 通過時に `audit.regeneration.full`（`{"attempt": n}`）を発火。`last_gate_evaluation` に既存 `audit_metrics` をそのまま載せた（新規変数なし）。リングバッファは 500 件上限を維持。
+- **バグB修正**: advisory 緩和ガードに `strict_guard`（`ENABLE_AUDIT_ADVISORY_STRICT_GUARD`、既定 ON）を追加。`AUDIT_GATE_THRESHOLD` を手動で上げたまま既定 advisory（80.0）が残余ると `80 < 99` が成立して「再執筆する」が「警告通過」に反転していた事故を阻止。
+- **残存**: `tests/contract/test_v6_audit_advisory_gate.py::test_all_or_nothing_mode_keeps_advisory_off` は
+  「1件でも不合格なら再執筆する（all-or-nothing の定義）」というコード側の実挙動と、
+  テストの期待値 `requires_regeneration is False` が矛盾しており赤のまま。既存ロジック改変禁止のため未修正。

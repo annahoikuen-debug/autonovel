@@ -41,7 +41,7 @@ class TwoTierAuditor:
                             rule_id="forbidden_word",
                             severity="error",
                             message=f"禁止語句が検出されました: {word}",
-                            suggested_fix=f"該当箇所を削除または修正してください",
+                            suggested_fix="該当箇所を削除または修正してください",
                         )
                     )
 

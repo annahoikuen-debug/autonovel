@@ -35,12 +35,20 @@ async def test_writing_graph_complete_flow():
     mock_manager.narrative.get_integrity_threshold = MagicMock(return_value=0.7)
     mock_manager.repo = None  # ユーザーレビューなし
 
-    # WritingGraphManagerのインスタンスを作成
-    manager = WritingGraphManager(mock_manager)
-
     # langgraphが利用できない場合のフォールバックパスをテストするため、
-    # あえてHAS_LANGGRAPHをFalseにする
+    # あえてHAS_LANGGRAPHをFalseにする。
+    #
+    # 注意: `WritingGraphManager.__init__` が `HAS_LANGGRAPH` を読んで
+    # `self.checkpointer` / `self.workflow` を **構築時に** 決めるため、
+    # patch は **インスタンス生成まで含めた範囲** で効かせる必要がある。
+    # 生成後に patch しても `self.workflow` は実グラフのままなので、
+    # 意図に反して graph 経路が走り、checkpointer（MemorySaver）が
+    # MagicMock を msgpack 化しようとして fatal error になる。
     with patch('src.backend.workflows.writing_langgraph.HAS_LANGGRAPH', False):
+        # WritingGraphManagerのインスタンスを patch 内で作る（workflow は None になる）
+        manager = WritingGraphManager(mock_manager)
+        assert manager.workflow is None, "HAS_LANGGRAPH=False ならフォールバックオブジェクトになる"
+
         # runメソッドを実行（フォールバックパスが使用される）
         draft, meta, is_ok = await manager.run(
             ep_num=1,

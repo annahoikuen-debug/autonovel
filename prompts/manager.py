@@ -812,6 +812,10 @@ class PromptManager:
     #: 背景（継続中）未回収伏線をプロンプトへ渡す上限（長編では数十〜数百本に膨れる）
     MAX_BACKGROUND_FORESHADOWINGS = 20
 
+    #: 省略サマリに「直近N話での回収推奨」を載せる上限（W5 Step 11 / W5-10）。
+    #: 終端で未回収が一斉に発生しても、**先に回収させる理由**を渡す。
+    FORESHADOW_BUNDLE_LIMIT = 5
+
     @classmethod
     def _select_background_foreshadowings(
         cls,
@@ -852,24 +856,39 @@ class PromptManager:
             for f in (unresolved_foreshadowings or [])
             if _get(f, "id") not in contract_ids
         ]
-        # 期限超過（最重要シグナル）を最優先し、残りは設置話数の新しい順に並べる
+        # 期限超過（最重要シグナル）を最優先し、次に「回収予定が今話に最も近い」ものを
+        # 優先し、残りは設置話数の新しい順に並べる（W5 Step 11）。
+        # 終端へ回収を一斉に寄せないための並び替えであり、**上限は増やさない**。
         background.sort(
             key=lambda f: (
                 0 if (f["target_episode"] is not None and f["target_episode"] < current_episode) else 1,
+                (f["target_episode"] if isinstance(f["target_episode"], int) else 10**9),
                 -(f["planted_episode"] if isinstance(f["planted_episode"], int) else 0),
             )
         )
 
         omitted = background[cls.MAX_BACKGROUND_FORESHADOWINGS:]
         shown = background[: cls.MAX_BACKGROUND_FORESHADOWINGS]
-        note = ""
+
+        note_parts: List[str] = []
         if omitted:
             overdue = sum(
                 1
                 for f in omitted
                 if f["target_episode"] is not None and f["target_episode"] < current_episode
             )
-            note = f"他{len(omitted)}件あり（うち期限超過{overdue}件）"
+            note_parts.append(f"他{len(omitted)}件あり（うち期限超過{overdue}件）")
+        # 回収推奨話（= 今話以降の回収予定話）を数える。切られた件にも効く。
+        upcoming = sorted(
+            {
+                f["target_episode"]
+                for f in background
+                if isinstance(f["target_episode"], int) and f["target_episode"] >= current_episode
+            }
+        )[: cls.FORESHADOW_BUNDLE_LIMIT]
+        if upcoming:
+            note_parts.append("直近の回収推奨: " + "、".join(f"第{ep}話" for ep in upcoming))
+        note = " / ".join(note_parts)
         return shown, note
 
     async def build_rebuild_plot_outline_prompt(

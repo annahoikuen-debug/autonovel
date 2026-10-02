@@ -67,14 +67,8 @@ describe('ZenModeAndEditor Components Tests', () => {
       selectedBookId: '1',
       selectedBook: { title: 'テスト小説' },
       currentEpNum: 1,
-      isWizardActive: false,
-      setIsWizardActive: vi.fn(),
-      wizardStep: 0,
-      setWizardStep: vi.fn(),
-      hasCompletedWizard: false,
-      setHasCompletedWizard: vi.fn(),
-      mode: 'studio',
-      setMode: vi.fn(),
+      // 旧6ステップウィザードと mode state は削除済み（PLAN_UI_UX_REMEDIATION S6/S1）。
+      // ここに残すと context の型と食い違い、型チェックが壊れるため除去している。
       lineScores: {},
       setLineScores: vi.fn(),
       chapters: [

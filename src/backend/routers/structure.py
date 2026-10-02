@@ -9,14 +9,20 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
-from src.backend.database.models import Plot
+from src.backend.auth import get_current_user
+from src.backend.database.models import Plot, User
 from src.backend.database.uow import UnitOfWork
+from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
 from src.services.structure_validator import list_structures, validate
 
-router = APIRouter(prefix="/api/structure", tags=["structure"])
+router = APIRouter(
+    prefix="/api/structure",
+    tags=["structure"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("/templates")
@@ -29,8 +35,11 @@ async def get_templates() -> list[dict[str, Any]]:
 async def validate_structure(
     book_id: int,
     structure: str = Query("three_act", description="three_act | kishotenketsu | hero_journey"),
+    pattern: str | None = Query(None, description="STORY_SPINE パターンキー (exile_rise 等)"),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """作品のプロット構造を検証する。"""
+    await verify_book_ownership(book_id, current_user)
     from sqlalchemy import select
 
     async with UnitOfWork(AppContainer.db()) as uow:
@@ -44,4 +53,4 @@ async def validate_structure(
             for p in result.scalars().all()
         ]
 
-    return validate(plots, structure)
+    return validate(plots, structure, pattern_key=pattern)

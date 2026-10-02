@@ -39,3 +39,12 @@
 ## 📊 目標品質指標
 - **失敗テスト件数**: 0 件（ALL GREEN）
 - **CIステータス**: 全ジョブ PASS（`continue-on-error` なし）
+
+> **⚠️ 2026-10-02 実測**: 上記 2 項目は**未達**。
+> `continue-on-error` の撤去と ruff ratchet 化は PLAN_H1 の H1〜H5 で完了したが、
+> - バックエンド: `tests/regression` に 4 件の失敗が残存（`test_lint_budget` の W292 2 件、
+>   `test_status_md_counts_match_reality`、`test_repo_hygiene` の関連残）
+> - フロントエンド: `npm run test:ci` が **6 ファイル / 9 テスト失敗**で停止し、
+>   カバレッジ閾値の gate に到達しない
+> ため「全ジョブ PASS」はまだ成立しない。詳細は `docs/STATUS.md` の
+> 「2026-10-02 再実測」節を参照。

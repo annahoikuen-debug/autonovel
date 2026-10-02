@@ -1,5 +1,6 @@
 import { BookShowcaseData, MarketingPromoData } from "../types/marketingShowcase";
 import { ViralTitleRequest, ViralTitleResponse } from "../types/marketing";
+import { apiFetch } from "./client";
 
 const BASE = "/api/marketing";
 
@@ -8,7 +9,7 @@ export async function generateMarketingContent(
   novelContent: string,
   authorName: string
 ): Promise<{ showcase: BookShowcaseData; promo: MarketingPromoData }> {
-  const res = await fetch(`${BASE}/generate`, {
+  const res = await apiFetch(`${BASE}/generate`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -24,7 +25,7 @@ export async function generateMarketingContent(
 export async function generateViralTitles(
   payload: ViralTitleRequest
 ): Promise<ViralTitleResponse> {
-  const res = await fetch(`${BASE}/viral-titles`, {
+  const res = await apiFetch(`${BASE}/viral-titles`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

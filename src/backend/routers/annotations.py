@@ -78,8 +78,6 @@ def _get_stores() -> tuple:
 
 def _beats_to_domain(beats_dto: List[BeatDTO], episode: int) -> List:
     """DTOをドメインモデルに変換"""
-    from src.annotations.beat import EmotionalBeat
-    from src.pipeline.emotional_residue import EmotionType
 
     domain_beats = []
     for dto in beats_dto:

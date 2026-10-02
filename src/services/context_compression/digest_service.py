@@ -93,9 +93,11 @@ async def generate_episode_digest(
     if not digest_text or not digest_text.strip():
         lines = [line.strip() for line in cleaned_draft.splitlines() if line.strip()]
         # 台詞以外の主要記述を抽出
-        narrative_lines = [l for l in lines if not (l.startswith("「") or l.startswith("『"))]
+        narrative_lines = [
+            line for line in lines if not (line.startswith("「") or line.startswith("『"))
+        ]
         sample_lines = narrative_lines[-3:] if len(narrative_lines) >= 3 else lines[-3:]
-        fallback_summary = "。".join([l.rstrip("。") for l in sample_lines])
+        fallback_summary = "。".join([line.rstrip("。") for line in sample_lines])
         digest_text = f"第{ep_num}話要約: {fallback_summary}"
 
     # 長さ正規化 (最大 MAX_DIGEST_LENGTH 字)

@@ -73,7 +73,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     """Pydantic バリデーションエラーを RFC 7807 形式に変換"""
     invalid_params = []
     for err in exc.errors():
-        loc = " -> ".join(str(l) for l in err.get("loc", []))
+        loc = " -> ".join(str(part) for part in err.get("loc", []))
         invalid_params.append({
             "name": loc,
             "reason": err.get("msg", "Invalid value"),

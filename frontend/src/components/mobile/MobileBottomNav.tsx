@@ -14,7 +14,19 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ activeTab, onT
   ] as const;
 
   return (
-    <nav aria-label="モバイルナビゲーション" className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-md border-t border-slate-800/80 px-4 pb-[var(--safe-bottom)] shadow-2xl">
+    /*
+     * 背景・文字・罫線はすべて CSS 変数で指定する。
+     * 以前は `bg-slate-950/95` など Tailwind のダーク固定色で、
+     * ライト/セピアテーマでも暗いままだった（R8）。
+     */
+    <nav
+      aria-label="モバイルナビゲーション"
+      className="md:hidden fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md px-4 pb-[var(--safe-bottom)] shadow-2xl"
+      style={{
+        background: "var(--surface-2)",
+        borderTop: "1px solid var(--border-color)",
+      }}
+    >
       <div className="flex items-center justify-around h-[var(--mobile-nav-height)]">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -22,9 +34,11 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ activeTab, onT
             <button
               key={tab.id}
               onClick={() => onTabChange(tab.id)}
-              className={`flex flex-col items-center justify-center flex-1 h-full touch-target transition-colors ${
-                isActive ? 'text-indigo-400 font-bold' : 'text-slate-400 hover:text-slate-200'
-              }`}
+              style={{
+                color: isActive ? "var(--accent-purple)" : "var(--text-muted)",
+                fontWeight: isActive ? 700 : 400,
+              }}
+              className="flex flex-col items-center justify-center flex-1 h-full touch-target transition-colors hover:opacity-80"
             >
               <span className="text-lg mb-0.5">{tab.icon}</span>
               <span className="text-[10px] tracking-tight">{tab.label}</span>

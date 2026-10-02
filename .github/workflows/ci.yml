@@ -24,7 +24,6 @@ jobs:
   # エラー数が 0 のルールセットが確定した時点で、そのルールだけを hard gate に格上げする。
   static-analysis:
     runs-on: ubuntu-latest
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -35,11 +34,13 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install "ruff==0.16.5" "mypy==2.3.1"
-      - name: ruff (record-only ratchet)
-        run: ruff check src tests --statistics --output-format=concise || true
-      - name: mypy (record-only ratchet)
+      - name: ruff ratchet (hard gate)
+        run: python scripts/ci_lint_ratchet.py
+      - name: ruff (statistics for trend)
+        run: ruff check src tests config scripts --statistics --output-format=concise || true
+      - name: mypy (record-only for now)
         run: mypy src || true
-      - name: ruff format check (record-only ratchet)
+      - name: ruff format check (record-only for now)
         run: ruff format --check src || true
 
   # ==========================================================================
@@ -47,6 +48,8 @@ jobs:
   # ==========================================================================
   # これらのテストは外部依存（DB / LLM / ネットワーク）に一切依存しない純粋な静的検査で、
   # 現状 8 passed / 0 failed。バージョン不整合は v5 リリースの重大障害なので hard gate する。
+  # 依存は pytest だけでよい: tests/conftest.py は SQLAlchemy をモジュール直下では
+  # import しない（`release-consistency` ジョブが collection error になるのを防ぐため）。
   release-consistency:
     runs-on: ubuntu-latest
     steps:
@@ -58,9 +61,15 @@ jobs:
       - name: Install minimal test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-asyncio pytest-timeout
+          pip install pytest
       - name: Version consistency guardrail
-        run: pytest tests/regression/test_v5_version_consistency.py -q
+        run: pytest tests/regression/test_v5_version_consistency.py -q -p no:cacheprovider
+      - name: Tenant FK integrity
+        run: pytest tests/regression/test_tenant_fk_integrity.py -q -p no:cacheprovider
+      - name: No tautological asserts
+        run: pytest tests/regression/test_H1_tautology_guard.py -q -p no:cacheprovider
+      - name: Route mount parity
+        run: pytest tests/security/test_server_route_mount_parity.py -q -p no:cacheprovider
       - name: CHANGELOG must document the released version
         run: |
           VERSION=$(python -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
@@ -112,8 +121,44 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          pip install pytest-timeout
           pip install -e ".[dev]"
       - name: Run unit test suite
-        run: pytest -q -m "not integration and not slow" --timeout=120
+        run: pytest -q -m "not integration and not perf and not slow" --timeout=120
       - name: Run v5 regression guardrails
         run: pytest tests/regression/ -v --timeout=120
+
+  # ==========================================================================
+  # フロントエンドCIゲート
+  # ==========================================================================
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+      - name: Install minimal Python dependencies for snapshot check
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .. || pip install -r ../requirements.txt || true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
+      - name: Unit tests
+        run: npm run test:ci
+      - name: planning_options スナップショットの鮮度確認
+        working-directory: .
+        run: python scripts/export_planning_options.py --check
+

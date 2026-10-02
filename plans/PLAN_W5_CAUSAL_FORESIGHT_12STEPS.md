@@ -4,7 +4,7 @@
 - **作成日**: 2026-09-29
 - **対象バージョン**: AutoNovel v5.3.0 → v6.0.0
 - **親計画**: [PLAN_V6_COST_LATENCY_OPTIMIZATION.md](PLAN_V6_COST_LATENCY_OPTIMIZATION.md) §2 / PLAN_T6 R-series
-- **ステータス**: 未着手
+- **ステータス**: **完了**（2026-09-30 / Step 1〜12 実装済み）
 - **目的**: 伏線回収を「話数の算術」 から「因果依存グラフ（Narrative Causal DAG）＋物語アンカー＋文脈関連度」に移行し、
   1) 終端への未回収伏線の一斉押し寄せ、2) 延期時の連鎖破綻、3) 文脈を無視した強制回収、を同時に防ぐ。
 
@@ -1127,6 +1127,62 @@ C:\Python314\python.exe -m pytest tests/unit/test_prompt_manager_bundling.py -q
                                                                               │ Step 8 診断
    relevance.py ── Step 10 prompt_composer ── Step 11 prompts/manager
 ```
+
+## 4.1 実装実績と計画書からの逸脱（2026-09-30）
+
+### 実装したステップ
+
+| Step | 成果物 | 状態 |
+|:---|:---|:---|
+| 1 | `src/services/foreshadowing/flags.py` | **先行実装済み**（本計画着手前から存在） |
+| 2 | `src/services/foreshadowing/anchors.py` | 新規 |
+| 3-4 | `src/services/foreshadowing/planner.py` | 既存ファイルへキーワード引数のみ追加 |
+| 5-6 | `src/services/foreshadowing/causal_dag.py` | 新規 |
+| 7 | `src/services/foreshadowing/rescheduler.py` | `cascade_reschedule` のみ追加 |
+| 8 | `src/infrastructure/repositories/foreshadowing_repo.py` | `last_rejection` のみ追加（SQL は無変更） |
+| 9 | `src/services/foreshadowing/relevance.py` | 新規 |
+| 10 | `src/agents/prompt_composer.py` | `_collect_unresolved` へ分割し、関連度ゲートを追加 |
+| 11 | `prompts/manager.py` | ソートキー1行 + 注記1段落 |
+| 12 | 本書 / `docs/STATUS.md` | 完了 |
+
+### 計画書のテストと仕様が自己矛盾していた箇所の扱い（P6 猜测禁止のため実測で確定）
+
+| 箇所 | 計画書の記述 | 実測で確定したこと | 採った方針 |
+|:---|:---|:---|:---|
+| Step 2 `beat_for_episode` | `beat_for_episode(10) == (11,18)` **かつ** `beat_for_episode(3) == (1,3)` | `COMMERCIAL_40EP_BEATS` の range は隣接境界を共有しているため、**単一の統一則では両方を満たせない** | 「半開区間 + 境界話は次のビート」を採用。docstring の意図（第10話→(11,18)）を優先し、ep=3 の assertion を (4,10) に書き換え |
+| Step 4 `test_anchor_snap_...` | `target <= total_episodes` | `planted == total` は既存仕様どおり `planted + 1`（= 作品外）を返す（`get_overdue` で可視化） | テスト範囲を `planted < total` に限定し、既存仕様の注釈を追加 |
+| Step 6 `_chain` | 末尾ノードだけ「独立」 | 独立ノードは root なので `order.index(2) < order.index(5)` と衝突 | 鎖と独立ノードを別テストに分離し、連鎖・独立の両方を検証 |
+| Step 8 `create_test_db` | `async with create_test_db() as (session, book_id)` | 実際は `session_factory` を 1 つ yield する | 実際の形に合わせて記述 |
+| Step 9 `test_overdue_gets_boost` | `score * 1.1`（1.0 でクランプ） | `0.7*cos + 0.3*decay` の上限は 1.0 未満のため `>= 1.0` に到達しない | 期限超過は **優先カテゴリ**（下限 1.0、上限 1.5）として実装。降順ソートで必ず先頭に来る、という意図を保持 |
+| Step 11 注記 | 「他N件あり」を先頭に、横に回収推奨 | 省略 0 件でも回収推奨を出す（`test_note_mentions_recommended_episodes` の要件） | 省略サマリは「他N件あり」＋「直近の回収推奨」の 2 段落。省略 0 件なら後者のみ |
+
+### 既存契約テストの改変（1件のみ）
+
+- `tests/contract/test_v53_prompt_contract.py::test_contract_ids_are_excluded_from_background`
+  - `assert note == ""` → 新仕様（回収推奨が出る）を反映。
+  - **契約本体（契約IDが背景に残らない）は変更していない。**
+
+### 総合回帰の実測（2026-09-30）
+
+| コマンド | 結果 |
+|:---|:---|
+| `pytest tests/unit/services/foreshadowing/ -q` | **緑**（新規 6 ファイル / 60 件） |
+| `pytest tests/contract/ -q` | 1 契約更新で緑（ただし T6 由来の失敗 3 件は別件） |
+| `pytest tests/unit/database/ -q` | **緑**（既存 CAS テスト 11 本を含む） |
+| `pytest tests/regression/ -q` | 210 passed / **1 failed**（`test_lint_budget` の W292。以下） |
+| `pytest tests/unit/services/ -q` | 1940 passed / **25 failed**（compression / episode_context / pgvector_store。W5 と無関係の既存 failures） |
+| `ruff check src/services/foreshadowing/{flags,anchors,causal_dag,relevance}.py --select E9,F63,F7,F82` | **0 エラー** |
+| `python -m tests.benchmarks.long_form` | **例外なく完走**（20/50/100 話で scope 整合 100%） |
+| フラグ全 ON での `plan_foreshadowing(1..40)` | **不変条件違反 0 件**（horizon ≥ 1 を維持） |
+
+### 残存 failures（W5 と無関係）
+
+- `tests/regression/test_lint_budget.py::test_whitespace_rules_are_clean`: W292 が 10 件。
+  すべて `src/audit/*`・`src/services/prose/span_patch_applier.py`・`src/services/audit/*` と
+  そのテスト（＝T6 の並行作業 範의）。W5 が追加したファイルは **0 件**。
+- `tests/contract/test_v6_audit_advisory_gate.py` / `test_v6_audit_gate_thresholds.py`: 監査ゲート系（T6 範囲）。
+- `tests/unit/services/` の 25 件: compression / episode_context / pgvector_store / book_score。
+  **単独実行でも同様に失敗する既存 failures**（W6 実施時に同じ 25 件を実測済み）。
 
 ## 5. 期待効果
 

@@ -58,11 +58,19 @@ def assign_phases(chapters: list[dict[str, Any]]) -> list[dict[str, Any]]:
     n = len(chapters)
     if n == 0:
         return []
+    max_num = max((c.get("chapter_number", 0) for c in chapters), default=0)
+    if max_num > n:
+        return [
+            {**ch, "_phase": round((ch.get("chapter_number", i + 1) - 1) / max(max_num - 1, 1), 3)}
+            for i, ch in enumerate(chapters)
+        ]
     return [{**ch, "_phase": round(i / max(n - 1, 1), 3)} for i, ch in enumerate(chapters)]
 
 
 def check_required_beats(
-    assigned: list[dict[str, Any]], structure: dict[str, Any]
+    assigned: list[dict[str, Any]],
+    structure: dict[str, Any],
+    tol: float | None = None,
 ) -> list[dict[str, Any]]:
     """各必須ビートが「そのフェーズ付近に章が存在するか」を判定する。"""
     if not assigned:
@@ -70,7 +78,8 @@ def check_required_beats(
             {"key": b["key"], "label": b["label"], "present": False, "expected_phase": b["phase"]}
             for b in structure["required_beats"]
         ]
-    tol = 0.35
+    if tol is None:
+        tol = structure.get("beat_tol", 0.35)
     results = []
     for beat in structure["required_beats"]:
         present = any(abs(c["_phase"] - beat["phase"]) <= tol for c in assigned)
@@ -135,13 +144,16 @@ def load_pattern_beats(pattern_key: str) -> dict[str, Any]:
     """STORY_SPINE のパターンを検証器用の構造定義に変換する。"""
     from config.story_spine import BEAT_VOCABULARY, PATTERNS
 
-    pattern = PATTERNS.get(pattern_key) or PATTERNS.get("exile_rise")
+    resolved_pattern_key = pattern_key if pattern_key in PATTERNS else "exile_rise"
+    pattern = PATTERNS.get(resolved_pattern_key)
     if not pattern:
         return {
             "name": f"パターン {pattern_key}",
             "required_beats": [],
             "climax_min_phase": 0.66,
             "pattern_key": pattern_key,
+            "resolved_pattern_key": resolved_pattern_key,
+            "beat_tol": 0.10,
         }
 
     required = []
@@ -153,14 +165,18 @@ def load_pattern_beats(pattern_key: str) -> dict[str, Any]:
             {
                 "key": b["key"],
                 "label": vocab.label,
-                "phase": round(sum(vocab.span) / 2, 3),
+                "phase": round(sum(b["span"]) / 2, 3),  # patterns.yaml の span が SSOT
             }
         )
+    climax_beat = next((b for b in pattern.get("beats", []) if b["key"] == "climax"), None)
+    climax_min_phase = climax_beat["span"][0] if climax_beat else 0.66
     return {
         "name": pattern.get("name", pattern_key),
         "required_beats": required,
-        "climax_min_phase": 0.66,
+        "climax_min_phase": climax_min_phase,
         "pattern_key": pattern_key,
+        "resolved_pattern_key": resolved_pattern_key,
+        "beat_tol": 0.10,
     }
 
 
@@ -177,9 +193,11 @@ def check_spine_invariants(spine, eps: int) -> list[dict[str, Any]]:
         )
     if "midpoint_reversal" not in keys:
         problems.append({"key": "midpoint_reversal", "ok": False, "reason": "中点反転が無い"})
-    if keys[-1] not in ("climax", "volume_hook", "coda"):
+    # 結びは climax でも diminishing/coda 系でもよい。必要なのは「締め」が存在すること。
+    last = spine.beats[-1]
+    if last.key != "climax" and last.role != "close":
         problems.append(
-            {"key": "climax", "ok": False, "reason": f"最後が {keys[-1]!r}（決着に結びついていない）"}
+            {"key": "climax", "ok": False, "reason": f"最後が {last.key!r}（締めにならない）"}
         )
 
     covered = {ep for b in spine.beats for ep in range(b.ep_start, b.ep_end + 1)}
@@ -219,8 +237,10 @@ def validate(
     """
     if pattern_key:
         structure = load_pattern_beats(pattern_key)
+        resolved_pattern_key = structure.get("resolved_pattern_key", pattern_key)
     else:
         structure = load_structure(structure_name)
+        resolved_pattern_key = None
 
     assigned = assign_phases(chapters)
     beats = check_required_beats(assigned, structure)
@@ -239,8 +259,20 @@ def validate(
         "is_healthy": (not missing) and climax["ok"] and pacing["ok"],
     }
     if pattern_key:
+        from config.story_spine import resolve_spine
+
+        result["resolved_pattern_key"] = resolved_pattern_key
         result["required_beat_count"] = len(beats)
         result["alignment"] = (
             round((len(beats) - len(missing)) / len(beats), 3) if beats else 0.0
         )
+        try:
+            result["spine"] = resolve_spine(
+                resolved_pattern_key or "exile_rise",
+                "single_volume",
+                "general",
+                len(chapters) or 1,
+            )
+        except Exception:
+            result["spine"] = None
     return result

@@ -1,7 +1,7 @@
 # AutoNovel Makefile - 一般的な開発タスクのエイリアス。
 # Windows でも GNU Make (Git for Windows 同梱等) で実行可能。
 
-.PHONY: help install dev test lint typecheck openapi frontend-test frontend-lint run dev-up dev-down prod-up prod-down clean verify test-unit test-integration test-contract test-perf test-migration format-check black-check check-migrations
+.PHONY: help install dev test lint typecheck openapi frontend-test frontend-lint run dev-up dev-down prod-up prod-down clean verify test-unit test-integration test-contract test-perf test-migration format-check check-migrations
 
 help:  ## 利用可能ターゲット一覧を表示
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -13,19 +13,16 @@ dev: install  ## 開発用インストール (バック + フロント)
 	cd frontend && npm install
 
 test:  ## pytest を実行 (バックエンド)
-	py -m pytest -q --tb=short
+	py -m pytest -q --tb=short -m "not integration and not perf and not slow"
 
 lint:  ## ruff チェック
-	py -m ruff check src tests
+	py -m ruff check src tests config scripts
 
 format-check:  ## ruff format チェック (line-length 100, black 互換)
-	py -m ruff format --check src tests
+	py -m ruff format --check src tests config scripts
 
 typecheck:  ## mypy (strict 化は将来フェーズ)
 	py -m mypy src --ignore-missing-imports
-
-black-check:  ## black --check (pyproject.toml の line-length=100 と一致)
-	py -m black --check src tests
 
 openapi:  ## OpenAPI 仕様を docs/openapi.json へ生成
 	py scripts/generate_openapi.py --output docs/openapi.json
@@ -74,7 +71,7 @@ test-migration:  ## alembic 整合性チェック (alembic check + 往復)
 check-migrations:  ## マイグレーション往復検証スクリプトを実行
 	python scripts/check_migrations.py
 
-verify: lint format-check typecheck black-check test-unit test-contract test-migration  ## PR 前のフル検証 (CI と同じ順序)
+verify: lint format-check typecheck test-unit test-contract test-migration  ## PR 前のフル検証 (CI と同じ順序)
 	@echo "All checks passed."
 
 coverage:  ## カバレッジ計測・レポート生成

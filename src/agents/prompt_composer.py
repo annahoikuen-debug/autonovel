@@ -209,6 +209,7 @@ class PromptComposer:
         book_id: int | None,
         ep_num: int,
         context: dict[str, Any],
+        rows: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
         """未回収伏線（背景ブロック用）を DB から取得する。
 
@@ -218,7 +219,42 @@ class PromptComposer:
         コンテキストに既に `_foreshadowing_source` があればそれを使い、
         無ければセッション（`context["session"]` → `agent.repo.session`）経由で
         取得する。DB が使えない場合は空リスト（従来挙動）にフォールバックする。
+
+        W5 Step 10: フラグ `FORESHADOW_RELEVANCE_INJECTION` が ON のときだけ、
+        シーンとの関連度上位 `FORESHADOW_RELEVANCE_TOP_K` 件に絞る。
+        **既定 OFF なので現挙動は完全に維持される**。契約鉤子には触らない。
         """
+        from src.services.foreshadowing import flags as _fs_flags
+
+        normalized = await self._collect_unresolved(book_id, ep_num, context, rows)
+        if not _fs_flags.is_relevance_injection_enabled():
+            return normalized
+        if not normalized:
+            return normalized
+
+        from src.services.foreshadowing.relevance import score_and_select
+
+        scene_text = f"{context.get('phase', '')} {context.get('scene_summary', '')}"
+        selected = score_and_select(
+            scene_text,
+            normalized,
+            top_k=_fs_flags.get_relevance_top_k(),
+            current_episode=ep_num,
+        )
+        # 何も渡すとプロンプトが壊れるため、最低 1 件は残す
+        return selected or normalized[:1]
+
+    async def _collect_unresolved(
+        self,
+        book_id: int | None,
+        ep_num: int,
+        context: dict[str, Any],
+        rows: list[dict[str, Any]] | None,
+    ) -> list[dict[str, Any]]:
+        """未回収伏線（背景ブロック用）を機械的に正規化して返す。"""
+        if rows is not None:
+            return [dict(r) for r in rows]
+
         provided = context.get("unresolved_foreshadowings")
         if provided is not None:
             return list(provided)

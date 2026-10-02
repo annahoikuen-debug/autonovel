@@ -1,24 +1,37 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from config.project_context import GlobalConfig
-from src.backend.auth import validate_api_key_or_raise
+from src.backend.auth import get_current_user
 from src.backend.database import UnitOfWork
+from src.backend.database.models import User
+from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
 from src.models.api_schemas import RollbackRequest
 
-router = APIRouter(tags=["prompt_versions"])
+router = APIRouter(
+    tags=["prompt_versions"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @router.get("/api/prompt_versions/{book_id}")
-async def get_prompt_versions(book_id: int):
+async def get_prompt_versions(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    await verify_book_ownership(book_id, current_user)
     async with UnitOfWork(AppContainer.db()) as uow:
         versions = await uow.prompt_versions.get_prompt_versions(book_id)
     return versions
 
 
 @router.post("/api/prompt_versions/{book_id}/rollback")
-async def rollback_prompt_version(book_id: int, req: RollbackRequest):
-    await validate_api_key_or_raise(req.api_key)
+async def rollback_prompt_version(
+    book_id: int,
+    req: RollbackRequest,
+    current_user: User = Depends(get_current_user),
+):
+    await verify_book_ownership(book_id, current_user)
     from src.backend.prompt_version_manager import PromptVersionManager
 
     _ = PromptVersionManager(AppContainer.db())

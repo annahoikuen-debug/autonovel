@@ -11,6 +11,7 @@ export interface ManuscriptCountResult {
 
 export interface ManuscriptTargetPreset {
   id: string;
+  lengthKey?: string;     // STORY_SPINE の長さ階層 key（'short' / 'web_volume' など）
   label: string;          // "新人賞標準 (400字×30枚)"
   targetPages: number;    // 30
   targetChars: number;    // 12000 (400*30)

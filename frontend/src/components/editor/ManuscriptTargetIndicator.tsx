@@ -9,6 +9,7 @@ export interface ManuscriptTargetIndicatorProps {
   onPresetChange: (presetId: string) => void;
   customTargetChars?: number;
   onCustomTargetChange?: (chars: number) => void;
+  presets?: ManuscriptTargetPreset[];
 }
 
 export const ManuscriptTargetIndicator: React.FC<ManuscriptTargetIndicatorProps> = ({
@@ -17,9 +18,11 @@ export const ManuscriptTargetIndicator: React.FC<ManuscriptTargetIndicatorProps>
   onPresetChange,
   customTargetChars = 10000,
   onCustomTargetChange,
+  presets,
 }) => {
+  const availablePresets = presets && presets.length > 0 ? presets : MANUSCRIPT_PRESETS;
   const currentPreset =
-    MANUSCRIPT_PRESETS.find((p) => p.id === selectedPresetId) || MANUSCRIPT_PRESETS[0];
+    availablePresets.find((p) => p.id === selectedPresetId) || availablePresets[0];
 
   const activePreset: ManuscriptTargetPreset =
     currentPreset.id === 'custom'
@@ -33,10 +36,18 @@ export const ManuscriptTargetIndicator: React.FC<ManuscriptTargetIndicatorProps>
   const targetState =
     activePreset.targetChars > 0 ? checkTarget(count, activePreset) : null;
 
+  const isWarningState = Boolean(
+    targetState &&
+      (targetState.isWarning ||
+        (!targetState.isOver &&
+          !targetState.isMaxOver &&
+          targetState.ratio >= activePreset.warningThreshold))
+  );
+
   const getProgressBarColor = () => {
     if (!targetState) return 'var(--accent-primary, #6366f1)';
     if (targetState.isOver || targetState.isMaxOver) return 'var(--accent-danger, #ef4444)';
-    if (targetState.isWarning) return 'var(--accent-yellow, #eab308)';
+    if (isWarningState) return 'var(--accent-yellow, #eab308)';
     return 'var(--accent-green, #10b981)';
   };
 
@@ -72,7 +83,7 @@ export const ManuscriptTargetIndicator: React.FC<ManuscriptTargetIndicatorProps>
           }}
           data-testid="preset-select"
         >
-          {MANUSCRIPT_PRESETS.map((p) => (
+          {availablePresets.map((p) => (
             <option key={p.id} value={p.id}>
               {p.label}
             </option>
@@ -148,7 +159,7 @@ export const ManuscriptTargetIndicator: React.FC<ManuscriptTargetIndicatorProps>
               <span>上限 {activePreset.maxPages}枚 超過 (現在 {count.pages}枚)</span>
             ) : targetState.isOver ? (
               <span>目標超過 +{(count.body - activePreset.targetChars).toLocaleString()} 字</span>
-            ) : targetState.isWarning ? (
+            ) : isWarningState ? (
               <span>
                 {count.body.toLocaleString()} / {activePreset.targetChars.toLocaleString()} 字 ({percent}%)
                 (あと {targetState.remainingChars.toLocaleString()} 字)

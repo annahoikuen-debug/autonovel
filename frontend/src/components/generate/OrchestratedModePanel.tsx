@@ -7,14 +7,6 @@ interface OrchestratedModePanelProps {
   setCharacter: React.Dispatch<React.SetStateAction<Character>>;
   llmConfig: any;
   setLlmConfig: React.Dispatch<React.SetStateAction<any>>;
-  selectedStyleId: string;
-  customStyleProfile: any;
-  showStyleModal: boolean;
-  setShowStyleModal: React.Dispatch<React.SetStateAction<boolean>>;
-  showApiSettings: boolean;
-  setShowApiSettings: React.Dispatch<React.SetStateAction<boolean>>;
-  showApiKey: boolean;
-  setShowApiKey: React.Dispatch<React.SetStateAction<boolean>>;
   yonkomaEnabled: boolean;
   setYonkomaEnabled: React.Dispatch<React.SetStateAction<boolean>>;
   generationState: GenerationState;
@@ -49,14 +41,6 @@ export default function OrchestratedModePanel(props: OrchestratedModePanelProps)
     setCharacter,
     llmConfig,
     setLlmConfig,
-    selectedStyleId,
-    customStyleProfile,
-    showStyleModal,
-    setShowStyleModal,
-    showApiSettings,
-    setShowApiSettings,
-    showApiKey,
-    setShowApiKey,
     yonkomaEnabled,
     setYonkomaEnabled,
     generationState,

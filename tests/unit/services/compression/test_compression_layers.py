@@ -211,7 +211,13 @@ def test_tfidf_extractor_legacy_helpers():
     scores = ex._compute_tfidf_scores(nouns, ["文1", "文2"], 3, 0.0)
     assert isinstance(scores, list)
     assert ex._compute_frequency_scores([], TEXT, 3, 0.0) == []
-    assert ex._compute_frequency_scores(["存在"], "存在", 3, 0.0) == []
+    # 実装は count/total を min_score でフィルタする仕様。min_score=0.0 なら
+    # テキストに存在するトークンは必ず残る（空にはならない）。
+    assert ex._compute_frequency_scores(["存在"], "存在", 3, 0.0) == [("存在", 1.0)]
+    # min_score を相対スコアより大きな値にすれば空になる。
+    assert ex._compute_frequency_scores(["存在"], "存在", 3, 1.1) == []
+    # テキストに存在しないトークンはカウントされない。
+    assert ex._compute_frequency_scores(["存在しない"], "存在", 3, 0.0) == []
     freq = ex._compute_frequency_scores(["魔導剣", "魔王"], TEXT, 3, 0.0)
     assert freq
 
@@ -292,14 +298,31 @@ def test_layer2_relation_weights_used():
         seed_names=["アルト"],
         keyword_scores={},
     )
-    assert out.edges[0]["relevance_score"] == round(0.5 * RELATION_WEIGHTS["敵対"] * 1.3, 3)
+    # score = hop_decay * relation_weight * seed_boost。
+    # seed_boost はエッジの source/target 名にシード名が出現したときだけ 1.3 になるが、
+    # このエッジの端点は "n1"/"n2" でシード名 "アルト" を含まないため seed_boost=1.0。
+    assert out.edges[0]["relevance_score"] == round(0.5 * RELATION_WEIGHTS["敵対"], 3)
+
+    # 端点名がシード名と一致する場合は seed_boost=1.3 が掛かる。
+    boosted = ex.prune_subgraph(
+        nodes=[{"id": "n1", "name": "アルト"}],
+        edges=[{"source": "n1", "target": "n2", "type": "敵対", "hop": 2}],
+        seed_names=["n1"],
+        keyword_scores={},
+    )
+    assert boosted.edges[0]["relevance_score"] == round(0.5 * RELATION_WEIGHTS["敵対"] * 1.3, 3)
 
 
 def test_layer2_age_early_returns():
     ex = Layer2SubgraphExtractor()
     assert ex.extract_from_age(MagicMock(), "g", []).stats["source"] == "age_empty"
     assert ex.extract_from_age(MagicMock(), "", ["a"]).stats["source"] == "age_empty"
-    assert ex.extract_from_age(MagicMock(), "g", ["a"], age_client=None).stats["source"] == "age_empty"
+    # v5.3 以降 age_client はメソッド引数ではなくコンストラクタ注入（DI）。
+    # 未注入なら keyword_scores を渡しても age_empty で早期リターンする。
+    without_client = Layer2SubgraphExtractor(age_client=None)
+    assert without_client.extract_from_age(
+        MagicMock(), "g", ["a"], keyword_scores={"a": 1.0}
+    ).stats["source"] == "age_empty"
     with_client = Layer2SubgraphExtractor(age_client=MagicMock())
     assert with_client.extract_from_age(MagicMock(), "g", [""]).seed_entity_names == [""]
 
@@ -516,6 +539,7 @@ def test_trim_tight_budget_trims_concepts():
 
 
 def test_trim_all_pinned_cannot_reduce():
+    """Step 56: 残りが全てピン留めなら予算超過分を削れず、そのまま保持する。"""
     t = Layer4SceneTrimmer()
     abstraction = AbstractionLayerOutput(
         abstract_concepts=[],
@@ -523,8 +547,15 @@ def test_trim_all_pinned_cannot_reduce():
             "主要キャラ": [{"entity": "E", "fact": "F" * 200, "dual_name": "E"}],
         },
     )
-    out = t.trim(abstraction, max_tokens=1, protected_context=ProtectedContext(active_characters=["E"]))
+    protected = ProtectedContext(active_characters=["E"])
+    # 事実自体のトークン数(300)で採用され、マークダウン整形(324)だけが予算を超える。
+    # 削除候補の非ピン留め事実が無いので break し、ピン留め事実は保持される。
+    out = t.trim(abstraction, max_tokens=300, protected_context=protected)
     assert out.pinned_count == 1
+    assert out.token_count > 300
+    # なお初期採用の予算ゲートはピン留めでも効く（予算が事実1件にも満たない場合は採用されない）。
+    tiny = t.trim(abstraction, max_tokens=1, protected_context=protected)
+    assert tiny.pinned_count == 0
 
 
 def test_trim_empty_facts():

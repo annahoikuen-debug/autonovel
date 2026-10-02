@@ -293,7 +293,6 @@ async def list_chapter_chunks(
     session: AsyncSession = Depends(database.get_async_db),
 ) -> list[dict[str, Any]]:
     """保存されているベクトルチャンク一覧を取得する."""
-    from sqlalchemy import select
     query = select(ChapterChunk)
     if chapter_id is not None:
         query = query.where(ChapterChunk.chapter_id == chapter_id)

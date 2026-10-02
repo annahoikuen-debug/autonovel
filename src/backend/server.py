@@ -34,7 +34,11 @@ from src.backend.routers import (
     episodes,
     export,
     graph,
-    health,
+    # `health` は下の `@app.get("/health") async def health()` に再束縛されるため、
+    # モジュールとしては別名で持つ（mypy no-redef と、以降のコードが
+    # `health.router` を参照して壊れる事故を防ぐ）。
+    # 関数名は OpenAPI の operationId に使われるので rename しない。
+    health as health_router,
     hooks,
     illustrations,
     issues,
@@ -63,6 +67,7 @@ from src.backend.routers import (
     platform_export,
     stream_writing,
     subtext,
+    orchestrated,
 )
 
 logger = logging.getLogger(__name__)
@@ -102,7 +107,26 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         logger.warning("IMAGE_PROVIDER is 'sd_webui' but SD_WEBUI_URL is not configured.")
     elif settings.IMAGE_PROVIDER == "comfyui" and not settings.COMFYUI_URL:
         logger.warning("IMAGE_PROVIDER is 'comfyui' but COMFYUI_URL is not configured.")
-    yield
+
+    # PLAN_W6 Step 7: shutdown 枝。プロセス終了時にバックグラウンドタスクが
+    # 中断されると RAG 検索中の DB 接続がリークするため、明示的に取り消す。
+    try:
+        yield
+    finally:
+        try:
+            from src.services.semantic_cache import cancel_all_prefetch
+
+            cancelled = await cancel_all_prefetch()
+            logger.info("shutdown: cancelled %d prefetch task(s)", cancelled)
+        except Exception as e:
+            logger.warning("Failed to cancel prefetch tasks during shutdown: %s", e)
+        try:
+            from src.core.executor_manager import executor_manager
+
+            executor_manager.shutdown()
+        except Exception as e:
+            logger.warning("Failed to shutdown executor manager during shutdown: %s", e)
+        logger.info("shutdown: background tasks cancelled")
 
 
 app = FastAPI(title=f"{settings.APP_NAME} Backend", version=settings.APP_VERSION, lifespan=lifespan)
@@ -181,12 +205,13 @@ app.include_router(auth.router)
 app.include_router(billing.router)
 app.include_router(billing_webhook.router)
 app.include_router(trace.router)
-app.include_router(health.router)
+app.include_router(health_router.router)
 app.include_router(subtext.router)
 app.include_router(annotations.router)
 app.include_router(hooks.router)
 app.include_router(prompt_compare.router)
 app.include_router(structure.router)
+app.include_router(orchestrated.router)
 
 
 @app.get("/health")

@@ -1,9 +1,13 @@
-from fastapi import APIRouter, Depends
+import logging
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 
 from src.backend.auth import get_current_user, require_valid_api_key
-from src.backend.database.models import User
+from src.backend.database.models import Book, User
 from src.backend.database.uow import UnitOfWork
 from src.backend.security.owner_guard import verify_book_ownership
+from src.backend.security.branch_guard import verify_branch_belongs_to_book
 from src.backend.task_helpers import create_task as _create_task
 from src.core.container import AppContainer
 from src.core.observability import TraceContext
@@ -14,11 +18,137 @@ from src.models.api_schemas import (
     RetryFailedRequest,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(
     prefix="/api/episodes",
     tags=["episodes"],
     dependencies=[Depends(get_current_user)],
 )
+
+
+class ChapterUpsertRequest(BaseModel):
+    """1 話を保存/更新するリクエスト。
+
+    ``ep_num`` はパスで受け取るため、通常は body に入れない。
+    """
+
+    title: str = Field(default="", max_length=200)
+    content: str = Field(default="", max_length=2_000_000)
+    summary: str = Field(default="", max_length=4000)
+    branch_id: int = Field(default=1, ge=1)
+
+
+class ChapterUpsertResponse(BaseModel):
+    book_id: int
+    branch_id: int
+    ep_num: int
+    saved: bool
+    created: bool = False
+
+
+class ChapterDeleteResponse(BaseModel):
+    book_id: int
+    branch_id: int
+    ep_num: int
+    deleted: bool
+
+
+@router.put("/chapters/{book_id}/{ep_num}", response_model=ChapterUpsertResponse)
+async def upsert_chapter(
+    book_id: int,
+    ep_num: int,
+    payload: ChapterUpsertRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """1 話を Upsert する（無ければ作成、あれば更新）。
+
+    Studio の章操作（追加/編集/並び替え）と Wizard の執筆保存の両方が
+    ここを使うことで、「チャ保存」の API を増やさずに済むため。
+
+    - IDOR 防止として所有権を検証する
+    - ``(book_id, branch_id, ep_num)`` の UNIQUE 制約に従い、既存行があれば更新する
+    """
+    if ep_num < 1:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="ep_num は 1 以上にしてください",
+        )
+
+    async with UnitOfWork(AppContainer.db()) as uow:
+        await verify_book_ownership(book_id, current_user, uow)
+        await _verify_branch_belongs_to_book(uow, book_id, payload.branch_id)
+
+        # 生成済みメタデータ（killer_phrase / ai_insight / world_state /
+        # trinity_review_log / created_at）は渡さない。
+        # 渡すと upsert が既存値を上書きして、消してしまうため。
+        updated = await uow.chapters.create_chapter(
+            book_id=book_id,
+            ep_num=ep_num,
+            title=payload.title or f"第{ep_num}話",
+            content=payload.content,
+            summary=payload.summary,
+            branch_id=payload.branch_id,
+        )
+
+    return {
+        "book_id": book_id,
+        "branch_id": payload.branch_id,
+        "ep_num": ep_num,
+        "saved": True,
+        "created": not updated,
+    }
+
+
+@router.delete("/chapters/{book_id}/{ep_num}", response_model=ChapterDeleteResponse)
+async def delete_chapter(
+    book_id: int,
+    ep_num: int,
+    branch_id: int = 1,
+    current_user: User = Depends(get_current_user),
+):
+    """1 話を削除する（Studio の章削除用）。"""
+    if ep_num < 1:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="ep_num は 1 以上にしてください",
+        )
+
+    async with UnitOfWork(AppContainer.db()) as uow:
+        await verify_book_ownership(book_id, current_user, uow)
+        await verify_branch_belongs_to_book(uow, book_id, branch_id)
+        deleted = await uow.chapters.delete_chapter(book_id, ep_num, branch_id=branch_id)
+
+    if deleted == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="指定された話が見つかりません",
+        )
+
+    return {"book_id": book_id, "branch_id": branch_id, "ep_num": ep_num, "deleted": True}
+
+
+async def _cancel_prefetch_for_book(book_id: int | None) -> int:
+    """書籍単位のプリフェッチをすべて取り消す（PLAN_W6 Step 10）。
+
+    リトライは「已完成分」を破棄して書き直すため，その之前に出ていた投機プリフェッチは
+    すべて無駄になる。レジストリの実キーは `"{book_id}_{ep}"` なので、
+    `cancel_prefix` のスコープ一致でまとめて殺す。
+    プリフェッチ取り消しが失敗しても API は落とさない（ログのみ）。
+    """
+    if book_id is None:
+        return 0
+    try:
+        from src.services.rag_prefetch_service import RagPrefetchService
+
+        svc = RagPrefetchService()
+        cancelled = await svc._registry.cancel_prefix(f"{book_id}")
+        if cancelled:
+            logger.info("[W6] cancelled %d prefetch task(s) for book %s", cancelled, book_id)
+        return cancelled
+    except Exception as e:
+        logger.warning("[W6] failed to cancel prefetch for book %s: %s", book_id, e)
+        return 0
 
 
 @router.get("/chapters/{book_id}")
@@ -128,6 +258,10 @@ async def retry_failed_episodes(
     if req.api_key:
         require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
+
+    # PLAN_W6 Step 10: リトライ前に、進行中の投機プリフェッチをすべて取り消す。
+    await _cancel_prefetch_for_book(req.book_id)
+
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("retry_failed")

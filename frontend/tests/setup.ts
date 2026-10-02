@@ -1,4 +1,25 @@
 import '@testing-library/jest-dom';
+import { cleanup } from '@testing-library/react';
+import { afterEach, beforeEach } from 'vitest';
+
+/**
+ * テスト間の DOM 累積を防ぐ。
+ *
+ * RTL は `globals: true` のとき自動クリーンアップを仕込むが、このプロジェクトは
+ * テストファイルが `render` を直接 import して使う形になっており、
+ * 自動クリーンアップが効かないケースで「要素が複数見つかる」失敗起きていた。
+ * ここで明示的に cleanup して、テスト間の区切りを確実にする。
+ */
+afterEach(() => {
+  cleanup();
+  // テスト中に書き換えたグローバルを元へ戻す（他ファイルへの汚染防止）
+  document.body.style.overflow = '';
+  document.body.innerHTML = '';
+});
+
+beforeEach(() => {
+  window.localStorage.clear();
+});
 
 class MockWebSocket extends EventTarget {
   url: string;

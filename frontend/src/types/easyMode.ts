@@ -24,6 +24,12 @@ export interface EasyModeInput {
     character_params: CharacterParams | Record<string, unknown>;
     content_length_limit: number;
     target_episodes?: number;
+    /**
+     * 文体プリセットの指定。
+     *
+     * 画面（Easy Mode の「文体の雰囲気」選択）で選んだ値を生成処理まで届けるために使う。
+     * API 側は `style_override` として受け取る。
+     */
     style_override?: Record<string, unknown>;
     llm_config?: LLMConfigOverride;
     book_id?: number;

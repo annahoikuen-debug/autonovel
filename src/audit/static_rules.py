@@ -8,6 +8,11 @@ import re
 from typing import List, Tuple, Optional
 from dataclasses import dataclass
 
+# 深刻度ラベル（W4 Step 1）。人手判断が必要なものと自動修正できるものを区別する。
+SEVERITY_MINOR = "minor"      # ルール置換で即時解決できる
+SEVERITY_MAJOR = "major"      # 局所パッチ / シーン再生成の判断が必要
+SEVERITY_CRITICAL = "critical"  # 自動で触らず人手へ委ねる
+
 
 @dataclass
 class Issue:
@@ -16,6 +21,8 @@ class Issue:
     message: str  # Human-readable description
     location: Optional[Tuple[int, int]]  # (start_index, end_index) or None if location unknown
     suggestion: Optional[str] = None  # Optional suggestion for fixing the issue
+    # 後方互換のため最終フィールド・既定値付きで追加する（位置引数3つ生成を維持）
+    severity: str = SEVERITY_MINOR
 
 
 class StaticRuleAuditor:
@@ -55,7 +62,8 @@ class StaticRuleAuditor:
                 type="length_exceeded",
                 message=f"文字数が上限を超えています（{len(text)}文字 > {self.default_max_chapter_chars}文字）",
                 location=(0, len(text)),
-                suggestion=f"文字数を{self.default_max_chapter_chars}文字以内に収めてください"
+                suggestion=f"文字数を{self.default_max_chapter_chars}文字以内に収めてください",
+                severity=SEVERITY_MAJOR
             ))
 
         # 2. 章タイトルフォーマットチェック
@@ -65,7 +73,8 @@ class StaticRuleAuditor:
                 type="title_length_exceeded",
                 message=f"章タイトルが長すぎます（{len(lines[0])}文字 > {self.default_max_title_chars}文字）",
                 location=(0, len(lines[0])),
-                suggestion=f"章タイトルを{self.default_max_title_chars}文字以内に収めてください"
+                suggestion=f"章タイトルを{self.default_max_title_chars}文字以内に収めてください",
+                severity=SEVERITY_MINOR
             ))
 
         # 3. 段落数チェック
@@ -75,7 +84,8 @@ class StaticRuleAuditor:
                 type="paragraph_count_insufficient",
                 message=f"段落数が不足しています（{len(paragraphs)}段落 < {self.default_min_paragraphs}段落）",
                 location=None,
-                suggestion=f"少なくとも{self.default_min_paragraphs}段落を含めてください"
+                suggestion=f"少なくとも{self.default_min_paragraphs}段落を含めてください",
+                severity=SEVERITY_CRITICAL
             ))
 
         # 4. 禁則チェック (基本的な実装)
@@ -85,9 +95,10 @@ class StaticRuleAuditor:
                 issues.append(Issue(
                 type="forbidden_pattern",
                 message=f"禁則パターンが検出されました: {match.group()}",
-                location=(match.start(), match.end()),
-                suggestion="禁則パターンを修正してください"
-            ))
+location=(match.start(), match.end()),
+                    suggestion="禁則パターンを修正してください",
+                    severity=SEVERITY_MAJOR
+                ))
 
         # 5. 行頭禁則チェック (行頭に閉じ括弧や句読点がないか)
         line_start_forbidden = frozenset('、。・：；？！」「』】〕〉》')
@@ -98,7 +109,8 @@ class StaticRuleAuditor:
                     type="line_start_forbidden_punct",
                     message=f"行頭に禁則文字があります: '{line[0]}'",
                     location=(current_offset, current_offset + 1),
-                    suggestion="行頭の禁則文字を削除または文頭に移動してください"
+                    suggestion="行頭の禁則文字を削除または文頭に移動してください",
+                    severity=SEVERITY_MINOR
                 ))
             current_offset += len(line) + 1  # +1 for newline
 
