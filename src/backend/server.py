@@ -34,7 +34,11 @@ from src.backend.routers import (
     episodes,
     export,
     graph,
-    health,
+    # `health` は下の `@app.get("/health") async def health()` に再束縛されるため、
+    # モジュールとしては別名で持つ（mypy no-redef と、以降のコードが
+    # `health.router` を参照して壊れる事故を防ぐ）。
+    # 関数名は OpenAPI の operationId に使われるので rename しない。
+    health as health_router,
     hooks,
     illustrations,
     issues,
@@ -201,7 +205,7 @@ app.include_router(auth.router)
 app.include_router(billing.router)
 app.include_router(billing_webhook.router)
 app.include_router(trace.router)
-app.include_router(health.router)
+app.include_router(health_router.router)
 app.include_router(subtext.router)
 app.include_router(annotations.router)
 app.include_router(hooks.router)
