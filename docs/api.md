@@ -203,12 +203,21 @@ ZIP に含まれるファイル:
 `docs/openapi.json` としてエクスポート可能。
 
 ```powershell
+# 仕様書は APP_ENV に依存する（/api/easy-mode/* は development のみのマウント）。
+# 追跡する仕様書はテスト/CI と同じプロファイルで生成すること。
+$env:APP_ENV = "testing"
 py scripts/generate_openapi.py
 ```
 
-CI では生成結果とリポジトリ上の `docs/openapi.json` との差分を検知し、
-スキーマの drift を防止する。新しいエンドポイント・スキーマ変更時は
-必ず再生成してコミットすること。
+drift 検出は `tests/regression/test_docs_router_count_matches_reality.py` が
+CI の `test` ジョブ（`pytest tests/regression/`）で行う。app の route 集合と
+`docs/openapi.json` の path 集合の不一致を検出する。
+（WebSocket ルートと `include_in_schema=False` のエイリアスは仕様書に出ないため対象外。）
+
+> 2026-10-02 実測: 本ファイルは「CI が差分を検知する」と記載していたが、
+> 実際の CI にそのチェックは存在せず、`docs/openapi.json` は
+> **version 5.0.3 / 213 paths** のまま 6.0.0 / 240 paths より古い状態だった。
+> 上記のテスト追加と再生成で、記述と実態を一致させた。
 
 ---
 

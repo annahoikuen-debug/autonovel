@@ -81,7 +81,6 @@ def _detect(rel: str, source: str) -> list[str]:
     tree = ast.parse(source)
     offenders: list[str] = []
     for node in _top_level_nodes(tree):
-        segment = ast.unparse(node)
         if not isinstance(node, (ast.Assign, ast.Expr, ast.AnnAssign)):
             continue
         for call in ast.walk(node):
@@ -97,10 +96,6 @@ def test_no_module_starts_threads_at_import():
     offenders: list[str] = []
     for rel in _files():
         src = open(rel, encoding="utf-8").read()
-        try:
-            tree = ast.parse(src)
-        except SyntaxError:
-            continue
         offenders.extend(_detect(rel, src))
     assert not offenders, (
         f"import 時にスレッドを起動するモジュールがある: {offenders}\n"

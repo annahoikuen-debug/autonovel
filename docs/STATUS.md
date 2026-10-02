@@ -55,7 +55,7 @@
 2. **文体の章への適用は存在しない。** `Chapter` テーブルにスタイル列が無い（`src/backend/database/models.py:244`）。文体指定で章を書き直す API も無い。
 3. **なろう公開は selenium を要求するが、依存宣言が無い。** `requirements.txt` / `pyproject.toml` に `selenium`・`webdriver-manager` が無く、`src/services/publishers/narou.py` の import が失敗する環境では动车しない。
 4. **GraphRAG のベクトルストアは PostgreSQL 無しで chroma / in-memory に落ちる。** `AUTONOVEL_RAG_MODE`（既定 `auto`）で `PgVector > Chroma > InMemory` の順（`src/services/vector_store/__init__.py:41-59`）。グラフ書き込み系は未実装スタブ。
-5. **フロントエンドのカバレッジゲートが失敗する。** `frontend/vite.config.*` の thresholds は lines/branches/functions/statements すべて 50% 必須だが、functions の実測は 40%。`npm run test:ci` は失敗する。
+5. **フロントエンドの `npm run test:ci` は失敗する（2026-10-02 実測）。** 原因はカバレッジ閾値ではなく **6 ファイル / 9 テストの失敗**（`tests/unit/uiux/wizardStep3Editing.test.tsx` ほか。vitest はテスト失敗時に coverage レポートを書き出さないため、現在の主ゲートは閾値ではない）。`frontend/vite.config.ts` の thresholds は lines/branches/functions/statements すべて 50% のままである（D07: 閾値は本次計画で上げない。`src/types/**` の除外は「正直な表示」のため維持する）。カバレッジの実測値は 9 件のテスト失敗が直るまで取得できない。
 6. **`src/services/pdca_cycle.py` / `src/generation/pdca_controller.py` / `src/services/pdca_directive.py` は未配線。** 検索しても他のモジュールから import されない（デッドコード）。
 7. **なろう / カクヨム / Kindle の実際の投稿疎通は未確認**（資格情報・外部 API 承認が要るため）。
 
@@ -75,9 +75,9 @@
 | `py -m pytest tests/contract -v` | 契約テスト（`make test-contract`） |
 | `py -m pytest tests/integration -v` | 統合テスト。PG + Redis 必須（`make test-integration`） |
 | `py -m pytest tests/perf -v --benchmark-only` | パフォーマンス（`make test-perf`） |
-| `make verify` | lint → format-check → typecheck → black-check → test-unit → test-contract → test-migration |
+| `make verify` | lint → format-check → typecheck → test-unit → test-contract → test-migration |
 
-CI (`.github/workflows/ci.yml`) は `pytest -q -m "not integration and not slow" --timeout=120` を実行する。
+CI (`.github/workflows/ci.yml`) は `pytest -q -m "not integration and not perf and not slow" --timeout=120` を実行する。
 `--timeout` は pytest-timeout 導入済み CI 専用の引数で、ローカル既定には入っていない（`pytest.ini` のコメント参照）。
 
 ### フロントエンド（vitest）
@@ -85,7 +85,7 @@ CI (`.github/workflows/ci.yml`) は `pytest -q -m "not integration and not slow"
 | コマンド | 内容 |
 |:---|:---|
 | `npm test` | watch モード（`frontend/package.json`） |
-| `npm run test:ci` | `vitest run --coverage`。**カバレッジ閾値で失敗する**（functions 40% < 50%） |
+| `npm run test:ci` | `vitest run --coverage`。**2026-10-02 実測で 6 ファイル / 9 テストが失敗する**ため coverage レポートが生成されず、閾値ゲートには到達しない |
 | `make frontend-test` / `frontend-coverage` | Makefile ラッパー |
 
 ### 既知の状態（2026-09-28 時点・実行して確認したわけではない）
@@ -93,6 +93,17 @@ CI (`.github/workflows/ci.yml`) は `pytest -q -m "not integration and not slow"
 - 直近のコミットで **契約テストの 401 事故、本番設定バリデーションのテスト汚染、執筆グラフの経路分岐テストの Early Exit 不一致、テストダブルと実装の乖離 4 件、DB 障害時の素の 500** が修正済み。
 - 上記の修正が**全て緑になったことは本ドキュメント作成時点では未確認**（テストを実行していない）。
 - バックエンドのカバレッジ 40% ゲートの通過可否も **未確認**。
+
+### 2026-10-02 再実測（PLAN_H1_SECURITY_HYGIENE_36STEPS の受入時）
+
+| 対象 | 実測 |
+|:---|:---|
+| `py -m pytest tests/regression` | 4 failed / 263 passed（内訳は §8 参照。4 件は本計画開始前から赤） |
+| `py -m pytest tests/security` | 緑 |
+| `npm run test:ci` | 6 files / 9 tests 失敗（`functions` 閾値に到達しない） |
+| `npm run typecheck` | 緑（エラー 0） |
+| `/health` | 200 |
+| ruff | ratchet 化済み（`scripts/ci_lint_ratchet.py`）。ベースライン 0 化は別計画（N1） |
 
 ---
 

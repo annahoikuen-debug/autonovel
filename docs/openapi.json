@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AutoNovel Backend",
-    "version": "5.0.3"
+    "version": "6.0.0"
   },
   "paths": {
     "/easy_mode/generate": {
@@ -161,7 +161,20 @@
             "required": true,
             "schema": {
               "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[a-zA-Z0-9_\\-]+$",
               "title": "Task Id"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
             }
           }
         ],
@@ -201,15 +214,27 @@
         "summary": "Gacha Endpoint",
         "description": "3案ガチャ企画生成 [Gacha Pitch]",
         "operationId": "gacha_endpoint_easy_mode_gacha_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/GachaRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -243,15 +268,27 @@
         "summary": "Digest Endpoint",
         "description": "ダイジェスト生成 [Quick Digest]",
         "operationId": "digest_endpoint_easy_mode_digest_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DigestRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -285,15 +322,27 @@
         "summary": "Promote Endpoint",
         "description": "上級者モード昇格 [Producer Handoff]",
         "operationId": "promote_endpoint_easy_mode_promote_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PromotionRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -327,15 +376,27 @@
         "summary": "Reverse Generate Endpoint",
         "description": "逆算プロットビルダー用同期生成エンドポイント [Reverse Plot Builder]",
         "operationId": "reverse_generate_endpoint_easy_mode_reverse_generate_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReversePlotGeneratePayload"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -343,8 +404,8 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
+                  "additionalProperties": true,
                   "title": "Response Reverse Generate Endpoint Easy Mode Reverse Generate Post"
                 }
               }
@@ -415,14 +476,14 @@
         }
       }
     },
-    "/api/easy-mode/generate": {
+    "/api/wizard/generate": {
       "post": {
         "tags": [
-          "easy-mode"
+          "wizard"
         ],
         "summary": "Generate Content",
         "description": "章単位の対話型自動生成 [Interactive Writer]",
-        "operationId": "generate_content_api_easy_mode_generate_post",
+        "operationId": "generate_content_api_wizard_generate_post",
         "parameters": [
           {
             "name": "Authorization",
@@ -469,14 +530,14 @@
         }
       }
     },
-    "/api/easy-mode/export/{book_id}": {
+    "/api/wizard/export/{book_id}": {
       "get": {
         "tags": [
-          "easy-mode"
+          "wizard"
         ],
         "summary": "Export Easy Mode Package",
         "description": "かんたんモードで作成された作品の納品パッケージ (ZIP) をエクスポートする。\n\nbook_id に対応する作品が DB に存在しなくてもフォールバックデータで\nZIP を生成して返却する仕様 (TC-12 参照)。",
-        "operationId": "export_easy_mode_package_api_easy_mode_export__book_id__get",
+        "operationId": "export_easy_mode_package_api_wizard_export__book_id__get",
         "parameters": [
           {
             "name": "book_id",
@@ -511,14 +572,14 @@
         }
       }
     },
-    "/api/easy-mode/status/{task_id}": {
+    "/api/wizard/status/{task_id}": {
       "get": {
         "tags": [
-          "easy-mode"
+          "wizard"
         ],
         "summary": "Get Task Status",
         "description": "Return the status of a generation task.\n\nReturns \"pending\" if not yet completed, \"failed\" if an error occurred,\notherwise \"completed\" with the result.",
-        "operationId": "get_task_status_api_easy_mode_status__task_id__get",
+        "operationId": "get_task_status_api_wizard_status__task_id__get",
         "parameters": [
           {
             "name": "task_id",
@@ -538,7 +599,7 @@
                 "schema": {
                   "type": "object",
                   "additionalProperties": true,
-                  "title": "Response Get Task Status Api Easy Mode Status  Task Id  Get"
+                  "title": "Response Get Task Status Api Wizard Status  Task Id  Get"
                 }
               }
             }
@@ -556,14 +617,14 @@
         }
       }
     },
-    "/api/easy-mode/task/{task_id}": {
+    "/api/wizard/task/{task_id}": {
       "delete": {
         "tags": [
-          "easy-mode"
+          "wizard"
         ],
         "summary": "Cancel Task",
         "description": "タスクをキャンセルまたは削除する。",
-        "operationId": "cancel_task_api_easy_mode_task__task_id__delete",
+        "operationId": "cancel_task_api_wizard_task__task_id__delete",
         "parameters": [
           {
             "name": "task_id",
@@ -571,7 +632,20 @@
             "required": true,
             "schema": {
               "type": "string",
+              "minLength": 1,
+              "maxLength": 128,
+              "pattern": "^[a-zA-Z0-9_\\-]+$",
               "title": "Task Id"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
             }
           }
         ],
@@ -585,7 +659,7 @@
                   "additionalProperties": {
                     "type": "string"
                   },
-                  "title": "Response Cancel Task Api Easy Mode Task  Task Id  Delete"
+                  "title": "Response Cancel Task Api Wizard Task  Task Id  Delete"
                 }
               }
             }
@@ -603,23 +677,35 @@
         }
       }
     },
-    "/api/easy-mode/gacha": {
+    "/api/wizard/gacha": {
       "post": {
         "tags": [
-          "easy-mode"
+          "wizard"
         ],
         "summary": "Gacha Endpoint",
         "description": "3案ガチャ企画生成 [Gacha Pitch]",
-        "operationId": "gacha_endpoint_api_easy_mode_gacha_post",
+        "operationId": "gacha_endpoint_api_wizard_gacha_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/GachaRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -645,23 +731,35 @@
         }
       }
     },
-    "/api/easy-mode/digest": {
+    "/api/wizard/digest": {
       "post": {
         "tags": [
-          "easy-mode"
+          "wizard"
         ],
         "summary": "Digest Endpoint",
         "description": "ダイジェスト生成 [Quick Digest]",
-        "operationId": "digest_endpoint_api_easy_mode_digest_post",
+        "operationId": "digest_endpoint_api_wizard_digest_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/DigestRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -687,23 +785,35 @@
         }
       }
     },
-    "/api/easy-mode/promote": {
+    "/api/wizard/promote": {
       "post": {
         "tags": [
-          "easy-mode"
+          "wizard"
         ],
         "summary": "Promote Endpoint",
         "description": "上級者モード昇格 [Producer Handoff]",
-        "operationId": "promote_endpoint_api_easy_mode_promote_post",
+        "operationId": "promote_endpoint_api_wizard_promote_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/PromotionRequest"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -729,23 +839,35 @@
         }
       }
     },
-    "/api/easy-mode/reverse-generate": {
+    "/api/wizard/reverse-generate": {
       "post": {
         "tags": [
-          "easy-mode"
+          "wizard"
         ],
         "summary": "Reverse Generate Endpoint",
         "description": "逆算プロットビルダー用同期生成エンドポイント [Reverse Plot Builder]",
-        "operationId": "reverse_generate_endpoint_api_easy_mode_reverse_generate_post",
+        "operationId": "reverse_generate_endpoint_api_wizard_reverse_generate_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ReversePlotGeneratePayload"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "200": {
@@ -753,9 +875,9 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "additionalProperties": true,
                   "type": "object",
-                  "title": "Response Reverse Generate Endpoint Api Easy Mode Reverse Generate Post"
+                  "additionalProperties": true,
+                  "title": "Response Reverse Generate Endpoint Api Wizard Reverse Generate Post"
                 }
               }
             }
@@ -773,14 +895,14 @@
         }
       }
     },
-    "/api/easy-mode/export-with-data": {
+    "/api/wizard/export-with-data": {
       "post": {
         "tags": [
-          "easy-mode"
+          "wizard"
         ],
         "summary": "Export With Data Endpoint",
         "description": "クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする",
-        "operationId": "export_with_data_endpoint_api_easy_mode_export_with_data_post",
+        "operationId": "export_with_data_endpoint_api_wizard_export_with_data_post",
         "parameters": [
           {
             "name": "book_id",
@@ -1309,6 +1431,72 @@
         }
       }
     },
+    "/api/graph/foreshadowing/kpi": {
+      "get": {
+        "tags": [
+          "graph"
+        ],
+        "summary": "Get Foreshadowing Kpi",
+        "description": "伏線KPI（回収率・未回収数・期限超過数）を取得する。\n\nv5.3 で追加。ロードマップの主要KPI「伏線回収率」を実測する唯一のAPI。\n同時に Prometheus メトリクス（foreshadowing_collection_rate 等）も更新する。",
+        "operationId": "get_foreshadowing_kpi_api_graph_foreshadowing_kpi_get",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "作品ID",
+              "title": "Book Id"
+            },
+            "description": "作品ID"
+          },
+          {
+            "name": "current_episode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "現在話数（指定時は期限超過数も計測）",
+              "title": "Current Episode"
+            },
+            "description": "現在話数（指定時は期限超過数も計測）"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Foreshadowing Kpi Api Graph Foreshadowing Kpi Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/graph/chunks": {
       "get": {
         "tags": [
@@ -1438,7 +1626,7 @@
           "graph"
         ],
         "summary": "Upsert Node",
-        "description": "ノードを作成または更新する.",
+        "description": "ノードを作成または更新する（未実装）。",
         "operationId": "upsert_node_api_graph_nodes_post",
         "requestBody": {
           "content": {
@@ -1482,7 +1670,7 @@
           "graph"
         ],
         "summary": "Upsert Edge",
-        "description": "エッジを作成または更新する.",
+        "description": "エッジを作成または更新する（未実装）。",
         "operationId": "upsert_edge_api_graph_edges_post",
         "requestBody": {
           "content": {
@@ -1526,7 +1714,7 @@
           "graph"
         ],
         "summary": "Upsert Batch",
-        "description": "ノードとエッジをバッチで作成・更新する.",
+        "description": "ノードとエッジをバッチで作成・更新する（未実装）。",
         "operationId": "upsert_batch_api_graph_batch_post",
         "requestBody": {
           "content": {
@@ -1568,7 +1756,7 @@
           "graph"
         ],
         "summary": "Delete Node",
-        "description": "ノードを削除する.",
+        "description": "ノードを削除する（未実装）。",
         "operationId": "delete_node_api_graph_nodes__label___name__delete",
         "parameters": [
           {
@@ -2955,7 +3143,7 @@
           "system"
         ],
         "summary": "Get Ab Test History",
-        "description": "A/Bテスト履歴を取得する（簡易実装：メトリクスから取得）",
+        "description": "A/Bテスト履歴を取得する\n\n履歴を永続化するテーブル/リポジトリが存在しないため、従来は固定の\nダミーデータ（固定 timestamp・根拠のない p_value）を返していた。\n偽の成功レスポンスを返さないよう、実装されるまでは 501 を返す。",
         "operationId": "get_ab_test_history_api_system_admin_skills_ab_test_history_get",
         "parameters": [
           {
@@ -3073,7 +3261,7 @@
           "system"
         ],
         "summary": "Cancel Ab Test Schedule",
-        "description": "スケジュール済みA/Bテストをキャンセルする",
+        "description": "スケジュール済みA/Bテストをキャンセルする\n\nスケジュール自体は Huey タスクとして登録されるが、キャンセル可能な\nハンドル（タスクIDの永続化・停止）が実装されていない。\n従来は何もせず 200 を返していたため、偽の成功にならないよう 501 を返す。",
         "operationId": "cancel_ab_test_schedule_api_system_admin_skills_ab_test_schedule__task_id__delete",
         "parameters": [
           {
@@ -3172,7 +3360,7 @@
           "system"
         ],
         "summary": "Update Audit Model Routing",
-        "description": "オーディターのモデル割り当てを動的に変更",
+        "description": "オーディターのモデル割り当てを動的に変更する\n\n`AuditorModelRouter` は設定ファイルを読み取るだけで、書き込み API を\n持たない。従来は変更を一切保存せずに 200 を返していた（偽の成功）。\n永続化されるまで 501 を返す。",
         "operationId": "update_audit_model_routing_admin_audit_model_routing_post",
         "parameters": [
           {
@@ -4662,7 +4850,7 @@
           "plots"
         ],
         "summary": "Expand Commercial Beats",
-        "description": "企画パラメータから商業12ステップビートシートを生成",
+        "description": "企画パラメータから構造テンプレートに基づくビートシートを生成",
         "operationId": "expand_commercial_beats_api_plots_expand_beats_post",
         "requestBody": {
           "content": {
@@ -4705,6 +4893,138 @@
             "OAuth2PasswordBearer": []
           }
         ]
+      }
+    },
+    "/api/episodes/chapters/{book_id}/{ep_num}": {
+      "put": {
+        "tags": [
+          "episodes"
+        ],
+        "summary": "Upsert Chapter",
+        "description": "1 話を Upsert する（無ければ作成、あれば更新）。\n\nStudio の章操作（追加/編集/並び替え）と Wizard の執筆保存の両方が\nここを使うことで、「チャ保存」の API を増やさずに済むため。\n\n- IDOR 防止として所有権を検証する\n- ``(book_id, branch_id, ep_num)`` の UNIQUE 制約に従い、既存行があれば更新する",
+        "operationId": "upsert_chapter_api_episodes_chapters__book_id___ep_num__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "ep_num",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ep Num"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChapterUpsertRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChapterUpsertResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "episodes"
+        ],
+        "summary": "Delete Chapter",
+        "description": "1 話を削除する（Studio の章削除用）。",
+        "operationId": "delete_chapter_api_episodes_chapters__book_id___ep_num__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "ep_num",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ep Num"
+            }
+          },
+          {
+            "name": "branch_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Branch Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChapterDeleteResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/episodes/chapters/{book_id}": {
@@ -5139,6 +5459,7 @@
           "tasks"
         ],
         "summary": "Stream Task Status",
+        "description": "タスクの進捗を SSE で配信する。所有者が一致しない場合は拒否する。",
         "operationId": "stream_task_status_api_tasks__task_id__stream_get",
         "security": [
           {
@@ -5288,6 +5609,23 @@
         "summary": "List Zombie Tasks",
         "description": "List current zombie tasks (running with stale heartbeat) without recovering them.",
         "operationId": "list_zombie_tasks_api_tasks_admin_recover_zombies_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -5296,13 +5634,18 @@
                 "schema": {}
               }
             }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
           }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/tasks/admin/wal/{dag_id}": {
@@ -5311,7 +5654,7 @@
           "tasks"
         ],
         "summary": "Get Wal Logs",
-        "description": "Get WAL logs for a specific DAG for debugging.",
+        "description": "Get WAL logs for a specific DAG for debugging.\n\nWAL には入力/出力ペイロード（プロンプト・LLM 出力）が含まれるため、\n管理者権限または API Key を要求する。",
         "operationId": "get_wal_logs_api_tasks_admin_wal__dag_id__get",
         "security": [
           {
@@ -5326,6 +5669,16 @@
             "schema": {
               "type": "string",
               "title": "Dag Id"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
             }
           }
         ],
@@ -6120,7 +6473,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/marketing/export_package/{book_id}": {
@@ -6310,6 +6668,11 @@
         ],
         "summary": "Get Prompt Versions",
         "operationId": "get_prompt_versions_api_prompt_versions__book_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -6350,6 +6713,11 @@
         ],
         "summary": "Rollback Prompt Version",
         "operationId": "rollback_prompt_version_api_prompt_versions__book_id__rollback_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -6608,7 +6976,7 @@
           "misc"
         ],
         "summary": "Get Planning Options",
-        "description": "フロントエンド向けの企画立案用オプション（ジャンル、アーキタイプ、文体など）を返す。",
+        "description": "フロントエンド向けの企画立案用オプション（ジャンル、アーキタイプ、文体、構造テンプレート）を返す。\n\n旧実装は存在しない定数を import していたため、このエンドポイントは常に\nImportError で HTTP 500 を返していた。構造テンプレートの供給元は\nSTORY_SPINE（`config/story_spine/`）に一本化する。",
         "operationId": "get_planning_options_api_config_planning_options_get",
         "responses": {
           "200": {
@@ -7819,6 +8187,514 @@
         ]
       }
     },
+    "/commercial/planning/{book_id}": {
+      "get": {
+        "tags": [
+          "commercial-planning"
+        ],
+        "summary": "Get Beat Sheet",
+        "description": "書籍IDに紐づく40話ビートシートを取得する。\n存在しない場合は404を返す。",
+        "operationId": "get_beat_sheet_commercial_planning__book_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BeatSheetResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/commercial/planning/generate": {
+      "post": {
+        "tags": [
+          "commercial-planning"
+        ],
+        "summary": "Generate Beat Sheet",
+        "description": "タイトルとあらすじから40話ビートシートを生成し、データベースに保存する。",
+        "operationId": "generate_beat_sheet_commercial_planning_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BeatSheetGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BeatSheetResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/collab/books/{book_id}/members": {
+      "post": {
+        "tags": [
+          "collab"
+        ],
+        "summary": "Add Member",
+        "operationId": "add_member_api_collab_books__book_id__members_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MemberRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Add Member Api Collab Books  Book Id  Members Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "collab"
+        ],
+        "summary": "List Members",
+        "operationId": "list_members_api_collab_books__book_id__members_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Members Api Collab Books  Book Id  Members Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collab/books/{book_id}/members/{member_id}": {
+      "delete": {
+        "tags": [
+          "collab"
+        ],
+        "summary": "Remove Member",
+        "operationId": "remove_member_api_collab_books__book_id__members__member_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "member_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Member Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Remove Member Api Collab Books  Book Id  Members  Member Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collab/books/{book_id}/chapters/{chapter_ep}/comments": {
+      "post": {
+        "tags": [
+          "collab"
+        ],
+        "summary": "Add Comment",
+        "operationId": "add_comment_api_collab_books__book_id__chapters__chapter_ep__comments_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "chapter_ep",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Chapter Ep"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Add Comment Api Collab Books  Book Id  Chapters  Chapter Ep  Comments Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collab/books/{book_id}/comments": {
+      "get": {
+        "tags": [
+          "collab"
+        ],
+        "summary": "List Comments",
+        "operationId": "list_comments_api_collab_books__book_id__comments_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "chapter_ep",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Chapter Ep"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Comments Api Collab Books  Book Id  Comments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collab/comments/{comment_id}/resolve": {
+      "patch": {
+        "tags": [
+          "collab"
+        ],
+        "summary": "Resolve Comment",
+        "operationId": "resolve_comment_api_collab_comments__comment_id__resolve_patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Comment Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "default": {},
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Resolve Comment Api Collab Comments  Comment Id  Resolve Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/collab/comments/{comment_id}": {
+      "delete": {
+        "tags": [
+          "collab"
+        ],
+        "summary": "Delete Comment",
+        "operationId": "delete_comment_api_collab_comments__comment_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Comment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Comment Api Collab Comments  Comment Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/generate": {
       "post": {
         "summary": "Generate Illustration",
@@ -7943,6 +8819,63 @@
               }
             }
           }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/images/{book_id}/{scene_name}": {
+      "get": {
+        "summary": "Get Scene Illustration",
+        "description": "シーンに対応する挿絵画像 URL を返す（Studio のプレビュー用）。\n\nフロントは「まだ生成されていない」状態と「取得に失敗した」状態を区別したいので、\n見つからない場合は 404 ではなく **200 + ``found: false``** を返す。\n（404 にするとフロント側で例外処理が要り、「未生成」と「障害」が混同される）\n\nResponse:\n    {\"found\": true,  \"image_url\": \"https://...\", \"illustration_id\": 12}\n    {\"found\": false, \"image_url\": null,   \"illustration_id\": null}\n\n``scene_name`` はプロンプトに埋め込まれたシーン名を想定しているため、\n完全一致に処分し、無ければ最も新しい挿絵へフォールバックする。",
+        "operationId": "get_scene_illustration_images__book_id___scene_name__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "scene_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Scene Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
         }
       }
     },
@@ -7951,6 +8884,11 @@
         "summary": "Get Illustration Status",
         "description": "Huey タスクのステータス・結果を取得する。",
         "operationId": "get_illustration_status_status__task_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "task_id",
@@ -9560,7 +10498,7 @@
           "pipeline_stream"
         ],
         "summary": "Sse Pipeline Stream",
-        "description": "Server-Sent Events (SSE) fallback endpoint for pipeline telemetry (Step 31).",
+        "description": "Server-Sent Events (SSE) endpoint for pipeline telemetry.",
         "operationId": "sse_pipeline_stream_api_stream_pipeline__book_id__get",
         "parameters": [
           {
@@ -9595,6 +10533,51 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/stream/token/{book_id}": {
+      "post": {
+        "tags": [
+          "pipeline_stream"
+        ],
+        "summary": "Issue Stream Token",
+        "description": "EventSource / WebSocket 用の短命トークンを発行する。\n\nブラウザは EventSource にヘッダーを付けられないため、クエリに載せる\n認証情報は本トークン（60秒で失効・当該作品のみ）に限定する。",
+        "operationId": "issue_stream_token_api_stream_token__book_id__post",
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Issue Stream Token Api Stream Token  Book Id  Post"
+                }
               }
             }
           },
@@ -10385,9 +11368,47 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/LivenessResponse"
-                }
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/live": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health Liveness",
+        "description": "Liveness Probe: プロセスが生きているか即座に応答（外部依存なし）",
+        "operationId": "health_liveness_health_live_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "system"
+        ],
+        "summary": "Health Ready",
+        "description": "Readiness probe: checks if dependencies (e.g., database) are available.\nReturns 200 when all dependencies are healthy, 503 with error payload otherwise.",
+        "operationId": "health_ready_health_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           }
@@ -10422,8 +11443,20 @@
           "system"
         ],
         "summary": "Health Check",
-        "description": "拡張ヘルスチェック: DB, Redis, ChromaDB, LLM Gateway, Worker を並列チェック",
+        "description": "拡張ヘルスチェック: DB, Redis, ChromaDB, LLM Gateway, Worker を並列チェック\n\n内部のバージョン・依存関係・レイテンシなどの情報を返すため認証必須とする。\nLLM プローブは既定で無効 (`settings.HEALTH_CHECK_LLM_PROBE`)。",
         "operationId": "health_check_health_detail_get",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -10431,6 +11464,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -10467,6 +11510,7 @@
           "subtext"
         ],
         "summary": "Create Or Update Rule",
+        "description": "ルールレジストリ（プロセス共有）を更新する。",
         "operationId": "create_or_update_rule_subtext_rules_post",
         "requestBody": {
           "content": {
@@ -10499,7 +11543,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/subtext/templates": {
@@ -10529,6 +11578,7 @@
           "subtext"
         ],
         "summary": "Create Template",
+        "description": "サブテキストテンプレートを生成する。\n\n書き込み先は必ず `template_loader.template_dir` 配下に限定する。",
         "operationId": "create_template_subtext_templates_post",
         "requestBody": {
           "content": {
@@ -10563,7 +11613,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/subtext/tokens": {
@@ -10593,6 +11648,7 @@
           "subtext"
         ],
         "summary": "Update Token Dictionary",
+        "description": "トークン辞書（プロセス共有）を更新する。",
         "operationId": "update_token_dictionary_subtext_tokens_put",
         "requestBody": {
           "content": {
@@ -10629,7 +11685,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/subtext/tokens/preview": {
@@ -10681,6 +11742,7 @@
           "subtext"
         ],
         "summary": "Process Dialogue",
+        "description": "台本をサブテキスト処理パイプラインに通す。",
         "operationId": "process_dialogue_subtext_process_post",
         "requestBody": {
           "content": {
@@ -10713,7 +11775,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/annotations/persist": {
@@ -10893,6 +11960,707 @@
             "OAuth2PasswordBearer": []
           }
         ]
+      }
+    },
+    "/api/hooks/books/{book_id}/diagnose": {
+      "get": {
+        "tags": [
+          "hooks"
+        ],
+        "summary": "Diagnose Hooks",
+        "description": "作品の全章についてフック強度を診断する。",
+        "operationId": "diagnose_hooks_api_hooks_books__book_id__diagnose_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Diagnose Hooks Api Hooks Books  Book Id  Diagnose Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hooks/books/{book_id}/suggest": {
+      "post": {
+        "tags": [
+          "hooks"
+        ],
+        "summary": "Suggest Hook Fix",
+        "description": "指定章のフック改善案を生成する。",
+        "operationId": "suggest_hook_fix_api_hooks_books__book_id__suggest_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FixRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Suggest Hook Fix Api Hooks Books  Book Id  Suggest Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/hooks/books/{book_id}/episodes/{ep_num}/apply": {
+      "post": {
+        "tags": [
+          "hooks"
+        ],
+        "summary": "Apply Hook Fix",
+        "description": "生成した修正案を章末に適用する（本文の末尾を置換し、履歴は別途管理）。",
+        "operationId": "apply_hook_fix_api_hooks_books__book_id__episodes__ep_num__apply_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "ep_num",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ep Num"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": true,
+                "title": "Payload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Apply Hook Fix Api Hooks Books  Book Id  Episodes  Ep Num  Apply Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/prompt-compare/books/{book_id}/versions": {
+      "get": {
+        "tags": [
+          "prompt-compare"
+        ],
+        "summary": "List Versions",
+        "description": "作品の指定プロンプトキーのバージョン一覧を取得する。",
+        "operationId": "list_versions_api_prompt_compare_books__book_id__versions_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "prompt_key",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Prompt Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response List Versions Api Prompt Compare Books  Book Id  Versions Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/prompt-compare/books/{book_id}/compare": {
+      "post": {
+        "tags": [
+          "prompt-compare"
+        ],
+        "summary": "Compare",
+        "description": "複数バージョンの出力を比較し、勝者を決定する。",
+        "operationId": "compare_api_prompt_compare_books__book_id__compare_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CompareRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Compare Api Prompt Compare Books  Book Id  Compare Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/prompt-compare/books/{book_id}/versions/{version_id}/activate": {
+      "post": {
+        "tags": [
+          "prompt-compare"
+        ],
+        "summary": "Activate Version",
+        "description": "指定バージョンをアクティブ（採用）にする。",
+        "operationId": "activate_version_api_prompt_compare_books__book_id__versions__version_id__activate_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "version_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Version Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Activate Version Api Prompt Compare Books  Book Id  Versions  Version Id  Activate Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/structure/templates": {
+      "get": {
+        "tags": [
+          "structure"
+        ],
+        "summary": "Get Templates",
+        "description": "利用可能な構造テンプレート一覧を取得する。",
+        "operationId": "get_templates_api_structure_templates_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array",
+                  "title": "Response Get Templates Api Structure Templates Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/structure/books/{book_id}/validate": {
+      "get": {
+        "tags": [
+          "structure"
+        ],
+        "summary": "Validate Structure",
+        "description": "作品のプロット構造を検証する。",
+        "operationId": "validate_structure_api_structure_books__book_id__validate_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "structure",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "three_act | kishotenketsu | hero_journey",
+              "default": "three_act",
+              "title": "Structure"
+            },
+            "description": "three_act | kishotenketsu | hero_journey"
+          },
+          {
+            "name": "pattern",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "STORY_SPINE パターンキー (exile_rise 等)",
+              "title": "Pattern"
+            },
+            "description": "STORY_SPINE パターンキー (exile_rise 等)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Validate Structure Api Structure Books  Book Id  Validate Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orchestrated/generate": {
+      "post": {
+        "tags": [
+          "orchestrated"
+        ],
+        "summary": "Generate Orchestrated",
+        "description": "マルチエージェントオーケストレーションによる章生成をキューに投入。",
+        "operationId": "generate_orchestrated_orchestrated_generate_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OrchestratedGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OrchestratedGenerateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/orchestrated/status/{task_id}": {
+      "get": {
+        "tags": [
+          "orchestrated"
+        ],
+        "summary": "Get Orchestrated Task Status",
+        "description": "オーケストレーションタスクのステータス取得。",
+        "operationId": "get_orchestrated_task_status_orchestrated_status__task_id__get",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Orchestrated Task Status Orchestrated Status  Task Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orchestrated/task/{task_id}": {
+      "delete": {
+        "tags": [
+          "orchestrated"
+        ],
+        "summary": "Cancel Orchestrated Task",
+        "description": "オーケストレーションタスクをキャンセル。",
+        "operationId": "cancel_orchestrated_task_orchestrated_task__task_id__delete",
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "title": "Response Cancel Orchestrated Task Orchestrated Task  Task Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orchestrated/export/{book_id}": {
+      "get": {
+        "tags": [
+          "orchestrated"
+        ],
+        "summary": "Export Orchestrated Package",
+        "description": "オーケストレーション版の納品パッケージ (ZIP) をエクスポート。",
+        "operationId": "export_orchestrated_package_orchestrated_export__book_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/orchestrated/events/{correlation_id}": {
+      "get": {
+        "tags": [
+          "orchestrated"
+        ],
+        "summary": "Orchestrated Events",
+        "description": "オーケストレーション中のAgentEventをSSEでリアルタイム配信。",
+        "operationId": "orchestrated_events_orchestrated_events__correlation_id__get",
+        "parameters": [
+          {
+            "name": "correlation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Correlation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/health": {
@@ -11643,6 +13411,109 @@
         "title": "BeatItemSchema",
         "description": "1話分のビート情報"
       },
+      "BeatSheetGenerateRequest": {
+        "properties": {
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "synopsis": {
+            "type": "string",
+            "title": "Synopsis"
+          },
+          "genre": {
+            "type": "string",
+            "title": "Genre",
+            "default": "fantasy"
+          },
+          "target_episodes": {
+            "type": "integer",
+            "title": "Target Episodes",
+            "default": 40
+          },
+          "pattern_key": {
+            "type": "string",
+            "title": "Pattern Key",
+            "default": "exile_rise"
+          },
+          "length_key": {
+            "type": "string",
+            "title": "Length Key",
+            "default": "web_volume"
+          },
+          "market_key": {
+            "type": "string",
+            "title": "Market Key",
+            "default": "web"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "synopsis"
+        ],
+        "title": "BeatSheetGenerateRequest"
+      },
+      "BeatSheetItem": {
+        "properties": {
+          "ep_num": {
+            "type": "integer",
+            "title": "Ep Num"
+          },
+          "phase": {
+            "type": "string",
+            "title": "Phase"
+          },
+          "mission": {
+            "type": "string",
+            "title": "Mission"
+          },
+          "tension_target": {
+            "type": "number",
+            "title": "Tension Target"
+          },
+          "visual_scene_focus": {
+            "type": "string",
+            "title": "Visual Scene Focus"
+          }
+        },
+        "type": "object",
+        "required": [
+          "ep_num",
+          "phase",
+          "mission",
+          "tension_target",
+          "visual_scene_focus"
+        ],
+        "title": "BeatSheetItem"
+      },
+      "BeatSheetResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/BeatSheetItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "BeatSheetResponse"
+      },
       "BookCreateRequest": {
         "properties": {
           "title": {
@@ -11939,7 +13810,14 @@
       "BranchForkRequest": {
         "properties": {
           "parent_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Parent Id"
           },
           "name": {
@@ -11958,11 +13836,10 @@
         "additionalProperties": true,
         "type": "object",
         "required": [
-          "parent_id",
           "name"
         ],
         "title": "BranchForkRequest",
-        "description": "フォーク（分岐作成）リクエスト."
+        "description": "フォーク（分岐作成）リクエスト.\n\n``parent_id`` は省略可。省略時は「親なしの新規ブランチ」として作られる。\n編集画面から分岐を作る場合、正しい親ブランチを特定できない状態で\n既定値（従来は 1 固定）が送られ、無関係なブランチの子として作られていた。"
       },
       "BranchGraphResponse": {
         "properties": {
@@ -12471,6 +14348,34 @@
         "title": "CatchphraseGenerateRequest",
         "description": "キャッチコピー生成リクエスト"
       },
+      "ChapterDeleteResponse": {
+        "properties": {
+          "book_id": {
+            "type": "integer",
+            "title": "Book Id"
+          },
+          "branch_id": {
+            "type": "integer",
+            "title": "Branch Id"
+          },
+          "ep_num": {
+            "type": "integer",
+            "title": "Ep Num"
+          },
+          "deleted": {
+            "type": "boolean",
+            "title": "Deleted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "book_id",
+          "branch_id",
+          "ep_num",
+          "deleted"
+        ],
+        "title": "ChapterDeleteResponse"
+      },
       "ChapterImportRequest": {
         "properties": {
           "api_key": {
@@ -12511,13 +14416,13 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At",
-            "default": "2026-09-24T01:29:33.392655"
+            "default": "2026-10-02T01:19:30.483497"
           },
           "updated_at": {
             "type": "string",
             "format": "date-time",
             "title": "Updated At",
-            "default": "2026-09-24T01:29:33.392665"
+            "default": "2026-10-02T01:19:30.483509"
           },
           "id": {
             "type": "integer",
@@ -12594,6 +14499,70 @@
           "title"
         ],
         "title": "ChapterSchema"
+      },
+      "ChapterUpsertRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Title",
+            "default": ""
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 2000000,
+            "title": "Content",
+            "default": ""
+          },
+          "summary": {
+            "type": "string",
+            "maxLength": 4000,
+            "title": "Summary",
+            "default": ""
+          },
+          "branch_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Branch Id",
+            "default": 1
+          }
+        },
+        "type": "object",
+        "title": "ChapterUpsertRequest",
+        "description": "1 話を保存/更新するリクエスト。\n\n``ep_num`` はパスで受け取るため、通常は body に入れない。"
+      },
+      "ChapterUpsertResponse": {
+        "properties": {
+          "book_id": {
+            "type": "integer",
+            "title": "Book Id"
+          },
+          "branch_id": {
+            "type": "integer",
+            "title": "Branch Id"
+          },
+          "ep_num": {
+            "type": "integer",
+            "title": "Ep Num"
+          },
+          "saved": {
+            "type": "boolean",
+            "title": "Saved"
+          },
+          "created": {
+            "type": "boolean",
+            "title": "Created",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "book_id",
+          "branch_id",
+          "ep_num",
+          "saved"
+        ],
+        "title": "ChapterUpsertResponse"
       },
       "CharacterParams": {
         "properties": {
@@ -12714,6 +14683,40 @@
         "title": "CliffhangerDef",
         "description": "Web小説の離脱を防ぐ引き・クリフハンガー3分類（v4より完全継承）"
       },
+      "CommentRequest": {
+        "properties": {
+          "author_name": {
+            "type": "string",
+            "title": "Author Name"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "anchor_text": {
+            "type": "string",
+            "title": "Anchor Text",
+            "default": ""
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "author_name",
+          "content"
+        ],
+        "title": "CommentRequest"
+      },
       "CommercialConfig": {
         "properties": {
           "series_config": {
@@ -12766,6 +14769,41 @@
         "type": "object",
         "title": "CommercialConfig",
         "description": "商用化パイプライン設定"
+      },
+      "CompareRequest": {
+        "properties": {
+          "prompt_key": {
+            "type": "string",
+            "title": "Prompt Key"
+          },
+          "texts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Texts"
+          },
+          "weights": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "number"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Weights"
+          }
+        },
+        "type": "object",
+        "required": [
+          "prompt_key",
+          "texts"
+        ],
+        "title": "CompareRequest"
       },
       "ConfigResponse": {
         "properties": {
@@ -12930,6 +14968,12 @@
       },
       "ConsistencyIssue": {
         "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id",
+            "description": "安定した問題 ID。フロントの配列 index ではなく book_id / 章 / issue_type / conflicting_text から決定的に生成する",
+            "default": ""
+          },
           "issue_type": {
             "type": "string",
             "title": "Issue Type",
@@ -13950,6 +15994,24 @@
             "description": "代償・リスク過酷度 (1-5)",
             "default": 2
           },
+          "pattern_key": {
+            "type": "string",
+            "title": "Pattern Key",
+            "description": "構造パターン (空なら exile_rise)",
+            "default": ""
+          },
+          "length_key": {
+            "type": "string",
+            "title": "Length Key",
+            "description": "長さ階層 (空なら web_volume)",
+            "default": ""
+          },
+          "market_key": {
+            "type": "string",
+            "title": "Market Key",
+            "description": "媒体規格 (空なら web)",
+            "default": ""
+          },
           "beats": {
             "items": {
               "$ref": "#/components/schemas/BeatItemSchema"
@@ -14006,6 +16068,24 @@
         "type": "object",
         "title": "ExportRequestPayload",
         "description": "エクスポート用即時反映ペイロード"
+      },
+      "FixRequest": {
+        "properties": {
+          "api_key": {
+            "type": "string",
+            "title": "Api Key"
+          },
+          "ep_num": {
+            "type": "integer",
+            "title": "Ep Num"
+          }
+        },
+        "type": "object",
+        "required": [
+          "api_key",
+          "ep_num"
+        ],
+        "title": "FixRequest"
       },
       "FormatRequest": {
         "properties": {
@@ -14476,7 +16556,7 @@
           "version": {
             "type": "string",
             "title": "Version",
-            "default": "5.0.3"
+            "default": "6.0.0"
           },
           "timestamp": {
             "type": "string",
@@ -14673,24 +16753,6 @@
         "title": "LLMConfigOverride",
         "description": "オプトインでフロントエンドから渡されるLLM設定。"
       },
-      "LivenessResponse": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "title": "Status",
-            "default": "alive"
-          },
-          "timestamp": {
-            "type": "string",
-            "title": "Timestamp"
-          }
-        },
-        "type": "object",
-        "required": [
-          "timestamp"
-        ],
-        "title": "LivenessResponse"
-      },
       "MarketingExportRequest": {
         "properties": {
           "api_key": {
@@ -14728,6 +16790,24 @@
         ],
         "title": "MarketingGenerateRequest",
         "description": "マーケティング生成リクエスト"
+      },
+      "MemberRequest": {
+        "properties": {
+          "user_name": {
+            "type": "string",
+            "title": "User Name"
+          },
+          "role": {
+            "type": "string",
+            "title": "Role",
+            "default": "viewer"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_name"
+        ],
+        "title": "MemberRequest"
       },
       "MetaphorFrequency": {
         "properties": {
@@ -14982,6 +17062,133 @@
         ],
         "title": "NovelStatusResponse",
         "description": "作品ステータス取得レスポンス"
+      },
+      "OrchestratedGenerateRequest": {
+        "properties": {
+          "book_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Book Id",
+            "description": "作品ID",
+            "default": 1
+          },
+          "branch_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Branch Id",
+            "description": "ブランチID",
+            "default": 1
+          },
+          "ep_num": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Ep Num",
+            "description": "エピソード番号",
+            "default": 1
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title",
+            "description": "作品タイトル"
+          },
+          "synopsis": {
+            "type": "string",
+            "title": "Synopsis",
+            "description": "あらすじ",
+            "default": ""
+          },
+          "target_eps": {
+            "type": "integer",
+            "maximum": 100.0,
+            "minimum": 1.0,
+            "title": "Target Eps",
+            "description": "目標総話数",
+            "default": 10
+          },
+          "concept": {
+            "type": "string",
+            "title": "Concept",
+            "description": "コンセプト",
+            "default": ""
+          },
+          "genre": {
+            "type": "string",
+            "title": "Genre",
+            "description": "ジャンル",
+            "default": "fantasy"
+          },
+          "keywords": {
+            "type": "string",
+            "title": "Keywords",
+            "description": "キーワード",
+            "default": ""
+          },
+          "target_word_count": {
+            "type": "integer",
+            "maximum": 10000.0,
+            "minimum": 500.0,
+            "title": "Target Word Count",
+            "description": "目標文字数",
+            "default": 3000
+          },
+          "style_tag": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Style Tag",
+            "description": "文体タグ"
+          },
+          "llm_config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Config",
+            "description": "LLM設定"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "OrchestratedGenerateRequest",
+        "description": "オーケストレーション版生成リクエスト。"
+      },
+      "OrchestratedGenerateResponse": {
+        "properties": {
+          "task_id": {
+            "type": "string",
+            "title": "Task Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "type": "object",
+        "required": [
+          "task_id",
+          "status",
+          "message"
+        ],
+        "title": "OrchestratedGenerateResponse",
+        "description": "生成起動レスポンス。"
       },
       "PDCACycleSnapshot": {
         "properties": {
@@ -15596,13 +17803,13 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At",
-            "default": "2026-09-24T01:29:33.392655"
+            "default": "2026-10-02T01:19:30.483497"
           },
           "updated_at": {
             "type": "string",
             "format": "date-time",
             "title": "Updated At",
-            "default": "2026-09-24T01:29:33.392665"
+            "default": "2026-10-02T01:19:30.483509"
           },
           "id": {
             "type": "integer",
@@ -16071,6 +18278,18 @@
             ],
             "title": "Additional Entities",
             "description": "追加エンティティ"
+          },
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Id",
+            "description": "対象書籍ID。コンテキストキャッシュのキー的重要组成部分（未指定時はキャッシュを読み書きしない）"
           }
         },
         "type": "object",
@@ -17601,13 +19820,13 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At",
-            "default": "2026-09-24T01:29:33.392655"
+            "default": "2026-10-02T01:19:30.483497"
           },
           "updated_at": {
             "type": "string",
             "format": "date-time",
             "title": "Updated At",
-            "default": "2026-09-24T01:29:33.392665"
+            "default": "2026-10-02T01:19:30.483509"
           },
           "id": {
             "type": "integer",
