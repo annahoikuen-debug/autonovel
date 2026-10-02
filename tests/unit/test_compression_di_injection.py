@@ -8,7 +8,7 @@ from src.core.container.app import AppContainer
 from src.services.compression.compressor import FourLayerCompressor
 from src.services.compression.models import CompressionConfig
 from src.agents.context_builder_agent import ContextBuilderAgent
-from src.services.writing_service import WritingService
+from src.domain.writing import WritingService
 
 
 class TestCompressionDIInjection:

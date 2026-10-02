@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import Mock, AsyncMock, MagicMock
 from dataclasses import dataclass
 
-from src.services.writing_service import WritingService
+from src.domain.writing import WritingService
 from src.services.compression.compressor import FourLayerCompressor
 from src.services.compression.models import CompressionConfig
 from src.agents.orchestrator import AgentContext, AgentResult

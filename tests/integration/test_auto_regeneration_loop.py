@@ -8,7 +8,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.services.writing_service import WritingService
+from src.domain.writing import WritingService
 from src.agents.orchestrator import AgentContext
 from dataclasses import dataclass
 
