@@ -125,6 +125,17 @@ frontend/vite.config.ts.timestamp-*.mjs
 logs/*.jsonl
 # start_local.ps1 が出すサービスログと PID ファイル
 logs/*.log
+logs/*.log.err
 logs/*.pids
 logs/e2e_*.log
+# `python -X importtime` の出力（scripts/debug/analyze_importtime.py の入力だが、
+# 使い捨ての計測ログなので追跡しない）
+logs/importtime*.txt
+
+# --- H1: スクラッチディレクトリ (PLAN_H1_SECURITY_HYGIENE_36STEPS R1) ---
+# カバレッジ計測や調査用の使い捨て JSON が 43 件追跡されていたため外した。
+# 必要なときは .gitignore を一時的に外すのではなく %TEMP% を使うこと。
+tmp/
+# output/ 内の生成物（MULTIMEDIA_OUTPUT_DIR 配下の WAV 等）
+output/multimedia/
 
