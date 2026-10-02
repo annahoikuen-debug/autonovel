@@ -60,6 +60,45 @@
 | N-6 | Makefile の `black-check` が H6 で中身だけ `ruff format` に変わったまま `format-check` と二重化 | target 撤去（D06） |
 | N-7 | H8 の `test_H1_http_error_discipline.py` に未使用 import があり、**H1 で導入した ratchet を赤くしていた**（actual 968 > baseline 967） | 除去し ratchet を緑に復帰 |
 
+### 3.1 H1 の**自己レビュー**で発見した欠陥（H1R で対応）
+
+出典: [`PLAN_H1R_POST_REVIEW_REMEDIATION_10STEPS.md`](../plans/PLAN_H1R_POST_REVIEW_REMEDIATION_10STEPS.md)
+
+| # | 発見 | 対応 |
+|:---|:---|:---|
+| **B-1** | **`check_database()` が 2 世代連続で常に `"error"` を返していた。** 旧実装は Python 3.14 で `There is no current event loop`、H1 の書き換えは `greenlet_spawn has not been called`。`get_system_status()["database"]` は恒久的に嘘をついていた | `AsyncEngine` の URL から独立した**同期エンジン**を生成して `SELECT 1` を実行。mock 不使用の smoke 10 件を追加（`tests/integration/test_health_status_real_db.py`） |
+| **B-2** | **H1 Step H8 が FE テスト 2 件を壊していた。** `graph.ts` の生 `fetch(` を `apiFetch(` に移行したが、`tests/api/graph.test.ts` は第 1 引数のみで検査していた | `apiFetch` 契約に修正し、`Authorization: Bearer` 注入の検証を追加。`frontend/tests/unit/apiFetchContract.guard.test.ts` で再発を防止 |
+| **B-3** | **`test_server_route_mount_parity.py` はソース文字列 grep だった**（`re.findall` で `include_router(<name>.router)` を列挙）。`include_router` の引数がエイリアスになると名前が変わって検出できない | router の endpoint 関数が app に登録されているかをオブジェクト同一性で判定する方式へ変更。prefix・エイリアスに依存しない |
+
+### 3.2 教訓（最重要）
+
+> **archangel は「形」しか見ない。「実挙動」は見ない。**
+
+H1 は archangel（archangel = 悪化の検出器）を **19 本** 追加した。
+しかし B-1 のバグを **1 本も捕まえていない**。
+
+理由が明白である: 19 本が検査していたのは
+「import されるか」「ガードがあるか」「ファイルレイアウトがどうか」であり、
+**イベントループ / greenlet / DB 接続という境界をまたぐ実挙動**を
+検査するものが 1 本も存在しなかった。
+
+したがって次の方針を取る:
+
+- archangel を**追加し続ける**（19 から 20 を増やしても捕獲率は上がらない）
+- ✅ **mock を使わない実物 smoke を 1 本足す**（B-1 の穴は 10 件の smoke で埋まった）
+
+この判断は [`docs/TEST_STRATEGY.md`](TEST_STRATEGY.md) および
+[`CONTRIBUTING.md`](../CONTRIBUTING.md) に規約として残した。
+
+### 3.3 A8 の判定訂正（重要）
+
+H1 の受入基準 A8 は「`npm run test:ci` の 9 件失敗は**既存 FE 不具合**で H1 範囲外」と
+判定したが、**これは誤り**だった。
+
+実測（`git checkout 5b4c0563~1 -- frontend/src/api/graph.ts` して再実行 → 1 passed）により
+**2 件が H1 原因**であることが判明した。残る 7 件は既存。
+内訳と実測メッセージは [`docs/FRONTEND_KNOWN_FAILURES.md`](FRONTEND_KNOWN_FAILURES.md) に記録。
+
 ---
 
 ## 4. 整改後の検出能力（19 ファイル → 22 ファイル）

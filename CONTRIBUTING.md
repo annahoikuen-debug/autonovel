@@ -76,6 +76,38 @@ def test_x():
 機械で検査できるなら detector を作り、
 archangel テスト（`tests/regression/test_H1_tautology_guard.py` など）を併せて追加すること。
 
+### 5.2 関数を書き換えたら、素の呼び出しで 1 回実行する（2026-10-02 追加）
+
+> **mock が入ったテストは「mock が正しく動いている」ことしか保証しない。**
+
+H1 では archangel（archangel = 悪化の検出器）を 19 本追加したが、
+`src/services/resilience.py::check_database()` が **2 世代連続で
+常に `"error"` を返していた**ことを **1 本も捕まえられなかった**。
+旧実装は Python 3.14 で `There is no current event loop`、
+書き換え後は `greenlet_spawn has not been called` で、
+**どちらも例外を握りつぶして `"error"` を返していた**。
+`get_system_status()["database"]` は恒久的に嘘をついていた。
+
+原因は一点で、**19 本の archangel が検査していたのは「形」だけ**だった
+（import されるか、ガードがあるか、ファイルレイアウトがどうか）。
+**イベントループ / greenlet / DB 接続という境界をまたぐ実挙動**を
+検査するものが 1 本も存在しなかった。
+
+したがって次の運用とする:
+
+1. **関数の実装を書き換えたら、mock を入れずに素の呼び出しで 1 回実行する。**
+   実行例: `py -c "from src.services.resilience import check_database; print(check_database())"`
+2. **検出用力 archangel を増やすより、実物 smoke を 1 本足す方を優先する。**
+   archangel は「同じ間違いの空間的な再発」を防ぐもので、
+   「その関数が今動くか」は保証しない。
+3. **既存の archangel がソース文字列 grep でないか自查する。**
+   `grep` は「その文字列が存在する」ことしか述べていない。
+   実際の挙動（オブジェクト同一性・戻り値）を検証すべき。
+
+参考: [`tests/integration/test_health_status_real_db.py`](tests/integration/test_health_status_real_db.py)
+は mock 不使用で `/health` `/health/detail` `/api/system/status` `/metrics` を
+実 DB に対して叩く（10 件）。
+
 ## 6. CHANGELOG の更新
 
 ユーザ影響のある変更は [`CHANGELOG.md`](CHANGELOG.md) の Unreleased セクションへ追記:
