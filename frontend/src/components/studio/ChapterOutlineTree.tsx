@@ -418,11 +418,16 @@ style={{
                data-testid={`chapter-item-${ch.ep_num}`}
              >
               {isEditing ? (
-                <form
-                  onSubmit={(e) => handleSaveTitle(ch.ep_num, e)}
-                  style={{ display: "flex", gap: "4px", alignItems: "center" }}
-                  onClick={(e) => e.stopPropagation()}
-                >
+                 <form
+                   onSubmit={(e) => handleSaveTitle(ch.ep_num, e)}
+                   style={{ display: "flex", gap: "4px", alignItems: "center" }}
+                   onClick={(e) => e.stopPropagation()}
+                   // 親の章枠は Enter / Space で話を選択する（role="button" の役割）。
+                   // stopPropagation しないと、入力欄で Enter を押しても
+                   // preventDefault で form の submit が潰れ、タイトルが保存されないまま
+                   // 半角スペースも入力されなくなる（= インライン編集が使えなくなる）。
+                   onKeyDown={(e) => e.stopPropagation()}
+                 >
                   <input
                     className="input"
                     style={{ padding: "3px 6px", fontSize: "0.78rem", flex: 1 }}

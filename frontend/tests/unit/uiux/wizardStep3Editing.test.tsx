@@ -100,9 +100,24 @@ describe("S5: Step3 の編集内容が失われない", () => {
     await gotoStep3(user);
 
     expect(wizardApi.saveWizardBook).toHaveBeenCalled();
-    // bookId = 7 のキーが作られていることで確認
-    await waitFor(() =>
-      expect(window.localStorage.getItem("autonovel.wizard.draft.7")).toBeTruthy(),
-    );
+
+    // 退避は「執筆内容を編集したとき」にしか書かれない
+    // （WizardWorkflowPage.tsx:265 の useEffect は generatedChapters 依存で、
+    //  さらに復元 (hydratedBookIdRef) が終わるまで書かない）。
+    // そのため Step3 へ到達しただけではキーは存在せず、編集して初めて作られる。
+    const textarea = screen.getByTestId("wizard-chapter-textarea") as HTMLTextAreaElement;
+    await user.clear(textarea);
+    await user.type(textarea, "退避キーの確認用本文");
+
+    // bookId = 7（saveWizardBook の戻り値）が退避キーに使われる。
+    // `.7` であり、`.1` や `.null` / `.undefined` へ落ちていないことも確認する。
+    await waitFor(() => {
+      const raw = window.localStorage.getItem("autonovel.wizard.draft.7");
+      expect(raw).toBeTruthy();
+      expect(raw).toContain("退避キーの確認用本文");
+    });
+    expect(window.localStorage.getItem("autonovel.wizard.draft.1")).toBeNull();
+    expect(window.localStorage.getItem("autonovel.wizard.draft.null")).toBeNull();
+    expect(window.localStorage.getItem("autonovel.wizard.draft.undefined")).toBeNull();
   });
 });

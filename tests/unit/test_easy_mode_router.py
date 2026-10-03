@@ -69,8 +69,11 @@ class DummyRepo:
     @property
     def is_async(self) -> bool:
         return False
-
-    def create_task(self, task_id: str | None = None, status: str = "pending", result: str | None = None):
+# 本物の BookRepository.create_task と同じシグネチャにする。
+    # `user_id` はタスク所有者の記録に使う（渡さないと
+    # `/easy_mode/status/{task_id}` が自分のタスクを拒否する）。
+    def create_task(self, task_id: str | None = None, status: str = "pending",
+                    result: str | None = None, user_id: int | None = None):
         return DummyTask(task_id or self.task_id)
 
     def update_task_status(self, task_id: str, status: str):

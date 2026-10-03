@@ -33,15 +33,33 @@ describe("R2/R3: 章の永続化 API", () => {
 
     await expect(upsertChapter(1, 3, { title: "第3話", content: "本文" })).resolves.toBe(true);
 
+    // summary を渡されなかったときはキーごと送らない。
+    // 常に "" を送ると、サーバー側が保持しているプロット目標を空で上書きする
+    // （upsertChapter の docstring 参照）。
     expect(mockedApiFetch).toHaveBeenCalledWith("/api/episodes/chapters/1/3", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: "第3話",
         content: "本文",
-        summary: "",
         branch_id: 1,
       }),
+    });
+  });
+
+  it("summary を渡したときだけ本文に含める", async () => {
+    mockedApiFetch.mockResolvedValue(respond(true, { saved: true }));
+
+    await expect(
+      upsertChapter(1, 3, { title: "第3話", content: "本文", summary: "要約" }),
+    ).resolves.toBe(true);
+
+    const body = JSON.parse(mockedApiFetch.mock.calls[0][1]!.body as string);
+    expect(body).toEqual({
+      title: "第3話",
+      content: "本文",
+      summary: "要約",
+      branch_id: 1,
     });
   });
 

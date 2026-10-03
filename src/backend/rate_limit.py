@@ -38,6 +38,16 @@ def _parse_trusted_proxies(raw: str | None) -> tuple[ipaddress.IPv4Network | ipa
 class RateLimiter:
     """スライディングウィンドウ方式のレートリミッター (Redis対応・メモリフォールバック)."""
 
+    # 追跡している IP キー数の上限。
+    # メモリ内フォールバックは `defaultdict` であり、キー自体は自動削除されないため、
+    # 攻撃者が大量の異なる IP（またはスプーフした X-Forwarded-For）から
+    # 1 リクエストずつ送ると、キー数だけが無制限に増える。
+    # ウィンドウ内の履歴は惰性削除されるが、キー自体は次の清掃まで残るため上限を設ける。
+    MAX_TRACKED_KEYS = 10_000
+
+    # 清掃の実行間隔（秒）。全リクエストで行うと CPU を無駄にするため間引く。
+    EVICTION_INTERVAL_SECONDS = 60
+
     def __init__(
         self,
         max_requests: int = 10,
@@ -51,6 +61,42 @@ class RateLimiter:
         self._lock = threading.Lock()
         self._requests: dict[str, list[float]] = defaultdict(list)
         self._trusted_proxies = trusted_proxies
+        self._last_eviction = 0.0
+
+    def _evict_idle_keys(self, now: float) -> None:
+        """ウィンドウ外の履歴を持つキーを破棄する。
+
+        呼び出しは ``self._lock`` を保持した状態で行うこと。
+        上限（``MAX_TRACKED_KEYS``）の切り詰めは ``check`` 側で
+        新規キーを追加した直後に行う（追加前に切ると上限が 1 個ずれる）。
+        """
+        stale: list[str] = []
+        for ip, timestamps in self._requests.items():
+            kept = [t for t in timestamps if now - t < self._window]
+            if kept:
+                self._requests[ip] = kept
+            else:
+                stale.append(ip)
+        for ip in stale:
+            del self._requests[ip]
+
+    def _enforce_key_cap(self) -> None:
+        """追跡キー数の上限を超えたら最も古いキーから切り詰める。
+
+        呼び出しは ``self._lock`` を保持し、キーを追加した**後**に行うこと。
+        """
+        overflow = len(self._requests) - self.MAX_TRACKED_KEYS
+        if overflow <= 0:
+            return
+        oldest = sorted(self._requests.items(), key=lambda kv: kv[1][0])[:overflow]
+        for ip, _ in oldest:
+            del self._requests[ip]
+        logger.warning(
+            "Rate limit key cap reached (%d): dropped %d oldest keys (prefix=%s)",
+            self.MAX_TRACKED_KEYS,
+            overflow,
+            self._prefix,
+        )
 
     def _is_trusted_proxy(self, host: str) -> bool:
         proxies = self._trusted_proxies
@@ -123,6 +169,11 @@ class RateLimiter:
         # 2. メモリ内フォールバック
         now = time.time()
         with self._lock:
+            # 定期清掃。各 IP の履歴は下の遅延削除で sliding window を保つが、
+            # キー（IP）自体は残るため、放置すると数だけが無制限に増える。
+            if now - self._last_eviction >= self.EVICTION_INTERVAL_SECONDS:
+                self._evict_idle_keys(now)
+                self._last_eviction = now
             timestamps = self._requests[client_ip]
             self._requests[client_ip] = [t for t in timestamps if now - t < self._window]
             if len(self._requests[client_ip]) >= self._max:
@@ -131,6 +182,7 @@ class RateLimiter:
                     detail="Rate limit exceeded. Try again later.",
                 )
             self._requests[client_ip].append(now)
+            self._enforce_key_cap()
 
     def reset(self) -> None:
         """テスト用のリセットメソッド."""

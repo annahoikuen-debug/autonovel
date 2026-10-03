@@ -82,7 +82,11 @@ describe("D4: 保存失敗はユーザーへ伝えて巻き戻す", () => {
 
     await failPendingSaves();
 
-    await waitFor(() => expect(screen.getByText("Sample 2")).toBeInTheDocument());
+    // 巻き戻しの対象は「元のタイトル」= このテストが流し込んだ B。
+    // （fixture は Sample N ではなく A/B/C を流し込んでいるので Sample N ではない）
+    await waitFor(() =>
+      expect(within(screen.getByTestId("chapter-item-2")).getByText("B")).toBeInTheDocument(),
+    );
     expect(screen.queryByText("書き換えたタイトル")).not.toBeInTheDocument();
     expect(errorMessageShown()).toContain("サーバーに保存できませんでした");
   });
@@ -98,9 +102,10 @@ describe("D4: 保存失敗はユーザーへ伝えて巻き戻す", () => {
     await failPendingSaves();
 
     await waitFor(() => expect(errorMessageShown()).toContain("章の並び替え"));
-    // 並びも選択中の話も元へ戻す
-    expect(screen.getByTestId("chapter-item-1")).toHaveTextContent("Sample 1");
-    expect(screen.getByTestId("chapter-item-2")).toHaveTextContent("Sample 2");
+    // 並びも選択中の話も元へ戻す（元のタイトルは A / B / C）
+    expect(screen.getByTestId("chapter-item-1")).toHaveTextContent("A");
+    expect(screen.getByTestId("chapter-item-2")).toHaveTextContent("B");
+    expect(screen.getByTestId("chapter-item-3")).toHaveTextContent("C");
   });
 
   it("削除が失敗したら消した章を復活させ、通知する", async () => {
@@ -108,12 +113,17 @@ describe("D4: 保存失敗はユーザーへ伝えて巻き戻す", () => {
     renderOutlineTree({ chapters: THREE_CHAPTERS });
 
     await user.click(screen.getByTestId("btn-delete-chapter-2"));
-    expect(screen.queryByTestId("chapter-item-2")).not.toBeInTheDocument();
+    // 話数が空くと ▲▼ と D&D の添字が壊れるため、削除済みでも残りは連番に振り直される。
+    // よって「chapter-item-2 が消える」のではなく「中身の B が C に置き換わる」。
+    expect(screen.queryByText("B")).not.toBeInTheDocument();
+    expect(within(screen.getByTestId("chapter-item-2")).getByText("第2話: C")).toBeInTheDocument();
 
     await failPendingSaves();
 
     await waitFor(() => expect(errorMessageShown()).toContain("章の削除"));
-    expect(screen.getByTestId("chapter-item-2")).toHaveTextContent("Sample 2");
+    // 消した B が 2 話目へ戻り、C は 3 話目へ戻る
+    expect(within(screen.getByTestId("chapter-item-2")).getByText("B")).toBeInTheDocument();
+    expect(within(screen.getByTestId("chapter-item-3")).getByText("C")).toBeInTheDocument();
     expect(endpoints(mockedApiFetch, "DELETE")).toEqual([
       "/api/episodes/chapters/1/2?branch_id=1",
     ]);

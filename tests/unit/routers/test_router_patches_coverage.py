@@ -99,7 +99,6 @@ async def test_approve_patch_not_found(patch_uow_and_ownership):
     result = MagicMock()
     result.scalar_one_or_none.return_value = None
     uow.session.execute = AsyncMock(return_value=result)
-    from src.core.exceptions import NotFoundError
     with pytest.raises(NotFoundError):
         await approve_patch(999, None, current_user=MagicMock())
 
@@ -251,7 +250,7 @@ async def test_reject_patch_not_found_and_already_processed(patch_uow_and_owners
     result = MagicMock()
     result.scalar_one_or_none.return_value = None
     uow.session.execute = AsyncMock(return_value=result)
-    from src.core.exceptions import NotFoundError, ValidationError
+    from src.core.exceptions import ValidationError
     with pytest.raises(NotFoundError):
         await reject_patch(999, None, current_user=MagicMock())
 
@@ -364,7 +363,6 @@ async def test_get_review_detail(patch_uow_and_ownership):
 async def test_get_review_detail_not_found(patch_uow_and_ownership):
     uow = patch_uow_and_ownership.uow
     uow.misc.get_patch_review = AsyncMock(return_value=None)
-    from src.core.exceptions import NotFoundError
     with pytest.raises(NotFoundError):
         await get_review_detail(999, current_user=MagicMock())
 
@@ -403,7 +401,7 @@ async def test_approve_review_without_audit_issues(patch_uow_and_ownership):
 async def test_approve_review_errors(patch_uow_and_ownership):
     uow = patch_uow_and_ownership.uow
     uow.misc.get_patch_review = AsyncMock(return_value=None)
-    from src.core.exceptions import NotFoundError, ValidationError
+    from src.core.exceptions import ValidationError
     with pytest.raises(NotFoundError):
         await approve_review(999, ReviewActionRequest(), current_user=MagicMock())
 
@@ -463,7 +461,7 @@ async def test_revise_review_success(patch_uow_and_ownership):
 async def test_revise_review_errors(patch_uow_and_ownership):
     uow = patch_uow_and_ownership.uow
     uow.misc.get_patch_review = AsyncMock(return_value=None)
-    from src.core.exceptions import NotFoundError, ValidationError
+    from src.core.exceptions import ValidationError
     with pytest.raises(NotFoundError):
         await revise_review(999, ReviseReviewRequest(proposed_content="x"),
                             current_user=MagicMock())
@@ -498,7 +496,6 @@ async def test_get_setting_version_found_and_missing(patch_uow_and_ownership):
     assert result == version
 
     uow.misc.get_setting_version = AsyncMock(return_value=None)
-    from src.core.exceptions import NotFoundError
     with pytest.raises(NotFoundError, match="Setting version not found"):
         await get_setting_version(10, 999, current_user=MagicMock())
 
@@ -517,18 +514,45 @@ async def test_patch_paragraph_negative_index():
 
 
 @pytest.mark.asyncio
-async def test_patch_paragraph_success(patch_uow_and_ownership):
+async def test_patch_paragraph_success(patch_uow_and_ownership, monkeypatch):
     uow = patch_uow_and_ownership.uow
-    chapter = SimpleNamespace(id=5, book_id=10)
+    # patches.py:443 は chapter.content を参照し、:450 で段落数の上限を確認する。
+    # 3 段落の本文を与えて paragraph_index=2 が指す段落をテスト対象にする。
+    chapter = SimpleNamespace(
+        id=5,
+        book_id=10,
+        content="original content of paragraph 0\n\n"
+                "original content of paragraph 1\n\n"
+                "original content of paragraph 2",
+    )
     result = MagicMock()
     result.scalar_one_or_none.return_value = chapter
     uow.session.execute = AsyncMock(return_value=result)
+
+    # AppContainer.llm_factory は実 LLMProviderFactory を返すと API キー必須で例外になり、
+    # ParagraphPatchAgent は「指示を反映しない」フォールバックへ落ちる。
+    # ここでは指示を反映した書き直しを返すスタブを注入し、
+    # 書き直し結果がそのままレスポンスに伝播することを確認する。
+    class _StubLLMClient:
+        def __init__(self):
+            self.prompts: list[str] = []
+
+        async def generate_async(self, prompt: str) -> str:
+            self.prompts.append(prompt)
+            return "original content of paragraph 2 (more vivid)"
+
+    stub_client = _StubLLMClient()
+    monkeypatch.setattr(patches_module.AppContainer, "llm_factory", lambda: stub_client)
 
     req = ParagraphPatchRequest(paragraph_index=2, directive="more vivid")
     response = await patch_paragraph(5, req, current_user=MagicMock())
     assert response.index == 2
     assert "original content of paragraph 2" in response.original_paragraph
     assert "more vivid" in response.patched_paragraph
+    # LLM に投げたプロンプトに対象段落と修正指示が含まれていること
+    assert len(stub_client.prompts) == 1
+    assert "original content of paragraph 2" in stub_client.prompts[0]
+    assert "more vivid" in stub_client.prompts[0]
     patches_module.verify_book_ownership.assert_awaited_once()
 
 
@@ -538,7 +562,6 @@ async def test_patch_paragraph_chapter_not_found(patch_uow_and_ownership):
     result = MagicMock()
     result.scalar_one_or_none.return_value = None
     uow.session.execute = AsyncMock(return_value=result)
-    from src.core.exceptions import NotFoundError
     req = ParagraphPatchRequest(paragraph_index=0, directive="d")
     with pytest.raises(NotFoundError, match="Episode not found"):
         await patch_paragraph(999, req, current_user=MagicMock())

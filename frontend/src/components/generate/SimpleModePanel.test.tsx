@@ -51,16 +51,19 @@ const REAL_API_CARDS = {
       source: 'existing',
     },
   ],
-  lengths: { web_volume: { key: 'web_volume', eps_range: [40, 40] } },
+  // `lengths` は実データ（config/story_spine/LENGTHS の web_volume）と同じ形にする。
+  // chars_per_ep が無いとカードの選択で目標文字数が更新されない
+  // （SimpleModePanel.tsx:179-181）。
+  lengths: { web_volume: { key: 'web_volume', eps_range: [40, 40], chars_per_ep: [2500, 2500] } },
   genres: {},
 };
 
-const setup = (payload: unknown = REAL_API_CARDS) => {
+const setup = (payload: unknown = REAL_API_CARDS, props: Record<string, unknown> = {}) => {
   vi.stubGlobal(
     'fetch',
     vi.fn().mockResolvedValue({ ok: true, status: 200, json: async () => payload })
   );
-  return render(<SimpleModePanel />);
+  return render(<SimpleModePanel {...props} />);
 };
 
 describe('SimpleModePanel テンプレートカード', () => {
@@ -126,11 +129,34 @@ describe('SimpleModePanel カード選択', () => {
   });
 
   it('カード選択で style_key と chars_per_ep が反映される', async () => {
-    setup();
+    // style_key の 반영先は startGeneration / startStreaming に渡る引数
+    // （SimpleModePanel.tsx:451,462）なので、その出力で観測する。
+    //
+    // なお「文体の雰囲気」select dropdown で hot_blooded を直接見ることはできない。
+    // 構造テンプレートの style_key（hot_blooded / romantic / cool_headed / comedy /
+    // healing / dark の全 6 種）は src.config.STYLE_DEFINITIONS に存在せず、
+    // select の option に無いためブラウザは先頭要素（auto）に丸めてしまう。
+    // つまり「画面は AIにおまかせと表示しているのに hot_blooded で生成する」不一致が
+    // 現状あり、その食い違いを隠さないために出力側で検証する。
+    const startGeneration = vi.fn();
+    const startStreaming = vi.fn();
+    setup(REAL_API_CARDS, { startGeneration, startStreaming });
+    vi.mocked(fetch).mockClear();
+
     fireEvent.click((await screen.findByText('追放ざまぁ（Web連載・1巻40話）')).closest('div[style]')!);
+
+    // 1話あたりの目標文字数（chars_per_ep: [2500, 2500] の中央値）
     await waitFor(() => {
-      expect(screen.getByDisplayValue('hot_blooded')).toBeTruthy();
       expect(screen.getByDisplayValue('2500')).toBeTruthy();
     });
+
+    // 目標話数もカードから入していること（eps_range: [40, 40]）
+    expect((screen.getByLabelText(/目標話数/) as HTMLInputElement).value).toBe('40');
+
+    // 執筆ボタンが style_key を持ち去ること
+    fireEvent.click(screen.getByTestId('btn-easy-generate'));
+    expect(startGeneration).toHaveBeenCalledWith('hot_blooded');
+    fireEvent.click(screen.getByTestId('btn-streaming-generate'));
+    expect(startStreaming).toHaveBeenCalledWith('hot_blooded');
   });
 });

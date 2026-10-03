@@ -1,10 +1,35 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Editor } from "../../src/components/editor/Editor";
 import { ChapterOutlineTree } from "../../src/components/studio/ChapterOutlineTree";
 import { StudioWorkspace } from "../../src/components/studio/StudioWorkspace";
 import { NovelProvider } from "../../src/context/NovelContext";
+import { apiFetch } from "../../src/api/client";
+
+// 章名の変更は「楽観更新 → サーバー保存 → 失敗時は巻き戻し」になったため、
+// 通信が失敗すると直前のタイトルへ戻ってしまう（tests/unit/uiux/ の D4 がその契約）。
+// ここでは UI の編集操作だけを検証したいので、保存 (PUT) は成功させる。
+// 一方 章一覧 (GET) は失敗させる。成功させると NovelContext の hydration が
+// NovelProvider の初期値 (1 話) で上書きし、章ツリーが空になるため。
+vi.mock("../../src/api/client", () => ({
+  apiFetch: vi.fn(),
+}));
+
+const mockedApiFetch = vi.mocked(apiFetch);
+
+const okResponse = (data: unknown = { saved: true }) =>
+  ({ ok: true, status: 200, json: async () => data }) as unknown as Response;
+
+beforeEach(() => {
+  mockedApiFetch.mockReset();
+  mockedApiFetch.mockImplementation((_endpoint, options) => {
+    if (options?.method === "PUT" || options?.method === "DELETE") {
+      return Promise.resolve(okResponse());
+    }
+    return Promise.reject(new Error("章一覧は取得しない"));
+  });
+});
 
 describe("Editor component refinements", () => {
   it("displays character count, line count and estimated reading time", () => {
@@ -65,7 +90,19 @@ describe("ChapterOutlineTree inline editing", () => {
     await user.clear(editInput);
     await user.type(editInput, "第1話 運命の剣{Enter}");
 
-    expect(screen.getByText("第1話 運命の剣")).toBeInTheDocument();
+    // 半角スペースが入力できること（章枠側の Space 選択に奪われないこと）
+    expect(editInput).toHaveValue("第1話 運命の剣");
+
+    await waitFor(() => expect(screen.getByText("第1話 運命の剣")).toBeInTheDocument());
+
+    // 実際に PUT へ新しいタイトルが届いていること
+    const put = mockedApiFetch.mock.calls.find(
+      ([, options]) => (options as RequestInit | undefined)?.method === "PUT",
+    );
+    expect(put).toBeDefined();
+    expect(JSON.parse(String((put![1] as RequestInit).body))).toMatchObject({
+      title: "第1話 運命の剣",
+    });
   });
 });
 

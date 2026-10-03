@@ -318,6 +318,10 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
             "zip_data": zip_data,
             "zip_filename": zip_filename,
             "artifacts": final_ctx.artifacts,
+            # 所有者を結果 dict にも載せる。`/status/{task_id}` は Huey の結果 dict
+            # に対して `_assert_task_ownership(result, current_user)` で判定するため、
+            # ここが NULL だと呼び出し元が自分のタスクなのに 403 で拒否される。
+            "user_id": payload.get("user_id"),
         }
     finally:
         session.close()

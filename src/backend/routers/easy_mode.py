@@ -1,13 +1,17 @@
 import logging
+import secrets
 import time
 import urllib.parse
 from typing import Any
 
-from fastapi import APIRouter, Depends, Path, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, Response
+from fastapi import status as http_status
 from pydantic import ValidationError
 
 from src.backend import database
-from src.backend.auth import get_current_user, require_api_key
+from src.backend.auth import get_current_user, oauth2_scheme, require_api_key
+from src.backend.config import settings
+from src.backend.database import get_async_db
 from src.backend.database.core import get_db_manager
 from src.backend.database.repository import BookRepository
 from src.backend.observability.health import metrics
@@ -272,16 +276,98 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
 generate_with_llm = execute_generation
 
 
+async def _ensure_dev_user_row(db: Any) -> None:
+    """``AUTH_DISABLED`` 時に開発用モックユーザー (id=1) の行を確保する。
+
+    ``tasks.user_id`` は ``users.id`` への外部キーのため、行が無い状態で
+    ``user_id=1`` を書くと投入が IntegrityError で 500 になる。
+    ``init_db`` は作品を seed するがユーザーは作らないため、開発/テストでは
+    ここで補う。``AUTH_DISABLED`` のときしか通らない経路であり、
+    値は開発用の固定値のみ（認証は既に無効になっている）。
+    """
+    from src.backend.auth import _get_dev_mock_user
+    from src.backend.database.models import User
+
+    dev = _get_dev_mock_user()
+    try:
+        if await db.get(User, dev.id) is not None:
+            return
+        db.add(
+            User(
+                id=dev.id,
+                email=dev.email,
+                # パスワードは使わないが NOT NULL。ランダム値を置いて
+                # 意図せずログイン可能にならないようにする。
+                hashed_password=secrets.token_hex(32),
+                display_name=dev.display_name,
+                role=dev.role,
+                status=dev.status,
+                plan_tier=dev.plan_tier,
+                credits=dev.credits,
+            )
+        )
+        await db.commit()
+    except Exception:  # noqa: BLE001 - seed 失敗で投入を落とさない
+        await db.rollback()
+        logger.warning("Failed to seed AUTH_DISABLED dev user row", exc_info=True)
+
+
+async def get_current_user_or_api_key_owner(
+    token: str = Depends(oauth2_scheme),
+    db=Depends(get_async_db),
+) -> Any:
+    """easy-mode のタスク所有者を解決する FastAPI 依存。
+
+    easy-mode はフロントエンドが API キー（``Authorization`` ヘッダー）で叩くため、
+    ``require_api_key`` を認証手段として採用している。一方で投入される Huey タスクは
+    ``/status/{task_id}`` から参照されるため、所有者を必ず特定できる必要がある
+    （``Task.user_id`` が NULL のままだと ``_assert_task_ownership`` が
+    *自分の* タスクまで拒否する = エンドポイント相互運用性の破綻）。
+
+    そのためここでもう 1 本、ユーザーを解決する:
+    1. ``AUTH_DISABLED``（開発/テスト）なら開発用モックユーザーを返す。
+    2. JWT (Bearer) が引ければそのユーザーを返す。
+    3. どちらでも所有者を特定できない場合は 403 で拒否する。
+
+    3 の 403 は意図的な仕様変更である。所有者を特定できないまま
+    帰属不明のタスクを作る（= 事後に必ず読めなくなる）よりも、
+    enqueue 時点で明示的に失敗させるほうが安全で原因も追える。
+    """
+    if settings.AUTH_DISABLED:
+        await _ensure_dev_user_row(db)
+        from src.backend.auth import _get_dev_mock_user
+
+        return _get_dev_mock_user()
+
+    try:
+        return await get_current_user(token=token, db=db)
+    except HTTPException as exc:
+        # API キー単独の呼び出しでは所有者が不明。
+        # 401 のまま「タスクを投入できたように見える」結果を返さない。
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail=(
+                "このエンドポイントは所有者を特定できないためタスクを作成できません"
+                "（所有者を紐づける Bearer トークンで呼び出してください）"
+            ),
+        ) from exc
+
+
 @router.post("/generate", response_model=GenerationResponse)
 async def generate_content(
     input_data: EasyModeInput,
     request: Request,
     session=Depends(database.get_db),
     api_key: str = Depends(require_api_key),
+    current_user: Any = Depends(get_current_user_or_api_key_owner),
 ) -> GenerationResponse:
     """章単位の対話型自動生成 [Interactive Writer]"""
     await generate_limiter.check(request)
     try:
+        # 所有者を先に解決する（依存 `get_current_user_or_api_key_owner` が
+        # 解決できない場合は 403 で弾かれている）。
+        owner_id = getattr(current_user, "id", None)
+
         # 章の中身処理
         processed_chapter = process_chapter(input_data.current_chapter)
 
@@ -309,6 +395,11 @@ async def generate_content(
             "start_ep": input_data.start_ep,
             "end_ep": input_data.end_ep,
             "compressor": FourLayerCompressor(config=CompressionConfig()),
+            # 所有者 ID。 Huey の結果 dict には所有者が含まれないため、
+            # `/status/{task_id}` は `_assert_task_ownership(result, ...)` で
+            # 判定できず、自分のタスクなのに fail-closed で拒否されてしまう。
+            # タスクの入力パラメータ経由で引き継ぎ、結果 dict にも載せる。
+            "user_id": owner_id,
         }
 
         # タスクをキューに投入 (Huey 非同期タスク呼び出し)
@@ -319,11 +410,15 @@ async def generate_content(
         params["task_id"] = huey_task_id
 
         # DB レコードを作成
+        # user_id を必ず渡すこと。渡さない（NULL）と、同一エンドポイントの
+        # `/status/{task_id}` が `_assert_task_ownership` で自分のタスクを拒否する。
         repo = BookRepository(session)
         if repo.is_async:
-            await repo.create_task_async(task_id=huey_task_id, status="running")
+            await repo.create_task_async(
+                task_id=huey_task_id, status="running", user_id=owner_id
+            )
         else:
-            repo.create_task(task_id=huey_task_id, status="running")
+            repo.create_task(task_id=huey_task_id, status="running", user_id=owner_id)
 
         metrics.increment("tasks_enqueued")
         logger.info("Enqueued generation task: task_id=%s", huey_task_id)

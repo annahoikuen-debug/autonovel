@@ -127,6 +127,14 @@ class Settings(BaseSettings):
                 raise ValueError("本番環境 (APP_ENV=production) では AUTH_DISABLED=True は許可されません。")
             if not self.JWT_SECRET_KEY or "change-in-prod" in self.JWT_SECRET_KEY:
                 raise ValueError("本番環境 (APP_ENV=production) では安全な JWT_SECRET_KEY の設定が必須です。")
+            # `.env.example` の例示値をそのまま流用した設定も拒否する。
+            # 公開リポジトリに載っている値は「秘密」ではないが、
+            # 本番判断を素通りして管理者トークンの偽造を許してしまうため。
+            if self.JWT_SECRET_KEY in _load_example_secret_keys():
+                raise ValueError(
+                    "本番環境 (APP_ENV=production) では .env.example に記載された例示の "
+                    "JWT_SECRET_KEY / SECRET_KEY を使用できません。"
+                )
             if "sqlite" in self.DATABASE_URL:
                 raise ValueError("本番環境では SQLite ではなく PostgreSQL の設定が必要です。")
             if not self.STRIPE_WEBHOOK_SECRET and not self.ALLOW_UNSIGNED_WEBHOOKS:

@@ -305,6 +305,28 @@ def _optional_module_available(name: str) -> bool:
 
 _ORTOOLS_AVAILABLE = _optional_module_available("ortools")
 
+# reportlab は PDF 書き出し専用の任意依存。
+# src/easy_mode/phase3/ebook_export.py:27 は `find_spec("reportlab")` で可用性を判定し、
+# 無い環境では PDF 出力だけを RuntimeError で拒否する（epub / mobi は動く）。
+# requirements.txt にも pyproject の extra にも宣言が無いため、CI でも必須ではない。
+# そのため reportlab を無条件に import するテストは、
+# ファイル全体ではなく「PDF のみを扱うテスト」だけをスキップする。
+_REPORTLAB_AVAILABLE = _optional_module_available("reportlab")
+
+# 実際に `from reportlab... import` する、または PdfGenerator を生成するテスト。
+# 同じファイル内の epub / mobi / metadata テストは reportlab 不要なので残す。
+_REPORTLAB_REQUIRED_TESTS = frozenset(
+    {
+        "tests/unit/easy_mode/test_ebook_export_coverage.py::test_pdf_generator_register_fonts_fallback",
+        "tests/unit/easy_mode/test_ebook_export_coverage.py::test_pdf_generator_generate",
+        "tests/unit/easy_mode/test_ebook_export_coverage.py::test_pdf_generator_generate_with_genre",
+        "tests/unit/easy_mode/test_ebook_export_coverage.py::test_pdf_build_cover_toc_chapter_colophon",
+        "tests/unit/easy_mode/test_ebook_export_coverage.py::test_pdf_build_chapter_all_styles",
+        "tests/unit/easy_mode/test_ebook_export_coverage.py::test_exporter_export_pdf",
+        "tests/unit/easy_mode/test_ebook_export_coverage.py::test_exporter_export_all",
+    }
+)
+
 # ortools が無い環境で収集を見送るテストは、**実際に ortools を import するものだけ**。
 # 以前はパス名に "dsp" / "detector" / "balancer" などのキーワードが含まれるだけで
 # まとめて収集を飛ばしていたが、サブ文字列一致のため
@@ -355,3 +377,7 @@ def pytest_collection_modifyitems(config, items):
             )
         if not _ORTOOLS_AVAILABLE and _rel_path(item.fspath) in _ORTOOLS_REQUIRED_TESTS:
             item.add_marker(pytest.mark.skip(reason="ortools is not installed in environment"))
+        # reportlab は任意依存。PDF 出力を行うテストだけを対象外にする
+        # （_rel_path は "tests/unit/...::test_name" 形式をパス文字列として扱う）。
+        if not _REPORTLAB_AVAILABLE and f"{_rel_path(item.fspath)}::{item.name}" in _REPORTLAB_REQUIRED_TESTS:
+            item.add_marker(pytest.mark.skip(reason="reportlab is not installed in environment"))
