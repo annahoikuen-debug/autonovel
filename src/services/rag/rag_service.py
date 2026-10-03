@@ -192,7 +192,29 @@ class GraphRAGService:
         limit: int = 5,
         min_score: float = 0.0,
     ) -> list[SearchResult]:
-        """ベクトル類似度検索（pgvector優先、SQLiteフォールバック）."""
+        """ベクトル類似度検索（pgvector優先、SQLiteフォールバック）.
+
+        ``session`` は **同期** ``Session`` で、本体は :meth:`search_similar_chunks_sync`
+        （同期コア）に切り出してある。ここではコアを直接呼ぶだけなので、DB 往復は
+        呼び出し元のスレッドで実行される（スレッド跨ぎは発生しない）。
+        ブロッキング I/O をループ外へ逃がしたい場合は
+        ``await asyncio.to_thread(rag.search_similar_chunks_sync, ...)`` を使い、
+        呼び出し側がセッションをワーカースレッド専用にする。
+        """
+        return self.search_similar_chunks_sync(session, query, limit, min_score)
+
+    def search_similar_chunks_sync(
+        self,
+        session: Session,
+        query: str,
+        limit: int = 5,
+        min_score: float = 0.0,
+    ) -> list[SearchResult]:
+        """ベクトル類似度検索の同期コア（同期 Session 専用）.
+
+        ``asyncio.to_thread`` 経由でワーカースレッドから呼ばれる前提のため、
+        埋め込み取得はスレッド内から直接呼ぶ（これ以上のスレッド化は不要）。
+        """
         if not query or not query.strip():
             return []
 
@@ -200,7 +222,7 @@ class GraphRAGService:
         try:
             # PostgreSQL + pgvector 環境
             if HAS_PGVECTOR and settings.DATABASE_URL.startswith("postgresql"):
-                query_vector = await asyncio.to_thread(embedding_service.get_embedding, query)
+                query_vector = embedding_service.get_embedding(query)
                 stmt = text(
                     """
                     SELECT id, content, chunk_metadata, embedding <=> :query_vector AS distance
@@ -265,7 +287,7 @@ class GraphRAGService:
                     return []
 
                 # クエリ埋め込みを1回だけ取得
-                query_emb = await asyncio.to_thread(embedding_service.get_embedding, query)
+                query_emb = embedding_service.get_embedding(query)
 
                 # Step 30 & 31: 事前保存済み embedding の活用 & 欠損分のバッチ補完
                 valid_chunks: list[ChapterChunk] = []
@@ -287,7 +309,9 @@ class GraphRAGService:
                 # 欠損分のみオンデマンドで一括計算・保存 (Step 31)
                 if missing_chunks:
                     missing_texts = [str(c.content) for c in missing_chunks]
-                    computed_vectors = await asyncio.to_thread(embedding_service.embed_texts, missing_texts, batch_size=len(missing_texts))
+                    computed_vectors = embedding_service.embed_texts(
+                        missing_texts, batch_size=len(missing_texts)
+                    )
                     for c, vec in zip(missing_chunks, computed_vectors):
                         c.embedding = vec
                         valid_chunks.append(c)
@@ -389,6 +413,38 @@ class GraphRAGService:
     ) -> list[SearchResult]:
         """ハイブリッド検索: Vector + Graph + Fulltext の RRF 融合.
 
+        DB 層は同期 ``Session`` なので本体は :meth:`hybrid_search_sync` にある。
+        クエリ埋め込みの生成だけを ``to_thread`` で逃がし、DB 往復は呼び出し元の
+        スレッドで行う（セッションのスレッド affinities を壊さないため）。
+        ブロッキング I/O をループ外へ逃がしたい場合は
+        ``await asyncio.to_thread(rag.hybrid_search_sync, ...)`` を使う。
+        """
+        if query_embedding is None:
+            query_embedding = await asyncio.to_thread(embedding_service.get_embedding, query)
+        return self.hybrid_search_sync(
+            session,
+            query,
+            query_embedding,
+            core_entities,
+            top_k,
+            alpha,
+            beta,
+            gamma,
+        )
+
+    def hybrid_search_sync(
+        self,
+        session: Session,
+        query: str,
+        query_embedding: list[float] | None = None,
+        core_entities: list[str] | None = None,
+        top_k: int = 10,
+        alpha: float = 0.5,  # Vector weight
+        beta: float = 0.3,  # Graph weight
+        gamma: float = 0.2,  # Fulltext weight
+    ) -> list[SearchResult]:
+        """ハイブリッド検索の同期コア（同期 Session 専用）.
+
         Args:
             session: DBセッション
             query: 検索クエリテキスト
@@ -400,7 +456,7 @@ class GraphRAGService:
             gamma: 全文検索の重み
         """
         if query_embedding is None:
-            query_embedding = await asyncio.to_thread(embedding_service.get_embedding, query)
+            query_embedding = embedding_service.get_embedding(query)
 
         # 正規化
         total = alpha + beta + gamma
@@ -410,7 +466,7 @@ class GraphRAGService:
         all_results: dict[str, SearchResult] = {}
 
         # 1. ベクトル検索
-        vector_results = await self.search_similar_chunks(session, query, limit=top_k * 2)
+        vector_results = self.search_similar_chunks_sync(session, query, limit=top_k * 2)
         for i, r in enumerate(vector_results):
             rrf_score = alpha / (60 + i + 1)  # RRF: k=60
             all_results[r.id] = SearchResult(
@@ -429,7 +485,7 @@ class GraphRAGService:
             and settings.ENABLE_GRAPHRAG
             and settings.DATABASE_URL.startswith("postgresql")
         ):
-            graph_results = await self._search_graph(session, core_entities, query_embedding, top_k * 2)
+            graph_results = self._search_graph_sync(session, core_entities, query_embedding, top_k * 2)
             for i, r in enumerate(graph_results):
                 rrf_score = beta / (60 + i + 1)
                 if r.id in all_results:
@@ -472,7 +528,17 @@ class GraphRAGService:
         query_embedding: list[float],
         limit: int,
     ) -> list[SearchResult]:
-        """グラフ探索とセマンティック再ランキング."""
+        """グラフ探索（同期コアを直接呼ぶ内部ヘルパー）."""
+        return self._search_graph_sync(session, core_entities, query_embedding, limit)
+
+    def _search_graph_sync(
+        self,
+        session: Session,
+        core_entities: list[str],
+        query_embedding: list[float],
+        limit: int,
+    ) -> list[SearchResult]:
+        """グラフ探索とセマンティック再ランキング（同期コア）."""
         results: list[SearchResult] = []
         for entity in core_entities:
             if not entity.strip():
@@ -486,7 +552,7 @@ class GraphRAGService:
                 desc = props.get("description", "") if isinstance(props, dict) else ""
 
                 fact_text = f"{name} {rel} {desc}".strip()
-                item_emb = await asyncio.to_thread(embedding_service.get_embedding, fact_text)
+                item_emb = embedding_service.get_embedding(fact_text)
                 sim = self._cosine_similarity(query_embedding, item_emb)
                 # ユニークID生成
                 result_id = f"graph_{entity}_{name}_{rel}".replace(" ", "_")
@@ -575,11 +641,23 @@ class GraphRAGService:
         current_prompt: str,
         top_k: int = 7,
     ) -> list[dict[str, Any]]:
-        """プロンプトの意味ベクトルに基づき、取得したグラフ事実を関連度順に再評価 (Rerank) する."""
+        """プロンプトの意味ベクトルに基づき、取得したグラフ事実を関連度順に再評価 (Rerank) する.
+
+        埋め込み取得は同期処理のため本体は :meth:`rerank_graph_neighbors_sync` にある。
+        """
+        return self.rerank_graph_neighbors_sync(neighbors, current_prompt, top_k)
+
+    def rerank_graph_neighbors_sync(
+        self,
+        neighbors: list[dict[str, Any]],
+        current_prompt: str,
+        top_k: int = 7,
+    ) -> list[dict[str, Any]]:
+        """プロンプトの意味ベクトルによるグラフ事実の再評価（同期コア）."""
         if not neighbors or not current_prompt.strip():
             return neighbors[:top_k]
 
-        prompt_emb = await asyncio.to_thread(embedding_service.get_embedding, current_prompt)
+        prompt_emb = embedding_service.get_embedding(current_prompt)
         scored_neighbors = []
 
         for item in neighbors:
@@ -589,7 +667,7 @@ class GraphRAGService:
             desc = props.get("description", "") if isinstance(props, dict) else ""
 
             fact_text = f"{name} {rel} {desc}".strip()
-            item_emb = await asyncio.to_thread(embedding_service.get_embedding, fact_text)
+            item_emb = embedding_service.get_embedding(fact_text)
             sim = self._cosine_similarity(prompt_emb, item_emb)
             scored_neighbors.append((sim, item))
 
@@ -643,6 +721,39 @@ class GraphRAGService:
     ) -> RagContext:
         """小説執筆プロンプトに注入するハイブリッドコンテキストを生成.
 
+        本体は :meth:`build_rag_context_sync`（同期 Session 用コア）にある。
+        クエリ埋め込みの生成だけを ``to_thread`` で逃がし、DB 往復は呼び出し元の
+        スレッドで行う（セッションを別スレッドへ跨がせないため）。
+        ブロッキング I/O をループ外へ逃がしたい場合は
+        ``await asyncio.to_thread(rag.build_rag_context_sync, ...)`` を使う。
+        """
+        query_embedding = await asyncio.to_thread(embedding_service.get_embedding, current_prompt)
+        return self.build_rag_context_sync(
+            session,
+            current_prompt,
+            character_name,
+            additional_entities,
+            book_id=book_id,
+            use_cache=use_cache,
+            query_embedding=query_embedding,
+        )
+
+    def build_rag_context_sync(
+        self,
+        session: Session,
+        current_prompt: str,
+        character_name: str,
+        additional_entities: list[str] | None = None,
+        *,
+        book_id: int | None = None,
+        use_cache: bool = True,
+        query_embedding: list[float] | None = None,
+    ) -> RagContext:
+        """小説執筆プロンプトに注入するハイブリッドコンテキストを生成（同期コア）.
+
+        ``query_embedding`` を渡すと埋め込み生成を省略できる（非同期ラッパー側が
+        ``to_thread`` で事前生成して渡す）。
+
         Args:
             book_id: 対象書籍の ID。コンテキストは `session` に紐づく書籍スコープの
                 データから構築されるため、キャッシュキーにも必ず含めること。
@@ -679,10 +790,12 @@ class GraphRAGService:
         if additional_entities:
             entities_to_query.extend(additional_entities)
 
-        # 2. グラフ探索と Reranking (rerank_graph_neighbors は async メソッド)
+        # 2. グラフ探索と Reranking
         neighbors = self.get_graph_context(session, entities_to_query, max_depth=2)
         if neighbors:
-            ranked_neighbors = await self.rerank_graph_neighbors(neighbors, current_prompt, top_k=7)
+            ranked_neighbors = self.rerank_graph_neighbors_sync(
+                neighbors, current_prompt, top_k=7
+            )
             graph_lines = []
             for item in ranked_neighbors:
                 name = item.get("name")
@@ -697,8 +810,9 @@ class GraphRAGService:
             graph_context = "- 確定された特記事項なし（初期状態）"
 
         # 3. ハイブリッド検索 (ベクトル + グラフ + 全文)
-        query_embedding = await asyncio.to_thread(embedding_service.get_embedding, current_prompt)
-        hybrid_results = await self.hybrid_search(
+        if query_embedding is None:
+            query_embedding = embedding_service.get_embedding(current_prompt)
+        hybrid_results = self.hybrid_search_sync(
             session, current_prompt, query_embedding, entities_to_query, top_k=5
         )
 
@@ -753,12 +867,35 @@ class GraphRAGService:
         additional_entities: list[str] | None = None,
         top_k: int = 5,
     ) -> dict[str, Any]:
-        """エピソード執筆向けにハイブリッド検索結果を一括取得する公開 API."""
+        """エピソード執筆向けにハイブリッド検索結果を一括取得する公開 API.
+
+        本体は :meth:`retrieve_for_episode_sync`（同期 Session 用コア）にある。
+        """
+        return self.retrieve_for_episode_sync(
+            session,
+            book_id=book_id,
+            episode_number=episode_number,
+            character_name=character_name,
+            additional_entities=additional_entities,
+            top_k=top_k,
+        )
+
+    def retrieve_for_episode_sync(
+        self,
+        session: Session,
+        *,
+        book_id: int | None = None,
+        episode_number: int | None = None,
+        character_name: str,
+        additional_entities: list[str] | None = None,
+        top_k: int = 5,
+    ) -> dict[str, Any]:
+        """エピソード執筆向け検索結果の一括取得（同期コア）."""
         current_prompt = character_name
         if episode_number is not None:
             current_prompt = f"{character_name} ep{episode_number}"
 
-        context = await self.build_rag_context(
+        context = self.build_rag_context_sync(
             session,
             current_prompt=current_prompt,
             character_name=character_name,

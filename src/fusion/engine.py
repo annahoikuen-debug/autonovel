@@ -14,6 +14,17 @@ from src.stores.conflict_store import ConflictStore
 from src.stores.vector_store import VectorStore
 
 
+def _episode_of(episode_id: str) -> int:
+    """"ep31" 形式からエピソード番号を取り出す (解析できなければ -1)。"""
+    text = str(episode_id or "").strip().lower()
+    if text.startswith("ep"):
+        try:
+            return int(text[2:])
+        except ValueError:
+            return -1
+    return -1
+
+
 class FusionEngine:
     """全ペアの一括感情融合およびキャッシュ永続化を担うメインエンジン"""
 
@@ -120,14 +131,21 @@ class FusionEngine:
             self.vector_store.upsert("fused", f"ep{episode}:{src}->{tgt}", pair_vec)
 
     def get_fused(self, episode: int) -> Optional[FusedVector]:
-        """キャッシュされた FusedVector を取得する"""
-        vec = self.vector_store.get_latest("fused", ("*", "*"))
+        """キャッシュされた FusedVector を取得する
+
+        まず指定エピソードの融合ベクトルを取得する
+        (``get_latest`` は常に最新エピソードを返すため、そのまま使うと
+        第9話の執筆時に第40話の感情状態が「前話」に注入されてしまう)。
+        指定エピソードのベクトルが未保存の場合のみ、latest へのフォールバックを行う。
+        """
+        vec = self.vector_store.get_by_episode("fused", episode)
         if not vec:
-            all_vecs = self.vector_store.get_all("fused")
-            for v in all_vecs:
-                if v.episode_id == f"ep{episode}":
-                    vec = v
-                    break
+            # フォールバック: 指定エピソードのキャッシュが無い場合のみ最新を使う。
+            # InMemoryVectorStore は ("*", "*") のワイルドカードを解釈しないため、
+            # ここでは get_all でエピソード番号の最大値を選ぶ。
+            all_vecs = [v for v in self.vector_store.get_all("fused") if v.episode_id]
+            if all_vecs:
+                vec = max(all_vecs, key=lambda v: _episode_of(v.episode_id))
 
         if vec and "fused_payload" in vec.metadata:
             return FusedVector.from_dict(vec.metadata["fused_payload"])

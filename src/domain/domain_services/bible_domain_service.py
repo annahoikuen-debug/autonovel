@@ -268,16 +268,26 @@ class BibleConsistencyChecker:
                 ))
 
         # Check pending settings
-        for field_name, pending in bible.get_pending_settings().items():
+        # get_pending_settings() は List[PendingSetting] を返す
+        for pending in bible.get_pending_settings():
+            field_name = pending.field_name
             if field_name in flat_settings:
                 if flat_settings[field_name] != pending.proposed_value.content:
                     warnings.append(f"Pending setting '{field_name}' differs from current value")
 
         # Check lore consistency
+        # check_lore_consistency は new_lore 自身を含む集合を渡すと自己衝突になるため、
+        # category でグループ化し、同一 category 内の他エントリのみを比較対象にする
         all_lore = await self._bible_repo.get_all_lore(novel_id)
+        lore_by_category: Dict[str, List[Lore]] = {}
         for lore in all_lore:
-            conflicts = self.check_lore_consistency(all_lore, lore)
-            all_conflicts.extend(conflicts)
+            lore_by_category.setdefault(lore.category, []).append(lore)
+
+        for group in lore_by_category.values():
+            for i, lore in enumerate(group):
+                others = group[:i] + group[i + 1:]
+                if others:
+                    all_conflicts.extend(self.check_lore_consistency(others, lore))
 
         is_consistent = not any(c.severity in ("error", "critical") for c in all_conflicts)
 
@@ -299,33 +309,51 @@ class BibleConsistencyChecker:
         )
 
     def _detect_circular_dependencies(self, settings: Dict[str, Any]) -> List[List[str]]:
-        """Detect circular dependencies in settings."""
-        graph = {}
-        for key in settings:
-            if key in self.SETTING_DEPENDENCIES:
-                graph[key] = self.SETTING_DEPENDENCIES[key]
+        """Detect circular dependencies in settings.
 
-        visited = set()
-        rec_stack = set()
-        cycles = []
+        SETTING_DEPENDENCIES は "field -> required fields"（field は dep を前提とする）であり、
+        値（依存先）がキーとして現れないため、そのままでは辺が張られない。
+        ここでは「依存先がそれ自身を前提とする」=相互依存を閉路とみなす。
+        実際の設定に存在するフィールドのみをノードとする。
+        """
+        known = set(self.SETTING_DEPENDENCIES)
+        present = {k for k in settings if k in known}
 
-        def dfs(node: str, path: List[str]):
+        # 有向グラフ: key -> dep。dep が key を逆に前提とする場合のみ相互依存の閉路になる
+        graph: Dict[str, Set[str]] = {key: set() for key in present}
+        for key in present:
+            for dep in self.SETTING_DEPENDENCIES[key]:
+                if dep not in present:
+                    continue
+                graph[key].add(dep)
+                if key in self.SETTING_DEPENDENCIES.get(dep, []):
+                    graph[dep].add(key)
+
+        visited: Set[str] = set()
+        rec_stack: Set[str] = set()
+        cycles: List[List[str]] = []
+        seen_cycles: Set[frozenset] = set()
+
+        def dfs(node: str, path: List[str]) -> None:
             visited.add(node)
             rec_stack.add(node)
             path.append(node)
 
             for neighbor in graph.get(node, []):
-                if neighbor not in visited:
-                    if dfs(neighbor, path.copy()):
-                        return True
-                elif neighbor in rec_stack:
-                    # Found cycle
+                if neighbor in rec_stack:
                     cycle_start = path.index(neighbor)
-                    cycles.append(path[cycle_start:] + [neighbor])
-                    return True
+                    cycle = path[cycle_start:] + [neighbor]
+                    # 同じ閉路は一度だけ報告する
+                    fingerprint = frozenset(cycle)
+                    if fingerprint not in seen_cycles:
+                        seen_cycles.add(fingerprint)
+                        cycles.append(cycle)
+                elif neighbor not in visited:
+                    dfs(neighbor, path.copy())
 
-            rec_stack.remove(node)
-            return False
+            # バックトラック時にスタックから必ず外す
+            rec_stack.discard(node)
+            path.pop()
 
         for node in graph:
             if node not in visited:

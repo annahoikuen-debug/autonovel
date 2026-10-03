@@ -40,6 +40,24 @@ dependencies = [
     # 決済 (src/backend/routers/billing_webhook.py:7 がモジュール直下で無条件に import する。
     # server.py:182 で必ず router が登録されるため、欠けると起動自体が ImportError で失敗する)
     "stripe>=11.0.0",
+    # CSP ソルバ (src/narrative_balancer/csp/ の 5 モジュールがモジュール直下で
+    # `from ortools.sat.python import cp_model` を import するため必須。
+    # 欠けると CSP 残高 PDB 全体が ImportError になり csp-balance スクリプトが起動不能)
+    "ortools>=9.10.0",
+    # LLM プロバイダ SDK (src/core/llm/adapters/claude_unified_client.py:9-11 と
+    # src/infrastructure/external/anthropic_client.py:13 がモジュール直下で無条件に import)
+    "anthropic>=0.40.0",
+    # 画像処理 (漫画組版・品質ゲート・挿絵生成が src/services/manga/*.py と
+    # src/services/illustration/base.py で遅延 import する)
+    "Pillow>=10.0.0",
+    # 設定の永続化 (config/project_context.py:124 / config/streamlit_adapter.py:112 が
+    # TOML 書き出しに使う。settings の SSOT なので欠けると UI 保存が無言で失敗する)
+    "tomli_w>=1.0.0",
+    # トークン圧縮のキーワード抽出 (src/services/compression/layer1_keywords.py:34 が
+    # tiktoken.get_encoding("cl100k_base") を遅延 import する)
+    "tiktoken>=0.7.0",
+    # リソース監視 (src/backend/tasks/resource_manager.py:14 が psutil を遅延 import)
+    "psutil>=5.9.0",
 ]
 
 [project.scripts]
@@ -59,6 +77,8 @@ dev = [
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
     "pytest-cov>=4.1",
+    # Makefile の test-perf が --benchmark-only / --benchmark-autosave を渡すため必要
+    "pytest-benchmark>=4.0.0",
     # ハングした非同期テストが CI を無期限に停止させるのを防ぐ
     "pytest-timeout>=2.3.0",
     "testcontainers>=4.14.2",
@@ -91,6 +111,14 @@ epub = [
     # src/easy_mode/phase3/ebook_export.py が EPUB 出力時に import する。
     # v5 の目玉機能（商用縦書き EPUB 3）なので、無条件列入を推奨。
     "ebooklib>=0.18",
+]
+# 重い任意依存。requirements.txt / Dockerfile には含めない (ビルド時間と
+# イメージサイズが大きく増える)。GPU メモリ情報の取得が必要な環境でのみ
+# 手動インストールすること。
+pytorch = [
+    # src/backend/tasks/resource_manager.py:19 が try/except で遅延 import し、
+    # 無い場合は GPU VRAM の取得だけが None にフォールバックする
+    "torch>=2.2.0",
 ]
 
 [build-system]

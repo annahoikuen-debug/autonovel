@@ -174,6 +174,7 @@ class PlotAgent(SkillAgent):
             # ----- 監査の実行 -----
             audit_passed, last_error_summary = await self._run_audits(
                 book_id=book_id,
+                branch_id=branch_id,
                 ep_num=ep_num,
                 plot_data=plot_data,
                 last_error_summary=last_error_summary,
@@ -220,6 +221,7 @@ class PlotAgent(SkillAgent):
         plot_data: "PlotEpisode",
         last_error_summary: str,
         reporter: Optional["IReporter"] = None,
+        branch_id: int | None = None,
     ) -> tuple[bool, str]:
         """論理整合性監査と因果律監査を実行し、合格可否とエラー要約を返す."""
         audit_passed = True
@@ -233,6 +235,7 @@ class PlotAgent(SkillAgent):
                 book_id=book_id,
                 ep_num=ep_num,
                 blueprint=plot_data.detailed_blueprint,
+                branch_id=branch_id,
             )
 
             if not logical_ok:
@@ -328,7 +331,8 @@ class PlotAgent(SkillAgent):
                     await self.repo.archive_plots_from(branch_id, start_ep, new_total)
                 else:
                     # 代替メソッド: delete_plots_from
-                    await self.repo.delete_plots_from(branch_id, start_ep)
+                    # branch_id は作品間で共有されるため、他作品を巻き込まないよう book_id も渡す
+                    await self.repo.delete_plots_from(branch_id, start_ep, book_id=book_id)
 
                 # 新しいプロットを保存
                 saved_plots = []
@@ -349,19 +353,23 @@ class PlotAgent(SkillAgent):
 
     async def _build_past_context(
         self,
+        book_id: int,
         branch_id: int,
         start_ep: int,
     ) -> str:
         """過去プロットから文脈文字列を生成する.
 
         Args:
+            book_id: 作品ID
             branch_id: 分岐ID
             start_ep: 再構築開始話数
 
         Returns:
             過去文脈文字列
         """
-        past_plots = await self.repo.get_plots_between(branch_id, 1, start_ep - 1)
+        past_plots = await self.repo.get_plots_between(
+            branch_id, 1, start_ep - 1, book_id=book_id
+        )
         if not past_plots:
             return "【過去文脈】\n過去のプロットはありません。\n"
 

@@ -96,7 +96,10 @@ check("S7 try_local_patch が async", "async def try_local_patch" in _aa)
 
 # --- Step 8: update_chapter_content --------------------------------------
 _ag = read("src/agents/writing/agent.py")
-check("S8 3引数呼び出しが2箇所", _ag.count("update_chapter_content(branch_id, ep_num, rewritten_text)") == 2)
+check(
+    "S8 3引数呼び出しが2箇所",
+    _ag.count("branch_id, ep_num, rewritten_text, book_id=book_id") == 2,
+)
 check("S8 chapter.id 呼び出し 0件", "update_chapter_content(chapter.id" not in _ag)
 
 # --- Step 9: version ------------------------------------------------------

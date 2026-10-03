@@ -12,12 +12,21 @@ router = APIRouter(tags=["misc"])
 
 
 @router.get("/api/books/{book_id}/narrative_metrics", deprecated=True, tags=["metrics"])
-async def get_narrative_metrics(book_id: int, branch_id: int = 1, ep_num: int | None = None):
+async def get_narrative_metrics(
+    book_id: int,
+    branch_id: int = 1,
+    ep_num: int | None = None,
+    current_user: User = Depends(get_current_user),
+):
     """[非推奨] 新path版 /api/narrative_metrics/{book_id}/{branch_id} を使用してください。"""
     try:
         from src.backend.database.repositories.narrative_metrics_repo import (
             NarrativeMetricRepository,
         )
+
+        async with UnitOfWork(AppContainer.db()) as uow:
+            # IDOR 防止: 作品の所有権を検証する
+            await verify_book_ownership(book_id, current_user, uow)
 
         async with AppContainer.db().get_session() as session:
             repo = NarrativeMetricRepository(session)
@@ -73,11 +82,17 @@ async def get_opt_history(
 
 
 @router.get("/api/narrative_metrics/{book_id}/{branch_id}")
-async def get_narrative_metrics_trend(book_id: int, branch_id: int):
+async def get_narrative_metrics_trend(
+    book_id: int,
+    branch_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """
     書籍およびブランチごとの指標推移を取得する。
     """
     async with UnitOfWork(AppContainer.db()) as uow:
+        # IDOR 防止: 作品の所有権を検証する
+        await verify_book_ownership(book_id, current_user, uow)
         metrics = await uow.narrative_metrics.get_trend_metrics(book_id, branch_id)
         return metrics
 

@@ -54,7 +54,10 @@ class TestBookRepositoryChapterContract:
             )
 
     def test_get_chapter_signature_matches_call_sites(self) -> None:
-        """`agent.py:126` は `get_chapter(branch_id, end_ep)` と呼ぶ。"""
+        """`agent.py:126` は `get_chapter(branch_id, end_ep, book_id=...)` と呼ぶ。
+
+        作品間データ取り違え防止のため `book_id` が第三引数として必須の枠を持つこと。
+        """
         from src.infrastructure.repositories.book import BookRepository
 
         params = [
@@ -62,7 +65,14 @@ class TestBookRepositoryChapterContract:
             for name in inspect.signature(BookRepository.get_chapter).parameters
             if name != "self"
         ]
-        assert params == ["branch_id", "ep_num"], f"引数順が呼び出し側と不一致: {params}"
+        assert params == ["branch_id", "ep_num", "book_id"], f"引数順が呼び出し側と不一致: {params}"
+
+    def test_update_chapter_content_accepts_book_id(self) -> None:
+        """`update_chapter_content` は `book_id` を受け取れること（他作品の上書き防止）。"""
+        from src.infrastructure.repositories.book import BookRepository
+
+        params = inspect.signature(BookRepository.update_chapter_content).parameters
+        assert "book_id" in params, "update_chapter_content に book_id が無い"
 
 
 class TestDelegationTargets:

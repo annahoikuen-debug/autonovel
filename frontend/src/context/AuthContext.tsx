@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { AUTH_TOKEN_STORAGE_KEY, readAuthToken, clearAuthToken } from '../api/client';
 
 interface User {
   id: number;
@@ -19,8 +20,17 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // トークンは api/client.ts と **同じキー** に置く。以前はここが `token` に
+  // 書いていたため apiFetch が読めず、ログインしても全リクエストが 401 になっていた。
+  // トークンが無い状態（未ログイン）もそのまま描画する（クラッシュさせない）。
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const [token, setToken] = useState<string | null>(() => readAuthToken());
+
+  const logout = useCallback(() => {
+    setToken(null);
+    setUser(null);
+    clearAuthToken();
+  }, []);
 
   useEffect(() => {
     if (token) {
@@ -59,7 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const data = await response.json();
     const { access_token } = data;
     setToken(access_token);
-    localStorage.setItem('token', access_token);
+    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, access_token);
   };
 
   const register = async (email: string, password: string, display_name: string) => {
@@ -73,12 +83,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!response.ok) {
       throw new Error('Registration failed');
     }
-  };
-
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
   };
 
   return (

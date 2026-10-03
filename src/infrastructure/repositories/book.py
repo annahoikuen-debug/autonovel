@@ -75,10 +75,19 @@ class BookRepository(BaseRepository):
 
         return BookDbModel(**d)
 
-    async def get_all_books(self, user_id: int | None = None) -> list[BookDbModel]:
+    async def get_all_books(
+        self, user_id: int | None = None, limit: int = 100, offset: int = 0
+    ) -> list[BookDbModel]:
+        """作品一覧。1 行ごとに style_dna / marketing_data を JSON 解析するため、
+        全件を返すと件数に比例してコストが増えるため既定 limit を設ける。
+        """
         stmt = select(Book).order_by(Book.id.desc())
         if user_id is not None:
             stmt = stmt.where(Book.user_id == user_id)
+        if limit is not None:
+            stmt = stmt.limit(limit)
+        if offset:
+            stmt = stmt.offset(offset)
         result = await self.session.execute(stmt)
         books = result.scalars().all()
         from src.models import BookDbModel
@@ -89,16 +98,58 @@ class BookRepository(BaseRepository):
         ]
 
     @retry_on_lock()
-    async def update_book_cumulative_tension(self, book_id: int, user_id: int, tension: int) -> None:
-        await self.session.execute(
-            update(Book).where(Book.id == book_id, Book.user_id == user_id).values(cumulative_tension=tension)
-        )
+    async def update_book_cumulative_tension(
+        self,
+        book_id: int,
+        user_id: int,
+        tension: int,
+        expected_version: int | None = None,
+    ) -> bool:
+        """``cumulative_tension`` を楽観ロック付きで更新する。
+
+        ``expected_version`` を渡すと ``WHERE version = expected_version`` で
+        1 桁だけ更新し、成功時に version を +1 する（``branch.py`` の
+        ``update_play_session_state_optimistic`` と同じ方式）。2 つの章生成が
+        同時進行しても、後着が先着の増分を上書きしない。
+
+        Returns:
+            更新できたなら True。``expected_version`` 不一致なら False。
+        """
+        values: dict[str, Any] = {"cumulative_tension": tension}
+        stmt = update(Book).where(Book.id == book_id, Book.user_id == user_id)
+        if expected_version is not None:
+            stmt = stmt.where(Book.version == expected_version)
+            values["version"] = expected_version + 1
+        result = await self.session.execute(stmt.values(**values))
+        if expected_version is not None:
+            return (result.rowcount or 0) > 0
+        return True
+
+    async def get_book_version(self, book_id: int, user_id: int | None = None) -> int | None:
+        """``update_book_cumulative_tension`` の ``expected_version`` 用。"""
+        stmt = select(Book.version).where(Book.id == book_id)
+        if user_id is not None:
+            stmt = stmt.where(Book.user_id == user_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
     @retry_on_lock()
-    async def update_book_cumulative_stress(self, book_id: int, user_id: int, stress: int) -> None:
-        # stress is mapped to cumulative_tension
-        await self.session.execute(
-            update(Book).where(Book.id == book_id, Book.user_id == user_id).values(cumulative_tension=stress)
+    async def update_book_cumulative_stress(
+        self,
+        book_id: int,
+        user_id: int,
+        stress: int,
+        expected_version: int | None = None,
+    ) -> bool:
+        """stress は ``cumulative_tension`` にマップされる（既存仕様）。
+
+        ``update_book_cumulative_tension`` と同じく version ガード付き。
+        """
+        return await self.update_book_cumulative_tension(
+            book_id=book_id,
+            user_id=user_id,
+            tension=stress,
+            expected_version=expected_version,
         )
 
     @retry_on_lock()
@@ -266,9 +317,17 @@ class BookRepository(BaseRepository):
             branch_id=branch_id,
         )
 
-    async def get_chapter(self, branch_id: int, ep_num: int) -> Any:
-        """指定話数の章を取得する（無ければ None）。"""
-        return await self._chapter_repo().get_chapter(branch_id=branch_id, ep_num=ep_num)
+    async def get_chapter(
+        self, branch_id: int, ep_num: int, book_id: int | None = None
+    ) -> Any:
+        """指定話数の章を取得する（無ければ None）。
+
+        ``branch_id`` は作品間で共有される（既定 1）ため、呼び出し側は ``book_id`` を
+        渡すこと（``ChapterRepository.get_chapter`` と同じ理由）。
+        """
+        return await self._chapter_repo().get_chapter(
+            branch_id=branch_id, ep_num=ep_num, book_id=book_id
+        )
 
     async def update_chapter_content(
         self, branch_id: int, ep_num: int, content: str, book_id: int | None = None

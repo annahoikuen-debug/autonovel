@@ -22,7 +22,9 @@ def repair_midpoint_sag(
     solver, status = solve_csp(model, config)
 
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        solved_beats = csp_solution_to_beats(solver, vars)
+        solved_beats = csp_solution_to_beats(
+            solver, vars, existing_beats=list(current_state.confirmed_beats.values())
+        )
         return current_state.merge_solution(solved_beats)
 
     # Attempt 2: If infeasible, relax confirmed episodes that are stagnant/daily in middle quarter
@@ -47,14 +49,18 @@ def repair_midpoint_sag(
     solver2, status2 = solve_csp(model2, config)
 
     if status2 in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        solved_beats = csp_solution_to_beats(solver2, vars2)
+        solved_beats = csp_solution_to_beats(
+            solver2, vars2, existing_beats=list(relaxed_state.confirmed_beats.values())
+        )
         return relaxed_state.merge_solution(solved_beats)
 
     # Fallback: Solve without hard-fixing confirmed states (only hints)
     model3, vars3, _ = build_csp_model(current_state, config, enforce_confirmed=False)
     solver3, status3 = solve_csp(model3, config)
     if status3 in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        solved_beats = csp_solution_to_beats(solver3, vars3)
+        solved_beats = csp_solution_to_beats(
+            solver3, vars3, existing_beats=list(current_state.confirmed_beats.values())
+        )
         return current_state.merge_solution(solved_beats)
 
     raise RuntimeError("Unable to find feasible narrative resolution under current constraints.")

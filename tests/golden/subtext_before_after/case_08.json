@@ -6,7 +6,8 @@
     "「なぜなら真実は闇の中だからだ」"
   ],
   "expected_contains": [
-    "「……"
+    "（……",
+    "——「真実は闇の中だからだ」"
   ],
   "applied_rules": [
     "rule_03_causal_to_irony"

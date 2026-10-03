@@ -7,7 +7,6 @@ from fastapi import HTTPException
 
 import src.backend.routers.novel as novel_module
 from src.backend.routers.novel import (
-    BookScoreResponse,
     check_promotion_eligibility,
     get_book_alerts,
     get_chapter_book_score,
@@ -33,6 +32,25 @@ def make_score(chapter=1, overall=85.0, structure=90.0, coherency=88.0,
     return s
 
 
+def make_current_user(user_id=1):
+    """所有権検証を通過する管理者ユーザーのモック."""
+    return SimpleNamespace(id=user_id, role="admin", status="active")
+
+
+def patch_book_ownership(monkeypatch, book_id=1):
+    """``verify_book_ownership`` を Book を返すスタブに差し替える。
+
+    IDOR 修正で novel ルーターの book_id 単位ルートに所有者検証が入るよう
+    になったため、handler を直接呼ぶ単体テストでは「Book が存在する」と
+    ころまで通す。handler 本体のロジックはそのまま実行される。
+    """
+    book = SimpleNamespace(id=book_id, user_id=1)
+    m = monkeypatch
+    m.setattr(novel_module, "verify_book_ownership",
+              AsyncMock(return_value=book))
+    return m
+
+
 # ============================================================================
 # produce_novel
 # ============================================================================
@@ -40,7 +58,6 @@ def make_score(chapter=1, overall=85.0, structure=90.0, coherency=88.0,
 
 @pytest.mark.asyncio
 async def test_produce_novel_success(monkeypatch):
-    from src.models.production_config import NovelProject
     req = SimpleNamespace(title="T", genre="g", synopsis="s", keywords="k",
                           target_episodes=3, target_word_count=2000,
                           style_key="web", engine_key="default")
@@ -149,7 +166,8 @@ async def test_get_chapter_book_score_found_with_trend():
         m.setattr(novel_module.AppContainer, "db", lambda: None)
         m.setattr("src.services.book_score_service.BookScoreCalculator",
                   lambda repository=None: calculator)
-        result = await get_chapter_book_score(1, 5)
+        patch_book_ownership(m, 1)
+        result = await get_chapter_book_score(1, 5, current_user=make_current_user())
     assert result.book_id == 1
     assert result.overall_score == 85.0
     assert result.trend_3ch is not None
@@ -168,8 +186,9 @@ async def test_get_chapter_book_score_not_found():
         m.setattr(novel_module.AppContainer, "db", lambda: None)
         m.setattr("src.services.book_score_service.BookScoreCalculator",
                   lambda repository=None: calculator)
+        patch_book_ownership(m, 1)
         with pytest.raises(HTTPException) as exc:
-            await get_chapter_book_score(1, 1)
+            await get_chapter_book_score(1, 1, current_user=make_current_user())
     assert exc.value.status_code == 404
 
 
@@ -199,7 +218,8 @@ async def test_get_chapter_book_score_no_trend_single_score():
         m.setattr(novel_module.AppContainer, "db", lambda: None)
         m.setattr("src.services.book_score_service.BookScoreCalculator",
                   lambda repository=None: calculator)
-        result = await get_chapter_book_score(1, 1)
+        patch_book_ownership(m, 1)
+        result = await get_chapter_book_score(1, 1, current_user=make_current_user())
     assert result.trend_3ch is None
 
 
@@ -237,7 +257,8 @@ async def test_check_promotion_eligibility(scores, expected_eligible, reason_hin
         import src.backend.database.uow as uow_source
         m.setattr(uow_source, "UnitOfWork", lambda db=None: uow)
         m.setattr(novel_module.AppContainer, "db", lambda: None)
-        result = await check_promotion_eligibility(1)
+        patch_book_ownership(m, 1)
+        result = await check_promotion_eligibility(1, current_user=make_current_user())
     assert result.eligible is expected_eligible
     if reason_hint:
         assert reason_hint in (result.reason or "")
@@ -291,7 +312,8 @@ async def test_get_pdca_report_success():
                   lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
-        result = await get_pdca_report(1)
+        patch_book_ownership(m, 1)
+        result = await get_pdca_report(1, current_user=make_current_user())
     assert result == report
 
 
@@ -310,15 +332,17 @@ async def test_get_pdca_report_not_found_and_error():
                   lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
+        patch_book_ownership(m, 1)
         with pytest.raises(HTTPException) as exc:
-            await get_pdca_report(1)
+            await get_pdca_report(1, current_user=make_current_user())
     assert exc.value.status_code == 404
 
     with pytest.MonkeyPatch.context() as m:
         m.setattr("src.backend.database.core.get_db_manager",
                   MagicMock(side_effect=RuntimeError("db")))
+        patch_book_ownership(m, 1)
         with pytest.raises(HTTPException) as exc:
-            await get_pdca_report(1)
+            await get_pdca_report(1, current_user=make_current_user())
     assert exc.value.status_code == 500
 
 
@@ -340,7 +364,8 @@ async def test_get_book_alerts_all_types():
                   lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
-        result = await get_book_alerts(1)
+        patch_book_ownership(m, 1)
+        result = await get_book_alerts(1, current_user=make_current_user())
     types = [a["type"] for a in result["alerts"]]
     assert "score_drop" in types
     assert "stagnation" in types
@@ -363,7 +388,8 @@ async def test_get_book_alerts_no_trend():
                   lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
-        result = await get_book_alerts(1)
+        patch_book_ownership(m, 1)
+        result = await get_book_alerts(1, current_user=make_current_user())
     assert result == {"book_id": 1, "alerts": []}
 
 
@@ -384,7 +410,8 @@ async def test_get_book_alerts_healthy():
                   lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
-        result = await get_book_alerts(1)
+        patch_book_ownership(m, 1)
+        result = await get_book_alerts(1, current_user=make_current_user())
     assert result["alerts"] == []
 
 
@@ -406,7 +433,9 @@ async def test_get_novel_social_relationships(monkeypatch):
         m.setattr("src.backend.database.core.DatabaseManager", lambda url: db)
         m.setattr("src.backend.database.social_repository.SocialRepository",
                   lambda d: repo)
-        result = await get_novel_social_relationships(1, api_key="key")
+        patch_book_ownership(m, 1)
+        result = await get_novel_social_relationships(1, api_key="key",
+                                                      current_user=make_current_user())
     assert result["book_id"] == 1
     assert len(result["relationships"]) == 1
     assert result["relationships"][0]["char_a"] == "A"
@@ -422,8 +451,10 @@ async def test_get_novel_social_journals(monkeypatch):
         m.setattr("src.backend.database.core.DatabaseManager", lambda url: db)
         m.setattr("src.backend.database.social_repository.SocialRepository",
                   lambda d: repo)
+        patch_book_ownership(m, 1)
         result = await get_novel_social_journals(1, ep_num=2, character_name="A",
-                                                 limit=10, api_key="key")
+                                                 limit=10, api_key="key",
+                                                 current_user=make_current_user())
     assert result["journals"] == [{"id": 1}]
     repo.get_journals.assert_awaited_once_with(book_id=1, episode_num=2,
                                                character_name="A", limit=10)
@@ -438,5 +469,7 @@ async def test_get_novel_social_trends(monkeypatch):
         m.setattr("src.backend.database.core.DatabaseManager", lambda url: db)
         m.setattr("src.backend.database.social_repository.SocialRepository",
                   lambda d: repo)
-        result = await get_novel_social_trends(1, api_key="key")
+        patch_book_ownership(m, 1)
+        result = await get_novel_social_trends(1, api_key="key",
+                                               current_user=make_current_user())
     assert result["trends_summary"] == "trend text"

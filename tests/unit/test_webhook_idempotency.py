@@ -12,6 +12,7 @@ from starlette.requests import Request
 
 from src.backend.database.models import Base
 from src.backend.database.models_billing import StripeWebhookEvent
+from src.backend.routers import billing_webhook
 from src.backend.routers.billing_webhook import handle_stripe_webhook
 
 
@@ -31,6 +32,18 @@ async def setup_db():
     yield
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+
+@pytest.fixture(autouse=True)
+def allow_unsigned_webhooks(monkeypatch):
+    """署名検証を省略する明示的オプトイン (ALLOW_UNSIGNED_WEBHOOKS=true) を有効にする。
+
+    本テストは署名検証ではなくべき等性（イベントID単位の重複排除）を対象とする。
+    実請求では Stripe-Signature ヘッダー送来らないため、署名検証省略は
+    ローカル検証専用のフラグでのみ許可される。
+    """
+    monkeypatch.setattr(billing_webhook, "WEBHOOK_SECRET", "")
+    monkeypatch.setattr(billing_webhook, "ALLOW_UNSIGNED_WEBHOOKS", True)
 
 
 def _make_dummy_request(event_dict: dict) -> Request:

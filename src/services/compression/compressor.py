@@ -16,10 +16,11 @@ from src.services.compression.models import (
     SceneFlowHistory,
 )
 from src.services.compression.metrics import calculate_consistency_metrics
-from src.services.compression.layer1_keywords import Layer1KeywordExtractor
+from src.services.compression.layer1_keywords import Layer1KeywordExtractor, count_tokens
 from src.services.compression.layer2_subgraph import Layer2SubgraphExtractor
 from src.services.compression.layer3_abstraction import Layer3ConceptAbstractor
 from src.services.compression.layer4_trimming import Layer4SceneTrimmer
+from src.services.compression.models import SubgraphLayerOutput
 from src.services.compression.cache import CompressionCache
 
 logger = logging.getLogger(__name__)
@@ -56,6 +57,28 @@ class FourLayerCompressor:
         self.cache = CompressionCache(
             redis_client=redis_client,
             default_ttl=self.config.cache_ttl_seconds,
+        )
+
+    def _fallback_trim(self, raw_text: str, budget: int) -> str:
+        """予算内に切り詰めた生テキストを返す（フォールバック用）."""
+        while raw_text and count_tokens(raw_text) > budget:
+            raw_text = raw_text[: max(int(len(raw_text) * 0.8), 1)]
+        return raw_text.strip()
+
+    @staticmethod
+    def _raw_text_subgraph(text: str) -> SubgraphLayerOutput:
+        """生テキスト 1 件を Layer 3 へ渡せる単一ノードのサブグラフへ変換する."""
+        head = text[:120].strip() or text.strip()[:120]
+        return SubgraphLayerOutput(
+            nodes=[
+                {
+                    "name": head,
+                    "labels": ["AutoExtracted"],
+                    "properties": {"description": text},
+                }
+            ],
+            edges=[],
+            seed_entity_names=[head],
         )
 
     def compress(
@@ -186,6 +209,36 @@ class FourLayerCompressor:
         elapsed_ms = (time.perf_counter() - start_time) * 1000
         final_text = layer4_out.compressed_text
         final_tokens = layer4_out.token_count
+
+        # フェイルセーフ: 非空の入力から**完全に空**のコンテキストを返さない。
+        # Layer 1 のキーワード抽出が 1 語も取れなかった場合（例: 数字・記号だけで
+        # 構成された入力）、Layer 2 以降にノードが 1 つも作られず、圧縮結果は
+        # 「空文字」になっていた。圧縮的本质は「短縮」であって「削除」ではないため、
+        # 予算内で生テキストを切り詰めたフォールバックへ倒す。
+        if not final_text.strip() and raw_text.strip():
+            fallback_text = self._fallback_trim(raw_text, budget)
+            if fallback_text:
+                logger.warning(
+                    "Compression produced no context for non-empty input "
+                    "(original_char_count=%d); falling back to raw text (%d chars).",
+                    layer1_out.original_char_count,
+                    len(fallback_text),
+                )
+                layer3_out = self.layer3.abstract(
+                    subgraph=self._raw_text_subgraph(fallback_text),
+                    raw_text=fallback_text,
+                )
+                layer4_out = self.layer4.trim(
+                    abstraction_output=layer3_out,
+                    scene_type=target_scene,
+                    max_tokens=budget,
+                    keywords=seeds,
+                    original_token_count=layer1_out.original_token_count,
+                    scene_weights=scene_weights,
+                    protected_context=protected_context,
+                )
+                final_text = layer4_out.compressed_text
+                final_tokens = layer4_out.token_count
 
         reduction = 0.0
         if layer1_out.original_token_count > 0:

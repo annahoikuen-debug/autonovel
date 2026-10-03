@@ -175,18 +175,22 @@ class CharacterConsistencyChecker:
         self,
         novel_id: NovelId,
     ) -> List[CharacterConsistencyIssue]:
-        """Check all character relationships for consistency."""
-        issues = []
-        all_chars = await self._char_repo.list_by_novel(novel_id)
+        """Check all character relationships for consistency.
 
-        # Build relationship map
-        defaultdict(list)
-
-        for char in all_chars:
-            # In real implementation, would fetch from relationship repository
-            pass
-
-        return issues
+        .. warning::
+            未実装。``ICharacterRepository`` には関係性を読み出すメソッドが無く、
+            関係性の実体はインフラ層の ``SocialRepository``
+            (``src/backend/database/social_repository.py``) にのみ存在する。
+            このドメインサービスはインフラに依存しない純粋な層であるため、
+            参照する手段が無い。空リストを返すと「矛盾なし」と誤解させるので、
+            誤った all-clear ではなく明示的に失敗させる。
+            実装には関係性リポジトリの抽象をこの層に用意する必要がある。
+        """
+        raise NotImplementedError(
+            "check_relationship_consistency requires a relationship repository "
+            "port (e.g. ICharacterRelationshipRepository); "
+            "ICharacterRepository does not expose relationships."
+        )
 
 
 class CharacterRelationshipManager:

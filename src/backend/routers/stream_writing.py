@@ -40,7 +40,7 @@ async def _run_writing_pipeline(
         book_genre = getattr(book, "genre", "") or "fantasy"
 
         # 章情報を取得
-        chapter = await uow.chapters.get_chapter(branch_id, ep_num)
+        chapter = await uow.chapters.get_chapter(branch_id, ep_num, book_id=book_id)
         if not chapter:
             # 章が存在しない場合は作成用の空データを返す
             class MockChapter:

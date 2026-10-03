@@ -42,6 +42,17 @@ class TokenTracker:
         self.usage_by_task: dict[str, dict[str, Any]] = {}
         #: タスク種別ごとの LLM 呼び出し回数（v5.3 追加）
         self.call_count_by_task: dict[str, int] = {}
+        #: ``task_type`` 無し呼び出し用のフォールバックバケット。
+        #: ここを除くと、トークンは加算されるがコストがどこにも記録されず
+        #: ``get_total_cost_usd`` が 0.00 を返してしまう。
+        self.unassigned_usage: dict[str, Any] = {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "cost_usd": 0.0,
+            "calls": 0,
+            "models": {},
+        }
         #: tier ごとの使用量（v6 / Step 27 追加）。tier 別のコスト比較用。
         self.usage_by_tier: dict[str, dict[str, Any]] = {}
         #: tier ごとの LLM 呼び出し回数（v6 / Step 27 追加）
@@ -119,6 +130,11 @@ class TokenTracker:
             self.call_count_by_task[task_type] = (
                 self.call_count_by_task.get(task_type, 0) + 1
             )
+
+        else:
+            # task_type 無し呼び出し: 明示のフォールバックバケットに計上する
+            # （Tokensは加算済みだが、コストを置き去りにすると合計が狂うため）
+            self._record_unassigned(input_tokens, output_tokens, model_name)
 
         if task_type or tier:
             self._record_tier(
@@ -233,9 +249,54 @@ class TokenTracker:
             8,
         )
 
+    def _record_unassigned(
+        self,
+        input_tokens: int,
+        output_tokens: int,
+        model_name: str | None,
+    ) -> None:
+        """``task_type`` 無し呼び出しの使用量とコストを加算する。"""
+        bucket = self.unassigned_usage
+        bucket["input_tokens"] += input_tokens
+        bucket["output_tokens"] += output_tokens
+        bucket["total_tokens"] += input_tokens + output_tokens
+        bucket["cost_usd"] = round(
+            bucket["cost_usd"]
+            + self.estimate_cost_usd(input_tokens, output_tokens, model_name),
+            8,
+        )
+        bucket["calls"] += 1
+        if model_name:
+            model_bucket = bucket["models"].setdefault(
+                model_name,
+                {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0, "calls": 0},
+            )
+            model_bucket["input_tokens"] += input_tokens
+            model_bucket["output_tokens"] += output_tokens
+            model_bucket["total_tokens"] += input_tokens + output_tokens
+            model_bucket["calls"] += 1
+
     def get_total_cost_usd(self) -> float:
-        """計測済み全体の推定USDコストを返す。"""
-        return round(sum(b["cost_usd"] for b in self.usage_by_task.values()), 8)
+        """計測済み全体の推定USDコストを返す。
+
+        ``task_type`` 無し呼び出し（``unassigned_usage``）も含める。
+        """
+        return round(
+            sum(b["cost_usd"] for b in self.usage_by_task.values())
+            + self.unassigned_usage["cost_usd"],
+            8,
+        )
+
+    def get_unassigned_breakdown(self) -> dict[str, Any]:
+        """``task_type`` 無し呼び出しの使用量・コストを返す。"""
+        return {
+            "calls": self.unassigned_usage["calls"],
+            "input_tokens": self.unassigned_usage["input_tokens"],
+            "output_tokens": self.unassigned_usage["output_tokens"],
+            "total_tokens": self.unassigned_usage["total_tokens"],
+            "cost_usd": self.unassigned_usage["cost_usd"],
+            "models": dict(self.unassigned_usage["models"]),
+        }
 
     def get_task_breakdown(self) -> dict[str, dict[str, Any]]:
         """タスク種別ごとのaggregations（呼び出し回数・トークン・コスト）を返す。"""
@@ -319,6 +380,14 @@ class TokenTracker:
         self.last_agent_name = None
         self.usage_by_task = {}
         self.call_count_by_task = {}
+        self.unassigned_usage = {
+            "input_tokens": 0,
+            "output_tokens": 0,
+            "total_tokens": 0,
+            "cost_usd": 0.0,
+            "calls": 0,
+            "models": {},
+        }
         self.usage_by_tier = {}
         self.call_count_by_tier = {}
 
@@ -347,28 +416,42 @@ class TokenTracker:
             session: 非同期DBセッション（任意）。未指定時はコストのみ返す。
 
         Returns:
-            推定コスト（USD）。``session`` が未指定または flush 失敗時は ``None``。
+            推定コスト（USD）。コスト算出または永続化が失敗した場合は ``None``。
         """
-        from src.services.cost_analytics import CostCalculator
+        try:
+            from src.services.cost_analytics import CostCalculator
 
-        cost_calculator = CostCalculator()
-        cost_usd = cost_calculator.calculate(input_tokens, output_tokens, model_name)
+            cost_calculator = CostCalculator()
+            # 実メソッド名は estimate_cost_usd（calculate は存在しない）
+            cost_usd = cost_calculator.estimate_cost_usd(
+                input_tokens, output_tokens, model_name
+            )
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                "Failed to estimate cost for book_id=%s model=%s",
+                book_id,
+                model_name,
+                exc_info=True,
+            )
+            return None
 
         if session is None:
             return cost_usd
 
-        from src.backend.database.models import CostLogModel
-
-        log_entry = CostLogModel(
-            book_id=book_id,
-            chapter_number=chapter_number,
-            agent_name=agent_name,
-            model_name=model_name,
-            input_tokens=input_tokens,
-            output_tokens=output_tokens,
-            cost_usd=cost_usd,
-        )
         try:
+            from src.backend.database.models import CostLogModel
+
+            log_entry = CostLogModel(
+                book_id=book_id,
+                chapter_number=chapter_number,
+                agent_name=agent_name,
+                model_name=model_name,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost_usd=cost_usd,
+            )
             session.add(log_entry)
             await session.flush()
         except Exception:
@@ -377,5 +460,4 @@ class TokenTracker:
             logging.getLogger(__name__).warning(
                 "Failed to log cost consumption for book_id=%s", book_id, exc_info=True
             )
-            return cost_usd
         return cost_usd

@@ -18,11 +18,38 @@ from src.backend.server import app
 
 @pytest.fixture(autouse=True)
 def _bypass_auth(monkeypatch):
-    """契約テストでは認証をバイパスする（形状検証が目的のため）。"""
+    """契約テストでは認証をバイパスする（形状検証が目的のため）。
+
+    `GlobalAuthMiddleware` に加えて、ルートが直接 `Depends(get_current_user)`
+    を持つようになったため、依存性オーバーライドも併せて差し替える。
+    所有権ガードは `AppContainer.db()`（本番セッション）を参照するため、
+    契約テストでは形状検証が本命なのでスタブする
+    （認可そのものは tests/security/ で検証している）。
+    """
+    from unittest.mock import AsyncMock
+
+    from src.backend.auth import get_current_user
+    from src.backend.database.models import User
     from src.backend.middleware import auth_middleware
+    from src.backend.routers import graph as graph_router
 
     monkeypatch.setattr(auth_middleware.settings, "AUTH_DISABLED", True, raising=False)
+
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id=1, email="contract@example.com", role="admin", status="active"
+    )
+    monkeypatch.setattr(
+        graph_router, "verify_book_ownership", AsyncMock(return_value=object())
+    )
+    # `/pipeline/process` と `/pipeline/batch` は `_assert_chapter_ownership` 経由で
+    # 章 → 作品 の所有者を辿るため、まず章テーブルの SELECT を行う。
+    # 契約テストが契約化しているのはレスポンス形状であって事前データ整備では
+    # ないので、この解決のみスタブする（パイプライン本体の処理はそのまま走る）。
+    monkeypatch.setattr(
+        graph_router, "_assert_chapter_ownership", AsyncMock(return_value=None)
+    )
     yield
+    app.dependency_overrides.pop(get_current_user, None)
 
 
 client = TestClient(app)

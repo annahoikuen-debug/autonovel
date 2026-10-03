@@ -44,12 +44,10 @@ class VectorCollector:
         for ns in self.namespaces:
             vec: Optional[EmotionalVector] = None
             if episode is not None:
-                # 特定エピソード指定の場合、key = f"ep{episode}:{pair[0]}->{pair[1]}" or similar
-                # get_latest から取得するか、get_by_key等
-                vec = self.vector_store.get_latest(ns, pair)
-                if vec and vec.episode_id != f"ep{episode}":
-                    # もしエピソードIDが異なっていても、直近エピソードとして利用可能か
-                    pass
+                # エピソード指定がある場合は、そのエピソードのベクトルだけを使う。
+                # get_latest は常に最新エピソードを返すため、別エピソードの値と
+                # 混線すると偽の矛盾として仲裁結果や融合結果に書き込まれる。
+                vec = self.vector_store.get_by_episode(ns, episode, pair)
             else:
                 vec = self.vector_store.get_latest(ns, pair)
 

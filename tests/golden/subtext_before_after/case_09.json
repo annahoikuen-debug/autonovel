@@ -6,7 +6,8 @@
     "「理由は君にある」"
   ],
   "expected_contains": [
-    "「……"
+    "（……",
+    "——「君にある」"
   ],
   "applied_rules": [
     "rule_03_causal_to_irony"

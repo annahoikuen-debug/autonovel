@@ -51,7 +51,7 @@ class EasyModeContextBuilderSkill(SkillAgent):
             # 前話の章を取得
             if ep_num > 1:
                 try:
-                    await self.repo.get_chapter(branch_id, ep_num - 1)
+                    await self.repo.get_chapter(branch_id, ep_num - 1, book_id=book_id)
                 except Exception:
                     pass
 

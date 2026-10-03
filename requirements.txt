@@ -6,6 +6,10 @@ asyncpg==0.30.0
 alembic>=1.13.0
 annotated-doc==0.0.5
 annotated-types==0.8.0
+# --- LLM プロバイダ SDK: src/core/llm/adapters/claude_unified_client.py:9-11 と
+#     src/infrastructure/external/anthropic_client.py:13 がモジュール直下で無条件に
+#     import する (必須) ---
+anthropic>=0.40.0
 anyio==4.14.2
 ast_serialize==0.8.0
 attrs==26.1.0
@@ -25,6 +29,9 @@ cryptography==50.0.1
 dependency-injector==4.49.1
 distro==1.9.0
 durationpy==0.11
+# --- EPUB 書き出し: src/easy_mode/phase3/ebook_export.py:254 が EPUB 出力時に
+#     import する (pyproject の [epub] extra に対応) ---
+ebooklib>=0.18
 email-validator>=2.0.0
 fastapi==0.141.1
 filelock==3.32.5
@@ -85,16 +92,33 @@ opentelemetry-proto==1.44.0
 opentelemetry-sdk==1.44.0
 opentelemetry-semantic-conventions==0.65b0
 orjson==3.12.0
+# --- CSP ソルバ: src/narrative_balancer/csp/ の 5 モジュール
+#     (constraints / character_constraints / constraint_factory / converter /
+#      diagnostics) が `from ortools.sat.python import cp_model` をモジュール直下で
+#     import する。欠けると CSP 残高PDB 全体が ImportError になり、
+#     pyproject の `csp-balance` コンソールスクリプトも起動できない (必須) ---
+ortools>=9.10.0
+# --- グラフ解析: src/stores/vector_store.py と tests/unit/test_foreshadowing_retriever.py が
+#     import する (未宣言だと収集時に ModuleNotFoundError で TestCollectionError) ---
+networkx>=3.0
 overrides==7.7.0
 packaging==26.3
 pandas==3.0.5
 pathspec==1.1.1
 pgvector==0.5.0
+# --- 画像処理: src/services/manga/{typesetter,quality_gate,client}.py と
+#     src/services/illustration/base.py が関数内 (遅延 import) で使う。
+#     漫画組版・品質ゲート・挿絵生成すべてがこれなしでは動かない (必須) ---
+Pillow>=10.0.0
 pluggy==1.6.0
 prometheus_client==0.26.0
 propcache==0.5.2
 proto-plus==1.28.2
 protobuf==5.29.6
+# --- リソース監視: src/backend/tasks/resource_manager.py:14 が psutil / torch を
+#     遅延 import し、片方が欠けていても None にフォールバックする。
+#     torch は数 GB あるため、この必須ブロックには psutil のみ入れる ---
+psutil>=5.9.0
 psycopg2-binary==2.9.12
 pyasn1==0.6.4
 pyasn1_modules==0.4.2
@@ -110,8 +134,14 @@ pyproject_hooks==1.2.0
 pytest==9.1.1
 pytest-asyncio==1.4.0
 pytest-cov==7.1.0
+# --- Makefile の test-perf ターゲットが --benchmark-only / --benchmark-autosave を
+#     渡すため pytest-benchmark が必要 (無いと unrecognized arguments で exit 4) ---
+pytest-benchmark>=4.0.0
 # --- ハングしたテストの停止防止 (pytest.ini の --timeout=120 がこれを必要とする) ---
 pytest-timeout>=2.3.0
+# --- tests/property/test_{compression_invariants,dsp_properties,grammar_properties}.py が
+#     hypothesis を import する (未宣言だと収集時に ModuleNotFoundError で TestCollectionError) ---
+hypothesis>=6.100.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.3
 python-json-logger==4.2.0
@@ -139,7 +169,18 @@ starlette==1.6.0
 #     (server.py:182 で必ず router が登録されるため、欠けると起動自体が失敗する) ---
 stripe>=11.0.0
 tenacity==9.1.4
+# --- トークナイザ: src/services/compression/layer1_keywords.py:34 が
+#     tiktoken.get_encoding("cl100k_base") を遅延 import して使う。
+#     無ければ文字数ベースの近似にフォールバックするが、圧縮率が崩れる ---
+tiktoken>=0.7.0
 tokenizers==0.23.1
+# --- TOML 読み込み: tests/config/test_phase1_coverage.py が import する。
+#     Python 3.11+ では stdlib の tomllib を使うが、このテストは明示的に tomli を要求する
+#     (未宣言だと収集時に ModuleNotFoundError で TestCollectionError) ---
+tomli>=2.0.1; python_version < "3.11"
+# --- TOML 書き出し: config/project_context.py:124 と config/streamlit_adapter.py:112
+#     が設定の永続化 (SSOT) に使う。欠けると UI からの設定保存が無言で失敗する ---
+tomli_w>=1.0.0
 tqdm==4.70.0
 truststore==0.10.4
 typer==0.27.2
@@ -153,3 +194,13 @@ watchfiles==1.2.0
 websocket-client==1.9.2
 websockets==16.1.1
 yarl==1.24.5
+
+# ============================================================
+# 重い任意依存 (基本面には入らない。必要環境でのみ手動インストールすること)
+# ============================================================
+# PyTorch (CUDA ランタイム込みで約 2-3 GB)。
+# src/backend/tasks/resource_manager.py:19 が try/except で遅延 import し、
+# 無い場合は GPU メモリ情報の取得だけが None にフォールバックする。
+# したがって[pytorch] extra として pyproject.toml に宣言するのみで、
+# requirements.txt / Dockerfile には含めない (ビルド時間とイメージサイズが大幅に増える)。
+#   pip install torch --index-url https://download.pytorch.org/whl/cu124

@@ -125,11 +125,25 @@ class SubtextEngine:
         block: DialogueBlock,
         context: Optional[SubtextContext] = None,
     ) -> DialogueBlock:
-        """Processes a single DialogueBlock through registered rules in priority order."""
+        """Processes a single DialogueBlock through registered rules in priority order.
+
+        ``final`` の意味:
+            マッチしたルールの ``final=True`` は「チェーン全体を止める」のではなく
+            「そのルールと同じ優先度以下 (同値含む) のルールの実行を止める」こと。
+            これにより ThreatSubtextRule (priority 50) や
+            ComplianceSubvertRule (priority 60) がマッチしても、拡張ルール
+            8-15 (priority 80-115) は適用され続ける。出力品質が
+            「最初にマッチしたルール」だけに依存しなくなる。
+        """
         current_block = block.clone()
         rules = self.registry.list_rules(enabled_only=True)
 
+        # final ルールが実行を停止した優先度 (まだ到達していないルールにのみ効く)
+        blocked_up_to_priority: Optional[int] = None
+
         for rule in rules:
+            if blocked_up_to_priority is not None and rule.priority <= blocked_up_to_priority:
+                continue
             try:
                 result = rule.apply(current_block, context=context)
                 if result.modified:
@@ -141,7 +155,7 @@ class SubtextEngine:
                     )
                     # Check if final flag is set
                     if rule.final:
-                        break
+                        blocked_up_to_priority = rule.priority
             except Exception as e:
                 # Step 19: Safe fallback on rule exception
                 logger.warning(f"Exception during rule {rule.id} execution: {e}. Keeping current text.")

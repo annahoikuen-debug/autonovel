@@ -222,15 +222,19 @@ class TestEmotionToActionRule:
 
 class TestCausalToIronyRule:
     def test_dialogue(self):
+        """台詞の場合、反讽の舞台指示を前置し、発話そのものは保持する。"""
         r = CausalToIronyRule()
         out = r.apply(block("「なぜなら彼が来たからだ」"))
         assert out.modified is True
-        assert out.block.lines[0].startswith("「……")
+        assert out.block.lines[0].startswith("（……")
+        assert "「彼が来たからだ」" in out.block.lines[0]
 
     def test_narration(self):
         r = CausalToIronyRule()
         out = r.apply(block("理由はこうだ"))
-        assert out.block.lines[0].startswith("……")
+        assert out.block.lines[0].startswith("（……")
+        # ナレーションも元の文を消さずに残す
+        assert "理由はこうだ" in out.block.lines[0]
 
     def test_no_match(self):
         r = CausalToIronyRule()

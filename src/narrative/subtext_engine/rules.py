@@ -7,7 +7,8 @@ from __future__ import annotations
 import abc
 import random
 import re
-from typing import Any, Callable, Dict, List, Optional, Union
+from functools import lru_cache
+from typing import Callable, Dict, List, Optional, Union
 
 from src.narrative.subtext_engine.models import (
     DialogueBlock,
@@ -283,6 +284,47 @@ class ExplanatoryCompressRule(RuleBase):
         )
 
 
+_HIRAGANA_START = 0x3041
+_HIRAGANA_END = 0x309F
+
+# 感情語がここで終わっているとみなす文字 (助詞・て/た活用の助動詞 等)。
+# 「〜ている」「〜かった」の「て/た」、「〜が」「〜顔」の「が」などが該当。
+_SUFFIX_STARTERS = frozenset("ではたにのはをが")
+
+
+def _is_hiragana(ch: str) -> bool:
+    """1 文字がひらがな (長音符・記号を含まない) かどうか。"""
+    return bool(ch) and _HIRAGANA_START <= ord(ch[0]) <= _HIRAGANA_END
+
+
+def _continues_word(match: "re.Match", text: str) -> bool:
+    """マッチが「別の語の途中」かどうか (True なら書き換えない)。
+
+    日本語には単語区切りがないため、素の部分一致では「悲しみ」の「悲し」の
+    ように別の語を壊してしまう。判定方法は次の通り:
+
+    - 尾部 (活用) がマッチしていれば語末扱い (「寂しい」「怒っているんだ」)
+    - 尾部の直後が「語を繋がない文字 (助詞・て活用等)」なら語末扱い
+      (「恨んでいる」「悲しい顔」)
+    - それ以外は別語の途中 (「悲しみ」「悔しむ」「寂しさ」「悲しくない」)
+    """
+    if match.group(1):
+        return False
+    nxt = text[match.end():match.end() + 1]
+    if not nxt or not _is_hiragana(nxt):
+        return False
+    return nxt not in _SUFFIX_STARTERS
+
+
+@lru_cache(maxsize=64)
+def _emotion_word_re(key: str) -> "re.Pattern":
+    """感情語 + 尾部 (活用) のパターンを返す。
+
+    語境界の判定は呼び出し側 (``_continues_word``) で行う。
+    """
+    return re.compile(rf"{re.escape(key)}(い|いだ|いよ|くて|かった|ている|てる|た)?")
+
+
 EMOTION_ACTION_DICT = {
     "悲し": "悲しげな表情で、拳を握りしめ",
     "怒っ": "怒気を孕んだ瞳で、テーブルを叩く",
@@ -332,9 +374,19 @@ class EmotionToActionRule(RuleBase):
         for line in block.lines:
             matched_key = None
             for key in self.actions:
-                if key in line and f"{key}くない" not in line and f"{key}くはない" not in line:
-                    matched_key = key
-                    break
+                m = _emotion_word_re(key).search(line)
+                if not m:
+                    continue
+                # 別語の途中の感情語 (「悲しみ」「悔しむ」等) は書き換えない。
+                if _continues_word(m, line):
+                    continue
+                # 否定判定もマッチしたスパンに限定する
+                # (行全体への「悲しくない」判定で書き換えを丸ごと飛ばさない)
+                tail = line[m.end():]
+                if tail.startswith("くない") or tail.startswith("くはない"):
+                    continue
+                matched_key = key
+                break
 
             if matched_key:
                 action_desc = self.actions[matched_key]
@@ -342,7 +394,13 @@ class EmotionToActionRule(RuleBase):
                 if line.startswith("「") and line.endswith("」"):
                     inner = line[1:-1]
                     # Sub out the emotion word or soften it
-                    inner_subbed = re.sub(rf"{matched_key}(い|くて|かった|ている|てる|た)?", "……", inner)
+                    # (他の語の一部に重ならないよう、同じ境界ルールを適用する)
+                    def _soften(match: "re.Match") -> str:
+                        if _continues_word(match, inner):
+                            return match.group(0)
+                        return "……"
+
+                    inner_subbed = _emotion_word_re(matched_key).sub(_soften, inner)
                     cleaned_inner = re.sub(r"……+", "……", inner_subbed).strip()
                     if not cleaned_inner or cleaned_inner == "……":
                         cleaned_line = f"（{action_desc}）"
@@ -413,11 +471,13 @@ class CausalToIronyRule(RuleBase):
             match = self.regex.search(line)
             if match:
                 irony = rnd.choice(self.irony_pool)
-                # If within dialogue brackets
+                spoken = match.group(2).strip().strip("「").strip("」").strip()
+                # キャラクターの発話そのものは残し、舞台指示を前置する
+                # （置換すると元の台詞が消え、会話が成立しなくなる）。
                 if line.startswith("「") and line.endswith("」"):
-                    new_line = f"「……{irony}」"
+                    new_line = f"（……{irony}——「{spoken}」）"
                 else:
-                    new_line = f"……{irony}。"
+                    new_line = f"（……{irony}。）{line}"
                 new_lines.append(new_line)
                 modified = True
             else:
@@ -436,6 +496,29 @@ class CausalToIronyRule(RuleBase):
             )
 
         return RewriteResult(success=True, modified=False, block=block)
+
+
+def _yanai_base(verb: str) -> str:
+    """``〜げな`` に前置する連用形を整形する。
+
+    「〜げな」は用言の連用形/終止形 (「確信しげな」「呆れたげな」) などに付く。
+    終止形で終わる動詞をそのまま繋ぐと「思うげな」「感じるげな」のような
+    語形成として破綻した語になるため、進行形に正規化する。
+    """
+    v = verb.strip()
+    if not v:
+        return v
+    if v.endswith("ている"):
+        return v
+    if v.endswith("ます"):
+        return v[:-2]
+    if v.endswith("て"):
+        return v[:-1] + "ている"
+    if v.endswith("う"):
+        return v[:-1] + "っている"
+    if v.endswith("る"):
+        return v[:-1] + "ている"
+    return v
 
 
 class SubjectiveInternalizeRule(RuleBase):
@@ -473,8 +556,12 @@ class SubjectiveInternalizeRule(RuleBase):
             if match:
                 content = match.group(1).strip()
                 verb = match.group(2).strip()
-                replacement = f"（……{content}{verb}げな素振りを見せ、言葉を飲み込む）"
-                new_lines.append(replacement)
+                if not content:
+                    new_lines.append(line)
+                    continue
+                # 発話そのものは残し、舞台指示を前置する (置換で発話を消さない)
+                beat = f"（……{_yanai_base(verb)}げな素振りを見せ、言葉を飲み込む）"
+                new_lines.append(f"{beat}{line}")
                 modified = True
             else:
                 new_lines.append(line)
@@ -543,10 +630,14 @@ class ThreatSubtextRule(RuleBase):
         new_lines: List[str] = []
 
         for line in block.lines:
-            if self.regex.search(line):
+            match = self.regex.search(line)
+            if match:
                 phrase = rnd.choice(self.cold_phrases)
                 action = rnd.choice(self.threat_actions)
-                new_line = f"「……{phrase}」——{action}。"
+                # キャラクターの発話そのものは残し、冷たい副次テキストと
+                # 威嚇的な行動を舞台指示として前置する
+                # （置換すると元の台詞が消え、会話が成立しなくなる）。
+                new_line = f"（……{phrase}——{action}。）{line}"
                 new_lines.append(new_line)
                 modified = True
             else:

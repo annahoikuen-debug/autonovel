@@ -1,11 +1,15 @@
 import pytest
 from unittest.mock import AsyncMock, patch, MagicMock
 from fastapi import Request
+from src.backend.routers import billing_webhook
 from src.backend.routers.billing_webhook import handle_stripe_webhook
 from src.backend.database.models_billing import StripeWebhookEvent
 
 @pytest.mark.asyncio
-async def test_billing_webhook_idempotency():
+async def test_billing_webhook_idempotency(monkeypatch):
+    # 本番相当の安全設定（署名シークレット必須）でも検証経路を通すため、
+    # テスト内でだけ WEBHOOK_SECRET を設定する（署名は construct_event をモック済み）。
+    monkeypatch.setattr(billing_webhook, "WEBHOOK_SECRET", "whsec_test_secret")
     event_id = "evt_test_idempotent_123"
 
     mock_request = MagicMock(spec=Request)

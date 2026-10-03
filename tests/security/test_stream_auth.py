@@ -75,10 +75,91 @@ def test_legitimate_public_prefixes_still_public(path: str):
         ("/api/stream/pipeline/7", 7),
         ("/api/stream/writing/notanumber/3", None),
         ("/api/other/1", None),
+        # トークン発行パスは book_id スコープを持たないため、必ず None。
+        # 以前は int("token") の ValueError に「たまたま」除外されていた。
+        ("/api/stream/token/42", None),
+        ("/api/stream/token", None),
     ],
 )
 def test_extract_stream_book_id(path: str, expected):
     assert _extract_stream_book_id(path) == expected
+
+
+def test_token_minting_path_is_explicitly_excluded():
+    """`/api/stream/token/...` の除外は明示的で、`int()` の例外に依存しない。
+
+    除外ロジックが `segments[0] == STREAM_TOKEN_SEGMENT` によることを、
+    book_id として数字が解釈できてしまう版でも除外が効く形で固定する。
+    """
+    from src.backend.middleware.auth_middleware import STREAM_TOKEN_SEGMENT
+
+    assert STREAM_TOKEN_SEGMENT == "token"
+    # 2 段目に book_id が来たとしても、先頭が token なら None のまま
+    assert _extract_stream_book_id("/api/stream/token/123") is None
+    assert _extract_stream_book_id("/api/stream/token/123/") is None
+    # 先頭が token でなければ従来どおり解決できる
+    assert _extract_stream_book_id("/api/stream/writing/123/1") == 123
+
+
+def test_token_minting_path_stays_authenticated(monkeypatch):
+    """トークン発行パスはストリームトークンでバイパスできない（認証が必要）。
+
+    `/api/stream/token/{book_id}` は book_id スコープを持たないため、
+    期限付きストリームトークンでバイパスしてはならない。
+    """
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from src.backend.middleware.auth_middleware import GlobalAuthMiddleware
+
+    app = FastAPI()
+    app.add_middleware(GlobalAuthMiddleware)
+
+    @app.get("/api/stream/token/{book_id}")
+    async def mint(book_id: int):
+        return {"book_id": book_id}
+
+    # AUTH_DISABLED を無効化したうえで実際の判定を見る
+    monkeypatch.setattr(settings, "AUTH_DISABLED", False)
+    client = TestClient(app)
+
+    # book_id 42 にスコープされた正しいストリームトークンを提示しても 401
+    scoped = create_stream_token(user_id=1, book_id=42)
+    res = client.get(f"/api/stream/token/42?token={scoped}")
+    assert res.status_code == 401
+
+    # トークン無しも 401
+    assert client.get("/api/stream/token/42").status_code == 401
+
+    # access JWT なら通る
+    access = create_access_token(data={"sub": "1"})
+    ok = client.get(
+        "/api/stream/token/42", headers={"Authorization": f"Bearer {access}"}
+    )
+    assert ok.status_code == 200
+
+
+def test_dead_api_prefixed_paths_are_not_in_public_exact_paths():
+    """存在しない `/api/health/...` / `/api/metrics` は許可リストに無いこと。
+
+    実パス（`/health/live` 等）は別途許可されており、`/api/...` 側はデッドエントリ
+    だったため削除した。残骸が再び入っていないことを固定する。
+    """
+    from src.backend.middleware.auth_middleware import PUBLIC_EXACT_PATHS
+
+    for dead in (
+        "/api/health/live",
+        "/api/health/liveness",
+        "/api/health/ready",
+        "/api/health/readiness",
+        "/api/metrics",
+    ):
+        assert dead not in PUBLIC_EXACT_PATHS, f"{dead} はデッドエントリ"
+        assert is_public_path(dead) is False, f"{dead} が公開パスとして扱われています"
+
+    # 実パスは引き続き公開
+    for live in ("/health", "/health/live", "/health/ready", "/metrics"):
+        assert is_public_path(live) is True
 
 
 # ---------------------------------------------------------------- #

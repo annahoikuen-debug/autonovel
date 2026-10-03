@@ -6,7 +6,9 @@
     "「貴様だけは許さない」"
   ],
   "expected_contains": [
-    "——"
+    "（……",
+    "——",
+    "「貴様だけは許さない」"
   ],
   "applied_rules": [
     "rule_05_threat_subtext"

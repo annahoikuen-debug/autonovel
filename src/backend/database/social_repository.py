@@ -15,6 +15,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# get_relationship_trends_summary が 1 関係あたり从哪里頭 3 件まで取る上限
+_MAX_HISTORY_PER_RELATION = 3
+
 
 class SocialRepository:
     """ソーシャルシミュレーション関連のDB操作を集約するリポジトリ"""
@@ -520,17 +523,31 @@ class SocialRepository:
             if not rels:
                 return ""
 
+            # 関係ごとに 1 本ずつ SELECT していたため、relationship_id IN (...) の
+            # 一括取得（limit_pairs 制約は MAX_RECORDS で各関係を 3 件までに守る）に変更する。
+            rel_ids = [rel.id for rel in rels]
+            if not rel_ids:
+                return ""
+
+            hist_stmt = (
+                select(RelationshipHistory)
+                .where(RelationshipHistory.relationship_id.in_(rel_ids))
+                .order_by(
+                    RelationshipHistory.relationship_id,
+                    RelationshipHistory.episode_num.desc(),
+                )
+            )
+            h_res = await session.execute(hist_stmt)
+            hist_by_rel: dict[int, list[RelationshipHistory]] = {}
+            for hist in h_res.scalars().all():
+                bucket = hist_by_rel.setdefault(hist.relationship_id, [])
+                if len(bucket) < _MAX_HISTORY_PER_RELATION:
+                    bucket.append(hist)
+
             lines = []
             for rel in rels:
                 # 過去の履歴からトレンドを計算
-                hist_stmt = (
-                    select(RelationshipHistory)
-                    .where(RelationshipHistory.relationship_id == rel.id)
-                    .order_by(RelationshipHistory.episode_num.desc())
-                    .limit(3)
-                )
-                h_res = await session.execute(hist_stmt)
-                hist_records = list(h_res.scalars().all())
+                hist_records = hist_by_rel.get(rel.id, [])
 
                 trend_desc = ""
                 if len(hist_records) >= 2:
@@ -564,6 +581,7 @@ class SocialRepository:
         self,
         book_id: int,
         char_names: list[str],
+        limit: int = 100,
     ) -> list[dict[str, Any]]:
         """指定されたキャラクターリストに関連する関係性のみを抽出 (Step 32)"""
         from sqlalchemy import or_, select
@@ -583,6 +601,7 @@ class SocialRepository:
                     ),
                 )
                 .order_by(CharacterRelationship.last_interaction_ep.desc())
+                .limit(limit)
             )
             result = await session.execute(stmt)
             rows = result.scalars().all()

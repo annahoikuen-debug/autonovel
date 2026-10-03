@@ -52,11 +52,27 @@ def mock_repo():
     repo = MagicMock()
     storage = {}
 
-    async def get_plot(book_id: int, ep_num: int, branch_id: int = 1):
-        return storage.get((book_id, ep_num))
+    # `PlotRepository.get_plot` は (book_id_or_branch_id, ep_num, branch_id, book_id)。
+    # branch_id は作品間で共有されるため、作品で絞り込むため book_id も明示的に
+    # 渡されるようになったため、テストダブルも同じシグネチャに揃える。
+    async def get_plot(
+        book_id_or_branch_id: int,
+        ep_num: int,
+        branch_id: int | None = None,
+        book_id: int | None = None,
+    ):
+        key = (book_id if book_id is not None else book_id_or_branch_id, ep_num)
+        return storage.get(key)
 
-    async def save_plot(book_id: int, ep_num: int, plot_data: any, branch_id: int = 1):
-        storage[(book_id, ep_num)] = plot_data
+    async def save_plot(
+        book_id_or_branch_id: int,
+        ep_num: int,
+        plot_data: any,
+        branch_id: int = 1,
+        book_id: int | None = None,
+    ):
+        key = (book_id if book_id is not None else book_id_or_branch_id, ep_num)
+        storage[key] = plot_data
 
     repo.get_plot = AsyncMock(side_effect=get_plot)
     repo.save_plot = AsyncMock(side_effect=save_plot)

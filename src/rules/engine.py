@@ -133,6 +133,7 @@ class RuleEngine:
         events: List[PlotEvent],
         initial_context: Optional[PlotContext] = None,
         previous_snapshot: Optional[Dict[str, Dict[str, float]]] = None,
+        previous_decays: Optional[Dict[str, Dict[str, float]]] = None,
         previous_episode: Optional[int] = None,
     ) -> EmotionalVector:
         """エピソードのイベント列を順に処理し、最終状態を EmotionalVector で返す。
@@ -149,6 +150,7 @@ class RuleEngine:
             events: 処理するイベントリスト (scene 順にソートされる)
             initial_context: 初期コンテキスト (各イベント評価時に複製して使用)
             previous_snapshot: 前回エピソード終了時のスナップショット
+            previous_decays: 前回の減衰率スナップショット (省略時は既定値 0.1)
             previous_episode: 前回エピソード番号 (減衰計算用)
 
         Returns:
@@ -156,7 +158,9 @@ class RuleEngine:
         """
         # 1. 前回スナップショットからの復元 (減衰スナップショットも復元)
         if previous_snapshot is not None:
-            self.state_machine.restore(previous_snapshot)
+            # decays を渡さないと全キーの減衰率が 0.1 に落ち、
+            # decay_per_episode を指定したルールの減衰が失われる
+            self.state_machine.restore(previous_snapshot, decays=previous_decays)
             if previous_episode is not None and previous_episode < episode:
                 # エピソード境界で 1 話分の減衰を適用
                 self.apply_inter_episode_decay(episode - previous_episode)
@@ -172,8 +176,9 @@ class RuleEngine:
             # 次イベントの条件評価用に previous_event_type を記録
             ctx.custom_data["previous_event_type"] = event.event_type.value
 
-        # 3. スナップショット保存
+        # 3. スナップショット保存 (減衰率もセットで保存)
         self._last_snapshot = self.state_machine.snapshot()
+        self._last_decay_snapshot = self.state_machine.decay_snapshot()
 
         # 4. EmotionalVector 変換
         vector = self._signals_to_vector(episode, all_signals)
@@ -309,6 +314,14 @@ class RuleEngine:
     def last_snapshot(self) -> Optional[Dict[str, Dict[str, float]]]:
         """直近の process_episode で保存されたスナップショット。"""
         return getattr(self, "_last_snapshot", None)
+
+    @property
+    def last_decay_snapshot(self) -> Optional[Dict[str, Dict[str, float]]]:
+        """直近の process_episode で保存された減衰率スナップショット。
+
+        次回 process_episode の ``previous_decays`` に渡す。
+        """
+        return getattr(self, "_last_decay_snapshot", None)
 
     @property
     def last_vector(self) -> Optional[EmotionalVector]:

@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from fastapi import APIRouter, Depends
 from fastapi.responses import Response
@@ -6,12 +6,11 @@ from fastapi.responses import Response
 from src.backend.auth import get_current_user, get_prompt_manager, validate_api_key_or_raise
 from src.backend.database.models import User
 from src.backend.engine_helpers import get_engine
+from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.task_helpers import create_task
 from src.backend.tasks import execute_service_workflow
 from src.core.observability import TraceContext
 from src.models.api_schemas import MarketingExportRequest, MarketingGenerateRequest, CatchphraseGenerateRequest
-from src.agents.marketing import MarketingAgent
-from src.domain.schemas.marketing import CatchphraseItem
 
 router = APIRouter(tags=["marketing"])
 
@@ -62,7 +61,17 @@ async def export_package_post(book_id: int, req: MarketingExportRequest):
 
 
 @router.get("/api/marketing/export_package/{book_id}")
-async def export_package_get(book_id: int, api_key: str):
+async def export_package_get(
+    book_id: int,
+    api_key: str = Depends(validate_api_key_or_raise),
+    current_user: User = Depends(get_current_user),
+):
+    """作品データ一式 (本文 / 設定 / プロット / JSON) を ZIP で返す (GET)。
+
+    プロバイダ API キーはクエリ文字列ではなく `Authorization` ヘッダーから受け取る。
+    クエリ文字列に出すと nginx 等のアクセスログやブラウザ履歴に平文で残るため。
+    """
+    await verify_book_ownership(book_id, current_user)
     engine = get_engine(api_key)
     zip_data, zip_filename = await engine.marketing.create_export_package(book_id)
     return Response(

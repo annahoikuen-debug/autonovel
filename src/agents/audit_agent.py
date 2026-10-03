@@ -416,6 +416,7 @@ class AuditAgent(SkillAgent):
         drafted_text: str,
         book_id: int,
         ep_num: int,
+        branch_id: int | None = None,
     ) -> list[tuple[AuditCriterion, Any]]:
         """既存5監査を投入し、``(criterion, 結果)`` のリストを返す。
 
@@ -439,7 +440,7 @@ class AuditAgent(SkillAgent):
 
         async def _logical() -> tuple[bool, str, float]:
             return await self._logical_auditor.audit_logical_consistency(
-                book_id=book_id, ep_num=ep_num, blueprint=blueprint
+                book_id=book_id, ep_num=ep_num, blueprint=blueprint, branch_id=branch_id
             )
 
         async def _deai() -> tuple[bool, str]:
@@ -668,6 +669,7 @@ class AuditAgent(SkillAgent):
         book_id: int,
         ep_num: int,
         parallel: bool = True,
+        branch_id: int | None = None,
     ) -> tuple[list[dict[str, Any]], float]:
         """監査フェーズを実行し ``(outcomes, レイテンシ秒)`` を返す。
 
@@ -677,7 +679,9 @@ class AuditAgent(SkillAgent):
         """
         started = time.perf_counter()
 
-        plan = await self._run_core_audits(writing_context, drafted_text, book_id, ep_num)
+        plan = await self._run_core_audits(
+            writing_context, drafted_text, book_id, ep_num, branch_id=branch_id
+        )
         durations: dict[str, float] = {}
 
         def _timed(criterion: AuditCriterion, factory: Any) -> Any:

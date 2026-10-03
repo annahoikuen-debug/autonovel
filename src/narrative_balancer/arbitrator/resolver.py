@@ -1,9 +1,33 @@
 """Priority-based conflict resolution and synthesis engine."""
 
+import math
 from typing import Dict, List, Tuple
 from src.narrative_balancer.arbitrator.config import ArbitratorConfig
 from src.narrative_balancer.arbitrator.models import BalancerResult, ConflictRecord, PlotState
 from src.narrative_balancer.models import Beat, CorrectionAction
+
+
+def _is_valid_tension(value: object) -> bool:
+    """tension が比較可能な数値 (None/NaN でない) か判定する。"""
+    if value is None:
+        return False
+    try:
+        return not math.isnan(float(value))
+    except (TypeError, ValueError):
+        return False
+
+
+def _is_placeholder_summary(summary: str) -> bool:
+    """ソルバー/バランサーが生成したプレースホルダ summary かどうか。
+
+    プレースホルダ (例: "ビート: SETUP") は著作データではないため、
+    既存の著者サマリーを差し替えてはならない。
+    """
+    if summary.startswith("ビート:") or summary.startswith("Beat:"):
+        return True
+    if summary.startswith("第") and summary.endswith("話"):
+        return True
+    return False
 
 
 class PriorityResolver:
@@ -72,23 +96,37 @@ class PriorityResolver:
                         conflicting_names.append(name)
                     # The highest priority available sets the beat type
                     chosen_beat.beat_type = prop_bt
-                    chosen_beat.summary = proposals[name].summary or chosen_beat.summary
+                    # summary は著作データ。_balancer 側のプレースホルダ/空文字で
+                    # 上書きしない (既存著者テキストを保持)
+                    proposed_summary = (proposals[name].summary or "").strip()
+                    if proposed_summary and not _is_placeholder_summary(proposed_summary):
+                        if not chosen_beat.summary.strip():
+                            chosen_beat.summary = proposed_summary
                     break
 
             # 2. Tension: Take DSP if active and changed, or highest recommended tension
-            if "dsp" in proposals and proposals["dsp"].tension != base_beat.tension:
-                chosen_beat.tension = proposals["dsp"].tension
+            dsp_tension = proposals["dsp"].tension if "dsp" in proposals else None
+            if "dsp" in proposals and _is_valid_tension(dsp_tension) and dsp_tension != base_beat.tension:
+                chosen_beat.tension = dsp_tension
                 if "dsp" not in conflicting_names:
                     conflicting_names.append("dsp")
             else:
                 # Max tension recommended by any balancer
-                max_t = max(p.tension for p in proposals.values())
-                chosen_beat.tension = max_t
+                # tension は Optional[float] で None/NaN があり得るため除外する
+                candidates = [
+                    p.tension for p in proposals.values() if _is_valid_tension(p.tension)
+                ]
+                if candidates:
+                    chosen_beat.tension = max(candidates)
+                # 全部 None/NaN の場合は既存値 (base) をそのまま維持する
 
             # 3. Characters & Defeats: CSP (primary) -> Grammar -> Base
-            if "csp" in proposals:
+            # CSP は構造ソルバーであり、著作データ (characters) と
+            # 確定済みエピソードの is_defeat の正誤を決める権限はない。
+            # 既存 Beat が無いエピソード (新規生成) のときだけ採用する。
+            if "csp" in proposals and orig_map.get(ep) is None:
                 if proposals["csp"].characters:
-                    chosen_beat.characters = proposals["csp"].characters
+                    chosen_beat.characters = list(proposals["csp"].characters)
                 chosen_beat.is_defeat = proposals["csp"].is_defeat
 
             final_beats.append(chosen_beat)

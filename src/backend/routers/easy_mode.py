@@ -7,11 +7,12 @@ from fastapi import APIRouter, Depends, Path, Request, Response
 from pydantic import ValidationError
 
 from src.backend import database
-from src.backend.auth import require_api_key
+from src.backend.auth import get_current_user, require_api_key
 from src.backend.database.core import get_db_manager
 from src.backend.database.repository import BookRepository
 from src.backend.observability.health import metrics
 from src.backend.rate_limit import generate_limiter
+from src.backend.security.owner_guard import verify_book_ownership
 from src.domain.entities.easy_mode import EasyModeInput, GenerationResponse
 from src.services.digest_service import process_chapter
 from src.services.graph_pipeline import graph_pipeline_service
@@ -354,13 +355,15 @@ async def generate_content(
 async def export_easy_mode_package(
     book_id: int = Path(ge=1),
     session=Depends(database.get_db),
+    current_user: Any = Depends(get_current_user),
 ) -> Response:
     """かんたんモードで作成された作品の納品パッケージ (ZIP) をエクスポートする。
 
-    book_id に対応する作品が DB に存在しなくてもフォールバックデータで
-    ZIP を生成して返却する仕様 (TC-12 参照)。
+    認証済みユーザー本人の作品のみエクスポートできる（他者の book_id を
+    推測して差し替えパッケージを取得できないようにする）。
     """
     logger.info("Export requested: book_id=%s", book_id)
+    await verify_book_ownership(book_id, current_user)
     metrics.increment("exports_attempted")
     repo = BookRepository(session)
     agent = MarketingAgent(repo=repo)
@@ -390,15 +393,28 @@ async def export_easy_mode_package(
 
 # Task status endpoint
 @router.get("/status/{task_id}")
-async def get_task_status(task_id: str) -> dict[str, Any]:
+async def get_task_status(
+    task_id: str,
+    current_user: Any = Depends(get_current_user),
+) -> dict[str, Any]:
     """Return the status of a generation task.
 
     Returns "pending" if not yet completed, "failed" if an error occurred,
     otherwise "completed" with the result.
+
+    認証必須。タスク結果に所有者が記録されている場合は本人 (または管理者) のみ参照できる。
     """
     from src.backend.tasks.huey import huey
 
     result = huey.result(task_id)
+
+    # タスク結果に user_id が記録されている場合は所有者を確認する
+    # （所有者が不明のタスクは管理者だけが参照できる fail-closed 判定）。
+    if isinstance(result, dict):
+        from src.backend.routers.tasks import _assert_task_ownership
+
+        _assert_task_ownership(result, current_user)
+
     if result is None:
         logger.info("Task status polled (pending): task_id=%s", task_id)
         return {"task_id": task_id, "status": "pending"}

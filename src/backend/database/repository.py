@@ -204,28 +204,54 @@ class BookRepository:
         return self.session.get(Book, book_id)
 
     def create_task(
-        self, task_id: str | None = None, status: str = "pending", result: str | None = None
+        self,
+        task_id: str | None = None,
+        status: str = "pending",
+        result: str | None = None,
+        user_id: int | None = None,
     ) -> Task:
-        """Create a new Task record and return it (Sync)."""
+        """Create a new Task record and return it (Sync).
+
+        ``user_id`` は所有ユーザー。渡さない（None）タスクは所有者が不明なので
+        ``_assert_task_ownership`` が拒否する（fail-closed）。
+        """
         now = int(time.time())
         if not task_id:
             import uuid
             task_id = str(uuid.uuid4())
-        task = Task(id=task_id, status=status, result=result, created_at=now, updated_at=now)
+        task = Task(
+            id=task_id,
+            user_id=user_id,
+            status=status,
+            result=result,
+            created_at=now,
+            updated_at=now,
+        )
         self.session.add(task)
         self._safe_commit()
         self._safe_refresh(task)
         return task
 
     async def create_task_async(
-        self, task_id: str | None = None, status: str = "pending", result: str | None = None
+        self,
+        task_id: str | None = None,
+        status: str = "pending",
+        result: str | None = None,
+        user_id: int | None = None,
     ) -> Task:
         """Create a new Task record and return it with guaranteed awaitable commit (Async)."""
         now = int(time.time())
         if not task_id:
             import uuid
             task_id = str(uuid.uuid4())
-        task = Task(id=task_id, status=status, result=result, created_at=now, updated_at=now)
+        task = Task(
+            id=task_id,
+            user_id=user_id,
+            status=status,
+            result=result,
+            created_at=now,
+            updated_at=now,
+        )
         self.session.add(task)
         await self.commit_async()
         await self.refresh_async(task)

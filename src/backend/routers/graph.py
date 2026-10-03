@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
-from typing import Any
+from typing import Any, Callable
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field, field_validator
@@ -13,10 +14,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from src.backend import database
-from src.backend.auth import require_api_key
+from src.backend.auth import get_current_user, require_api_key
 from src.backend.config import settings
-from src.backend.database.models import Book as BookModel, Character as CharacterModel
-from src.backend.database.models_relation import CharacterRelationModel
+from src.backend.database.models import Character as CharacterModel
+from src.backend.database.models import Chapter as ChapterModel, User
+from src.backend.security.owner_guard import verify_book_ownership
+from src.core.container import AppContainer
 from src.domain.schemas.foreshadowing import (
     ForeshadowingGraphResponse,
     GraphEdgeSchema,
@@ -28,9 +31,75 @@ from src.services.foreshadowing_service import ForeshadowingService
 from src.services.graph_pipeline import graph_pipeline_service
 from src.services.rag_service import rag_service
 
-router = APIRouter(prefix="/api/graph", tags=["graph"])
+router = APIRouter(
+    prefix="/api/graph",
+    tags=["graph"],
+    # 従来は router に認証が無く、GlobalAuthMiddleware を通過した任意のテナントが
+    # 他人のナレッジグラフ・チャプター本文を読み書きできた。認証を必須にする。
+    dependencies=[Depends(get_current_user)],
+)
 
 logger = logging.getLogger("graph_router")
+
+
+# ============================================================
+# 認可ヘルパー
+# ============================================================
+
+
+def _is_admin(user: User | None) -> bool:
+    """管理者ロールかどうかを判定する。"""
+    return getattr(user, "role", None) == "admin"
+
+
+async def _assert_chapter_ownership(
+    chapter_id: int, current_user: User, session: AsyncSession
+) -> None:
+    """``chapter_id`` から ``book_id`` を解決して所有権を検証する。"""
+    result = await session.execute(select(ChapterModel).where(ChapterModel.id == chapter_id))
+    chapter = result.scalar_one_or_none()
+    if chapter is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"チャプターが見つかりません: {chapter_id}",
+        )
+    await verify_book_ownership(int(chapter.book_id), current_user, session)
+
+
+async def _require_book_scope(
+    book_id: int | None, current_user: User
+) -> int:
+    """RAG 系で book_id 任意になっている経路の認可を行う。
+
+    ``book_id`` が指定されていれば通常どおり所有権を検証する。
+    指定がない場合はセッション（＝全テナント）にまたがる検索になるため、
+    管理者に限定する（fail-closed）。
+    """
+    if book_id is not None:
+        await verify_book_ownership(book_id, current_user, AppContainer.db())
+        return book_id
+    if not _is_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="book_id を指定するか、管理者権限が必要です",
+        )
+    return book_id  # type: ignore[return-value]
+
+
+async def _run_blocking(fn: Callable[..., Any], /, **kwargs: Any) -> Any:
+    """ブロッキングな **同期** 関数をワーカースレッドへ逃がす。
+
+    ``session`` は同期 ``Session`` であり、内部の `session.execute` /
+    `session.query` はループを止める重い I/O になる。そこで **同期コア** を
+    ``asyncio.to_thread`` で別スレッドに投げ、メインループは待たされずに済む。
+
+    以前の ``asyncio.to_thread(lambda: asyncio.run(fn(**kwargs)))`` は
+    呼び出しごとに新しいイベントループを生成していた（ループ生成コスト、
+    ループ所有権の破壊、`tests/regression/test_H1_async_boundary.py` の
+    ガード違反）。    それを避けるため `rag_service` / `graph_pipeline_service` は
+    同期コア (`*_sync`) を提供しており、ネストしたループを作らずに済む。
+    """
+    return await asyncio.to_thread(fn, **kwargs)
 
 
 # ============================================================
@@ -146,6 +215,14 @@ class HybridSearchRequest(BaseModel):
     alpha: float = Field(0.5, ge=0.0, le=1.0, description="ベクトル検索の重み")
     beta: float = Field(0.3, ge=0.0, le=1.0, description="グラフ検索の重み")
     gamma: float = Field(0.2, ge=0.0, le=1.0, description="全文検索の重み")
+    book_id: int | None = Field(
+        None,
+        ge=1,
+        description=(
+            "スコープする書籍ID。検索はセッション全体（=全テナント）にまたがるため、"
+            "通常利用では作品所有権の検証に必要なため指定が必須となる"
+        ),
+    )
 
 
 class RagContextRequest(BaseModel):
@@ -170,12 +247,15 @@ async def get_graph_data(
     book_id: int = Query(..., description="作品ID"),
     graph_name: str | None = None,
     session: AsyncSession = Depends(database.get_async_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """フロントエンドの相関図可視化 (Force-Graph 等) 用にノードとエッジ一覧を取得する.
 
     book_id を指定して、RDBMS (foreshadowings, characters, character_relations) から
     実際の作品データに基づくグラフを動的に生成して返却する。
     """
+    # IDOR 防止: 作品の所有権を検証する
+    await verify_book_ownership(book_id, current_user, session)
     gname = graph_name or settings.AGE_GRAPH_NAME
 
     # RDBMSベースの伏線グラフ生成
@@ -264,6 +344,7 @@ async def get_foreshadowing_kpi(
         None, ge=1, description="現在話数（指定時は期限超過数も計測）"
     ),
     session: AsyncSession = Depends(database.get_async_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """伏線KPI（回収率・未回収数・期限超過数）を取得する。
 
@@ -272,6 +353,8 @@ async def get_foreshadowing_kpi(
     """
     from src.services.foreshadowing.kpi import ForeshadowingKpiService
 
+    # IDOR 防止: 作品の所有権を検証する
+    await verify_book_ownership(book_id, current_user, session)
     try:
         repo = DbForeshadowingRepository(session)
         kpi = await ForeshadowingKpiService(repo).compute(
@@ -291,8 +374,19 @@ async def list_chapter_chunks(
     chapter_id: int | None = Query(None, description="章IDでフィルタ"),
     limit: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(database.get_async_db),
+    current_user: User = Depends(get_current_user),
 ) -> list[dict[str, Any]]:
     """保存されているベクトルチャンク一覧を取得する."""
+    # チャンク本文は小説の全文を含むため、章の所有者を必ず検証する。
+    if chapter_id is not None:
+        await _assert_chapter_ownership(chapter_id, current_user, session)
+    elif not _is_admin(current_user):
+        # chapter_id 未指定は全テナントのチャンクを跨ぐため管理者に限定する
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="chapter_id を指定するか、管理者権限が必要です",
+        )
+
     query = select(ChapterChunk)
     if chapter_id is not None:
         query = query.where(ChapterChunk.chapter_id == chapter_id)
@@ -320,9 +414,22 @@ async def list_chapter_chunks(
 @router.post("/cypher", response_model=CypherQueryResponse, dependencies=[Depends(require_api_key)])
 def execute_cypher(
     request: CypherQueryRequest,
+    current_user: User = Depends(get_current_user),
     session: Session = Depends(database.get_db),
 ) -> CypherQueryResponse:
-    """任意のCypherクエリを実行する（管理者向け）."""
+    """任意のCypherクエリを実行する（管理者向け）.
+
+    呼び出し側が指定した Cypher をそのまま渡せるため、認可は
+    GraphRAG の有効無効（インストールフラグ）より **先に** 判定する。
+    フラグで無効の場合でも、管理者以外は 403 で拒否する。
+    """
+    # 認可をフラグ判定より先に行い、無効設定でも攻撃者の取りこぼしを防ぐ
+    if not _is_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="このエンドポイントには管理者権限が必要です",
+        )
+
     if not settings.ENABLE_GRAPHRAG or not settings.DATABASE_URL.startswith("postgresql"):
         raise HTTPException(status_code=400, detail="GraphRAG is not enabled or not on PostgreSQL")
 
@@ -480,13 +587,21 @@ def get_labels(
 async def process_chapter(
     request: PipelineProcessRequest,
     session: Session = Depends(database.get_db),
+    auth_session: AsyncSession = Depends(database.get_async_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """単一チャプターのGraphRAG処理を実行する."""
+    # IDOR 防止: 他人のチャプターにナレッジ行を書けないようにする
+    await _assert_chapter_ownership(request.chapter_id, current_user, auth_session)
+
     if not request.chapter_text.strip():
         return {"chunks_created": 0, "entities_created": 0, "relationships_created": 0}
 
     idempotency_key = request.idempotency_key or f"chapter_{request.chapter_id}"
     # await 漏れにより result が coroutine になっていた（上記 process_chapter 参照）
+    # process_chapter_knowledge は LLM 抽出が非同期だが、同期 Session を触る
+    # 冪等性チェック・チャンク保存・冪等性記録は内部でワーカースレッドへ
+    # 逃が済み（graph_pipeline.py）、ここでさらにループを作らずにそのまま await できる。
     result = await graph_pipeline_service.process_chapter_knowledge(
         session=session,
         chapter_id=request.chapter_id,
@@ -509,10 +624,18 @@ async def process_chapter(
 async def process_chapters_batch(
     request: PipelineBatchRequest,
     session: Session = Depends(database.get_db),
+    auth_session: AsyncSession = Depends(database.get_async_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """複数チャプターのGraphRAG処理をバッチ実行する."""
+    # IDOR 防止: バッチに含まれる全チャプターの所有者を検証する
+    for c in request.chapters:
+        await _assert_chapter_ownership(c.chapter_id, current_user, auth_session)
+
     chapters = [(c.chapter_id, c.chapter_text) for c in request.chapters]
     # await 漏れ（process_chapter と同じ原因）
+    # チャプター単位のブロッキング処理は process_chapter_knowledge 内部で
+    # ワーカースレッドへ逃が済み（process_chapter と同じ理由）
     stats = await graph_pipeline_service.process_chapters_batch(
         session=session,
         chapters=chapters,
@@ -546,14 +669,21 @@ def get_pipeline_status(
 async def hybrid_search(
     request: HybridSearchRequest,
     session: Session = Depends(database.get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """ハイブリッド検索 (Vector + Graph + Fulltext) を実行する."""
     import time
 
+    # 検索対象はセッション全体なので、作品スコープを必ず指定させる
+    await _require_book_scope(request.book_id, current_user)
+
     start = time.perf_counter()
 
     try:
-        results = await rag_service.hybrid_search(
+        # rag_service は内部で session.execute を同期実行するため、
+        # 同期コアをワーカースレッドへオフロードしてイベントループをブロックしない
+        results = await _run_blocking(
+            rag_service.hybrid_search_sync,
             session=session,
             query=request.query,
             core_entities=request.core_entities,
@@ -587,10 +717,15 @@ async def hybrid_search(
 async def build_rag_context(
     request: RagContextRequest,
     session: Session = Depends(database.get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """執筆用RAGコンテキスト (グラフ + ベクトル + 全文) を生成する."""
+    # book_id 未指定はセッション全体を対象になるため管理者に限定される
+    await _require_book_scope(request.book_id, current_user)
     try:
-        context = await rag_service.build_rag_context(
+        # rag_service は内部で session.execute を同期実行するため同期コアをオフロードする
+        context = await _run_blocking(
+            rag_service.build_rag_context_sync,
             session=session,
             book_id=request.book_id,
             current_prompt=request.current_prompt,
@@ -616,10 +751,15 @@ async def retrieve_for_episode(
     additional_entities: list[str] | None = Query(None),
     top_k: int = Query(5, ge=1, le=20),
     session: Session = Depends(database.get_db),
+    current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
     """エピソード執筆向けのコンテキストを一括取得する."""
+    # book_id 未指定はセッション全体を対象になるため管理者に限定される
+    await _require_book_scope(book_id, current_user)
     try:
-        result = await rag_service.retrieve_for_episode(
+        # rag_service は内部で session.execute を同期実行するため同期コアをオフロードする
+        result = await _run_blocking(
+            rag_service.retrieve_for_episode_sync,
             session=session,
             book_id=book_id,
             episode_number=episode_number,

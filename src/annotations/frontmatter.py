@@ -1,12 +1,14 @@
 """YAML frontmatter parser for emotional beat annotations."""
 from __future__ import annotations
 
+import logging
 import yaml
-from typing import Optional
 
-from src.annotations.beat import EmotionalBeat, ParsedScript
+from src.annotations.beat import EmotionalBeat
 from src.pipeline.emotional_residue import EmotionType
 
+
+logger = logging.getLogger(__name__)
 
 # フロントマター区切りマーカー
 FRONTMATTER_DELIMITER = "---"
@@ -89,8 +91,21 @@ def parse_frontmatter(
             )
             beats.append(beat)
         except (KeyError, ValueError, TypeError) as e:
-            # 不正なビートはスキップ
+            # 不正なビートはスキップ（寛容な方針は維持）するが、
+            # フロントマター自体は除去されるため、欠落が呼び出し元に
+            # 伝わらないよう警告を残す
+            logger.warning(
+                "Skipped malformed beat at index %d: %s: %s", idx, type(e).__name__, e
+            )
             continue
+
+    if len(beats) != len(fm_data["beats"]):
+        logger.warning(
+            "Parsed %d of %d frontmatter beats; %d were malformed and skipped",
+            len(beats),
+            len(fm_data["beats"]),
+            len(fm_data["beats"]) - len(beats),
+        )
 
     return clean_text, beats
 

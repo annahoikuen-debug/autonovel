@@ -92,7 +92,9 @@ class DefaultPlotExpander:
 
         skeletons = batch.episodes
         for sk in skeletons:
-            existing = await self.repo.get_plot(book_id, sk.ep_num, branch_id=branch_id)
+            existing = await self.repo.get_plot(
+                branch_id, sk.ep_num, branch_id=branch_id, book_id=book_id
+            )
             if existing is None:
                 dummy_micro = PlotMicroBlueprint(ep_num=sk.ep_num)
                 partial_plot = merge_macro_and_micro(sk, dummy_micro)
@@ -167,7 +169,9 @@ class DefaultPlotExpander:
         reporter: IReporter | None = None,
     ) -> PlotEpisode:
         """指定話数の詳細プロットが存在することを保証する（完全冪等）"""
-        existing = await self.repo.get_plot(book_id, ep_num, branch_id=branch_id)
+        existing = await self.repo.get_plot(
+            branch_id, ep_num, branch_id=branch_id, book_id=book_id
+        )
         if existing and hasattr(existing, "scenes") and len(existing.scenes) >= 3:
             return existing
 
@@ -183,7 +187,7 @@ class DefaultPlotExpander:
         prev_ending_text = ""
         if ep_num > 1:
             try:
-                prev_ch = await self.repo.get_chapter(book_id, branch_id, ep_num - 1)
+                prev_ch = await self.repo.get_chapter(branch_id, ep_num - 1, book_id=book_id)
                 if prev_ch and hasattr(prev_ch, "content") and prev_ch.content:
                     prev_ending_text = prev_ch.content
             except Exception as e:
@@ -259,7 +263,9 @@ class DefaultPlotExpander:
         async def _process_single(ep_num: int) -> Any | None:
             async with sem:
                 try:
-                    existing = await self.repo.get_plot(book_id, ep_num, branch_id=branch_id)
+                    existing = await self.repo.get_plot(
+                        branch_id, ep_num, branch_id=branch_id, book_id=book_id
+                    )
                     if existing and not force:
                         if (
                             hasattr(existing, "detailed_blueprint")

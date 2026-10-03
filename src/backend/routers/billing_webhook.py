@@ -23,16 +23,21 @@ router = APIRouter(prefix="/api/billing/webhook", tags=["billing-webhook"])
 # Webhook署名の検証用エンドポイントシークレット
 WEBHOOK_SECRET = getattr(settings, "STRIPE_WEBHOOK_SECRET", "") or ""
 
-# 署名検証なしでペイロードを受け付けてよい環境（ローカル検証専用）
-# 本番・ステージングでは必ず STRIPE_WEBHOOK_SECRET を設定すること。
-SIGNATURE_OPTIONAL_ENVS: frozenset[str] = frozenset({"local", "testing", "development"})
+# 署名シークレットが未設定でも、検証を敢えて省略してよい環境向けオプトイン。
+# APP_ENV だけでは判定しない: APP_ENV は既定で "development" であり、
+# 既定のまま放置すると本番相当のzia環境でも署名検証が無効化されるため。
+ALLOW_UNSIGNED_WEBHOOKS: bool = bool(getattr(settings, "ALLOW_UNSIGNED_WEBHOOKS", False))
 
 
 def _signature_verification_optional() -> bool:
-    """署名検証を省略してよい環境かどうかを返す。"""
+    """署名検証を省略してよいかどうかを返す。
+
+    省略を許すのは `ALLOW_UNSIGNED_WEBHOOKS=true` が明示的に設定され、
+    かつ Webhook シークレットが未設定のときのみ。
+    """
     if WEBHOOK_SECRET:
         return False
-    return str(getattr(settings, "APP_ENV", "")).lower() in SIGNATURE_OPTIONAL_ENVS
+    return ALLOW_UNSIGNED_WEBHOOKS
 
 
 @router.post("")
@@ -45,12 +50,15 @@ async def handle_stripe_webhook(
     payload = await request.body()
 
     if not _signature_verification_optional():
-        # 署名シークレット未設定 かつ 本番系環境 は 500 で即時拒否する
-        # （これまで 200 を返していたため、攻撃者がクレジットを偽装付与できていた）
+        # 署名シークレット未設定で、かつ ALLOW_UNSIGNED_WEBHOOKS=true でも
+        # オプトインされていない場合は 400 で即時拒否する
+        # （200 を返していたため、攻撃者がクレジットを偽装付与できていた）
         if not WEBHOOK_SECRET:
-            logger.error("STRIPE_WEBHOOK_SECRET is required outside local/testing environments!")
+            logger.error(
+                "STRIPE_WEBHOOK_SECRET is required unless ALLOW_UNSIGNED_WEBHOOKS=true!"
+            )
             raise HTTPException(
-                status_code=500, detail="Server configuration error: missing webhook secret"
+                status_code=400, detail="Server configuration error: missing webhook secret"
             )
 
     try:
@@ -176,6 +184,40 @@ def _dig(obj, *path: str, default=None):
         if current is None:
             return default
     return current
+
+
+def _extract_price_id(subscription) -> str | None:
+    """Stripe Subscription オブジェクトから Price ID を抽出する。
+
+    Stripe の実形状は ``subscription.items.data`` がサブスクリプションアイテムの
+    **リスト** で、各要素の ``price.id`` に Price ID がある。旧実装はリストを
+    取り出した直後に `"unknown"` で上書きしていたため、常に未知の Price として
+    扱い、`get_tier_for_price_id` の `free` フォールバックに落ちて
+    課金中顧客を勝手にフリーへダウングレードしていた。
+
+    リストでない（要素が単一オブジェクト）等、旧形状でも同じ取り出し方で
+    ベストエフォートで解決する。解決できない場合は `None` を返し、
+    呼び出し側が ERROR ログを残したうえで `get_tier_for_price_id` の
+    安全側フォールバック（`free`）へ倒す。
+    """
+    items = _dig(subscription, "items", "data", default=None)
+    if items is None:
+        return None
+    if isinstance(items, dict):
+        # data が単一オブジェクトで返された場合の旧形状
+        first_item: object = items
+    elif isinstance(items, (list, tuple)):
+        if not items:
+            return None
+        first_item = items[0]
+    else:
+        return None
+
+    price = _field(first_item, "price")
+    if price is None:
+        return None
+    price_id = _field(price, "id")
+    return price_id or None
 
 
 async def _resolve_user(result) -> Optional[User]:
@@ -332,16 +374,16 @@ async def _create_or_update_subscription_record(user: User, subscription, db: As
     if inspect.isawaitable(db_subscription):
         db_subscription = await db_subscription
 
-    price_id = _dig(subscription, "items", "data", default=None)
-    price_id = "unknown"
-    if isinstance(price_id, (list, tuple)) and price_id:
-        first_item = price_id[0]
-        nested = _field(first_item, "price")
-        if nested is not None:
-            resolved = _field(nested, "id")
-            if resolved is not None:
-                price_id = resolved
-    tier = get_tier_for_price_id(price_id)
+    price_id = _extract_price_id(subscription)
+    if price_id is None:
+        # 未知の Price と同じ扱いにすると、課金中顧客が黙って free へ
+        # ダウングレードされるため、必ずログに残して追跡できるようにする。
+        logger.error(
+            "Could not extract Stripe price id from subscription %s; "
+            "falling back to the 'free' tier. Check STRIPE_PRICE_TO_PLAN.",
+            _field(subscription, "id"),
+        )
+    tier = get_tier_for_price_id(price_id or "")
     period_end_val = _field(subscription, "current_period_end")
     if isinstance(period_end_val, (int, float)):
         period_end = datetime.fromtimestamp(period_end_val)

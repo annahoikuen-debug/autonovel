@@ -3,20 +3,32 @@ from __future__ import annotations
 
 import io
 import zipfile
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.backend import config
-from src.backend.auth import validate_api_key_or_raise
+from src.backend.auth import get_current_user, validate_api_key_or_raise
+from src.backend.database.models import User
 from src.backend.multimedia_service import MultimediaService
 from src.backend.rate_limit import generate_limiter
 from src.backend.routers import multimedia as multimedia_router
 
 
 @pytest.fixture
-def mm_e2e_client(monkeypatch, tmp_path, real_db_manager):
+def mm_auth_user() -> User:
+    """`get_current_user` オーバーライド用の認証済みユーザー。
+
+    `validate_api_key_or_raise` のオーバーライドだけでは `get_current_user` は
+    差し替わらないため、認証をバイパスするには本フィクスチャも必要。
+    """
+    return User(id=1, email="test@example.com", role="admin", status="active")
+
+
+@pytest.fixture
+def mm_e2e_client(monkeypatch, tmp_path, real_db_manager, mm_auth_user):
     monkeypatch.setattr(config.settings, "ENABLE_MULTIMEDIA", True)
     monkeypatch.setattr(config.settings, "MULTIMEDIA_OUTPUT_DIR", str(tmp_path / "mm"))
 
@@ -26,6 +38,14 @@ def mm_e2e_client(monkeypatch, tmp_path, real_db_manager):
     app.include_router(multimedia_router.router, prefix="/multimedia", tags=["multimedia"])
     app.dependency_overrides[multimedia_router.get_multimedia_service] = lambda: service
     app.dependency_overrides[validate_api_key_or_raise] = lambda: "k"
+    app.dependency_overrides[get_current_user] = lambda: mm_auth_user
+    # 所有権ガードは AppContainer.db() を使うため、テストが生成する book 行とは
+    # 独立に「所有権だけ通過」させる。エンドポイント自体は変更しない。
+    monkeypatch.setattr(
+        multimedia_router,
+        "verify_book_ownership",
+        AsyncMock(return_value=MagicMock(id=1, user_id=mm_auth_user.id)),
+    )
     generate_limiter.reset()
 
     with TestClient(app) as c:

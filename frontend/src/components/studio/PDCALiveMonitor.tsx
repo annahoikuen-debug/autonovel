@@ -104,7 +104,10 @@ export const PDCALiveMonitor: React.FC<PDCALiveMonitorProps> = ({ bookId }) => {
             </div>
           ) : (
             actionableDiffs.map((diff, idx) => (
-              <div key={idx} className="bg-slate-800/50 border border-slate-700/40 p-2.5 rounded-lg text-xs flex flex-col gap-1">
+              // 監査ディレクティブは追記型かつ最新50件で切り詰められるため、
+              // index だけだと切り詰め後に DOM が誤って再利用される。
+              // サーバー側に ID が無いため、業務フィールド + 位置で安定キーを作る。
+              <div key={`${diff.timestamp}-${diff.dimension}-${idx}`} className="bg-slate-800/50 border border-slate-700/40 p-2.5 rounded-lg text-xs flex flex-col gap-1">
                 <div className="flex justify-between items-center text-[10px] text-indigo-300 font-medium">
                   <span className="uppercase px-1.5 py-0.5 bg-indigo-500/20 rounded">{diff.dimension}</span>
                   <span className="text-slate-500">{new Date(diff.timestamp).toLocaleTimeString()}</span>

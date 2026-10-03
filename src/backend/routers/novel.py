@@ -7,8 +7,10 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
-from src.backend.auth import require_api_key
+from src.backend.auth import get_current_user, require_api_key
+from src.backend.database.models import User
 from src.backend.database.uow import UnitOfWork
+from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
 from src.models.api_schemas import (
     EpisodeListResponse,
@@ -20,7 +22,13 @@ from src.models.api_schemas import (
 from src.services.novel_producer import NovelProducer
 from src.services.report_generator import ReportGenerator
 
-router = APIRouter(prefix="/api/novel", tags=["novel"])
+router = APIRouter(
+    prefix="/api/novel",
+    tags=["novel"],
+    # 従来は router に dependencies が無く、GlobalAuthMiddleware を通過した
+    # 任意のテナントが他人の作品を読み書きできていた。認証を必須にする。
+    dependencies=[Depends(get_current_user)],
+)
 
 # シングルトンプロデューサー（簡易実装）
 producer = NovelProducer()
@@ -41,7 +49,11 @@ class BookScoreResponse(BaseModel):
 
 
 @router.post("/produce", response_model=ProduceNovelResponse)
-async def produce_novel(req: ProduceNovelRequest, api_key: str = Depends(require_api_key)):
+async def produce_novel(
+    req: ProduceNovelRequest,
+    current_user: User = Depends(get_current_user),
+    api_key: str = Depends(require_api_key),
+):
     """作品全話生成を開始するエンドポイント"""
     # プロジェクト作成
     from src.models.production_config import NovelProject
@@ -72,7 +84,10 @@ async def produce_novel(req: ProduceNovelRequest, api_key: str = Depends(require
 
 
 @router.get("/{project_id}/status", response_model=NovelStatusResponse)
-async def get_novel_status(project_id: int):
+async def get_novel_status(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """作品ステータス取得"""
     progress = producer.get_progress()
     if not progress:
@@ -89,7 +104,10 @@ async def get_novel_status(project_id: int):
 
 
 @router.get("/{project_id}/episodes", response_model=EpisodeListResponse)
-async def list_episodes(project_id: int):
+async def list_episodes(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """エピソード一覧取得"""
     episodes = producer.get_episodes()
     data: list[dict[str, Any]] = []
@@ -106,7 +124,10 @@ async def list_episodes(project_id: int):
 
 
 @router.get("/{project_id}/report", response_model=NovelReportResponse)
-async def get_report(project_id: int):
+async def get_report(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """制作レポート取得"""
     try:
         report = producer.generate_report()
@@ -119,12 +140,18 @@ async def get_report(project_id: int):
 
 
 @router.get("/books/{book_id}/chapters/{chapter_number}/score", response_model=BookScoreResponse)
-async def get_chapter_book_score(book_id: int, chapter_number: int):
+async def get_chapter_book_score(
+    book_id: int,
+    chapter_number: int,
+    current_user: User = Depends(get_current_user),
+):
     """指定章の BookScore を取得する"""
     try:
         from src.services.book_score_service import BookScoreCalculator
 
         async with UnitOfWork(AppContainer.db()) as uow:
+            # IDOR 防止: 作品の所有権を検証する
+            await verify_book_ownership(book_id, current_user, uow)
             calculator = BookScoreCalculator(repository=uow.book_scores)
             score_model = await calculator.get_latest_score(book_id, chapter_number)
 
@@ -176,10 +203,15 @@ class PromotionEligibilityResponse(BaseModel):
 
 
 @router.get("/books/{book_id}/promotion", response_model=PromotionEligibilityResponse)
-async def check_promotion_eligibility(book_id: int):
+async def check_promotion_eligibility(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """かんたんモードから上級者Studioへの昇格判定を取得する"""
     try:
         async with UnitOfWork(AppContainer.db()) as uow:
+            # IDOR 防止: 作品の所有権を検証する
+            await verify_book_ownership(book_id, current_user, uow)
             all_scores = await uow.book_scores.get_all_for_book(book_id)
 
             if len(all_scores) < 3:
@@ -234,12 +266,18 @@ class PDCAReportResponse(BaseModel):
 
 
 @router.get("/books/{book_id}/pdca", response_model=PDCAReportResponse)
-async def get_pdca_report(book_id: int):
+async def get_pdca_report(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """書籍の PDCA レポートを取得する"""
     try:
         from src.backend.database.core import get_db_manager
         from src.backend.database.repositories.book_score import BookScoreRepository
         from src.services.book_score_service import BookScoreCalculator
+
+        # IDOR 防止: 作品の所有権を検証する
+        await verify_book_ownership(book_id, current_user, AppContainer.db())
 
         db_manager = get_db_manager()
         async with db_manager.get_session() as session:
@@ -263,12 +301,18 @@ class AlertResponse(BaseModel):
 
 
 @router.get("/books/{book_id}/alerts", response_model=AlertResponse)
-async def get_book_alerts(book_id: int):
+async def get_book_alerts(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+):
     """書籍のスコアアラートを取得する"""
     try:
         from src.backend.database.core import get_db_manager
         from src.backend.database.repositories.book_score import BookScoreRepository
         from src.services.book_score_service import BookScoreCalculator
+
+        # IDOR 防止: 作品の所有権を検証する
+        await verify_book_ownership(book_id, current_user, AppContainer.db())
 
         db_manager = get_db_manager()
         async with db_manager.get_session() as session:
@@ -336,15 +380,20 @@ async def get_book_alerts(book_id: int):
 @router.get("/{book_id}/social/relationships")
 async def get_novel_social_relationships(
     book_id: int,
+    current_user: User = Depends(get_current_user),
     api_key: str = Depends(require_api_key),
 ):
     """作品のキャラクター間動的関係性一覧を取得"""
-    from src.backend.database.core import DatabaseManager
     from src.backend.database.social_repository import SocialRepository
-    from src.backend.config import settings
 
-    db = DatabaseManager(settings.DATABASE_URL)
-    repo = SocialRepository(db)
+    # IDOR 防止: 作品の所有権を検証する
+    await verify_book_ownership(book_id, current_user, AppContainer.db())
+
+    # リクエストごとに DatabaseManager(settings.DATABASE_URL) を生成すると
+    # エンジンとコネクションプールが dispose されないまま積み上がり、
+    # ファイルディスクリプタ (SQLite) や max_connections (PostgreSQL) を枯渇させる。
+    # AppContainer.db() はシングルトンの DatabaseManager を返すので使い回す。
+    repo = SocialRepository(AppContainer.db())
     rels = await repo.get_all_relationships(book_id)
     return {
         "book_id": book_id,
@@ -370,15 +419,17 @@ async def get_novel_social_journals(
     ep_num: int | None = None,
     character_name: str | None = None,
     limit: int = 20,
+    current_user: User = Depends(get_current_user),
     api_key: str = Depends(require_api_key),
 ):
     """作品の登場人物内面手記・日記一覧を取得"""
-    from src.backend.database.core import DatabaseManager
     from src.backend.database.social_repository import SocialRepository
-    from src.backend.config import settings
 
-    db = DatabaseManager(settings.DATABASE_URL)
-    repo = SocialRepository(db)
+    # IDOR 防止: 作品の所有権を検証する
+    await verify_book_ownership(book_id, current_user, AppContainer.db())
+
+    # AppContainer.db() はシングルトンなので、リクエストごとに engine を生成しない
+    repo = SocialRepository(AppContainer.db())
     journals = await repo.get_journals(
         book_id=book_id,
         episode_num=ep_num,
@@ -391,14 +442,16 @@ async def get_novel_social_journals(
 @router.get("/{book_id}/social/trends")
 async def get_novel_social_trends(
     book_id: int,
+    current_user: User = Depends(get_current_user),
     api_key: str = Depends(require_api_key),
 ):
     """作品の動的関係性トレンド要約テキストを取得"""
-    from src.backend.database.core import DatabaseManager
     from src.backend.database.social_repository import SocialRepository
-    from src.backend.config import settings
 
-    db = DatabaseManager(settings.DATABASE_URL)
-    repo = SocialRepository(db)
+    # IDOR 防止: 作品の所有権を検証する
+    await verify_book_ownership(book_id, current_user, AppContainer.db())
+
+    # AppContainer.db() はシングルトンなので、リクエストごとに engine を生成しない
+    repo = SocialRepository(AppContainer.db())
     summary = await repo.get_relationship_trends_summary(book_id)
     return {"book_id": book_id, "trends_summary": summary}

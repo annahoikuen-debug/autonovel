@@ -21,8 +21,10 @@ class LogicalAuditWorkflow(BaseWorkflow):
 
         async with UnitOfWork(self.repo.db) as uow:
             for ep in range(ep_from, ep_to + 1):
-                plot = await uow.plots.get_plot(branch_id, ep)
-                chapter = await uow.chapters.get_chapter(branch_id, ep)
+                plot = await uow.plots.get_plot(
+                    branch_id, ep, branch_id=branch_id, book_id=book_id
+                )
+                chapter = await uow.chapters.get_chapter(branch_id, ep, book_id=book_id)
                 if not plot or not chapter:
                     continue
 

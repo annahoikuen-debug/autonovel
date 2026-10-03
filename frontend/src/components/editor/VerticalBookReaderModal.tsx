@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNovelContext } from '../../context/NovelContext';
+import { escapeHtml } from '../../lib/escape';
 
 interface VerticalBookReaderModalProps {
   isOpen: boolean;
@@ -124,7 +125,9 @@ export const VerticalBookReaderModal: React.FC<VerticalBookReaderModalProps> = (
 
   const renderRubyContent = (text: string) => {
     // Simple ruby parsing for display
-    return text
+    // 本文は LLM 出力なので、タグ置換の前に必ず escapeHtml() を通す。
+    // `｜` `《` `》` は ASCII ではないためエスケープされず、ルビ記法はそのまま解析できる。
+    return escapeHtml(text)
       .replace(/｜([^《]+)《([^》]+)》/g, '<ruby>$1<rt>$2</rt></ruby>')
       .replace(/\n/g, '<br />');
   };

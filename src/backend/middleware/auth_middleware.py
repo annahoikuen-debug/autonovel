@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 
 # 公開許可パス（完全一致、末尾スラッシュ除去後）
 # 費用が発生する / 内部情報を含む detailed エンドポイントは公開しない
+#
+# NOTE: 実パスの `/health/live` 系は上で個別に許可している。`/api/health/live` /
+#   `/api/health/liveness` / `/api/health/ready` / `/api/health/readiness` /
+#   `/api/metrics` はどのルーターにも存在しないデッドエントリだったため削除した
+#   （許可リストが実際の公開面を誤って説明していた）。
 PUBLIC_EXACT_PATHS: set[str] = {
     "",
     "/health",
@@ -33,11 +38,6 @@ PUBLIC_EXACT_PATHS: set[str] = {
     "/health/readiness",
     "/metrics",
     "/api/health",
-    "/api/health/live",
-    "/api/health/liveness",
-    "/api/health/ready",
-    "/api/health/readiness",
-    "/api/metrics",
     "/docs",
     "/redoc",
     "/openapi.json",
@@ -69,6 +69,12 @@ PUBLIC_PREFIXES: tuple[str, ...] = (
 # 完全に外れていた（最も守るべき最も広い範囲）。
 STREAM_PATH_PREFIX = "/api/stream/"
 
+# ストリームトークン発行のみを表すセグメント。このセグメントの直後には
+# book_id が無く、book_id スコープのストリームトークン検証は成立しない。
+# 以前は `_extract_stream_book_id` の `int("token")` が ValueError を投げることに
+# よって「たまたま」除外されていた（＝偶然に依存した安全）。明示的に除外する。
+STREAM_TOKEN_SEGMENT = "token"
+
 
 def _matches_public_prefix(path: str) -> bool:
     """path が公開プレフィックスのいずれかに該当するか（スラッシュ境界を考慮）。"""
@@ -84,12 +90,20 @@ def _matches_public_prefix(path: str) -> bool:
 
 
 def _extract_stream_book_id(path: str) -> int | None:
-    """`/api/stream/writing/{book_id}/{ep_num}` 等から book_id を取り出す。"""
+    """`/api/stream/writing/{book_id}/{ep_num}` 等から book_id を取り出す。
+
+    トークン発行のみのパス（`/api/stream/token/{book_id}`）は必ず None を返す。
+    除外は明示的に行う: 以前は `int("token")` の ValueError に依存しており、
+    偶然に過ぎない保証だった。
+    """
     if not path.startswith(STREAM_PATH_PREFIX):
         return None
     segments = [s for s in path[len(STREAM_PATH_PREFIX):].split("/") if s]
     # writing/{book_id}/{ep_num} / pipeline/{book_id}
     if not segments:
+        return None
+    # トークン発行パスは book_id スコープを持たないためバイパス対象にしない
+    if segments[0] == STREAM_TOKEN_SEGMENT:
         return None
     candidate = segments[1] if segments[0] in ("writing", "pipeline") else segments[0]
     try:

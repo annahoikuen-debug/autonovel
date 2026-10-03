@@ -1,3 +1,25 @@
 node_modules
 dist
 .git
+
+# frontend/Dockerfile は `COPY . .` でビルドコンテキストを丸ごと取得するため、
+# 開発者のローカル設定や秘密情報がビルドに焼き込まれないよう除外する。
+# ルートの .dockerignore と同じ方針（.env.example だけは残す）。
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.enc
+coverage/
+node_modules/
+npm-debug.log*
+yarn-error.log*
+*.log
+*.tsbuildinfo
+.vscode/
+.idea/
+.DS_Store

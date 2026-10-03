@@ -1,7 +1,7 @@
 """Ports and adapters for integrating F1, F2, and F3 balancers."""
 
 import time
-from typing import List, Protocol, runtime_checkable
+from typing import Dict, List, Protocol, runtime_checkable
 from src.narrative_balancer.arbitrator.models import BalancerResult, PlotState
 from src.narrative_balancer.csp.balancer import CSPNarrativeBalancer
 from src.narrative_balancer.csp.partial_state import PartialPlotState
@@ -83,9 +83,29 @@ class CSPAdapter(NarrativeBalancerPort):
             solved_beats = self.balancer.balance(partial)
             elapsed = (time.perf_counter() - t0) * 1000.0
 
-            actions: List[CorrectionAction] = []
+            # CSP が「主張してよいのは」 tension / beat_type のみ。
+            # 既存エピソードについては著作フィールド (title / summary /
+            # characters / foreshadowing) と確定済みの is_defeat を必ず保持し、
+            # ソルバー結果で上書きしない。
+            # 既存 Beat が無いエピソード (新規生成) のみソルバー値をそのまま採用する。
             orig_map = {b.episode: b for b in state.beats}
+            synthesized: Dict[int, Beat] = {}
             for corr in solved_beats:
+                orig = orig_map.get(corr.episode)
+                if orig is None:
+                    synthesized[corr.episode] = corr.model_copy(deep=True)
+                    continue
+                merged = orig.model_copy(deep=True)
+                merged.tension = corr.tension
+                merged.beat_type = corr.beat_type
+                synthesized[corr.episode] = merged
+            # ソルバー出力に欠けた既存エピソードは削除せず保持する
+            for ep, orig in orig_map.items():
+                synthesized.setdefault(ep, orig.model_copy(deep=True))
+            csp_beats = [synthesized[ep] for ep in sorted(synthesized.keys())]
+
+            actions: List[CorrectionAction] = []
+            for corr in csp_beats:
                 orig = orig_map.get(corr.episode)
                 if orig is None or orig.tension != corr.tension or orig.beat_type != corr.beat_type:
                     actions.append(CorrectionAction(
@@ -99,7 +119,7 @@ class CSPAdapter(NarrativeBalancerPort):
 
             return BalancerResult(
                 balancer_name=self.name,
-                beats=solved_beats,
+                beats=csp_beats,
                 actions=actions,
                 detections_count=len(actions),
                 confidence=0.90,

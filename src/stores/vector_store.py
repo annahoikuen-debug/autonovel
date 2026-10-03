@@ -13,6 +13,19 @@ from src.pipeline.emotional_residue import EmotionalVector
 logger = logging.getLogger(__name__)
 
 
+def _episode_from_id(episode_id: Optional[str]) -> Optional[int]:
+    """"ep14" / "ep014" 形式からエピソード番号を取り出す (失敗時は None)。"""
+    if not episode_id:
+        return None
+    text = str(episode_id).strip().lower()
+    if not text.startswith("ep"):
+        return None
+    try:
+        return int(text[2:])
+    except ValueError:
+        return None
+
+
 class VectorStore(abc.ABC):
     """感情ベクトルストアの抽象基底クラス"""
 
@@ -40,6 +53,44 @@ class VectorStore(abc.ABC):
     def get_namespace_keys(self, namespace: str) -> list[str]:
         """ネームスペース内のキー一覧取得"""
         ...
+
+    def get_by_episode(
+        self,
+        namespace: str,
+        episode: int,
+        pair: tuple[str, str] = ("*", "*"),
+    ) -> Optional[EmotionalVector]:
+        """指定エピソードのベクトルを取得する。
+
+        ``get_latest`` は常に「最新エピソード」を返すため、エピソードをまたぐ
+        処理 (例: 第14話の値と第31話の値を融合する) では別エピソードの値が
+        混線する。本メソッドは ``episode`` に一致するベクトルだけを返す。
+
+        Args:
+            namespace: ネームスペース
+            episode: エピソード番号 (1-based)
+            pair: 対象ペア。``("*", "*")`` で全ペア
+
+        Returns:
+            該当エピソードのベクトル (無ければ None)
+        """
+        for vec in self.get_all(namespace):
+            if _episode_from_id(vec.episode_id) != episode:
+                continue
+            if pair == ("*", "*"):
+                return vec
+            pair_emotions = vec.get_pair_emotions(pair[0], pair[1])
+            if not pair_emotions:
+                continue
+            result = EmotionalVector(episode_id=vec.episode_id)
+            result.metadata = dict(vec.metadata)
+            for emo, val in pair_emotions.items():
+                key = (pair[0], pair[1], emo)
+                result.signals[key] = val
+                result.confidences[key] = vec.confidences.get(key, 0.5)
+                result.causes[key] = vec.causes.get(key)
+            return result
+        return None
 
 
 class RedisVectorStore(VectorStore):

@@ -18,7 +18,7 @@ test:  ## pytest を実行 (バックエンド)
 lint:  ## ruff チェック
 	py -m ruff check src tests config scripts
 
-format-check:  ## ruff format チェック (line-length 100, black 互換)
+format-check:  ## ruff format チェック (line-length 120)
 	py -m ruff format --check src tests config scripts
 
 typecheck:  ## mypy (strict 化は将来フェーズ)
@@ -50,7 +50,7 @@ prod-down:  ## docker compose 本番環境を停止
 
 clean:  ## 生成物・キャッシュを削除
 	-rm -rf .pytest_cache .ruff_cache .mypy_cache
-	-rm -f autonovel.db huey.db docs/openapi.json
+	-rm -f autonovel.db huey.db test_migration.db docs/openapi.json
 	-find . -type d -name __pycache__ -prune -exec rm -rf {} +
 
 test-unit:  ## ユニットテスト (coverage gate 40% で開始、段階引き上げ)
@@ -65,8 +65,10 @@ test-contract:  ## 契約テスト (OpenAPI スナップショット・Pydantic 
 test-perf:  ## パフォーマンステスト (benchmarks.json ベースライン比較)
 	py -m pytest tests/perf -v --tb=short --benchmark-only --benchmark-autosave
 
+# alembic.ini はリポジトリルートにしか無く、script_location = src/backend/alembic も
+# ルート相対なので、必ずルート（make の起動ディレクトリ）から実行する。
 test-migration:  ## alembic 整合性チェック (alembic check + 往復)
-	cd src/backend && alembic check && alembic upgrade head && alembic downgrade -1 && alembic upgrade head
+	alembic check && alembic upgrade head && alembic downgrade -1 && alembic upgrade head
 
 check-migrations:  ## マイグレーション往復検証スクリプトを実行
 	python scripts/check_migrations.py

@@ -2,6 +2,83 @@
 
 本プロジェクトの変更履歴。[Semantic Versioning](https://semver.org/lang/ja/) に準拠。
 
+## [Unreleased] - 2026-10-02 - 公開前ハードニング（セキュリティ・データ整合性）
+
+公開前の多角監査で見つかった欠陥をまとめて修正した。個別（約 60 件）の内訳ではなく、
+影響領域ごとにまとめる。破壊的変更（開発環境での認証必須化）を含む。
+
+### セキュリティ
+
+- IDOR（他者の作品への越境アクセス）の全面的な遮断
+    - 認証が無かった／所有権が未検証だったルーティング（`novel` / `misc` / `books` /
+      `graph` / `orchestrated` / `branches` の play 系 / `multimedia` /
+      `illustrations` / `commercial` など）に `get_current_user` と
+      `verify_book_ownership` を追加。`session_id` / `task_id` / `correlation_id` /
+      `asset_id` のような推測可能な ID 経由の経路も所有者を辿って検証し、
+      所有者が記録されていないタスクは fail-closed で管理者に限定した。
+    - 所有者 `NULL` の作品を非管理者に公開していた判定も修正（seed で投入される
+      `Book(id=1)` が誰でも読み書きできる状態だった）。
+  - Stripe webhook の署名検証
+    - `STRIPE_WEBHOOK_SECRET` が空というだけで署名検証をスキップしていたため、
+      `APP_ENV` の既定が `development` である以上ほぼ全環境で webhook を偽装し
+      クレジットを付与できた。`ALLOW_UNSIGNED_WEBHOOKS`（既定 `false`）が明示的に
+      `true` のときだけ省略するようにした。
+  - API キーとペイロードの URL 漏えい
+    - `GET /easy_mode/generate/stream` の base64 `payload` クエリパラメータは
+      `llm_config.api_key` / `base_url` をアクセスログ・ブラウザ履歴に平文で残し、
+      SSRF の起点にもなっていた。`400` で明示的に拒否し、入力はリクエストボディ
+      か個別のクエリフィールドに移した。
+    - 未認証の manuscript エクスポートと、クエリ文字列での API キー受理を廃止。
+  - JWT / 起動時ガード
+    - `.env.example` に載っている `JWT_SECRET_KEY` / `SECRET_KEY` の例示値を
+      本番起動時に拒否するようにした（管理者トークンの偽造が可能だった）。
+    - `CORS_ORIGINS=*` を `APP_ENV=production` で起動時に拒否。
+    - `docker-compose.yml` の `AUTH_DISABLED=true` を撤去し、開発用バックエンドの
+      ポートを Loopback 限定（`127.0.0.1:8200:8200`）にバインド。
+    - 開発環境でもトークンが必要になったため、README のセットアップ手順を
+      登録／ログイン／`Authorization: Bearer` の手順に更新した。
+
+### データ整合性（無言で壊れていた経路）
+
+  - 課金プランの無言降格 — Stripe webhook が受信 price id を `"unknown"` で
+    上書きしており、全有料利用者が `plan_tier=free` になっていた。
+  - 成功／失敗の反転 — `system.py` の再計算サマリが 0 件（失敗）を 1 件
+    （成功）として計上していた。
+  - 品質スコアが常に F — plot 品質軸の重み集合と book 次元の重み集合に
+    共通要素が無く、重み合計 0 → `overall` が常に 0 だった。
+  - 作品横断の上書き — 一部のリポジトリが `branch_id` のみで絞り込んでおり、
+    一意制約 `(book_id, branch_id, ep_num)` と食い違い別作品の行を上書きしていた。
+  - スキーマ生成の漏れ — `create_all` が 2 モデルモジュールしか import せず
+    6 テーブルが生成されず、その結果 billing 経路の初回 INSERT が死在していた。
+  - 時刻の凍結 — `created_at` などの default 値が import 時に評価され、
+    プロセス起動時刻で固定されていた。
+  - 物語生成の上書き — CSP 変換が 40 個の作者済みビートを placeholder で
+    上書きしていた。
+  - 潜在テキストルールの飢餓 — `final` フラグが「チェーン全体を停止」だったため、
+    優先度 50/60 のルールが拡張ルール（80-115）の適用を妨げていた。
+    「同一優先度以下のみを停止する」定義に改めた。
+  - 発話の消失 — 潜在テキストの一部ルールが舞台指示への置換でキャラクターの
+    発話そのものを削除していた。発話を保持したまま前置きする形に修正。
+
+### 信頼性・依存関係
+
+  - リトライの挙動是正 — サーバー指定の `Retry-After` が局所バックオフ上限
+    （既定 2 秒）に丸められ、即座に再 429 していた。サーバー指定値には専用の
+    上限を、導出バックオフには従来の上限を適用するよう分離。
+  - 恒久的な 4xx のリトライ — 408 / 409 / 429 を除く 4xx を一時エラー扱いにして
+    いたため、リトライしても必ず失敗する処理を 3 回回していた。
+  - ストリーミングの計測漏れ — 早期終了や上流例外で計測が飛んでいた
+    `stream_text` を `try/finally` 化し、`system_prompt` も計測対象に含めた。
+  - 未導入の必須依存と壊れたビルド定義 — `ortools` の宣言漏れ、
+    `COPY database/`（存在しないディレクトリ）の指定、`docker/postgres/Dockerfile`
+    の誤った build-context パスを修正し、コンテナ image が実際にビルドできる
+    状態に復元した。
+  - フロントエンドのビルド阻断 — 欠落していた `indexedDbClient` の実装と
+    `QueryClientProvider` の未配置を補い、`tsc` / `vite build` を通した。
+  - その他の修正 — 商用ルートの同期 `Session` を非同期に統一、
+    `RateLimitMiddleware` が 429 ではなく 500 を返していた問題、
+    非同期関数の未 await によるグラフ無音更新、SSE ストリームの所有者検証漏れ。
+
 ## [6.0.0] - 2026-09-28 - V6 コスト・レイテンシ最適化＋v5.3 配線の是正
 
 「v5.3 で計画した長編機構が、実際には配線が未接続だった」という欠陥を是正し、

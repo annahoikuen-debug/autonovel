@@ -9,16 +9,32 @@ from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
+from src.backend.auth import get_current_user
 from src.backend.config import settings
+from src.backend.database.models import User
 from src.backend.server import app
 from src.infrastructure.database.models.book_score import BookScore as BookScoreModel
 
 
 @pytest.fixture
-def client(monkeypatch):
-    """テスト用クライアント。AUTH_DISABLED=True を保証して認証をバイパスする。"""
-    monkeypatch.setattr(settings, "AUTH_DISABLED", True)
-    return TestClient(app)
+def auth_user() -> User:
+    """`get_current_user` オーバーライド用の認証済みユーザー。
+
+    書籍系ルートは `get_current_user` に依存するようになったため、
+    `AUTH_DISABLED` に頼らず依存性オーバーライドで認証を供給する。
+    """
+    return User(id=1, email="test@example.com", role="admin", status="active")
+
+
+@pytest.fixture
+def client(monkeypatch, auth_user):
+    """テスト用クライアント。認証済みユーザーを `get_current_user` に差し替える。"""
+    monkeypatch.setattr(settings, "AUTH_DISABLED", False)
+    app.dependency_overrides[get_current_user] = lambda: auth_user
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.pop(get_current_user, None)
 
 
 @pytest.fixture

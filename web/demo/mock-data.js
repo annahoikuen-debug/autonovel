@@ -129,6 +129,21 @@ const DEMO_STATE = {
 };
 
 // ユーティリティ関数
+
+/**
+ * HTML エスケープ。
+ * showModal / showToast は innerHTML に組み立てるため、ここを通さないと
+ * 実データを繋いだ瞬間に XSS になる。差し込む値は常にエスケープする。
+ */
+const escapeHtml = (value) =>
+  String(value == null ? '' : value).replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }[ch]));
+
 const Utils = {
   // ランダムな項目を選択
   randomItem: (array) => array[Math.floor(Math.random() * array.length)],
@@ -164,8 +179,8 @@ const Utils = {
     
     modal.innerHTML = `
       <button class="modal-close">&times;</button>
-      <h2>${title}</h2>
-      <div class="modal-content">${content}</div>
+      <h2>${escapeHtml(title)}</h2>
+      <div class="modal-content">${escapeHtml(content)}</div>
     `;
     
     overlay.appendChild(modal);
@@ -193,9 +208,11 @@ const Utils = {
                     })();
     
     const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+    // type は className に載るため、`type` のみを許可してクラス脱出を防ぐ
+    const safeType = ['info', 'success', 'error', 'warning'].includes(type) ? type : 'info';
+    toast.className = `toast ${safeType}`;
     toast.innerHTML = `
-      <div class="toast-content">${message}</div>
+      <div class="toast-content">${escapeHtml(message)}</div>
       <div class="toast-progress"><div></div></div>
     `;
     
@@ -213,5 +230,8 @@ const Utils = {
         container.remove();
       }
     }, duration);
-  }
+  },
+
+  // script.js からも innerHTML 組み立て用に使えるよう公開する
+  escapeHtml
 };

@@ -563,7 +563,7 @@ class ContextBuilderAgent(SkillAgent):
         if repo is None:
             return None
         try:
-            return await repo.get_plot(book_id, ep_num, branch_id=branch_id)
+            return await repo.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
         except Exception as e:
             logger.debug(
                 f"Plot not found for book={book_id}, branch={branch_id}, ep={ep_num}: {e}"
@@ -597,7 +597,7 @@ class ContextBuilderAgent(SkillAgent):
         if repo is None or ep_num <= 1:
             return None
         try:
-            return await repo.get_chapter(branch_id, ep_num - 1)
+            return await repo.get_chapter(branch_id, ep_num - 1, book_id=book_id)
         except Exception as e:
             logger.debug(
                 f"Previous chapter not found for book={book_id}, branch={branch_id}, ep={ep_num}: {e}"

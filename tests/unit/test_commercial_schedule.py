@@ -79,7 +79,6 @@ async def test_commercial_router_schedule_request():
     410 が返らない環境（モックなど）でも要件に適合するため、schema のみ検証する。
     """
     from src.backend.routers.commercial import PublishRequest
-    from unittest.mock import AsyncMock
 
     req = PublishRequest(
         book_id=1,
@@ -94,7 +93,13 @@ async def test_commercial_router_schedule_request():
 
 @pytest.mark.asyncio
 async def test_commercial_router_cancel_schedule():
-    """Step 6: Router endpoint cancels a pending schedule and prevents cancelling non-pending ones."""
+    """Step 6: Router endpoint cancels a pending schedule and prevents cancelling non-pending ones.
+
+    commercial ルーターのセッションプロバイダは `get_db`（同期）から
+    `get_async_db`（非同期）へ変更された。所有権ガード `verify_book_ownership`
+    も導入されたため、テストでは所有者検証だけをスタブし、
+    ハンドラ本体のロジックを検証する。
+    """
     from src.backend.routers.commercial import cancel_schedule
     from unittest.mock import AsyncMock
     from src.backend.database.models import PublicationScheduleModel
@@ -106,7 +111,6 @@ async def test_commercial_router_cancel_schedule():
     mock_result_none.scalar_one_or_none.return_value = None
     mock_session.execute.return_value = mock_result_none
 
-    from fastapi import HTTPException
     with pytest.raises(HTTPException) as exc:
         await cancel_schedule(schedule_id=999, db=mock_session, api_key="test-key")
     assert exc.value.status_code == 404
@@ -118,22 +122,25 @@ async def test_commercial_router_cancel_schedule():
     mock_result_completed.scalar_one_or_none.return_value = mock_schedule_completed
     mock_session.execute.return_value = mock_result_completed
 
-    with pytest.raises(HTTPException) as exc:
-        await cancel_schedule(schedule_id=123, db=mock_session, api_key="test-key")
-    assert exc.value.status_code == 400
-    assert "Only pending schedules can be cancelled" in exc.value.detail
+    with patch(
+        "src.backend.routers.commercial.verify_book_ownership", new_callable=AsyncMock
+    ):
+        with pytest.raises(HTTPException) as exc:
+            await cancel_schedule(schedule_id=123, db=mock_session, api_key="test-key")
+        assert exc.value.status_code == 400
+        assert "Only pending schedules can be cancelled" in exc.value.detail
 
-    # Case 3: Successful cancellation
-    mock_schedule_pending = MagicMock(spec=PublicationScheduleModel)
-    mock_schedule_pending.status = "pending"
-    mock_result_pending = MagicMock()
-    mock_result_pending.scalar_one_or_none.return_value = mock_schedule_pending
-    mock_session.execute.return_value = mock_result_pending
+        # Case 3: Successful cancellation
+        mock_schedule_pending = MagicMock(spec=PublicationScheduleModel)
+        mock_schedule_pending.status = "pending"
+        mock_result_pending = MagicMock()
+        mock_result_pending.scalar_one_or_none.return_value = mock_schedule_pending
+        mock_session.execute.return_value = mock_result_pending
 
-    res = await cancel_schedule(schedule_id=123, db=mock_session, api_key="test-key")
-    assert res["success"] is True
-    assert mock_schedule_pending.status == "cancelled"
-    mock_session.commit.assert_called()
+        res = await cancel_schedule(schedule_id=123, db=mock_session, api_key="test-key")
+        assert res["success"] is True
+        assert mock_schedule_pending.status == "cancelled"
+        mock_session.commit.assert_called()
 
 
 @pytest.mark.asyncio
@@ -229,9 +236,14 @@ async def test_commercial_router_get_schedules():
 
 @pytest.mark.asyncio
 async def test_commercial_router_run_schedule_now():
-    """Step 10: Router endpoint triggers immediate execution of a schedule."""
+    """Step 10: Router endpoint triggers immediate execution of a schedule.
+
+    ワーカー (`execute_publication_task`) は pending のスケジュールしか受け付けないため、
+    取り消済み・実行中・完了済みの再実行は 400 で拒否される。
+    所有権ガード `verify_book_ownership` も導入されているためスタブする。
+    """
     from src.backend.routers.commercial import run_schedule_now
-    from unittest.mock import AsyncMock, patch
+    from unittest.mock import AsyncMock
     from src.backend.database.models import PublicationScheduleModel
 
     mock_session = AsyncMock()
@@ -245,17 +257,19 @@ async def test_commercial_router_run_schedule_now():
     mock_result.scalar_one_or_none.return_value = mock_schedule
     mock_session.execute.return_value = mock_result
 
-    with patch("src.backend.tasks.commercial_tasks.execute_publication_task") as mock_task:
+    with patch(
+        "src.backend.routers.commercial.verify_book_ownership", new_callable=AsyncMock
+    ), patch("src.backend.tasks.commercial_tasks.execute_publication_task") as mock_task:
         res = await run_schedule_now(schedule_id=123, db=mock_session, api_key="test-key")
 
         assert res["success"] is True
         assert "triggered successfully" in res["message"]
         mock_task.assert_called_once_with(123)
 
-    # Test already running
-    mock_schedule.status = "running"
-    from fastapi import HTTPException
-    with pytest.raises(HTTPException) as exc:
-        await run_schedule_now(schedule_id=123, db=mock_session, api_key="test-key")
-    assert exc.value.status_code == 400
-    assert "already running" in exc.value.detail
+        # 既に実行中（= pending 以外）のスケジュールは再実行できない
+        mock_schedule.status = "running"
+        from fastapi import HTTPException
+        with pytest.raises(HTTPException) as exc:
+            await run_schedule_now(schedule_id=123, db=mock_session, api_key="test-key")
+        assert exc.value.status_code == 400
+        assert "Only pending schedules can be triggered" in exc.value.detail

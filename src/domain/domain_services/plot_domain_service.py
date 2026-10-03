@@ -114,7 +114,13 @@ class PlotIntegrityChecker:
             pass
         elif prev.status == PlotStatus.PLANNED and current.status == PlotStatus.WRITING:
             pass
-        elif current.status.value < prev.status.value:
+        elif prev.status == PlotStatus.REVISED and current.status == PlotStatus.WRITING:
+            # 改稿後の書き直しは正当な再進行
+            pass
+        elif prev.status == PlotStatus.LOCKED and current.status == PlotStatus.REVISED:
+            # 確定済み原稿の改稿フェーズへの移行
+            pass
+        elif current.status.rank() < prev.status.rank():
             issues.append(f"Status regression: {prev.status.value} -> {current.status.value}")
 
         return issues

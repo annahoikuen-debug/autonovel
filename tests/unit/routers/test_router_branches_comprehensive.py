@@ -45,6 +45,48 @@ from src.domain.models.branch import BranchDbModelCreate
 
 
 # ==============================================================================
+# 認可ガードのスタブ (IDOR 修正で追加された所有者検証の差し替え)
+# ==============================================================================
+# branches ルーターの book_id 単位ルートは `verify_book_ownership`、
+# ノード操作ルートは `verify_branch_belongs_to_book` で所有者を検証する。
+# これらの handler を Python から直接呼び出す単体テストでは依存注入が
+# 走らないため、検証が「Book が存在する」ことまで通るスタブに差し替える。
+# handler 本体のロジックはそのまま実行されるため、テストは検証済み
+# (自分の作品である) 経路を検証し続ける。
+
+_BOOK_GUARD = "src.backend.routers.branches.verify_book_ownership"
+_BRANCH_GUARD = "src.backend.routers.branches.verify_branch_belongs_to_book"
+
+
+def make_current_user(user_id: int = 1):
+    """所有権検証を通過する管理者ユーザーのモック."""
+    user = MagicMock()
+    user.id = user_id
+    user.role = "admin"
+    return user
+
+
+def make_book(book_id: int = 1, user_id: int = 1):
+    """所有権検証が「Returns」する Book のモック."""
+    book = MagicMock()
+    book.id = book_id
+    book.user_id = user_id
+    return book
+
+
+def patch_book_ownership(book_id: int = 1):
+    """``verify_book_ownership`` を Book を返すスタブに差し替える."""
+    return patch(
+        _BOOK_GUARD, new_callable=AsyncMock, return_value=make_book(book_id)
+    )
+
+
+def patch_branch_ownership():
+    """``verify_branch_belongs_to_book`` を通過するスタブに差し替える."""
+    return patch(_BRANCH_GUARD, new_callable=AsyncMock, return_value=None)
+
+
+# ==============================================================================
 # Helper Functions (already tested in test_router_branches.py, but we keep for completeness)
 # ==============================================================================
 
@@ -88,7 +130,8 @@ async def test_create_branch_endpoint():
     )
     mock_session = AsyncMock()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.create_branch = AsyncMock(return_value=1)
         repo_inst.save_branch_graph = AsyncMock()
@@ -102,7 +145,9 @@ async def test_create_branch_endpoint():
         mock_branch.created_at = datetime.now()
         repo_inst.get_branch = AsyncMock(return_value=mock_branch)
 
-        res = await create_branch(payload=payload, session=mock_session)
+        res = await create_branch(
+            payload=payload, session=mock_session, current_user=make_current_user()
+        )
         assert res.id == 1
         assert res.name == "New Branch"
         repo_inst.create_branch.assert_awaited_once()
@@ -119,13 +164,16 @@ async def test_create_branch_failed():
     )
     mock_session = AsyncMock()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.create_branch = AsyncMock(return_value=2)
         repo_inst.get_branch = AsyncMock(return_value=None)
 
         with pytest.raises(HTTPException) as exc_info:
-            await create_branch(payload=payload, session=mock_session)
+            await create_branch(
+                payload=payload, session=mock_session, current_user=make_current_user()
+            )
         assert exc_info.value.status_code == 500
 
 
@@ -458,7 +506,8 @@ async def test_start_play_session():
     mock_branch.book_id = 1
     mock_graph = {"entry_node_id": "node1"}
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_branch = AsyncMock(return_value=mock_branch)
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
@@ -466,7 +515,8 @@ async def test_start_play_session():
 
         res = await start_play_session(
             payload=payload,
-            session=mock_session
+            session=mock_session,
+            current_user=make_current_user(),
         )
 
         assert res.book_id == 1
@@ -490,14 +540,16 @@ async def test_get_play_state():
     mock_sess.updated_at = datetime.now()
     mock_graph = {"nodes": {"node1": {"choices": []}}}
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
 
         res = await get_play_state(
             session_id=session_id,
-            session=mock_session
+            session=mock_session,
+            current_user=make_current_user(),
         )
 
         assert res.session_id == session_id
@@ -556,7 +608,8 @@ async def test_play_choose():
     mock_updated_sess.status = "active"
     mock_updated_sess.updated_at = datetime.now()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
@@ -566,7 +619,8 @@ async def test_play_choose():
         res = await play_choose(
             session_id=session_id,
             payload=payload,
-            session=mock_session
+            session=mock_session,
+            current_user=make_current_user(),
         )
 
         assert res.current_node_id == "node2"
@@ -599,7 +653,8 @@ async def test_play_choose_invalid_choice():
         }
     }
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
@@ -608,7 +663,8 @@ async def test_play_choose_invalid_choice():
             await play_choose(
                 session_id=session_id,
                 payload=payload,
-                session=mock_session
+                session=mock_session,
+                current_user=make_current_user(),
             )
         assert exc_info.value.status_code == 400
 
@@ -635,7 +691,8 @@ async def test_play_save():
     mock_updated_sess.status = "active"
     mock_updated_sess.updated_at = datetime.now()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
         repo_inst.update_play_session_state = AsyncMock()
@@ -655,7 +712,8 @@ async def test_play_save():
 
             res = await play_save(
                 session_id=session_id,
-                session=mock_session
+                session=mock_session,
+                current_user=make_current_user(),
             )
 
             assert res.save_points_count == 1
@@ -688,7 +746,8 @@ async def test_play_load():
     mock_updated_sess.status = "active"
     mock_updated_sess.updated_at = datetime.now()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
         repo_inst.update_play_session_state = AsyncMock()
@@ -709,7 +768,8 @@ async def test_play_load():
             res = await play_load(
                 session_id=session_id,
                 index=1,
-                session=mock_session
+                session=mock_session,
+                current_user=make_current_user(),
             )
 
             assert res.current_node_id == "node2"
@@ -729,7 +789,8 @@ async def test_play_load_invalid_index():
     mock_sess.save_points_json = [{"node_id": "node1", "context": {"key": "value"}, "saved_at": datetime.now().isoformat()}]
     mock_sess.status = "active"
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
 
@@ -737,7 +798,8 @@ async def test_play_load_invalid_index():
             await play_load(
                 session_id=session_id,
                 index=5,  # out of range
-                session=mock_session
+                session=mock_session,
+                current_user=make_current_user(),
             )
         assert exc_info.value.status_code == 400
 
@@ -754,7 +816,8 @@ async def test_play_end():
     mock_sess.current_node_id = "node1"
     mock_sess.status = "active"
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.end_play_session = AsyncMock()
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
@@ -762,7 +825,8 @@ async def test_play_end():
         res = await play_end(
             session_id=session_id,
             payload=payload,
-            session=mock_session
+            session=mock_session,
+            current_user=make_current_user(),
         )
 
         assert res.status == "completed"
@@ -784,13 +848,15 @@ async def test_get_playthrough():
         "ending": "good_ending"
     }
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
 
         res = await get_playthrough(
             session_id=session_id,
-            session=mock_session
+            session=mock_session,
+            current_user=make_current_user(),
         )
 
         assert res.session_id == session_id
@@ -813,7 +879,8 @@ async def test_list_branch_nodes():
         }
     }
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_branch_ownership():
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
 
@@ -850,7 +917,8 @@ async def test_create_branch_node():
         "entry_node_id": "node1"
     }
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_branch_ownership():
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
         repo_inst.save_branch_graph = AsyncMock()
@@ -885,7 +953,8 @@ async def test_delete_branch_node():
         "entry_node_id": "node1"
     }
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_branch_ownership():
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
         repo_inst.save_branch_graph = AsyncMock()
@@ -914,7 +983,8 @@ async def test_delete_branch_node_referenced():
         "entry_node_id": "node1"
     }
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch_branch_ownership():
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
 

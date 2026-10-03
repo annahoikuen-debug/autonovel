@@ -2,6 +2,7 @@ import React from "react";
 import { CountMode } from "../../types/manuscript";
 import { useManuscriptCount } from "../../hooks/useManuscriptCount";
 import { ManuscriptCountBadge } from "./ManuscriptCountBadge";
+import { escapeHtml } from "../../lib/escape";
 
 interface EditorPreviewProps {
   /** プレビューする本文 */
@@ -20,9 +21,13 @@ interface EditorPreviewProps {
 
 /**
  * ルビ記法 ｜親文字《ルビ》 を HTML に変換する簡易パーサー
+ *
+ * 変換より **先に** escapeHtml() を通す。先にタグ置換すると生成タグまで
+ * エスケープ対象になり、この順序だとルビが壊れる。
  */
 export function renderRuby(text: string): { __html: string } {
-  const formatted = text
+  const escaped = escapeHtml(text);
+  const formatted = escaped
     .replace(/｜(.+?)《(.+?)》/g, "<ruby>$1<rt>$2</rt></ruby>")
     .replace(/\n/g, "<br />");
   return { __html: formatted };
@@ -30,9 +35,12 @@ export function renderRuby(text: string): { __html: string } {
 
 /**
  * キャラクター名（カタカナ語）をハイライトする簡易実装
+ *
+ * ルビと同じく、変換前に escapeHtml() を通す。
  */
 export function renderHighlightedContent(text: string): { __html: string } {
-  const highlighted = text.replace(/([ァ-ヶー]+)/g, (match) => {
+  const escaped = escapeHtml(text);
+  const highlighted = escaped.replace(/([ァ-ヶー]+)/g, (match) => {
     return `<span class="character-name">${match}</span>`;
   });
   return { __html: highlighted };

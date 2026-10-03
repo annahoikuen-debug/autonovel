@@ -9,11 +9,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
 from src.backend.auth import get_current_user, require_api_key
-from src.backend.database import get_db
+from src.backend.database import get_async_db
 from src.backend.database.models import PublicationScheduleDbModel, User
-from src.backend.middleware.tenant_guard import verify_book_ownership
+from src.backend.security.owner_guard import verify_book_ownership
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.backend.workflows.commercial_pipeline import CommercialPipeline
+from src.core.container import AppContainer
 from src.services.publishers import (
     NarouCredentials,
     KakuyomuCredentials,
@@ -84,7 +85,7 @@ class PublicationScheduleResponse(BaseModel):
 async def create_schedule(
     req: PublicationScheduleCreate,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     api_key: str = Depends(require_api_key),
 ):
     """
@@ -122,7 +123,7 @@ async def create_schedule(
 async def get_schedules(
     book_id: int,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_async_db),
     api_key: str = Depends(require_api_key),
 ):
     """
@@ -159,7 +160,8 @@ async def get_schedules(
 @router.delete("/schedules/{schedule_id}", response_model=dict[str, Any])
 async def cancel_schedule(
     schedule_id: int,
-    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_db),
     api_key: str = Depends(require_api_key)
 ):
     """
@@ -175,6 +177,10 @@ async def cancel_schedule(
 
         if not schedule:
             raise HTTPException(status_code=404, detail="Schedule not found")
+
+        # schedule_id だけでは他テナントのスケジュールを指せるため、
+        # 紐づく作品を必ず検証する。
+        await verify_book_ownership(schedule.book_id, current_user, db)
 
         if schedule.status != "pending":
             raise HTTPException(
@@ -198,25 +204,42 @@ async def cancel_schedule(
 @router.post("/schedules/{schedule_id}/run-now", response_model=dict[str, Any])
 async def run_schedule_now(
     schedule_id: int,
-    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_db),
     api_key: str = Depends(require_api_key)
 ):
     """
     予約投稿を即時に実行する (Step 10).
+
+    実行自体は Huey ワーカー側の ``execute_publication_task`` が
+    pending -> running -> completed/failed の遷移と投稿処理を担当する。
+    本エンドポイントはそのタスクを即時投入するだけで、
+    スケジュールの存在確認と作品の所有権検証に徹する。
     """
+    from src.backend.tasks.commercial_tasks import execute_publication_task
+
     try:
         from sqlalchemy import select
-        from src.backend.tasks.commercial_tasks import execute_publication_task
 
-        # スケジュールの存在確認
-        result = await db.execute(select(PublicationScheduleDbModel).where(PublicationScheduleDbModel.id == schedule_id))
+        # スケジュールの取得
+        result = await db.execute(
+            select(PublicationScheduleDbModel).where(PublicationScheduleDbModel.id == schedule_id)
+        )
         schedule = result.scalar_one_or_none()
 
         if not schedule:
             raise HTTPException(status_code=404, detail="Schedule not found")
 
-        if schedule.status == "running":
-            raise HTTPException(status_code=400, detail="Schedule is already running")
+        # 他テナントのスケジュールを即時実行できないようにする
+        await verify_book_ownership(schedule.book_id, current_user, db)
+
+        # ワーカー側は pending のスケジュールしか受け付けないため、
+        # 取り消済み・実行中・完了済みの再実行をここで拒否する。
+        if schedule.status != "pending":
+            raise HTTPException(
+                status_code=400,
+                detail=f"Only pending schedules can be triggered. Current status: {schedule.status}",
+            )
 
         # Hueyタスクを即時投入
         execute_publication_task(schedule_id)
@@ -227,15 +250,6 @@ async def run_schedule_now(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Trigger run-now failed: {str(e)}")
-        await db.commit()
-        await db.refresh(schedule)
-
-        return {"success": True, "message": "Schedule cancelled successfully", "schedule_id": schedule_id}
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Cancel schedule failed: {str(e)}")
 
 
 @router.post("/run", response_model=dict[str, Any])
@@ -294,20 +308,39 @@ async def publish_commercial(request: PublishRequest, api_key: str = Depends(req
 
 @router.get("/scheduled-tasks/{book_id}", response_model=dict[str, Any])
 async def get_scheduled_publish_tasks(
-    book_id: int, api_key: str = Depends(require_api_key)
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+    api_key: str = Depends(require_api_key)
 ) -> dict[str, Any]:
     """予約投稿ジョブの一覧を取得する (Step 56)."""
     from src.backend.tasks.commercial_tasks import get_scheduled_commercial_tasks
+
+    await verify_book_ownership(book_id, current_user, AppContainer.db())
     tasks = get_scheduled_commercial_tasks(book_id)
     return {"success": True, "data": tasks}
 
 
 @router.delete("/scheduled-tasks/{task_id}", response_model=dict[str, Any])
 async def cancel_scheduled_publish_task(
-    task_id: str, api_key: str = Depends(require_api_key)
+    task_id: str,
+    current_user: User = Depends(get_current_user),
+    api_key: str = Depends(require_api_key)
 ) -> dict[str, Any]:
     """予約投稿ジョブを取り消す (Step 57)."""
-    from src.backend.tasks.commercial_tasks import cancel_commercial_task
+    from src.backend.tasks.commercial_tasks import _SCHEDULED_JOBS, cancel_commercial_task
+
+    # Huey のジョブ ID 自体は所有者を保持していないため、
+    # ジョブレジストリから book_id を取り出して所有者を確認する。
+    job = _SCHEDULED_JOBS.get(task_id)
+    if job is not None and job.get("book_id") is not None:
+        await verify_book_ownership(int(job["book_id"]), current_user, AppContainer.db())
+    elif getattr(current_user, "role", None) != "admin":
+        # 所有者を特定できないジョブは管理者以外から操作させない (fail-closed)
+        raise HTTPException(
+            status_code=403,
+            detail="このタスクの所有者が記録されていないため取り消せません",
+        )
+
     cancelled = cancel_commercial_task(task_id)
     return {
         "success": cancelled,
@@ -346,7 +379,11 @@ async def get_publish_status(
 
 
 @router.get("/publish/records/{book_id}", response_model=dict[str, Any])
-async def get_publish_records(book_id: int, api_key: str = Depends(require_api_key)):
+async def get_publish_records(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+    api_key: str = Depends(require_api_key)
+):
     """
     書籍の投稿履歴を取得する。
 
@@ -365,6 +402,8 @@ async def get_publish_records(book_id: int, api_key: str = Depends(require_api_k
         async with UnitOfWork(AppContainer.db()) as uow:
             if uow.session is None:
                 raise HTTPException(status_code=500, detail="Database session not available")
+            # 書籍IDは他テナントのものを指定できるため所有権を検証する
+            await verify_book_ownership(book_id, current_user, uow)
             result = await uow.session.execute(
                 select(PublishRecord)
                 .where(PublishRecord.book_id == book_id)

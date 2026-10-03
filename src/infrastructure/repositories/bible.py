@@ -158,30 +158,42 @@ class BibleRepository(BaseRepository):
                 )
             self.session.add_all(chars)
 
-            # Plots
-            for ep in range(1, kwargs.get("target_eps", 50) + 1):
-                # Check if plot already exists
-                plot_result = await self.session.execute(
-                    select(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num == ep)
+            # Plots: 話数ごとの SELECT を N 回重ねるのではなく一括 UPSERT する。
+            # 旧実装は SELECT → 未存在なら INSERT で、同時保存時に
+            # UNIQUE(book_id, branch_id, ep_num) 制約で後着が落ちていた。
+            # 既存行も「計画済みテンプレート」で上書きする点は旧実装と同じ。
+            target_eps = kwargs.get("target_eps", 50)
+            bind = self.session.get_bind()
+            dialect = bind.dialect.name
+            if dialect == "postgresql":
+                from sqlalchemy.dialects.postgresql import insert as _insert
+            else:
+                from sqlalchemy.dialects.sqlite import insert as _insert
+            stmt = _insert(Plot).values(
+                [
+                    {
+                        "book_id": book_id,
+                        "branch_id": branch_id,
+                        "ep_num": ep,
+                        "title": f"第{ep}話 (TBD)",
+                        "summary": "andang...",
+                        "status": "planned",
+                        "current_chain_phase": "Hate",
+                    }
+                    for ep in range(1, target_eps + 1)
+                ]
+            )
+            await self.session.execute(
+                stmt.on_conflict_do_update(
+                    index_elements=[Plot.book_id, Plot.branch_id, Plot.ep_num],
+                    set_={
+                        "title": stmt.excluded.title,
+                        "summary": stmt.excluded.summary,
+                        "status": stmt.excluded.status,
+                        "current_chain_phase": stmt.excluded.current_chain_phase,
+                    },
                 )
-                p_obj = plot_result.scalar_one_or_none()
-                if not p_obj:
-                    p_obj = Plot(
-                        book_id=book_id,
-                        branch_id=branch_id,
-                        ep_num=ep,
-                        title=f"第{ep}話 (TBD)",
-                        summary="計画中...",
-                        status="planned",
-                        current_chain_phase="Hate",
-                    )
-                    self.session.add(p_obj)
-                else:
-                    p_obj.book_id = book_id
-                    p_obj.title = f"第{ep}話 (TBD)"
-                    p_obj.summary = "計画中..."
-                    p_obj.status = "planned"
-                    p_obj.current_chain_phase = "Hate"
+            )
 
             return book_id
         except Exception as e:

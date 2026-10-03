@@ -367,6 +367,28 @@ class TestGrammarDP:
         assert result[0] == Terminal.SETUP
         assert result[-1] == Terminal.CLIMAX
 
+    @pytest.mark.parametrize("length", [0, 1, 2, 3, 5, 8])
+    def test_reconstruct_fallback_returns_exactly_length_terminals(self, length):
+        """フォールバック経路は `length` 個と厳密に一致すること（off by one 防止）。
+
+        以前は length が 0 / 1 / 2 のときも 2 個返しており、
+        「n 話ぶんの Terminal 列」という呼び出し側の前提とずれていた。
+        """
+        from src.narrative_balancer.grammar.symbols import NonTerminal, Terminal
+
+        dp = DPTable(load_cost_model(), max_len=8)
+        result = reconstruct_optimal_expansion(dp, NonTerminal.ACT3, length)
+        assert len(result) == length
+        if length >= 2:
+            assert result[0] == Terminal.SETUP
+            assert result[-1] == Terminal.CLIMAX
+
+    def test_reconstruct_terminal_passthrough_zero_length(self):
+        from src.narrative_balancer.grammar.symbols import Terminal
+
+        dp = DPTable(load_cost_model(), max_len=4)
+        assert reconstruct_optimal_expansion(dp, Terminal.SETUP, 0) == []
+
 
 def _get_terminal_cost(dp: DPTable) -> float:
     from src.narrative_balancer.grammar.symbols import Terminal

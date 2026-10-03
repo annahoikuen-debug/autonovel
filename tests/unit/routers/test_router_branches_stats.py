@@ -61,6 +61,30 @@ def patch_branch_repo(monkeypatch, repo, chapter_repo=None):
     return repo
 
 
+def make_current_user(user_id=1):
+    """所有権検証を通過する管理者ユーザーのモック."""
+    return MagicMock(id=user_id, role="admin", status="active")
+
+
+def patch_book_ownership(monkeypatch, book_id=10):
+    """``verify_book_ownership`` を Book を返すスタブに差し替える。
+
+    IDOR 修正で play 系ルートに所有者検証が入るようになったため、
+    handler を直接呼ぶ単体テストでは「Book が存在する」ところまで通す。
+    handler 本体のロジックはそのまま実行される。
+    """
+    stub = AsyncMock(return_value=MagicMock(id=book_id, user_id=1))
+    monkeypatch.setattr(branches_module, "verify_book_ownership", stub)
+    return stub
+
+
+def patch_branch_ownership(monkeypatch):
+    """``verify_branch_belongs_to_book`` を通過するスタブに差し替える."""
+    stub = AsyncMock(return_value=None)
+    monkeypatch.setattr(branches_module, "verify_branch_belongs_to_book", stub)
+    return stub
+
+
 # ============================================================================
 # get_branch_stats
 # ============================================================================
@@ -164,6 +188,7 @@ async def test_play_load():
 
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
+        patch_book_ownership(m, 10)
         with patch("src.backend.routers.branches.get_play_state", new_callable=AsyncMock) as mock_get_play_state:
             mock_get_play_state.return_value = BranchPlayStateResponse(
                 session_id=session_id,
@@ -176,7 +201,8 @@ async def test_play_load():
                 status="active",
                 updated_at=datetime.now()
             )
-            result = await play_load(session_id, index=1, session=session)
+            result = await play_load(session_id, index=1, session=session,
+                                     current_user=make_current_user())
 
     assert result.current_node_id == "n2"
     assert result.context == {"other": "data"}
@@ -197,8 +223,10 @@ async def test_play_load_invalid_index():
 
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
+        patch_book_ownership(m, 10)
         with pytest.raises(HTTPException) as exc_info:
-            await play_load(session_id, index=5, session=session)
+            await play_load(session_id, index=5, session=session,
+                            current_user=make_current_user())
         assert exc_info.value.status_code == 400
         assert "Save index out of range" in exc_info.value.detail
 
@@ -221,7 +249,9 @@ async def test_play_end():
 
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
-        result = await play_end(session_id, payload=payload, session=session)
+        patch_book_ownership(m, 10)
+        result = await play_end(session_id, payload=payload, session=session,
+                                current_user=make_current_user())
 
     assert result.status == "completed"
     repo.end_play_session.assert_awaited_once_with(session_id, status="completed")
@@ -249,7 +279,9 @@ async def test_get_playthrough():
 
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
-        result = await get_playthrough(session_id, session=session)
+        patch_book_ownership(m, 10)
+        result = await get_playthrough(session_id, session=session,
+                                       current_user=make_current_user())
 
     assert result.session_id == session_id
     assert result.book_id == 10
@@ -278,6 +310,7 @@ async def test_list_branch_nodes():
 
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
+        patch_branch_ownership(m)
         result = await list_branch_nodes(10, 1, session=session)
 
     assert result["branch_id"] == 1
@@ -307,6 +340,7 @@ async def test_create_branch_node():
 
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
+        patch_branch_ownership(m)
         result = await create_branch_node(10, 1, node_data, session=session)
 
     assert result["branch_id"] == 1
@@ -334,6 +368,7 @@ async def test_delete_branch_node():
 
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
+        patch_branch_ownership(m)
         result = await delete_branch_node(10, 1, node_id, session=session)
 
     assert result["branch_id"] == 1
@@ -356,6 +391,7 @@ async def test_delete_branch_node_referenced():
 
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
+        patch_branch_ownership(m)
         with pytest.raises(HTTPException) as exc_info:
             await delete_branch_node(10, 1, node_id, session=session)
         assert exc_info.value.status_code == 422

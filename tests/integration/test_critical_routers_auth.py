@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.backend.server import app
-from src.backend.database import get_db
+from src.backend.database import get_async_db, get_db
 from src.backend.database.models import Base, User, Book
 from src.backend.security.jwt import create_access_token
 from src.core.container import AppContainer
@@ -32,9 +32,15 @@ async def setup_db():
         await conn.run_sync(Base.metadata.create_all)
     original_db = AppContainer.db
     AppContainer.db = TestingSessionLocal
+    # commercial 系ルートはセッションプロバイダが `get_db` から `get_async_db` へ
+    # 変更されたため、両方を差し替える。
+    # `get_db` だけを差し替えても `get_async_db` を使うエンドポイントは
+    # 本物のセッション（本番 DB）に接続しており、401 判定が意味を失う。
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_async_db] = override_get_db
     yield
     app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_async_db, None)
     AppContainer.db = original_db
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

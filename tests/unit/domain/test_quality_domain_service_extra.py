@@ -331,14 +331,107 @@ class TestQualityDomainServiceExtra:
         weights["story"] = 0.9
         assert QualityCalculator.DEFAULT_WEIGHTS["story"] == 0.20
 
-    def test_set_custom_weights(self):
+    def test_set_custom_weights_affects_only_this_instance(self):
+        """カスタム重みはインスタンス単位に効き、クラス属性は汚さない。
+
+        旧挙動では ``QualityCalculator`` に ``__init__`` が無く
+        ``self._calculator`` がクラスそのものだったため、``set_custom_weights`` が
+        プロセス全体で ``DEFAULT_WEIGHTS`` を書き換えていた。
+        """
+        before = dict(QualityCalculator.DEFAULT_WEIGHTS)
         svc = self.make()
-        original = dict(QualityCalculator.DEFAULT_WEIGHTS)
-        try:
-            svc.set_custom_weights({"story": 1.0})
-            assert svc._calculator.DEFAULT_WEIGHTS == {"story": 1.0}
-        finally:
-            QualityCalculator.DEFAULT_WEIGHTS = original
+        other = self.make()
+
+        plot = FakePlot(
+            state_integrity=100,
+            emotional_resonance=50,
+            thematic_depth=0,
+            literary_beauty=0,
+            erotic_intensity=0,
+        )
+        svc.set_custom_weights({"state_integrity": 0.5, "emotional_resonance": 0.5})
+
+        # 1) 実際に計算結果に影響する
+        assert svc.get_dimension_weights() == {"state_integrity": 0.5, "emotional_resonance": 0.5}
+        assert svc.calculate_plot_quality(plot).overall == 75
+
+        # 2) 他のインスタンスに影響しない（既定 PLOT_QUALITY_WEIGHTS のまま）
+        assert other.get_dimension_weights() == before
+        assert other.calculate_plot_quality(plot).overall == 35
+
+        # 3) クラス属性は変更されない
+        assert QualityCalculator.DEFAULT_WEIGHTS == before
+        assert QualityCalculator.DEFAULT_WEIGHTS["story"] == 0.20
+
+    def test_custom_weights_change_computed_score(self):
+        """story に全重みを与えると story スコアがそのまま総合点になる。"""
+        svc = self.make()
+        plot = FakePlot(
+            state_integrity=100,
+            emotional_resonance=0,
+            thematic_depth=0,
+            literary_beauty=0,
+            erotic_intensity=0,
+        )
+        default_score = svc.calculate_plot_quality(plot)
+
+        svc.set_custom_weights({"state_integrity": 1.0})
+        custom_score = svc.calculate_plot_quality(plot)
+
+        assert default_score.overall == 25
+        assert custom_score.overall == 100
+        assert custom_score.overall != default_score.overall
+
+    def test_calculate_from_dimensions_uses_default_weights(self):
+        """weights 未指定時は BookScore.WEIGHTS が使われる。"""
+        dims = {"story": 100, "character": 0}
+        score = BookScore.calculate_from_dimensions(dims)
+        # (100*0.20 + 0*0.15) / 0.35
+        assert score.overall == 57
+        assert score.dimensions == dims
+
+    def test_calculate_from_dimensions_honours_custom_weights(self):
+        """weights 引数が渡されればそれだけで重み付けされる。"""
+        dims = {"story": 100, "character": 0}
+        assert BookScore.calculate_from_dimensions(dims, {"story": 1.0}).overall == 100
+        assert BookScore.calculate_from_dimensions(dims, {"character": 1.0}).overall == 0
+
+    def test_plot_quality_weights_are_disjoint_from_book_weights(self):
+        """PLOT_QUALITY_WEIGHTS は BookScore.WEIGHTS とキーが重ならない。
+
+        重なる前に ``calculate_plot_quality_score`` は BookScore.WEIGHTS を流用して
+        total_weight=0 になり、常に overall=0 を返していた。
+        """
+        assert set(BookScore.PLOT_QUALITY_WEIGHTS) == set(
+            QualityCalculator.PLOT_QUALITY_DIMENSIONS
+        )
+        assert not (set(BookScore.PLOT_QUALITY_WEIGHTS) & set(BookScore.WEIGHTS))
+        assert set(QualityCalculator.PLOT_QUALITY_WEIGHTS) == set(BookScore.PLOT_QUALITY_WEIGHTS)
+
+    def test_calculate_plot_quality_score_is_not_zero(self):
+        """plot の品質軸が全て最大なら PLOT_QUALITY_WEIGHTS で 100 になる。"""
+        plot = FakePlot(
+            state_integrity=100,
+            emotional_resonance=100,
+            thematic_depth=100,
+            literary_beauty=100,
+            erotic_intensity=100,
+        )
+        assert QualityCalculator.calculate_plot_quality_score(plot).overall == 100
+        assert abs(sum(BookScore.PLOT_QUALITY_WEIGHTS.values()) - 1.0) < 1e-9
+
+    def test_calculate_plot_quality_uses_custom_weights(self):
+        """インスタンスのカスタム重みが plot 品質計算にも効く。"""
+        svc = self.make()
+        plot = FakePlot(
+            state_integrity=100,
+            emotional_resonance=0,
+            thematic_depth=0,
+            literary_beauty=0,
+            erotic_intensity=0,
+        )
+        svc.set_custom_weights({"state_integrity": 1.0})
+        assert svc.calculate_plot_quality(plot).overall == 100
 
     def test_set_custom_weights_invalid(self):
         svc = self.make()

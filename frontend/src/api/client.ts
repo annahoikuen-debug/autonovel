@@ -9,6 +9,34 @@
 
 export const DEFAULT_API_TIMEOUT_MS = 30_000;
 
+/**
+ * アクセストークンの localStorage キー（**単一の情報源**）。
+ *
+ * 以前は AuthContext が `"token"` に書き、client.ts が `"auth_token"` を読んでいたため
+ * ログインしても Authorization ヘッダが 付与 されず全 API が 401 になっていた。
+ * client.ts 側に寄せ、ここを定数として両方から参照する。
+ */
+export const AUTH_TOKEN_STORAGE_KEY = "auth_token";
+
+/** 保存済みトークンを読む。localStorage 自体が使えない環境では null。 */
+export function readAuthToken(): string | null {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  } catch {
+    // プライベートモード等で localStorage が禁じられている
+    return null;
+  }
+}
+
+/** 保存済みトークンを消す。例外は握る（呼び出し側の@unmount を止めないため）。 */
+export function clearAuthToken(): void {
+  try {
+    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+  } catch {
+    // ignore storage error
+  }
+}
+
 export class ApiNetworkError extends Error {
   constructor(message = "ネットワークに接続できません。接続を確認してください。") {
     super(message);
@@ -53,7 +81,7 @@ export async function apiFetch(
   options?: RequestInit,
   timeoutMs: number = DEFAULT_API_TIMEOUT_MS
 ): Promise<Response> {
-  const token = localStorage.getItem("auth_token");
+  const token = readAuthToken();
   const headers = new Headers(options?.headers || {});
   if (!headers.has("Content-Type") && options?.body) {
     headers.set("Content-Type", "application/json");
@@ -97,11 +125,7 @@ export async function apiFetch(
 
   // 401: 認証切れ → トークンを除去（AuthContext が次回未認証扱いにする）
   if (response.status === 401) {
-    try {
-      localStorage.removeItem("auth_token");
-    } catch {
-      // ignore storage error
-    }
+    clearAuthToken();
   }
 
   return response;

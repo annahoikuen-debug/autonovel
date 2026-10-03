@@ -8,6 +8,10 @@ from src.backend.auth import get_current_user
 from src.backend.database import get_async_db
 from src.backend.database.models import Illustration, User
 from src.backend.database.uow import UnitOfWork
+from src.backend.schemas.illustrations import (
+    IllustrationGenerateRequest,
+    YonkomaGenerateRequest,
+)
 from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
 from src.dependencies import get_illustration_workflow
@@ -47,12 +51,15 @@ class _ReporterShim:
 
 @router.post("/generate")
 async def generate_illustration(
-    request: dict[str, Any],
+    request: IllustrationGenerateRequest,
     workflow=Depends(get_illustration_workflow),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_db),
 ):
     """単一の挿絵を生成する (5クレジット消費)"""
+    # IDOR 防止 / 誤課金の防止: 所有権を検証してからクレジットを消費する
+    await verify_book_ownership(request.book_id, current_user, AppContainer.db())
+
     try:
         # クレジット消費
         credit_service = CreditService(db)
@@ -60,7 +67,7 @@ async def generate_illustration(
             user_id=current_user.id,
             amount=5,
             transaction_type="illustration_generation",
-            description=f"Generate illustration for book {request.get('book_id')}",
+            description=f"Generate illustration for book {request.book_id}",
         )
     except InsufficientCreditsError as e:
         raise HTTPException(
@@ -71,12 +78,12 @@ async def generate_illustration(
     try:
         # リクエストのパース
         ill_request = IllustrationRequest(
-            book_id=request["book_id"],
-            illustration_type=IllustrationType(request["illustration_type"]),
-            episode_number=request.get("episode_number"),
-            model=IllustrationModel(request.get("model", "auto")),
+            book_id=request.book_id,
+            illustration_type=IllustrationType(request.illustration_type),
+            episode_number=request.episode_number,
+            model=IllustrationModel(request.model),
             safety_level=SafetyLevel.R15_CONTENT
-            if request.get("enable_r15")
+            if request.enable_r15
             else SafetyLevel.BLOCK_SOME,
         )
 
@@ -98,14 +105,14 @@ async def generate_illustration(
 
 @router.post("/yonkoma")
 async def generate_yonkoma(
-    request: dict[str, Any],
+    request: YonkomaGenerateRequest,
     workflow=Depends(get_illustration_workflow),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_db),
 ):
     """1話分の流れを 6 コマ (デフォルト) で要約した漫画プロンプト+画像を生成する。
 
-    Request:
+    Request は `YonkomaGenerateRequest` で検証される:
         {
             "book_id": int,
             "episode_text": str,        # 1話分の本文
@@ -117,7 +124,11 @@ async def generate_yonkoma(
 
     Response: IllustrationResult 互換の dict
     """
-    yonkoma_enabled = bool(request.get("yonkoma_enabled", True))
+    yonkoma_enabled = bool(request.yonkoma_enabled)
+
+    # IDOR 防止 / 誤課金の防止: 所有権を検証してからクレジットを消費する
+    await verify_book_ownership(request.book_id, current_user, AppContainer.db())
+
     if yonkoma_enabled:
         try:
             credit_service = CreditService(db)
@@ -125,7 +136,7 @@ async def generate_yonkoma(
                 user_id=current_user.id,
                 amount=20,
                 transaction_type="illustration_yonkoma",
-                description=f"Generate yonkoma for book {request.get('book_id')}",
+                description=f"Generate yonkoma for book {request.book_id}",
             )
         except InsufficientCreditsError as e:
             raise HTTPException(
@@ -134,17 +145,17 @@ async def generate_yonkoma(
             )
 
     try:
-        book_id = int(request["book_id"])
-        episode_text = str(request.get("episode_text") or "")
-        panels = max(3, min(int(request.get("panels") or 6), 6))
-        model = request.get("model", "auto")
-        enable_r15 = bool(request.get("enable_r15"))
-        book_context = dict(request.get("book_context") or {})
+        book_id = int(request.book_id)
+        episode_text = str(request.episode_text or "")
+        panels = max(3, min(int(request.panels or 6), 6))
+        model = request.model
+        enable_r15 = bool(request.enable_r15)
+        book_context = dict(request.book_context or {})
 
         ill_request = IllustrationRequest(
             book_id=book_id,
             illustration_type=IllustrationType.YONKOMA,
-            episode_number=request.get("episode_number"),
+            episode_number=request.episode_number,
             scene_text=episode_text,
             book_context=book_context,
             model=IllustrationModel(model),

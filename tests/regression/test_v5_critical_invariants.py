@@ -22,6 +22,7 @@ if str(ROOT_DIR) not in sys.path:
 from src.backend.middleware.auth_middleware import is_safe_api_key_match
 from src.backend.database.models import User
 from src.backend.database.models_billing import StripeWebhookEvent
+from src.backend.routers import billing_webhook
 from src.backend.routers.billing_webhook import handle_stripe_webhook
 from fastapi import Request
 
@@ -40,8 +41,11 @@ def test_timing_safe_auth_matching():
 
 
 @pytest.mark.asyncio
-async def test_billing_webhook_idempotency_prevents_duplicate_grant():
+async def test_billing_webhook_idempotency_prevents_duplicate_grant(monkeypatch):
     """同一のStripeイベントIDが重複受信された際、二重付与せず即時返却すること."""
+    # 署名シークレット未設定時は 400 で拒否される（安全設定）。
+    # ここでは署名検証そのものではなくべき等性を問うため、テスト内でだけ Secret を設定する。
+    monkeypatch.setattr(billing_webhook, "WEBHOOK_SECRET", "whsec_test_secret")
     # Mock request
     mock_request = MagicMock(spec=Request)
     mock_request.body = AsyncMock(return_value=b'{"id": "evt_duplicate_test", "type": "checkout.session.completed"}')

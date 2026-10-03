@@ -63,6 +63,10 @@ class CharacterExtractor:
         if dict_to_use:
             text = doc.text
             for char_name in dict_to_use:
+                # 空文字・非文字列はスキップする。
+                # text.find("", 0) は常に 0 を返すため、start が進まず無限ループになる。
+                if not isinstance(char_name, str) or not char_name.strip():
+                    continue
                 # 単純な文字列検索（改善の余地あり）
                 start = 0
                 while True:
@@ -70,6 +74,9 @@ class CharacterExtractor:
                     if idx == -1:
                         break
                     end = idx + len(char_name)
+                    # 防御: 検索位置が進まない場合は終了（無限ループ防止）
+                    if end <= start:
+                        break
                     span_key = (idx, end)
                     if span_key not in seen_spans:
                         # トークン位置を推定

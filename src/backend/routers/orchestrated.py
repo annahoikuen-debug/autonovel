@@ -13,6 +13,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
@@ -24,6 +25,8 @@ from src.backend.database.models import User
 from src.backend.database.repository import BookRepository
 from src.backend.observability.health import metrics
 from src.backend.rate_limit import generate_limiter
+from src.backend.routers.tasks import _assert_task_ownership
+from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.tasks.generation_tasks import generate_chapter_orchestrated_task
 from src.backend.tasks.huey import huey
 from src.agents.event_bus import EventBus, AgentEvent
@@ -35,8 +38,29 @@ except ImportError:
 # prefix は frontend/src/api/orchestratedApi.ts の `BASE = "/orchestrated"` 契約に一致させる。
 # prefix を付けないと /generate や /status/{task_id} がルート直下に露出し、
 # FE が叩く /orchestrated/* が 404 になる。
-router = APIRouter(prefix="/orchestrated", tags=["orchestrated"])
+router = APIRouter(
+    prefix="/orchestrated",
+    tags=["orchestrated"],
+    # 従来は認証依存が無く、GlobalAuthMiddleware を通過した任意のテナントが
+    # 他人のタスク結果閲覧・キャンセル・エ-Agent イベント購読を行えた。
+    dependencies=[Depends(get_current_user)],
+)
 logger = logging.getLogger(__name__)
+
+# Agent イベントの correlation_id は `book_<book_id>_branch_<branch_id>_ep_<ep_num>`
+# 形式（generation_tasks.py:188）で生成される。branches.py 側は `str(book_id)` を使うため、
+# 数値のみのパターンも併せて受け付ける。
+_CORRELATION_BOOK_RE = re.compile(r"^book_(\d+)(?:_|$)")
+
+
+def _book_id_from_correlation(correlation_id: str) -> int | None:
+    """correlation_id から作品 ID を抽出する。判定不能な場合は None。"""
+    m = _CORRELATION_BOOK_RE.match(correlation_id)
+    if m:
+        return int(m.group(1))
+    if correlation_id.isdigit():
+        return int(correlation_id)
+    return None
 
 
 class OrchestratedGenerateRequest(BaseModel):
@@ -94,7 +118,7 @@ async def generate_orchestrated(
 
         # DB レコードを作成
         repo = BookRepository(session)
-        repo.create_task(task_id=huey_task_id, status="running")
+        repo.create_task(task_id=huey_task_id, status="running", user_id=current_user.id)
 
         metrics.increment("orchestrated_tasks_enqueued")
         logger.info("Enqueued orchestrated generation task: task_id=%s", huey_task_id)
@@ -110,9 +134,20 @@ async def generate_orchestrated(
 
 
 @router.get("/status/{task_id}")
-async def get_orchestrated_task_status(task_id: str) -> dict[str, Any]:
+async def get_orchestrated_task_status(
+    task_id: str,
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
     """オーケストレーションタスクのステータス取得。"""
     result = huey.result(task_id)
+
+    # IDOR 防止: task_id は連番/推測可能なため、タスク所有者を必ず検証する。
+    # `tasks.py` の `_assert_task_ownership` と同じ fail-closed 方針に従う
+    # （所有者が記録されていないタスクは管理者のみ参照可）。
+    _assert_task_ownership(
+        result if isinstance(result, dict) else {}, current_user
+    )
+
     if result is None:
         logger.info("Orchestrated task status polled (pending): task_id=%s", task_id)
         return {"task_id": task_id, "status": "pending"}
@@ -130,15 +165,25 @@ async def get_orchestrated_task_status(task_id: str) -> dict[str, Any]:
 
 
 @router.delete("/task/{task_id}")
-async def cancel_orchestrated_task(task_id: str) -> dict[str, str]:
+async def cancel_orchestrated_task(
+    task_id: str,
+    session=Depends(database.get_async_db),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, str]:
     """オーケストレーションタスクをキャンセル。"""
+    # IDOR 防止: 他人のタスクをキャンセルできないようにする。
+    # `Task` モデルに user_id 列が無いため、`_assert_task_ownership` は
+    # 所有者が不明なら管理者以外を拒否する（fail-closed）。
+    repo = BookRepository(session)
+    task = await repo.get_task_async(task_id)
+    _assert_task_ownership({"user_id": getattr(task, "user_id", None)}, current_user)
+
     try:
         huey.revoke_by_id(task_id)
     except Exception:
         logger.warning("Failed to revoke huey task_id=%s", task_id)
 
-    repo = BookRepository()
-    repo.update_task_status(task_id, "cancelled")
+    await repo.update_task_status_async(task_id, "cancelled")
 
     return {"task_id": task_id, "status": "cancelled"}
 
@@ -198,8 +243,24 @@ async def export_orchestrated_package(
 async def orchestrated_events(
     correlation_id: str,
     request: Request,
+    current_user: User = Depends(get_current_user),
 ) -> EventSourceResponse:
-    """オーケストレーション中のAgentEventをSSEでリアルタイム配信。"""
+    """オーケストレーション中のAgentEventをSSEでリアルタイム配信。
+
+    IDOR 防止: correlation_id は単なる識別子（`book_<id>_branch_<id>_ep_<n>`）で、
+    他人の生成イベントを購読できてしまう。作品 ID を解決して所有者を検証する。
+    """
+    book_id = _book_id_from_correlation(correlation_id)
+    if book_id is None:
+        # 作品スコープに紐づけられない correlation_id は管理者に限定する (fail-closed)
+        if getattr(current_user, "role", None) != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="このイベントストリームは作品に紐づかないため管理者権限が必要です",
+            )
+    else:
+        await verify_book_ownership(book_id, current_user)
+
     use_redis = os.environ.get("USE_REDIS_EVENTS", "false").lower() == "true"
     event_bus = EventBus(use_redis=use_redis)
     if use_redis:

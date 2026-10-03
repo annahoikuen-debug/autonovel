@@ -114,13 +114,26 @@ class QualityCalculator:
         "erotic_intensity": "erotic_intensity",
     }
 
-    @classmethod
-    def calculate_book_score(cls, dimensions: Dict[str, int], weights: Optional[Dict[str, float]] = None) -> BookScore:
-        """Calculate BookScore from dimension scores using weights."""
-        return BookScore.calculate_from_dimensions(dimensions)
+    # Plot quality axes have their own weights: they are disjoint from BookScore.WEIGHTS,
+    # so reusing the book weights would leave total_weight at 0 and always yield overall=0
+    PLOT_QUALITY_WEIGHTS: Dict[str, float] = dict(BookScore.PLOT_QUALITY_WEIGHTS)
+
+    # Aggregate weights cover both book dimensions and plot quality axes
+    AGGREGATE_WEIGHTS: Dict[str, float] = {
+        **BookScore.WEIGHTS,
+        **BookScore.PLOT_QUALITY_WEIGHTS,
+    }
 
     @classmethod
-    def calculate_plot_quality_score(cls, plot) -> BookScore:
+    def calculate_book_score(cls, dimensions: Dict[str, int], weights: Optional[Dict[str, float]] = None) -> BookScore:
+        """Calculate BookScore from dimension scores using weights.
+
+        weights が None の場合は BookScore.WEIGHTS が使用される。
+        """
+        return BookScore.calculate_from_dimensions(dimensions, weights)
+
+    @classmethod
+    def calculate_plot_quality_score(cls, plot, weights: Optional[Dict[str, float]] = None) -> BookScore:
         """Calculate quality score for a Plot entity."""
         dimensions = {}
         for dim_name, attr_name in cls.PLOT_QUALITY_DIMENSIONS.items():
@@ -128,21 +141,22 @@ class QualityCalculator:
                 value = getattr(plot, attr_name)
                 if value is not None:
                     dimensions[dim_name] = max(0, min(100, value))
-        return cls.calculate_book_score(dimensions)
+        return cls.calculate_book_score(dimensions, weights or cls.PLOT_QUALITY_WEIGHTS)
 
     @classmethod
-    def calculate_chapter_quality_score(cls, chapter) -> Optional[BookScore]:
+    def calculate_chapter_quality_score(cls, chapter, weights: Optional[Dict[str, float]] = None) -> Optional[BookScore]:
         """Calculate quality score for a Chapter entity."""
         if chapter.score_story is None:
             return None
         dimensions = {"story": chapter.score_story}
-        return cls.calculate_book_score(dimensions)
+        return cls.calculate_book_score(dimensions, weights)
 
     @classmethod
     def calculate_aggregate_quality(
         cls,
         plot_scores: List[BookScore],
         chapter_scores: List[Optional[BookScore]],
+        weights: Optional[Dict[str, float]] = None,
     ) -> BookScore:
         """Calculate aggregate quality across multiple plots and chapters."""
         all_dimensions: Dict[str, List[int]] = {}
@@ -160,7 +174,7 @@ class QualityCalculator:
         for dim, values in all_dimensions.items():
             averaged[dim] = int(round(sum(values) / len(values)))
 
-        return cls.calculate_book_score(averaged)
+        return cls.calculate_book_score(averaged, weights or cls.AGGREGATE_WEIGHTS)
 
     @classmethod
     def calculate_tension_curve(cls, plots) -> Dict[str, Any]:
@@ -404,14 +418,20 @@ class QualityDomainService:
         self._validator = QualityValidator()
         self._calculator = QualityCalculator()
         self._analyzer = QualityAnalyzer()
+        # インスタンス単位のカスタム重み（クラス属性は変更しない）
+        self._custom_weights: Optional[Dict[str, float]] = None
+
+    def _effective_weights(self) -> Optional[Dict[str, float]]:
+        """Return the instance-scoped custom weights, if any."""
+        return dict(self._custom_weights) if self._custom_weights is not None else None
 
     def calculate_plot_quality(self, plot) -> BookScore:
         """Calculate quality score for a single plot."""
-        return self._calculator.calculate_plot_quality_score(plot)
+        return self._calculator.calculate_plot_quality_score(plot, self._effective_weights())
 
     def calculate_chapter_quality(self, chapter) -> Optional[BookScore]:
         """Calculate quality score for a single chapter."""
-        return self._calculator.calculate_chapter_quality_score(chapter)
+        return self._calculator.calculate_chapter_quality_score(chapter, self._effective_weights())
 
     def calculate_novel_quality(
         self,
@@ -421,7 +441,9 @@ class QualityDomainService:
         """Calculate aggregate quality score for a novel."""
         plot_scores = [self.calculate_plot_quality(p) for p in plots]
         chapter_scores = [self.calculate_chapter_quality(c) for c in chapters]
-        return self._calculator.calculate_aggregate_quality(plot_scores, chapter_scores)
+        return self._calculator.calculate_aggregate_quality(
+            plot_scores, chapter_scores, self._effective_weights()
+        )
 
     def validate_plot_scores(self, plot) -> List[str]:
         """Validate all quality scores in a plot."""
@@ -500,16 +522,20 @@ class QualityDomainService:
 
     def get_dimension_weights(self) -> Dict[str, float]:
         """Get current dimension weights used in BookScore calculation."""
-        return self._calculator.DEFAULT_WEIGHTS.copy()
+        if self._custom_weights is not None:
+            return dict(self._custom_weights)
+        return dict(QualityCalculator.DEFAULT_WEIGHTS)
 
     def set_custom_weights(self, weights: Dict[str, float]) -> None:
-        """Set custom dimension weights (for testing or customization)."""
+        """Set custom dimension weights (for testing or customization).
+
+        このインスタンスにのみ適用される（クラス属性は変更しない）。
+        """
         # Validate weights sum to ~1.0
         total = sum(weights.values())
         if abs(total - 1.0) > 0.01:
             raise QualityValidationError(f"Weights must sum to 1.0, got {total}")
-        # Note: This modifies class variable, use with caution
-        self._calculator.DEFAULT_WEIGHTS = weights
+        self._custom_weights = dict(weights)
 
 
 __all__ = [

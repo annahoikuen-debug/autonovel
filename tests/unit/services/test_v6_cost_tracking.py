@@ -49,6 +49,14 @@ class _FakeAdapter:
         self.cancelled = True  # type: ignore[attr-defined]
 
 
+class _FailingStreamAdapter(_FakeAdapter):
+    """1 チャンク目だけ返してから例外を投げるストリーム。"""
+
+    async def stream_text(self, prompt: str, **kwargs: Any):
+        yield "あ"
+        raise RuntimeError("upstream failure")
+
+
 class TestTokenTrackerTaskBreakdown:
     def test_add_usage_without_task_type_keeps_legacy_behavior(self) -> None:
         """後方互換: task_type 省略時は従来の集計のみ。"""
@@ -135,6 +143,67 @@ class TestTrackedLLMAdapter:
         chunks = [c async for c in adapter.stream_text("プロンプト")]
         assert chunks == ["あ", "い", "う"], "ストリームが素通しされていない"
         assert tracker.call_count_by_task["writing"] == 1
+
+    @pytest.mark.asyncio
+    async def test_stream_text_records_on_early_consumer_exit(self) -> None:
+        """コンシューマーが途中で離脱しても、既消費分は必ず記録される。
+
+        以前は `self._record(...)` が `async for` の後ろにしか無く、
+        早期終了や上流例外だと課金済みトークンがローカルに記録されないまま
+        消えていた（`generate_text` と挙動も不揃いだった）。
+
+        `async for` の `break` だけでは async generator の終了が確定しないため、
+        離脱として明確な `aclose()` を呼んでから検証する。
+        """
+        inner = _FakeAdapter()
+        tracker = TokenTracker()
+        adapter = TrackedLLMAdapter(inner, tracker, "writing")
+
+        agen = adapter.stream_text("プロンプト")
+        async for chunk in agen:
+            if chunk == "い":
+                break
+        await agen.aclose()
+
+        assert tracker.call_count_by_task["writing"] == 1, "早期終了でも計測が記録される"
+        # 消費できたのは "あ" と "い" の 2 文字ぶん
+        assert tracker.usage_by_task["writing"]["output_tokens"] == 2
+
+    @pytest.mark.asyncio
+    async def test_stream_text_records_when_upstream_raises(self) -> None:
+        """上流例外時も、配信済みのトークンは記録される。"""
+        inner = _FailingStreamAdapter()
+        tracker = TokenTracker()
+        adapter = TrackedLLMAdapter(inner, tracker, "writing")
+
+        received = []
+        with pytest.raises(RuntimeError):
+            async for chunk in adapter.stream_text("プロンプト"):
+                received.append(chunk)
+
+        assert received == ["あ"]
+        assert tracker.call_count_by_task["writing"] == 1
+        # 配信できた 1 文字ぶんだけが記録される
+        assert tracker.usage_by_task["writing"]["output_tokens"] == 1
+
+    @pytest.mark.asyncio
+    async def test_stream_text_includes_system_prompt_in_estimate(self) -> None:
+        """stream_text も generate_text と同じく system_prompt を入力計測に含める。"""
+        tracker = TokenTracker()
+        adapter = TrackedLLMAdapter(_FakeAdapter(), tracker, "writing")
+
+        with_system = [c async for c in adapter.stream_text("短い", system_prompt="SYS" * 50)]
+        assert with_system == ["あ", "い", "う"]
+        with_system_tokens = tracker.usage_by_task["writing"]["input_tokens"]
+
+        tracker.reset()
+        without_system = [c async for c in adapter.stream_text("短い")]
+        assert without_system == ["あ", "い", "う"]
+        without_system_tokens = tracker.usage_by_task["writing"]["input_tokens"]
+
+        assert with_system_tokens > without_system_tokens, (
+            "system_prompt が stream_text の計測に含まれていない"
+        )
 
     def test_unknown_attributes_are_delegated(self) -> None:
         """既存スキルがアダプタ固有メソッドを呼んでも壊れないこと。"""

@@ -76,11 +76,18 @@ class MockBookRepository:
     async def get_book(self, book_id: int):
         return self.books.get(book_id)
 
-    async def get_chapter(self, branch_id: int, ep_num: int):
+    async def get_chapter(self, branch_id: int, ep_num: int, book_id: int | None = None):
         return self.chapters.get((branch_id, ep_num))
 
-    async def get_plot(self, book_id: int, ep_num: int, branch_id: int = 1):
-        return self.plots.get((book_id, branch_id, ep_num))
+    async def get_plot(
+        self,
+        book_id_or_branch_id: int,
+        ep_num: int,
+        branch_id: int | None = None,
+        book_id: int | None = None,
+    ):
+        branch = branch_id if branch_id is not None else book_id_or_branch_id
+        return self.plots.get((book_id, branch, ep_num))
 
     async def get_all_characters(self, book_id: int):
         return self.characters
@@ -91,11 +98,18 @@ class MockBookRepository:
     async def get_all_non_anchor_chapters(self, book_id: int, branch_id: int = 1, order_by: str = "ep_num"):
         return [c for (b, e), c in self.chapters.items() if b == branch_id]
 
-    async def get_all_plots(self, book_id: int, branch_id: int = 1):
-        return [p for (bk, b, e), p in self.plots.items() if bk == book_id and b == branch_id]
+    async def get_all_plots(
+        self,
+        book_id_or_branch_id: int,
+        branch_id: int | None = None,
+        book_id: int | None = None,
+    ):
+        branch = branch_id if branch_id is not None else 1
+        target = book_id if book_id is not None else book_id_or_branch_id
+        return [p for (bk, b, e), p in self.plots.items() if bk == target and b == branch]
 
-    async def create_task(self, task_id: str, status: str):
-        self.tasks[task_id] = {"status": status}
+    async def create_task(self, task_id: str, status: str, result: str | None = None, user_id: int | None = None):
+        self.tasks[task_id] = {"status": status, "user_id": user_id}
 
     async def update_task_status(self, task_id: str, status: str):
         if task_id in self.tasks:

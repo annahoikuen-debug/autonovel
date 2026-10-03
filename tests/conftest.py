@@ -259,8 +259,20 @@ def llm_mocker() -> LLMMocker:
 
 
 @pytest.fixture(autouse=True)
-def mock_llm_adapter(llm_mocker: LLMMocker, monkeypatch) -> MockLLMAdapter:
-    """get_llm_adapter を自動的にモックアダプターにパッチするフィクスチャ。"""
+def mock_llm_adapter(request, llm_mocker: LLMMocker, monkeypatch) -> MockLLMAdapter | None:
+    """get_llm_adapter を自動的にモックアダプターにパッチするフィクスチャ。
+
+    既定では全テスト（統合テストを含む）に適用される。
+    実アダプターを検証したい統合テストでは、以下のいずれかで opt-out できる:
+
+    * マーカー ``@pytest.mark.real_llm``（``pytest.ini`` に marker 登録済み）
+    * 環境変数 ``TEST_WITH_REAL_LLM=1``（CI 全体で opt-out）
+    """
+    if os.environ.get("TEST_WITH_REAL_LLM") == "1" or (
+        request.node.get_closest_marker("real_llm") is not None
+    ):
+        return None
+
     mock_adapter = MockLLMAdapter(llm_mocker)
 
     def mock_get_llm_adapter(*args, **kwargs):
@@ -273,11 +285,15 @@ def mock_llm_adapter(llm_mocker: LLMMocker, monkeypatch) -> MockLLMAdapter:
 # ============================================================================
 # 環境依存テストの collection error 回避 (Step 36)
 # ============================================================================
+# NOTE: ここでは REDIS_AVAILABLE / GEMINI_AVAILABLE を無条件で False にしない。
+# 以前は上の実検出（`TEST_WITH_REDIS=1` での疎通確認や `google.generativeai` の
+# find_spec）の直後に `REDIS_AVAILABLE = False; GEMINI_AVAILABLE = False` と
+# 無条件代入があり、`TEST_WITH_REDIS=1` が永久に無効化され、CI が provision した
+# Redis / Gemini がテストで使われていなかった。
+#
 # ortools 等のオプショナル依存が未インストールの環境では、該当テストファイルを
 # collection error ではなく「収集しない」扱いにして、全体スイートが
 # failed=0, errors=0 を維持できるようにする。
-REDIS_AVAILABLE = False
-GEMINI_AVAILABLE = False
 
 
 def _optional_module_available(name: str) -> bool:

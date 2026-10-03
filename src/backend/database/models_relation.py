@@ -5,7 +5,7 @@ Apache AGE のグラフDB Edge を置換する、
 """
 from __future__ import annotations
 
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, UniqueConstraint
 
 from src.infrastructure.database.models.base_orm import Base
 
@@ -26,7 +26,15 @@ class CharacterRelationModel(Base):
     """
 
     __tablename__ = "character_relations"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = (
+        UniqueConstraint(
+            "book_id",
+            "source_char_id",
+            "target_char_id",
+            "relation_type",
+            name="uq_character_relations_edge",
+        ),
+    )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     book_id = Column(Integer, nullable=False, index=True)

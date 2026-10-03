@@ -157,6 +157,22 @@ class TestContextManager:
         assert isinstance(result, str)
 
     @pytest.mark.asyncio
+    async def test_build_past_context_propagates_book_id(self, manager, mock_repo):
+        """参照クエリには book_id も渡されること（branch_id は作品間で共有される）。
+
+        book_id を落とすと他作品の同ブランチ章が混ざり、生成プロンプトに流出する。
+        """
+        manager._get_delegate = lambda: None
+        await manager.build_past_context(book_id=42, end_ep=5)
+        calls = (
+            mock_repo.get_chapters_before.await_args_list
+            + mock_repo.get_relevant_past_logs.await_args_list
+        )
+        assert calls, "リポジトリが一度も呼ばれていない"
+        for call in calls:
+            assert call.kwargs.get("book_id") == 42, f"book_id が伝播していない: {call}"
+
+    @pytest.mark.asyncio
     async def test_build_past_context_with_world_state(self, manager, mock_repo):
         manager._get_delegate = lambda: None
         chap = MagicMock()

@@ -72,6 +72,16 @@ class BookScore:
         "emotion": 0.10,
     }
 
+    # Weight for plot quality dimensions (Plot entity quality axes).
+    # WEIGHTS とキーが重複しないため、Plot 軸だけの集計には別の重みが必要
+    PLOT_QUALITY_WEIGHTS: ClassVar[dict[str, float]] = {
+        "state_integrity": 0.25,
+        "emotional_resonance": 0.20,
+        "thematic_depth": 0.20,
+        "literary_beauty": 0.20,
+        "erotic_intensity": 0.15,
+    }
+
     def __post_init__(self) -> None:
         if not 0 <= self.overall <= 100:
             raise ValueError("Overall score must be between 0 and 100")
@@ -80,11 +90,20 @@ class BookScore:
                 raise ValueError(f"Dimension {dim} score must be between 0 and 100")
 
     @classmethod
-    def calculate_from_dimensions(cls, dimensions: dict[str, int]) -> BookScore:
-        """Calculate overall score from dimension scores using weights."""
+    def calculate_from_dimensions(
+        cls,
+        dimensions: dict[str, int],
+        weights: dict[str, float] | None = None,
+    ) -> BookScore:
+        """Calculate overall score from dimension scores using weights.
+
+        weights が指定されない場合はclassmethod既定の WEIGHTS を使用する。
+        重み付け合計は、該当する次元の重みで正規化されるため合計が1でなくてもよい。
+        """
+        active_weights = cls.WEIGHTS if weights is None else weights
         weighted_sum = 0.0
         total_weight = 0.0
-        for dim, weight in cls.WEIGHTS.items():
+        for dim, weight in active_weights.items():
             if dim in dimensions:
                 weighted_sum += dimensions[dim] * weight
                 total_weight += weight

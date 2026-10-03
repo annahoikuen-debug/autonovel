@@ -49,6 +49,8 @@ class CompressionPipeline:
         self.log_store = log_store
         # エピソード間で状態を引き継ぐためのスナップショット
         self._last_rule_snapshot: Optional[Dict[str, Dict[str, float]]] = None
+        # 減衰率スナップショット (これを渡さないと decay_per_episode が 0.1 に落ちる)
+        self._last_rule_decays: Optional[Dict[str, Dict[str, float]]] = None
         self._last_rule_episode: Optional[int] = None
 
     def run(self, episode_id: str, script: str, episode: Optional[int] = None) -> Dict[str, Any]:
@@ -110,10 +112,12 @@ class CompressionPipeline:
             ep,
             events,
             previous_snapshot=self._last_rule_snapshot,
+            previous_decays=self._last_rule_decays,
             previous_episode=self._last_rule_episode,
         )
         # エピソード間の状態引き継ぎ用に保存
         self._last_rule_snapshot = self.rule_engine.last_snapshot
+        self._last_rule_decays = self.rule_engine.last_decay_snapshot
         self._last_rule_episode = ep
 
         # 永続化 (ストアが利用可能な場合)
@@ -145,16 +149,28 @@ class CompressionPipeline:
             return []
 
     def get_baseline_vector(self, episode_id: str, episode: Optional[int] = None) -> Optional[EmotionalVector]:
-        """ベースラインベクトル (rule_engine ネームスペース) を取得する。"""
+        """ベースラインベクトル (rule_engine ネームスペース) を取得する。
+
+        ``get_latest(ns, ("ep14", "ep14"))`` は常に「最新エピソード」を返すため、
+        呼び出し側の ``episode`` と別のエピソードの値が混線する
+        （fusion collector が同じ理由でエピソード単位の取得に切り替えられた）。
+        エピソードをまたいだ処理が正しくなるよう、public API
+        ``get_by_episode`` を使う。
+        """
         if self.vector_store is None:
             return None
         ep = episode if episode is not None else _extract_episode(episode_id)
         if ep is None:
             return None
-        return self.vector_store.get_latest(
-            NAMESPACE_RULE_ENGINE,
-            (f"ep{ep}", f"ep{ep}"),
-        ) if hasattr(self.vector_store, "get_latest") else None
+        getter = getattr(self.vector_store, "get_by_episode", None)
+        if getter is None:
+            # 旧ストア実装（get_by_episode 未実装）向けのフォールバック
+            return (
+                self.vector_store.get_latest(NAMESPACE_RULE_ENGINE, (f"ep{ep}", f"ep{ep}"))
+                if hasattr(self.vector_store, "get_latest")
+                else None
+            )
+        return getter(NAMESPACE_RULE_ENGINE, ep)
 
 
 def _extract_episode(episode_id: str) -> Optional[int]:

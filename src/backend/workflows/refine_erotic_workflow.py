@@ -85,6 +85,8 @@ class RefineEroticWorkflow(BaseWorkflow):
 
     async def execute(self, reporter: StatusReporter | None = None, **kwargs) -> dict[str, Any]:
         book_id = kwargs["book_id"]
+        # branch_id は作品間で共有される（既定 1）ため、照合には book_id も必須
+        branch_id = kwargs.get("branch_id", 1)
         ep_num = kwargs["ep_num"]
         intensity = kwargs.get("intensity", 2)
         _ = kwargs.get("platform_preset", "kakuyomu_romance")
@@ -95,7 +97,7 @@ class RefineEroticWorkflow(BaseWorkflow):
 
         # 1. 隧ｲ蠖薙メ繝｣繝励ち繝ｼ縺ｮ譛ｬ譁・ｒ蜿門ｾ・
         async with self.repo as uow:
-            chapter = await uow.chapters.get_chapter(book_id, ep_num)
+            chapter = await uow.chapters.get_chapter(branch_id, ep_num, book_id=book_id)
             if not chapter:
                 raise ValueError(f"Chapter not found for book_id {book_id}, ep_num {ep_num}")
 
@@ -137,7 +139,7 @@ class RefineEroticWorkflow(BaseWorkflow):
             # 4. 譛ｬ譁・ｒ譖ｴ譁ｰ
             chapter.content = refined_content
             # 繝励Ο繝・ヨ蛛ｴ縺ｮ erotic_intensity 繧よ峩譁ｰ
-            plot = await uow.plots.get_plot(book_id, ep_num)
+            plot = await uow.plots.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
             if plot:
                 plot.erotic_intensity = intensity
 

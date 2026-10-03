@@ -133,14 +133,25 @@ def reconstruct_optimal_expansion(
     root: Symbol,
     length: int,
 ) -> List[Terminal]:
-    """Reconstruct sequence of terminals from DP table backtracking."""
+    """Reconstruct sequence of terminals from DP table backtracking.
+
+    返り値は必ず `length` 個の Terminal になる。
+    """
+    if length <= 0:
+        return []
+
     if isinstance(root, Terminal):
         return [root] * length
 
     entry = dp.table.get((root, length))
     if not entry or entry[1] is None:
-        # Fallback to default linear progression
-        return [Terminal.SETUP] + [Terminal.RISING] * max(0, length - 2) + [Terminal.CLIMAX]
+        # Fallback to default linear progression.
+        # 以前の式は length が 0 / 1 / 2 のとき 2 個返しており（off by one）、
+        # 呼び出し側が「length 話ぶんの Terminal 列」を期待していると
+        # 話数と要素数がずれてプロット構成が崩れる。length 個に必ず合わせる。
+        if length == 1:
+            return [Terminal.SETUP]
+        return [Terminal.SETUP] + [Terminal.RISING] * (length - 2) + [Terminal.CLIMAX]
 
     prod, alloc = entry[1], entry[2]
     result: List[Terminal] = []

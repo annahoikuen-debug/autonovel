@@ -1,10 +1,14 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import Request
+from src.backend.routers import billing_webhook
 from src.backend.routers.billing_webhook import handle_stripe_webhook
 
 @pytest.mark.asyncio
-async def test_stripe_webhook_grants_credits():
+async def test_stripe_webhook_grants_credits(monkeypatch):
+    # 署名シークレット必須という本番安全設定の奥へ入るため、
+    # テスト内でだけ WEBHOOK_SECRET を設定する（署名は construct_event をモック済み）。
+    monkeypatch.setattr(billing_webhook, "WEBHOOK_SECRET", "whsec_test_secret")
     # Mock request
     mock_request = MagicMock(spec=Request)
     mock_request.body = AsyncMock(return_value=b'{"id": "evt_test_123", "type": "checkout.session.completed", "data": {"object": {"id": "cs_test_123", "customer": "cus_test_123", "subscription": "sub_test_123"}}}')

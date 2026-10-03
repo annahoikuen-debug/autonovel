@@ -67,6 +67,7 @@ class IllustrationWorkflow(BaseWorkflow):
             - settings: Dict (EasyModeStoreからの設定)
         """
         book_id = kwargs.get("book_id")
+        branch_id = kwargs.get("branch_id", 1)
         settings = kwargs.get("settings", {})
 
         if not book_id:
@@ -128,6 +129,7 @@ class IllustrationWorkflow(BaseWorkflow):
                     if settings.get("generateYonkoma", False):
                         await self._generate_episode_yonkoma(
                             book_id=book_id,
+                            branch_id=branch_id,
                             ep_num=ep_num,
                             settings=settings,
                             results=results,
@@ -140,6 +142,7 @@ class IllustrationWorkflow(BaseWorkflow):
         self,
         *,
         book_id: int,
+        branch_id: int,
         ep_num: int,
         settings: dict[str, Any],
         results: list[Any],
@@ -147,7 +150,7 @@ class IllustrationWorkflow(BaseWorkflow):
     ) -> None:
         """1話分の本文を取得し、6 コマ要約漫画を生成する。"""
         try:
-            chapter = await self.repo.get_chapter(book_id, ep_num)
+            chapter = await self.repo.get_chapter(branch_id, ep_num, book_id=book_id)
         except Exception as e:  # noqa: BLE001
             logger.warning(f"Yonkoma: failed to load chapter {ep_num}: {e}")
             return

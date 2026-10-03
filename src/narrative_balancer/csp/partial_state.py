@@ -22,14 +22,33 @@ class PartialPlotState(BaseModel):
         return cls(total_episodes=total, confirmed_beats=confirmed, unconfirmed_episodes=unconfirmed)
 
     def merge_solution(self, solved_beats: List[Beat]) -> "PartialPlotState":
-        """Merge solved beats into this state, completing unconfirmed episodes."""
-        new_confirmed = dict(self.confirmed_beats)
+        """Merge solved beats into this state, completing unconfirmed episodes.
+
+        確定済みエピソードは「置き換え」ずに統合する。ソルバーが所有する
+        tension / beat_type のみ反映し、title / summary / characters /
+        is_defeat / foreshadowing などの著作データは既存値を保持する。
+        ソルバー結果に無い確定済みエピソードは削除せずそのまま残す。
+        """
+        new_confirmed = {ep: beat.model_copy(deep=True) for ep, beat in self.confirmed_beats.items()}
         for b in solved_beats:
-            new_confirmed[b.episode] = b
+            prev = new_confirmed.get(b.episode)
+            if prev is not None:
+                merged = prev.model_copy(deep=True)
+                merged.tension = b.tension
+                merged.beat_type = b.beat_type
+                if not merged.foreshadowing_setup and b.foreshadowing_setup:
+                    merged.foreshadowing_setup = list(b.foreshadowing_setup)
+                if not merged.foreshadowing_payoff and b.foreshadowing_payoff:
+                    merged.foreshadowing_payoff = list(b.foreshadowing_payoff)
+                new_confirmed[b.episode] = merged
+            else:
+                new_confirmed[b.episode] = b.model_copy(deep=True)
+
+        remaining = set(range(1, self.total_episodes + 1)) - set(new_confirmed.keys())
         return PartialPlotState(
             total_episodes=self.total_episodes,
             confirmed_beats=new_confirmed,
-            unconfirmed_episodes=set(),
+            unconfirmed_episodes=remaining,
         )
 
     def to_beat_list(self) -> List[Beat]:

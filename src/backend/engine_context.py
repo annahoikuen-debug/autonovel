@@ -158,7 +158,7 @@ class ContextManager:
         delegate = self._get_delegate()
         if delegate is not None:
             try:
-                all_past = await self.repo.get_chapters_before(branch_id or 1, end_ep)
+                all_past = await self.repo.get_chapters_before(branch_id or 1, end_ep, book_id=book_id)
                 target_word_count = 3000
                 style_tag = None
                 reflective_rag = None
@@ -189,7 +189,7 @@ class ContextManager:
         book = await self.repo.get_book(book_id)
         if branch_id is None:
             branch_id = book.current_branch_id if book and book.current_branch_id else 1
-        all_past = await self.repo.get_chapters_before(branch_id, end_ep)
+        all_past = await self.repo.get_chapters_before(branch_id, end_ep, book_id=book_id)
         recent = all_past[:3]
         cumulative_summary = ""
         threads = []
@@ -304,7 +304,7 @@ class ContextManager:
         book = await self.repo.get_book(book_id)
         if branch_id is None:
             branch_id = book.current_branch_id if book and book.current_branch_id else 1
-        all_past = await self.repo.get_chapters_before(branch_id, ep_num)
+        all_past = await self.repo.get_chapters_before(branch_id, ep_num, book_id=book_id)
         char_states = {}
         if all_past:
             ws = (
@@ -339,7 +339,9 @@ class ContextManager:
         else:
             query = plots.detailed_blueprint or ""
 
-        rag_ctx = await self.repo.get_relevant_past_logs(branch_id, ep_num, query_text=query)
+        rag_ctx = await self.repo.get_relevant_past_logs(
+            branch_id, ep_num, query_text=query, book_id=book_id
+        )
 
         prev_ctx = base_past_ctx + "\n" + rag_ctx
         char_ctx = self.filter_active_characters(plots, all_chars, char_states, recent_ctx=prev_ctx)
@@ -381,7 +383,7 @@ class ContextManager:
         book = await self.repo.get_book(book_id)
         if branch_id is None:
             branch_id = book.current_branch_id if book and book.current_branch_id else 1
-        all_past = await self.repo.get_chapters_before(branch_id, ep_num)
+        all_past = await self.repo.get_chapters_before(branch_id, ep_num, book_id=book_id)
         char_states = {}
         if all_past:
             try:

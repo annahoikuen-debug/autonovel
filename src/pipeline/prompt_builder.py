@@ -1,12 +1,14 @@
 """Prompt builder for emotional context injection."""
 from __future__ import annotations
 
+import logging
 from typing import Any, Optional
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, TemplateError
 
-from src.pipeline.emotional_residue import EmotionalVector
 from src.stores.vector_store import VectorStore
+
+logger = logging.getLogger(__name__)
 
 
 # Jinja2環境（シングルトン）
@@ -45,28 +47,11 @@ def build_emotional_context_prompt(
     if prev_episode < 1:
         return ""
 
-    # エピソードID形式: "ep{num}"
-    ep_key = f"ep{prev_episode}"
-
-    # ベクトル取得
-    # 全キーから該当エピソードのベクトルを取得
-    keys = vector_store.get_namespace_keys(namespace)
-    ep_keys = [k for k in keys if k == ep_key or k.startswith(f"{ep_key}:")]
-
-    if not ep_keys:
-        return ""
-
-    # 最新のベクトル取得（単一キーの場合）
-    vector = vector_store.get_latest(namespace, ("", ""))  # ペア指定なしで全取得試行
-
-    # キー指定で取得を試行
-    for key in ep_keys:
-        vec = vector_store._get_by_key(namespace, key) if hasattr(vector_store, '_get_by_key') else None
-        if vec:
-            vector = vec
-            break
-    else:
-        return ""
+    # エピソード指定の公開 API で取得する。
+    # - get_latest は「最新エピソード」を返すため、前話の特定には使えない
+    # - private な _get_by_key を hasattr で叩くと InMemoryVectorStore では
+    #   常に None になり、感情コンテキストが一切注入されない
+    vector = vector_store.get_by_episode(namespace, prev_episode)
 
     if not vector or not vector.signals:
         return ""
@@ -179,7 +164,9 @@ def build_fused_emotional_context_prompt(
             conflicts=formatted_conflicts,
         )
         return rendered.strip()
-    except Exception:
+    except TemplateError as e:
+        # テンプレート側の不備は握り潰さず記録する (データ不在とは別事由)
+        logger.error("Failed to render fused_emotional_context.j2: %s", e)
         return ""
 
 

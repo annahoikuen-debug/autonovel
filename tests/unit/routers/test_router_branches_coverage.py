@@ -53,6 +53,24 @@ def patch_branch_repo(monkeypatch, repo, chapter_repo=None):
     return repo
 
 
+def make_current_user(user_id=1):
+    """所有権検証を通過する管理者ユーザーのモック."""
+    return SimpleNamespace(id=user_id, role="admin", status="active")
+
+
+def patch_book_ownership(monkeypatch, book_id=10):
+    """``verify_book_ownership`` を Book を返すスタブに差し替える。
+
+    IDOR 修正で play 系ルートに所有者検証が入るようになったため、
+    handler を直接呼ぶ単体テストでは「Book が存在する」ところまで通す。
+    handler 本体のロジックはそのまま実行される。
+    """
+    book = SimpleNamespace(id=book_id, user_id=1)
+    stub = AsyncMock(return_value=book)
+    monkeypatch.setattr(branches_module, "verify_book_ownership", stub)
+    return stub
+
+
 # ============================================================================
 # get_branch_diff
 # ============================================================================
@@ -394,7 +412,9 @@ async def test_start_play_session_success():
     payload = SimpleNamespace(book_id=10, branch_id=1)
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
-        result = await start_play_session(payload, session=session)
+        patch_book_ownership(m, 10)
+        result = await start_play_session(payload, session=session,
+                                          current_user=make_current_user())
     assert result.current_node_id == "n1"
     assert result.status == "active"
     repo.create_play_session.assert_awaited_once()
@@ -409,8 +429,10 @@ async def test_start_play_session_branch_not_found():
     payload = SimpleNamespace(book_id=10, branch_id=999)
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
+        patch_book_ownership(m, 10)
         with pytest.raises(HTTPException) as exc:
-            await start_play_session(payload, session=session)
+            await start_play_session(payload, session=session,
+                                     current_user=make_current_user())
     assert exc.value.status_code == 404
 
 
@@ -429,7 +451,9 @@ async def test_get_play_state_success():
         "nodes": {"n1": {"choices": [{"text": "go"}]}}})
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
-        result = await get_play_state(session_id, session=session)
+        patch_book_ownership(m, 10)
+        result = await get_play_state(session_id, session=session,
+                                      current_user=make_current_user())
         assert result.session_id == session_id
         assert result.current_node_id == "n1"
         assert result.current_node["choices"]
@@ -441,7 +465,8 @@ async def test_get_play_state_success():
             return_value=SimpleNamespace(branch_id=1, book_id=10, current_node_id="n1",
                                          context_json=None, save_points_json=None,
                                          status=None, updated_at=None))
-        result2 = await get_play_state(session_id, session=session)
+        result2 = await get_play_state(session_id, session=session,
+                                       current_user=make_current_user())
         assert result2.status == "active"
         assert result2.context == {}
         assert result2.save_points_count == 0
@@ -486,6 +511,8 @@ async def test_get_play_state_no_graph():
     repo.load_branch_graph = AsyncMock(return_value=None)
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
-        result = await get_play_state(session_id, session=session)
+        patch_book_ownership(m, 10)
+        result = await get_play_state(session_id, session=session,
+                                      current_user=make_current_user())
     assert result.current_node == {}
     assert result.current_node_id is None

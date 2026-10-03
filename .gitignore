@@ -115,6 +115,11 @@ output/probe_lines.txt
 # 大きな生成カバレッジ成果物のみ個別に無視する。
 artifacts/coverage-*.json
 
+# 6.7 MB の生成カバレッジベースライン。差分計測ツールの入力であって
+# ソースでもテストの基準値でもないので追跡しない。
+#   git rm --cached cov_baseline.json
+cov_baseline.json
+
 # PowerShell の `> $null` リダイレクトで生成された空ファイル（事故ファイル）
 /$null
 
@@ -122,6 +127,7 @@ artifacts/coverage-*.json
 frontend/vite.config.ts.timestamp-*.mjs
 
 # 実行時ログ（クラッシュ調査用。コミット対象ではない）
+logs/
 logs/*.jsonl
 # start_local.ps1 が出すサービスログと PID ファイル
 logs/*.log

@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import io
 from src.backend.database.repositories.chapter import ChapterRepository
+import asyncio
 import functools
 import inspect
+import json
 import logging
 import difflib
 import uuid
@@ -13,15 +15,18 @@ import zipfile
 from datetime import datetime
 from typing import Any, AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, status
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.auth import get_current_user
+from src.backend.config import settings
 from src.backend.database.models import User
+from src.backend.security.jwt import decode_token
 from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.database.uow import UnitOfWork
 from src.core.container import AppContainer
+from src.core.exceptions import AppError
 from src.backend.database.core import get_db_manager
 from src.backend.database.repositories.branch import BranchRepository
 from src.backend.services.branch_merge_service import BranchMergeService
@@ -77,6 +82,13 @@ def requires_book_ownership(handler):
     ``current_user`` 未渡しで 401 になり、handler のロジックだけを
     検証できなくなる。FastAPI 依存なら、HTTP 経由では検証が必ず走り、
     直接呼び出しでは検証が走らない（テスト想要的動作になる）。
+
+    ただし ``__signature__`` に ``current_user`` を足すだけだと、FastAPI は
+    解決した依存を全て kwargs で渡すため、``current_user`` を宣言していない
+    handler では ``TypeError: unexpected keyword argument 'current_user'``
+    になり HTTP 経路が全て 500 になる。したがって薄いラッパーを被せて
+    ``current_user`` だけを吸収させ、``Depends`` 自体は HTTP 経由でのみ解決される
+    （直接呼び出しでは検証が走らない）semantics は維持する。
     """
     sig = inspect.signature(handler)
     if "current_user" in sig.parameters:
@@ -93,8 +105,16 @@ def requires_book_ownership(handler):
             ),
         ]
     )
-    handler.__signature__ = new_sig
-    return handler
+
+    @functools.wraps(handler)
+    async def wrapper(*args, **kwargs):
+        # FastAPI が渡す current_user は本デコレータ用の依存であり、handler 側の
+        # シグネチャには存在しないため、ここで取り除いてから委譲する。
+        kwargs.pop("current_user", None)
+        return await handler(*args, **kwargs)
+
+    wrapper.__signature__ = new_sig
+    return wrapper
 
 
 
@@ -127,12 +147,40 @@ def _validate_uuid(session_id: str) -> bool:
         return False
 
 
+async def _assert_play_session_ownership(
+    session_id: str, current_user: User, session: AsyncSession
+) -> Any:
+    """``session_id`` -> プレイセッション -> 作品 の順に辿り、所有者を検証する。
+
+    プレイセッションの ``session_id`` は UUID のみで所有者を保持しないため、
+    認証(user_id)だけでは他テナントのセッションを操作できてしまう。
+    常に ``book.user_id`` まで join して検証する（fail-closed）。
+    """
+    repo = BranchRepository(session)
+    sess = await repo.get_play_session(session_id)
+    if sess is None:
+        raise HTTPException(status_code=404, detail="Session not found")
+    # verify_book_ownership は book が無ければ NotFoundError、作品が他人の物的なら 403
+    await verify_book_ownership(int(sess.book_id), current_user, session)
+    return sess
+
+
 @router.post("/", response_model=BranchResponse, status_code=201)
 async def create_branch(
     payload: BranchDbModelCreate,
     session: AsyncSession = Depends(get_branch_session),
+    current_user: User = Depends(get_current_user),
 ) -> BranchResponse:
-    """新規ブランチを作成."""
+    """新規ブランチを作成.
+
+    ``@requires_book_ownership`` は使用しない: 同デコレータが注入する
+    ``enforce_book_ownership(book_id, ...)`` は ``book_id`` をパスパラメータとして
+    解決するため (``{book_id}`` を含まない本ルートではクエリパラメータ化され)、
+    ボディの ``payload.book_id`` と一致しない。本ルートは明示的に検証する。
+    """
+    # IDOR 防止: 他人の作品にブランチを作れないようにする
+    await verify_book_ownership(payload.book_id, current_user, session)
+
     repo = BranchRepository(session)
     branch_id = await repo.create_branch(
         book_id=payload.book_id,
@@ -243,8 +291,8 @@ async def get_branch_diff(
         raise HTTPException(status_code=404, detail="Branch not found")
 
     # 各ブランチの章内容を取得
-    chapter_a = await chapter_repo.get_chapter(branchA, chapter)
-    chapter_b = await chapter_repo.get_chapter(branchB, chapter)
+    chapter_a = await chapter_repo.get_chapter(branchA, chapter, book_id=book_id)
+    chapter_b = await chapter_repo.get_chapter(branchB, chapter, book_id=book_id)
 
     if not chapter_a or not chapter_b:
         raise HTTPException(status_code=404, detail="Chapter not found")
@@ -359,13 +407,19 @@ async def preview_merge(
         raise HTTPException(status_code=404, detail="Branch not found")
 
     # マージポイントの章内容を取得
-    source_chapter = await chapter_repo.get_chapter(payload.source_branch_id, payload.merge_ep_num)
-    target_chapter = await chapter_repo.get_chapter(payload.target_branch_id, payload.merge_ep_num)
+    source_chapter = await chapter_repo.get_chapter(
+        payload.source_branch_id, payload.merge_ep_num, book_id=book_id
+    )
+    target_chapter = await chapter_repo.get_chapter(
+        payload.target_branch_id, payload.merge_ep_num, book_id=book_id
+    )
 
     # ベースブランチ（共通祖先）の内容を取得（簡易実装：ターゲットブランチの親）
     base_chapter_content = ""
     if target_branch.parent_id is not None:
-        base_chapter = await chapter_repo.get_chapter(target_branch.parent_id, payload.merge_ep_num)
+        base_chapter = await chapter_repo.get_chapter(
+            target_branch.parent_id, payload.merge_ep_num, book_id=book_id
+        )
         if base_chapter:
             base_chapter_content = base_chapter.content or ""
 
@@ -476,8 +530,12 @@ async def save_branch_graph(
 async def start_play_session(
     payload: BranchPlayRequest,
     session: AsyncSession = Depends(get_branch_session),
+    current_user: User = Depends(get_current_user),
 ) -> BranchPlaySessionResponse:
     """IF プレイヤーセッションを開始. session_id は UUID で自動発行."""
+    # IDOR 防止: 他人の作品でセッションを開始できないようにする
+    await verify_book_ownership(payload.book_id, current_user, session)
+
     repo = BranchRepository(session)
     branch = await repo.get_branch(payload.branch_id)
     if branch is None or branch.book_id != payload.book_id:
@@ -508,14 +566,14 @@ async def start_play_session(
 async def get_play_state(
     session_id: str,
     session: AsyncSession = Depends(get_branch_session),
+    current_user: User = Depends(get_current_user),
 ) -> BranchPlayStateResponse:
     """セッションの現状態（current node / context / available choices）を取得."""
     if not _validate_uuid(session_id):
         raise HTTPException(status_code=400, detail="Invalid session_id (UUID required)")
     repo = BranchRepository(session)
-    sess = await repo.get_play_session(session_id)
-    if sess is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # IDOR 防止: session_id -> book -> book.user_id で所有者を検証する
+    sess = await _assert_play_session_ownership(session_id, current_user, session)
 
     graph = await repo.load_branch_graph(int(sess.branch_id)) or {}
     nodes = graph.get("nodes", {}) or {}
@@ -541,14 +599,14 @@ async def play_choose(
     session_id: str,
     payload: BranchPlayChooseRequest,
     session: AsyncSession = Depends(get_branch_session),
+    current_user: User = Depends(get_current_user),
 ) -> BranchPlayStateResponse:
     """選択肢を実行し current_node を進める. 楽観ロック対応."""
     if not _validate_uuid(session_id):
         raise HTTPException(status_code=400, detail="Invalid session_id (UUID required)")
     repo = BranchRepository(session)
-    sess = await repo.get_play_session(session_id)
-    if sess is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # IDOR 防止: 他人のセッションを操作できないようにする
+    sess = await _assert_play_session_ownership(session_id, current_user, session)
     if sess.status and sess.status != "active":
         raise HTTPException(status_code=409, detail=f"Session not active (status={sess.status})")
 
@@ -581,21 +639,21 @@ async def play_choose(
         raise HTTPException(status_code=409, detail="Concurrent modification detected")
     await session.commit()
 
-    return await get_play_state(session_id, session)
+    return await get_play_state(session_id, session, current_user)
 
 
 @router.post("/play/{session_id}/save", response_model=BranchPlayStateResponse)
 async def play_save(
     session_id: str,
     session: AsyncSession = Depends(get_branch_session),
+    current_user: User = Depends(get_current_user),
 ) -> BranchPlayStateResponse:
     """現状態を save_points に追記保存."""
     if not _validate_uuid(session_id):
         raise HTTPException(status_code=400, detail="Invalid session_id (UUID required)")
     repo = BranchRepository(session)
-    sess = await repo.get_play_session(session_id)
-    if sess is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # IDOR 防止: 他人のセッションを操作できないようにする
+    sess = await _assert_play_session_ownership(session_id, current_user, session)
 
     save_points = list(sess.save_points_json or [])
     save_points.append(
@@ -612,7 +670,7 @@ async def play_save(
         save_points_json=save_points,
     )
     await session.commit()
-    return await get_play_state(session_id, session)
+    return await get_play_state(session_id, session, current_user)
 
 
 @router.post("/play/{session_id}/load", response_model=BranchPlayStateResponse)
@@ -620,14 +678,14 @@ async def play_load(
     session_id: str,
     index: int = 0,
     session: AsyncSession = Depends(get_branch_session),
+    current_user: User = Depends(get_current_user),
 ) -> BranchPlayStateResponse:
     """save_points の index から状態を復元."""
     if not _validate_uuid(session_id):
         raise HTTPException(status_code=400, detail="Invalid session_id (UUID required)")
     repo = BranchRepository(session)
-    sess = await repo.get_play_session(session_id)
-    if sess is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # IDOR 防止: 他人のセッションを操作できないようにする
+    sess = await _assert_play_session_ownership(session_id, current_user, session)
 
     save_points = list(sess.save_points_json or [])
     if not (0 <= index < len(save_points)):
@@ -643,7 +701,7 @@ async def play_load(
         save_points_json=save_points,
     )
     await session.commit()
-    return await get_play_state(session_id, session)
+    return await get_play_state(session_id, session, current_user)
 
 
 @router.post("/play/{session_id}/end", response_model=BranchPlaySessionResponse)
@@ -651,14 +709,14 @@ async def play_end(
     session_id: str,
     payload: BranchPlayEndRequest | None = None,
     session: AsyncSession = Depends(get_branch_session),
+    current_user: User = Depends(get_current_user),
 ) -> BranchPlaySessionResponse:
     """セッションを終了（status 更新）."""
     if not _validate_uuid(session_id):
         raise HTTPException(status_code=400, detail="Invalid session_id (UUID required)")
     repo = BranchRepository(session)
-    sess = await repo.get_play_session(session_id)
-    if sess is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # IDOR 防止: 他人のセッションを終了できないようにする
+    sess = await _assert_play_session_ownership(session_id, current_user, session)
 
     new_status = (payload.status if payload else None) or "completed"
     await repo.end_play_session(session_id, status=new_status)
@@ -678,14 +736,14 @@ async def play_end(
 async def get_playthrough(
     session_id: str,
     session: AsyncSession = Depends(get_branch_session),
+    current_user: User = Depends(get_current_user),
 ) -> BranchPlayPlaythroughResponse:
     """プレイスルー記録 (history + context) を取得."""
     if not _validate_uuid(session_id):
         raise HTTPException(status_code=400, detail="Invalid session_id (UUID required)")
     repo = BranchRepository(session)
-    sess = await repo.get_play_session(session_id)
-    if sess is None:
-        raise HTTPException(status_code=404, detail="Session not found")
+    # IDOR 防止: 他人のプレイスルー記録を読み取れないようにする
+    sess = await _assert_play_session_ownership(session_id, current_user, session)
 
     ctx: dict[str, Any] = dict(sess.context_json) if sess.context_json else {}
     return BranchPlayPlaythroughResponse(
@@ -860,12 +918,61 @@ async def _load_state_dict(repo: BranchRepository, sess: Any) -> dict[str, Any]:
     }
 
 
+# WebSocket 1 メッセージあたりの上限 (チャンク不要なので十分小さい)
+_WS_MAX_MESSAGE_BYTES = 64 * 1024
+# 1 接続あたりのメッセージレート上限 (1 秒あたりの受信回数)
+_WS_MAX_MESSAGES_PER_SEC = 50
+# WebSocket 認可失敗時に使う application-defined close code
+_WS_POLICY_VIOLATION = 1008
+
+
+async def _authenticate_websocket(websocket: WebSocket) -> User | None:
+    """WebSocket ハンドシェイク時にユーザーを解決する。
+
+    ``OAuth2PasswordBearer`` はリクエストヘッダを読むため、WebSocket ハンドシェイク
+    でも同じ ``Authorization`` ヘッダを受け取れる。ここでは HTTPException を
+    送出せず ``None`` を返し、呼び出し側でポリシー違反コードを明示してクローズする。
+    """
+    token = ""
+    auth_header = websocket.headers.get("authorization") or ""
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    elif auth_header:
+        token = auth_header.strip()
+
+    if settings.AUTH_DISABLED:
+        return User(id=1, email="dev@autonovel.local", display_name="Dev Admin",
+                    role="admin", status="active", plan_tier="enterprise", credits=99999)
+    if not token:
+        return None
+
+    payload = decode_token(token, expected_type="access")
+    if payload is None or payload.get("sub") is None:
+        return None
+    sub = payload["sub"]
+    user_id = int(sub) if isinstance(sub, (int, str)) and str(sub).isdigit() else sub
+
+    mgr = get_db_manager()
+    session = mgr.get_session()
+    try:
+        user = await session.get(User, user_id)
+    finally:
+        await session.close()
+    if not user or getattr(user, "status", None) != "active":
+        return None
+    return user
+
+
 @router.websocket("/play/{session_id}/ws")
 async def play_ws(websocket: WebSocket, session_id: str) -> None:
     """IF プレイヤー双方向 WebSocket.
 
     クライアント → サーバー: {"action": "choose"|"save"|"load"|"end", ...}
     サーバー → クライアント: {"type": "state"|"error"|"closed", ...}
+
+    認可はハンドシェイク時に行い、以後は接続内で固定する（再評価しない）。
+    さらに 1 メッセージサイズと 1 秒あたりの受信回数に上限を設け、
+    大きなペイロードや連投による資源枯渇を防ぐ。
     """
     try:
         uuid.UUID(session_id)
@@ -873,16 +980,28 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
         await websocket.close(code=4000)
         return
 
+    # --- ハンドシェイク時の認可 ---
+    user = await _authenticate_websocket(websocket)
+    if user is None:
+        # 未認証: 受け入れる前に拒否する (ASGI 仕様上 close のみが安全)
+        await websocket.close(code=_WS_POLICY_VIOLATION)
+        return
+
     await websocket.accept()
 
     mgr = get_db_manager()
     session = mgr.get_session()
+    message_window_start = asyncio.get_event_loop().time()
+    message_count = 0
     try:
         repo = BranchRepository(session)
-        sess = await repo.get_play_session(session_id)
-        if sess is None:
-            await websocket.send_json({"type": "error", "message": "Session not found"})
-            await websocket.close(code=4404)
+        try:
+            # session_id -> book -> book.user_id で所有者を検証する
+            sess = await _assert_play_session_ownership(session_id, user, session)
+        except (HTTPException, AppError):
+            # verify_book_ownership は 404 を NotFoundError(=AppError 派生) で送出する
+            await websocket.send_json({"type": "error", "message": "Forbidden"})
+            await websocket.close(code=_WS_POLICY_VIOLATION)
             return
 
         # 初期 state を push
@@ -891,7 +1010,31 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
         while True:
             if sess is None:
                 break
-            data = await websocket.receive_json()
+
+            # レート制限とサイズ制限
+            now = asyncio.get_event_loop().time()
+            if now - message_window_start >= 1.0:
+                message_window_start = now
+                message_count = 0
+            message_count += 1
+            if message_count > _WS_MAX_MESSAGES_PER_SEC:
+                await websocket.send_json(
+                    {"type": "error", "message": "Too many messages"}
+                )
+                await websocket.close(code=_WS_POLICY_VIOLATION)
+                return
+
+            raw = await websocket.receive_text()
+            if len(raw.encode("utf-8")) > _WS_MAX_MESSAGE_BYTES:
+                await websocket.send_json({"type": "error", "message": "Message too large"})
+                await websocket.close(code=_WS_POLICY_VIOLATION)
+                return
+            try:
+                data = json.loads(raw)
+            except (TypeError, ValueError):
+                await websocket.send_json({"type": "error", "message": "Invalid JSON"})
+                continue
+
             action = (data or {}).get("action")
 
             if action == "choose":

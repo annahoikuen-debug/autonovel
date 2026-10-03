@@ -31,15 +31,7 @@ while [[ $# -gt 0 ]]; do
       ;;
     --run-migrations)
       # ワーカー側でも明示的に適用したい場合の明示指定（既定は 0）
-SKIP_MIGRATIONS=0
-
-# 環境変数 SKIP_ALEMBIC=1 でもマイグレーションをスキップする。
-# docker-compose.prod.yml の worker サービスは entrypoint の引数ではなく
-# 環境変数で渡しているため、両方の経路を受け付ける。
-if [[ "${SKIP_ALEMBIC:-0}" == "1" ]]; then
-  SKIP_MIGRATIONS=1
-fi
-
+      SKIP_MIGRATIONS=0
       shift
       ;;
     *)
@@ -47,6 +39,21 @@ fi
       ;;
   esac
 done
+
+# 環境変数 SKIP_ALEMBIC=1 でもマイグレーションをスキップする。
+# docker-compose.prod.yml の worker サービスは entrypoint の引数ではなく
+# 環境変数で渡しているため、両方の経路を受け付ける。
+#
+# 注意: この評価は case 文の外側（引数解析の後）に一度だけ行う。
+# 旧実装は `--run-migrations` の case アームの中に書かれており、
+# 実際の引数が何であれ到達しない no-op だった。その結果 prod では
+# backend と worker が同時に `alembic upgrade head` を実行し、
+# alembic_version テーブルの主キー重複でクラッシュループしていた。
+# 引数解析の「後」に置くことで、環境変数が --run-migrations よりも
+# 優先され（= マイグレーションの抑制が常に効く） unintended な二重実行を防ぐ。
+if [[ "${SKIP_ALEMBIC:-0}" == "1" ]]; then
+  SKIP_MIGRATIONS=1
+fi
 
 if [[ $# -eq 0 ]]; then
   echo "[ENTRYPOINT] ERROR: no command given. Usage: entrypoint.sh [--skip-migrations] <command> [args...]" >&2
@@ -58,7 +65,7 @@ fi
 export ALEMBIC_DATABASE_URL="${ALEMBIC_DATABASE_URL:-${DATABASE_URL:-}}"
 
 if [[ "$SKIP_MIGRATIONS" -eq 1 ]]; then
-  echo "[ENTRYPOINT] --skip-migrations specified: skipping 'alembic upgrade head'."
+  echo "[ENTRYPOINT] migrations disabled (--skip-migrations or SKIP_ALEMBIC=1): skipping 'alembic upgrade head'."
 elif [[ -z "$ALEMBIC_DATABASE_URL" ]]; then
   echo "[ENTRYPOINT] WARNING: DATABASE_URL / ALEMBIC_DATABASE_URL is not set." >&2
   echo "[ENTRYPOINT]          'alembic upgrade head' would fall back to the sqlite URL in alembic.ini." >&2

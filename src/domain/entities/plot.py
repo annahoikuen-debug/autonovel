@@ -3,7 +3,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, List
+from typing import Dict, Optional, List
 from enum import Enum
 
 from src.domain.value_objects.ids import NovelId, PlotId
@@ -13,11 +13,30 @@ from src.domain.value_objects.scores import TensionScore
 
 class PlotStatus(Enum):
     """Plot status enumeration."""
+
     PLANNED = "planned"
     WRITING = "writing"
     COMPLETED = "completed"
     REVISED = "revised"
     LOCKED = "locked"
+
+    def rank(self) -> int:
+        """Return the explicit progression rank of this status.
+
+        文字列の辞書順は進行順と一致しない（'completed' < 'writing'）ため、
+        進捗比較には必ずこのランクを用いる。
+        """
+        return _PLOT_STATUS_RANKS[self.value]
+
+
+# ステータス遷移の明示的な進行順（値 -> ランク）
+_PLOT_STATUS_RANKS: Dict[str, int] = {
+    PlotStatus.PLANNED.value: 1,
+    PlotStatus.WRITING.value: 2,
+    PlotStatus.COMPLETED.value: 3,
+    PlotStatus.REVISED.value: 4,
+    PlotStatus.LOCKED.value: 5,
+}
 
 
 class ChainPhase(Enum):

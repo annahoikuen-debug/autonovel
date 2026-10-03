@@ -117,10 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 結果表示
     gachaCard.innerHTML = `
-      <h4>${selectedPlan.title}</h4>
-      <p><strong>概要:</strong> ${selectedPlan.logline}</p>
-      <p><strong>主人公:</strong> ${selectedPlan.protagonist_summary}</p>
-      <p><strong>魅力点:</strong> <span class="charm-point">${selectedPlan.charm_point}</span></p>
+      <h4>${Utils.escapeHtml(selectedPlan.title)}</h4>
+      <p><strong>概要:</strong> ${Utils.escapeHtml(selectedPlan.logline)}</p>
+      <p><strong>主人公:</strong> ${Utils.escapeHtml(selectedPlan.protagonist_summary)}</p>
+      <p><strong>魅力点:</strong> <span class="charm-point">${Utils.escapeHtml(selectedPlan.charm_point)}</span></p>
     `;
     
     gachaResult.classList.remove('hidden');
@@ -182,10 +182,10 @@ document.addEventListener('DOMContentLoaded', () => {
       episodeElement.innerHTML = `
         <h4>
           <span class="episode-number">第${episode.ep_num}話</span>
-          <span class="episode-title">${episode.title}</span>
+          <span class="episode-title">${Utils.escapeHtml(episode.title)}</span>
           ${episode.is_catharsis ? '<span class="is-catharsis">クライマックス</span>' : ''}
         </h4>
-        <p class="episode-summary">${episode.one_line_summary}</p>
+        <p class="episode-summary">${Utils.escapeHtml(episode.one_line_summary)}</p>
       `;
       episodesContainer.appendChild(episodeElement);
     });
@@ -339,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
       suggestionElement.innerHTML = `
         <h4>
           <span class="suggestion-number">${index + 1}</span>
-          <span class="suggestion-text">${suggestion}</span>
+          <span class="suggestion-text">${Utils.escapeHtml(suggestion)}</span>
         </h4>
       `;
       suggestionsContent.appendChild(suggestionElement);

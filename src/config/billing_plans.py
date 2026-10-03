@@ -1,3 +1,8 @@
+"""課金プラン設定。"""
+import logging
+
+logger = logging.getLogger(__name__)
+
 PLAN_CONFIG = {
     "free": {"price_jpy": 0, "monthly_credits": 50, "max_parallel_jobs": 1},
     "starter": {"price_jpy": 980, "monthly_credits": 300, "max_parallel_jobs": 2},
@@ -28,6 +33,14 @@ def get_tier_for_price_id(price_id: str) -> str:
         return STRIPE_PRICE_TO_PLAN[price_id]["tier"]
     if price_id in PLAN_CONFIG:
         return price_id
+    # 未知の price id は「無料”作为の安全な既定値を返すが、
+    # 無言で降格させると全有料利用者が plan_tier=free になり理由が追えない。
+    # どの Stripe Price がマッピング漏れなのか特定できるよう必ず警告する。
+    logger.warning(
+        "Unknown Stripe price id %r: not present in STRIPE_PRICE_TO_PLAN or PLAN_CONFIG. "
+        "Falling back to tier 'free' (0 credits). Check STRIPE_PRICE_TO_PLAN mapping.",
+        price_id,
+    )
     return "free"
 
 # 1クレジット ≒ 約 2.5〜3 円相当

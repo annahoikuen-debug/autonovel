@@ -378,8 +378,35 @@ class TestBackoffAndRateLimit:
         class Err(Exception):
             retry_after = 5.0
 
-        g = _gw(sleep=sleep, max_backoff_seconds=3.0)
+        # サーバー指定の Retry-After は max_backoff_seconds ではなく
+        # max_retry_after_seconds で丸められる（レート制限ウィンドウが解けるまで待つ）。
+        g = _gw(sleep=sleep, max_backoff_seconds=3.0, max_retry_after_seconds=120.0)
         await g._backoff(Err(), 0)
+        assert slept == [5.0]
+
+    async def test_retry_after_capped_by_max_retry_after_seconds(self):
+        slept = []
+
+        async def sleep(s):
+            slept.append(s)
+
+        class Err(Exception):
+            retry_after = 3600.0
+
+        # 巨大でも max_retry_after_seconds で頭打ちになる（無限待機はしない）
+        g = _gw(sleep=sleep, max_backoff_seconds=2.0, max_retry_after_seconds=30.0)
+        await g._backoff(Err(), 0)
+        assert slept == [30.0]
+
+    async def test_derived_backoff_capped_by_max_backoff_seconds(self):
+        slept = []
+
+        async def sleep(s):
+            slept.append(s)
+
+        # 導出バックオフ（Retry-After 無し）は従来どおり max_backoff_seconds が上限
+        g = _gw(sleep=sleep, backoff_base_seconds=2.0, max_backoff_seconds=3.0)
+        await g._backoff(Exception("boom"), 5)
         assert slept == [3.0]
 
     async def test_retry_after_from_response(self):

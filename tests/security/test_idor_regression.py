@@ -14,7 +14,13 @@ ROUTER_DIR = "src/backend/routers"
 # 所有者検証が「意図的に」不要または次回計画で対応予定の router を明示的に列挙。
 # ここに無い router に book_id ハンドラが無症状で現れたらテストが赤になる。
 NO_OWNERSHIP_NEEDED: set[str] = {
-    # TODO(H1-2): books.py の各ハンドラ (get_book, delete_book等) への verify_book_ownership 導入
+    # misc / novel は authz 修正（Fix batch G）で全ハンドラに
+    # get_current_user と verify_book_ownership が入ったため、allow-list から削除済み。
+    #
+    # TODO(H1-2): books.py の get_book / delete_book は所有権検証を
+    #   BookUseCases へ委譲しており、ガード呼び出しがリテラルに現れないため
+    #   ここでは素朴な文字列一致で依然としてフラグが立つ（実際の検証は
+    #   tests/security/test_router_ownership_matrix.py 側で担保している）。
     "books",
     # TODO(H1-2): branches.py の node 以外のブランチ操作系ハンドラへの検証共通化
     "branches",
@@ -30,14 +36,12 @@ NO_OWNERSHIP_NEEDED: set[str] = {
     "easy_mode",
     # TODO(H1-2): episodes.py の内部ヘルパー _cancel_prefetch_for_book
     "episodes",
+    # graph.py の RAG 系は `_require_book_scope` ヘルパー経由で所有権検証するため、
+    # ガード呼び出しがリテラルに現れず、ここでは依然としてフラグが立つ。
     # TODO(H1-2): graph.py の知識グラフ・伏線エンドポイントの認証・所有権検証
     "graph",
     # TODO(H1-2): marketing.py のパッケージエクスポートエンドポイントの所有権検証
     "marketing",
-    # TODO(H1-2): misc.py の物語メトリクスエンドポイントの所有権検証
-    "misc",
-    # TODO(H1-2): novel.py のソーシャル・スコアエンドポイントの認証・所有権検証
-    "novel",
     # TODO(H1-2): orchestrated.py のエクスポートエンドポイントの所有権検証
     "orchestrated",
     # TODO(H1-2): pipeline_stream.py のストリーミングエンドポイントの検証共通化
@@ -54,9 +58,10 @@ NO_AUTH_NEEDED: set[str] = {
     # TODO(H1-2): easy_mode.py のルータレベル認証依存追加
     "easy_mode",
     # TODO(H1-2): graph.py のルータレベル認証依存追加
+    # NOTE: 修正後は各ハンドラが `get_current_user` を Declaring するため
+    #   AUTH_MARKERS の一致で検出できるが、`retrieve_for_episode` だけは
+    #   `_require_book_scope` ヘルパー経由で検証するため allow-list に残す。
     "graph",
-    # TODO(H1-2): novel.py のルータレベル認証依存追加
-    "novel",
     # TODO(H1-2): system.py のルータレベル認証依存追加
     "system",
 }

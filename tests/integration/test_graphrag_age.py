@@ -630,7 +630,13 @@ async def test_rag_build_context(age_session):
 
 def test_graph_api_endpoints(age_container):
     """FastAPI エンドポイントテスト."""
+    from unittest.mock import AsyncMock
+
     from fastapi.testclient import TestClient
+
+    from src.backend.auth import get_current_user
+    from src.backend.database.models import User
+    from src.backend.routers import graph as graph_router
     from src.backend.server import app
 
     # テスト用DB接続設定
@@ -640,18 +646,28 @@ def test_graph_api_endpoints(age_container):
     os.environ["ENABLE_GRAPHRAG"] = "true"
 
     # アプリの再初期化が必要な場合があるため、コンテナごとに新しいクライアント
+    # `/api/graph` は `Depends(get_current_user)` を持ち、book_id 単位的所有権検証も
+    # 行うため、認証済み管理者と「所有権だけ通過する」ガードを注入する
+    # （認可そのものは tests/security/ で検証している）。
+    user = User(id=1, email="age@example.com", role="admin", status="active")
+    app.dependency_overrides[get_current_user] = lambda: user
+    original_verify = graph_router.verify_book_ownership
+    graph_router.verify_book_ownership = AsyncMock(return_value=object())
     client = TestClient(app)
+    try:
+        # ヘルスチェック
+        resp = client.get("/health")
+        assert resp.status_code == 200
 
-    # ヘルスチェック
-    resp = client.get("/health")
-    assert resp.status_code == 200
-
-    # グラフデータ取得
-    resp = client.get("/api/graph")
-    assert resp.status_code == 200
-    data = resp.json()
-    assert "nodes" in data
-    assert "edges" in data
+        # グラフデータ取得
+        resp = client.get("/api/graph", params={"book_id": 1})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "nodes" in data
+        assert "edges" in data
+    finally:
+        graph_router.verify_book_ownership = original_verify
+        app.dependency_overrides.pop(get_current_user, None)
 
 
 # ============================================================

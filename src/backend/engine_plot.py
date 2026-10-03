@@ -65,6 +65,7 @@ async def get_emotional_hook_for_plot(
     repo: Any,
     book_id: int,
     ep_num: int,
+    branch_id: int | None = None,
 ) -> EmotionalHookSpec:
     """
     プロット生成時に呼び出し、感情起点を決定して返す。
@@ -78,7 +79,13 @@ async def get_emotional_hook_for_plot(
 
     if hook is None and repo is not None:
         try:
-            loaded = await repo.get_plot(book_id, ep_num)
+            if branch_id is not None:
+                # branch_id は作品間で共有される（既定 1）ため book_id も渡す
+                loaded = await repo.get_plot(
+                    branch_id, ep_num, branch_id=branch_id, book_id=book_id
+                )
+            else:
+                loaded = await repo.get_plot(book_id, ep_num)
             if loaded is not None:
                 hook = resolve_emotional_hook(loaded)
         except Exception:

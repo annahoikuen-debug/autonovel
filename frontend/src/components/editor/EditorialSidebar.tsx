@@ -13,6 +13,8 @@ interface EditorialSidebarProps {
 }
 
 interface ChatMessage {
+   /** 安定キー（挿入時に採番する）。Render 内の index キー禁止のため。 */
+   id: string;
    sender: "user" | "ai";
    text: string;
    evidence?: Array<{ id: string; label: string; source_reference: string }>;
@@ -44,15 +46,19 @@ export const EditorialSidebar: React.FC<EditorialSidebarProps> = ({
    const [tab, setTab] = useState<"chat" | "audit">("chat");
 
    // Q&A 状態
-   const [messages, setMessages] = useState<ChatMessage[]>([
-     {
-       sender: "ai",
-       text: "こんにちは！作品専属のAI編集者です。世界観設定やキャラクター情報、過去の伏線について何でも質問してください。",
-     },
-   ]);
+const [messages, setMessages] = useState<ChatMessage[]>([
+      {
+        id: "msg-0",
+        sender: "ai",
+        text: "こんにちは！作品専属のAI編集者です。世界観設定やキャラクター情報、過去の伏線について何でも質問してください。",
+      },
+    ]);
    const [inputQuery, setInputQuery] = useState("");
    const [isQuerying, setIsQuerying] = useState(false);
    const messagesEndRef = useRef<HTMLDivElement>(null);
+   /** メッセージの安定キーを採番するカウンタ（挿入順と 1:1 で対応する） */
+   const messageIdRef = useRef(1);
+   const nextMessageId = () => `msg-${messageIdRef.current++}`;
 
    // 矛盾診断状態
    const [isAuditing, setIsAuditing] = useState(false);
@@ -71,8 +77,8 @@ export const EditorialSidebar: React.FC<EditorialSidebarProps> = ({
    const executeQuery = async (queryText: string) => {
      if (!queryText.trim() || isQuerying) return;
 
-     setMessages((prev) => [...prev, { sender: "user", text: queryText }]);
-     setIsQuerying(true);
+setMessages((prev) => [...prev, { id: nextMessageId(), sender: "user", text: queryText }]);
+      setIsQuerying(true);
 
      try {
        const res: AskBibleResponse = await askBible({
@@ -80,11 +86,12 @@ export const EditorialSidebar: React.FC<EditorialSidebarProps> = ({
          query: queryText,
        });
 
-       setMessages((prev) => [
-         ...prev,
-         {
-           sender: "ai",
-           text: res.answer,
+setMessages((prev) => [
+          ...prev,
+          {
+            id: nextMessageId(),
+            sender: "ai",
+            text: res.answer,
            evidence: res.evidence_nodes.map((n) => ({
              id: n.id,
              label: n.label,
@@ -93,11 +100,12 @@ export const EditorialSidebar: React.FC<EditorialSidebarProps> = ({
          },
        ]);
      } catch (err: any) {
-       setMessages((prev) => [
-         ...prev,
-         {
-           sender: "ai",
-           text: `❌ 検索エラー: ${err.message || err}`,
+setMessages((prev) => [
+          ...prev,
+          {
+            id: nextMessageId(),
+            sender: "ai",
+            text: `❌ 検索エラー: ${err.message || err}`,
          },
        ]);
      } finally {
@@ -274,23 +282,24 @@ export const EditorialSidebar: React.FC<EditorialSidebarProps> = ({
          {tab === "chat" ? (
            <>
              <div className="editorial-messages" data-testid="editorial-messages">
-               {messages.map((m, idx) => (
-                 <div
-                   key={idx}
-                   className={`editorial-msg ${m.sender === "user" ? "editorial-msg--user" : "editorial-msg--ai"}`}
-                 >
-                   <div>{m.text}</div>
-                   {m.evidence && m.evidence.length > 0 && (
-                     <div style={{ marginTop: "6px" }}>
-                       {m.evidence.map((ev, eIdx) => (
-                         <span key={eIdx} className="evidence-tag" title={`出展: ${ev.source_reference}`}>
-                           📊 [{ev.label}] {ev.id}
-                         </span>
-                       ))}
-                     </div>
-                   )}
-                 </div>
-               ))}
+{messages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`editorial-msg ${m.sender === "user" ? "editorial-msg--user" : "editorial-msg--ai"}`}
+                  >
+                    <div>{m.text}</div>
+                    {m.evidence && m.evidence.length > 0 && (
+                      <div style={{ marginTop: "6px" }}>
+                        {/* evidence はノード ID を本来就持つため、index ではなく本物の ID をキーにする */}
+                        {m.evidence.map((ev) => (
+                          <span key={ev.id} className="evidence-tag" title={`出展: ${ev.source_reference}`}>
+                            📊 [{ev.label}] {ev.id}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
                {isQuerying && (
                  <div className="editorial-msg editorial-msg--ai" style={{ color: "var(--accent-cyan)", display: "flex", alignItems: "center", gap: "6px" }}>
                    <span className="spinner" /> <span>GraphRAG ナレッジを探索中...</span>
@@ -388,8 +397,10 @@ export const EditorialSidebar: React.FC<EditorialSidebarProps> = ({
                {auditIssues.map((issue, idx) => {
                  const isHighlighted = activeHighlight?.conflictingText === issue.conflicting_text;
                  return (
-                   <div
-                     key={idx}
+<div
+                      // サーバー側が決定的に発行する ID をキーにする。
+                      // 無ければ表示専用のフォールバック ID を使う（既存の handleFocusIssue と同じ規則）。
+                      key={issue.id ? String(issue.id) : `local-${idx}`}
                      style={{
                        background: isHighlighted
                          ? "rgba(239, 68, 68, 0.25)"

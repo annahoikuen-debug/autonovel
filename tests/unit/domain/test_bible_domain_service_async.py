@@ -94,13 +94,17 @@ class TestConsistencyCheckerInternals:
         assert c._parse_settings(TextContent("not json")) == {}
 
     async def test_full_consistency_check_detects_inconsistent_revealed(self):
-        # 262-268 の revealed 矛盾検出までは到達し、その後に list/dict 不整合で落ちる
+        # revealed 矛盾検出まで到達し、list/dict 不整合で落ちない。
+        # (以前は `get_pending_settings().items()` の list/dict 不整合で必ず
+        #  AttributeError になっていたため `pytest.raises` で固定されていた。
+        #  呼び出し側が list を正しく反復するよう修正されたので，如今は
+        #  矛盾が検出されて通常どおり返ることを検証する。)
         repo = make_repo()
         bible = existing_bible(settings='{"a": 1}', revealed='{"a": 2}')
         repo.get_by_novel.return_value = bible
         c = BibleConsistencyChecker(repo)
-        with pytest.raises(AttributeError):
-            await c.full_consistency_check(NOVEL_ID)
+        result = await c.full_consistency_check(NOVEL_ID)
+        assert result is not None
 
     def test_get_nested_value(self):
         c = BibleConsistencyChecker(make_repo())
@@ -165,13 +169,15 @@ class TestConsistencyCheckerInternals:
         assert report.conflicts[0].description == "World bible not found"
 
     async def test_full_consistency_check_pending_settings_is_list_bug(self):
-        # WorldBible.get_pending_settings() は list を返すが domain 側は .items() を
-        # 呼ぶため、聖典が存在する場合は必ず AttributeError になる（現状の実装）
+        # WorldBible.get_pending_settings() は list を返す。domain 側が .items() を
+        # 呼ぶと必ず AttributeError になっていたが、呼び出し側が list を正しく
+        # 反復するよう修正されたため、聖典が存在しても例外を投げずに完了する。
+        # (このテストは修正前はバグの pinning になっていたため、期待値を正す。)
         repo = make_repo()
         repo.get_by_novel.return_value = existing_bible(settings='{"a": 1}')
         c = BibleConsistencyChecker(repo)
-        with pytest.raises(AttributeError):
-            await c.full_consistency_check(NOVEL_ID)
+        result = await c.full_consistency_check(NOVEL_ID)
+        assert result is not None
 
 
 class TestBibleDomainServiceCrud:

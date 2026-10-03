@@ -103,7 +103,9 @@ class MarketingService:
                     if bible and hasattr(bible, "settings"):
                         bible_settings = bible.settings or {}
 
-                    db_plots = self.repo.get_all_plots(book_id, branch_id=branch_id)
+                    db_plots = self.repo.get_all_plots(
+                        branch_id, branch_id=branch_id, book_id=book_id
+                    )
                     plots = [
                         {
                             "ep_num": getattr(p, "ep_num", i + 1),

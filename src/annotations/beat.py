@@ -68,6 +68,8 @@ class EmotionalBeat:
         """辞書に変換（フロントマター用）"""
         return {
             "beat_id": self.beat_id,
+            "episode": self.episode,
+            "scene": self.scene,
             "source": self.source,
             "target": self.target,
             "emotion": self.emotion.value,

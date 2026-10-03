@@ -7,7 +7,9 @@ class IRepository(Protocol):
     Phase 2で各リポジトリに必要なメソッドを統一的に定義する。
     """
 
-    async def update_plot_blueprint(self, branch_id: int, ep_num: int, blueprint: Any) -> bool: ...
+    async def update_plot_blueprint(
+        self, branch_id: int, ep_num: int, detailed_blueprint: str, book_id: int | None = None
+    ) -> None: ...
 
     async def create_book(self, book_data: Any) -> str: ...
 

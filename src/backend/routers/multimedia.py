@@ -104,6 +104,64 @@ async def _assert_media_path_ownership(safe_path: Path, current_user: User) -> N
     await verify_book_ownership(book_id, current_user, None)
 
 
+async def _assert_artifact_ownership(
+    service: MultimediaService,
+    asset_id: int,
+    current_user: User,
+) -> dict[str, Any]:
+    """成果物 ``asset_id`` が current_user の作品に属することを検証してメタを返す。
+
+    ``asset_id`` は連番で推測できるため、所有者検証無しで他テナントの
+    eBook / アセットパックをダウンロードできてしまう。
+    """
+    meta = service.get_artifact(asset_id)
+    if meta is None:
+        raise HTTPException(status_code=404, detail="artifact not found")
+    await verify_book_ownership(int(meta["book_id"]), current_user, AppContainer.db())
+    return meta
+
+
+async def _assert_task_ownership(
+    service: MultimediaService,
+    task_id: str,
+    current_user: User,
+) -> dict[str, Any]:
+    """タスク ``task_id`` を作品へ解決して所有者を検証する。
+
+    ``multimedia_tasks`` は ``asset_id`` しか持たないため、
+    ``asset_id`` -> ``multimedia_artifacts`` -> ``book_id`` と辿る。
+    ``asset_id`` が NULL のタスクは作品に紐づかないため管理者に限定する (fail-closed)。
+    """
+    info = service.get_task(task_id)
+    if info is None:
+        raise HTTPException(status_code=404, detail="task not found")
+
+    asset_id = info.get("asset_id")
+    if asset_id is None:
+        if getattr(current_user, "role", None) != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="このタスクは作品に紐づかないため参照できません",
+            )
+        return info
+
+    await _assert_artifact_ownership(service, int(asset_id), current_user)
+    return info
+
+
+def _safe_artifact_file_path(file_path: str) -> Path:
+    """DB に記録された成果物パスが ``MULTIMEDIA_OUTPUT_DIR`` 配下にあることを確認する。
+
+    ``/multimedia/files/{filename:path}`` の `_safe_path_under_base` と同じ厳密さで、
+    DB が改竄された場合에도ベースディレクトリ外を配信しないようにする。
+    """
+    base = get_multimedia_dir().resolve()
+    candidate = Path(file_path).resolve()
+    if base != candidate and base not in candidate.parents:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    return candidate
+
+
 @router.post(
     "/media-mix",
     response_model=MediaMixResponse,
@@ -303,13 +361,16 @@ async def generate_asset_pack_alias(
     response_model=AssetsByBookResponse,
     responses={503: {"description": "Multimedia disabled"}},
 )
-def get_assets_by_book(
+async def get_assets_by_book(
     book_id: int = PathParam(..., ge=1),
+    current_user: User = Depends(get_current_user),
     service: MultimediaService = Depends(get_multimedia_service),
 ) -> AssetsByBookResponse:
     """README 互換エイリアス: 指定 book_id の全アセットメタデータを取得。"""
     if not is_multimedia_enabled():
         raise HTTPException(status_code=503, detail="Multimedia disabled")
+    # IDOR 防止: 作品の所有権を検証する
+    await verify_book_ownership(book_id, current_user, AppContainer.db())
     assets = service.get_artifacts_by_book(book_id)
     return AssetsByBookResponse(
         book_id=book_id,
@@ -322,16 +383,16 @@ def get_assets_by_book(
     response_model=ArtifactMetaResponse,
     responses={404: {"description": "Not found"}},
 )
-def get_artifact(
+async def get_artifact(
     asset_id: int = PathParam(..., ge=1),
+    current_user: User = Depends(get_current_user),
     service: MultimediaService = Depends(get_multimedia_service),
 ) -> ArtifactMetaResponse:
     """成果物メタデータ取得。"""
     if not is_multimedia_enabled():
         raise HTTPException(status_code=503, detail="Multimedia disabled")
-    meta = service.get_artifact(asset_id)
-    if meta is None:
-        raise HTTPException(status_code=404, detail="artifact not found")
+    # IDOR 防止: asset_id から作品を解決して所有者を検証する
+    meta = await _assert_artifact_ownership(service, asset_id, current_user)
     return ArtifactMetaResponse(
         asset_id=meta["asset_id"],
         book_id=meta["book_id"],
@@ -347,17 +408,17 @@ def get_artifact(
     "/artifacts/{asset_id}/download",
     responses={404: {"description": "Not found"}},
 )
-def download_artifact(
+async def download_artifact(
     asset_id: int = PathParam(..., ge=1),
+    current_user: User = Depends(get_current_user),
     service: MultimediaService = Depends(get_multimedia_service),
 ) -> FileResponse:
     """成果物ファイル本体をダウンロード。"""
     if not is_multimedia_enabled():
         raise HTTPException(status_code=503, detail="Multimedia disabled")
-    meta = service.get_artifact(asset_id)
-    if meta is None:
-        raise HTTPException(status_code=404, detail="artifact not found")
-    path = Path(meta["file_path"])
+    # IDOR 防止: 返送バイトを返する前に所有者検証を必ず通す
+    meta = await _assert_artifact_ownership(service, asset_id, current_user)
+    path = _safe_artifact_file_path(meta["file_path"])
     if not path.exists():
         raise HTTPException(status_code=404, detail="file missing on disk")
     media_type = "application/zip" if path.suffix == ".zip" else "application/json"
@@ -365,16 +426,16 @@ def download_artifact(
 
 
 @router.get("/tasks/{task_id}", response_model=TaskStatusResponse)
-def get_task(
+async def get_task(
     task_id: str = PathParam(..., min_length=1),
+    current_user: User = Depends(get_current_user),
     service: MultimediaService = Depends(get_multimedia_service),
 ) -> TaskStatusResponse:
     """タスクステータス取得。"""
     if not is_multimedia_enabled():
         raise HTTPException(status_code=503, detail="Multimedia disabled")
-    info = service.get_task(task_id)
-    if info is None:
-        raise HTTPException(status_code=404, detail="task not found")
+    # IDOR 防止: task_id -> asset_id -> book_id で所有者を検証する
+    info = await _assert_task_ownership(service, task_id, current_user)
     return TaskStatusResponse(
         task_id=info["task_id"],
         asset_id=info.get("asset_id"),

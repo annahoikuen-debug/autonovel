@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import asyncio
-import base64
 import json
 import logging
 from collections.abc import AsyncIterator
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
 from src.backend.auth import require_api_key
@@ -107,9 +106,16 @@ async def _stream_generator(input_data: EasyModeInput, request: Request) -> Asyn
 @router.get("/generate/stream")
 async def stream_generation(
     request: Request,
+    body_input: EasyModeInput | None = Body(default=None),
     payload: str | None = Query(
         default=None,
-        description="Base64-urlsafe encoded JSON of EasyModeInput",
+        deprecated=True,
+        description=(
+            "Deprecated. Base64-encoded EasyModeInput used to be accepted here, "
+            "but it carried llm_config.api_key / llm_config.base_url into the URL "
+            "(access-log and history leak + SSRF). Send a JSON body instead, or use "
+            "the individual query fields below."
+        ),
     ),
     current_chapter: str | None = Query(default=None),
     chapter_history: str | None = Query(
@@ -121,26 +127,36 @@ async def stream_generation(
     character_ability: str | None = Query(default=None),
     character_genre: str | None = Query(default=None),
     content_length_limit: int | None = Query(default=None, ge=1, le=10000),
+    api_key: str = Depends(require_api_key),
 ) -> StreamingResponse:
     """小説執筆を SSE でストリーミング配信する (GET)。
 
     EventSource は GET のみ対応しているため、本エンドポイントは GET で
-    リクエストパラメータ (個別フィールド または base64 ``payload``) を受け取り、
-    ``text/event-stream`` で逐次チャンクを返す。
+    ``text/event-stream`` を返す。入力は次のいずれか:
 
-    個別フィールドが指定された場合は ``StreamQueryInput`` 経由で組み立てる。
-    ``payload`` (base64 JSON) を渡した場合は ``EasyModeInput`` として直接復元する。
+    * JSON リクエストボディ (``EasyModeInput``) — `llm_config` を使いたい場合はこちら
+    * クエリの個別フィールド (``current_chapter`` / ``character_*`` など)
+
+    認証は POST 版と同じ ``require_api_key`` に統一した。base64 ``payload``
+    (クエリ文字列に `llm_config.api_key` / `base_url` を埋め込む仕組み) は
+    アクセスログとブラウザ履歴に平文で残り、かつ攻撃者が指定したホストへの
+    SSRF の起点になるため、受け取った場合は明示的に拒否する。
     """
     await stream_limiter.check(request)
 
     if payload is not None:
-        try:
-            raw = base64.urlsafe_b64decode(payload.encode()).decode("utf-8")
-            input_data = EasyModeInput.model_validate_json(raw)
-        except Exception as exc:
-            from fastapi import HTTPException
+        logger.warning(
+            "GET /generate/stream received a base64 payload; rejected. "
+            "Send a JSON body or the individual query fields instead."
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="payload query parameter is no longer supported; send a JSON body",
+        )
 
-            raise HTTPException(status_code=400, detail=f"invalid payload: {exc}") from exc
+    input_data: EasyModeInput
+    if body_input is not None:
+        input_data = body_input
     else:
         history_list = (
             [line for line in (chapter_history or "").split("\n") if line]

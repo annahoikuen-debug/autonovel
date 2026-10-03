@@ -3,6 +3,14 @@
 
 set -e
 
+# 必ずリポジトリルートで実行する。`pip install -e .` はカレントディレクトリを
+# パッケージルートとみなすため、scripts/ から実行すると失敗する
+# （旧実装に CWD ガードが無く `bash scripts/setup_dev.sh` で落ちていた）。
+# scripts/check_env.py の PROJECT_ROOT と同じ考え方。
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$PROJECT_ROOT"
+echo "Project root: $PROJECT_ROOT"
+
 echo "=== AutoNovel Development Setup ==="
 
 # Python バージョンチェック
@@ -26,11 +34,12 @@ echo "Installing dependencies..."
 pip install -e ".[dev]"
 
 # マイグレーション実行
+# alembic.ini はリポジトリルートにしかないうえ、その script_location は
+# `src/backend/alembic` とルート相対で指定されている。`cd src/backend` してから
+# 呼ぶと "ERROR: Can't locate a configuration file" で失敗する。
 echo "Running database migrations..."
-cd src/backend
 alembic upgrade head
-cd ../..
 
 echo "=== Setup complete ==="
 echo "Activate virtual environment with: source .venv/bin/activate"
-echo "Run tests with: ./run_tests.sh"
+echo "Run tests with: ./scripts/runners/run_tests.sh"

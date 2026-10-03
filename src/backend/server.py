@@ -14,6 +14,7 @@ from src.backend.api.admin_phase2 import (
     rag_router as admin_rag_router,
     router as admin_audit_router,
 )
+from src.api.middleware.rate_limit import RateLimitMiddleware
 from src.backend.config import settings
 from src.backend.database import init_db
 from src.backend.error_handlers import register_error_handlers
@@ -134,14 +135,46 @@ app = FastAPI(title=f"{settings.APP_NAME} Backend", version=settings.APP_VERSION
 
 
 from src.backend.middleware.auth_middleware import GlobalAuthMiddleware
+from src.security.headers import SecurityHeadersMiddleware
 
 register_error_handlers(app)
 app.add_middleware(GlobalAuthMiddleware)
 
+# 認証系エンドポイントのみ IP 単位のレート制限を適用する。
+# `/api/auth/login` と `/api/auth/register` は認証なしで到達でき、
+# 制限しないとパスワード総当たりと、アカウント大量作成（登録ごとに
+# credits=50 を付与される LLM 予算の悪用）が可能になる。
+# グローバルな上限は設定せず、認証パスにだけ上限を置くことで
+# ストリーミングやバッチ生成など他ルートの実運用を阻害しない。
+AUTH_PATH_RATE_LIMITS: dict[str, int] = {
+    "/api/auth/login": 10,
+    "/api/auth/register": 5,
+    "/api/auth/refresh": 30,
+}
+app.add_middleware(RateLimitMiddleware, path_rate_limits=AUTH_PATH_RATE_LIMITS)
+
+# レスポンスにセキュリティヘッダー (HSTS / X-Frame-Options / CSP 等) を付与する。
+app.add_middleware(SecurityHeadersMiddleware)
+
+# `CORS_ORIGINS` に `*` が含まれている場合、資格情報 (Cookie / Authorization) を
+# 伴うアクセスを信頼するのは危険（リフレクションで全オリジンに許可される）。
+# 本番起動は禁止し、それ以外は資格情報付きを強制無効化+loud warning する。
+_cors_allow_credentials = settings.cors_allow_credentials
+if not _cors_allow_credentials:
+    logger.warning(
+        "[SECURITY WARNING] CORS_ORIGINS contains '*'; forcing allow_credentials=False. "
+        "Set an explicit origin list if credentialed cross-origin access is required."
+    )
+if settings.APP_ENV == "production" and not _cors_allow_credentials:
+    raise RuntimeError(
+        "本番環境 (APP_ENV=production) では CORS_ORIGINS に '*' を設定できません。"
+        "公開オリジンを明示的に列挙してください。"
+    )
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_credentials=True,
+    allow_credentials=_cors_allow_credentials,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=settings.cors_allow_headers_list,
 )

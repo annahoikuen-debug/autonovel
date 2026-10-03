@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { escapeHtml, escapeAttribute } from "../../lib/escape";
 
 interface VerticalReaderProps {
   title: string;
@@ -35,8 +36,12 @@ export const VerticalReader: React.FC<VerticalReaderProps> = ({
       .join("\n\n");
   };
 
+  // 本文は LLM 出力なので、**タグ置換の前に 1 回だけ** escapeHtml() を通す。
+  // 以降の加工（ルビ展開・改行分割）はエスケープ済み文字列に対して行うため、
+  // pages に載る各文字列はそのまま __html に埋め込んでも安全。
+  // 逆にエスケープすると最後に生成した ruby タグが壊れるため、この順序を守る。
   const processedContent = processIndentationAndQuotes(
-    processRubyText(content)
+    processRubyText(escapeHtml(content))
   );
 
   // Split into pages (for now, just by double newline)
@@ -118,9 +123,11 @@ export const VerticalReader: React.FC<VerticalReaderProps> = ({
           }}
           dangerouslySetInnerHTML={{ __html: pages.map((page, index) => {
             const isCurrent = index === currentPage;
+            // 属性値は引用符で包み、値側をエスケープして属性脱出を防く
+            const safeIndex = escapeAttribute(String(index));
             return `
               <div class="vertical-reader-page" 
-                   data-page-index="${index}"
+                   data-page-index="${safeIndex}"
                    style="${isCurrent ? 'opacity: 1; transform: translateX(0);' : 
                           index < currentPage ? 'opacity: 0.3; transform: translateX(-20px);' : 
                           'opacity: 0.3; transform: translateX(20px);'}"

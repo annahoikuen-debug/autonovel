@@ -36,18 +36,19 @@ export async function generateContentStream(
     ...(signal ? { signal } : {}),
   });
   if (!res.ok) {
-    let errorMessage = await res.text();
+    // 本文は必ず一度しか読めない。以前は text() で読んだ後に json() を試みていたため
+    // 必ず "Body has already been read" で失敗し、try ブロックが死んでいた。
+    // clone() を先に取っておき、json() を主、text() を副として使い分ける。
+    const fallback = res.clone();
+    let errorMessage = "";
     try {
       const errorJson = await res.json();
-      if (errorJson.detail) {
-        errorMessage = errorJson.detail;
-      } else if (errorJson.message) {
-        errorMessage = errorJson.message;
-      }
-    } catch (e) {
-      // If not JSON, use the text we already have
+      errorMessage = errorJson.detail || errorJson.message || "";
+    } catch {
+      // JSON でなければ clone 側（未消費）の生テキストを使う
+      errorMessage = await fallback.text().catch(() => "");
     }
-    throw new Error(errorMessage);
+    throw new Error(errorMessage || `HTTP ${res.status} ${res.statusText}`);
   }
   return res;
 }

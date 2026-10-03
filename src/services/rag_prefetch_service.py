@@ -117,7 +117,9 @@ class RagPrefetchService:
             # 2. 過去ログRAG検索
             if hasattr(engine, "repo") and hasattr(engine.repo, "get_relevant_past_logs"):
                 tasks.append(
-                    engine.repo.get_relevant_past_logs(branch_id, ep_num, query_text=blueprint)
+                    engine.repo.get_relevant_past_logs(
+                        branch_id, ep_num, query_text=blueprint, book_id=book_id
+                    )
                 )
             else:
                 tasks.append(_null(""))

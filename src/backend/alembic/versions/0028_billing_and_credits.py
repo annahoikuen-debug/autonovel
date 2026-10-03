@@ -5,6 +5,11 @@ Revises: 0027_multitenancy_users
 Create Date: 2026-09-14 02:46:44.000000
 
 全テーブル作成を既存ガイド (0011 等) と同じ存在チェックで冪等化する。
+
+注意: このリビジョンは既に適用済みの DB には流儀の影響が及ばないため、
+``stripe_webhook_events`` と ``credit_transactions`` のスキーマ是正
+（モデル不一致 PK / ``sa.text('now()')`` 既定値）は 0033_schema_reconciliation
+で行うこと。
 """
 from alembic import op
 import sqlalchemy as sa
@@ -40,7 +45,10 @@ def upgrade() -> None:
             sa.Column('transaction_type', sa.String(length=30), nullable=False),
             sa.Column('task_id', sa.String(length=100), nullable=True),
             sa.Column('description', sa.String(length=255), nullable=False),
-            sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+            # SQLite には now() 関数が無いため sa.text('now()') は
+            # 既定値としてそのまま焼き込まれ、以降の全 INSERT が失敗する。
+            # sa.func.now() は CURRENT_TIMESTAMP にレンダリングされる。
+            sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=True),
             sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
             sa.PrimaryKeyConstraint('id')
         )
@@ -74,7 +82,8 @@ def upgrade() -> None:
             sa.Column('stripe_event_id', sa.String(length=255), nullable=False),
             sa.Column('event_type', sa.String(length=50), nullable=False),
             sa.Column('processed', sa.Boolean(), nullable=False, default=False),
-            sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
+            # sa.text('now()') は SQLite で機能しないため sa.func.now()（CURRENT_TIMESTAMP）を使う。
+            sa.Column('created_at', sa.DateTime(), server_default=sa.func.now(), nullable=True),
             sa.PrimaryKeyConstraint('id'),
             sa.UniqueConstraint('stripe_event_id')
         )

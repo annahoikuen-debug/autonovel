@@ -43,7 +43,6 @@ COPY --from=builder /opt/deps /home/appuser/.local
 # イメージ.layers に不要なファイルが残らないようにする。
 COPY --chown=appuser:appuser src/ ./src/
 COPY --chown=appuser:appuser config/ ./config/
-COPY --chown=appuser:appuser database/ ./database/
 COPY --chown=appuser:appuser formatters/ ./formatters/
 COPY --chown=appuser:appuser plugins/ ./plugins/
 COPY --chown=appuser:appuser prompts/ ./prompts/

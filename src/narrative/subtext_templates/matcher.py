@@ -122,12 +122,31 @@ class ContextMatcher:
                 matched.append(scored)
 
         if not matched:
+            # フォールバックは「制約チェックを通過した候補」だけを対象にする。
+            # ここでの原本ループは全候補を再投入していたため、forbidden_tags で
+            # 弾かれたテンプレートや感情が非互換なテンプレートまで再登場していた。
+            # 該当なし (候補ゼロ) ならマッチ無しを返し、禁則テンプレートを描かない。
             for candidate in candidates:
+                if context.speaker and not self.constraints.is_template_allowed(
+                    context.speaker, candidate.metadata.tags
+                ):
+                    continue
+
                 req_emotions = (candidate.metadata.context or {}).get("emotion")
-                if not req_emotions:
-                    scored = candidate.model_copy()
-                    scored.score = float(candidate.metadata.weight)
-                    matched.append(scored)
+                if isinstance(req_emotions, str):
+                    req_emotions = [req_emotions]
+                # score_candidate が 0.0 を返す「感情非互換」候補は使わない
+                if (
+                    req_emotions
+                    and context.emotion
+                    and context.emotion != "neutral"
+                    and context.emotion not in req_emotions
+                ):
+                    continue
+
+                scored = candidate.model_copy()
+                scored.score = float(candidate.metadata.weight)
+                matched.append(scored)
 
         # Sort: final templates first, then score descending
         matched.sort(key=lambda c: (c.metadata.final, c.score), reverse=True)

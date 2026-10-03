@@ -22,7 +22,7 @@ type TimerId = ReturnType<typeof setTimeout>;
  * 別文言を返すと JSON パース失敗とみなされ、ストリームはそのまま正常終了扱いになり、
  * 部分的な本文が「執筆が完了しました」として保存されていた。
  */
-class StreamServerError extends Error {
+export class StreamServerError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "StreamError";

@@ -128,17 +128,30 @@ class TrackedLLMAdapter:
         return result
 
     async def stream_text(self, *args: Any, **kwargs: Any):
-        """ストリーミング生成。逐次チャンクを素通ししつつ出力を集計する。"""
+        """ストリーミング生成。逐次チャンクを素通ししつつ出力を集計する。
+
+        計測は ``try/finally`` で行う: コンシューマーが途中で ``break`` した
+        り上流が例外を投げたりすると、``async for`` の後に置いたままだと
+        コストは課金されているがローカルには記録されないまま飛んでいた。
+        """
         chunks: list[str] = []
-        async for chunk in self._inner.stream_text(*args, **kwargs):
-            chunks.append(chunk)
-            yield chunk
-        prompt = ""
-        if args:
-            prompt = str(args[0])
-        elif "prompt" in kwargs:
-            prompt = str(kwargs["prompt"])
-        self._record(prompt, "".join(chunks))
+        try:
+            async for chunk in self._inner.stream_text(*args, **kwargs):
+                chunks.append(chunk)
+                yield chunk
+        finally:
+            prompt = ""
+            if args:
+                prompt = str(args[0])
+            elif "prompt" in kwargs:
+                prompt = str(kwargs["prompt"])
+            # generate_text / generate と同じ形（system_prompt を含めて推定する）
+            system_prompt = ""
+            if len(args) > 1:
+                system_prompt = str(args[1])
+            elif "system_prompt" in kwargs:
+                system_prompt = str(kwargs["system_prompt"] or "")
+            self._record(f"{system_prompt}{prompt}", "".join(chunks))
 
     def cancel(self) -> None:
         cancel = getattr(self._inner, "cancel", None)

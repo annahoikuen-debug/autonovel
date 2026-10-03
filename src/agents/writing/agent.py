@@ -123,7 +123,11 @@ class WritingAgent(SkillAgent):
                 )
 
             # 最後の生成テキストを取得（簡易実装）
-            chapter = await self.repo.get_chapter(branch_id, end_ep) if self.repo else None
+            chapter = (
+                await self.repo.get_chapter(branch_id, end_ep, book_id=book_id)
+                if self.repo
+                else None
+            )
             drafted_text: str = chapter.content if chapter else ""
 
             self.emit_event("writing.completed", {
@@ -261,8 +265,10 @@ class WritingAgent(SkillAgent):
         if reporter:
             reporter.report(f"Ep.{ep_num}: {focus} フォーカスで書き直し開始", "info")
 
-        # 既存の章を取得
-        chapter = await self.repo.get_chapter(1, ep_num) if self.repo else None
+        # 既存の章を取得（branch_id は作品間で共有されるため book_id も渡す）
+        chapter = (
+            await self.repo.get_chapter(1, ep_num, book_id=book_id) if self.repo else None
+        )
         if not chapter or not chapter.content:
             return {"status": "error", "message": "Chapter not found or empty"}
 
@@ -364,8 +370,11 @@ class WritingAgent(SkillAgent):
         branch_id = getattr(chapter, "branch_id", None)
         if branch_id is None:
             branch_id = 1
+        # `book_id` を渡さないと、branch_id を共有する他作品の同番の章を上書きする。
         if self.repo and hasattr(self.repo, 'update_chapter_content'):
-            res = self.repo.update_chapter_content(branch_id, ep_num, rewritten_text)
+            res = self.repo.update_chapter_content(
+                branch_id, ep_num, rewritten_text, book_id=book_id
+            )
             if inspect.isawaitable(res):
                 await res
 
@@ -418,7 +427,9 @@ class WritingAgent(SkillAgent):
             reporter.report(f"Ep.{ep_num}: {dimension} ディメンションで書き直し開始", "info")
 
         # 既存の章を取得
-        chapter = await self.repo.get_chapter(branch_id, ep_num) if self.repo else None
+        chapter = (
+            await self.repo.get_chapter(branch_id, ep_num, book_id=book_id) if self.repo else None
+        )
         if not chapter or not chapter.content:
             return {"status": "error", "message": "Chapter not found or empty"}
 
@@ -513,8 +524,11 @@ class WritingAgent(SkillAgent):
         # T6 Step 8: 実シグネチャは `(branch_id, ep_num, content)`。
         # 従来は `chapter.id` を `branch_id` に、`rewritten_text` を `ep_num` に
         # 渡しており `content` が欠落して TypeError になっていた。
+        # `book_id` を渡さないと、branch_id を共有する他作品の同番の章を上書きする。
         if self.repo and hasattr(self.repo, 'update_chapter_content'):
-            res = self.repo.update_chapter_content(branch_id, ep_num, rewritten_text)
+            res = self.repo.update_chapter_content(
+                branch_id, ep_num, rewritten_text, book_id=book_id
+            )
             if inspect.isawaitable(res):
                 await res
 

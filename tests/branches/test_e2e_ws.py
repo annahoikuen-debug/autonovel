@@ -9,7 +9,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.database.models import Base, Book
+from src.backend.database.models import Base, Book, User
 
 
 @pytest.fixture
@@ -40,22 +40,56 @@ def client():
         async with test_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         async with test_session_factory() as s:
-            b = Book(title="t", genre="g", concept="c", current_branch_id=1)
+            # 所有者ユーザーは WebSocket ハンドシェイク時の認証にも必要
+            user = User(
+                id=1,
+                email="branches-ws@example.com",
+                hashed_password="not-used-in-this-test",
+                display_name="Branches WS",
+                role="admin",
+                status="active",
+            )
+            s.add(user)
+            # `Book.user_id` が NULL の作品はアクセスできないため設定する
+            b = Book(title="t", genre="g", concept="c", current_branch_id=1, user_id=user.id)
             s.add(b)
             await s.commit()
 
     asyncio.run(_setup())
 
-    from src.backend.auth import validate_api_key_or_raise
+    owner = User(id=1, email="branches-ws@example.com", role="admin", status="active")
+
+    from src.backend.auth import get_current_user, validate_api_key_or_raise
     from src.backend.routers import branches as bmod
+    # `branches.py` は `get_db_manager` を名前で import している
+    # (`from ... import get_db_manager`) ため、`core_mod` 側の属性を差し替えるだけでは
+    # 既に束縛済みの名前は更新されない。ルータモジュール側を直接パッチする。
+    bmod.get_db_manager = core_mod.get_db_manager
+    # `enforce_book_ownership` デコレータ (branches.py:70) はセッション引数なしで
+    # `verify_book_ownership` を呼ぶため自身で UnitOfWork を開き、一時 DB を見られない。
+    # ここを Book を返すスタブに差し替えてセッション境界を越えないようにする。
+    # (他のルータテストと同じ方針: ガードはスタブするがハンドラ本体は最後まで実行する)
+    async def _fake_verify_book_ownership(book_id, current_user, uow=None):
+        return Book(id=book_id, user_id=1)
+
+    bmod.verify_book_ownership = _fake_verify_book_ownership
 
     app = FastAPI()
     app.dependency_overrides[validate_api_key_or_raise] = lambda: "testkey"
+    # branches ルーターは `dependencies=[Depends(get_current_user)]` を持つ
+    app.dependency_overrides[get_current_user] = lambda: owner
     app.include_router(bmod.router)
     return TestClient(app)
 
 
 def test_ws_flow(client):
+    from src.backend.security.jwt import create_access_token
+
+    # WebSocket は dependency_overrides が効かないため、
+    # `_authenticate_websocket` が `Authorization` ヘッダから読む JWT を渡す。
+    token = create_access_token(data={"sub": "1", "role": "admin"})
+    ws_headers = {"Authorization": f"Bearer {token}"}
+
     r = client.post("/api/branches/", json={"book_id": 1, "name": "main"})
     assert r.status_code == 201, f"Status: {r.status_code}, Body: {r.text}"
     bid = r.json()["id"]
@@ -71,7 +105,9 @@ def test_ws_flow(client):
 
     sid = client.post("/api/branches/play", json={"book_id": 1, "branch_id": bid}).json()["session_id"]
 
-    with client.websocket_connect(f"/api/branches/play/{sid}/ws") as ws:
+    with client.websocket_connect(
+        f"/api/branches/play/{sid}/ws", headers=ws_headers
+    ) as ws:
         # initial state
         msg = ws.receive_json()
         assert msg["type"] == "state"

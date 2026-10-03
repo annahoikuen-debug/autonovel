@@ -49,7 +49,6 @@ COPY --from=builder --chown=appuser:appuser /opt/deps /home/appuser/.local
 # アプリケーションソースのコピー
 COPY --chown=appuser:appuser src/ ./src/
 COPY --chown=appuser:appuser config/ ./config/
-COPY --chown=appuser:appuser database/ ./database/
 COPY --chown=appuser:appuser docker/backend/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY --chown=appuser:appuser formatters/ ./formatters/
 COPY --chown=appuser:appuser plugins/ ./plugins/

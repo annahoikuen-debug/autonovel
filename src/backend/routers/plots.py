@@ -43,7 +43,9 @@ router = APIRouter(
 async def get_plots(book_id: int, current_user: User = Depends(get_current_user)):
     async with UnitOfWork(AppContainer.db()) as uow:
         await verify_book_ownership(book_id, current_user, uow)
-        plots = await uow.plots.get_all_plots(book_id)
+        # 第1位置引数は branch_id カラムに効くため、本Branchesの既定ブランチ 1 を明示し
+        # book_id で作品を絞る（既定ブランチは全作品で 1 が共有される）。
+        plots = await uow.plots.get_all_plots(1, branch_id=1, book_id=book_id)
     return [
         {
             "ep_num": p.ep_num,
@@ -265,7 +267,6 @@ async def wizard_save(
         require_valid_api_key(req.api_key)
 
     from src.backend.database.models import Book
-    from src.services.errors import retry_on_lock
 
     async with UnitOfWork(AppContainer.db()) as uow:
         # 新規Bookを作成

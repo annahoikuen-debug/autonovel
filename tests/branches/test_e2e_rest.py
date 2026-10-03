@@ -46,10 +46,23 @@ def client():
     async def _setup():
         async with test_engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        # Add a test book
+        # Add a test book owned by the test user.
+        # `Book.user_id` が NULL の作品は非管理者からアクセスできないため、
+        # 所有者消费的検証を通すように user_id を設定する。
         async with test_session_factory() as session:
-            from src.backend.database.models import Book
-            book = Book(title="t", genre="g", concept="c", current_branch_id=1)
+            from src.backend.database.models import Book, User
+            user = User(
+                id=1,
+                email="branches-e2e@example.com",
+                hashed_password="not-used-in-this-test",
+                display_name="Branches E2E",
+                role="admin",
+                status="active",
+            )
+            session.add(user)
+            book = Book(
+                title="t", genre="g", concept="c", current_branch_id=1, user_id=user.id
+            )
             session.add(book)
             await session.commit()
     asyncio.run(_setup())
@@ -57,10 +70,30 @@ def client():
     # Set test API key
     os.environ["ALLOWED_API_KEYS"] = "testkey"
 
+    from src.backend.auth import get_current_user
+    from src.backend.database.models import User
     from src.backend.routers import branches as bmod
 
     app = FastAPI()
     app.include_router(bmod.router)
+
+    # branches ルーターは `dependencies=[Depends(get_current_user)]` を持つ。
+    # さらに book_id 単位のルートは verify_book_ownership を通るため、
+    # 作品に紐づく所有者ユーザー（管理者）を注入する。
+    owner = User(id=1, email="branches-e2e@example.com", role="admin", status="active")
+    app.dependency_overrides[get_current_user] = lambda: owner
+    # `branches.py` は `get_db_manager` を名前で import しているため、
+    # `core_mod` 側の属性を差し替えるだけではルータは一時 DB を見られない。
+    bmod.get_db_manager = core_mod.get_db_manager
+    # `enforce_book_ownership` はセッション引数なしで `verify_book_ownership` を呼ぶため
+    # 自身で UnitOfWork を開いて一時 DB を見られない。Book を返すスタブに置き換える
+    # (ガードはスタブするがハンドラ本体は最後まで実行する)。
+    async def _fake_verify_book_ownership(book_id, current_user, uow=None):
+        from src.backend.database.models import Book
+
+        return Book(id=book_id, user_id=1)
+
+    bmod.verify_book_ownership = _fake_verify_book_ownership
 
     try:
         yield TestClient(app)

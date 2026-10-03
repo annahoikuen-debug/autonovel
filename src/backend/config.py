@@ -21,6 +21,42 @@ STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 # 開発用エフェメラルJWTキーのプロセス内キャッシュ
 _ephemeral_dev_jwt_secret: str | None = None
 
+# `.env.example` に記載されたシークレット値のキャッシュ
+_example_secret_keys: frozenset[str] | None = None
+
+
+def _load_example_secret_keys() -> frozenset[str]:
+    """`.env.example` に書かれた `JWT_SECRET_KEY` / `SECRET_KEY` の値を収集する。
+
+    `.env.example` をそのまま `.env` にコピーして `APP_ENV=production` を設定すると、
+    公開リポジトリに載っている値がそのまま JWT 署名キーになりうる（管理者トークンの
+    偽造が可能）。そのため、本番起動時の判定材料として一度だけ読み込む。
+    """
+    global _example_secret_keys
+    if _example_secret_keys is not None:
+        return _example_secret_keys
+
+    keys: set[str] = set()
+    try:
+        env_example = ROOT_DIR / ".env.example"
+        if env_example.exists():
+            for line in env_example.read_text(encoding="utf-8").splitlines():
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#") or "=" not in stripped:
+                    continue
+                name, _, value = stripped.partition("=")
+                if name.strip() not in {"JWT_SECRET_KEY", "SECRET_KEY"}:
+                    continue
+                value = value.strip().strip('"').strip("'")
+                if value:
+                    keys.add(value)
+    except OSError:
+        # .env.example が読めない場合は「例示値なし」とみなす（起動を止めない）
+        pass
+
+    _example_secret_keys = frozenset(keys)
+    return _example_secret_keys
+
 
 def _get_package_version() -> str:
     """pyproject.toml からバージョンを動的取得する。"""
@@ -93,6 +129,11 @@ class Settings(BaseSettings):
                 raise ValueError("本番環境 (APP_ENV=production) では安全な JWT_SECRET_KEY の設定が必須です。")
             if "sqlite" in self.DATABASE_URL:
                 raise ValueError("本番環境では SQLite ではなく PostgreSQL の設定が必要です。")
+            if not self.STRIPE_WEBHOOK_SECRET and not self.ALLOW_UNSIGNED_WEBHOOKS:
+                raise ValueError(
+                    "本番環境 (APP_ENV=production) では STRIPE_WEBHOOK_SECRET の設定が必須です"
+                    "（未設定のまま運用すると署名検証を省略できず、クレジットの偽装付与を受けます）。"
+                )
         return self
 
     # 外部決済設定
@@ -100,6 +141,9 @@ class Settings(BaseSettings):
     # 未設定を致命エラーとして扱う（src/backend/routers/billing_webhook.py）。
     STRIPE_SECRET_KEY: str | None = None
     STRIPE_WEBHOOK_SECRET: str = ""
+    # 署名検証を完全に省略してよい環境向けオプトインフラグ（既定 False）。
+    # ローカル検証以外で True にしないこと。
+    ALLOW_UNSIGNED_WEBHOOKS: bool = False
 
     def get_jwt_secret_key(self) -> str:
         """JWTシークレットキーを取得し、本番環境での安全性を厳格に検証する。"""
@@ -112,10 +156,16 @@ class Settings(BaseSettings):
             "autonovel-dev-secret-key-minimum-32-bytes-long",
             "your-secret-key-here",
             "change-me",
+            "change_me_generate_with_openssl_rand_hex_32",
             "secret",
         }
         if self.APP_ENV == "production":
-            if not key or key in insecure_keys or len(key) < 32:
+            if (
+                not key
+                or key in insecure_keys
+                or key in _load_example_secret_keys()
+                or len(key) < 32
+            ):
                 raise ValueError(
                     "CRITICAL SECURITY RISK: In production, JWT_SECRET_KEY must be set to a secure string of at least 32 bytes. "
                     "Current key is missing, default, or too short."
@@ -244,6 +294,17 @@ class Settings(BaseSettings):
     def cors_origin_list(self) -> list[str]:
         """CORS origins をリスト形式で取得する。"""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",") if origin.strip()]
+
+    @property
+    def cors_allow_credentials(self) -> bool:
+        """CORS の資格情報付きアクセスを許可してよいかを判定する。
+
+        `CORS_ORIGINS` にワイルドカード `*` が含まれる場合、Any オリジンが
+        資格情報（Cookie / Authorization）付きリクエストを信頼全世界に公開することになる。
+        そのため `*` を含む場合は `False` を返し、呼び出し元に資格情報付き
+        アクセスを強制的に無効化させる。
+        """
+        return ["*"] not in self.cors_origin_list
 
     @property
     def cors_allow_headers_list(self) -> list[str]:

@@ -152,10 +152,20 @@ class ChapterRepository(BaseRepository):
             ch.qol_delta = qol_delta
         return not created
 
-    async def get_chapter(self, branch_id: int, ep_num: int) -> ChapterDbModel | None:
-        result = await self.session.execute(
-            select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num == ep_num)
-        )
+    async def get_chapter(
+        self, branch_id: int, ep_num: int, book_id: int | None = None
+    ) -> ChapterDbModel | None:
+        """1 話を取得する。
+
+        ``branch_id`` は作品間で共有される（既定値 1）ため、``book_id`` を
+        渡さないと同じ branch_id の**他作品**の行を掴んでしまう
+        （``create_chapter`` の docstring と同じ理由）。省略は後方互換のため
+        許容するが、呼び出し側は必ず ``book_id`` を渡すこと。
+        """
+        stmt = select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num == ep_num)
+        if book_id is not None:
+            stmt = stmt.where(Chapter.book_id == book_id)
+        result = await self.session.execute(stmt)
         ch = result.scalar_one_or_none()
         if not ch:
             return None
@@ -165,13 +175,17 @@ class ChapterRepository(BaseRepository):
             **self._parse_row(self._to_dict(ch), ["world_state", "trinity_review_log", "summary"])
         )
 
-    async def get_chapters_before(self, branch_id: int, ep_num: int) -> list[ChapterDbModel]:
-        result = await self.session.execute(
+    async def get_chapters_before(
+        self, branch_id: int, ep_num: int, book_id: int | None = None
+    ) -> list[ChapterDbModel]:
+        stmt = (
             select(Chapter)
             .where(Chapter.branch_id == branch_id)
             .where(Chapter.ep_num < ep_num)
-            .order_by(Chapter.ep_num.desc())
         )
+        if book_id is not None:
+            stmt = stmt.where(Chapter.book_id == book_id)
+        result = await self.session.execute(stmt.order_by(Chapter.ep_num.desc()))
         chaps = result.scalars().all()
         from src.models import ChapterDbModel
 
@@ -289,6 +303,7 @@ class ChapterRepository(BaseRepository):
         current_ep: int,
         query_text: str = "",
         top_k: int = 5,
+        book_id: int | None = None,
     ) -> str:
         """【強化版RAG機能】現在のプロットに含まれるキーワードに基づき、過去の重要ログを抽出する。"""
         if not query_text:
@@ -299,6 +314,8 @@ class ChapterRepository(BaseRepository):
         stmt = (
             select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num < current_ep)
         )
+        if book_id is not None:
+            stmt = stmt.where(Chapter.book_id == book_id)
         like_clauses = [Chapter.content.like(f"%{k}%") for k in keywords[:5]]
         stmt = stmt.where(or_(*like_clauses))
         stmt = stmt.order_by(Chapter.ep_num.desc()).limit(top_k)

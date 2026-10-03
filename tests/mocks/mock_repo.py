@@ -48,8 +48,14 @@ class MockBookRepository(MockBaseRepository):
 
 
 class MockPlotRepository(MockBaseRepository):
-    async def get_plot(self, book_id: int, ep_num: int):
-        return self.data.get(f"{book_id}_{ep_num}")
+    async def get_plot(
+        self,
+        book_id_or_branch_id: int,
+        ep_num: int,
+        branch_id: int | None = None,
+        book_id: int | None = None,
+    ):
+        return self.data.get(f"{book_id_or_branch_id}_{ep_num}")
 
     async def save_plot(self, book_id: int, plot_data: dict):
         ep_num = plot_data.get("ep_num")
@@ -60,8 +66,10 @@ class MockPlotRepository(MockBaseRepository):
 
 
 class MockChapterRepository(MockBaseRepository):
-    async def get_chapter(self, book_id: int, ep_num: int):
-        return self.data.get(f"{book_id}_{ep_num}")
+    async def get_chapter(
+        self, branch_id: int, ep_num: int, book_id: int | None = None
+    ):
+        return self.data.get(f"{branch_id}_{ep_num}")
 
     async def save_chapter(self, book_id: int, chapter_data: dict):
         ep_num = chapter_data.get("ep_num")

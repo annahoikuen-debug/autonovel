@@ -1,20 +1,31 @@
 """Multimedia ルータの統合テスト (self-contained FastAPI app)。"""
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.backend import config
-from src.backend.auth import validate_api_key_or_raise
+from src.backend.auth import get_current_user, validate_api_key_or_raise
+from src.backend.database.models import User
 from src.backend.multimedia_service import MultimediaResult
 from src.backend.routers import multimedia as multimedia_router
 
 
 @pytest.fixture
-def mm_client(monkeypatch, tmp_path):
+def mm_auth_user() -> User:
+    """`get_current_user` オーバーライド用の認証済みユーザー。
+
+    `validate_api_key_or_raise` のオーバーライドだけでは `get_current_user` は
+    差し替わらないため、認証をバイパスするには本フィクスチャも必要。
+    """
+    return User(id=1, email="test@example.com", role="admin", status="active")
+
+
+@pytest.fixture
+def mm_client(monkeypatch, tmp_path, mm_auth_user):
     """`/multimedia` 系の TestClient。Multimedia を有効化し、`MultimediaService` をスタブ。"""
     monkeypatch.setattr(config.settings, "ENABLE_MULTIMEDIA", True)
     monkeypatch.setattr(config.settings, "MULTIMEDIA_OUTPUT_DIR", str(tmp_path / "mm"))
@@ -57,6 +68,11 @@ def mm_client(monkeypatch, tmp_path):
     app.include_router(multimedia_router.router, prefix="/multimedia", tags=["multimedia"])
     app.dependency_overrides[multimedia_router.get_multimedia_service] = lambda: stub
     app.dependency_overrides[validate_api_key_or_raise] = lambda: "test-key"
+    app.dependency_overrides[get_current_user] = lambda: mm_auth_user
+    # 所有権ガードは AppContainer.db() を使うため、スタブサービスだけでは検証できない。
+    # エンドポイント自体はそのまま（所有権チェックの通過のみスタブする）。
+    ownership_stub = AsyncMock(return_value=MagicMock(id=1, user_id=mm_auth_user.id))
+    monkeypatch.setattr(multimedia_router, "verify_book_ownership", ownership_stub)
 
     from src.backend.rate_limit import generate_limiter
     generate_limiter.reset()
@@ -118,23 +134,28 @@ def test_artifact_metadata_endpoint(mm_client):
     assert body["book_id"] == 1
 
 
-def test_disabled_returns_503(monkeypatch, tmp_path):
+def test_disabled_returns_503(monkeypatch, tmp_path, mm_auth_user):
     monkeypatch.setattr(config.settings, "ENABLE_MULTIMEDIA", False)
     app = FastAPI()
     app.include_router(multimedia_router.router, prefix="/multimedia", tags=["multimedia"])
     app.dependency_overrides[validate_api_key_or_raise] = lambda: "k"
+    app.dependency_overrides[get_current_user] = lambda: mm_auth_user
     with TestClient(app) as c:
         res = c.post("/multimedia/media-mix", json={"book_id": 1})
     assert res.status_code == 503
     assert "Multimedia" in res.text
 
 
-def test_path_traversal_blocked(monkeypatch, tmp_path):
+def test_path_traversal_blocked(monkeypatch, tmp_path, mm_auth_user):
     monkeypatch.setattr(config.settings, "ENABLE_MULTIMEDIA", True)
     monkeypatch.setattr(config.settings, "MULTIMEDIA_OUTPUT_DIR", str(tmp_path / "mm"))
     app = FastAPI()
     app.include_router(multimedia_router.router, prefix="/multimedia", tags=["multimedia"])
     app.dependency_overrides[validate_api_key_or_raise] = lambda: "k"
+    app.dependency_overrides[get_current_user] = lambda: mm_auth_user
+    monkeypatch.setattr(
+        multimedia_router, "verify_book_ownership", AsyncMock(return_value=MagicMock(id=1))
+    )
     with TestClient(app) as c:
         # Starlette/FastAPI の URL バリデーションで `..` は 400 を返す
         res = c.get("/multimedia/files/..%2F..%2Fetc%2Fpasswd", follow_redirects=False)

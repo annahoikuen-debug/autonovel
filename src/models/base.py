@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -106,9 +106,10 @@ def extract_int(v: Any) -> int:
         "最高": 100,
     }
     v_lower = v.lower()
-    for word, val in word_map.items():
+    # 部分一致するため、長い語から先に判定する（例: "very high" が "high" より先）
+    for word in sorted(word_map, key=len, reverse=True):
         if word in v_lower:
-            return val
+            return word_map[word]
 
     # 数値の抽出
     nums = re.findall(r"-?\d+", v)
@@ -119,13 +120,16 @@ def extract_int(v: Any) -> int:
 
 def normalize_chain_phase(v: Any) -> str:
     """ChainPhaseのゆらぎを補正する"""
-    valid_phases = ["Friction", "Prep", "Payoff", "Discovery", "Bonding", "Fulfillment"]
+    # 定義との乖離を防ぐため、ChainPhaseから導出する
+    valid_phases = list(get_args(ChainPhase))
     if v in valid_phases:
         return str(v)
     if not isinstance(v, str):
         return "Friction"
     v_lower = v.lower()
-    if "friction" in v_lower or "軋轢" in v_lower or "hate" in v_lower or "ヘイト" in v_lower:
+    if "hate" in v_lower or "ヘイト" in v_lower or "憎悪" in v_lower:
+        return "Hate"
+    if "friction" in v_lower or "軋轢" in v_lower:
         return "Friction"
     if "prep" in v_lower or "準備" in v_lower:
         return "Prep"

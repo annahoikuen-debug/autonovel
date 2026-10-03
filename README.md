@@ -340,6 +340,89 @@ docker compose up --build
 | FastAPI Swagger UI | <http://localhost:8200/docs> |
 | ヘルスチェック | <http://localhost:8200/health> |
 
+> **開発環境でも認証が必要です。**
+> `docker-compose.yml` は `AUTH_DISABLED=true` を設定せず、バックエンドの
+> ポートを `127.0.0.1:8200:8200`（Loopback 限定）にバインドするようになりました。
+> そのため API を叩く前に以下でユーザーを作成し、`Authorization: Bearer <token>`
+> を各リクエストに付けてください。トークンなしのリクエストは `401` になります。
+
+```bash
+# 1. ユーザーを登録する（初回のみ。email / password は任意）
+curl -X POST http://localhost:8200/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"dev@example.com","password":"dev-password"}'
+
+# 2. ログインしてアクセストークンを取得する
+curl -X POST http://localhost:8200/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"dev@example.com","password":"dev-password"}'
+# → {"access_token": "<JWT>", ...}
+
+# 3. 取得したトークンを付けて呼び出す
+curl http://localhost:8200/api/books \
+  -H "Authorization: Bearer <JWT>"
+```
+
+Swagger UI（<http://localhost:8200/docs>）上でも「Authorize」ボタンから
+同じトークンを登録して試せます。
+
+> **本番運用で起動しないでください。** `APP_ENV=production` では
+> `CORS_ORIGINS` にワイルドカード `*` を設定していると起動時エラーになります
+> （`CORS_ORIGINS=*` は `APP_ENV=production` で拒否されます。実 Origin を
+> カンマ区切りで列挙してください）。また `STRIPE_WEBHOOK_SECRET` が未設定で
+> `ALLOW_UNSIGNED_WEBHOOKS=true` でもない場合、本番起動は拒否されます。
+
+### ⑤ 本番デプロイ（docker-compose.prod.yml）
+
+本番構成（backend / worker / frontend(nginx) / PostgreSQL(pgvector) / Redis）は
+`docker-compose.yml` とは別の `docker-compose.prod.yml` で定義されている。
+
+```bash
+# 1. 環境変数ファイルを用意する
+cp .env.example .env
+
+# 2. 必須値を設定する（下記「必須環境変数」を参照）
+#    例: openssl rand -hex 32   # JWT_SECRET_KEY
+#        openssl rand -hex 16   # POSTGRES_PASSWORD / REDIS_PASSWORD
+
+# 3. 起動する（Makefile の prod-up ターゲットと同一）
+docker compose -f docker-compose.prod.yml up -d --build
+#   もしくは: make prod-up
+
+# 停止・破棄
+docker compose -f docker-compose.prod.yml down          # コンテナのみ停止
+docker compose -f docker-compose.prod.yml down -v       # ボリュームも削除（データ消失）
+#   もしくは: make prod-down
+```
+
+公開ポートは frontend の `http://localhost:8080` のみ。backend (`8200`) は
+`expose` のみでホストには公開されず、frontend の nginx が
+`/easy_mode`, `/api`, `/health`, `/metrics` などをリバースプロキシする。
+frontend は backend のヘルスチェック（`/health/liveness`）が OK になるまで起動しない。
+
+**必須環境変数**（`${VAR:?}` の fail-fast。1 つでも欠けると compose 自体が起動しない）
+
+| 変数 | 説明 |
+|---|---|
+| `JWT_SECRET_KEY` | JWT 署名鍵。`openssl rand -hex 32`。ワーカー間で同一 MUST |
+| `ALLOWED_API_KEYS` | 許容する API キー（カンマ区切り）。空不可 |
+| `CORS_ORIGINS` | 許可オリジン（カンマ区切り）。例: `https://novel.example.com` |
+| `POSTGRES_PASSWORD` | PostgreSQL のパスワード |
+| `REDIS_PASSWORD` | Redis の `--requirepass` パスワード |
+
+任意（既定あり）: `UVICORN_WORKERS`（既定 1）、`ACCESS_TOKEN_EXPIRE_MINUTES`（60）、
+`REFRESH_TOKEN_EXPIRE_DAYS`（14）、`FRONTEND_URL`、`LLM_PROVIDER`、`OPENAI_API_KEY`、
+`GEMINI_API_KEY`、`ANTHROPIC_API_KEY`、`STRIPE_SECRET_KEY`、`STRIPE_WEBHOOK_SECRET`。
+
+補足:
+- マイグレーションは backend コンテナ 1 台だけが実行する。worker は `SKIP_ALEMBIC=1`
+  で明示的にスキップし、二重実行（`alembic_version` 主キー重複による
+  crash-loop）を防ぐ。
+- 生成物（章・アップロード画像・エクスポート）は `autonovel_storage` /
+  `autonovel_logs` ボリュームに永続化される。`down -v` で消える。
+- `POSTGRES_PASSWORD` の既定値 `autonovel_dev_password_change_me` は開発用のみ。
+  本番では必ずランダム値に変更すること。
+
 ---
 
 ## 💻 コマンドリファレンス
@@ -371,7 +454,7 @@ make install        # バックエンド依存をインストール
 make dev            # バックエンド・フロントエンドのセットアップ
 make test           # バックエンド pytest
 make lint           # ruff による静的解析
-make format-check   # ruff format チェック（line-length 100）
+make format-check   # ruff format チェック（line-length 120）
 make typecheck      # mypy による型検査
 make frontend-test  # フロントエンド vitest
 make frontend-lint  # フロントエンド ESLint + 型検査

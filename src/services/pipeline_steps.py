@@ -114,7 +114,8 @@ class PlanStep(WorkflowStep):
                     from config.project_context import ProjectContext
                     from src.backend.engine_narrative import WavePatternAnalyzer
 
-                    plots = await engine.repo.plot.get_all_plots(book_id)
+                    # branch_id は作品間で共有されるため book_id も渡す（既定ブランチ 1）
+                    plots = await engine.repo.plot.get_all_plots(1, book_id=book_id)
                     tension_history = (
                         [getattr(p, "tension", 50) for p in plots] if plots else [50] * 5
                     )
@@ -267,7 +268,7 @@ class CatharsisAnalysisStep(WorkflowStep):
             from config.project_context import ProjectContext
             from src.backend.engine_narrative import WavePatternAnalyzer
 
-            plots = await engine.repo.plot.get_all_plots(ctx.book_id)
+            plots = await engine.repo.plot.get_all_plots(1, book_id=ctx.book_id)
             tension_history = [getattr(p, "tension", 50) for p in plots] if plots else [50] * 5
 
             wave_analyzer = WavePatternAnalyzer(
@@ -679,7 +680,7 @@ class IllustrationPointGenerationStep(WorkflowStep):
                 reporter.report("⚠️ Bible データが見つかりません", "warning")
                 return True
 
-            await engine.repo.plot.get_all_plots(ctx.book_id)
+            await engine.repo.plot.get_all_plots(1, book_id=ctx.book_id)
             episodes = await engine.repo.episode.get_all_by_book_id(ctx.book_id)
 
             # 2. キャラクター情報を抽出
@@ -780,7 +781,7 @@ class ForeshadowingRegistrationStep(WorkflowStep):
             repo = getattr(engine, "foreshadowing_repository", None)
 
             # プロットから伏線を抽出
-            plots = await engine.repo.plot.get_all_plots(ctx.book_id)
+            plots = await engine.repo.plot.get_all_plots(1, book_id=ctx.book_id)
             if not plots:
                 reporter.report("⚠️ プロットが見つからないため伏線登録をスキップします", "warning")
                 return True

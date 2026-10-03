@@ -117,6 +117,10 @@ class EmotionalStateMachine:
                 "A->B": {"affection": -0.6, "tension": 0.8},
                 ...
             }
+
+        減衰率 (``decay_snapshot``) は別のスナップショットとして返る。
+        呼び出し側は両方を保存・復元すること (復元時に decays を省略すると
+        全キーの減衰率が既定値 0.1 に落ちてしまう)。
         """
         result: Dict[str, Dict[str, float]] = {}
         for (s, t, emo), val in self._state.items():

@@ -8,7 +8,9 @@ services:
     image: autonovel-backend:latest
     container_name: autonovel_backend
     ports:
-      - "8200:8200"
+      # 開発用のバックエンドは Loopback のみに公開する（全インターフェース公開は
+      # LAN 上の別ホストから到達できてしまうため）
+      - "127.0.0.1:8200:8200"
     # 開発マシンのリソース圧迫を防止するメモリ制限 (Step 10)
     deploy:
       resources:
@@ -30,7 +32,6 @@ services:
       - ALEMBIC_DATABASE_URL=postgresql://${POSTGRES_USER:-autonovel}:${POSTGRES_PASSWORD:-autonovel}@db:5432/${POSTGRES_DB:-autonovel}
       - REDIS_URL=redis://redis:6379/0
       - HUEY_BACKEND=redis
-      - AUTH_DISABLED=true
       - LOG_LEVEL=INFO
       - LLM_PROVIDER=${LLM_PROVIDER:?LLM_PROVIDER is required}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
@@ -75,7 +76,6 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - HUEY_BACKEND=redis
       - USE_NULL_POOL=1
-      - AUTH_DISABLED=true
       - LOG_LEVEL=INFO
       - LLM_PROVIDER=${LLM_PROVIDER:?LLM_PROVIDER is required}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}

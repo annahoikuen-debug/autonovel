@@ -50,6 +50,40 @@ function Invoke-Check {
     }
 }
 
+# HTTP ステータスコードを 5.1 でも例外にせず取得するヘルパー。
+#
+# 注意: Windows PowerShell 5.1（.bat ランチャーが呼ぶ powershell.exe）には
+# Invoke-WebRequest の -SkipHttpErrorCheck パラメータが存在しない。5.1 では
+# 4xx/5xx が terminating error になり、$ErrorActionPreference = "Stop" の下では
+# try/catch で捕まえない限りスクリプト全体が中断する。PowerShell 7 の
+# -SkipHttpErrorCheck は 5.1 では「A parameter cannot be found」として解釈され、
+# 健全なアプリに対しても FAIL を報告してしまう。
+#
+# 5.1 では 4xx/5xx が WebException として投げられ、Response に
+# [System.Net.HttpStatusCode] が入る。接続不能など真の障害は Response が無いか
+# Response が無いので、再送出せず呼び出し側の catch に委ねる。
+# -UseBasicParsing は 5.1 で IE ベースの DOM パーサ起動を避けるために必須。
+function Get-HttpStatusCode {
+    param(
+        [Parameter(Mandatory = $true)][string]$Uri
+    )
+    try {
+        $resp = Invoke-WebRequest -Uri $Uri -Method GET -TimeoutSec 5 -UseBasicParsing
+        return [int]$resp.StatusCode
+    } catch [System.Net.WebException] {
+        $code = $null
+        if ($_.Exception.Response -ne $null) {
+            $code = [int]$_.Exception.Response.StatusCode
+        }
+        if ($code -ne $null) { return $code }
+        throw
+    } catch {
+        # WebException 以外（DNS 失敗・タイムアウト等）は真の障害として再送出する。
+        # 黙って FAIL 扱いにすると「接続できない」を「500 が返った」と取り違えるため、必ず再送出する。
+        throw
+    }
+}
+
 # 1. /health
 Invoke-Check "GET /health" {
     Invoke-RestMethod -Uri "$BaseUrl/health" -Method GET -TimeoutSec 5
@@ -91,21 +125,18 @@ if ($taskId) {
 
 # 4. /easy_mode/export/0 (422)
 Invoke-Check "GET /easy_mode/export/0 (expect 422)" {
-    try {
-        Invoke-WebRequest -Uri "$BaseUrl/easy_mode/export/0" -Method GET -TimeoutSec 5 -SkipHttpErrorCheck
-    } catch { $_.Exception.Response }
+    Get-HttpStatusCode -Uri "$BaseUrl/easy_mode/export/0"
 } {
     param($r)
-    $null -ne $r -and ($r.StatusCode -band 0) -ne 0 -and [int]$r.StatusCode -eq 422
+    $r -eq 422
 }
 
 # 5. /easy_mode/export/1 (200 or 404, but not 500)
 Invoke-Check "GET /easy_mode/export/1 (expect 200/404, never 500)" {
-    Invoke-WebRequest -Uri "$BaseUrl/easy_mode/export/1" -Method GET -TimeoutSec 5 -SkipHttpErrorCheck
+    Get-HttpStatusCode -Uri "$BaseUrl/easy_mode/export/1"
 } {
     param($r)
-    $code = [int]$r.StatusCode
-    $code -eq 200 -or $code -eq 404
+    $r -eq 200 -or $r -eq 404
 }
 
 if ($overallOk) {

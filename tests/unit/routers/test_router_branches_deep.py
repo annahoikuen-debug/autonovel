@@ -107,7 +107,9 @@ async def test_create_branch_endpoint():
     )
     mock_session = AsyncMock()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch("src.backend.routers.branches.verify_book_ownership",
+               new_callable=AsyncMock, return_value=MagicMock(id=1, user_id=1)):
         repo_inst = MockRepo.return_value
         repo_inst.create_branch = AsyncMock(return_value=1)
         repo_inst.save_branch_graph = AsyncMock()
@@ -121,7 +123,8 @@ async def test_create_branch_endpoint():
         mock_branch.created_at = datetime.now()
         repo_inst.get_branch = AsyncMock(return_value=mock_branch)
 
-        res = await create_branch(payload=payload, session=mock_session)
+        res = await create_branch(payload=payload, session=mock_session,
+                                  current_user=MagicMock(id=1, role="admin"))
         assert res.id == 1
         assert res.name == "New Branch"
         repo_inst.create_branch.assert_awaited_once()
@@ -138,13 +141,16 @@ async def test_create_branch_failed():
     )
     mock_session = AsyncMock()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
+         patch("src.backend.routers.branches.verify_book_ownership",
+               new_callable=AsyncMock, return_value=MagicMock(id=1, user_id=1)):
         repo_inst = MockRepo.return_value
         repo_inst.create_branch = AsyncMock(return_value=2)
         repo_inst.get_branch = AsyncMock(return_value=None)
 
         with pytest.raises(HTTPException) as exc_info:
-            await create_branch(payload=payload, session=mock_session)
+            await create_branch(payload=payload, session=mock_session,
+                                current_user=MagicMock(id=1, role="admin"))
         assert exc_info.value.status_code == 500
 
 

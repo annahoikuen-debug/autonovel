@@ -47,7 +47,9 @@ class MockBibleRepo:
 
 class MockPlotRepo:
     """モックの Plot リポジトリ"""
-    async def get_all_plots(self, book_id):
+    # books をまたいだ参照を防ぐため `get_all_plots` は
+    # (branch_id, book_id) を受ける。Step は (1, book_id=ctx.book_id) で呼ぶ。
+    async def get_all_plots(self, branch_id, book_id=None):
         return [MockPlot() for _ in range(5)]
 
     async def get_by_book_and_number(self, book_id, number):

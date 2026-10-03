@@ -19,25 +19,55 @@ class _StubBook:
 class _StubRepo:
     def __init__(self, current_branch_id: int | None = None):
         self._book = _StubBook(current_branch_id)
+        self.calls: list[tuple[str, int | None]] = []
 
     async def get_book(self, _book_id):
         return self._book
 
-    async def get_chapters_before(self, branch_id, ep):
+    async def get_chapters_before(self, branch_id, ep, book_id=None):
+        self.calls.append(("get_chapters_before", book_id))
         return []
 
-    async def get_relevant_past_logs(self, branch_id, ep, query_text=""):
+    async def get_relevant_past_logs(self, branch_id, ep, query_text="", book_id=None):
+        self.calls.append(("get_relevant_past_logs", book_id))
         return ""
+
+
+def _bare_context_manager(repo):
+    """``ContextManager.__init__`` が設定する属性だけを持つインスタンスを作る。
+
+    ``ContextManager`` は非推奨で ``__init__`` が DeprecationWarning を出すため、
+    ここでは ``__new__`` で生成して ``__init__`` が設定する
+    ``repo`` / ``compressor`` / ``_delegate_agent`` を明示的に整える
+    (``_get_delegate()`` は ``_delegate_agent`` を読むため必須）。
+    """
+    ctx = ContextManager.__new__(ContextManager)
+    ctx.repo = repo
+    ctx.compressor = None
+    ctx._delegate_agent = None
+    return ctx
 
 
 @pytest.mark.asyncio
 async def test_engine_context_default_branch_is_one():
     """branch_id 未指定時は book.current_branch_id=1 → 1 維持."""
     repo = _StubRepo(current_branch_id=None)
-    ctx = ContextManager.__new__(ContextManager)
-    ctx.repo = repo
+    ctx = _bare_context_manager(repo)
     result = await ctx.build_past_context(book_id=1, end_ep=1)
     assert result is not None  # 呼び出しが成功
+
+
+@pytest.mark.asyncio
+async def test_engine_context_propagates_book_id_to_repo():
+    """branch_id は作品間で共有されるため、参照クエリには book_id も渡されること。
+
+    book_id を落とすと他作品の同ブランチ行が混ざり、プロンプトと生成本文に流出する。
+    """
+    repo = _StubRepo(current_branch_id=None)
+    ctx = _bare_context_manager(repo)
+    await ctx.build_past_context(book_id=7, end_ep=1)
+    assert repo.calls, "リポジトリが一度も呼ばれていない"
+    assert all(book_id == 7 for _, book_id in repo.calls), f"book_id が伝播していない: {repo.calls}"
 
 
 @pytest.mark.asyncio

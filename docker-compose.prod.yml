@@ -57,6 +57,21 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # Dockerfile:43 がイメージ内に mkdir する /app/storage と /app/logs は
+    # `--build` のたびにイメージへ戻るため、compose 側で永続化する必要がある。
+    # 未マウントだったため、生成済みの章・アップロード画像・エクスポートが
+    # コンテナ再作成ごとに消失していた（開発用 docker-compose.yml は
+    # ./storage を bind mount しており、ここだけ抜けている状態だった）。
+    volumes:
+      - autonovel_storage:/app/storage
+      - autonovel_logs:/app/logs
+    # メモリ上限。開発用 docker-compose.yml の backend (1024M) と同じ
+    # deploy.resources.limits 記法に揃えたもの（Compose V2 は swarm モードでなくても
+    # limits を適用する）。worker は 1 台あたりの割り当てが小さいので 1G。
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     restart: unless-stopped
     logging:
       driver: json-file
@@ -104,6 +119,19 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      # backend だけが `alembic upgrade head` を実行する（worker は SKIP_ALEMBIC=1）。
+      # ただし migrations には `alembic_version` への INSERT が含まれるため、
+      # backend がマイグレーションを終える前にワーカーが DB に触ると
+      # duplicate key 制約違反になり得る。healthcheck が通るまで待つことで
+      # 依存の順序を確定させる。
+      backend:
+        condition: service_healthy
+    # worker は backend と同一イメージだが、Web ソケットやリクエスト処理は持たない。
+    # backend より小さい上限でよい。
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     restart: unless-stopped
     logging:
       driver: json-file
@@ -182,6 +210,10 @@ services:
 volumes:
   autonovel_pgdata:
   autonovel_redis:
+  # backend/worker 共有の生成物・ログ用ボリューム（docker-compose.prod.yml の
+  # backend / worker がマウントする。`down -v` で消える点に注意）
+  autonovel_storage:
+  autonovel_logs:
 
 networks:
   autonovel:

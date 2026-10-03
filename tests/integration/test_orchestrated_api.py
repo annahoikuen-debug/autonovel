@@ -18,13 +18,25 @@ class TestOrchestratedAPI:
     """オーケストレーション API テスト（ルーター単独ロード）。"""
 
     def _build_minimal_app(self):
-        """オーケストレーションルーターのみを含む最小 FastAPI アプリ。"""
+        """オーケストレーションルーターのみを含む最小 FastAPI アプリ。
+
+        ルーターは `dependencies=[Depends(get_current_user)]` を持ち、
+        `/status/{task_id}` と `/task/{task_id}` は fail-closed の
+        `_assert_task_ownership` を通るため、`get_current_user` の
+        オーバーライドが無いと 401/403 になる。ここでは管理者ユーザーを注入し、
+        「認証済みならエンドポイント本体が正しく動く」ことを検証する。
+        """
         app = FastAPI()
+        from src.backend.auth import get_current_user
+        from src.backend.database.models import User
         from src.backend.routers.orchestrated import router as orchestrated_router
 
         # prefix は router 定義側（src/backend/routers/orchestrated.py）が持つ。
         # ここで重ねると /orchestrated/orchestrated/* になるため渡さない。
         app.include_router(orchestrated_router)
+
+        admin = User(id=1, email="admin@example.com", role="admin", status="active")
+        app.dependency_overrides[get_current_user] = lambda: admin
         return app
 
     @patch("src.backend.routers.orchestrated.BookRepository")

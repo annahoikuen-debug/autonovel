@@ -249,7 +249,10 @@ class MarketingAgent(BaseAgent):
             ))
             chars = await self._maybe_await(self.repo.get_all_characters(book_id))
             bible = await self._maybe_await(self.repo.get_latest_bible(book_id))
-            plots = await self._maybe_await(self.repo.get_all_plots(book_id, branch_id=branch_id))
+            plots = await self._maybe_await(
+                # branch_id は作品間で共有されるため book_id も渡す
+                self.repo.get_all_plots(branch_id, branch_id=branch_id, book_id=book_id)
+            )
 
         # book_data 提供時は repo アクセスを省略しオーバーライド値を使用
         if book_data is not None:

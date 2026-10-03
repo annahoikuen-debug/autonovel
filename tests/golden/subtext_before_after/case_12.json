@@ -6,7 +6,9 @@
     "「絶対に殺してやる」"
   ],
   "expected_contains": [
-    "——"
+    "（……",
+    "——",
+    "「絶対に殺してやる」"
   ],
   "applied_rules": [
     "rule_05_threat_subtext"

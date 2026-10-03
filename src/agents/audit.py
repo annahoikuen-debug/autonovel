@@ -896,14 +896,14 @@ class LogicalAuditor:
         return True, []
 
     async def audit_logical_consistency(
-        self, book_id: int, ep_num: int, blueprint: str
+        self, book_id: int, ep_num: int, blueprint: str, branch_id: int | None = None
     ) -> tuple[bool, str, float]:
         """作品のロジカル整合性をチェックします"""
-        base_ok, base_feedback = await self._check_base_config(book_id, ep_num)
+        base_ok, base_feedback = await self._check_base_config(book_id, ep_num, branch_id)
         if not base_ok:
             return False, base_feedback, 0.0
 
-        plot_ok, plot_feedback = await self._check_plot_integrity(book_id, ep_num)
+        plot_ok, plot_feedback = await self._check_plot_integrity(book_id, ep_num, branch_id)
         if not plot_ok:
             return False, plot_feedback, 0.0
 
@@ -917,22 +917,38 @@ class LogicalAuditor:
 
         return True, "OK", 1.0
 
-    async def _check_base_config(self, book_id: int, ep_num: int) -> tuple[bool, str]:
+    async def _check_base_config(
+        self, book_id: int, ep_num: int, branch_id: int | None = None
+    ) -> tuple[bool, str]:
         """基本設定の一貫性"""
         if self.repo is None:
             return True, "OK"
-        settings = await self.repo.bible.get_plot(book_id, ep_num)
+        # branch_id は作品間で共有される（既定 1）ため、呼び出し側が渡した
+        # branch_id を第一引数にし、book_id も併せて絞る（.plot.py / .chapter.py 参照）
+        if branch_id is None:
+            settings = await self.repo.bible.get_plot(book_id, ep_num)
+        else:
+            settings = await self.repo.bible.get_plot(
+                branch_id, ep_num, branch_id=branch_id, book_id=book_id
+            )
         if not settings:
             return False, "設定未設定"
         if not settings.get("scene_integrity", "false"):
             return False, "scene integrity violation"
         return True, "OK"
 
-    async def _check_plot_integrity(self, book_id: int, ep_num: int) -> tuple[bool, str]:
+    async def _check_plot_integrity(
+        self, book_id: int, ep_num: int, branch_id: int | None = None
+    ) -> tuple[bool, str]:
         """プロット全体の一貫性"""
         if self.repo is None:
             return True, "OK"
-        plot = await self.repo.plot.get_plot(book_id, ep_num)
+        if branch_id is None:
+            plot = await self.repo.plot.get_plot(book_id, ep_num)
+        else:
+            plot = await self.repo.plot.get_plot(
+                branch_id, ep_num, branch_id=branch_id, book_id=book_id
+            )
         if not plot:
             return False, "plot not found"
         if not await self._check_pacing(plot):

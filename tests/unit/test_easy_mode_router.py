@@ -1,12 +1,34 @@
 """Tests for src.backend.routers.easy_mode router functions."""
 
 import asyncio
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 import src.backend.tasks.huey as huey_mod
 from src.backend.routers import easy_mode
+
+
+def make_admin_user(user_id: int = 1):
+    """所有者検証・タスク所有者ガードを通過する管理者ユーザーのモック.
+
+    IDOR 修正で easy_mode のルートに `get_current_user` /
+    `verify_book_ownership` / `_assert_task_ownership` が追加されたため、
+    handler を直接呼ぶ単体テストでは認証済みユーザーを明示する。
+    """
+    return MagicMock(id=user_id, role="admin", status="active")
+
+
+def patch_book_ownership(monkeypatch, book_id: int = 1):
+    """``verify_book_ownership`` を Book を返すスタブに差し替える.
+
+    handler 本体のロジックはそのまま実行される (作品が存在する前提で進む)。
+    """
+    monkeypatch.setattr(
+        easy_mode,
+        "verify_book_ownership",
+        AsyncMock(return_value=MagicMock(id=book_id, user_id=1)),
+    )
 
 
 class DummySession:
@@ -242,8 +264,10 @@ def test_export_easy_mode_package(monkeypatch, dummy_session):
             called.append(name)
 
     monkeypatch.setattr(easy_mode, "metrics", DummyMetrics)
+    patch_book_ownership(monkeypatch, 1)
     response = asyncio.run(
-        easy_mode.export_easy_mode_package(book_id=1, session=dummy_session)
+        easy_mode.export_easy_mode_package(book_id=1, session=dummy_session,
+                                           current_user=make_admin_user())
     )
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "application/zip"
@@ -262,7 +286,9 @@ def test_get_task_status_pending(monkeypatch):
 
 def test_get_task_status_completed(monkeypatch):
     monkeypatch.setattr(huey_mod, "result", lambda task_id: {"output": "done"})
-    result = asyncio.run(easy_mode.get_task_status("xyz789"))
+    result = asyncio.run(
+        easy_mode.get_task_status("xyz789", current_user=make_admin_user())
+    )
     assert result["status"] == "completed"
     assert result["result"] == {"output": "done"}
     assert result["task_id"] == "xyz789"
@@ -270,7 +296,9 @@ def test_get_task_status_completed(monkeypatch):
 
 def test_get_task_status_failed(monkeypatch):
     monkeypatch.setattr(huey_mod, "result", lambda task_id: {"error": "LLM generation timeout", "text": "", "time": 0})
-    result = asyncio.run(easy_mode.get_task_status("err456"))
+    result = asyncio.run(
+        easy_mode.get_task_status("err456", current_user=make_admin_user())
+    )
     assert result["status"] == "failed"
     assert result["error"] == "LLM generation timeout"
     assert result["task_id"] == "err456"

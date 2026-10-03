@@ -125,9 +125,11 @@ class GraphPipelineService:
                 idempotency_key=idempotency_key,
             )
 
-        # 冪等性チェック
+        # 冪等性チェック（同期 Session の execute なのでループ外へ逃がす）
         if idempotency_key:
-            existing = self._check_idempotency(session, idempotency_key)
+            existing = await asyncio.to_thread(
+                self._check_idempotency, session, idempotency_key
+            )
             if existing:
                 logger.info(
                     "Skipping chapter_id=%s (idempotency_key=%s already processed)",
@@ -145,6 +147,8 @@ class GraphPipelineService:
 
         try:
             # 単一トランザクションでチャンク保存とグラフ更新を原子的に実行
+            # （チャンク保存は同期 Session を触るため `_save_chapter_chunks_atomic`
+            #   が内部でワーカースレッドへ逃がす。ループは止まらない。）
             chunks_count = await self._save_chapter_chunks_atomic(session, chapter_id, chapter_text)
 
             # グラフ更新は chunk 保存が成功していれば、失敗してもパイプライン全体を
@@ -163,7 +167,9 @@ class GraphPipelineService:
 
             # 冪等性キー記録
             if idempotency_key:
-                self._record_idempotency(session, idempotency_key, chapter_id)
+                await asyncio.to_thread(
+                    self._record_idempotency, session, idempotency_key, chapter_id
+                )
 
             elapsed_ms = (time.perf_counter() - start_time) * 1000
             logger.info(
@@ -249,7 +255,23 @@ class GraphPipelineService:
         chapter_id: int,
         chapter_text: str,
     ) -> int:
-        """本文をチャンク分割して埋め込みベクトルとともに保存する（トランザクション内）."""
+        """本文をチャンク分割して埋め込みベクトルとともに保存する（トランザクション内）.
+
+        ``session`` は同期 ``Session`` なので、ブロッキングな本体
+        (:meth:`_save_chapter_chunks_sync`) は ``asyncio.to_thread`` で
+        ワーカースレッドへ逃がす。イベントループを止めないための必須の境界。
+        """
+        return await asyncio.to_thread(
+            self._save_chapter_chunks_sync, session, chapter_id, chapter_text
+        )
+
+    def _save_chapter_chunks_sync(
+        self,
+        session: Session,
+        chapter_id: int,
+        chapter_text: str,
+    ) -> int:
+        """チャンク分割・埋め込み・保存の同期コア（同期 Session 専用）."""
         paragraphs = split_into_paragraphs(chapter_text)
         if not paragraphs:
             return 0
@@ -259,7 +281,7 @@ class GraphPipelineService:
 
         for idx, para in enumerate(paragraphs):
             try:
-                emb = await asyncio.to_thread(embedding_service.get_embedding, para)
+                emb = embedding_service.get_embedding(para)
 
                 # ChapterChunk ORM で保存（PostgreSQL + pgvector対応）
                 chunk = ChapterChunk(

@@ -69,6 +69,7 @@ class ResilientLLMGateway:
         *,
         backoff_base_seconds: float = 0.1,
         max_backoff_seconds: float = 2.0,
+        max_retry_after_seconds: float = 120.0,
         sleep: Callable[[float], Awaitable[None]] | None = None,
         call_timeout_seconds: float | None = None,
     ) -> None:
@@ -82,6 +83,10 @@ class ResilientLLMGateway:
         self.provider_factory = provider_factory
         self.backoff_base_seconds = max(0.0, backoff_base_seconds)
         self.max_backoff_seconds = max(0.0, max_backoff_seconds)
+        # サーバーが明示した Retry-After の上限。max_backoff_seconds は
+        # 「自前で計算した」指数バックオフ専用であり、レート制限ウィンドウを
+        # 切る長さの待機を禁止するために用到してはならない。
+        self.max_retry_after_seconds = max(0.0, max_retry_after_seconds)
         self._sleep = sleep or asyncio.sleep
         # プロバイダ呼び出し全体の期限。None なら環境変数
         # AUTONOVEL_LLM_CALL_TIMEOUT_SECONDS、既定 300 秒。
@@ -396,12 +401,18 @@ class ResilientLLMGateway:
             match = re.search(r"retry[- ]?after[:=]\s*(\d+(?:\.\d+)?)", message, re.I)
             retry_after = float(match.group(1)) if match else None
         if retry_after is None:
+            # 導出バックオフのみ max_backoff_seconds で制限する
             retry_after = min(
                 self.backoff_base_seconds * (2 ** max(attempt, 0)),
                 self.max_backoff_seconds,
             )
+            ceiling = self.max_backoff_seconds
+        else:
+            # サーバー指定の Retry-After は、レート制限ウィンドウが解けるまで
+            # 待つ必要があるため、桁違いの上限を適用する
+            ceiling = self.max_retry_after_seconds
         if retry_after > 0:
-            await self._sleep(min(float(retry_after), self.max_backoff_seconds))
+            await self._sleep(min(float(retry_after), ceiling))
 
     @staticmethod
     def _is_rate_limit_error(error: Exception) -> bool:

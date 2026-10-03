@@ -19,6 +19,30 @@ from src.services.rag_service import GraphRAGService
 from src.services.text_chunker import split_into_paragraphs
 
 
+@pytest.fixture
+def _graph_router_auth(monkeypatch):
+    """graph ルーターの認証・所有権ガードをテスト用に差し替える。
+
+    `/api/graph/*` は `Depends(get_current_user)` を持つようになり、
+    所有権検証は `AppContainer.db()`（本番セッション）を参照する。
+    このテストは GraphRAG の応答形状を検証する目的のため、
+    認証済み管理者と「所有権だけ通過する」ガードを注入する
+    （認可そのものは tests/security/ で検証している）。
+    """
+    from src.backend.auth import get_current_user
+    from src.backend.database.models import User
+    from src.backend.routers import graph as graph_router
+    from src.backend.server import app
+
+    user = User(id=1, email="graphrag@example.com", role="admin", status="active")
+    app.dependency_overrides[get_current_user] = lambda: user
+    monkeypatch.setattr(
+        graph_router, "verify_book_ownership", AsyncMock(return_value=object())
+    )
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
+
 def test_split_into_paragraphs():
     """段落チャンク分割が正しく動作することを検証."""
     text = "第1段落です。\n\n第2段落です。\n\n第3段落です。"
@@ -395,7 +419,7 @@ async def test_openai_adapter_response_format():
         assert kwargs.get("response_format") == {"type": "json_object"}
 
 
-def test_graph_router(client):
+def test_graph_router(client, _graph_router_auth):
     """GET /api/graph エンドポイントが正常に応答することを検証.
 
     認証ミドルウェアにより 401 が返る環境では、認証エラーも許容する。

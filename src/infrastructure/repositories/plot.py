@@ -22,12 +22,28 @@ class PlotRepository(BaseRepository):
     """Plotテーブルに関するDB操作をまとめたMixin"""
 
     async def get_plot(
-        self, book_id_or_branch_id: int, ep_num: int, branch_id: int | None = None
+        self,
+        book_id_or_branch_id: int,
+        ep_num: int,
+        branch_id: int | None = None,
+        book_id: int | None = None,
     ) -> PlotDbModel | None:
+        """プロットを 1 件取得する。
+
+        ``branch_id`` は作品ごとには固有ではなく既定値 1 が全作品で共有される
+        （chapter.py:83-86 と同じ理由）。したがって ``book_id`` を渡さないと
+        他作品と衝突して ``MultipleResultsFound`` になるか、他作品の行を返す。
+        ``book_id`` は省略可（後方互換）だが、呼び出し側は必ず渡すこと。
+        """
         target_branch_id = branch_id if branch_id is not None else book_id_or_branch_id
-        result = await self.session.execute(
-            select(Plot).where(Plot.branch_id == target_branch_id).where(Plot.ep_num == ep_num)
+        stmt = (
+            select(Plot)
+            .where(Plot.branch_id == target_branch_id)
+            .where(Plot.ep_num == ep_num)
         )
+        if book_id is not None:
+            stmt = stmt.where(Plot.book_id == book_id)
+        result = await self.session.execute(stmt)
         plot = result.scalar_one_or_none()
         if not plot:
             return None
@@ -38,12 +54,26 @@ class PlotRepository(BaseRepository):
         )
 
     async def get_all_plots(
-        self, book_id_or_branch_id: int, branch_id: int | None = None
+        self,
+        book_id_or_branch_id: int,
+        branch_id: int | None = None,
+        book_id: int | None = None,
+        limit: int | None = None,
+        offset: int = 0,
     ) -> list[PlotDbModel]:
+        """プロット一覧。``book_id`` を渡さないと他作品と混ざる（get_plot 参照）。
+
+        呼び出し側が指定できるよう limit / offset を追加した（既定は後方互換の無制限）。
+        """
         target_branch_id = branch_id if branch_id is not None else book_id_or_branch_id
-        result = await self.session.execute(
-            select(Plot).where(Plot.branch_id == target_branch_id).order_by(Plot.ep_num)
-        )
+        stmt = select(Plot).where(Plot.branch_id == target_branch_id).order_by(Plot.ep_num)
+        if book_id is not None:
+            stmt = stmt.where(Plot.book_id == book_id)
+        if limit is not None:
+            stmt = stmt.limit(limit)
+        if offset:
+            stmt = stmt.offset(offset)
+        result = await self.session.execute(stmt)
         plots = result.scalars().all()
         from src.models import PlotDbModel
 
@@ -58,12 +88,22 @@ class PlotRepository(BaseRepository):
         ]
 
     async def get_plots_with_tension(
-        self, book_id: int, from_ep: int = 1, to_ep: int = 9999
+        self,
+        book_id: int,
+        from_ep: int = 1,
+        to_ep: int = 9999,
+        branch_id: int | None = None,
     ) -> list[PlotDbModel]:
-        """指定範囲のプロットをtension順に取得する（波パターン分析用）"""
+        """指定範囲のプロットをtension順に取得する（波パターン分析用）
+
+        ``branch_id`` は作品間で共有される（既定 1）ため、``book_id`` とは別に
+        受け取る。省略時は既定ブランチ 1 を対象とする。
+        """
+        target_branch_id = branch_id if branch_id is not None else 1
         result = await self.session.execute(
             select(Plot)
-            .where(Plot.branch_id == book_id)
+            .where(Plot.branch_id == target_branch_id)
+            .where(Plot.book_id == book_id)
             .where(Plot.ep_num.between(from_ep, to_ep))
             .order_by(Plot.ep_num)
         )
@@ -129,6 +169,7 @@ class PlotRepository(BaseRepository):
         sim_id = simulation_id if simulation_id is not None else ""
         result = await self.session.execute(
             select(Plot)
+            .where(Plot.book_id == book_id)
             .where(Plot.branch_id == branch_id)
             .where(Plot.ep_num == ep_num)
             .where(Plot.simulation_id == sim_id)
@@ -165,7 +206,7 @@ class PlotRepository(BaseRepository):
         plot_obj.script_content = script_content  # type: ignore[assignment]
         plot_obj.current_chain_phase = current_chain_phase  # type: ignore[assignment]
         plot_obj.resolution_style = resolution_style  # type: ignore[assignment]
-        plot_obj.is_plot_twist = is_plot_twist  # type: ignore[assignment]
+        plot_obj.is_plot_twist = is_plot_twist
         plot_obj.burned_cost_or_loot = burned_cost_or_loot  # type: ignore[assignment]
         plot_obj.antagonist_status = antagonist_status  # type: ignore[assignment]
         plot_obj.thematic_milestone = thematic_milestone  # type: ignore[assignment]
@@ -185,7 +226,7 @@ class PlotRepository(BaseRepository):
         plot_obj.is_locked = is_locked  # type: ignore[assignment]
         plot_obj.is_simulation = is_simulation  # type: ignore[assignment]
         plot_obj.simulation_id = sim_id  # type: ignore[assignment]
-        plot_obj.candidates = candidates  # type: ignore[assignment]
+        plot_obj.candidates = candidates
         plot_obj.erotic_intensity = erotic_intensity  # type: ignore[assignment]
 
     @retry_on_lock()
@@ -276,23 +317,36 @@ class PlotRepository(BaseRepository):
 
     @retry_on_lock()
     async def update_plot_status_tension_love(
-        self, branch_id: int, ep_num: int, tension_delta: int, love_meter: int
+        self,
+        branch_id: int,
+        ep_num: int,
+        tension_delta: int,
+        love_meter: int,
+        book_id: int | None = None,
     ) -> None:
-        await self.session.execute(
+        stmt = (
             update(Plot)
             .where(Plot.branch_id == branch_id)
             .where(Plot.ep_num == ep_num)
-            .values(status="completed", tension_delta=tension_delta, love_meter=love_meter)
+        )
+        if book_id is not None:
+            stmt = stmt.where(Plot.book_id == book_id)
+        await self.session.execute(
+            stmt.values(status="completed", tension_delta=tension_delta, love_meter=love_meter)
         )
 
     @retry_on_lock()
-    async def reset_plot_status(self, branch_id: int, ep_num: int) -> None:
+    async def reset_plot_status(self, branch_id: int, ep_num: int, book_id: int | None = None) -> None:
         """プロットのステータスを計画済みに戻し、設計図や個別統計を完全にリセットする"""
-        await self.session.execute(
+        stmt = (
             update(Plot)
             .where(Plot.branch_id == branch_id)
             .where(Plot.ep_num == ep_num)
-            .values(
+        )
+        if book_id is not None:
+            stmt = stmt.where(Plot.book_id == book_id)
+        await self.session.execute(
+            stmt.values(
                 status="planned",
                 tension_delta=0,
                 love_meter=0,
@@ -306,41 +360,53 @@ class PlotRepository(BaseRepository):
 
     @retry_on_lock()
     async def update_plot_blueprint(
-        self, branch_id: int, ep_num: int, detailed_blueprint: str
+        self, branch_id: int, ep_num: int, detailed_blueprint: str, book_id: int | None = None
     ) -> None:
         """プロットの設計図を直接更新する"""
-        await self.session.execute(
+        stmt = (
             update(Plot)
             .where(Plot.branch_id == branch_id)
             .where(Plot.ep_num == ep_num)
-            .values(detailed_blueprint=detailed_blueprint)
         )
+        if book_id is not None:
+            stmt = stmt.where(Plot.book_id == book_id)
+        await self.session.execute(stmt.values(detailed_blueprint=detailed_blueprint))
 
     @retry_on_lock()
-    async def update_plot_lock_status(self, branch_id: int, ep_num: int, is_locked: bool) -> None:
+    async def update_plot_lock_status(
+        self, branch_id: int, ep_num: int, is_locked: bool, book_id: int | None = None
+    ) -> None:
         """プロットのロック状態を更新する"""
-        await self.session.execute(
+        stmt = (
             update(Plot)
             .where(Plot.branch_id == branch_id)
             .where(Plot.ep_num == ep_num)
-            .values(is_locked=is_locked)
         )
+        if book_id is not None:
+            stmt = stmt.where(Plot.book_id == book_id)
+        await self.session.execute(stmt.values(is_locked=is_locked))
 
     @retry_on_lock()
-    async def delete_plots_from(self, branch_id: int, start_ep: int) -> None:
-        await self.session.execute(
-            delete(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num >= start_ep)
-        )
+    async def delete_plots_from(
+        self, branch_id: int, start_ep: int, book_id: int | None = None
+    ) -> None:
+        stmt = delete(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num >= start_ep)
+        if book_id is not None:
+            stmt = stmt.where(Plot.book_id == book_id)
+        await self.session.execute(stmt)
 
-    async def get_plots_before_limit_1(self, branch_id: int, ep_num: int) -> PlotDbModel | None:
+    async def get_plots_before_limit_1(
+        self, branch_id: int, ep_num: int, book_id: int | None = None
+    ) -> PlotDbModel | None:
         """ep_num より前の最新プロットを1件取得（直前プロットの状態参照用）"""
-        result = await self.session.execute(
+        stmt = (
             select(Plot)
             .where(Plot.branch_id == branch_id)
             .where(Plot.ep_num < ep_num)
-            .order_by(Plot.ep_num.desc())
-            .limit(1)
         )
+        if book_id is not None:
+            stmt = stmt.where(Plot.book_id == book_id)
+        result = await self.session.execute(stmt.order_by(Plot.ep_num.desc()).limit(1))
         plot = result.scalar_one_or_none()
         if not plot:
             return None
@@ -354,15 +420,17 @@ class PlotRepository(BaseRepository):
         )
 
     async def get_plots_between(
-        self, branch_id: int, start_ep: int, end_ep: int
+        self, branch_id: int, start_ep: int, end_ep: int, book_id: int | None = None
     ) -> list[PlotDbModel]:
         """start_ep〜end_ep の範囲のプロットを取得"""
-        result = await self.session.execute(
+        stmt = (
             select(Plot)
             .where(Plot.branch_id == branch_id)
             .where(Plot.ep_num.between(start_ep, end_ep))
-            .order_by(Plot.ep_num)
         )
+        if book_id is not None:
+            stmt = stmt.where(Plot.book_id == book_id)
+        result = await self.session.execute(stmt.order_by(Plot.ep_num))
         plots = result.scalars().all()
         from src.models import PlotDbModel
 
@@ -434,13 +502,12 @@ class PlotRepository(BaseRepository):
         )
         return result.scalars().all()
 
-    async def get_tension_curve(self, branch_id: int) -> list[dict[str, Any]]:
+    async def get_tension_curve(self, branch_id: int, book_id: int | None = None) -> list[dict[str, Any]]:
         """指定したブランチの全エピソードの緊張感スコアを時系列で取得する"""
-        result = await self.session.execute(
-            select(Plot.ep_num, Plot.tension)
-            .where(Plot.branch_id == branch_id)
-            .order_by(Plot.ep_num)
-        )
+        stmt = select(Plot.ep_num, Plot.tension).where(Plot.branch_id == branch_id)
+        if book_id is not None:
+            stmt = stmt.where(Plot.book_id == book_id)
+        result = await self.session.execute(stmt.order_by(Plot.ep_num))
         rows = result.all()
         return [{"ep_num": row[0], "tension": row[1]} for row in rows]
 
@@ -459,6 +526,7 @@ class PlotRepository(BaseRepository):
         """キャラクターアークの状態を保存または更新する"""
         result = await self.session.execute(
             select(CharacterArc).where(
+                CharacterArc.book_id == book_id,
                 CharacterArc.branch_id == branch_id,
                 CharacterArc.character_id == character_id,
                 CharacterArc.ep_num == ep_num,
@@ -476,11 +544,17 @@ class PlotRepository(BaseRepository):
         arc_obj.confidence = confidence
 
     async def get_character_arc_history(
-        self, branch_id: int, character_id: int
+        self, book_id: int, branch_id: int, character_id: int
     ) -> list[CharacterArc]:
-        """特定のキャラクターの全エピソードにおけるアーク履歴を取得する"""
+        """特定のキャラクターの全エピソードにおけるアーク履歴を取得する
+
+        ``CharacterArc`` の一意制約は ``save_character_arc`` と同じく作品スコープ
+        （``book_id, branch_id, character_id, ep_num``）なので、``book_id`` を
+        条件に含めないと同じ branch_id の他作品のアークが混ざる。
+        """
         result = await self.session.execute(
             select(CharacterArc)
+            .where(CharacterArc.book_id == book_id)
             .where(CharacterArc.branch_id == branch_id)
             .where(CharacterArc.character_id == character_id)
             .order_by(CharacterArc.ep_num)
@@ -488,11 +562,15 @@ class PlotRepository(BaseRepository):
         return result.scalars().all()
 
     async def get_latest_character_arc(
-        self, branch_id: int, character_id: int, ep_num: int
+        self, book_id: int, branch_id: int, character_id: int, ep_num: int
     ) -> CharacterArc | None:
-        """指定エピソード以前の最新のキャラクター状態を取得する"""
+        """指定エピソード以前の最新のキャラクター状態を取得する
+
+        ``book_id`` 条件は必須（``get_character_arc_history`` と同じ理由）。
+        """
         result = await self.session.execute(
             select(CharacterArc)
+            .where(CharacterArc.book_id == book_id)
             .where(CharacterArc.branch_id == branch_id)
             .where(CharacterArc.character_id == character_id)
             .where(CharacterArc.ep_num < ep_num)

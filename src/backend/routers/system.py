@@ -232,13 +232,15 @@ async def recalc_all_book_scores() -> dict[str, Any]:
     results = await asyncio.gather(
         *(recalc_chapter(book_id, ch_num) for book_id, ch_num in targets)
     )
-    recalculated = sum(1 for r in results if isinstance(r, (int, float)))
+    # recalc_chapter は成功時 1 / 失敗時 0 を返すため、型判定ではなく値を合算する
+    recalculated = sum(results)
+    failed_count = len(results) - recalculated
 
     if errors:
         return {
             "status": "partial",
             "recalculated_count": recalculated,
-            "failed_count": len(errors),
+            "failed_count": failed_count,
             "errors": errors[:20],
         }
     return {"status": "success", "recalculated_count": recalculated}
