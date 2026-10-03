@@ -1,9 +1,8 @@
 """Domain models, enums and structures for CSP Narrative Balancer."""
 
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import List
 from pydantic import BaseModel, Field, ConfigDict
-from src.narrative_balancer.models import Beat, BeatType, CorrectionAction
 
 
 class CharRole(str, Enum):

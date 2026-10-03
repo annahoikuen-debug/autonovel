@@ -6,7 +6,6 @@ from typing import Any
 from src.services.auditors.rule_based_metrics import (
     calculate_sentence_rhythm,
     calculate_dialogue_ratio,
-    calculate_kanji_ratio,
     detect_ai_cliches,
     evaluate_cliffhanger_ending,
 )

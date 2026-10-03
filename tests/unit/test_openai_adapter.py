@@ -10,8 +10,15 @@ from src.services.llm.openai_adapter import OpenAIAdapter
 
 @pytest.fixture
 def mock_client():
-    """AsyncOpenAI クライアントのモック。"""
-    with patch("src.services.llm.openai_adapter.AsyncOpenAI") as cls:
+    """AsyncOpenAI クライアントのモック。
+
+    `OpenAIAdapter.__init__` は SDK を**遅延 import** する
+    （src/services/llm/openai_adapter.py:50 `from openai import AsyncOpenAI`）。
+    したがって `src.services.llm.openai_adapter.AsyncOpenAI` という
+    モジュール属性は存在せず、そこを patch すると AttributeError になる。
+    実際の import 元である `openai` 側を patch する。
+    """
+    with patch("openai.AsyncOpenAI") as cls:
         instance = AsyncMock()
         cls.return_value = instance
         # chat.completions.create のモック

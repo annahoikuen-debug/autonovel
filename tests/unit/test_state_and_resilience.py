@@ -1,9 +1,9 @@
 """Unit tests for src/services/state_manager.py, src/services/resilience.py, src/services/reproducibility.py."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
-from tests.conftest import REDIS_AVAILABLE, GEMINI_AVAILABLE
+from tests.conftest import REDIS_AVAILABLE
 from src.services.state_manager import StateManager
 from src.services.resilience import (
     is_offline_mode_enabled,

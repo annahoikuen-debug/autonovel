@@ -2,7 +2,6 @@
 Unit tests for RuleBase and RuleRegistry (Step 3).
 """
 
-import pytest
 from src.narrative.subtext_engine.models import DialogueBlock, RewriteResult
 from src.narrative.subtext_engine.rules import RuleBase, RuleRegistry
 

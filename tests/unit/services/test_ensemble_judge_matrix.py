@@ -1,6 +1,5 @@
 """Unit tests for EnsembleJudge matrix combinations."""
 
-import pytest
 from src.models.predicate_match import PredicateAnalysisResult, PredicateMatch
 from src.models.writing_metadata import ForeshadowingReport
 from src.services.foreshadowing.ensemble_judge import EnsembleJudge

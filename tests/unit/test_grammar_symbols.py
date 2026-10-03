@@ -1,6 +1,5 @@
 """Unit tests for grammar symbols, rules and parser."""
 
-import pytest
 from src.narrative_balancer.grammar.symbols import NonTerminal, Terminal
 from src.narrative_balancer.grammar.rules import GRAMMAR
 from src.narrative_balancer.grammar.parser import EarleyParser

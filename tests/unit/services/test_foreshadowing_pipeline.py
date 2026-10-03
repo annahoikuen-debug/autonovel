@@ -8,12 +8,11 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.agents.context_builder_agent import ContextBuilderAgent
-from src.services.foreshadowing_parser import detect_foreshadowing_mentions, ForeshadowingMention
+from src.services.foreshadowing_parser import detect_foreshadowing_mentions
 from src.services.foreshadowing_service import ForeshadowingService
 from src.services.auditors.foreshadowing_auditor import (
     audit_foreshadowings,
     validate_foreshadowing_order,
-    ForeshadowingAuditResult,
 )
 
 

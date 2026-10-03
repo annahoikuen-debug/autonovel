@@ -3,10 +3,7 @@ Unit tests for token dictionary and prompt integration (PLAN_Y3 Step 2, 3).
 """
 
 from pathlib import Path
-import pytest
 import yaml
-from src.narrative.subtext_tokens.expander import TokenExpander
-from src.narrative.subtext_tokens.parser import TokenParser
 
 
 def test_token_dictionary_loading():

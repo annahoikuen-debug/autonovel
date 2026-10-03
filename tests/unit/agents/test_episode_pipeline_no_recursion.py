@@ -3,7 +3,7 @@ Unit tests for EpisodePipeline to verify no infinite recursion.
 PLAN 02: エンタメ演出強化・マルチジャンル＆配信・掲示板演出
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from src.agents.episode_pipeline import EpisodePipeline
 
 

@@ -1,7 +1,6 @@
 """src.services.bible_service の深層単体テスト (Step 11)。"""
 from __future__ import annotations
 
-from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -69,9 +68,7 @@ class TestWorldBibleGenerator:
         mock_repo.bible.get_bible = AsyncMock(return_value=bible)
         mock_repo.session = AsyncMock()
 
-        from sqlalchemy import func, select
 
-        from src.backend.database.models import SettingVersion
 
         max_result = MagicMock()
         max_result.scalar.return_value = 3

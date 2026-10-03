@@ -68,6 +68,17 @@ else {
 # --------------------------------------------------------------------------- #
 Section "2. Toolchain"
 # --------------------------------------------------------------------------- #
+# Detect and add Node.js path to PATH if needed
+$nodePaths = @(
+    "C:\Program Files\nodejs",
+    "C:\Program Files (x86)\nodejs"
+)
+foreach ($p in $nodePaths) {
+    if ((Test-Path "$p\node.exe") -and ($env:PATH -notlike "*$p*")) {
+        $env:PATH = "$p;$env:PATH"
+    }
+}
+
 $pythonCmd = Get-Command python -ErrorAction SilentlyContinue
 $pyCmd = Get-Command py -ErrorAction SilentlyContinue
 $nodeCmd = Get-Command node -ErrorAction SilentlyContinue

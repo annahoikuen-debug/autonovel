@@ -84,7 +84,7 @@ class TestCompressionPerformance:
         _ = compressor.compress(text)
 
         metrics = measure_execution(compressor, text, iterations=5)
-        print(f"\n[10KB] Cache hit:")
+        print("\n[10KB] Cache hit:")
         print(f"  Median: {metrics['median_ms']:.2f}ms")
 
         assert metrics["median_ms"] < 50, f"キャッシュヒットが遅すぎます: {metrics['median_ms']:.2f}ms"

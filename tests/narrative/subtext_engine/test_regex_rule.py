@@ -2,7 +2,6 @@
 Unit tests for RegexRule (Step 4).
 """
 
-import pytest
 from src.narrative.subtext_engine.models import DialogueBlock
 from src.narrative.subtext_engine.rules import RegexRule
 

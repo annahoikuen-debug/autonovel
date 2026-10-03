@@ -34,7 +34,6 @@ class TestEmotionalResidueExtractor:
         script = "AはBを信頼していた。BはAを恐れている。"
 
         # モックNLPを使用するため内部実装を一時置換
-        from src.pipeline.nlp_init import get_nlp_for_testing
         nlp = get_nlp_for_testing()
         if "sentencizer" not in nlp.pipe_names:
             nlp.add_pipe("sentencizer")

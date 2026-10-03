@@ -9,7 +9,7 @@ Layer 3: 【直前エピソード本文】 (直近の文脈・台詞テンポ維
 """
 from __future__ import annotations
 
-from typing import Any, List, Optional, Union
+from typing import Any, List
 import math
 
 

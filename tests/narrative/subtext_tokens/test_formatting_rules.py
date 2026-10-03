@@ -2,7 +2,6 @@
 Unit tests for DialogueFormatter and post-processing formatting rules (PLAN_Y3 Step 7-14).
 """
 
-import pytest
 from src.narrative.subtext_engine.models import SubtextContext
 from src.narrative.subtext_tokens.formatter import DialogueFormatter
 

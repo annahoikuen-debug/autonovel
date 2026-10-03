@@ -1,6 +1,5 @@
 """Unit tests for ForeshadowingPredicateAnalyzer detecting resolved predicates."""
 
-import pytest
 from src.services.nlp.foreshadowing_predicate_analyzer import ForeshadowingPredicateAnalyzer
 
 

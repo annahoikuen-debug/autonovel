@@ -8,16 +8,15 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-import time
-from typing import Dict, Any
+from typing import Dict
 
 def run_health_checks() -> int:
     print("==========================================================")
     print("   Pillar 3: Semantic RAG & Compression Health Check      ")
     print("==========================================================")
-    
+
     results: Dict[str, bool] = {}
-    
+
     # 1. Japanese Tokenizer Check
     try:
         from src.services.nlp.japanese_tokenizer import JapaneseTokenizer
@@ -113,8 +112,7 @@ def run_health_checks() -> int:
 
     # 7. Blind Review Gate & Proposal Sandbox Check
     try:
-        from src.services.blind_review import BlindReviewGate, BlindFeedbackPurifier, detect_proposal_leaks
-        from src.services.proposal_isolation import ProposalSandboxContext
+        from src.services.blind_review import BlindReviewGate, BlindFeedbackPurifier
         gate = BlindReviewGate(forbidden_agents=["proposal_b"])
         scrubbed = gate.scrub_payload({"proposal_b": "secret", "clean": "public"})
         assert "<BLOCKED:proposal_b>" in scrubbed["proposal_b"]
@@ -132,7 +130,7 @@ def run_health_checks() -> int:
     total_count = len(results)
     print(f"Summary: {passed_count}/{total_count} components passed health check.")
     print("==========================================================")
-    
+
     return 0 if passed_count == total_count else 1
 
 

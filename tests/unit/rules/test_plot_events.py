@@ -1,7 +1,6 @@
 """Step 1: プロットイベント型定義テスト。"""
 from __future__ import annotations
 
-import pytest
 
 from src.rules.plot_events import PlotEvent, PlotEventType, Role
 

@@ -17,7 +17,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from starlette.testclient import TestClient
 
 import src.backend.routers.branches as branches_module
@@ -105,7 +105,6 @@ def test_direct_call_skips_ownership_check():
 
 
 def inspect_params(route):
-    import inspect
 
     dependant = getattr(route, "dependant", None)
     if dependant is None:

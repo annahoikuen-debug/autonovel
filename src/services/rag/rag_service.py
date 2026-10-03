@@ -12,10 +12,9 @@ Enhanced with:
 from __future__ import annotations
 
 import asyncio
-import math
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session

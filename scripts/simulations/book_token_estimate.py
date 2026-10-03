@@ -23,28 +23,28 @@ class TokenEstimate:
         self.output_tokens = 0
         self.cache_hit_ratio = 0.0
         self.retry_rate = 0.0
-    
-    def add(self, input_tokens: int, output_tokens: int, 
+
+    def add(self, input_tokens: int, output_tokens: int,
             cache_hit: float = 0.0, retry: float = 0.0):
         self.input_tokens += input_tokens
         self.output_tokens += output_tokens
         self.cache_hit_ratio = max(self.cache_hit_ratio, cache_hit)
         self.retry_rate = max(self.retry_rate, retry)
-    
+
     @property
     def total(self) -> int:
         return self.input_tokens + self.output_tokens
-    
+
     @property
     def effective_input(self) -> int:
         # キャッシュヒットで入力トークンコスト削減
         return int(self.input_tokens * (1 - self.cache_hit_ratio * 0.9))
-    
+
     @property
     def effective_output(self) -> int:
         # リトライで出力トークン増加
         return int(self.output_tokens * (1 + self.retry_rate))
-    
+
     def cost_jpy(self, model: str = "deepseek_v4_flash") -> float:
         # DeepSeek-V4-Flash API価格 (JPY per 1M tokens)
         prices = {
@@ -54,9 +54,9 @@ class TokenEstimate:
             "claude_sonnet": {"input": 1860.0, "output": 9300.0},
         }
         p = prices.get(model, prices["deepseek_v4_flash"])
-        return (self.effective_input * p["input"] + 
+        return (self.effective_input * p["input"] +
                 self.effective_output * p["output"]) / 1_000_000
-    
+
     def __str__(self) -> str:
         return f"""[{self.name}]
   input: {self.input_tokens:,} tokens (effective: {self.effective_input:,})
@@ -116,10 +116,10 @@ for i in range(50):
         + 4_000  # 当該プロット詳細
         + 1_000  # 監査結果のフィードバック（あれば）
     )
-    
+
     # 出力: 2,000文字 × 2.0トークン/文字
     output_tokens = CHARS_PER_EPISODE * 2
-    
+
     episodes.add(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
@@ -186,9 +186,9 @@ print("=" * 70)
 print("1冊（50話10万字）トークン合計")
 print("=" * 70)
 
-total_input = (plot_50ch.effective_input + episodes.effective_input + 
+total_input = (plot_50ch.effective_input + episodes.effective_input +
                audit.effective_input + retry.effective_input + context.effective_input)
-total_output = (plot_50ch.effective_output + episodes.effective_output + 
+total_output = (plot_50ch.effective_output + episodes.effective_output +
                 audit.effective_output + retry.effective_output + context.effective_output)
 total_tokens = total_input + total_output
 
@@ -250,14 +250,14 @@ models = [
     ("Claude Sonnet", "claude_sonnet"),
 ]
 
-total_cost_4flash = (plot_50ch.cost_jpy("deepseek_v4_flash") + 
-                     episodes.cost_jpy("deepseek_v4_flash") + 
+total_cost_4flash = (plot_50ch.cost_jpy("deepseek_v4_flash") +
+                     episodes.cost_jpy("deepseek_v4_flash") +
                      audit.cost_jpy("deepseek_v4_flash"))
 
-print(f"\n1冊あたりAPI原価:")
+print("\n1冊あたりAPI原価:")
 for name, model_key in models:
-    cost = (plot_50ch.cost_jpy(model_key) + 
-            episodes.cost_jpy(model_key) + 
+    cost = (plot_50ch.cost_jpy(model_key) +
+            episodes.cost_jpy(model_key) +
             audit.cost_jpy(model_key))
     print(f"  {name:<20}: JPY {cost:>8,.2f}")
 

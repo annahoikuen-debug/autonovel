@@ -3,7 +3,7 @@
 40話ビートシート策定から10万字商業EPUB納品までの一連のライフサイクルを自動検証。
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from src.agents.planning import PlanningAgent
 from src.services.foreshadowing_service import ForeshadowingService
 from src.services.exporters.commercial_manuscript_exporter import CommercialManuscriptExporter

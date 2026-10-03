@@ -3,8 +3,6 @@ Unit tests for debug logging and diff visualizer (Step 16).
 """
 
 import json
-import pytest
-from pathlib import Path
 from src.narrative.subtext_engine.engine import SubtextEngine
 from src.narrative.subtext_engine.models import DialogueBlock
 

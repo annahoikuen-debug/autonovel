@@ -15,7 +15,7 @@ import argparse
 import json
 import logging
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -25,7 +25,6 @@ from scipy import stats
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.config.weight_variants import WEIGHT_VARIANTS, SPECIALIST_NAMES
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -334,22 +333,22 @@ def run_analysis(
 def print_results(results: dict[str, Any]) -> None:
     """Print analysis results in human-readable format."""
     print("\n" + "=" * 80)
-    print(f"A/B TEST ANALYSIS REPORT")
+    print("A/B TEST ANALYSIS REPORT")
     print(f"Generated: {results['analyzed_at']}")
     print(f"Window: {results['analysis_window_days']} days")
     print("=" * 80)
 
-    print(f"\nThresholds:")
+    print("\nThresholds:")
     for k, v in results["thresholds"].items():
         print(f"  {k}: {v}")
 
     print(f"\nVariants analyzed: {', '.join(results['variants_analyzed'])}")
 
-    print(f"\nSummary:")
+    print("\nSummary:")
     for k, v in results["summary"].items():
         print(f"  {k}: {v}")
 
-    print(f"\nDetailed Comparisons:")
+    print("\nDetailed Comparisons:")
     print("-" * 80)
 
     for comp in results["comparisons"]:
@@ -413,10 +412,10 @@ def main():
             print(f"\n❌ {reject_count} variant(s) recommended for rejection")
             sys.exit(1)
         else:
-            print(f"\n⏸ No clear winners or losers this period")
+            print("\n⏸ No clear winners or losers this period")
             sys.exit(0)
 
-    except Exception as e:
+    except Exception:
         logger.exception("Analysis failed")
         sys.exit(2)
 

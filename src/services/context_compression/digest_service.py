@@ -10,7 +10,7 @@ import logging
 from typing import Any, List, Optional
 from datetime import datetime, timezone
 
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.database.models_digest import EpisodeDigestModel

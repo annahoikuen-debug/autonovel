@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import pytest
-from unittest.mock import Mock, AsyncMock, MagicMock
+from unittest.mock import Mock, AsyncMock
 from dataclasses import dataclass
 
 from src.domain.writing import WritingService

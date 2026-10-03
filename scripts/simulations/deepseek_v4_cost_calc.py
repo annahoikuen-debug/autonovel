@@ -37,7 +37,7 @@ print("=" * 70)
 print("DeepSeek-V4 500クレジット=10円モデル 採算計算")
 print("=" * 70)
 
-print(f"\n前提条件:")
+print("\n前提条件:")
 print(f"  500クレジット = JPY {PRICE_JPY}")
 print(f"  1クレジット = JPY {CREDIT_VALUE_JPY:.4f}")
 print(f"  1クレジット = {TOKENS_PER_CREDIT}トークン")
@@ -51,7 +51,7 @@ for name, model in [("V4-Flash", DEEPSEEK_V4_FLASH), ("V4-Pro", DEEPSEEK_V4_PRO)
     cost = TOTAL_TOKENS * model["blended_jpy_per_1m"] / 1_000_000
     margin = PRICE_JPY - cost
     margin_rate = (margin / PRICE_JPY) * 100 if PRICE_JPY > 0 else 0
-    
+
     print(f"\n【{name}】")
     print(f"  API原価: JPY {cost:.2f}")
     print(f"  売上:   JPY {PRICE_JPY}")
@@ -75,7 +75,7 @@ for model_name, data in SELF_HOSTED_COSTS.items():
     cost = TOTAL_TOKENS * data["per_1m_jpy"] / 1_000_000
     margin = PRICE_JPY - cost
     margin_rate = (margin / PRICE_JPY) * 100 if PRICE_JPY > 0 else 0
-    
+
     print(f"\n【{model_name}】（品質: {data['quality']}）")
     print(f"  原価/1M tokens: JPY {data['per_1m_jpy']}")
     print(f"  50Kトークン原価: JPY {cost:.2f}")
@@ -104,13 +104,13 @@ scenarios = [
 for name, items in scenarios:
     total_tokens = sum(EPISODE_TOKENS[item] for item in items)
     credits_needed = total_tokens // TOKENS_PER_CREDIT
-    
+
     # DeepSeek-V4-Flash API原価
     api_cost = total_tokens * DEEPSEEK_V4_FLASH["blended_jpy_per_1m"] / 1_000_000
-    
+
     # 必要なクレジット数
     credit_cost = credits_needed * CREDIT_VALUE_JPY
-    
+
     print(f"\n【{name}】")
     print(f"  必要トークン: {total_tokens:,}")
     print(f"  必要クレジット: {credits_needed}")

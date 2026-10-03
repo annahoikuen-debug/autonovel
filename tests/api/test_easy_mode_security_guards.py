@@ -5,8 +5,6 @@ Easy Mode 高負荷エンドポイント（gacha, reverse-generate, task cancel�
 APIキー認証ガードおよび不正 task_id バリデーションを検証。
 """
 
-from unittest.mock import patch, AsyncMock
-import pytest
 from fastapi.testclient import TestClient
 from src.backend.server import app
 from src.backend.config import settings

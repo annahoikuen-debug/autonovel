@@ -1,9 +1,7 @@
 """Tests for character dictionary loader."""
 from __future__ import annotations
 
-import pytest
 import tempfile
-import yaml
 from pathlib import Path
 
 from src.pipeline.character_dict import load_character_dict, save_character_dict

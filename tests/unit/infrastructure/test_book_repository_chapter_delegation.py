@@ -15,7 +15,6 @@ import sys
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 if str(ROOT_DIR) not in sys.path:

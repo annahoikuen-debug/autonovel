@@ -1,6 +1,5 @@
 """Performance tests for Week 4 Fusion Layer."""
 import time
-from src.fusion.arbitrator import Arbitrator
 from src.fusion.config import FusionConfig
 from src.fusion.conflict_detector import ConflictDetector
 from src.fusion.engine import FusionEngine

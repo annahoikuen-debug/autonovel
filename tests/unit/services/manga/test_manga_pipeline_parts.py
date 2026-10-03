@@ -1,8 +1,6 @@
 """Unit tests for src/services/manga/{config,models,prompt_generator,quality_gate}."""
-import os
 from pathlib import Path
 
-import pytest
 
 from src.services.manga.config import MangaPipelineConfig
 from src.services.manga.models import (

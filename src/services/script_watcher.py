@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional, Callable, Dict, Set
 from dataclasses import dataclass
 
-from src.annotations.integrated_parser import parse_script, BeatParser
+from src.annotations.integrated_parser import BeatParser
 from src.annotations.persistence import AnnotationPersistence
 from src.annotations.validator import BeatValidator
 from src.pipeline.character_dict import load_character_dict

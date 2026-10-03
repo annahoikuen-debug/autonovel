@@ -283,7 +283,6 @@ async def test_three_layer_context_reaches_prompt(tmp_path):
     """`EpisodeContextBuilder` 相当の3層テキストが最終プロンプトの本文に含まれる。"""
     from prompts.manager import PromptManager
 
-    from src.agents.prompt_composer import PromptComposer
 
     three_layer = {
         "layer1_bible": {"text": "【アルス】役割: 主人公"},

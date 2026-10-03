@@ -10,13 +10,12 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from src.services.publishers.base import (
     PublisherAdapter,
     PublisherCredentials,
     PublishResult,
-    AuthError,
     ValidationError,
 )
 

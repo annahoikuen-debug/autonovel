@@ -1,6 +1,5 @@
 """Unit tests for CSP config and structural constraints."""
 
-import pytest
 from ortools.sat.python import cp_model
 from src.narrative_balancer.csp.config import load_csp_config, CSPConfig
 from src.narrative_balancer.csp.structural_constraints import StructuralConstraintBuilder

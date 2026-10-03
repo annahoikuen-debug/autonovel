@@ -1,6 +1,5 @@
 """Unified Auditor API Endpoint (/api/editor/audit) 単体＆リグレッションテスト."""
 from unittest.mock import AsyncMock, patch
-import pytest
 from fastapi.testclient import TestClient
 
 from src.backend.server import app

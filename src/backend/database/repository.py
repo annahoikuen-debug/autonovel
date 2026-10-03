@@ -19,6 +19,21 @@ from .uow_context import current_uow
 logger = logging.getLogger(__name__)
 
 
+async def _await_awaitable(awaitable: Any) -> Any:
+    """汎用 awaitable を coroutine に正規化する。
+
+    `asyncio.ensure_future` / `loop.create_task` / `asyncio.run` は
+    いずれも **coroutine 以外を受け付けない**（`ensure_future` は awaitable を受理するが、
+    `create_task` と `asyncio.run` は coroutine 限定）。
+    `inspect.isawaitable()` は coroutine 以外の awaitable も真になるため、
+    判定と実行で前提が食い違い、二段目で `TypeError` / `ValueError` になる。
+    （例: `AsyncMock`、独自 `__await__` を持つオブジェクト）
+
+    coroutine ならそのまま、そうでなければ coroutine に包んで返す。
+    """
+    return await awaitable
+
+
 class DataRepositoryFacade:
     """
     既存の engine_agents 等が `self.repo` 経由で各メソッドを呼び出せるようにするための後方互換ファサード。
@@ -165,13 +180,13 @@ class BookRepository:
             try:
                 # 既にイベントループが実行中の場合はタスクとして待機コールバックを付与
                 loop = asyncio.get_running_loop()
-                task = loop.create_task(res)
+                task = loop.create_task(_await_awaitable(res))
                 def _on_done(t):
                     if not t.cancelled() and t.exception():
                         logger.error(f"[BookRepository] Async commit error: {t.exception()}")
                 task.add_done_callback(_on_done)
             except RuntimeError:
-                asyncio.run(res)
+                asyncio.run(_await_awaitable(res))
 
     def _safe_refresh(self, instance: Any) -> None:
         """同期リフレッシュ実行（非同期セッションの場合は警告）"""
@@ -185,13 +200,13 @@ class BookRepository:
             import asyncio
             try:
                 loop = asyncio.get_running_loop()
-                task = loop.create_task(res)
+                task = loop.create_task(_await_awaitable(res))
                 def _on_done(t):
                     if not t.cancelled() and t.exception():
                         logger.error(f"[BookRepository] Async refresh error: {t.exception()}")
                 task.add_done_callback(_on_done)
             except RuntimeError:
-                asyncio.run(res)
+                asyncio.run(_await_awaitable(res))
 
     def get_book(self, book_id: int) -> Book | None:
         """指定した ID の作品情報を取得する（同期）"""

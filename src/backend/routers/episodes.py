@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from src.backend.auth import get_current_user, require_valid_api_key
-from src.backend.database.models import Book, User
+from src.backend.database.models import User
 from src.backend.database.uow import UnitOfWork
 from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.security.branch_guard import verify_branch_belongs_to_book
@@ -77,7 +77,7 @@ async def upsert_chapter(
 
     async with UnitOfWork(AppContainer.db()) as uow:
         await verify_book_ownership(book_id, current_user, uow)
-        await _verify_branch_belongs_to_book(uow, book_id, payload.branch_id)
+        await verify_branch_belongs_to_book(uow, book_id, payload.branch_id)
 
         # 生成済みメタデータ（killer_phrase / ai_insight / world_state /
         # trinity_review_log / created_at）は渡さない。

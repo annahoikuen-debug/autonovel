@@ -2,7 +2,6 @@
 tests/conftest.py の共有フィクスチャ整合性検証テスト (Step 3)
 """
 
-import pytest
 
 
 def test_conftest_environment_setup():

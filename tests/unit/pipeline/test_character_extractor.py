@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 
 from src.pipeline.nlp_init import get_nlp_for_testing
-from src.pipeline.character_extractor import CharacterExtractor, CharacterMention
+from src.pipeline.character_extractor import CharacterExtractor
 
 
 class TestCharacterExtractor:

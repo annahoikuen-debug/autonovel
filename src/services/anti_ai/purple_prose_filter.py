@@ -7,8 +7,7 @@ to prevent overuse of purple prose in generated text.
 from __future__ import annotations
 
 import re
-from collections import defaultdict
-from typing import Dict, List, Tuple, Pattern, Match
+from typing import Dict, List, Tuple, Pattern
 
 
 class PurpleProseFilter:

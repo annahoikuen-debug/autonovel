@@ -1,5 +1,4 @@
 """Unit tests for fusion data models."""
-from datetime import datetime, timezone
 from src.fusion.models import SourceVector, FusedValue, Conflict, FusedVector
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 

@@ -20,7 +20,6 @@ import warnings
 from typing import Any
 
 from src.agents.orchestrator import Orchestrator
-from src.backend.orchestrator_engine_adapter import OrchestratorEngineAdapter
 from src.llm.circuit_breaker import LLMCircuitBreaker
 from src.llm.resilient_gateway import ResilientLLMGateway
 

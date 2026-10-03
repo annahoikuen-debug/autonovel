@@ -2,9 +2,8 @@
 UnifiedLLMAuditor のJSON抽出堅牢化とリグレッション防止テスト (Step 9)
 """
 
-import pytest
 from unittest.mock import patch
-from src.audit.unified_llm_auditor import UnifiedLLMAuditor, Issue
+from src.audit.unified_llm_auditor import UnifiedLLMAuditor
 
 
 @patch("src.audit.unified_llm_auditor.call_llm_api")

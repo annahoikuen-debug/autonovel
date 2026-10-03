@@ -113,14 +113,14 @@ async def test_modern_dungeon_stream_full_flow():
     assert "【配信コメント】" in comment_block
     assert "視聴者1: すげええええ！" in comment_block
     assert "視聴者2: 同接10万突破wwww" in comment_block
-    print(f"[OK] Stream comment block formatted correctly")
+    print("[OK] Stream comment block formatted correctly")
 
     # 7. 掲示板スレッドブロックのフォーマット確認
     forum_block = "【掲示板スレッド】\n" + "\n".join([f"{p.res_num}：{p.name}：{p.body}" for p in forum_posts])
     assert "【掲示板スレッド】" in forum_block
     assert "1：イッチ：ドラゴン瞬殺した配信者www" in forum_block
     assert "2：名無し：草" in forum_block
-    print(f"[OK] Forum thread block formatted correctly")
+    print("[OK] Forum thread block formatted correctly")
 
     # 8. ジャンル固有のクリフハンガーキーワードが含まれることを確認
     assert "同接" in result["content"] or "配信" in result["content"]

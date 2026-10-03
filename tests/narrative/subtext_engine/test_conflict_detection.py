@@ -2,7 +2,6 @@
 Unit tests for Conflict Detection (Step 21).
 """
 
-import pytest
 from src.narrative.subtext_engine.engine import SubtextEngine
 from src.narrative.subtext_engine.models import DialogueBlock
 from src.narrative.subtext_engine.rules import RegexRule, RuleRegistry

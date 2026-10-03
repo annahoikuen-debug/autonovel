@@ -1,6 +1,5 @@
 import json
 from collections import defaultdict
-import os
 
 with open("coverage.json", "r", encoding="utf-8") as f:
     data = json.load(f)

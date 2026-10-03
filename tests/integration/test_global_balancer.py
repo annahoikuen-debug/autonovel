@@ -1,6 +1,5 @@
 """Integration tests for GlobalNarrativeBalancer."""
 
-import pytest
 from src.narrative_balancer.arbitrator.balancer import GlobalNarrativeBalancer
 from src.narrative_balancer.arbitrator.models import PlotState
 from src.narrative_balancer.models import Beat, BeatType

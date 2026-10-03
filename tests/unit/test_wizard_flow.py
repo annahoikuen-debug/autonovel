@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from fastapi.testclient import TestClient
 
-from src.backend.server import app
 from src.domain.entities.easy_mode import PromotionRequest, PromotionResponse
 from src.services.promotion_service import PromotionService, build_state_token
 

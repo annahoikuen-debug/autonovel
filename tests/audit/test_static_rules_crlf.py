@@ -2,7 +2,6 @@
 StaticRuleAuditor の改行コード正規化と位置精度リグレッションテスト (Step 8)
 """
 
-import pytest
 from src.audit.static_rules import StaticRuleAuditor
 
 

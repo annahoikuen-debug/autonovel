@@ -1,6 +1,5 @@
 """Unit tests for PredicateScorer."""
 
-import pytest
 from src.models.predicate_match import PredicateAnalysisResult, PredicateMatch
 from src.services.nlp.predicate_scorer import PredicateScorer
 

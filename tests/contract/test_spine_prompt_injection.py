@@ -1,7 +1,6 @@
 """**`spine_quality=off` で既存プロンプトが完全に不変**であること（最重要契約）。"""
 from __future__ import annotations
 
-import pytest
 
 from src.services.llm.prompts import (
     NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE,

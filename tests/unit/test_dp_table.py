@@ -1,9 +1,7 @@
 """Unit tests for DP table, cost model and rewrite rules."""
 
-import pytest
 from src.narrative_balancer.grammar.cost_model import GrammarCostModel
 from src.narrative_balancer.grammar.dp import build_dp_table
-from src.narrative_balancer.grammar.rewrite_rules import REWRITE_RULES
 from src.narrative_balancer.grammar.rewriter import GrammarRewriter
 from src.narrative_balancer.grammar.symbols import NonTerminal, Terminal
 from src.narrative_balancer.models import Beat, BeatType

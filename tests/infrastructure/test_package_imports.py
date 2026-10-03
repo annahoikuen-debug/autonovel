@@ -2,7 +2,6 @@
 パッケージインポート整合性と誤削除再発防止テスト (Step 2)
 """
 
-import pytest
 
 
 def test_database_types_import():

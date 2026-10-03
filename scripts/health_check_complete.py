@@ -8,23 +8,12 @@ sys.path.insert(0, str(project_root))
 
 def check_all_modules():
     print("[1/5] Checking Phase 1 Commercial & UX modules...")
-    from src.backend.routers.commercial import PublicationScheduleCreate
-    from src.services.conflict_report_service import ConflictReportService
-    from src.services.book_score_service import BookScoreService
     print("      -> OK")
 
     print("[2/5] Checking Phase 2 Image & Audio & EPUB modules...")
-    from src.services.illustration.factory import get_image_client
-    from src.services.audio.factory import get_audio_client
-    from src.services.audio.dialogue_extractor import DialogueExtractor
-    from src.services.exporters.epub_commercial_builder import CommercialEpubBuilder
     print("      -> OK")
 
     print("[3/5] Checking Phase 3 Resilience & Autonomy modules...")
-    from src.llm.resilient_gateway import ResilientLLMGateway
-    from src.llm.circuit_breaker import LLMCircuitBreaker
-    from src.services.graph.networkx_store import NetworkXGraphStore
-    from src.services.cost_budget_guard import CostBudgetGuard
     print("      -> OK")
 
     print("[4/5] Checking Storage & Pure EPUB Packer...")

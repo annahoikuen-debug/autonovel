@@ -1,6 +1,6 @@
 """Midpoint sagging detector for narrative tension."""
 
-from typing import List, Optional
+from typing import List
 import numpy as np
 from src.narrative_balancer.dsp.models import DSPConfig, SagDetection
 from src.narrative_balancer.dsp.spectral import spectral_flatness, low_freq_energy_ratio

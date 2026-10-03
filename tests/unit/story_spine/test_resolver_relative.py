@@ -2,7 +2,7 @@
 
 import pytest
 
-from config.story_spine import LENGTHS, PATTERNS, resolve_spine
+from config.story_spine import LENGTHS, resolve_spine
 from src.services.spine_resolver import _HOOK_KEYS
 
 

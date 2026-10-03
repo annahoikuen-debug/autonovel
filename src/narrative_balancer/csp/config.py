@@ -1,7 +1,7 @@
 """Configuration schema and loader for CSP Balancer."""
 
 from pathlib import Path
-from typing import Dict, Optional, Union
+from typing import Union
 import yaml
 from pydantic import BaseModel, Field, ConfigDict
 

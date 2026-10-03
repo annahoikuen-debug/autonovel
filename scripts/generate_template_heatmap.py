@@ -6,7 +6,6 @@ Outputs HTML report to reports/template_usage.html.
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 

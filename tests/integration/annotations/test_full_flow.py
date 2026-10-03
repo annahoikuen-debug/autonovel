@@ -3,11 +3,11 @@ from __future__ import annotations
 
 import pytest
 import tempfile
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 from src.annotations.integrated_parser import parse_script
 from src.annotations.persistence import AnnotationPersistence
-from src.pipeline.prompt_builder import build_emotional_context_prompt, build_fused_emotional_context_prompt
+from src.pipeline.prompt_builder import build_fused_emotional_context_prompt
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 from src.stores.vector_store import RedisVectorStore
 from src.stores.graph_store import InMemoryGraphStore
@@ -85,7 +85,6 @@ A goes to B.
         stored = vector_store.get_latest("annotation", ("A", "B"))
         assert stored is not None
 
-        from src.pipeline.emotional_residue import EmotionType
         fear_val = stored.get_value("A", "B", EmotionType.FEAR)
         assert fear_val == 0.8
 
@@ -94,7 +93,6 @@ A goes to B.
 
     def test_annotation_priority_in_prompt(self, vector_store):
         """プロンプトでのアノテーション優先度テスト"""
-        from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 
         # 1. annotation namespaceにデータ保存
         ann_vec = EmotionalVector(episode_id="ep15")
@@ -122,7 +120,6 @@ A goes to B.
 
     def test_annotation_only_prompt(self, vector_store):
         """annotationのみの場合"""
-        from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 
         vec = EmotionalVector(episode_id="ep14")
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.FEAR, 0.8, 0.9, "...", "ep14", "ep14 betrayal"))
@@ -135,7 +132,6 @@ A goes to B.
 
     def test_rule_engine_fallback(self, vector_store):
         """annotationなしの場合rule_engineが使われる"""
-        from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 
         vec = EmotionalVector(episode_id="ep14")
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.FEAR, -0.5, 0.5, "...", "ep14"))
@@ -147,7 +143,6 @@ A goes to B.
 
     def test_pipeline_last_resort(self, vector_store):
         """両方なしの場合pipelineが使われる"""
-        from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 
         vec = EmotionalVector(episode_id="ep14")
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.FEAR, 0.2, 0.3, "...", "ep14"))
@@ -168,7 +163,6 @@ A goes to B.
     def test_graph_log_consistency(self, vector_store):
         """Graph/Logストアとの整合性"""
         from src.annotations.beat import EmotionalBeat
-        from src.pipeline.emotional_residue import EmotionType
 
         graph_store = InMemoryGraphStore()
 

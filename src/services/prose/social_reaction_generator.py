@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import List, Union
+from typing import List
 from src.services.llm_service import LLMService
 from src.models.social_reaction import StreamComment, ForumPost
 

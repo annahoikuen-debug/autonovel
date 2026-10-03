@@ -2,7 +2,6 @@
 Unit tests for TemplateRenderer and fallback chain (PLAN_Y2 Step 6, 18).
 """
 
-import pytest
 from src.narrative.subtext_engine.models import SubtextContext
 from src.narrative.subtext_templates.renderer import TemplateRenderer
 

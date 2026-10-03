@@ -57,7 +57,6 @@ import pytest
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
 
-    from src.infrastructure.database.models.base_orm import Base
 
 
 # 各種外部サービス利用可能性フラグ（軽量チェック）

@@ -6,7 +6,6 @@
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 from src.backend.config import settings
 from src.services.audio.adapters.base import AudioTtsAdapter, TtsRequest, TtsResult

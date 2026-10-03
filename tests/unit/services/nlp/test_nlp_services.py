@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import sys
 import types
-from unittest.mock import MagicMock
 
-import pytest
 
 from src.models.predicate_match import PredicateAnalysisResult, PredicateMatch
 from src.services.nlp.foreshadowing_predicate_analyzer import (

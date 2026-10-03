@@ -1,7 +1,7 @@
 """Arbitrator logic for resolving conflicts and fusing emotional vectors."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Protocol, Set, Tuple
+from typing import Any, Dict, List, Optional, Protocol, Tuple
 from collections import defaultdict
 
 from src.fusion.config import FusionConfig, load_fusion_config

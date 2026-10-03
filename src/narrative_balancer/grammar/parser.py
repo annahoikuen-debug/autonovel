@@ -1,6 +1,6 @@
 """Earley Parser implementation for narrative grammar prefix parsing."""
 
-from typing import Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set
 from src.narrative_balancer.grammar.symbols import NonTerminal, Terminal
 from src.narrative_balancer.grammar.rules import GRAMMAR, Production
 from src.narrative_balancer.grammar.parse_forest import EarleyItem, ParseForest

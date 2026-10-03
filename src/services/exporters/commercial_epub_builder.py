@@ -9,7 +9,7 @@ from __future__ import annotations
 import io
 import uuid
 import zipfile
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from src.services.exporters.epub_ruby_processor import EpubRubyProcessor
 from src.services.exporters.epub_vertical_styler import COMMERCIAL_VERTICAL_CSS

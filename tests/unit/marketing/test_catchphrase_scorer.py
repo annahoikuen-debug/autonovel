@@ -4,7 +4,6 @@
 記号フック加点を検証する。
 """
 
-import pytest
 
 from src.config.kakuyomu_syntax_patterns import (
     CATCHPHRASE_MAX_LENGTH,

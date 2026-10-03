@@ -6,7 +6,6 @@ from pathlib import Path
 import pytest
 
 from src.narrative_balancer.arbitrator.cli import main, parse_args
-from src.narrative_balancer.models import Beat
 
 
 def _make_beat(ep: int, tension: float = 5.0) -> dict:

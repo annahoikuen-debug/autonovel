@@ -3,10 +3,25 @@ from httpx import AsyncClient, ASGITransport
 from unittest.mock import AsyncMock, patch, MagicMock
 from src.backend.server import app
 from src.backend.config import settings
+from src.services.spine_resolver import resolve_spine
 
 # ルーターを事前に含める
 from src.backend.routers.plots import router
 app.include_router(router)
+
+
+def _expected_beats(total_eps: int = 20) -> int:
+    """この API が返すべき beat 件数を Spine から導出する。
+
+    `/api/plots/expand-beats` は「12件固定」を廃止し、構造テンプレート
+    （Spine）が解決した beat 数だけ返す（src/backend/routers/plots.py:415-416）。
+    したがって 12 という固定値をハードコードすると、Spine の話数設計を変えた
+    だけで本テストが陳腐化する。期待値は常に実装と同じ权威ある源から導く。
+
+    なおリクエストで `pattern_key` / `length_key` / `market_key` が省略された場合は
+    エンドポイントが `exile_rise` / `web_volume` / `web` を既定値として使う。
+    """
+    return len(resolve_spine("exile_rise", "web_volume", "web", total_eps).beats)
 
 
 @pytest.fixture(autouse=True)
@@ -64,16 +79,37 @@ async def test_expand_commercial_beats_success():
             assert resp.status_code == 200
             data = resp.json()
             assert isinstance(data, list)
-            assert len(data) == 12
+            # LLM が 12 件返しても、Spine が決めた beat 数で切り詰められる
+            assert len(data) == _expected_beats()
             assert data[0]["episode"] == 1
             assert data[0]["title"] == "日常の崩壊"
             assert data[0]["cliffhanger_type"] == "New Crisis"
             assert "visual" in data[0]["sensory_focus"]
 
+            # 企画パラメータが LLM プロンプトへ確実に渡っていることの検証。
+            # （旧テストは fallback 経路の `data[3]["outline"]` に "チート能力" を
+            #  期待していたが、fallback は現在 Spine の duty を使うため
+            #  その前提自体が陳腐化していた。反映経路を実装に即した形で固定する）
+            prompt = mock_llm.generate_text.await_args.kwargs["prompt"]
+            assert "【チート度 (1-5)】4" in prompt
+            assert "【成長曲線】最初からカンスト(無双)" in prompt
+            assert "【システム支援度 (0-100)】70" in prompt
+            assert "【代償・リスク過酷度 (1-5)】2" in prompt
+
 
 @pytest.mark.asyncio
-async def test_expand_commercial_beats_fallback():
-    """LLM失敗時のフォールバックテスト"""
+async def test_expand_commercial_beats_llm_failure_returns_502():
+    """LLM 呼び出し失敗は縮退せず 502 を返すことのテスト。
+
+    意図として、LLM 障害・認証エラー・レート制限・タイムアウトを
+    「縮退 beat」で握り潰すと、クライアントは「モデルが出力した」と
+    「API キーが無効」を区別できなくなる。そのため 502 で失敗Berikut。
+    （src/backend/routers/plots.py:422-430 の設計意図）
+
+    したがって縮退（フォールバック）は LLM 障害ではなく
+    「応答は得たが JSON 整形に失敗した」場合だけ起作用する。
+    その経路は `test_expand_commercial_beats_edge_cases` が検証する。
+    """
     transport = ASGITransport(app=app)
 
     # LLMゲートウェイをモック（例外を投げる）
@@ -96,12 +132,45 @@ async def test_expand_commercial_beats_fallback():
                     "cost_severity": 2,
                 },
             )
+            assert resp.status_code == 502
+            assert "beat 生成に失敗" in resp.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_expand_commercial_beats_malformed_json_degrades():
+    """整形失敗時は Spine 由来の縮退 beat を返すことのテスト。
+
+    LLM 障害（502）とは区別して、「応答はбовьえたが JSON で壊れている」場合は
+    縮退して 200 を返す契約を守る。
+    """
+    transport = ASGITransport(app=app)
+
+    with patch("src.backend.routers.plots.LLMGateway") as mock_llm_class:
+        mock_llm = AsyncMock()
+        mock_llm_class.return_value = mock_llm
+        mock_response = MagicMock()
+        mock_response.story_content = "これは JSON ではないただの文章です"
+        mock_llm.generate_text.return_value = mock_response
+
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            resp = await client.post(
+                "/api/plots/expand-beats",
+                json={
+                    "title": "テスト作品",
+                    "genre": "fantasy",
+                    "synopsis": "テストあらすじ",
+                    "target_chapters": 20,
+                    "cheat_scale": 4,
+                    "growth_curve": "最初からカンスト(無双)",
+                    "system_assist": 70,
+                    "cost_severity": 2,
+                },
+            )
             assert resp.status_code == 200
             data = resp.json()
             assert isinstance(data, list)
-            assert len(data) == 12
+            assert len(data) == _expected_beats()
             assert data[0]["episode"] == 1
-            assert "チート能力" in data[3]["outline"]  # cheat_scaleが反映される
 
 
 @pytest.mark.asyncio
@@ -165,8 +234,8 @@ async def test_expand_commercial_beats_edge_cases():
             )
             assert resp.status_code == 200
             data = resp.json()
-            # フォールバックが使われるため12件返る
-            assert len(data) == 12
+            # フォールバックが使われるため、Spine が解決した beat 件数が返る
+            assert len(data) == _expected_beats()
 
             # 最大話数
             resp = await client.post(

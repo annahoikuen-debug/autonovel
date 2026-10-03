@@ -5,7 +5,6 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 
 from src.services.context_compression.digest_service import (
     MAX_DIGEST_LENGTH,

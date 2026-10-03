@@ -4,8 +4,7 @@ from __future__ import annotations
 import asyncio
 import sqlite3
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import aiosqlite
 import pytest

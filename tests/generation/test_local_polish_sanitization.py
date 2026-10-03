@@ -2,7 +2,6 @@
 LocalPolisher のサニタイズ処理とリグレッション防止テスト (Step 10)
 """
 
-import pytest
 from unittest.mock import patch
 from src.generation.local_polish import LocalPolisher, sanitize_polished_text
 

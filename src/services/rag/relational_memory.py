@@ -8,7 +8,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from src.models.foreshadowing_status import ForeshadowingScope, ForeshadowingStatus
 from src.services.foreshadowing_service import ForeshadowingService
 from src.services.graph_pipeline import graph_pipeline_service
 

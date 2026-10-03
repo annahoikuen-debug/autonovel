@@ -4,8 +4,6 @@ Tests rendering across betrayal, grief, power_play, romance, comedy, and action.
 """
 
 import pytest
-from src.narrative.subtext_engine.models import SubtextContext
-from src.narrative.subtext_templates.loader import TemplateLoader
 from src.narrative.subtext_templates.renderer import TemplateRenderer
 
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.anti_ai.pipeline_orchestrator import detox_prose
+from src.services.anti_ai.pipeline_orchestrator import ProseDetoxPipeline, detox_prose
 
 
 class TestPurpleProseDetoxIntegration:
@@ -93,8 +93,6 @@ class TestPurpleProseDetoxIntegration:
     def test_episode_limits(self) -> None:
         """Test that episode-based limits work correctly."""
         # Use very low limits for testing
-        from src.services.anti_ai.pipeline_orchestrator import ProseDetoxPipeline
-
         pipeline = ProseDetoxPipeline(
             stream_guard=__import__('src.services.anti_ai.purple_prose_filter',
                                    fromlist=['PurpleProseFilter']).PurpleProseFilter(
@@ -142,8 +140,6 @@ class TestPurpleProseDetoxIntegration:
 
     def test_metaphor_density_limit(self) -> None:
         """Test metaphor density limiting."""
-        from src.services.anti_ai.pipeline_orchestrator import ProseDetoxPipeline
-
         # Tight metaphor limit
         pipeline = ProseDetoxPipeline(
             stream_guard=__import__('src.services.anti_ai.purple_prose_filter',

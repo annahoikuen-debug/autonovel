@@ -7,7 +7,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-import pytest
 
 from src.services.manga.config import MangaPipelineConfig
 from src.services.manga.models import MangaEpisodeInput, SpeechBubble

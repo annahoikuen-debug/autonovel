@@ -1,7 +1,6 @@
 """Coverage tests for src/backend/auth.py, checkpoint_saver.py and small engine helper modules."""
 from __future__ import annotations
 
-import sys
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest

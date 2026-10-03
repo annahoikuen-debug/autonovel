@@ -48,7 +48,7 @@ class TestEmotionalResidueRegression:
 
     def test_no_regression_prompt_injection(self, vector_store, char_dict):
         """プロンプトに感情文言が含まれる"""
-        from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
+        from src.pipeline.emotional_residue import EmotionalVector
 
         vec = EmotionalVector(episode_id="ep14")
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.3, 0.8, "...", "ep14"))
@@ -65,7 +65,7 @@ class TestEmotionalResidueRegression:
 
     def test_no_regression_vector_persistence(self, vector_store, char_dict):
         """再起動後も Vector 読み出し可能"""
-        from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
+        from src.pipeline.emotional_residue import EmotionalVector
 
         vec = EmotionalVector(episode_id="ep01")
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.5, 0.8, "...", "ep01"))
@@ -88,7 +88,7 @@ class TestEmotionalResidueRegression:
 
     def test_no_regression_ttl_expiry(self, vector_store, char_dict):
         """TTL経過でキー消失確認（モック時間）"""
-        from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
+        from src.pipeline.emotional_residue import EmotionalVector
 
         # TTL 1秒のストア
         import fakeredis

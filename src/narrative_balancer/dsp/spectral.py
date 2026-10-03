@@ -1,6 +1,5 @@
 """Spectral analysis routines for narrative tension signals."""
 
-from typing import Union
 import numpy as np
 
 

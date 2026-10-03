@@ -13,7 +13,6 @@ import pytest
 from fastapi import HTTPException
 
 from src.backend.routers.branches import list_branch_nodes, create_branch_node, delete_branch_node
-from src.backend.database.models import Book, Branch
 
 
 class _FakeScalarResult:

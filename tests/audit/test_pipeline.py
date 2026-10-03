@@ -2,7 +2,6 @@
 Tests for audit pipeline.
 """
 
-import pytest
 from unittest.mock import patch
 from src.audit.pipeline import AuditPipeline
 from src.audit.static_rules import Issue as StaticIssue

@@ -8,7 +8,6 @@
 import asyncio
 import inspect
 
-import pytest
 
 from src.config.kakuyomu_syntax_patterns import (
     CATCHPHRASE_MAX_LENGTH,

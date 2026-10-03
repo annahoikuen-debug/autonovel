@@ -4,14 +4,13 @@
 自動実行されることを検証する。
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 from src.services.episode_context import EpisodeContextBuilder
 from src.services.foreshadowing_service import ForeshadowingService
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
 from src.backend.database.models_foreshadowing import ForeshadowingModel
-from src.backend.database.models import Character as CharacterModel, Chapter as ChapterModel
-from sqlalchemy import select
+from src.backend.database.models import Character as CharacterModel
 
 
 class TestRelationalMemoryE2E:

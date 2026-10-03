@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from src.services.publishers.formatters import PlatformFormatter, PublishPlatform
 from src.services.ebook.epub_generator import EpubGenerator

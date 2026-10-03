@@ -3,9 +3,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.services.audio.adapters.base import (
-    AudioTtsAdapter,
     TtsRequest,
-    TtsResult,
 )
 from src.services.audio.adapters.elevenlabs_adapter import (
     ElevenLabsAdapter,

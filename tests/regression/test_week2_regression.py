@@ -22,9 +22,7 @@ from src.pipeline.emotional_residue import (
     EmotionalVector,
     EmotionType,
 )
-from src.rules.engine import RuleEngine
-from src.rules.rule_loader import DEFAULT_EVENTS_PATH, DEFAULT_RULES_PATH
-from src.rules.state_machine import EmotionalStateMachine
+from src.rules.rule_loader import DEFAULT_EVENTS_PATH
 from src.stores.event_log import EventLogStore
 from src.stores.graph_store import InMemoryGraphStore
 
@@ -130,7 +128,6 @@ class TestWeek2Regression:
 
     def test_week1_regression_still_passes(self):
         """Week 1 機能に影響なし (VectorStore 基本動作)。"""
-        from src.pipeline.emotional_residue import EmotionalResidueExtractor as E
 
         # Week 1 のデータ構造がそのまま使える
         vec = EmotionalVector(episode_id="ep01")

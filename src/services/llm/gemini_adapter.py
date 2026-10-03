@@ -16,8 +16,7 @@ from src.services.llm.base import (
 from src.services.llm.retry import with_retry
 
 if TYPE_CHECKING:
-    from google import genai
-    from google.genai import types
+    pass
 
 logger = logging.getLogger(__name__)
 

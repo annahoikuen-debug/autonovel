@@ -1,7 +1,6 @@
 """Tests for frontmatter parser."""
 from __future__ import annotations
 
-import pytest
 
 from src.annotations.frontmatter import parse_frontmatter, serialize_frontmatter
 from src.annotations.beat import EmotionalBeat

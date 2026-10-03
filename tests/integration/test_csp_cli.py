@@ -1,8 +1,6 @@
 """Integration tests for CSP CLI."""
 
 import json
-from pathlib import Path
-import pytest
 from src.narrative_balancer.csp.cli import main
 
 

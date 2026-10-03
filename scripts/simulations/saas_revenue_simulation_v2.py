@@ -14,9 +14,7 @@ Usage:
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
-from typing import Literal
 
 
 # ============================================================
@@ -224,22 +222,22 @@ class StressTestSimulator:
             "studio": 80,
             "enterprise": 200,
         }
-        
+
         total = 0
         for tier_name, count in users.items():
             if count == 0:
                 continue
             chapters = count * chapters_per_user.get(tier_name, 0)
-            
+
             # Higher tiers use better/more expensive models
             multiplier = 1.0
             if tier_name == "pro":
                 multiplier = 1.5  # better quality models
             elif tier_name in ("studio", "enterprise"):
                 multiplier = 2.0  # premium models + more retries
-            
+
             total += chapters * LLM_COST_PER_CHAPTER_EFFECTIVE * multiplier
-        
+
         # Add base cost + 20% buffer for failed attempts/cache misses
         return int(total * 1.2) + self.model.llm_api_monthly_base
 
@@ -248,51 +246,51 @@ class StressTestSimulator:
         # Base + per-user + data transfer + storage
         base = self.model.server_base_cost_monthly
         per_user = self.model.infra_cost_per_user_monthly_jpy * total_users
-        
+
         # Data transfer and storage scale sub-linearly but still significant
         storage_network = 50_000 + (total_users * 15)  # ~JPY 50K base + per-user
-        
+
         return base + per_user + storage_network
 
     def _calculate_payment_fees(self, users: dict[str, int]) -> tuple[int, int]:
         """Calculate payment processing fees and refunds."""
         total_fees = 0
         total_refunds = 0
-        
+
         tier_prices = {
             "starter": 1_980,
             "pro": 3_980,
             "studio": 7_980,
             "enterprise": 39_800,
         }
-        
+
         for tier_name, count in users.items():
             if tier_name not in tier_prices or count == 0:
                 continue
             monthly_revenue = count * tier_prices[tier_name]
-            
+
             # Stripe-like fees: 3.6% + JPY 25
             fees = int(monthly_revenue * self.model.payment_processing_rate)
             fees += count * self.model.payment_fixed_fee_jpy
             total_fees += fees
-            
+
             # Refunds (3% of revenue)
             refunds = int(monthly_revenue * self.model.refund_rate)
             total_refunds += refunds
-        
+
         return total_fees, total_refunds
 
     def simulate(self) -> list[MonthlySnapshot]:
         """Run realistic stress-test simulation."""
         model = self.model
         tiers = model.tiers
-        
+
         free_tier = next((t for t in tiers if t.name == "Free"), None)
         starter_tier = next((t for t in tiers if "Starter" in t.name), None)
         pro_tier = next((t for t in tiers if "Pro" in t.name and "Studio" not in t.name), None)
         studio_tier = next((t for t in tiers if "Studio" in t.name), None)
         enterprise_tier = next((t for t in tiers if "Enterprise" in t.name), None)
-        
+
         # Initial state
         total_users = 0
         free_users = 0
@@ -300,7 +298,7 @@ class StressTestSimulator:
         pro_users = 0
         studio_users = 0
         enterprise_users = 0
-        
+
         for month in range(1, self.months + 1):
             # ============================================================
             # GROWTH: Realistic Japanese SaaS pattern
@@ -308,7 +306,7 @@ class StressTestSimulator:
             # - Paid acquisition with diminishing returns
             # - Market saturation effects
             # ============================================================
-            
+
             # Month 1-6: Early adopters, high growth rate but low base
             if month <= 6:
                 organic_growth_rate = 0.25  # 25% MoM (aggressive for early stage)
@@ -322,21 +320,21 @@ class StressTestSimulator:
             else:
                 organic_growth_rate = 0.05  # 5% MoM (saturation)
                 paid_growth = int(model.monthly_paid_signups * 1.5)
-            
+
             # Apply organic growth to existing user base
             organic_new = int(total_users * organic_growth_rate) if total_users > 0 else model.monthly_organic_signups
             new_signups = organic_new + paid_growth
-            
+
             # CAC for paid acquisition (increases over time due to competition)
             cac_effective = model.cac_jpy + (month * 50)  # CAC inflation
             paid_cac = paid_growth * cac_effective
-            
+
             # ============================================================
             # CHURN: Realistic Japanese consumer SaaS
             # ============================================================
             # Monthly churn applied to existing users
             churned = int(total_users * model.monthly_churn_rate) + 1 if total_users > 0 else 0
-            
+
             # Distribute churn proportionally (free users churn less, paid users churn more)
             if total_users > 0:
                 churn_free = max(0, int(churned * (free_users / total_users) * 0.7))  # 30% lower churn
@@ -346,7 +344,7 @@ class StressTestSimulator:
                 churn_enterprise = max(0, int(churned * (enterprise_users / total_users) * 0.5))  # lower churn
             else:
                 churn_free = churn_starter = churn_pro = churn_studio = churn_enterprise = 0
-            
+
             # ============================================================
             # USER DISTRIBUTION: Realistic conversion funnel
             # ============================================================
@@ -356,31 +354,31 @@ class StressTestSimulator:
             pro_new = int(new_signups * 0.08)
             studio_new = int(new_signups * 0.015)
             enterprise_new = int(new_signups * 0.005)
-            
+
             # Conversion: free -> starter (2.5% of active free users)
             conversion_pool = free_users - churn_free
             converted_to_starter = int(conversion_pool * model.freemium_conversion_rate)
-            
+
             # Upgrade: starter -> pro (10% of active starter users)
             upgrade_pool = starter_users - churn_starter
             upgraded_to_pro = int(upgrade_pool * model.starter_to_pro_upgrade_rate)
-            
+
             # Studio upgrade: pro -> studio (5% of active pro users)
             studio_upgrade_pool = pro_users - churn_pro
             upgraded_to_studio = int(studio_upgrade_pool * 0.05)
-            
+
             # Enterprise: rare, from studio users or direct sales
             enterprise_from_studio = int((studio_users - churn_studio) * 0.02)
-            
+
             # Update user counts
             free_users = max(0, free_users - churn_free + free_new - converted_to_starter)
             starter_users = max(0, starter_users - churn_starter + starter_new + converted_to_starter - upgraded_to_pro)
             pro_users = max(0, pro_users - churn_pro + pro_new + upgraded_to_pro - upgraded_to_studio)
             studio_users = max(0, studio_users - churn_studio + studio_new + upgraded_to_studio - enterprise_from_studio)
             enterprise_users = max(0, enterprise_users - churn_enterprise + enterprise_new + enterprise_from_studio)
-            
+
             total_users = free_users + starter_users + pro_users + studio_users + enterprise_users
-            
+
             # ============================================================
             # REVENUE CALCULATION
             # ============================================================
@@ -390,7 +388,7 @@ class StressTestSimulator:
                 studio_users * studio_tier.monthly_price_jpy +
                 enterprise_users * enterprise_tier.monthly_price_jpy
             )
-            
+
             # Payment fees and refunds
             payment_fees, refunds = self._calculate_payment_fees({
                 "starter": starter_users,
@@ -398,11 +396,11 @@ class StressTestSimulator:
                 "studio": studio_users,
                 "enterprise": enterprise_users,
             })
-            
+
             # Gross revenue (after payment processing, before refunds)
             gross_revenue = mrr - payment_fees
             net_revenue_before_costs = gross_revenue - refunds
-            
+
             # ============================================================
             # COSTS
             # ============================================================
@@ -413,21 +411,21 @@ class StressTestSimulator:
                 "studio": studio_users,
                 "enterprise": enterprise_users,
             })
-            
+
             infra_cost = self._calculate_infra_cost(total_users)
             support_cost = total_users * model.support_cost_per_user_monthly_jpy
             staff_cost = model.staff_cost_monthly + (month * 50_000)  # staff cost increases over time
             marketing_cost = model.marketing_monthly + paid_cac
             compliance_cost = model.compliance_legal_monthly + (total_users * 10)  # scales with users
             misc_cost = model.misc_monthly
-            
+
             total_cost = (
                 llm_cost + infra_cost + support_cost + staff_cost +
                 marketing_cost + compliance_cost + misc_cost
             )
-            
+
             net_revenue = net_revenue_before_costs - total_cost
-            
+
             snapshot = MonthlySnapshot(
                 month=month,
                 total_users=total_users,
@@ -453,7 +451,7 @@ class StressTestSimulator:
                 cac_total_jpy=paid_cac,
             )
             self.snapshots.append(snapshot)
-        
+
         return self.snapshots
 
     def print_summary(self) -> None:
@@ -462,12 +460,12 @@ class StressTestSimulator:
         print(f"AutoNovel SaaS STRESS TEST - {self.model.name}")
         print("=" * 80)
         print()
-        
+
         final = self.snapshots[-1]
         peak_loss = min(s.net_revenue_jpy for s in self.snapshots)
         cumulative = sum(s.net_revenue_jpy for s in self.snapshots)
         total_cac = sum(s.cac_total_jpy for s in self.snapshots)
-        
+
         print(f"--- FINAL STATE (Month {final.month}) ---")
         print(f"  Total Users:         {final.total_users:,}")
         print(f"    Free:              {final.free_users:,}")
@@ -479,7 +477,7 @@ class StressTestSimulator:
         print(f"  MRR:                 JPY {final.mrr_jpy:,} (~${final.mrr_jpy / 155:.0f}/month)")
         print(f"  ARR (MRR x 12):      JPY {final.mrr_jpy * 12:,} (~${final.mrr_jpy * 12 / 155:,.0f}/year)")
         print()
-        print(f"--- MONTHLY COSTS (Final Month) ---")
+        print("--- MONTHLY COSTS (Final Month) ---")
         print(f"  LLM API:             JPY {final.llm_cost_jpy:,}")
         print(f"  Infrastructure:      JPY {final.infra_cost_jpy:,}")
         print(f"  Support:             JPY {final.support_cost_jpy:,}")
@@ -489,14 +487,14 @@ class StressTestSimulator:
         print(f"  Misc:                JPY {final.misc_cost_jpy:,}")
         print(f"  Total Monthly Cost:  JPY {final.llm_cost_jpy + final.infra_cost_jpy + final.support_cost_jpy + final.staff_cost_jpy + final.marketing_cost_jpy + final.compliance_cost_jpy + final.misc_cost_jpy:,}")
         print()
-        print(f"--- PROFITABILITY ---")
+        print("--- PROFITABILITY ---")
         print(f"  Payment Fees:        JPY {final.payment_fees_jpy:,}")
         print(f"  Refunds:             JPY {final.refunds_jpy:,}")
         print(f"  Monthly Net Revenue: JPY {final.net_revenue_jpy:,}")
         print(f"  Peak Monthly Loss:   JPY {peak_loss:,}")
         print(f"  3-Year Cumulative:   JPY {cumulative:,}")
         print(f"  Total CAC (3yr):     JPY {total_cac:,}")
-        
+
         # Break-even
         breakeven_month = None
         for i, s in enumerate(self.snapshots):
@@ -507,7 +505,7 @@ class StressTestSimulator:
             print(f"  Break-even Month:    Month {breakeven_month}")
         else:
             print(f"  Break-even:          NOT REACHED in {self.months} months")
-        
+
         print()
         print(f"--- UNIT ECONOMICS (Month {final.month}) ---")
         paying_users = final.starter_users + final.pro_users + final.studio_users + final.enterprise_users
@@ -516,10 +514,10 @@ class StressTestSimulator:
             print(f"  LLM cost/paying user: JPY {final.llm_cost_jpy / paying_users:,.0f}")
             print(f"  Support cost/user:   JPY {final.support_cost_jpy / final.total_users:,.0f}")
             print(f"  LTV/CAC ratio:       {final.mrr_jpy / max(1, total_cac):.2f}x")
-        
+
         # Cash runway analysis
         print()
-        print(f"--- CASH RUNWAY ---")
+        print("--- CASH RUNWAY ---")
         cumulative_cf = 0
         runway_month = None
         for i, s in enumerate(self.snapshots):
@@ -530,17 +528,17 @@ class StressTestSimulator:
             print(f"  Cumulative CF positive: Month {runway_month}")
         else:
             print(f"  Cumulative CF:        JPY {cumulative_cf:,} (negative)")
-        
+
         # Risk indicators
         print()
-        print(f"--- RISK INDICATORS ---")
+        print("--- RISK INDICATORS ---")
         if final.llm_cost_jpy > final.mrr_jpy:
             print(f"  WARNING: LLM costs (JPY {final.llm_cost_jpy:,}) exceed MRR (JPY {final.mrr_jpy:,})")
         if final.net_revenue_jpy < 0:
             print(f"  WARNING: Not profitable at month {final.month}")
         if paying_users < 100:
             print(f"  WARNING: Low paying user base ({paying_users}) - high burn rate")
-        
+
         print()
 
     def print_monthly_table(self, last_n: int = 12) -> None:
@@ -549,7 +547,7 @@ class StressTestSimulator:
               f"{'MRR':>12} {'LLM Cost':>10} {'Net':>12}")
         print(f"{'-' * 6} {'-' * 8} {'-' * 7} {'-' * 8} {'-' * 7} {'-' * 7} {'-' * 5} "
               f"{'-' * 12} {'-' * 10} {'-' * 12}")
-        
+
         for s in self.snapshots[-last_n:]:
             print(
                 f"{s.month:>6} {s.total_users:>8,} {s.free_users:>7,} "
@@ -633,35 +631,35 @@ def main():
     print("Realistic Japanese market assumptions with operational overhead")
     print("=" * 80)
     print()
-    
+
     scenarios = {
         "STRESS TEST (worst case)": (create_stress_model(), 36),
         "REALISTIC BASE": (create_realistic_model(), 36),
         "OPTIMISTIC": (create_optimistic_model(), 36),
     }
-    
+
     all_results = {}
     for name, (model, months) in scenarios.items():
         sim = StressTestSimulator(model, months=months)
         sim.simulate()
         all_results[name] = sim
-        
+
         print(f"\n{'=' * 80}")
         print(f"SCENARIO: {name}")
         print(f"{'=' * 80}")
         sim.print_summary()
-        
+
         if "BASE" in name:
             print("\n--- RECENT MONTHLY BREAKDOWN (Realistic Base) ---")
             sim.print_monthly_table(last_n=12)
-    
+
     # Comparative summary
     print(f"\n{'=' * 80}")
     print("SCENARIO COMPARISON (36 months)")
     print(f"{'=' * 80}")
     print(f"{'Scenario':<25} {'Users':>8} {'Paying':>8} {'MRR':>14} {'ARR':>16} {'Net':>14} {'Breakeven':>10}")
     print(f"{'-' * 25} {'-' * 8} {'-' * 8} {'-' * 14} {'-' * 16} {'-' * 14} {'-' * 10}")
-    
+
     for name, sim in all_results.items():
         final = sim.snapshots[-1]
         paying = final.starter_users + final.pro_users + final.studio_users + final.enterprise_users
@@ -671,16 +669,16 @@ def main():
             f"JPY {final.mrr_jpy:>12,} JPY {final.mrr_jpy * 12:>14,} "
             f"JPY {final.net_revenue_jpy:>12,} {be:>10}"
         )
-    
+
     # Key insights
     print(f"\n{'=' * 80}")
     print("REALISTIC ASSESSMENT")
     print(f"{'=' * 80}")
-    
+
     base = all_results["REALISTIC BASE"]
     final_base = base.snapshots[-1]
     paying_base = final_base.starter_users + final_base.pro_users + final_base.studio_users + final_base.enterprise_users
-    
+
     print(f"""
 1. MARKET REALITY
    - TAM: {MARKET_TOTAL_AUTHORS_JP:,} total, {MARKET_ACTIVE_WRITERS_JP:,} active, {MARKET_PREMIUM_TOOL_USERS_JP:,} premium tool users

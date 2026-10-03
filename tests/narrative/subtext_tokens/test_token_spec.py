@@ -2,8 +2,7 @@
 Unit tests for Token BNF parser and specification (PLAN_Y3 Step 1).
 """
 
-import pytest
-from src.narrative.subtext_tokens.parser import TokenParser, TokenSpec
+from src.narrative.subtext_tokens.parser import TokenParser
 
 
 def test_token_bnf_parser_valid_cases():

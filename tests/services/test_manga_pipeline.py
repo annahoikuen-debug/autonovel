@@ -1,7 +1,6 @@
 """Unit and integration tests for NanoBanana 2 Lite Manga Pipeline."""
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 from PIL import Image
 

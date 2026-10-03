@@ -5,8 +5,6 @@ Executes all 40 golden samples from tests/golden/token_expansion/.
 
 import json
 from pathlib import Path
-import pytest
-from src.narrative.subtext_engine.models import SubtextContext
 from src.narrative.subtext_tokens.formatter import DialogueFormatter
 
 GOLDEN_DIR = Path("tests/golden/token_expansion")

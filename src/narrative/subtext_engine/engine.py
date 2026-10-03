@@ -10,14 +10,12 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
 import yaml
 
 from src.narrative.subtext_engine.models import (
     DialogueBlock,
-    RewriteResult,
-    RewriteRuleModel,
     SubtextContext,
 )
 from src.narrative.subtext_engine.rules import (
@@ -27,7 +25,6 @@ from src.narrative.subtext_engine.rules import (
     EmotionToActionRule,
     ExplanatoryCompressRule,
     RegexRule,
-    RuleBase,
     RuleRegistry,
     SubjectiveInternalizeRule,
     ThreatSubtextRule,

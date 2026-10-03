@@ -35,7 +35,7 @@ from src.backend.tasks.metrics_collector import (
     OTEL_AVAILABLE,
     PROMETHEUS_AVAILABLE,
 )
-from src.backend.tasks.dag_scheduler import DAGScheduler, _ResourceSemaphores
+from src.backend.tasks.dag_scheduler import DAGScheduler
 
 
 # --------------------------------------------------------------------------
@@ -251,7 +251,6 @@ class _FakeMem:
 
 
 def test_resource_manager_snapshots_and_limits(monkeypatch):
-    import src.backend.tasks.resource_manager as rm_mod
 
     topo = NUMATopology(cpu_to_numa={0: 0, 1: 1}, gpu_to_numa={0: 1}, numa_nodes=[0, 1])
     rm = ResourceManager(numa_topology=topo)
@@ -996,7 +995,6 @@ def test_detect_numa_topology_without_gpu_support(monkeypatch):
 
 def test_detect_gpu_numa_with_fake_pynvml(monkeypatch, tmp_path):
     import sys
-    import types
 
     class _Pci:
         domain = 0
@@ -1029,7 +1027,6 @@ def test_detect_gpu_numa_with_fake_pynvml(monkeypatch, tmp_path):
 
 def test_detect_gpu_numa_init_failure(monkeypatch):
     import sys
-    import types
 
     class _Nvml:
         @staticmethod
@@ -1042,7 +1039,6 @@ def test_detect_gpu_numa_init_failure(monkeypatch):
 
 def test_detect_gpu_numa_reads_sysfs(monkeypatch, tmp_path):
     import sys
-    import types
 
     class _Pci:
         domain = 0

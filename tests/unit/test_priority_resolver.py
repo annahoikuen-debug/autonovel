@@ -1,6 +1,5 @@
 """Unit tests for PriorityResolver."""
 
-import pytest
 from src.narrative_balancer.arbitrator.config import ArbitratorConfig
 from src.narrative_balancer.arbitrator.models import BalancerResult, PlotState
 from src.narrative_balancer.arbitrator.resolver import PriorityResolver

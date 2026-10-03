@@ -14,7 +14,7 @@ from src.pipeline.emotional_residue import (
     EmotionType,
 )
 from src.rules.emotional_rules import EmotionalRule, PlotContext
-from src.rules.plot_events import PlotEvent, Role
+from src.rules.plot_events import PlotEvent
 from src.rules.state_machine import EmotionalStateMachine
 
 logger = logging.getLogger(__name__)

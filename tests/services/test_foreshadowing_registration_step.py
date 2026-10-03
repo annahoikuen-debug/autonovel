@@ -24,16 +24,42 @@ class MockStatusReporter:
         return State()
 
 
+class MockPlot:
+    """モックの Plot（伏線ヒントを持つ）"""
+    def __init__(self, volume=1, episode=2, chapter=3, foreshadowing_hint="欠けた鍵の行方"):
+        self.volume = volume
+        self.episode = episode
+        self.chapter = chapter
+        self.foreshadowing_hint = foreshadowing_hint
+
+
+class MockPlotRepository:
+    """モックの Plot リポジトリ（get_all_plots は async）"""
+    def __init__(self, plots):
+        self._plots = plots
+
+    async def get_all_plots(self, volume, book_id=None):
+        return self._plots
+
+
+class MockRepo:
+    """モックの UnitOfWork。実装は engine.repo.plot.get_all_plots(...) を呼ぶ"""
+    def __init__(self, plots):
+        self.plot = MockPlotRepository(plots)
+
+
 class MockEngineWithRepository:
     """伏線リポジトリを持つモックの UltimateHegemonyEngine"""
-    def __init__(self):
+    def __init__(self, plots=None):
         self.foreshadowing_repository = MockForeshadowingRepository()
+        self.repo = MockRepo(plots if plots is not None else [MockPlot()])
 
 
 class MockEngineWithoutRepository:
     """伏線リポジトリを持たないモックの UltimateHegemonyEngine"""
-    def __init__(self):
+    def __init__(self, plots=None):
         self.foreshadowing_repository = None
+        self.repo = MockRepo(plots if plots is not None else [MockPlot()])
 
 
 class MockForeshadowingRepository:
@@ -121,17 +147,20 @@ async def test_foreshadowing_registration_step_execute_with_repository():
     assert len(engine.foreshadowing_repository.added_items) == 1
     added_item = engine.foreshadowing_repository.added_items[0]
     assert isinstance(added_item, Foreshadowing)
-    assert added_item.id == "DUMMY-001"
-    assert added_item.content == "これはダミーの伏線です。実際の実装ではプロットから抽出されます。"
+    # 実装はプロットの foreshadowing_hint から ID を採番する（pipeline_steps.py:824）
+    assert added_item.id == "FS-001"
+    assert added_item.content == "欠けた鍵の行方"
     assert added_item.hang_volume == 1
-    assert added_item.hang_episode == 1
-    assert added_item.hang_chapter == 1
+    assert added_item.hang_episode == 2
+    assert added_item.hang_chapter == 3
+    # キーワード（明確/直接/明示/読者/考察/想象）に一致しないので implicit
     assert added_item.hang_type == "implicit"
-    assert added_item.importance == "★"
+    # ヒントに区切り文字が無いのでキーワード数 2 → ★★
+    assert added_item.importance == "★★"
 
     # レポートに期待されるメッセージが含まれていることを確認
     report_messages = [msg for msg, level in reporter.reports]
-    assert any("ダミー伏線を登録しました" in msg for msg in report_messages)
+    assert any("1件の伏線を登録しました" in msg for msg in report_messages)
 
 
 @pytest.mark.asyncio
@@ -165,17 +194,17 @@ async def test_foreshadowing_registration_step_execute_fallback_to_context():
     assert len(ctx.foreshadowings) == initial_length + 1
     added_item = ctx.foreshadowings[-1]  # 最後に追加されたアイテム
     assert isinstance(added_item, Foreshadowing)
-    assert added_item.id == "DUMMY-001"
-    assert added_item.content == "これはダミーの伏線です。実際の実装ではプロットから抽出されます。"
+    assert added_item.id == "FS-001"
+    assert added_item.content == "欠けた鍵の行方"
     assert added_item.hang_volume == 1
-    assert added_item.hang_episode == 1
-    assert added_item.hang_chapter == 1
+    assert added_item.hang_episode == 2
+    assert added_item.hang_chapter == 3
     assert added_item.hang_type == "implicit"
-    assert added_item.importance == "★"
+    assert added_item.importance == "★★"
 
     # レポートに期待されるメッセージが含まれていることを確認
     report_messages = [msg for msg, level in reporter.reports]
-    assert any("ダミー伏線をコンテキストに追加しました" in msg for msg in report_messages)
+    assert any("1件の伏線を登録しました" in msg for msg in report_messages)
 
 
 @pytest.mark.asyncio
@@ -187,6 +216,9 @@ async def test_foreshadowing_registration_step_execute_exception_handling():
     class MockEngineThatRaises:
         def __init__(self):
             self.foreshadowing_repository = MockFailingRepository()
+            # 実装は repo.plot からプロットを取得してから repo.add を呼ぶので、
+            # リポジトリが例外を投げるには先にプロットが 1 件必要
+            self.repo = MockRepo([MockPlot()])
 
     class MockFailingRepository:
         def add(self, foreshadowing: Foreshadowing):

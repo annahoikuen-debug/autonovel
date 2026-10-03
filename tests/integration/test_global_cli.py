@@ -1,7 +1,6 @@
 """Integration tests for global-balance CLI."""
 
 import json
-from pathlib import Path
 import pytest
 
 pytest.importorskip("ortools")

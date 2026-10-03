@@ -163,7 +163,7 @@ def main() -> int:
 
     npm = shutil.which("npm.cmd" if os.name == "nt" else "npm")
     if npm is None:
-        print(f"[ERROR] npm が見つかりません (PATH を確認してください)", file=sys.stderr)
+        print("[ERROR] npm が見つかりません (PATH を確認してください)", file=sys.stderr)
         return 1
     if not (FRONTEND_DIR / "node_modules" / ".bin").exists():
         print(

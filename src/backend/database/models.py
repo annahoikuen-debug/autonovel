@@ -23,7 +23,6 @@ from sqlalchemy.orm import relationship
 
 from src.infrastructure.database.models.base_orm import Base
 from src.backend.database.models_checkpoint import WorkflowCheckpointModel
-from src.backend.database.models_tenant import Tenant, TenantMember
 
 # 0000_initial_migration の `Base.metadata.create_all` が全テーブルを確実に作るため、
 # 別モジュールに定義されたモデルもここで import して同一の Base に登録する。

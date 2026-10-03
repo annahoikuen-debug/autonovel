@@ -4,7 +4,6 @@ Data models for subtext template library (PLAN_Y2).
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 

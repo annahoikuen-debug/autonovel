@@ -8,7 +8,6 @@ import pytest
 
 from src.pipeline.emotional_residue import EmotionType
 from src.rules.engine import RuleEngine
-from src.rules.emotional_rules import EmotionalRule, PlotContext
 from src.rules.plot_events import PlotEvent, PlotEventType, Role
 from src.rules.rule_loader import DEFAULT_RULES_PATH, RuleLoader
 from src.rules.state_machine import EmotionalStateMachine

@@ -2,12 +2,8 @@
 Smoke test for SubtextEngine imports and initialization (Step 1).
 """
 
-import pytest
 from src.narrative.subtext_engine import (
     SubtextEngine,
-    DialogueBlock,
-    RuleRegistry,
-    RegexRule,
 )
 
 

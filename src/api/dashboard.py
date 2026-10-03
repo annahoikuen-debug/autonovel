@@ -1,12 +1,10 @@
 """Dashboard data API for emotional timeline, conflicts summary and source contribution."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 from fastapi import APIRouter, Query
 
 from src.fusion.engine import FusionEngine
-from src.stores.conflict_store import ConflictStore
-from src.stores.vector_store import VectorStore
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
 

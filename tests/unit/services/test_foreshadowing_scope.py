@@ -2,8 +2,6 @@
 Test file for foreshadowing scope
 PLAN 01: 伏線スコープのテスト
 """
-import pytest
-from unittest.mock import AsyncMock, MagicMock
 from src.models.foreshadowing_status import ForeshadowingScope
 
 

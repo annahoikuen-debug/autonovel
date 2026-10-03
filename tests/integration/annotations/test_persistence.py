@@ -5,10 +5,8 @@ import pytest
 
 from src.annotations.persistence import AnnotationPersistence, persist_annotations
 from src.annotations.beat import EmotionalBeat
-from src.pipeline.emotional_residue import EmotionType, EmotionalVector
+from src.pipeline.emotional_residue import EmotionType
 from src.stores.vector_store import RedisVectorStore
-from src.stores.graph_store import GraphStore
-from src.stores.event_log import EventLogStore
 
 
 class TestAnnotationPersistence:

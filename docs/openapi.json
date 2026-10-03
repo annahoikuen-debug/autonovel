@@ -13,6 +13,11 @@
         "summary": "Generate Content",
         "description": "章単位の対話型自動生成 [Interactive Writer]",
         "operationId": "generate_content_easy_mode_generate_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "Authorization",
@@ -65,8 +70,13 @@
           "easy_mode"
         ],
         "summary": "Export Easy Mode Package",
-        "description": "かんたんモードで作成された作品の納品パッケージ (ZIP) をエクスポートする。\n\nbook_id に対応する作品が DB に存在しなくてもフォールバックデータで\nZIP を生成して返却する仕様 (TC-12 参照)。",
+        "description": "かんたんモードで作成された作品の納品パッケージ (ZIP) をエクスポートする。\n\n認証済みユーザー本人の作品のみエクスポートできる（他者の book_id を\n推測して差し替えパッケージを取得できないようにする）。",
         "operationId": "export_easy_mode_package_easy_mode_export__book_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -107,8 +117,13 @@
           "easy_mode"
         ],
         "summary": "Get Task Status",
-        "description": "Return the status of a generation task.\n\nReturns \"pending\" if not yet completed, \"failed\" if an error occurred,\notherwise \"completed\" with the result.",
+        "description": "Return the status of a generation task.\n\nReturns \"pending\" if not yet completed, \"failed\" if an error occurred,\notherwise \"completed\" with the result.\n\n認証必須。タスク結果に所有者が記録されている場合は本人 (または管理者) のみ参照できる。",
         "operationId": "get_task_status_easy_mode_status__task_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "task_id",
@@ -484,6 +499,11 @@
         "summary": "Generate Content",
         "description": "章単位の対話型自動生成 [Interactive Writer]",
         "operationId": "generate_content_api_wizard_generate_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "Authorization",
@@ -536,8 +556,13 @@
           "wizard"
         ],
         "summary": "Export Easy Mode Package",
-        "description": "かんたんモードで作成された作品の納品パッケージ (ZIP) をエクスポートする。\n\nbook_id に対応する作品が DB に存在しなくてもフォールバックデータで\nZIP を生成して返却する仕様 (TC-12 参照)。",
+        "description": "かんたんモードで作成された作品の納品パッケージ (ZIP) をエクスポートする。\n\n認証済みユーザー本人の作品のみエクスポートできる（他者の book_id を\n推測して差し替えパッケージを取得できないようにする）。",
         "operationId": "export_easy_mode_package_api_wizard_export__book_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -578,8 +603,13 @@
           "wizard"
         ],
         "summary": "Get Task Status",
-        "description": "Return the status of a generation task.\n\nReturns \"pending\" if not yet completed, \"failed\" if an error occurred,\notherwise \"completed\" with the result.",
+        "description": "Return the status of a generation task.\n\nReturns \"pending\" if not yet completed, \"failed\" if an error occurred,\notherwise \"completed\" with the result.\n\n認証必須。タスク結果に所有者が記録されている場合は本人 (または管理者) のみ参照できる。",
         "operationId": "get_task_status_api_wizard_status__task_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "task_id",
@@ -953,7 +983,7 @@
           "streaming"
         ],
         "summary": "Stream Generation",
-        "description": "小説執筆を SSE でストリーミング配信する (GET)。\n\nEventSource は GET のみ対応しているため、本エンドポイントは GET で\nリクエストパラメータ (個別フィールド または base64 ``payload``) を受け取り、\n``text/event-stream`` で逐次チャンクを返す。\n\n個別フィールドが指定された場合は ``StreamQueryInput`` 経由で組み立てる。\n``payload`` (base64 JSON) を渡した場合は ``EasyModeInput`` として直接復元する。",
+        "description": "小説執筆を SSE でストリーミング配信する (GET)。\n\nEventSource は GET のみ対応しているため、本エンドポイントは GET で\n``text/event-stream`` を返す。入力は次のいずれか:\n\n* JSON リクエストボディ (``EasyModeInput``) — `llm_config` を使いたい場合はこちら\n* クエリの個別フィールド (``current_chapter`` / ``character_*`` など)\n\n認証は POST 版と同じ ``require_api_key`` に統一した。base64 ``payload``\n(クエリ文字列に `llm_config.api_key` / `base_url` を埋め込む仕組み) は\nアクセスログとブラウザ履歴に平文で残り、かつ攻撃者が指定したホストへの\nSSRF の起点になるため、受け取った場合は明示的に拒否する。",
         "operationId": "stream_generation_easy_mode_generate_stream_get",
         "parameters": [
           {
@@ -969,10 +999,12 @@
                   "type": "null"
                 }
               ],
-              "description": "Base64-urlsafe encoded JSON of EasyModeInput",
+              "description": "Deprecated. Base64-encoded EasyModeInput used to be accepted here, but it carried llm_config.api_key / llm_config.base_url into the URL (access-log and history leak + SSRF). Send a JSON body instead, or use the individual query fields below.",
+              "deprecated": true,
               "title": "Payload"
             },
-            "description": "Base64-urlsafe encoded JSON of EasyModeInput"
+            "description": "Deprecated. Base64-encoded EasyModeInput used to be accepted here, but it carried llm_config.api_key / llm_config.base_url into the URL (access-log and history leak + SSRF). Send a JSON body instead, or use the individual query fields below.",
+            "deprecated": true
           },
           {
             "name": "current_chapter",
@@ -1089,8 +1121,35 @@
               ],
               "title": "Content Length Limit"
             }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/EasyModeInput"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body Input"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -1376,6 +1435,11 @@
         "summary": "Get Graph Data",
         "description": "フロントエンドの相関図可視化 (Force-Graph 等) 用にノードとエッジ一覧を取得する.\n\nbook_id を指定して、RDBMS (foreshadowings, characters, character_relations) から\n実際の作品データに基づくグラフを動的に生成して返却する。",
         "operationId": "get_graph_data_api_graph_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -1439,6 +1503,11 @@
         "summary": "Get Foreshadowing Kpi",
         "description": "伏線KPI（回収率・未回収数・期限超過数）を取得する。\n\nv5.3 で追加。ロードマップの主要KPI「伏線回収率」を実測する唯一のAPI。\n同時に Prometheus メトリクス（foreshadowing_collection_rate 等）も更新する。",
         "operationId": "get_foreshadowing_kpi_api_graph_foreshadowing_kpi_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -1505,6 +1574,11 @@
         "summary": "List Chapter Chunks",
         "description": "保存されているベクトルチャンク一覧を取得する.",
         "operationId": "list_chapter_chunks_api_graph_chunks_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "chapter_id",
@@ -1572,8 +1646,13 @@
           "graph"
         ],
         "summary": "Execute Cypher",
-        "description": "任意のCypherクエリを実行する（管理者向け）.",
+        "description": "任意のCypherクエリを実行する（管理者向け）.\n\n呼び出し側が指定した Cypher をそのまま渡せるため、認可は\nGraphRAG の有効無効（インストールフラグ）より **先に** 判定する。\nフラグで無効の場合でも、管理者以外は 403 で拒否する。",
         "operationId": "execute_cypher_api_graph_cypher_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "Authorization",
@@ -1661,7 +1740,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/graph/edges": {
@@ -1705,7 +1789,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/graph/batch": {
@@ -1747,7 +1836,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/graph/nodes/{label}/{name}": {
@@ -1758,6 +1852,11 @@
         "summary": "Delete Node",
         "description": "ノードを削除する（未実装）。",
         "operationId": "delete_node_api_graph_nodes__label___name__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "label",
@@ -1873,7 +1972,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/graph/nodes/{node_name}/path/{target_name}": {
@@ -1884,6 +1988,11 @@
         "summary": "Get Shortest Path",
         "description": "2ノード間の最短パスを取得する.",
         "operationId": "get_shortest_path_api_graph_nodes__node_name__path__target_name__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "node_name",
@@ -1966,6 +2075,11 @@
         "summary": "Get Graph Stats",
         "description": "グラフの統計情報を取得する.",
         "operationId": "get_graph_stats_api_graph_stats_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "graph_name",
@@ -2016,6 +2130,11 @@
         "summary": "Get Labels",
         "description": "グラフ内の全ラベル一覧を取得する.",
         "operationId": "get_labels_api_graph_labels_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "graph_name",
@@ -2101,7 +2220,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/graph/pipeline/batch": {
@@ -2145,7 +2269,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/graph/pipeline/status": {
@@ -2169,7 +2298,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/graph/rag/hybrid-search": {
@@ -2213,7 +2347,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/graph/rag/context": {
@@ -2257,7 +2396,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/graph/rag/episode": {
@@ -2268,6 +2412,11 @@
         "summary": "Retrieve For Episode",
         "description": "エピソード執筆向けのコンテキストを一括取得する.",
         "operationId": "retrieve_for_episode_api_graph_rag_episode_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -2391,7 +2540,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/editor/assist": {
@@ -4399,6 +4553,11 @@
         ],
         "summary": "Get Book Score History",
         "operationId": "get_book_score_history_api_books__book_id__book_scores_history_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -4441,6 +4600,11 @@
         ],
         "summary": "Get Pdca Cycles",
         "operationId": "get_pdca_cycles_api_books__book_id__pdca_cycles__chapter_number__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -6536,7 +6700,13 @@
           "marketing"
         ],
         "summary": "Export Package Get",
+        "description": "作品データ一式 (本文 / 設定 / プロット / JSON) を ZIP で返す (GET)。\n\nプロバイダ API キーはクエリ文字列ではなく `Authorization` ヘッダーから受け取る。\nクエリ文字列に出すと nginx 等のアクセスログやブラウザ履歴に平文で残るため。",
         "operationId": "export_package_get_api_marketing_export_package__book_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -6548,12 +6718,13 @@
             }
           },
           {
-            "name": "api_key",
-            "in": "query",
-            "required": true,
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
             "schema": {
               "type": "string",
-              "title": "Api Key"
+              "default": "",
+              "title": "Authorization"
             }
           }
         ],
@@ -6771,6 +6942,11 @@
         "description": "[非推奨] 新path版 /api/narrative_metrics/{book_id}/{branch_id} を使用してください。",
         "operationId": "get_narrative_metrics_api_books__book_id__narrative_metrics_get",
         "deprecated": true,
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -6928,6 +7104,11 @@
         "summary": "Get Narrative Metrics Trend",
         "description": "書籍およびブランチごとの指標推移を取得する。",
         "operationId": "get_narrative_metrics_trend_api_narrative_metrics__book_id___branch_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -6998,6 +7179,11 @@
         "summary": "Produce Novel",
         "description": "作品全話生成を開始するエンドポイント",
         "operationId": "produce_novel_api_novel_produce_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "Authorization",
@@ -7052,6 +7238,11 @@
         "summary": "Get Novel Status",
         "description": "作品ステータス取得",
         "operationId": "get_novel_status_api_novel__project_id__status_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "project_id",
@@ -7095,6 +7286,11 @@
         "summary": "List Episodes",
         "description": "エピソード一覧取得",
         "operationId": "list_episodes_api_novel__project_id__episodes_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "project_id",
@@ -7138,6 +7334,11 @@
         "summary": "Get Report",
         "description": "制作レポート取得",
         "operationId": "get_report_api_novel__project_id__report_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "project_id",
@@ -7181,6 +7382,11 @@
         "summary": "Get Chapter Book Score",
         "description": "指定章の BookScore を取得する",
         "operationId": "get_chapter_book_score_api_novel_books__book_id__chapters__chapter_number__score_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -7233,6 +7439,11 @@
         "summary": "Check Promotion Eligibility",
         "description": "かんたんモードから上級者Studioへの昇格判定を取得する",
         "operationId": "check_promotion_eligibility_api_novel_books__book_id__promotion_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -7276,6 +7487,11 @@
         "summary": "Get Pdca Report",
         "description": "書籍の PDCA レポートを取得する",
         "operationId": "get_pdca_report_api_novel_books__book_id__pdca_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -7319,6 +7535,11 @@
         "summary": "Get Book Alerts",
         "description": "書籍のスコアアラートを取得する",
         "operationId": "get_book_alerts_api_novel_books__book_id__alerts_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -7362,6 +7583,11 @@
         "summary": "Get Novel Social Relationships",
         "description": "作品のキャラクター間動的関係性一覧を取得",
         "operationId": "get_novel_social_relationships_api_novel__book_id__social_relationships_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -7413,6 +7639,11 @@
         "summary": "Get Novel Social Journals",
         "description": "作品の登場人物内面手記・日記一覧を取得",
         "operationId": "get_novel_social_journals_api_novel__book_id__social_journals_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -7506,6 +7737,11 @@
         "summary": "Get Novel Social Trends",
         "description": "作品の動的関係性トレンド要約テキストを取得",
         "operationId": "get_novel_social_trends_api_novel__book_id__social_trends_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -7736,7 +7972,7 @@
           "commercial"
         ],
         "summary": "Run Schedule Now",
-        "description": "予約投稿を即時に実行する (Step 10).",
+        "description": "予約投稿を即時に実行する (Step 10).\n\n実行自体は Huey ワーカー側の ``execute_publication_task`` が\npending -> running -> completed/failed の遷移と投稿処理を担当する。\n本エンドポイントはそのタスクを即時投入するだけで、\nスケジュールの存在確認と作品の所有権検証に徹する。",
         "operationId": "run_schedule_now_commercial_schedules__schedule_id__run_now_post",
         "security": [
           {
@@ -8704,9 +8940,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "additionalProperties": true,
-                "type": "object",
-                "title": "Request"
+                "$ref": "#/components/schemas/IllustrationGenerateRequest"
               }
             }
           },
@@ -8742,15 +8976,13 @@
     "/yonkoma": {
       "post": {
         "summary": "Generate Yonkoma",
-        "description": "1話分の流れを 6 コマ (デフォルト) で要約した漫画プロンプト+画像を生成する。\n\nRequest:\n    {\n        \"book_id\": int,\n        \"episode_text\": str,        # 1話分の本文\n        \"panels\": int = 6,          # 3〜6 (省略時 6)\n        \"model\": str = \"auto\",      # fast/quality/ultra/auto\n        \"enable_r15\": bool = false,\n        \"book_context\": dict = {}   # title/genre/character_name 等\n    }\n\nResponse: IllustrationResult 互換の dict",
+        "description": "1話分の流れを 6 コマ (デフォルト) で要約した漫画プロンプト+画像を生成する。\n\nRequest は `YonkomaGenerateRequest` で検証される:\n    {\n        \"book_id\": int,\n        \"episode_text\": str,        # 1話分の本文\n        \"panels\": int = 6,          # 3〜6 (省略時 6)\n        \"model\": str = \"auto\",      # fast/quality/ultra/auto\n        \"enable_r15\": bool = false,\n        \"book_context\": dict = {}   # title/genre/character_name 等\n    }\n\nResponse: IllustrationResult 互換の dict",
         "operationId": "generate_yonkoma_yonkoma_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "additionalProperties": true,
-                "type": "object",
-                "title": "Request"
+                "$ref": "#/components/schemas/YonkomaGenerateRequest"
               }
             }
           },
@@ -8928,7 +9160,7 @@
           "branches"
         ],
         "summary": "Create Branch",
-        "description": "新規ブランチを作成.",
+        "description": "新規ブランチを作成.\n\n``@requires_book_ownership`` は使用しない: 同デコレータが注入する\n``enforce_book_ownership(book_id, ...)`` は ``book_id`` をパスパラメータとして\n解決するため (``{book_id}`` を含まない本ルートではクエリパラメータ化され)、\nボディの ``payload.book_id`` と一致しない。本ルートは明示的に検証する。",
         "operationId": "create_branch_api_branches__post",
         "requestBody": {
           "content": {
@@ -10871,6 +11103,50 @@
         }
       }
     },
+    "/api/auth/refresh": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Refresh",
+        "description": "リフレッシュトークンから新しいアクセストークンを発行する。\n\nリフレッシュトークンは `Authorization: Bearer <refresh_token>` で受け取る\n（クエリ文字列に置くとアクセスログへ平文で残るため）。\nログインが既に同トークンを発行しており、GlobalAuthMiddleware の公開パスにも\n登録されているため、未提供の状態ではクライアントがトークンを更新できない。",
+        "operationId": "refresh_api_auth_refresh_post",
+        "parameters": [
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/auth/me": {
       "get": {
         "tags": [
@@ -12491,6 +12767,11 @@
         "summary": "Get Orchestrated Task Status",
         "description": "オーケストレーションタスクのステータス取得。",
         "operationId": "get_orchestrated_task_status_orchestrated_status__task_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "task_id",
@@ -12536,6 +12817,11 @@
         "summary": "Cancel Orchestrated Task",
         "description": "オーケストレーションタスクをキャンセル。",
         "operationId": "cancel_orchestrated_task_orchestrated_task__task_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "task_id",
@@ -12628,8 +12914,13 @@
           "orchestrated"
         ],
         "summary": "Orchestrated Events",
-        "description": "オーケストレーション中のAgentEventをSSEでリアルタイム配信。",
+        "description": "オーケストレーション中のAgentEventをSSEでリアルタイム配信。\n\nIDOR 防止: correlation_id は単なる識別子（`book_<id>_branch_<id>_ep_<n>`）で、\n他人の生成イベントを購読できてしまう。作品 ID を解決して所有者を検証する。",
         "operationId": "orchestrated_events_orchestrated_events__correlation_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "correlation_id",
@@ -12646,7 +12937,9 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "title": "Response Orchestrated Events Orchestrated Events  Correlation Id  Get"
+                }
               }
             }
           },
@@ -14415,14 +14708,12 @@
           "created_at": {
             "type": "string",
             "format": "date-time",
-            "title": "Created At",
-            "default": "2026-10-02T01:19:30.483497"
+            "title": "Created At"
           },
           "updated_at": {
             "type": "string",
             "format": "date-time",
-            "title": "Updated At",
-            "default": "2026-10-02T01:19:30.483509"
+            "title": "Updated At"
           },
           "id": {
             "type": "integer",
@@ -16641,6 +16932,19 @@
             "title": "Gamma",
             "description": "全文検索の重み",
             "default": 0.2
+          },
+          "book_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Book Id",
+            "description": "スコープする書籍ID。検索はセッション全体（=全テナント）にまたがるため、通常利用では作品所有権の検証に必要なため指定が必須となる"
           }
         },
         "type": "object",
@@ -16649,6 +16953,55 @@
         ],
         "title": "HybridSearchRequest",
         "description": "ハイブリッド検索リクエスト."
+      },
+      "IllustrationGenerateRequest": {
+        "properties": {
+          "book_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Book Id",
+            "description": "対象 Book ID"
+          },
+          "illustration_type": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Illustration Type",
+            "description": "挿絵種別 (scene/character/yonkoma 等)"
+          },
+          "episode_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Episode Number",
+            "description": "話数"
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "生成モデル (fast/quality/ultra/auto)",
+            "default": "auto"
+          },
+          "enable_r15": {
+            "type": "boolean",
+            "title": "Enable R15",
+            "description": "R15 表現を許可するか",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_id",
+          "illustration_type"
+        ],
+        "title": "IllustrationGenerateRequest",
+        "description": "単一挿絵生成リクエスト (`POST /generate`)。"
       },
       "LLMConfigOverride": {
         "properties": {
@@ -17802,14 +18155,12 @@
           "created_at": {
             "type": "string",
             "format": "date-time",
-            "title": "Created At",
-            "default": "2026-10-02T01:19:30.483497"
+            "title": "Created At"
           },
           "updated_at": {
             "type": "string",
             "format": "date-time",
-            "title": "Updated At",
-            "default": "2026-10-02T01:19:30.483509"
+            "title": "Updated At"
           },
           "id": {
             "type": "integer",
@@ -19790,6 +20141,74 @@
         "title": "WritingDirectiveSchema",
         "description": "PDCA執筆指示のスキーマ"
       },
+      "YonkomaGenerateRequest": {
+        "properties": {
+          "book_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Book Id",
+            "description": "対象 Book ID"
+          },
+          "episode_text": {
+            "type": "string",
+            "title": "Episode Text",
+            "description": "1話分の本文",
+            "default": ""
+          },
+          "panels": {
+            "type": "integer",
+            "maximum": 6.0,
+            "minimum": 3.0,
+            "title": "Panels",
+            "description": "コマ数 (3〜6)",
+            "default": 6
+          },
+          "model": {
+            "type": "string",
+            "title": "Model",
+            "description": "生成モデル (fast/quality/ultra/auto)",
+            "default": "auto"
+          },
+          "enable_r15": {
+            "type": "boolean",
+            "title": "Enable R15",
+            "description": "R15 表現を許可するか",
+            "default": false
+          },
+          "episode_number": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Episode Number",
+            "description": "話数"
+          },
+          "book_context": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Book Context",
+            "description": "作品の補助情報"
+          },
+          "yonkoma_enabled": {
+            "type": "boolean",
+            "title": "Yonkoma Enabled",
+            "description": "画像生成を伴うか (False ならプロンプトのみ)",
+            "default": true
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "book_id"
+        ],
+        "title": "YonkomaGenerateRequest",
+        "description": "4コマ漫画生成リクエスト (`POST /yonkoma`)。"
+      },
       "src__backend__routers__annotations__RollbackRequest": {
         "properties": {
           "book_id": {
@@ -19819,14 +20238,12 @@
           "created_at": {
             "type": "string",
             "format": "date-time",
-            "title": "Created At",
-            "default": "2026-10-02T01:19:30.483497"
+            "title": "Created At"
           },
           "updated_at": {
             "type": "string",
             "format": "date-time",
-            "title": "Updated At",
-            "default": "2026-10-02T01:19:30.483509"
+            "title": "Updated At"
           },
           "id": {
             "type": "integer",

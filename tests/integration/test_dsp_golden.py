@@ -1,8 +1,5 @@
 """Golden master tests for DSP tension balancer."""
 
-import json
-from pathlib import Path
-import pytest
 from src.narrative_balancer.dsp.balancer import DSPTensionBalancer
 from src.narrative_balancer.dsp.models import Beat
 

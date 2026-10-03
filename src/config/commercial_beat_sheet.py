@@ -3,7 +3,7 @@
 Web小説・ライトノベル単行本1巻分（約10万字・40話）を読ませ切るための黄金構成比率。
 各フェーズにおけるストーリー方針と、伏線回収スロットの契約方針を定義。
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 COMMERCIAL_40EP_BEATS: List[Dict[str, Any]] = [
     {

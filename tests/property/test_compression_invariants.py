@@ -3,15 +3,12 @@ from __future__ import annotations
 
 import pytest
 from hypothesis import given, strategies as st, settings, assume
-from hypothesis.strategies import text, lists, integers, floats, sampled_from, dictionaries, sets
+from hypothesis.strategies import text, lists, integers, floats, sampled_from, sets
 
 from src.services.compression.compressor import FourLayerCompressor
 from src.services.compression.models import (
     CompressionConfig,
-    CompressedContextResult,
     ProtectedContext,
-    SceneFlowHistory,
-    SceneType,
 )
 
 

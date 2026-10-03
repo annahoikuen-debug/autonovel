@@ -6,7 +6,6 @@ from typing import Tuple
 from spacy.tokens import Token
 
 from src.pipeline.emotion_config import EmotionLexicon
-from src.pipeline.emotional_residue import EmotionType
 
 
 def classify_emotion(

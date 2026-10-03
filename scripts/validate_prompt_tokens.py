@@ -31,7 +31,7 @@ def validate_prompt_token_sync(
     tokens = TokenParser.find_tokens(prompt_content)
     expander = TokenExpander(dict_path=dict_path)
 
-    print(f"=== Validating Prompt Tokens against Dictionary ===")
+    print("=== Validating Prompt Tokens against Dictionary ===")
     print(f"Prompt: {prompt_path}")
     print(f"Dictionary: {dict_path}")
     print(f"Found {len(tokens)} token mentions in prompt.\n")

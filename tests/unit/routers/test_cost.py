@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.routers.cost import get_budget_consumption_ratio, get_cost_summary
+from src.backend.routers.cost import get_budget_consumption_ratio
 from src.backend.database.models import User, Book
 from fastapi import HTTPException
 

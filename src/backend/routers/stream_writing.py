@@ -36,7 +36,7 @@ async def _run_writing_pipeline(
         await verify_book_ownership(book_id, user, uow)
 
         # 書籍情報を取得してジャンルを特定
-        book = await uow.books.get_by_id(book_id)
+        book = await uow.books.get_book(book_id)
         book_genre = getattr(book, "genre", "") or "fantasy"
 
         # 章情報を取得

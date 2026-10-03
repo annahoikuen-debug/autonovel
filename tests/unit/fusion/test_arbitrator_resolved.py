@@ -1,7 +1,7 @@
 """Unit tests for resolved conflicts override in Arbitrator."""
 from src.fusion.arbitrator import Arbitrator
 from src.fusion.config import FusionConfig
-from src.fusion.models import Conflict, SourceVector
+from src.fusion.models import SourceVector
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 from src.stores.conflict_store import ConflictStore
 

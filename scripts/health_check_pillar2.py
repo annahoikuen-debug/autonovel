@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import sys
 from pathlib import Path
 
@@ -10,11 +9,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.backend.tasks.huey import check_huey_health
-from src.backend.database.core import DatabaseManager
 from src.core.container import AppContainer
 from src.backend.tasks.resource_manager import ResourceManager
 from src.backend.tasks.dag_scheduler import DAGScheduler
-from src.backend.database.social_repository import SocialRepository
 
 
 async def run_pillar2_diagnostics() -> dict[str, bool]:

@@ -3,12 +3,9 @@ import base64
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-import httpx
 
 from src.services.illustration.adapters.base import (
     ImagePromptRequest,
-    GeneratedImageResult,
-    ImageGenerationAdapter,
 )
 from src.services.illustration.adapters.dalle3_adapter import Dalle3Adapter
 from src.services.illustration.adapters.fal_adapter import FalAiAdapter

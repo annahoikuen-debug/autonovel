@@ -30,17 +30,17 @@ def check_performance():
     """Check if current metrics meet the SLO."""
     baselines = load_baselines()
     metrics = get_current_metrics()
-    
+
     # Check response time P95
     if metrics["response_time_p95"] > baselines["slo_response_time_seconds"]:
         print(f"ERROR: Response time P95 {metrics['response_time_p95']}s exceeds SLO {baselines['slo_response_time_seconds']}s")
         return False
-    
+
     # Check error rate
     if metrics["error_rate"] > baselines["slo_error_rate"]:
         print(f"ERROR: Error rate {metrics['error_rate']} exceeds SLO {baselines['slo_error_rate']}")
         return False
-    
+
     print("Performance check passed: All SLOs are met.")
     return True
 

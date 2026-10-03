@@ -2,9 +2,6 @@
 Performance, error handling, multilingual, and sync tests (PLAN_Y3 Step 18, 19, 22, 23).
 """
 
-from pathlib import Path
-import pytest
-from src.narrative.subtext_engine.models import SubtextContext
 from src.narrative.subtext_tokens.expander import TokenExpander
 from src.narrative.subtext_tokens.formatter import DialogueFormatter
 from scripts.validate_prompt_tokens import validate_prompt_token_sync

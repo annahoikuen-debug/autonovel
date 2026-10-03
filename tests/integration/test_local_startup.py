@@ -9,7 +9,6 @@ CI 環境では実際のプロセス起動を避けるため、スクリプト�
 
 from __future__ import annotations
 
-import re
 import subprocess
 import sys
 import urllib.request

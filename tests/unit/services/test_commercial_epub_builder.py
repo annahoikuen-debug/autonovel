@@ -1,7 +1,6 @@
 """商用縦書きEPUB 3組版ビルダー・ルビプロセッサ・縦書きCSSの単体テスト (v5.0 Step 15〜18)."""
 import io
 import zipfile
-import pytest
 
 from src.services.exporters.epub_vertical_styler import COMMERCIAL_VERTICAL_CSS
 from src.services.exporters.epub_ruby_processor import EpubRubyProcessor

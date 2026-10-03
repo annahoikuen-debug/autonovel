@@ -1,7 +1,6 @@
 """Performance benchmark for CSP Solver Balancer."""
 
 import time
-from ortools.sat.python import cp_model
 from src.narrative_balancer.csp.balancer import CSPNarrativeBalancer
 from src.narrative_balancer.csp.config import CSPConfig
 from src.narrative_balancer.models import Beat, BeatType

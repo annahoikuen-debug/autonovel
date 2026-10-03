@@ -1,13 +1,11 @@
 """Unit tests for signal extraction and spectral metrics."""
 
 import numpy as np
-import pytest
 from src.narrative_balancer.dsp.models import Beat
 from src.narrative_balancer.dsp.signal import extract_tension_curve
 from src.narrative_balancer.dsp.spectral import (
     spectral_flatness,
     low_freq_energy_ratio,
-    multivariate_spectral_flatness,
 )
 
 

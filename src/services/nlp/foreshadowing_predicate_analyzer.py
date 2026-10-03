@@ -2,7 +2,7 @@
 
 import logging
 import re
-from typing import List, Optional, Set, Tuple
+from typing import List, Tuple
 
 from src.config.predicate_matrices import (
     RESOLVED_PREDICATES,

@@ -4,7 +4,6 @@ Part 3 (Step 10) リグレッション防止テスト:
 API キー検証における定数時間比較 (hmac.compare_digest)、空文字・空白処理の堅牢性を検証。
 """
 
-import pytest
 from src.backend.auth import validate_api_key_sync
 from src.backend.config import settings
 

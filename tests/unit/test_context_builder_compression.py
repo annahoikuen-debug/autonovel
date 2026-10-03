@@ -2,20 +2,14 @@
 from __future__ import annotations
 
 import pytest
-from unittest.mock import Mock, AsyncMock, MagicMock
+from unittest.mock import Mock, AsyncMock
 from dataclasses import dataclass
 
 from src.agents.context_builder_agent import ContextBuilderAgent
-from src.agents.orchestrator import AgentContext, AgentResult, AgentName
+from src.agents.orchestrator import AgentContext
 from src.services.compression.compressor import FourLayerCompressor
 from src.services.compression.models import (
     CompressionConfig,
-    CompressedContextResult,
-    TrimmedContextOutput,
-    ProtectedContext,
-    SceneFlowHistory,
-    SceneType,
-    CompressionQualityMetrics,
 )
 
 

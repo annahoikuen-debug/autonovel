@@ -12,7 +12,6 @@ from __future__ import annotations
 import ast
 from pathlib import Path
 import sys
-import pytest
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
@@ -76,7 +75,7 @@ def test_no_deprecated_module_imports_in_src():
                         if node.module == forbidden or node.module.startswith(f"{forbidden}."):
                             violations.append(f"{py_file.relative_to(ROOT_DIR)}: from {node.module} import ...")
 
-    assert not violations, f"廃止済みモジュールへの依存が検出されました:\n" + "\n".join(violations)
+    assert not violations, "廃止済みモジュールへの依存が検出されました:\n" + "\n".join(violations)
 
 
 if __name__ == "__main__":

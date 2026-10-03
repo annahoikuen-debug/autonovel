@@ -1,6 +1,5 @@
 """Unit tests for ForeshadowingPredicateAnalyzer fallback mechanisms."""
 
-import pytest
 from src.services.nlp.foreshadowing_predicate_analyzer import ForeshadowingPredicateAnalyzer
 
 

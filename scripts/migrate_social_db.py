@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 import sys
 import logging
 from pathlib import Path
@@ -15,10 +14,6 @@ from sqlalchemy import inspect
 from src.backend.database import engine
 from src.backend.database.models import (
     Base,
-    CharacterRelationship,
-    CharacterJournal,
-    CharacterComment,
-    RelationshipHistory,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

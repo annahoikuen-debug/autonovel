@@ -5,7 +5,6 @@ Executes all 50 golden samples from tests/golden/templates/.
 
 import json
 from pathlib import Path
-import pytest
 from src.narrative.subtext_engine.models import SubtextContext
 from src.narrative.subtext_templates.loader import TemplateLoader
 from src.narrative.subtext_templates.matcher import ContextMatcher

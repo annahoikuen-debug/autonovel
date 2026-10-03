@@ -13,7 +13,7 @@ from src.pipeline.compression_pipeline import (
 )
 from src.pipeline.emotional_residue import EmotionType
 from src.rules.engine import RuleEngine
-from src.rules.rule_loader import DEFAULT_EVENTS_PATH, DEFAULT_RULES_PATH
+from src.rules.rule_loader import DEFAULT_RULES_PATH
 from src.rules.state_machine import EmotionalStateMachine
 from src.stores.event_log import EventLogStore
 from src.stores.graph_store import InMemoryGraphStore

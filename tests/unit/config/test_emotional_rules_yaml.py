@@ -4,7 +4,6 @@ from __future__ import annotations
 import pytest
 
 from src.pipeline.emotional_residue import EmotionType
-from src.rules.conditions import condition_registry
 from src.rules.rule_loader import DEFAULT_RULES_PATH, RuleLoader
 from src.rules.plot_events import PlotEventType, Role
 

@@ -4,7 +4,6 @@ import json
 import logging
 import time
 from typing import List, Optional, Set
-import numpy as np
 
 from src.narrative_balancer.dsp.models import (
     Beat,

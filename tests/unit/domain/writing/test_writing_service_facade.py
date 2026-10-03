@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.domain.writing import WritingService, WritingCoordinator, QualityLoop, StateGuard, ValidationResult
-from src.domain.writing.models import WritingGenerationContext, RegenerationAction
 from src.agents.orchestrator import AgentContext, AgentResult
 
 

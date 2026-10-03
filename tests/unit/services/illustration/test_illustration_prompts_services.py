@@ -1,5 +1,4 @@
 """Unit tests for illustration prompts, model_selector, and *Service classes."""
-import time
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest

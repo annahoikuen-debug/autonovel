@@ -1,7 +1,7 @@
 """API endpoints for conflict review and manual resolution."""
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 

@@ -3,8 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
-from dataclasses import dataclass
+from unittest.mock import MagicMock, patch
 
 from src.domain.entities.scene import Scene, SceneRole, SceneStatus
 from src.agents.writing.scene_writer import SceneWriter, SceneWriterOrchestrator
@@ -432,7 +431,7 @@ class TestScenePrompts:
         """プロンプトテンプレートがレンダリング可能かテスト"""
         import jinja2
         from pathlib import Path
-        from src.domain.entities.scene import Scene, SceneRole
+        from src.domain.entities.scene import Scene
         from src.domain.value_objects.ids import NovelId
 
         tmpl_path = Path(__file__).resolve().parents[3] / "prompts" / "templates"

@@ -4,7 +4,7 @@ Verifies that ContextBuilderAgent fulfills all required context-building capabil
 and that ContextManager cleanly acts as a deprecation shim without dual-maintenance issues.
 """
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 import warnings
 import pytest
 

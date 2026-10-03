@@ -2,7 +2,6 @@
 Unit tests for TokenExpander, deterministic expansion, and nested tokens (PLAN_Y3 Step 4, 5, 6).
 """
 
-import pytest
 from src.narrative.subtext_engine.models import SubtextContext
 from src.narrative.subtext_tokens.expander import TokenExpander
 

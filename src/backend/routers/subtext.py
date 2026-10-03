@@ -15,7 +15,7 @@ import yaml
 from src.backend.auth import get_current_user
 from src.backend.database.models import User
 from src.narrative.subtext_engine.engine import SubtextEngine
-from src.narrative.subtext_engine.models import DialogueBlock, RewriteRuleModel, SubtextContext
+from src.narrative.subtext_engine.models import RewriteRuleModel, SubtextContext
 from src.narrative.subtext_engine.rules import RegexRule
 from src.narrative.subtext_templates.loader import TemplateLoader
 from src.narrative.subtext_templates.renderer import TemplateRenderer

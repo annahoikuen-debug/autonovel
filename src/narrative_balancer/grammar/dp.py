@@ -1,6 +1,6 @@
 """Dynamic programming table and minimal completion cost calculator."""
 
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 import math
 from src.narrative_balancer.grammar.cost_model import GrammarCostModel
 from src.narrative_balancer.grammar.parse_forest import ParseForest

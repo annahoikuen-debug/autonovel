@@ -38,7 +38,7 @@ class MangaTypesetter:
             output_path.write_bytes(image_path.read_bytes())
             return output_path
 
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image, ImageDraw
 
         img = Image.open(image_path).convert("RGBA")
         width, height = img.size

@@ -1,5 +1,4 @@
 """古い計画書を docs/archive/ に退避するスクリプト。"""
-import os
 import shutil
 from pathlib import Path
 

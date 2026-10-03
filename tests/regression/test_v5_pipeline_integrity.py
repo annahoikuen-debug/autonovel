@@ -9,11 +9,8 @@ v5系の中核である
 
 from __future__ import annotations
 
-import asyncio
 from pathlib import Path
 import sys
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
@@ -24,7 +21,7 @@ from src.models.plot import (
     PlotMicroBlueprint,
     merge_macro_and_micro,
 )
-from src.services.compression import FourLayerCompressor, CompressionConfig
+from src.services.compression import FourLayerCompressor
 
 
 def test_coarse_fine_skeleton_and_blueprint():

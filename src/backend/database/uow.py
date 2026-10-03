@@ -3,7 +3,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any
 
-from dependency_injector.wiring import Provide, inject
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.services.errors import retry_on_lock

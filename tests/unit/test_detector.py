@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 from src.narrative_balancer.dsp.models import Beat, BeatType, DSPConfig
-from src.narrative_balancer.dsp.detector import detect_sag, scan_sags
+from src.narrative_balancer.dsp.detector import scan_sags
 from src.narrative_balancer.dsp.impulse import design_midpoint_disaster_impulse
 from src.narrative_balancer.dsp.corrector import apply_impulse_correction, writeback_corrected_beats
 from src.narrative_balancer.dsp.signal import extract_tension_curve

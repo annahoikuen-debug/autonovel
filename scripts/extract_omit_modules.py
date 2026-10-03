@@ -10,13 +10,13 @@ def main():
     omit = data.get("tool", {}).get("coverage", {}).get("run", {}).get("omit", [])
     if not omit:
         omit = data.get("tool", {}).get("coverage", {}).get("report", {}).get("omit", [])
-    
+
     output_path = Path("artifacts/omit_list.txt")
     output_path.parent.mkdir(exist_ok=True)
     with open(output_path, "w") as f:
         for pattern in omit:
             f.write(pattern + "\n")
-    
+
     print(f"Found {len(omit)} omit patterns")
     # 実際にファイルシステムでマッチするものを列挙（オプション）
     import glob

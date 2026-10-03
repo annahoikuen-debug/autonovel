@@ -11,8 +11,6 @@ from __future__ import annotations
 import argparse
 import logging
 import sys
-import tempfile
-from pathlib import Path
 from typing import Optional
 
 from src.rules.engine import RuleEngine

@@ -11,7 +11,6 @@ from src.agents.tools.memory_tools import MEMORY_TOOLS_SCHEMA
 from src.agents.tool_handler import ToolHandler
 from src.fusion.config import FusionConfig, load_fusion_config
 from src.fusion.engine import FusionEngine
-from src.pipeline.emotional_residue import EmotionalVector
 from src.pipeline.prompt_builder import build_emotional_context_prompt, build_fused_emotional_context_prompt
 from src.stores.vector_store import VectorStore
 

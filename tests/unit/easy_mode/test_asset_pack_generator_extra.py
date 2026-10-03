@@ -1,7 +1,6 @@
 """AssetPackGenerator の追加単体テスト."""
 
 import json
-from enum import Enum
 from unittest.mock import MagicMock
 
 from src.easy_mode import EpisodeResult, SeriesResult
@@ -314,7 +313,6 @@ class TestGraphOutputs:
 
     def test_generate_media_mix_default_formats(self, tmp_path, monkeypatch):
         from src.easy_mode.phase3 import asset_pack as ap
-        from src.easy_mode.phase3.media_mix import MediaFormat, MediaScript
 
         monkeypatch.setattr(ap, "MediaFormat", ShimbFormat)
         gen = AssetPackGenerator("fantasy", {})

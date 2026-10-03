@@ -5,11 +5,9 @@ Outputs colored HTML comparison between raw generated text and token-expanded po
 
 from __future__ import annotations
 
-import difflib
 import html
-import re
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from src.narrative.subtext_tokens.parser import TOKEN_REGEX
 

@@ -1,7 +1,7 @@
 """Data structures for parse forests and Earley items."""
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
 from src.narrative_balancer.grammar.symbols import NonTerminal, Terminal
 
 

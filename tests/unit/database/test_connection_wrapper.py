@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import MagicMock, AsyncMock
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy import text
 from src.backend.database.core import DatabaseManager

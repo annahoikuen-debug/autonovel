@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-import json, subprocess, sys
+import json
+import subprocess
+import sys
 from pathlib import Path
 
 def run_with_reruns(test_path, reruns=3, timeout_per_run=60):
@@ -16,7 +18,7 @@ def run_with_reruns(test_path, reruns=3, timeout_per_run=60):
         except subprocess.TimeoutExpired:
             passed = False
             result = None
-        except Exception as e:
+        except Exception:
             passed = False
             result = None
             # For other exceptions, we treat as failed
@@ -34,7 +36,7 @@ def main():
     if not fail_now_path.exists():
         print("fail_now.txt not found, exiting")
         return 1
-    
+
     test_targets = []
     with open(fail_now_path, "r") as f:
         for line in f:
@@ -64,7 +66,7 @@ def main():
                 # If no colon, assume it's a test file path
                 if Path(line).exists():
                     test_targets.append(line)
-    
+
     # Remove duplicates while preserving order
     seen = set()
     unique_targets = []
@@ -73,7 +75,7 @@ def main():
             seen.add(t)
             unique_targets.append(t)
     test_targets = unique_targets
-    
+
     # Optionally, skip known problematic tests that always hang
     # List of tests known to cause issues (from previous runs)
     known_problematic = {
@@ -85,11 +87,11 @@ def main():
     test_targets = [t for t in test_targets if t not in known_problematic]
     if len(test_targets) < original_count:
         print(f"Skipped {original_count - len(test_targets)} known problematic tests to avoid hanging")
-    
+
     if not test_targets:
         print("No valid test targets found in fail_now.txt after filtering")
         return 1
-    
+
     flaky_results = {}
     for test in test_targets:
         print(f"Checking {test} for flakiness...")
@@ -100,12 +102,12 @@ def main():
             flaky_results[test] = results
         # If all runs failed due to timeout, we don't mark as flaky here (it's consistently failing)
         # If all runs passed, it's stable
-    
+
     output_path = Path("artifacts/flaky_tests.json")
     output_path.parent.mkdir(exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(flaky_results, f, indent=2, ensure_ascii=False)
-    
+
     print(f"Found {len(flaky_results)} flaky tests")
     if flaky_results:
         print("Flaky tests:")

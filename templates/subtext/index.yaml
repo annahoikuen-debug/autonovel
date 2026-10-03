@@ -249,17 +249,6 @@ templates:
     weight: 95
     final: false
     file: E:\autonovel\templates\subtext\romance\teasing_as_shield.j2
-  en.betrayal.cold_acceptance:
-    id: en.betrayal.cold_acceptance
-    category: betrayal
-    tags:
-    - betrayal
-    - cold
-    - acceptance
-    - irony
-    weight: 100
-    final: false
-    file: E:\autonovel\templates\subtext\en\betrayal\cold_acceptance.j2
   zh.betrayal.cold_acceptance:
     id: zh.betrayal.cold_acceptance
     category: betrayal
@@ -271,3 +260,14 @@ templates:
     weight: 100
     final: false
     file: E:\autonovel\templates\subtext\zh\betrayal\cold_acceptance.j2
+  en.betrayal.cold_acceptance:
+    id: en.betrayal.cold_acceptance
+    category: betrayal
+    tags:
+    - betrayal
+    - cold
+    - acceptance
+    - irony
+    weight: 100
+    final: false
+    file: E:\autonovel\templates\subtext\en\betrayal\cold_acceptance.j2

@@ -157,9 +157,26 @@ async def resolve_comment(
     payload: dict[str, Any] = {},
     current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
+    """コメントを解決済みにする。
+
+    所有権検証が必須。`comment_id` はグローバル採番で、呼び出し側から
+    どの作品のコメントかは判断できないため、まず `comment.book_id` を
+    解決して `_verify_book_access` を通す。これが無いと
+    任意の認証ユーザーが他人のレビューコメントを握り潰せた。
+    """
     resolved = bool(payload.get("resolved", True))
     async with UnitOfWork(AppContainer.db()) as uow:
-        n = await uow.collab.resolve_comment(comment_id, resolved)
+        comment = await uow.collab.get_comment(comment_id)
+        if not comment:
+            from src.core.exceptions import NotFoundError
+
+            raise NotFoundError(
+                "Comment not found", resource_type="Comment", resource_id=str(comment_id)
+            )
+        book_id = int(comment.book_id)
+        await _verify_book_access(uow, book_id, current_user)
+        # book_id を渡して DB 層でも絞る（呼び出し側の検証漏れに対する多層防御）
+        n = await uow.collab.resolve_comment(comment_id, resolved, book_id=book_id)
     if n == 0:
         from src.core.exceptions import NotFoundError
 
@@ -174,8 +191,18 @@ async def delete_comment(
     comment_id: int,
     current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
+    """コメントを削除する。所有権検証は必須（`resolve_comment` 参照）。"""
     async with UnitOfWork(AppContainer.db()) as uow:
-        n = await uow.collab.delete_comment(comment_id)
+        comment = await uow.collab.get_comment(comment_id)
+        if not comment:
+            from src.core.exceptions import NotFoundError
+
+            raise NotFoundError(
+                "Comment not found", resource_type="Comment", resource_id=str(comment_id)
+            )
+        book_id = int(comment.book_id)
+        await _verify_book_access(uow, book_id, current_user)
+        n = await uow.collab.delete_comment(comment_id, book_id=book_id)
     if n == 0:
         from src.core.exceptions import NotFoundError
 

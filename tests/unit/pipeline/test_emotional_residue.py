@@ -1,7 +1,6 @@
 """Tests for emotional residue data structures."""
 from __future__ import annotations
 
-import pytest
 
 from src.pipeline.emotional_residue import EmotionType, EmotionalSignal, EmotionalVector
 

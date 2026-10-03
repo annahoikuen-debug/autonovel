@@ -5,7 +5,6 @@ Step 21: Analyze subtext rewrite rules for potential conflicts across sample dia
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -31,7 +30,7 @@ def main() -> int:
     samples = get_sample_dialogues()
     conflicts = engine.detect_conflicts(samples)
 
-    print(f"=== Subtext Rewrite Rule Conflict Analysis ===")
+    print("=== Subtext Rewrite Rule Conflict Analysis ===")
     print(f"Total test blocks analyzed: {len(samples)}")
     print(f"Total conflicts detected: {len(conflicts)}")
 

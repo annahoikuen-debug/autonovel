@@ -1,6 +1,5 @@
 """Unit tests for DSP config."""
 
-from pathlib import Path
 import pytest
 from src.narrative_balancer.dsp.config import load_dsp_config
 from src.narrative_balancer.dsp.models import DSPConfig

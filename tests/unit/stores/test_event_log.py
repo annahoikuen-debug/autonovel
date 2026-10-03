@@ -1,7 +1,6 @@
 """Step 12: EventLog ストアテスト (JSONL append-only)。"""
 from __future__ import annotations
 
-import pytest
 
 from src.pipeline.emotional_residue import EmotionalSignal, EmotionType
 from src.rules.state_machine import EmotionalStateMachine

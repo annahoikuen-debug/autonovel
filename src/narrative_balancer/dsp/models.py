@@ -1,9 +1,8 @@
 """DSP Tension Balancer models and data structures."""
 
-from typing import List, Optional
+from typing import List
 import numpy as np
 from pydantic import BaseModel, Field, ConfigDict
-from src.narrative_balancer.models import Beat, BeatType, CorrectionAction
 
 
 class TensionSignal(BaseModel):

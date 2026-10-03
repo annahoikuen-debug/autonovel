@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import re
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from src.agents.memory.archival_memory import ArchivalMemory
 from src.agents.memory.core_memory import CoreMemory

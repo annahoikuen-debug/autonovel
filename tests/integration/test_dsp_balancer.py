@@ -1,6 +1,5 @@
 """Integration tests for DSP Tension Balancer end-to-end flow."""
 
-import pytest
 from src.narrative_balancer.dsp.balancer import DSPTensionBalancer
 from src.narrative_balancer.dsp.models import Beat, BeatType, DSPConfig
 

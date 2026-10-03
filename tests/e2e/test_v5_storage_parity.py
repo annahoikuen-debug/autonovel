@@ -7,7 +7,6 @@ Alembic および SQLAlchemy の DDL / ORM モデルが
 
 from __future__ import annotations
 
-import pytest
 from sqlalchemy.dialects import postgresql, sqlite
 from sqlalchemy.schema import CreateTable
 

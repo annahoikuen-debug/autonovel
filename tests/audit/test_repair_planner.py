@@ -5,7 +5,7 @@ import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
-from src.audit.static_rules import Issue, StaticRuleAuditor
+from src.audit.static_rules import Issue
 from src.audit.repair_planner import plan_repair
 
 TEXT = "主人公は立ち止まった。\n\nその名を古代の魔導書と書く。\n\n夜が明けた。"

@@ -8,7 +8,6 @@ from src.pipeline.character_extractor import CharacterExtractor
 from src.pipeline.signal_extractor import SignalExtractor
 from src.pipeline.polarity import classify_emotion
 from src.pipeline.emotion_config import load_emotion_lexicon
-from src.pipeline.emotional_residue import EmotionType
 
 
 class TestPolarityClassification:

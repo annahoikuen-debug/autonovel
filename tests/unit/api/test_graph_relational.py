@@ -4,13 +4,13 @@ GET /api/graph で book_id を指定し、PostgreSQL/SQLite 環境でも
 実際の作品伏線・キャラデータから動的グラフが返却されることを検証する。
 """
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient
 
 from src.backend.server import app
 from src.backend.routers.graph import router
 from src.backend import database
-from src.domain.schemas.foreshadowing import GraphNodeSchema, GraphEdgeSchema, ForeshadowingGraphResponse
+from src.domain.schemas.foreshadowing import ForeshadowingGraphResponse
 
 
 client = TestClient(app)
@@ -102,10 +102,6 @@ class TestGraphRelationalAPI:
         self, mock_async_session, override_async_db, mock_foreshadowings, mock_characters, mock_character_relations
     ):
         """有効な book_id でグラフデータが正しく返却されることを検証"""
-        from sqlalchemy import select
-        from src.backend.database.models import Character as CharacterModel
-        from src.backend.database.models_relation import CharacterRelationModel
-        from src.backend.database.models_foreshadowing import ForeshadowingModel
 
         # セッションの execute をモック
         async def mock_execute(query):
@@ -167,7 +163,6 @@ class TestGraphRelationalAPI:
     @pytest.mark.asyncio
     async def test_get_graph_data_with_invalid_book_id(self, mock_async_session, override_async_db):
         """存在しない book_id で空のグラフが返却されることを検証"""
-        from sqlalchemy import select
 
         async def mock_execute(query):
             result = MagicMock()
@@ -200,10 +195,6 @@ class TestGraphRelationalAPI:
         self, mock_async_session, override_async_db, mock_foreshadowings, mock_characters, mock_character_relations
     ):
         """レスポンスが ForeshadowingGraphResponse スキーマに準拠することを検証"""
-        from sqlalchemy import select
-        from src.backend.database.models import Character as CharacterModel
-        from src.backend.database.models_relation import CharacterRelationModel
-        from src.backend.database.models_foreshadowing import ForeshadowingModel
 
         async def mock_execute(query):
             result = MagicMock()

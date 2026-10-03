@@ -27,7 +27,7 @@ def test_expected_phase_comes_from_pattern_yaml_not_vocabulary():
             expected = round(sum(yaml_spans[rb["key"]]) / 2, 3)
             if rb["phase"] != expected:
                 offenders.append(f"{pk}.{rb['key']}: {rb['phase']} != {expected}")
-    assert not offenders, f"phase が語彙 span から算出されている:\n" + "\n".join(offenders[:20])
+    assert not offenders, "phase が語彙 span から算出されている:\n" + "\n".join(offenders[:20])
 
 
 def test_pattern_beats_declare_a_tight_tolerance():

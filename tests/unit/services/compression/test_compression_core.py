@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import time
 from unittest.mock import MagicMock
 
-import pytest
 import yaml
 
 from src.services.compression.cache import CompressionCache

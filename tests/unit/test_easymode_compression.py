@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import pytest
-from unittest.mock import Mock, AsyncMock, MagicMock
+from unittest.mock import Mock, AsyncMock
 
 from src.services.auto_workflow_pipeline import create_easy_mode_pipeline
 from src.agents.writing.episode_writer import EpisodeWriter

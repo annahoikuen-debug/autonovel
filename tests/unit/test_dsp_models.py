@@ -1,13 +1,9 @@
 """Unit tests for DSP models."""
 
-import pytest
 import numpy as np
 from src.narrative_balancer.dsp.models import (
     Beat,
     BeatType,
-    CorrectionAction,
-    DSPConfig,
-    ImpulseConfig,
     SagDetection,
     TensionSignal,
 )

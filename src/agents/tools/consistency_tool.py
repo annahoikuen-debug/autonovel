@@ -4,7 +4,6 @@ from __future__ import annotations
 from typing import Any, Dict, List
 from src.agents.memory.core_memory import CoreMemory
 from src.fusion.models import FusedVector
-from src.pipeline.emotional_residue import EmotionType
 
 
 def check_emotional_consistency(

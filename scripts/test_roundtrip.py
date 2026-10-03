@@ -1,6 +1,6 @@
 import sys
 sys.path.insert(0, '.')
-from src.models.subversion import SubversionEngine, SubversionPattern
+from src.models.subversion import SubversionEngine
 
 e = SubversionEngine(interval=3)
 e.plan_schedule(12)

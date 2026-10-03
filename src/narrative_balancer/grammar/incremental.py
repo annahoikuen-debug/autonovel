@@ -2,8 +2,8 @@
 
 from typing import List, Optional
 from src.narrative_balancer.grammar.parser import EarleyParser
-from src.narrative_balancer.grammar.parse_forest import ParseForest, EarleyItem
-from src.narrative_balancer.grammar.symbols import NonTerminal, Terminal
+from src.narrative_balancer.grammar.parse_forest import ParseForest
+from src.narrative_balancer.grammar.symbols import Terminal
 
 
 class IncrementalParser:

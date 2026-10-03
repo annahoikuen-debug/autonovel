@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 
 from src.agents.memory.manager import MemoryManager
 

@@ -2,7 +2,6 @@
 Unit tests for YAML config loading (Step 6).
 """
 
-import pytest
 from pathlib import Path
 from src.narrative.subtext_engine.engine import SubtextEngine
 

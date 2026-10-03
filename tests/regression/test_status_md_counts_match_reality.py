@@ -24,6 +24,11 @@ def _collect(path: str) -> int:
         [sys.executable, "-m", "pytest", path, "--collect-only", "-q", "-p", "no:cacheprovider"],
         capture_output=True,
         text=True,
+        # Windows の既定エンコーディングは CP932(日本語) だが、pytest の出力は UTF-8。
+        # 明示しないと日本語を含むテスト名で UnicodeDecodeError になり、
+        # このゲート自体が collection 不能で黙って無効化される。
+        encoding="utf-8",
+        errors="replace",
         timeout=600,
         cwd=ROOT_DIR,
     )

@@ -1,9 +1,7 @@
 """src/config/ の各種設定ロード模块の単体テスト。"""
 from __future__ import annotations
 
-import os
 
-import pytest
 import yaml
 
 from src.config.billing_plans import (

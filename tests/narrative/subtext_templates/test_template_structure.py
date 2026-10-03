@@ -3,9 +3,7 @@ Unit tests for template structure and loader (PLAN_Y2 Step 1, 2, 3).
 """
 
 from pathlib import Path
-import pytest
 from src.narrative.subtext_templates.loader import TemplateLoader
-from src.narrative.subtext_templates.models import TemplateMetadata
 
 
 def test_template_structure_and_categories():

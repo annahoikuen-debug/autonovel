@@ -1,8 +1,6 @@
 """Integration tests for Grammar CLI."""
 
 import json
-from pathlib import Path
-import pytest
 from src.narrative_balancer.grammar.cli import main
 
 

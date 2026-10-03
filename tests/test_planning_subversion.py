@@ -1,13 +1,11 @@
 # tests/test_planning_subversion.py
 import pytest
 import sys
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.insert(0, '.')
 
 from src.agents.planning import PlanningAgent
-from src.models.plot import ArcList, ArcBlueprint
 
 
 class TestPlanningSubversion:

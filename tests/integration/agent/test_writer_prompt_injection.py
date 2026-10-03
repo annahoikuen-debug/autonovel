@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 from src.stores.vector_store import RedisVectorStore

@@ -1,6 +1,5 @@
 """DTO の結線と volume カウンタの確認。"""
 
-import pytest
 
 
 def _ctx():
@@ -37,7 +36,6 @@ def test_generate_plot_dto_legacy_construction():
 
 
 def test_workflow_context_has_volume_index():
-    from src.services.pipeline_base import WorkflowContext
 
     ctx = _ctx()
     assert ctx.volume_index == 1
@@ -45,7 +43,6 @@ def test_workflow_context_has_volume_index():
 
 
 def test_volume_index_increments():
-    from src.services.pipeline_base import WorkflowContext
 
     ctx = _ctx()
     ctx.volume_index += 1

@@ -4,7 +4,6 @@
 ルビ変換（|漢字《ルビ》・《《傍点》》）の正常性を検証する。
 """
 
-import pytest
 
 from src.services.formatters.platform_copy_formatter import (
     FormattedChapterPayload,

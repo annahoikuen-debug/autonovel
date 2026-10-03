@@ -1,7 +1,7 @@
 import pytest
 from pathlib import Path
 import jinja2
-from src.models.plot import EpisodeMacroSkeleton, PlotMacroBatch, PlotMicroBlueprint
+from src.models.plot import EpisodeMacroSkeleton
 
 
 @pytest.fixture

@@ -1,8 +1,7 @@
 import asyncio
-import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from src.backend.database.models import Base, User, Book
+from src.backend.database.models import User, Book
 from src.backend.security.password import hash_password
 
 # 既存のデータベースファイル

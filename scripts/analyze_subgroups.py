@@ -15,19 +15,19 @@ for path, info in files.items():
         rel = norm.split("src/", 1)[1]
     else:
         continue
-    
+
     parts = rel.split("/")
     if len(parts) >= 2:
         grp = f"{parts[0]}/{parts[1]}"
     else:
         grp = parts[0]
-        
+
     s = info.get("summary", {})
     stmts = s.get("num_statements", 0)
     cov = s.get("covered_lines", 0)
     missing = s.get("missing_lines", 0)
     pct = (cov / stmts * 100) if stmts > 0 else 0
-    
+
     groups[grp]["stmts"] += stmts
     groups[grp]["cov"] += cov
     groups[grp]["missing"] += missing

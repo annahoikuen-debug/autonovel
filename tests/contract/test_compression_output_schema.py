@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import pytest
-from unittest.mock import Mock
 
 from src.services.compression.compressor import FourLayerCompressor
 from src.services.compression.models import (
@@ -13,9 +12,7 @@ from src.services.compression.models import (
     AbstractionLayerOutput,
     TrimmedContextOutput,
     CompressionQualityMetrics,
-    SceneType,
     ProtectedContext,
-    SceneFlowHistory,
 )
 
 

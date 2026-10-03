@@ -4,7 +4,6 @@ Targets: csp.diagnostics, dsp.spectral / detector / signal / factory / config,
 grammar.corrector / constraint_penalties / dp reconstruction, arbitrator balancer paths.
 """
 
-import math
 from pathlib import Path
 
 import numpy as np

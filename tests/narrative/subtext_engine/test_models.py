@@ -2,7 +2,6 @@
 Unit tests for data models (Step 2).
 """
 
-import pytest
 from src.narrative.subtext_engine.models import (
     DialogueBlock,
     RewriteResult,

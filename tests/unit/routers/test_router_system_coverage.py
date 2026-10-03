@@ -208,7 +208,7 @@ def test_get_shared_orchestrator_singleton():
 async def test_recalc_all_book_scores():
     """全書籍のBookScore再計算。"""
     # DB session モック（async context manager をサポート）
-    from sqlalchemy import Delete, Select
+    from sqlalchemy import Select
 
     class FakeSession:
         def __init__(self):

@@ -1,6 +1,6 @@
 """Signal extraction and preprocessing utilities."""
 
-from typing import List, Optional
+from typing import List
 import numpy as np
 from src.narrative_balancer.dsp.models import Beat
 

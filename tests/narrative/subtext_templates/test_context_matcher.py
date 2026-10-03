@@ -2,8 +2,6 @@
 Unit tests for ContextMatcher (PLAN_Y2 Step 4, 15, 17).
 """
 
-from pathlib import Path
-import pytest
 from src.narrative.subtext_engine.models import SubtextContext
 from src.narrative.subtext_templates.loader import TemplateLoader
 from src.narrative.subtext_templates.matcher import ContextMatcher

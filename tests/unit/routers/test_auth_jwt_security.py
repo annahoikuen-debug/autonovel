@@ -22,7 +22,18 @@ def test_jwt_tampered_token():
     decoded = decode_token(tampered)
     assert decoded is None
 
-def test_auth_validate_api_key():
+def test_auth_validate_api_key(monkeypatch):
+    """無効なキーは拒否されること。
+
+    `validate_api_key_sync` は `settings.AUTH_DISABLED` が真のとき、検証Finite前に
+    "dev-key" を返して認証をバイパスする（src/backend/auth.py:152-153）。
+    tests/conftest.py は全テストで `AUTH_DISABLED=true` を設定するため、
+    本来の検証経路を検証するには必ず認証を明示的に有効化する必要がある。
+    """
+    from src.backend.config import settings
+
+    monkeypatch.setattr(settings, "AUTH_DISABLED", False)
+
     # 無効なキーの場合はFalseまたはNone
     assert validate_api_key_sync("invalid-key-999") is False
 

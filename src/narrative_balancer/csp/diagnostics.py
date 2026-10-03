@@ -1,7 +1,6 @@
 """Infeasibility diagnostics and human-readable conflict clause generation."""
 
 from typing import List
-from ortools.sat.python import cp_model
 from src.narrative_balancer.csp.config import CSPConfig
 from src.narrative_balancer.csp.models import ConflictClause
 from src.narrative_balancer.csp.partial_state import PartialPlotState

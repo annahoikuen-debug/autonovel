@@ -82,6 +82,11 @@ dev = [
     # ハングした非同期テストが CI を無期限に停止させるのを防ぐ
     "pytest-timeout>=2.3.0",
     "testcontainers>=4.14.2",
+    # tests/regression/test_emotional_residue_regression.py の vector_store フィクスチャが
+    # RedisVectorStore へ差し込む偽 Redis クライアントに使う。
+    # 未宣言のままだとクリーン環境ではこのリグレッションゲートが
+    # ModuleNotFoundError で setup ERROR になり、サイレントに無効化される。
+    "fakeredis>=2.21.0",
 ]
 rag = [
     "chromadb>=1.5.0,<2.0.0",

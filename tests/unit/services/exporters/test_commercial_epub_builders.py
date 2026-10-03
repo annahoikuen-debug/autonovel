@@ -2,7 +2,6 @@
 import io
 import zipfile
 
-import pytest
 
 from src.services.exporters.commercial_epub_builder import PureCommercialEpubBuilder
 from src.services.exporters.epub_commercial_builder import CommercialEpubBuilder

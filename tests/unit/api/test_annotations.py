@@ -39,7 +39,6 @@ class TestAnnotationsRouterLogic:
     def test_persist_request_validation(self):
         """PersistRequestのバリデーションテスト"""
         from src.backend.routers.annotations import PersistRequest, BeatDTO
-        from pydantic import ValidationError
 
         # 正常
         req = PersistRequest(
@@ -104,7 +103,6 @@ class TestAnnotationsRouterLogic:
         """persist_annotationsのロジックテスト（モック使用）"""
         from src.backend.routers.annotations import persist_annotations
         from src.backend.routers.annotations import PersistRequest, BeatDTO, PersistResponse
-        from src.pipeline.emotional_residue import EmotionType
 
         req = PersistRequest(
             book_id=1,

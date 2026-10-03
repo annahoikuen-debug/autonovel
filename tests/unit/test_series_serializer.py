@@ -1,7 +1,6 @@
 """`series_serializer` の単体テスト。"""
 from __future__ import annotations
 
-from typing import Any
 
 from src.easy_mode import EpisodeResult, SeriesResult
 from src.easy_mode.spice_guard import SpiceElement

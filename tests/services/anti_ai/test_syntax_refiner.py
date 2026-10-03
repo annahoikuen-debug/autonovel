@@ -110,5 +110,70 @@ class TestSyntaxRefiner:
         # Should handle newlines as delimiters
 
 
+# ------------------------------------------------------------------
+    # フィラー除去の契約（旧実装の不具合に対する回帰防止）
+    #
+    # 旧実装の FILLER_PATTERNS は先頭 `\s+` を必須にしていたため、
+    # `refine_paragraph` が文分割すること的后果として
+    # 「文頭」「読点直後」のフィラーが常に除去対象外になっていた。
+    # 日本語ではフィラーは節頭に置かれるため、機能全体がほぼ無効だった。
+    # 併せて「きっと」がパターンに未登録だった。
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize(
+        ("text", "must_be_absent"),
+        [
+            # 文頭（直前に空白なし）
+            ("たぶん、彼は成功する。", "たぶん"),
+            # 読点直後（直前に空白なし）
+            ("彼は、たぶん成功する。", "たぶん"),
+            # 動詞に直接連結（空白・句読点なし）
+            ("彼はきっと成功する。", "きっと"),
+            # 文末の丁寧表現（直前に空白なし）
+            ("彼は成功するでしょう。", "でしょう"),
+            ("さぞ彼は驚くだろう。", "さぞ"),
+        ],
+    )
+    def test_filler_removed_regardless_of_position(
+        self, text: str, must_be_absent: str
+    ) -> None:
+        """フィラーは前後に空白や句読点がなくても除去されること。"""
+        refiner = SyntaxRefiner()
+        result, _, _ = refiner.refine_paragraph(text, 0, 0)
+        assert must_be_absent not in result, (
+            f"フィラー {must_be_absent!r} が除去されなかった: {result}"
+        )
+
+    @pytest.mark.parametrize(
+        "text",
+        [
+            # 「かな」が他の語に含まれる場合は壊してはならない
+            "確かな答え。",
+            "おなかが痛い。",
+            # 部分一致を避けるため空白も句読点も無い状態
+            "このなんとかは unknown だった。",
+        ],
+    )
+    def test_filler_removal_does_not_corrupt_substrings(self, text: str) -> None:
+        """部分一致する語を誤って除去しないこと。"""
+        refiner = SyntaxRefiner()
+        result, _, _ = refiner.refine_paragraph(text, 0, 0)
+        assert result == text, f"部分一致で本文が壊された: {result}"
+
+    def test_filler_removal_leaves_no_punctuation_artifacts(self) -> None:
+        """除去後に「成功する 。」「、彼は」のような構造が残らないこと。
+
+        `pattern.sub(" ", ...)` が除去位置へ空白を挿入するため、
+        日本語約物の直前と行頭読点の整理が必要。
+        """
+        refiner = SyntaxRefiner()
+        result, _, _ = refiner.refine_paragraph(
+            "たぶん、彼はきっと成功するでしょう。", 0, 0
+        )
+        assert not result.startswith("、"), f"行頭に読点が残った: {result}"
+        assert " 。" not in result, f"約物直前の空白が残った: {result}"
+        assert "  " not in result, f"連続空白が残った: {result}"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

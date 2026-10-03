@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import time
 import random
-import string
 import sys
 import os
 
@@ -38,7 +37,7 @@ def generate_test_text(
         "彼の心は炎のように熱く、勇気は雷のように轟いた。",
         "涙が川のように流れ、声は枯れ葉のようにかすれた。"
     ]
-    
+
     # Normal prose templates
     normal_templates = [
         "今日は良い天気だった。",
@@ -50,15 +49,15 @@ def generate_test_text(
         "特に変わったことはなかった。",
         "普通の一日だった。"
     ]
-    
+
     # Build text
     parts = []
     target_purple_chars = int(length_chars * purple_ratio)
     target_normal_chars = length_chars - target_purple_chars
-    
+
     current_purple = 0
     current_normal = 0
-    
+
     while current_purple < target_purple_chars or current_normal < target_normal_chars:
         if current_purple < target_purple_chars and (current_normal >= target_normal_chars or random.random() < 0.5):
             # Add purple prose
@@ -70,7 +69,7 @@ def generate_test_text(
             template = random.choice(normal_templates)
             parts.append(template)
             current_normal += len(template)
-    
+
     # Join and trim to target length
     text = "".join(parts)
     if len(text) > length_chars:
@@ -80,7 +79,7 @@ def generate_test_text(
         padding_needed = length_chars - len(text)
         padding = (" " + random.choice(normal_templates)) * (padding_needed // 20 + 1)
         text = text + padding[:padding_needed]
-    
+
     return text
 
 
@@ -88,37 +87,37 @@ def run_benchmark() -> None:
     """Run a simple benchmark of the detox pipeline."""
     print("Purple Prose Detox Filter Benchmark")
     print("=" * 40)
-    
+
     # Test different text sizes
     test_sizes = [100, 500, 1000, 2000, 5000]
-    
+
     for size in test_sizes:
         print(f"\nTesting with {size} characters:")
         text = generate_test_text(size, purple_ratio=0.4)
-        
+
         # Time the processing
         start_time = time.perf_counter()
         cleaned_text, metrics = detox_prose(text, episode_id=f"bench_{size}")
         end_time = time.perf_counter()
-        
+
         elapsed_ms = (end_time - start_time) * 1000
-        
+
         print(f"  Original length: {len(text)} chars")
         print(f"  Cleaned length: {len(cleaned_text)} chars")
         print(f"  Processing time: {elapsed_ms:.2f} ms")
         print(f"  Throughput: {len(text) / (elapsed_ms / 1000):.0f} chars/second")
         print(f"  Density category: = {metrics['density_gate']['density_category']}")
         print(f"  Should refine: {metrics['density_gate']['should_refine']}")
-        
+
         # Check stream guard stats
         sg_stats = metrics["stream_guard"]["stats"]
         print(f"  Aggressive reactions: {sg_stats['aggressive_count']}")
         print(f"  Metaphors: {sg_stats['metaphor_count']}")
-        
+
         # Verify latency target (should be under 200ms for reasonable sizes)
         if size <= 2000:
             assert elapsed_ms < 500, f"Too slow: {elapsed_ms}ms for {size} chars"
-            print(f"  ✓ Latency OK (<500ms)")
+            print("  ✓ Latency OK (<500ms)")
         else:
             print(f"  ⚠ Latency: {elapsed_ms}ms (acceptable for {size} chars)")
 
@@ -127,22 +126,22 @@ def test_consistency() -> None:
     """Test that processing the same text gives consistent results."""
     print("\n\nConsistency Test")
     print("=" * 40)
-    
+
     text = generate_test_text(1000, purple_ratio=0.5)
-    
+
     # Process multiple times
     results = []
     for i in range(5):
         cleaned_text, metrics = detox_prose(text, episode_id=f"consistency_{i}")
         results.append((cleaned_text, metrics))
-    
+
     # Check that all results are identical
     first_result = results[0][0]
     for i, (result, _) in enumerate(results[1:], 1):
         assert result == first_result, f"Inconsistent result at iteration {i}"
-    
-    print(f"✓ All 5 iterations produced identical results")
-    
+
+    print("✓ All 5 iterations produced identical results")
+
     # Check that metrics are reasonable (processing time may vary slightly)
     times = [m[1]["pipeline"]["total_time_ms"] for m in results]
     avg_time = sum(times) / len(times)

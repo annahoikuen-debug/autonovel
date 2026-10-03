@@ -1,6 +1,5 @@
 """Unit tests for balancer adapters."""
 
-import pytest
 from src.narrative_balancer.arbitrator.models import PlotState
 from src.narrative_balancer.arbitrator.ports import (
     CSPAdapter,

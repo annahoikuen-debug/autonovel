@@ -2,7 +2,6 @@
 import base64
 import io
 import sys
-import types
 from unittest.mock import AsyncMock, MagicMock
 
 import httpx
@@ -457,7 +456,6 @@ class TestDalleClient:
 
 class TestSDWebUIClient:
     def _payload(self, images=("SU1H",)):
-        import base64 as _b64
 
         return {"images": list(images)}
 

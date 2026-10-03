@@ -4,7 +4,6 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.domain.writing.coordinator import WritingCoordinator
-from src.domain.writing.models import WritingGenerationContext
 
 
 class TestWritingCoordinator:

@@ -1,7 +1,6 @@
 """Tests for signal aggregator."""
 from __future__ import annotations
 
-import pytest
 
 from src.pipeline.emotional_residue import EmotionalSignal, EmotionalVector, EmotionType
 from src.pipeline.aggregator import (

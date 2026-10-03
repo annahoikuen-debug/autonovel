@@ -3,9 +3,7 @@ from __future__ import annotations
 
 import pytest
 import tempfile
-import time
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 from src.services.script_watcher import ScriptWatcher, WatchConfig, create_script_watcher
 from src.pipeline.emotional_residue import EmotionType

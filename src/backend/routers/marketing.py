@@ -48,9 +48,21 @@ async def generate_marketing(
 
 
 @router.post("/api/marketing/export_package/{book_id}")
-async def export_package_post(book_id: int, req: MarketingExportRequest):
-    """作品データ一式 (本文 / 設定 / プロット / JSON) を ZIP で返す."""
+async def export_package_post(
+    book_id: int,
+    req: MarketingExportRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """作品データ一式 (本文 / 設定 / プロット / JSON) を ZIP で返す (POST)。
+
+    所有権検証は GET 版 (`export_package_get`) と同一で**必須**。
+    認証は `GlobalAuthMiddleware` (default-deny) が担保するが、
+    「任意の認証済みユーザーが任意の book_id を走査して
+    他人の作品 ZIP を一括取得できる」水平権限昇格 (IDOR) になるため、
+    `verify_book_ownership` を通さないと公開阻害となる。
+    """
     await validate_api_key_or_raise(req.api_key)
+    await verify_book_ownership(book_id, current_user)
     engine = get_engine(req.api_key)
     zip_data, zip_filename = await engine.marketing.create_export_package(book_id)
     return Response(

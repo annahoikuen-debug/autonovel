@@ -1,12 +1,11 @@
 """ArchivalMemory adapter wrapping VectorStore, GraphStore and EventLogStore."""
 from __future__ import annotations
 
-import math
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.agents.memory.interfaces import BaseArchivalMemory, MemoryEntry
-from src.pipeline.emotional_residue import EmotionalVector, EmotionType
+from src.pipeline.emotional_residue import EmotionalVector
 from src.stores.vector_store import VectorStore
 
 

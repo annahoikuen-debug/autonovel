@@ -20,7 +20,6 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from src.backend.middleware.auth_middleware import is_safe_api_key_match
-from src.backend.database.models import User
 from src.backend.database.models_billing import StripeWebhookEvent
 from src.backend.routers import billing_webhook
 from src.backend.routers.billing_webhook import handle_stripe_webhook

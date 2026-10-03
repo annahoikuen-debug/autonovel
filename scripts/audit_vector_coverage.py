@@ -12,7 +12,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from src.services.vector_store import HAS_CHROMA, audit_collection_coverage
+from src.services.vector_store import HAS_CHROMA
 
 
 def main() -> int:

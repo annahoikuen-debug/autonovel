@@ -2,7 +2,6 @@
 Unit tests for Extension Rules 8-15 (Step 14).
 """
 
-import pytest
 from src.narrative.subtext_engine.models import DialogueBlock
 from src.narrative.subtext_engine.rules import create_extension_rules
 

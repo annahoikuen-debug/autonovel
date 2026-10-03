@@ -7,7 +7,6 @@ P = "tests/unit/llm_clients/test_api_clients.py"
 with open(P, encoding="utf-8") as f:
     content = f.read()
 
-import re
 
 # Remove any standalone ')' line that immediately follows an 'await client.' line
 # (leftovers from the asyncio.run(...) -> await rewrite).

@@ -1,7 +1,6 @@
 """Signal aggregation and normalization."""
 from __future__ import annotations
 
-from collections import defaultdict
 from typing import Optional
 
 from src.pipeline.emotional_residue import EmotionalSignal, EmotionalVector, EmotionType

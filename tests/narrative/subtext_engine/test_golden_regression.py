@@ -5,7 +5,6 @@ Executes all 30+ golden samples from tests/golden/subtext_before_after/.
 
 import json
 from pathlib import Path
-import pytest
 from src.narrative.subtext_engine.engine import SubtextEngine
 from src.narrative.subtext_engine.models import DialogueBlock, SubtextContext
 

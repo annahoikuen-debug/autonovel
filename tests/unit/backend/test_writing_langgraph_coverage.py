@@ -148,7 +148,6 @@ def test_save_checkpoint_if_needed_sync_and_async():
     graph.checkpoint_manager.record_step.assert_called_once()
 
     # async coroutine result -> queued
-    import asyncio as asyncio_module
 
     async def coro():
         pass

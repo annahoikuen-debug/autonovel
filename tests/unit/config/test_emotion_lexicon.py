@@ -1,7 +1,6 @@
 """Tests for emotion lexicon configuration."""
 from __future__ import annotations
 
-import pytest
 import yaml
 
 from src.pipeline.emotion_config import load_emotion_lexicon, load_dependency_patterns, EmotionLexicon

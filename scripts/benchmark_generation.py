@@ -4,8 +4,6 @@
 
 import json
 import time
-import random
-import string
 from datetime import datetime
 
 def estimate_token_count_japanese(text):
@@ -40,7 +38,7 @@ def generate_mock_story(genre, length_chars):
         'ミステリー': "静かな田舎町で起こった連続殺人事件。探偵は証拠を集め、容疑者の証言を丁寧に分析して真相に迫る。",
         '歴史': "江戸時代末期、維新志士として生きる主人公は、新しい時代への変革を願いながら日々を過ごした。"
     }
-    
+
     base_story = templates.get(genre, "これはサンプルストーリーです。")
     # 必要な長さになるまで繰り返す
     repeated = (base_story * ((length_chars // len(base_story)) + 1))[:length_chars]
@@ -56,31 +54,31 @@ def run_benchmark():
         {"genre": "ミステリー", "length": 1500, "description": "中編ミステリー"},
         {"genre": "歴史", "length": 800, "description": "短編歴史"},
     ]
-    
+
     results = []
-    
+
     for case in test_cases:
         genre = case["genre"]
         length = case["length"]
         description = case["description"]
-        
+
         logger.info(f"ベンチマーク開始: {description}")
-        
+
         # 開始時間を記録
         start_time = time.time()
-        
+
         # ストーリーを生成（ここではモックを使用）
         story = generate_mock_story(genre, length)
-        
+
         # 終了時間を記録
         end_time = time.time()
-        
+
         # 処理時間を計算
         elapsed_time = end_time - start_time
-        
+
         # トークン消費量を概算（日本語として扱う）
         token_count = estimate_token_count_japanese(story)
-        
+
         # 結果を記録
         result = {
             "test_case": description,
@@ -93,13 +91,13 @@ def run_benchmark():
             "chars_per_second": round(len(story) / elapsed_time, 2) if elapsed_time > 0 else 0
         }
         results.append(result)
-        
+
         logger.info(f"ベンチマーク完了: {description} - {elapsed_time:.2f}秒, {token_count:.0f}トークン")
-    
+
     # 全体のサマリーを計算
     total_time = sum(r["generation_time_seconds"] for r in results)
     total_tokens = sum(r["estimated_token_count"] for r in results)
-    
+
     summary = {
         "benchmark_timestamp": datetime.now().isoformat(),
         "total_test_cases": len(test_cases),
@@ -109,7 +107,7 @@ def run_benchmark():
         "average_tokens_per_test": round(total_tokens / len(test_cases), 2) if test_cases else 0,
         "results": results
     }
-    
+
     return summary
 
 if __name__ == "__main__":
@@ -117,14 +115,14 @@ if __name__ == "__main__":
     import logging
     logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
     logger = logging.getLogger(__name__)
-    
+
     print("ベンチマークを開始します...")
     results = run_benchmark()
-    
+
     # 結果をJSONファイルに出力
     output_file = f"scripts/benchmark_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
-    
+
     print(f"ベンチマーク結果を {output_file} に保存しました。")
     print(json.dumps(results, ensure_ascii=False, indent=2))

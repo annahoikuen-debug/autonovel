@@ -10,11 +10,10 @@ from typing import Any
 
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.config import settings
-from src.backend.database import get_async_db, get_db
+from src.backend.database import get_async_db
 from src.backend.database.models import User
 from src.backend.security.jwt import decode_token
 

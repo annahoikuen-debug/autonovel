@@ -1,11 +1,10 @@
 """Phase 1 Debt Clearance and Stabilization Comprehensive Regression Suite (Step 35)."""
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 from src.services.content_processor import ContentProcessor
 from src.services.narrative_scoring_service import NarrativeScoringService
-from src.services.llm.gemini_adapter import GeminiAdapter
 from src.services.audio.speaker_mapper import assign_speaker_id
 from src.config.emotional_hook_vocabulary import EMOTIONAL_HOOKS
 from src.agents.orchestrator import Orchestrator, CyclicDependencyError

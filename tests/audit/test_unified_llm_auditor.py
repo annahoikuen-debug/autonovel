@@ -2,9 +2,8 @@
 Tests for unified LLM auditor.
 """
 
-import pytest
 from unittest.mock import patch
-from src.audit.unified_llm_auditor import UnifiedLLMAuditor, Issue
+from src.audit.unified_llm_auditor import UnifiedLLMAuditor
 
 
 @patch("src.audit.unified_llm_auditor.call_llm_api")

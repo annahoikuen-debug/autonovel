@@ -2,7 +2,6 @@
 import pytest
 
 from src.services.formatters.platform_copy_formatter import (
-    FormattedChapterPayload,
     PlatformCopyFormatter,
 )
 

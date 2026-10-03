@@ -1,6 +1,5 @@
 """Unit tests for ForeshadowingPredicateAnalyzer classifying incidental mentions as mention_only."""
 
-import pytest
 from src.services.nlp.foreshadowing_predicate_analyzer import ForeshadowingPredicateAnalyzer
 
 

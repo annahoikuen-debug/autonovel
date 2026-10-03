@@ -4,7 +4,6 @@ from __future__ import annotations
 import sys
 import types
 
-import pytest
 
 from src.interfaces.plugin import BasePlugin, PluginProtocol
 from src.plugins.audio.plugin import AudioPlugin

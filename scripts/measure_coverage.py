@@ -28,17 +28,17 @@ def main():
         else:
             # Use existing json-report.json
             result = type('obj', (object,), {'returncode': 0})()  # Mock successful result
-    
+
     # Load coverage data
     with open("coverage.json", encoding="utf-8") as f:
         cov = json.load(f)
-    
+
     # Load test report data if available
     test_baseline = {}
     if os.path.exists("json-report.json"):
         with open("json-report.json", encoding="utf-8") as f:
             test_report = json.load(f)
-        
+
         # Extract test summary
         test_baseline = {
             "total_tests": test_report.get("summary", {}).get("total", 0),
@@ -55,14 +55,14 @@ def main():
             ],
             "timestamp": datetime.now().isoformat()
         }
-        
+
         # Save test baseline
         with open("artifacts/test_baseline.json", "w") as f:
             json.dump(test_baseline, f, indent=2, ensure_ascii=False)
         print(f"Test baseline saved: {test_baseline['total_tests']} tests, {test_baseline['passed']} passed, {test_baseline['failed']} failed, {test_baseline['skipped']} skipped")
     else:
         print("Warning: json-report.json not found, skipping test baseline")
-    
+
     # Create coverage baseline
     coverage_baseline = {
         "total_coverage": cov["totals"]["percent_covered"],
@@ -70,10 +70,10 @@ def main():
         "timestamp": datetime.now().isoformat(),
         "pytest_exit_code": getattr(result, 'returncode', 0)
     }
-    
+
     with open("artifacts/coverage_baseline.json", "w") as f:
         json.dump(coverage_baseline, f, indent=2, ensure_ascii=False)
-    
+
     print(f"Baseline coverage: {coverage_baseline['total_coverage']:.1f}%")
     return 0 if getattr(result, 'returncode', 0) == 0 else 1
 

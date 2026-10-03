@@ -3,7 +3,6 @@
 from typing import List, Optional, Tuple
 from src.narrative_balancer.grammar.beat_mapping import beat_to_terminal, terminal_to_beat
 from src.narrative_balancer.grammar.rewrite_rules import REWRITE_RULES, RewriteRule
-from src.narrative_balancer.grammar.symbols import Terminal
 from src.narrative_balancer.models import Beat, CorrectionAction
 
 

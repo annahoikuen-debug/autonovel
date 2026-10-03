@@ -1,11 +1,9 @@
 """Coverage tests for src/backend/database/repository.py (DataRepositoryFacade + BookRepository)."""
 from __future__ import annotations
 
-import json
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-from sqlalchemy import text
 
 import src.backend.database.repository as repo_mod
 from src.backend.database.core import DatabaseManager

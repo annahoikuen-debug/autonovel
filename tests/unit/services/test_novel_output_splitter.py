@@ -1,6 +1,5 @@
 """Unit tests for NovelOutputSplitter."""
 
-import pytest
 from src.services.prose.novel_output_splitter import NovelOutputSplitter
 
 

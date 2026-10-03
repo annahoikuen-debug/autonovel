@@ -45,7 +45,7 @@ print(f"""
 CREDIT_VALUE = PLAN_PRICE / BASE_TOKENS  # 10円/50K
 credits = plan_tokens / 100  # 1クレジット=100トークン
 
-print(f"クレジット換算:")
+print("クレジット換算:")
 print(f"  1クレジットあたり: JPY {CREDIT_VALUE * 100:.4f}")
 print(f"  付与クレジット: {credits:,.0f}")
 
@@ -66,7 +66,7 @@ scenarios = [
 for name, tokens in scenarios:
     ratio = tokens / plan_tokens
     remaining = plan_tokens - tokens
-    
+
     print(f"\n【{name}】")
     print(f"  必要トークン: {tokens:,}")
     print(f"  プランに対する比率: {ratio * 100:.1f}%")
@@ -94,7 +94,7 @@ for name, price, tokens in plans:
     cost = tokens * API_BLENDED_JPY_PER_1M / 1_000_000
     profit = price - cost
     episodes = tokens // 5000
-    
+
     print(f"{name:<12} JPY {price:>6,} {tokens:>12,} {episodes:>10}話 "
           f"JPY {cost:>8,.2f} JPY {profit:>8,.2f}")
 

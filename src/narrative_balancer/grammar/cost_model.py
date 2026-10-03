@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Dict, Optional, Union
 import yaml
 from pydantic import BaseModel, Field, ConfigDict
-from src.narrative_balancer.grammar.symbols import NonTerminal, Terminal
 
 
 class GrammarCostModel(BaseModel):

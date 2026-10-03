@@ -2,13 +2,10 @@
 from __future__ import annotations
 
 import pytest
-from unittest.mock import Mock
 
 from src.core.container.app import AppContainer
 from src.services.compression.compressor import FourLayerCompressor
 from src.services.compression.models import CompressionConfig
-from src.agents.context_builder_agent import ContextBuilderAgent
-from src.domain.writing import WritingService
 
 
 class TestCompressionDIInjection:

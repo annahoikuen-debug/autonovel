@@ -1,4 +1,3 @@
-import re
 
 path = 'src/backend/routers/tasks.py'
 with open(path, 'r', encoding='utf-8') as f:

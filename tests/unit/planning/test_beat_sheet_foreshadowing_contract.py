@@ -1,5 +1,4 @@
-import pytest
-from src.config.commercial_beat_sheet import COMMERCIAL_40EP_BEATS, get_beat_for_episode
+from src.config.commercial_beat_sheet import get_beat_for_episode
 from src.models.beat_sheet import EpisodeBeat
 
 

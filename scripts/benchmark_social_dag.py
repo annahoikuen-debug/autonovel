@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import os
 import sys
 import time
 from pathlib import Path
@@ -24,7 +23,7 @@ async def benchmark_social_repository(num_pairs: int = 15, history_per_pair: int
     start = time.perf_counter()
 
     db = AppContainer.db()
-    
+
     # Ensure tables exist in the db engine via async run_sync
     from src.backend.database.models import Base
     async_eng = getattr(db, "engine", None)

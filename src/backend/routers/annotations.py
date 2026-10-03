@@ -1,18 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
-from datetime import datetime
 
-from src.backend.auth import get_current_user, validate_api_key_sync
+from src.backend.auth import get_current_user
 from src.backend.database.models import User
-from src.backend.database.uow import UnitOfWork
 from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
 
 from src.annotations.beat import EmotionalBeat
 from src.annotations.persistence import AnnotationPersistence
 from src.stores.vector_store import RedisVectorStore
-from src.stores.graph_store import GraphStore, InMemoryGraphStore
+from src.stores.graph_store import InMemoryGraphStore
 from src.stores.event_log import EventLogStore
 from src.pipeline.character_dict import load_character_dict
 from src.pipeline.emotional_residue import EmotionType

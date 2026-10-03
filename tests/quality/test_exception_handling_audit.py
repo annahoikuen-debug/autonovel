@@ -5,7 +5,6 @@ Uses Python AST to ensure all exception handlers log or handle exceptions.
 
 import ast
 from pathlib import Path
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 

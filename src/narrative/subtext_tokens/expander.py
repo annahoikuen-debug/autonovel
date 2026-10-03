@@ -7,7 +7,7 @@ from __future__ import annotations
 import logging
 import random
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Union
+from typing import Any, Dict, Optional, Set
 import yaml
 
 from src.narrative.subtext_engine.models import SubtextContext

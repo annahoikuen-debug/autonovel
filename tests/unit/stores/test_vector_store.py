@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
-from src.stores.vector_store import RedisVectorStore, VectorStore
+from src.stores.vector_store import RedisVectorStore
 
 
 class TestVectorStore:

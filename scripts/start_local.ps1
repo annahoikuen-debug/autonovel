@@ -46,6 +46,17 @@ function Write-Err2($msg) { Write-Host "[X] $msg" -ForegroundColor Red }
 
 Set-Location $Root
 
+# Detect and add Node.js path to PATH if needed
+$nodePaths = @(
+    "C:\Program Files\nodejs",
+    "C:\Program Files (x86)\nodejs"
+)
+foreach ($p in $nodePaths) {
+    if ((Test-Path "$p\node.exe") -and ($env:PATH -notlike "*$p*")) {
+        $env:PATH = "$p;$env:PATH"
+    }
+}
+
 # --------------------------------------------------------------------------- #
 # Python インタプリタの解決
 # --------------------------------------------------------------------------- #

@@ -216,7 +216,7 @@ def main() -> int:
         else:
             ng.append(p)
             print(f"  NG   {p}")
-            print(f"       -> バックエンドに定義が見つからない")
+            print("       -> バックエンドに定義が見つからない")
     print()
 
     unmatched = [p for p in sorted(front) if not hit(p)]

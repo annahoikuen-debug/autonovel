@@ -307,16 +307,38 @@ def test_status_reporter(monkeypatch):
     empty.update_streaming_text("y")
 
 
-def test_module_level_report_exception_helper(monkeypatch):
+def test_module_level_report_exception_helper(monkeypatch, caplog):
+    """モジュールレベル関数 `report_exception` のメッセージ整形を検証する。
+
+    `report_exception` はクラス外（モジュールレベル）で定義された関数で、
+    第1引数にレポーターを受け取り `self.report(msg, level="error")` を呼ぶ
+    （src/backend/background.py:306-313）。モジュールグローバル `self` を読むOLA
+    ではないため、`bg.__dict__["self"]` への setitem は不要。
+
+    また基本 `StatusReporter.report` は仕様どおりログへ出力し
+    `state.error` へは書かない（src/backend/background.py:289-293、
+    「最小実装を提供しサブクラスで上書きする前提」の基底クラス）。
+    `state.error` への永続化は `BackgroundReporter` の責務である。
+    したがってここでは、整形されたメッセージが `report()` に
+    正しい level と共に渡ることを確認する。
+    """
     _patch_redis(monkeypatch, None)
-    state = ProgressState(task_id="t1", skip_initial_save=True)
-    reporter = StatusReporter(state)
-    # the module-level helper reads the module global ``self``
-    monkeypatch.setitem(bg.__dict__, "self", reporter)
-    bg.report_exception(reporter, ValueError("oops"), context="ctx")
-    assert "ctx - ValueError: oops" in state.error
-    bg.report_exception(reporter, ValueError("oops"))
-    assert "ValueError: oops" in state.error
+
+    class SpyReporter:
+        def __init__(self):
+            self.calls = []
+
+        def report(self, message, level="info"):
+            self.calls.append((message, level))
+
+    reporter = SpyReporter()
+
+    with caplog.at_level("INFO"):
+        bg.report_exception(reporter, ValueError("oops"), context="ctx")
+        bg.report_exception(reporter, ValueError("oops"))
+
+    assert reporter.calls[0] == ("ctx - ValueError: oops", "error")
+    assert reporter.calls[1] == ("ValueError: oops", "error")
 
 
 # --------------------------------------------------------------------------

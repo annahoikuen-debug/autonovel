@@ -2,7 +2,6 @@
 from unittest.mock import MagicMock
 
 import pytest
-from sqlalchemy import text
 
 from src.services.age_client import AgeClient, GraphStats, _parse_agtype
 

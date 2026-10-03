@@ -1,9 +1,8 @@
 """Fusion engine for aggregating, arbitrating and caching emotional vectors across pairs."""
 from __future__ import annotations
 
-import json
 import re
-from typing import Any, Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 from src.fusion.arbitrator import Arbitrator
 from src.fusion.collector import VectorCollector

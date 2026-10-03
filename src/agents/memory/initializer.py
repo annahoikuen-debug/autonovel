@@ -1,12 +1,10 @@
 """Memory initialization and management for projects and branches."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Optional
 import typer
 
-from src.agents.memory.core_memory import CoreMemory
 from src.agents.memory.manager import MemoryManager
 from src.stores.vector_store import InMemoryVectorStore, RedisVectorStore, VectorStore
 

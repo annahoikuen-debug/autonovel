@@ -1,6 +1,5 @@
 """Unit tests for CSP models and variables."""
 
-import pytest
 from ortools.sat.python import cp_model
 from src.narrative_balancer.csp.models import (
     BeatType,
@@ -8,7 +7,7 @@ from src.narrative_balancer.csp.models import (
     ConflictClause,
     ConstraintPriority,
 )
-from src.narrative_balancer.csp.variables import CSPVariables, BEAT_TYPE_MAP
+from src.narrative_balancer.csp.variables import CSPVariables
 
 
 def test_csp_models():

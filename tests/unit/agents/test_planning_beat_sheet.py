@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 from src.agents.planning import PlanningAgent
 from src.models.beat_sheet import EpisodeBeat

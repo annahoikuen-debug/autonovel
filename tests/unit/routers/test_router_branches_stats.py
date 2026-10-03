@@ -21,10 +21,7 @@ from src.backend.routers.branches import (
 from src.backend.schemas.branch_play import (
     BranchPlayEndRequest,
     BranchPlayStateResponse,
-    BranchPlayPlaythroughResponse,
-    BranchPlaySessionResponse,
 )
-from src.backend.schemas.branch import BranchResponse
 
 
 def make_branch(branch_id=1, book_id=10, name="Branch A", parent_id=None,

@@ -1,4 +1,3 @@
-import pytest
 
 # 1Mトークンあたりの価格 (USD)
 MODEL_RATES = {

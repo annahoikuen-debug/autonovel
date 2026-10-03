@@ -1,8 +1,6 @@
 """Integration tests for DSP CLI."""
 
 import json
-from pathlib import Path
-import pytest
 from src.narrative_balancer.dsp.cli import main
 
 

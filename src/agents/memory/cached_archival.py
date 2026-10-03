@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional
+from typing import List
 
 from src.agents.memory.archival_memory import ArchivalMemory
 from src.agents.memory.interfaces import MemoryEntry

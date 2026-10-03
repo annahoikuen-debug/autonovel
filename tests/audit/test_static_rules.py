@@ -2,8 +2,7 @@
 Tests for static rule auditor.
 """
 
-import pytest
-from src.audit.static_rules import StaticRuleAuditor, Issue
+from src.audit.static_rules import StaticRuleAuditor
 
 
 def test_too_long_chapter_detected():

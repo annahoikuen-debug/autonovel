@@ -1,5 +1,5 @@
 """Unit tests for WritingGenerationContext in src/backend/writing_service.py."""
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from src.backend.writing_service import WritingGenerationContext
 
 

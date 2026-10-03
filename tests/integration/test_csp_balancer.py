@@ -1,6 +1,5 @@
 """Integration tests for CSP Narrative Balancer."""
 
-import pytest
 from src.narrative_balancer.csp.balancer import CSPNarrativeBalancer
 from src.narrative_balancer.csp.config import CSPConfig
 from src.narrative_balancer.csp.partial_state import PartialPlotState

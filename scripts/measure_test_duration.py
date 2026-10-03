@@ -12,22 +12,22 @@ def main():
         capture_output=True, text=True
     )
     end = time.time()
-    
+
     duration = end - start
     passed = result.returncode == 0
-    
+
     data = {
         "total_duration": duration,
         "passed": passed,
         "timestamp": __import__("datetime").datetime.now().isoformat(),
         "target_met": duration <= 60.0
     }
-    
+
     output_path = Path("artifacts/test_duration.json")
     output_path.parent.mkdir(exist_ok=True)
     with open(output_path, "w") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-    
+
     print(f"Test duration: {duration:.2f}s ({'PASS' if data['target_met'] else 'FAIL'} target)")
     return 0 if data['target_met'] else 1
 

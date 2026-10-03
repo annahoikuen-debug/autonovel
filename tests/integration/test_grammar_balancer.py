@@ -1,6 +1,5 @@
 """Unit tests for incremental parsing and integration test for grammar balancer."""
 
-import pytest
 from src.narrative_balancer.grammar.balancer import GrammarNarrativeBalancer
 from src.narrative_balancer.grammar.incremental import IncrementalParser
 from src.narrative_balancer.grammar.symbols import Terminal

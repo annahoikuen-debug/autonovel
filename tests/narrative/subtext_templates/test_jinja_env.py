@@ -2,7 +2,6 @@
 Unit tests for Jinja2 environment custom filters and macros (PLAN_Y2 Step 5).
 """
 
-import pytest
 from src.narrative.subtext_templates.renderer import TemplateRenderer
 
 

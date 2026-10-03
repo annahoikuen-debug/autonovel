@@ -3,7 +3,6 @@ Performance unit test for SubtextEngine (Step 18).
 """
 
 import time
-import pytest
 from src.narrative.subtext_engine.engine import SubtextEngine
 from src.narrative.subtext_engine.models import DialogueBlock
 

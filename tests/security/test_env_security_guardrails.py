@@ -3,11 +3,9 @@ Regression tests for environment variable and secret security guardrails.
 Verifies that sensitive files are ignored by git, not tracked, and templates do not leak credentials.
 """
 
-import os
 import re
 import subprocess
 from pathlib import Path
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 

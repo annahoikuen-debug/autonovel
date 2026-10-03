@@ -67,7 +67,6 @@ class _SensitiveDataFilter(logging.Filter):
     MASK_SUFFIX = "***"
 
     def filter(self, record: logging.LogRecord) -> bool:
-        import re
 
         # msg 属性のマスキング
         if hasattr(record, "msg") and isinstance(record.msg, str):

@@ -15,7 +15,7 @@ import streamlit as st
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from config.models import GlobalConfigModel
-from streamlit_app.state import ConfigState, UIStateStore
+from streamlit_app.state import ConfigState
 
 st.set_page_config(
     page_title="AutoNovel - ホーム",

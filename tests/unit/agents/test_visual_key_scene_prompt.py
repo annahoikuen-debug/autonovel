@@ -1,5 +1,4 @@
 import jinja2
-import os
 
 def test_visual_key_scene_inclusion():
     env = jinja2.Environment(loader=jinja2.FileSystemLoader('prompts/templates/narrative'))

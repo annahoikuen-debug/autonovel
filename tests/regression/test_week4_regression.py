@@ -1,6 +1,5 @@
 """Comprehensive regression tests for Week 4 Fusion Layer."""
 import pytest
-from src.agents.writer_agent import WriterAgent
 from src.fusion.alerts import ConflictAlerter
 from src.fusion.arbitrator import Arbitrator
 from src.fusion.config import FusionConfig

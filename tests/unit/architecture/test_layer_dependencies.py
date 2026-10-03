@@ -66,6 +66,6 @@ def test_domain_layer_does_not_import_routers():
                     )
 
     assert not violations, (
-        f"Domain layer has architectural dependency violations:\n"
+        "Domain layer has architectural dependency violations:\n"
         + "\n".join(violations)
     )

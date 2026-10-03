@@ -2,8 +2,7 @@
 config/project_context.py の整合性とリグレッション防止テスト
 """
 
-import pytest
-from config.project_context import ProjectContext, get_config, set_config
+from config.project_context import ProjectContext, get_config
 from config.models import GlobalConfigModel
 
 

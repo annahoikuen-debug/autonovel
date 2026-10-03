@@ -7,7 +7,6 @@ T6 Step 15 の回帰防止。
 (3) バージョンの正準との一致を固定する。
 """
 
-import re
 import tomllib
 from pathlib import Path
 

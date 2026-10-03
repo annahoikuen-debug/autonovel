@@ -2,7 +2,6 @@
 Unit tests for Core Rewrite Rules 1-7 (Steps 7-13).
 """
 
-import pytest
 from src.narrative.subtext_engine.models import DialogueBlock, SubtextContext
 from src.narrative.subtext_engine.rules import (
     AddressDistanceRule,

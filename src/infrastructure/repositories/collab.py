@@ -72,17 +72,47 @@ class CollabRepository:
         return list(result.scalars().all())
 
     @retry_on_lock()
-    async def resolve_comment(self, comment_id: int, resolved: bool = True) -> int:
+    async def get_comment(self, comment_id: int) -> "Comment | None":
+        """コメント ID からコメントを取得する（所有権検証の前提）。
+
+        `comment_id` はグローバル採番であり、呼び出し側からは
+        どの作品のコメントか判断できない。所有権検証のためには
+        まず `comment.book_id` を取り出す必要があるため、本メソッドを
+        経由しない所有者検証は実施できない。
+        """
+        result = await self.session.execute(
+            select(Comment).where(Comment.id == comment_id)
+        )
+        return result.scalar_one_or_none()
+
+    @retry_on_lock()
+    async def resolve_comment(
+        self, comment_id: int, resolved: bool = True, book_id: int | None = None
+    ) -> int:
+        """コメントを解決済みにする。`book_id` を渡すと作品で絞り込む。
+
+        `book_id` による絞りは呼び出し側が所有権検証を忘れた場合の
+        多層防御。IDOR を DB 層でも落とす。
+        """
         from sqlalchemy import update
 
-        result = await self.session.execute(
-            update(Comment).where(Comment.id == comment_id).values(resolved=resolved)
-        )
+        stmt = update(Comment).where(Comment.id == comment_id)
+        if book_id is not None:
+            stmt = stmt.where(Comment.book_id == book_id)
+        result = await self.session.execute(stmt.values(resolved=resolved))
         return result.rowcount
 
     @retry_on_lock()
-    async def delete_comment(self, comment_id: int) -> int:
+    async def delete_comment(self, comment_id: int, book_id: int | None = None) -> int:
+        """コメントを削除する。`book_id` を渡すと作品で絞り込む。
+
+        `book_id` による絞りは呼び出し側が所有権検証を忘れた場合の
+        多層防御。IDOR を DB 層でも落とす。
+        """
         from sqlalchemy import delete
 
-        result = await self.session.execute(delete(Comment).where(Comment.id == comment_id))
+        stmt = delete(Comment).where(Comment.id == comment_id)
+        if book_id is not None:
+            stmt = stmt.where(Comment.book_id == book_id)
+        result = await self.session.execute(stmt)
         return result.rowcount

@@ -6,7 +6,6 @@
 安定収束（フラット化）することを検証する。
 """
 import time
-import pytest
 
 from src.services.context_compression.rolling_memory import RollingMemoryBuilder
 

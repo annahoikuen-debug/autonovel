@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from src.agents.writing.opening_booster import OpeningBoosterAgent
 from src.models.opening_booster import OpeningEpisodeConfig
 
@@ -41,7 +41,6 @@ async def test_opening_booster_multigenre_prompt_construction():
 @pytest.mark.asyncio
 async def test_opening_booster_multigenre_cliffhanger_evaluation():
     """ジャンルごとにクリフハンガー評価が正しく走ることをテスト"""
-    from src.services.auditors.cliffhanger_scorer import score_cliffhanger
 
     # モックのセットアップ
     mock_llm = AsyncMock()

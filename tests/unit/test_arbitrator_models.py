@@ -1,13 +1,11 @@
 """Unit tests for Arbitrator models."""
 
-import pytest
 from src.narrative_balancer.arbitrator.models import (
     PlotState,
     BalancerResult,
     ConflictRecord,
-    IntegratedResult,
 )
-from src.narrative_balancer.models import Beat, BeatType, CorrectionAction
+from src.narrative_balancer.models import Beat, CorrectionAction
 
 
 def test_plot_state_creation():
