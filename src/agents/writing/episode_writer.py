@@ -515,20 +515,110 @@ class EpisodeWriter(BaseAgent):
         ep_num: int,
         target_word_count: int,
         style_tag: str | None = None,
+        repo: Any = None,
+        session: Any = None,
     ) -> dict[str, Any]:
-        """執筆に必要な完全なコンテキストを構築する。"""
+        """執筆に必要な完全なコンテキストを構築する。
+
+        v5.3 までは `repo` / `session` を渡しておらず、`ContextBuilderAgent.execute`
+        が「repo is required in artifacts」で早期 return していた
+        （= `foreshadowing_ctx` / `contract_foreshadowings` / `three_layer_context`
+        が常に空）。省略時は `self.repo` から解決する（後方互換）。
+        """
+        resolved_repo = repo if repo is not None else getattr(self, "repo", None)
+        resolved_session = session
+        if resolved_session is None:
+            resolved_session = getattr(resolved_repo, "session", None)
+
+        artifacts: dict[str, Any] = {
+            "target_word_count": target_word_count,
+            "style_tag": style_tag,
+            "compressor": self.compressor,
+        }
+        if resolved_repo is not None:
+            artifacts["repo"] = resolved_repo
+        if resolved_session is not None:
+            artifacts["session"] = resolved_session
+
         ctx = AgentContext(
             book_id=book_id,
             branch_id=branch_id,
             ep_num=ep_num,
-            artifacts={
-                "target_word_count": target_word_count,
-                "style_tag": style_tag,
-                "compressor": self.compressor,
-            },
+            artifacts=artifacts,
         )
         result = await self.context_builder.execute(ctx)
-        return result.artifacts.get("writing_context", {})
+        built = result.artifacts.get("writing_context", {})
+        return built if isinstance(built, dict) else {}
+
+    @staticmethod
+    def _is_context_placeholder(value: Any) -> bool:
+        """マージ時に「呼び出し元の意図的な値」か「空の器」かを判定する。"""
+        if value is None:
+            return True
+        if isinstance(value, (list, tuple, set, dict, str)) and len(value) == 0:
+            return True
+        return False
+
+    async def _merge_full_context(
+        self,
+        ctx: AgentContext,
+        writing_context: dict[str, Any] | None,
+    ) -> dict[str, Any]:
+        """`build_context()` の出力で `writing_context` を**補完**する。
+
+        `build_context()` は v5.3 以前から定義されていたが **呼び出し元 0 件**で、
+        契約伏線 ID・3層記憶がプロンプトに載らないまま dead-letter になっていた。
+        ここでは `run()` から呼び、**既存の値が常に優先**する形で統合する
+        （丸ごと置換すると `generator.py` が渡す `target_word_count` /
+        `style_intensity` / `passion` を失い、執筆フローが退行するため）。
+
+        統合ルール:
+          - 呼び出し元（`generator.py` 等）が非空で渡した値 → そのまま保持
+          - 呼び出し元が空（`None` / `[]` / `{}` / `""`）で、
+            `context_builder` が非空の値を持つ場合 → そちらで埋める
+            （`contract_foreshadowings: []` がこの第二种に当たる）
+          - `context_builder` が失敗・空・未設定 → 既存 context をそのまま返す
+        """
+        base = dict(writing_context or {})
+        if self.context_builder is None:
+            return base
+        # 上流（Orchestrator / SceneWriter）が既に `ContextBuilderAgent` を
+        # 走らせている場合のみ統合を省略し、1話あたりの重複 DB アクセスを避ける。
+        if "three_layer_context" in base and "contract_foreshadowings" in base:
+            return base
+
+        target_word_count = base.get("target_word_count")
+        if not isinstance(target_word_count, int) or target_word_count <= 0:
+            target_word_count = 2400
+
+        try:
+            built = await self.build_context(
+                book_id=ctx.book_id,
+                branch_id=ctx.branch_id,
+                ep_num=ctx.ep_num,
+                target_word_count=target_word_count,
+                style_tag=base.get("style_tag"),
+                repo=ctx.artifacts.get("repo"),
+                session=ctx.artifacts.get("session"),
+            )
+        except Exception as e:  # noqa: BLE001 - コンテキスト補完は補助なので落とさない
+            logger.warning(
+                "Ep.%s: コンテキスト補完でエラー（既存contextで継続）: %s", ctx.ep_num, e
+            )
+            return base
+
+        if not isinstance(built, dict) or not built:
+            return base
+
+        merged = dict(built)
+        for key, value in base.items():
+            if self._is_context_placeholder(value) and not self._is_context_placeholder(
+                built.get(key)
+            ):
+                # 呼び出し元は空、`context_builder` は値あり → 後者採用
+                continue
+            merged[key] = value
+        return merged
 
     async def write(self, book_id: int, ep_num: int, context: dict[str, Any]) -> str:
         """
@@ -623,7 +713,12 @@ class EpisodeWriter(BaseAgent):
         book_id = ctx.book_id
         ep_num = ctx.ep_num
         # The writing context should be in the artifacts from the context_builder_agent
-        writing_context = ctx.artifacts.get("writing_context", {})
+        writing_context = ctx.artifacts.get("writing_context", {}) or {}
+        # v5.3: `build_context()`（= `ContextBuilderAgent` の完全コンテキスト）が
+        # 呼び出し元 0 件の死んだコードだったため、`run()` から Wiring する。
+        # 契約伏線 ID / 3層記憶 / 未回収伏線一覧がプロンプトに載るようになる。
+        # 既存キーは保持されるので `generator.py` の値は失われない（マージ而非置換）。
+        writing_context = await self._merge_full_context(ctx, writing_context)
         # Generate the written text
         written_text = await self.write(book_id, ep_num, writing_context)
         writing_metadata = getattr(self, "last_metadata", None)

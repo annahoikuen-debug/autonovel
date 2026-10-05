@@ -217,6 +217,18 @@ class WritingGenerator:
                 "regeneration_directive": None,
                 "branch_id": branch_id,
                 "use_beat_to_scene": True,  # Beat-to-Scene分割執筆を有効化
+                # v5.3: 契約伏線（= `[伏線ID: n]` アンカーの供給元）。
+                # キーの存在が目的であり、値は `EpisodeWriter` が
+                # `ContextBuilderAgent` 経由で埋め戻す
+                # （`EpisodeWriter._merge_full_context` を参照）。
+                # ここで `DbForeshadowingRepository` を直接叩かない理由:
+                # セッションは `session_factory` 経由でのみ供給され
+                # （下のコメント参照）、本撰写フェーズで新的に開くと
+                # 後処理と同一スコープで SQLite 書き込みロックを競合させる。
+                # また設置（planting）は `bible_service` 側に未配線のため、
+                # ここでは空リストが正しい（`PromptManager` 側も
+                # `.get(...) or []` で空は空のまま扱われる）。
+                "contract_foreshadowings": [],
             }
 
             # v5.3 / Step 7: `write()` を直接呼ばず `run()` 経由で生成する。
