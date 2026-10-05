@@ -58,6 +58,16 @@ def is_cascade_reschedule_enabled() -> bool:
     return _env_flag("FORESHADOW_CASCADE_RESCHEDULE")
 
 
+def is_foreshadowing_planting_enabled() -> bool:
+    """伏線自動設置（roadmap -> foreshadowings）を有効にするか（既定 False）。
+
+    **既定 False**。このファイルの既定方針「ON にしない限り既存挙動は完全に
+    現状維持される」に従い、OFF のままでは `plant_from_roadmap` は
+    何もせず空リストを返し、DB への副作用もゼロになる（＝ロールバック可能）。
+    """
+    return _env_flag("FORESHADOW_PLANTING")
+
+
 def get_relevance_top_k(default: int = DEFAULT_RELEVANCE_TOP_K) -> int:
     """関連度注入の上限件数（0 以上の整数のみ採用。不正値は `default`）。"""
     raw = os.environ.get("FORESHADOW_RELEVANCE_TOP_K")

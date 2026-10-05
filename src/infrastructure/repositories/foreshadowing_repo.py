@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, List, Optional
+from typing import Any, Iterable, List, Optional, Sequence
 
 from sqlalchemy import and_, func, not_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.database.models_foreshadowing import ForeshadowingModel
+from src.backend.database.models_foreshadowing import ForeshadowingModel, encode_keywords
 from src.models.foreshadowing_status import ForeshadowingScope, ForeshadowingStatus
 
 logger = logging.getLogger(__name__)
@@ -89,12 +89,19 @@ class DbForeshadowingRepository:
         planted_episode: int,
         target_episode: Optional[int] = None,
         scope: Optional[ForeshadowingScope] = None,
+        keywords: Optional[Iterable[Any]] = None,
     ) -> ForeshadowingModel:
         """伏線を新規設置する
 
         v5.3 / Step 33: 設置時に `foreshadowing_planted_total` を記録する。
         `ForeshadowingKpiService.report_planted` は本番の呼び出し箇所が無く、
         設置件数のメトリクスが常に 0 だった。
+
+        `keywords`（0035 フェーズ1）:
+            手がかり語リスト。**末尾のキーワード引数**として追加しており、
+            既存の位置引数呼び出し（最大6引数）は一切壊さない。
+            `None`（既定）は「未設定」＝従来と完全に同じ行を作る。
+            内部では JSON 文字列へ変換して Text 列に格納する。
 
         注意: ここでは `flush()` までで **commit しない**。呼び出し側が
         `commit()` を明示すること（`ForeshadowingService` が話ごとに 1 回呼ぶ）。
@@ -109,10 +116,55 @@ class DbForeshadowingRepository:
         )
         if scope is not None:
             record.scope = scope.value
+        record.keywords = encode_keywords(keywords)
         self.db.add(record)
         await self.db.flush()
         await self._report_planted(record)
         return record
+
+    async def add_many(self, rows: Sequence[dict]) -> List[ForeshadowingModel]:
+        """複数本の伏線を1トランザクションでまとめて設置する。
+
+        Args:
+            rows: `add()` と同名のキーで構成した dict の列。
+                必須: `book_id` / `title` / `description` / `planted_episode`。
+                任意: `target_episode` / `scope` / `keywords`。
+
+        Returns:
+            追加された `ForeshadowingModel` のリスト（投入順）。
+
+        注意:
+            `add()` を **必ず** 通す。`add()` が行う
+            `foreshadowing_planted_total` の記録（`_report_planted`）を
+            bulk 経路で落とすと「設置件数メトリクス」が本数だけ減るため、
+            KPI を欠落させないことをテストで固定している。
+            commit は `add()` と同じく行わない（呼び出し側の責務）。
+        """
+        records: List[ForeshadowingModel] = []
+        for row in rows:
+            payload = dict(row)
+            book_id = payload.pop("book_id", None)
+            if book_id is None:
+                raise ValueError("add_many(): each row requires 'book_id'")
+            keywords = payload.pop("keywords", None)
+            allowed = {
+                "title",
+                "description",
+                "planted_episode",
+                "target_episode",
+                "scope",
+            }
+            unknown = set(payload) - allowed
+            if unknown:
+                raise ValueError(f"add_many(): unexpected keys {sorted(unknown)}")
+            records.append(
+                await self.add(
+                    book_id=book_id,
+                    keywords=keywords,
+                    **payload,
+                )
+            )
+        return records
 
     async def _report_planted(self, record: ForeshadowingModel) -> None:
         """設置メトリクスを記録する（失敗しても設置処理は継続する）"""
