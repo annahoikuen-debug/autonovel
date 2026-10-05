@@ -5,9 +5,12 @@ import logging
 import time
 from typing import List, Optional, Set
 
-from src.narrative_balancer.dsp.models import (
+from src.narrative_balancer.models import (
     Beat,
     CorrectionAction,
+)
+
+from src.narrative_balancer.dsp.models import (
     DSPConfig,
     SagDetection,
 )

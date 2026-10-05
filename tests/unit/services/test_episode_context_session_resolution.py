@@ -34,11 +34,25 @@ class _OnlyRepo:
         self.session = session
 
 
+class _FakeAsyncSession:
+    """伏線/ダイジェストのリポジトリが要求する非同期セッションのスタブ。
+
+    `_resolve_session` は「使える**非同期**セッションか」を判定する
+    （`run_sync` は AsyncSession 固有）。素の文字列や `object()` を
+    セッションの代用にしていると判定に掉落し、優先順位の検証ができない。
+    """
+
+    def __init__(self, label: str = ""):
+        self.run_sync = lambda *a, **k: None
+        self.label = label
+
+
 # ── 解決そのものの意味論 ─────────────────────────────────────────
 
 
 def test_explicit_session_wins():
-    assert _resolve_session(_OnlyRepo("FROM_REPO"), "EXPLICIT") == "EXPLICIT"
+    explicit = _FakeAsyncSession("EXPLICIT")
+    assert _resolve_session(_OnlyRepo(_FakeAsyncSession("FROM_REPO")), explicit) is explicit
 
 
 def test_falls_back_to_repo_session():
@@ -47,12 +61,23 @@ def test_falls_back_to_repo_session():
     M8 の本质：ダイジェスト経路は `artifacts.get("session")` しか見ず、
     repo しか持たない呼び出し元では空振りしていた。
     """
-    assert _resolve_session(_OnlyRepo("FROM_REPO"), None) == "FROM_REPO"
+    from_repo = _FakeAsyncSession("FROM_REPO")
+    assert _resolve_session(_OnlyRepo(from_repo), None) is from_repo
 
 
 def test_returns_none_when_both_absent():
     assert _resolve_session(None, None) is None
     assert _resolve_session(SimpleNamespace(), None) is None
+
+
+def test_rejects_non_async_session():
+    """同期 Session / coroutine function は「使えるセッション」ではないので弾く。
+
+    本番は BookRepository（**同期** Session）を渡していたため
+    `await self.db.flush()` が TypeError になり、伏線回収とダイジェスト保存が
+    常に警告でスキップされていた。判定が無いと握り潰されて原因不明になる。
+    """
+    assert _resolve_session(_OnlyRepo("SYNC_SESSION_PLACEHOLDER"), None) is None
 
 
 # ── 構造の固定 ───────────────────────────────────────────────────
@@ -113,7 +138,7 @@ async def test_digest_path_resolves_session_from_repo(monkeypatch):
 
     monkeypatch.setattr(EpisodeWriter, "_persist_episode_digest", _fake_digest)
 
-    session = object()
+    session = _FakeAsyncSession("FROM_REPO")
     writer = EpisodeWriter(
         llm=None,
         context_builder=None,

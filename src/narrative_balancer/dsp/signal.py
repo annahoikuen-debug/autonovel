@@ -2,7 +2,7 @@
 
 from typing import List
 import numpy as np
-from src.narrative_balancer.dsp.models import Beat
+from src.narrative_balancer.models import Beat
 
 
 def extract_tension_curve(beats: List[Beat], default_tension: float = 5.0) -> np.ndarray:

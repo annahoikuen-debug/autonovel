@@ -4,6 +4,7 @@
 ForeshadowingModel (ORM) を直接操作し、伏線の CRUD・未回収検索・回収更新・
 バランス集計をリレーショナルDBで完結する。
 """
+
 from __future__ import annotations
 
 import logging
@@ -31,9 +32,7 @@ def _record_rejection(reason: str) -> None:
 
 def _allowed_predecessors(target_status: ForeshadowingStatus) -> list[str]:
     """`target_status` へ遷移できる「現在のステータス」一覧を返す。"""
-    return [
-        s.value for s in ForeshadowingStatus if ForeshadowingStatus.can_transition(s, target_status)
-    ]
+    return [s.value for s in ForeshadowingStatus if ForeshadowingStatus.can_transition(s, target_status)]
 
 
 def _status_predicate(target_status: ForeshadowingStatus):
@@ -65,16 +64,40 @@ class DbForeshadowingRepository:
         # 非対称は本計画の対象外）。
         self.last_rejection: dict[str, Any] = {}
 
+    async def commit(self) -> None:
+        """このセッションの未確定変更を永続化する。
+
+        変更系メソッド（`add` / `resolve` / `progress` / `abandon` /
+        `update_target_episode`）は **`flush()` までしか行わない**。commit を
+        呼び出し側任せにしてくと、呼び出し側がセッションを `close()` した瞬間に
+        未コミット分が破棄される。実運用経路（`EpisodeWriter` の伏線自動回収）が
+        ちょうどこの形默认值で schema を毎話 save していたため、伏線状態が
+        永続化されないまま silencing していた。
+
+        複数 ID をまとめて更新する `ForeshadowingService.check_and_resolve` は
+        1話1コミットにするため、遷移ごとではなく最後に 1 回だけ呼ぶこと。
+        """
+        await self.db.commit()
+
     # ── CRUD ────────────────────────────────────────────
 
-    async def add(self, book_id: int, title: str, description: str,
-                  planted_episode: int, target_episode: Optional[int] = None,
-                  scope: Optional[ForeshadowingScope] = None) -> ForeshadowingModel:
+    async def add(
+        self,
+        book_id: int,
+        title: str,
+        description: str,
+        planted_episode: int,
+        target_episode: Optional[int] = None,
+        scope: Optional[ForeshadowingScope] = None,
+    ) -> ForeshadowingModel:
         """伏線を新規設置する
 
         v5.3 / Step 33: 設置時に `foreshadowing_planted_total` を記録する。
         `ForeshadowingKpiService.report_planted` は本番の呼び出し箇所が無く、
         設置件数のメトリクスが常に 0 だった。
+
+        注意: ここでは `flush()` までで **commit しない**。呼び出し側が
+        `commit()` を明示すること（`ForeshadowingService` が話ごとに 1 回呼ぶ）。
         """
         record = ForeshadowingModel(
             book_id=book_id,
@@ -97,9 +120,7 @@ class DbForeshadowingRepository:
             from src.services.foreshadowing.kpi import ForeshadowingKpiService
 
             scope = getattr(record, "scope", None) or ForeshadowingScope.SHORT_TERM.value
-            await ForeshadowingKpiService(self).report_planted(
-                book_id=record.book_id, scope=str(scope)
-            )
+            await ForeshadowingKpiService(self).report_planted(book_id=record.book_id, scope=str(scope))
         except Exception as e:  # pragma: no cover - メトリクス非対応環境
             logger.debug(f"Failed to report planted foreshadowing: {e}")
 
@@ -201,23 +222,15 @@ class DbForeshadowingRepository:
             current_status = ForeshadowingStatus(current.status)
         except ValueError:
             current_status = None
-        if current_status is not None and not ForeshadowingStatus.can_transition(
-            current_status, target_status
-        ):
-            return self._store_rejection(
-                foreshadowing_id, target_status, "illegal_transition"
-            )
+        if current_status is not None and not ForeshadowingStatus.can_transition(current_status, target_status):
+            return self._store_rejection(foreshadowing_id, target_status, "illegal_transition")
         if (
             isinstance(resolved_episode, int)
             and isinstance(current.planted_episode, int)
             and resolved_episode < current.planted_episode
         ):
-            return self._store_rejection(
-                foreshadowing_id, target_status, "before_plant_episode"
-            )
-        return self._store_rejection(
-            foreshadowing_id, target_status, "concurrent_modification"
-        )
+            return self._store_rejection(foreshadowing_id, target_status, "before_plant_episode")
+        return self._store_rejection(foreshadowing_id, target_status, "concurrent_modification")
 
     def _store_rejection(
         self,
@@ -267,11 +280,7 @@ class DbForeshadowingRepository:
         if isinstance(resolved_ep, int):
             conditions.append(ForeshadowingModel.planted_episode <= resolved_ep)
 
-        stmt = (
-            update(ForeshadowingModel)
-            .where(and_(*conditions))
-            .values(**values)
-        )
+        stmt = update(ForeshadowingModel).where(and_(*conditions)).values(**values)
         result = await self.db.execute(stmt)
         if result.rowcount > 0:
             return True
@@ -346,9 +355,11 @@ class DbForeshadowingRepository:
             reason = "not_found"
         else:
             planted_ep = getattr(current, "planted_episode", None)
-            reason = "horizon_zero" if (
-                isinstance(planted_ep, int) and target_episode <= planted_ep
-            ) else "illegal_transition"
+            reason = (
+                "horizon_zero"
+                if (isinstance(planted_ep, int) and target_episode <= planted_ep)
+                else "illegal_transition"
+            )
         logger.warning(
             "Rejecting foreshadowing reschedule: id=%s target_ep=%s (reason=%s)",
             foreshadowing_id,

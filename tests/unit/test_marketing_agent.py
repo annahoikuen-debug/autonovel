@@ -116,14 +116,42 @@ async def test_create_export_package_zip():
         assert any("設定" in n for n in names)
 
 
-def test_post_export_package_endpoint(client):
-    """POST /api/marketing/export_package/{id} が 200 + application/zip を返す."""
+def test_post_export_package_endpoint(client, real_db_manager):
+    """POST /api/marketing/export_package/{id} が 200 + application/zip を返す.
+
+    2026-10-04 の公開前監査で、このエンドポイントには IDOR が存在した
+    （認証・所有権の検証が一切なく、任意の認証ユーザーが任意の book_id を
+    走査して他人の作品 ZIP を一括取得できた）。所有者検証を追加したため
+    検証が必須になっており、本テストは**所有を持つ作品を用意する**。
+    """
     import os
 
+    from dependency_injector import providers
     from fastapi.testclient import TestClient
 
+    from src.backend.database.core import DatabaseManager
+    from src.backend.database.models import Book, User
+    from src.core.container import AppContainer
 
     os.environ["AUTH_DISABLED"] = "true"
+
+    # `verify_book_ownership` は作品の実在を最初に確認する（管理者がいても 404）。
+    # 開発用の autonovel.db を汚さないよう一時 SQLite に束縛し直して投入する。
+    AppContainer.db.override(providers.Object(DatabaseManager(os.environ["DATABASE_URL"])))
+    db = real_db_manager
+    db.add(User(id=1, email="owner@example.com", hashed_password="x", display_name="owner"))
+    db.add(
+        Book(
+            id=1,
+            user_id=1,
+            title="テスト作品",
+            genre="ファンタジー",
+            concept="テスト",
+            synopsis="テストあらすじ",
+            target_eps=1,
+        )
+    )
+    db.commit()
 
     fake_zip = b"PK\x03\x04fake_zip_bytes"
     fake_engine = MagicMock()
@@ -149,4 +177,5 @@ def test_post_export_package_endpoint(client):
             assert resp.content == fake_zip
     finally:
         marketing_router.get_engine = original_get_engine
+        AppContainer.db.reset_override()
         os.environ.pop("AUTH_DISABLED", None)

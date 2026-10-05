@@ -43,7 +43,9 @@ async def test_database_manager_in_memory_operations():
     assert rows[0]["val"] == "hello"
 
     # fetch_lastrowid
-    last_id = await mgr.fetch_lastrowid("INSERT INTO test_table (val) VALUES (?)", ("world",))
+    last_id = await mgr.fetch_lastrowid(
+        text("INSERT INTO test_table (val) VALUES (:val)"), {"val": "world"}
+    )
     assert last_id == 2
 
     # enqueue_write & flush_writes

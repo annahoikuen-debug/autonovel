@@ -1,12 +1,26 @@
 from __future__ import annotations
 import time
-from typing import Optional
+from typing import Any, Optional
 from src.models.prose_refinement import ProseRefineResult, RefinementDetail
 from src.services.prose.few_shot_selector import FewShotSelector
 from src.services.llm_service import LLMService
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+class AdapterOnlyLLMService:
+    """既に用意された LLM アダプタだけを渡す、最小の llm_service 風オブジェクト。
+
+    ``ProseRefinerAgent`` は ``llm_service`` が無ければ自分の ``LLMService``
+    ``LLM_PROVIDER=mock`` でも実ネットワークを
+    叩き、接続リトライで時間が溶けて精練が黙って失敗する。
+    ``refine()`` が触るのは ``llm_service.adapter.generate_text()`` だけなので、
+    アダプタ 1 つを持つ包みを渡せば十分。
+    """
+
+    def __init__(self, adapter: Any) -> None:
+        self.adapter = adapter
 
 
 class ProseRefinerAgent:

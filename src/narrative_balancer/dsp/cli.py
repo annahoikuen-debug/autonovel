@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List
 
 from src.narrative_balancer.dsp.factory import create_dsp_balancer
-from src.narrative_balancer.dsp.models import Beat
+from src.narrative_balancer.models import Beat
 
 
 def parse_args(args: List[str] = None):

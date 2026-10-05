@@ -35,11 +35,6 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-class DatabaseConnectionWrapper:
-    """Compatibility shim for legacy database connection wrapper."""
-    pass
-
-
 # ==========================================
 # リトライデコレータ
 # ==========================================
@@ -309,9 +304,25 @@ class DatabaseManager:
             result = await conn.execute(sql, params)
             return list(result.mappings().fetchall())
 
-    async def fetch_lastrowid(self, sql: str, params: tuple = ()) -> int:
+    async def fetch_lastrowid(self, sql: Any, params: Any = ()) -> int:
+        """INSERT 後の lastrowid を返す。sqlalchemy.text() のみ受け付ける。
+
+        2026-10-05: 以前は `sql: str` を取り、`exec_driver_sql()` に
+        生文字列を渡していた。`execute` / `fetch_one` / `fetch_all` が
+        raw string を拒否しているのに対し**このメソッドだけRejectされておらず**、
+        同一クラス内で契約が食い違っていた（`exec_driver_sql` は
+        パラメータをバインドせず文字列連結されるため実害のある注入面）。
+
+        `text()` で包むことで他メソッドと契約を一貫させ、生文字列を拒否する。
+        """
+        if isinstance(sql, str):
+            raise TypeError(
+                "DatabaseManager.fetch_lastrowid() no longer accepts raw strings. "
+                "Please use sqlalchemy.text() for SQL queries."
+            )
+
         async with self.engine.begin() as conn:
-            result = await conn.exec_driver_sql(sql, params)
+            result = await conn.execute(sql, params)
             return result.lastrowid or 0
 
     async def save_internal_state(self, key: str, value: str, updated_at: Any = None) -> None:

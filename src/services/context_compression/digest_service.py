@@ -3,6 +3,7 @@
 長編執筆におけるコンテキスト肥大化を防止するため、
 各エピソード本文から客観的事実のみを100字〜150字以内で抽出・永続化する。
 """
+
 from __future__ import annotations
 
 import inspect
@@ -93,9 +94,7 @@ async def generate_episode_digest(
     if not digest_text or not digest_text.strip():
         lines = [line.strip() for line in cleaned_draft.splitlines() if line.strip()]
         # 台詞以外の主要記述を抽出
-        narrative_lines = [
-            line for line in lines if not (line.startswith("「") or line.startswith("『"))
-        ]
+        narrative_lines = [line for line in lines if not (line.startswith("「") or line.startswith("『"))]
         sample_lines = narrative_lines[-3:] if len(narrative_lines) >= 3 else lines[-3:]
         fallback_summary = "。".join([line.rstrip("。") for line in sample_lines])
         digest_text = f"第{ep_num}話要約: {fallback_summary}"
@@ -103,7 +102,7 @@ async def generate_episode_digest(
     # 長さ正規化 (最大 MAX_DIGEST_LENGTH 字)
     cleaned = digest_text.strip()
     if len(cleaned) > MAX_DIGEST_LENGTH:
-        cleaned = cleaned[:MAX_DIGEST_LENGTH - 3].rstrip() + "..."
+        cleaned = cleaned[: MAX_DIGEST_LENGTH - 3].rstrip() + "..."
 
     return cleaned
 
@@ -114,13 +113,26 @@ class EpisodeDigestRepository:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def commit(self) -> None:
+        """未確定の変更を永続化する。
+
+        `save_digest` は `flush()` までで止め、**commit は呼び出し側の責務**。
+        ここを commit 責務にしておかないと、呼び出し側がセッションを閉じた
+        瞬間にダイジェストが消える（`AsyncSession.close()` は未コミットを
+        破棄する）。実運用経路では save だけが呼ばれて永続化されていなかった。
+        """
+        await self.db.commit()
+
     async def save_digest(
         self,
         book_id: int,
         episode_num: int,
         digest_text: str,
     ) -> EpisodeDigestModel:
-        """エピソードダイジェストを新規作成または更新（Upsert）。"""
+        """エピソードダイジェストを新規作成または更新（Upsert）。
+
+        注意: `flush()` までで **commit しない**。呼び出し側が `commit()` する。
+        """
         stmt = select(EpisodeDigestModel).where(
             EpisodeDigestModel.book_id == book_id,
             EpisodeDigestModel.episode_num == episode_num,
@@ -206,5 +218,13 @@ class EpisodeDigestService:
                 episode_num=episode_num,
                 digest_text=digest_text,
             )
+            # flush だけでは永続化されない（セッションを閉じた瞬間に破棄される）。
+            # ここで初めて commit して初めて「保存した」が成立する。
+            # LLM 生成は完了済みなので、DB 書き込みロックを保持したまま
+            # LLM を待つ時間は発生しない。
+            # `async def commit` を持つ実装だけ呼ぶ（テストダブル対策）。
+            commit = getattr(self.repo, "commit", None)
+            if inspect.iscoroutinefunction(commit):
+                await commit()
 
         return digest_text

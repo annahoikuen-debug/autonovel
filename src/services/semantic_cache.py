@@ -356,8 +356,20 @@ class SemanticCacheManager:
                     f"[SEMANTIC CACHE EVICTION] Evicted {len(delete_ids)} old cache entries."
                 )
 
-        except Exception as e:
-            logger.error(f"[SEMANTIC CACHE EVICTION] Failed: {e}")
+        except Exception:
+            # exception（トレースバック付き）で記録する。
+            #
+            # 旧実装は `logger.error(f"...: {e}")` でメッセージ本文だけを
+            # 記録していたため、原因の特定ができなかった。
+            # 2026-10-04 の公開前調査では、この握り潰しによって
+            # `executor_manager` が lifespan shutdown 後に恒久的に使用不能である
+            # 事実（`RuntimeError: cannot schedule new futures after shutdown`）が
+            # 伏せられ、`evict_if_needed` が無言で 0 件しか処理しないため、
+            # 呼び出し側のテストが opaque な原因で失敗していた。
+            #
+            # 驱逐は性能重視の経路（eviction 失敗してもキャッシュ本体は動く）なので
+            # 例外は伝播させない。ただし「何が起きたか」を必ず残す。
+            logger.exception("[SEMANTIC CACHE EVICTION] Failed")
 
     async def prefetch_next(
         self,

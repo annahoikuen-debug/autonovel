@@ -2,9 +2,9 @@
 core/interfaces.py - 依存性注入のためのインターフェース（Protocol）定義
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import Any, Protocol
-
+from sqlalchemy.sql.elements import TextClause
 from src.models.base import GenerateResult
 from src.models.db import BibleDbModel, BookDbModel, ChapterDbModel, CharacterDbModel, PlotDbModel
 
@@ -152,11 +152,26 @@ class IPromptManager(Protocol):
 
 
 class DatabaseManagerProtocol(Protocol):
-    """データベース接続管理のインターフェース"""
+    """データベース接続管理のインターフェース。
 
-    async def fetch_one(self, query: str, params: tuple[Any, ...] = ()) -> Any | None: ...
-    async def fetch_all(self, query: str, params: tuple[Any, ...] = ()) -> list[Any]: ...
-    async def execute(self, query: str, params: tuple[Any, ...] = ()) -> Any: ...
+    `query` の型は **`str` ではない**。
+    実装（`src/backend/database/core.py`）は生の文字列 SQL を
+    `TypeError` で拒否し、`sqlalchemy.text()` のみを受け付ける
+    （呼び出し規約の強制。`fetch_one` / `fetch_all` / `execute` /
+    `fetch_lastrowid` すべて）。
+
+    以前は `query: str` と宣言していたため、**型契約が実装と矛盾**していた。
+    """
+
+    async def fetch_one(
+        self, query: TextClause, params: Mapping[str, Any] | None = None
+    ) -> Any | None: ...
+    async def fetch_all(
+        self, query: TextClause, params: Mapping[str, Any] | None = None
+    ) -> list[Any]: ...
+    async def execute(
+        self, query: TextClause, params: Mapping[str, Any] | None = None
+    ) -> Any: ...
 
 
 class IRepository(Protocol):

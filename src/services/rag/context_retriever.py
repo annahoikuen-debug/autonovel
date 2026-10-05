@@ -119,7 +119,16 @@ class LongFormContextRetriever:
 
         if self.chroma_client is None:
             # モック/テスト用のインメモリ実装
-            from src.services.vector_store.in_memory import InMemoryVectorStore
+            # 2026-10-05: import 先を `in_memory_chroma` に変更。
+            # 従来は `from ...vector_store.in_memory import InMemoryVectorStore` を
+            # 読んでいたが、同モジュールに**そのクラスは存在しない**
+            # （実体は `InMemoryFallbackStore` で API も非互換）。
+            # そのため Chroma を用意できない環境では、この fallback が
+            # ImportError で落ちていた。
+            # `in_memory_chroma` は Chroma の Client/Collection 互換
+            # インターフェースを持つ実装。呼び出し側のコードは変更していない。
+            from src.services.vector_store.in_memory_chroma import InMemoryVectorStore
+
             self.chroma_client = InMemoryVectorStore()
 
         collection_name = f"novel_foreshadowings_book_{book_id}"

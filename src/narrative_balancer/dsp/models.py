@@ -4,6 +4,26 @@ from typing import List
 import numpy as np
 from pydantic import BaseModel, Field, ConfigDict
 
+# DSP 固有の型ではないが、DSP パッケージの公開モデル面の一部として
+# 従来から `dsp.models` 経由で参照されていた共通モデルを再輸出する。
+# (`tests/unit/test_dsp_models.py` 等が `from ...dsp.models import Beat` を使う)
+# 定義は上位パッケージの共通モデルにある。
+from src.narrative_balancer.models import (  # noqa: F401  (再輸出)
+    Beat,
+    BeatType,
+    CorrectionAction,
+)
+
+__all__ = [
+    "TensionSignal",
+    "SagDetection",
+    "ImpulseConfig",
+    "DSPConfig",
+    "Beat",
+    "BeatType",
+    "CorrectionAction",
+]
+
 
 class TensionSignal(BaseModel):
     """Numerical representation of tension values along episode timeline."""

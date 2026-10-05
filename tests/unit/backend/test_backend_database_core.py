@@ -39,8 +39,19 @@ async def async_db(tmp_path):
 # module-level fallbacks / constants
 # --------------------------------------------------------------------------
 
-def test_database_connection_wrapper_shim():
-    assert core.DatabaseConnectionWrapper() is not None
+def test_database_connection_wrapper_removed():
+    """`DatabaseConnectionWrapper` が削除されていることを確認。
+
+    2026-10-04: これは `pass` だけのシムで、`src/` 内に呼び出し元が 0 件だった。
+    実装は `get_conn()` 内部の `_CompatWrapper` が担っており、シムは
+    誤用の温床にしかならなかったため削除した。
+    シムの存在を前提にしたテストを残さないため、
+    「存在しない」ことを確認する形に変換している。
+    """
+    assert not hasattr(core, "DatabaseConnectionWrapper"), (
+        "DatabaseConnectionWrapper が復活している。復活している場合は呼び出し元を"
+        "確認し、シムではなく deprecated alias として残すこと"
+    )
 
 
 def test_retry_with_logging_retries_then_succeeds(monkeypatch):
@@ -187,7 +198,7 @@ async def test_database_manager_execute_and_fetch(async_db):
     assert (await async_db.fetch_one(text("SELECT b FROM smoke WHERE a = 1")))["b"] == "z"
     await async_db.flush_writes()
 
-    last = await async_db.fetch_lastrowid("INSERT INTO smoke VALUES (3, 'w')")
+    last = await async_db.fetch_lastrowid(text("INSERT INTO smoke VALUES (3, :w)"), {"w": "w"})
     assert isinstance(last, int)
 
 

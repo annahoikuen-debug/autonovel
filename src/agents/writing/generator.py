@@ -1,5 +1,6 @@
 # src/agents/writing/generator.py
 """WritingGenerator - 本文生成の実装ロジック"""
+
 from __future__ import annotations
 
 import logging
@@ -24,6 +25,7 @@ class WritingGenerator:
         ctx_mgr: Any = None,
         reporter_factory: Any = None,
         plot_expander: Any = None,
+        session_factory: Any = None,
     ):
         self.repo = repo
         self.llm = llm
@@ -32,6 +34,9 @@ class WritingGenerator:
         self.ctx_mgr = ctx_mgr
         self.reporter_factory = reporter_factory
         self.plot_expander = plot_expander
+        # ``async with`` 可能なセッション工場（伏線回収 / 事実ダイジェスト用）。
+        # None の場合は後処理がスキップされる（写作自体は成立する）。
+        self.session_factory = session_factory
         self.branch_id = 1
 
         # 必要な属性を設定（SchedulerCoordinator が期待するもの）
@@ -40,6 +45,8 @@ class WritingGenerator:
 
         # OpeningBoosterAgentを遅延初期化
         self._opening_booster: OpeningBoosterAgent | None = None
+        # 後処理専用 EpisodeWriter を遅延初期化（1〜3話用）
+        self._post_processing_writer: EpisodeWriter | None = None
 
     @property
     def opening_booster(self) -> OpeningBoosterAgent:
@@ -51,6 +58,64 @@ class WritingGenerator:
                 style_rag=self.style_rag,
             )
         return self._opening_booster
+
+    def _get_post_processing_writer(self) -> EpisodeWriter | None:
+        """後処理（伏線回収 / ダイジェスト）に使う EpisodeWriter を用意する。
+
+        1〜3話（OpeningBoosterAgent 経路）は `EpisodeWriter.run()` を経由しないため、
+        ここだけ明示的に `EpisodeWriter` を組み立てて後処理呼び出す。
+        ContextBuilderAgent は伏線/ダイジェストには不要だが、
+        EpisodeWriter のコンストラクタが必須とするため渡しておく。
+        """
+        if self._post_processing_writer is None:
+            try:
+                from src.agents.context_builder_agent import ContextBuilderAgent
+
+                context_builder = ContextBuilderAgent(
+                    repo=self.repo,
+                    llm=self.llm,
+                    style_rag=self.style_rag,
+                )
+                self._post_processing_writer = EpisodeWriter(
+                    llm=self.llm,
+                    context_builder=context_builder,
+                    repo=self.repo,
+                    style_rag=self.style_rag,
+                    rag_prefetch=None,
+                    prompt_manager=self.pm,
+                    compressor=None,
+                )
+            except Exception as e:  # noqa: BLE001 - 後処理は補助なので落とさない
+                logger.warning("後処理用の EpisodeWriter を初期化できませんでした: %s", e)
+                return None
+        return self._post_processing_writer
+
+    async def _run_post_episode_finalize(
+        self,
+        book_id: int,
+        branch_id: int,
+        ep_num: int,
+        written_text: str,
+    ) -> None:
+        """後処理を best-effort で実行する（失敗しても執筆は成立させる）。"""
+        if not written_text:
+            return
+        writer = self._get_post_processing_writer()
+        if writer is None:
+            return
+        try:
+            await writer._post_episode_finalize(
+                book_id=book_id,
+                branch_id=branch_id,
+                ep_num=ep_num,
+                written_text=written_text,
+                writing_metadata=None,
+                repo=self.repo,
+                session=None,
+                session_factory=self.session_factory,
+            )
+        except Exception as e:  # noqa: BLE001
+            logger.warning("Ep.%s: 後処理でエラー（本文は保持）: %s", ep_num, e)
 
     async def _write_single_episode_core(
         self,
@@ -77,6 +142,7 @@ class WritingGenerator:
         # 第1話〜第3話はOpeningBoosterAgentを使用
         if ep_num in (1, 2, 3):
             from src.models.opening_booster import OpeningEpisodeConfig
+
             config = OpeningEpisodeConfig(
                 ep_num=ep_num,
                 target_word_count=target_word_count,
@@ -100,11 +166,27 @@ class WritingGenerator:
                     content=content,
                 )
 
+                # 1〜3話も後処理（伏線自動回収 / 事実ダイジェスト永続化）を走らせる。
+                # 以前は OpeningBoosterAgent 経路が `EpisodeWriter.run()` を
+                # 経由しないため、この2機構が1〜3話では永久に未実行だった
+                # （= ダイジェストが最初の中盤危機語尾からしか無い長編になっていた）。
+                # 本文保存が成功したときだけ実行する（0文字なら何もしない）。
+                try:
+                    await self._run_post_episode_finalize(
+                        book_id=book_id,
+                        branch_id=branch_id,
+                        ep_num=ep_num,
+                        written_text=content,
+                    )
+                except Exception as e:  # noqa: BLE001 - 後処理は補助なので落とさない
+                    logger.warning("Ep.%s: 後処理でエラー（本文は保持）: %s", ep_num, e)
+
             return len(content)
         else:
             # 第4話以降はEpisodeWriter（Beat-to-Scene分割執筆）を使用
             # ContextBuilderが必要なので、ここでは簡易版として書く
             from src.agents.context_builder_agent import ContextBuilderAgent
+
             context_builder = ContextBuilderAgent(
                 repo=self.repo,
                 llm=self.llm,
@@ -150,7 +232,16 @@ class WritingGenerator:
                 ep_num=ep_num,
                 artifacts={
                     "repo": self.repo,
-                    "session": getattr(self.repo, "session", None),
+                    # セッションは「後処理の直前だけ開く短いスコープ」から渡す。
+                    # 以前は `getattr(self.repo, "session", None)` で取っていたが、
+                    #   - DataRepositoryFacade では coroutine function が返り、
+                    #     `'function' object has no attribute 'execute'`
+                    #   - 本番の BookRepository では**同期** Session が返り、
+                    #     `await self.db.flush()` が TypeError
+                    # となり、どちらの経路でも伏線回収・ダイジェスト保存は
+                    # 常に警告でスキップされていた（= 長編の伏線管理が死んでいた）。
+                    # 呼び出し側が session_factory を注入する。
+                    "session_factory": self.session_factory,
                     "writing_context": context,
                     **context,
                 },
@@ -202,6 +293,7 @@ class WritingGenerator:
         """第1話〜第3話の場合は OpeningBoosterAgent へ委譲し、それ以外は None を返す"""
         if ep_num in (1, 2, 3):
             from src.models.opening_booster import OpeningEpisodeConfig
+
             config = OpeningEpisodeConfig(
                 ep_num=ep_num,
                 target_word_count=target_word_count,

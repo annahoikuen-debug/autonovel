@@ -1,12 +1,11 @@
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import ANY, Mock, AsyncMock, patch
 import asyncio
 from pathlib import Path
 
 from src.backend.database.core import (
     retry_with_logging,
     WorkspaceManager,
-    DatabaseConnectionWrapper,
     DatabaseManager,
     init_db,
     get_db_manager,
@@ -115,172 +114,36 @@ class TestWorkspaceManager:
             assert result[2] == mock_path1  # mtime=1000
 
     def test_create_snapshot_creates_backup(self):
-            """create_snapshot がバックアップを作成することを確認"""
+            """create_snapshot がバックアップを作成することを確認
+
+            2026-10-04: 旧テストは `patch('pathlib.Path')` を使っていたが、
+            `core.py` は `from pathlib import Path` で**名前を束縛**している
+            ため、この patch は効いていなかった（実体の Path が使われ、
+            POSIX リテラルの比較が Windows で失敗していた）。
+            patch 先は束縛名（`src.backend.database.core.Path`）でなければならない。
+            """
             with patch('src.backend.database.core.BASE_DIR', Path('/tmp')):
-                with patch('pathlib.Path.exists', return_value=True):
-                    with patch('shutil.copy2') as mock_copy:
+                with patch('src.backend.database.core.Path.exists', return_value=True):
+                    with patch('src.backend.database.core.shutil.copy2') as mock_copy:
                         with patch('src.backend.database.core.logger') as mock_logger:
                             with patch('time.time', return_value=1234567890):
-                                mock_src = Mock()
-                                mock_dst = Mock()
-                                mock_src.with_suffix.return_value = mock_dst
+                                result = WorkspaceManager.create_snapshot(str(Path('/tmp/test.db')))
 
-                                with patch('pathlib.Path', return_value=mock_src):
-                                    result = WorkspaceManager.create_snapshot("/tmp/test.db")
-
-                                    assert result == "/tmp/test.db.bak_1234567890.db"
-                                    mock_copy.assert_called_once_with(mock_src, mock_dst)
-                                    mock_logger.info.assert_called_once_with(
-                                        "Snapshot created: test.db.bak_1234567890.db"
-                                    )
+                                # 実 Path で計算された結果を比較する（プラットフォーム非依存）
+                                expected = str(
+                                    Path('/tmp/test.db').with_suffix('.bak_1234567890.db')
+                                )
+                                assert result == expected, (result, expected)
+                                mock_copy.assert_called_once()
+                                mock_logger.info.assert_called_once_with(
+                                    f"Snapshot created: {Path(expected).name}"
+                                )
 
     def test_create_snapshot_returns_empty_if_source_not_exists(self):
         """Test that create_snapshot returns empty string when source does not exist"""
         with patch('pathlib.Path.exists', return_value=False):
             result = WorkspaceManager.create_snapshot("/nonexistent.db")
             assert result == ""
-
-
-class TestDatabaseConnectionWrapper:
-    """DatabaseConnectionWrapper クラスのテスト"""
-
-    def test_init_sets_attributes_correctly(self):
-        """初期化時に属性が正しく設定されることを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-
-        assert wrapper.sql_conn == mock_sql_conn
-        assert wrapper.dbapi_conn == mock_dbapi_conn
-
-    def test_cursor_property_returns_dbapi_cursor(self):
-        """cursor プロパティが dbapi カーソルを返すことを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-        mock_cursor = Mock()
-        mock_dbapi_conn.cursor.return_value = mock_cursor
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-
-        result = wrapper.cursor
-
-        assert result == mock_cursor
-        mock_dbapi_conn.cursor.assert_called_once()
-
-    def test_commit_calls_dbapi_commit(self):
-        """commit メソッドが dbapi の commit を呼び出すことを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-        wrapper.commit()
-
-        mock_dbapi_conn.commit.assert_called_once()
-
-    def test_rollback_calls_dbapi_rollback(self):
-        """rollback メソッドが dbapi の rollback を呼び出すことを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-        wrapper.rollback()
-
-        mock_dbapi_conn.rollback.assert_called_once()
-
-    def test_execute_calls_dbapi_execute(self):
-        """execute メソッドが dbapi の execute を呼び出すことを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-        mock_dbapi_conn.execute.return_value = "result"
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-        result = wrapper.execute("SELECT * FROM test", (1, 2))
-
-        assert result == "result"
-        mock_dbapi_conn.execute.assert_called_once_with("SELECT * FROM test", (1, 2))
-
-    def test_setattr_sets_special_attributes_directly(self):
-        """特別な属性（sql_conn, dbapi_conn）が直接設定されることを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-
-        # 特別な属性を設定
-        wrapper.sql_conn = "new_sql_conn"
-        wrapper.dbapi_conn = "new_dbapi_conn"
-
-        assert wrapper.sql_conn == "new_sql_conn"
-        assert wrapper.dbapi_conn == "new_dbapi_conn"
-
-    def test_setattr_sets_other_attributes_on_dbapi_conn(self):
-        """その他の属性が dbapi_conn に設定されることを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-
-        # 通常の属性を設定
-        wrapper.custom_attr = "custom_value"
-
-        # dbapi_conn に設定されていることを確認
-        assert mock_dbapi_conn.custom_attr == "custom_value"
-
-    def test_fetchone_returns_dbapi_fetchone(self):
-        """fetchone メソッドが dbapi の fetchone を返すことを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-        mock_result = Mock()
-        mock_dbapi_conn.fetchone.return_value = mock_result
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-        result = wrapper.fetchone()
-
-        assert result == mock_result
-        mock_dbapi_conn.fetchone.assert_called_once()
-
-    def test_fetchall_returns_dbapi_fetchall(self):
-        """fetchall メソッドが dbapi の fetchall を返すことを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-        mock_result = Mock()
-        mock_dbapi_conn.fetchall.return_value = mock_result
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-        result = wrapper.fetchall()
-
-        assert result == mock_result
-        mock_dbapi_conn.fetchall.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_close_calls_rollback_and_close(self):
-        """close メソッドが rollback と close を呼び出すことを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-        mock_dbapi_conn.rollback = AsyncMock()
-        mock_sql_conn.close = AsyncMock()
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-        await wrapper.close()
-
-        mock_dbapi_conn.rollback.assert_called_once()
-        mock_sql_conn.close.assert_called_once()
-
-    @pytest.mark.asyncio
-    async def test_close_handles_rollback_exception_gracefully(self):
-        """close メソッドが rollback 例外を graceful に処理することを確認"""
-        mock_sql_conn = Mock()
-        mock_dbapi_conn = Mock()
-        mock_dbapi_conn.rollback = AsyncMock(side_effect=Exception("rollback failed"))
-        mock_sql_conn.close = AsyncMock()
-
-        wrapper = DatabaseConnectionWrapper(mock_sql_conn, mock_dbapi_conn)
-        # 例外が発生しないことを確認
-        await wrapper.close()
-
-        mock_dbapi_conn.rollback.assert_called_once()
-        mock_sql_conn.close.assert_called_once()
 
 
 class TestDatabaseManager:
@@ -295,10 +158,16 @@ class TestDatabaseManager:
         assert hasattr(db_manager, 'engine')
         assert hasattr(db_manager, 'session_factory')
 
-    def test_init_sets_warned_flag_to_false(self):
-        """_warned_about_str_sql フラグが False で初期化されることを確認"""
+    def test_init_does_not_carry_warning_flag(self):
+        """`_warned_about_str_sql` が残っていないことを確認。
+
+        2026-10-04: 当初は「警告を 1 回だけ出す」フラグとして存在したが、
+        現在の実装は警告ではなく **hard reject**（`TypeError`）に変更され、
+        フラグ自体は削除された。テストが private 属性に依存していたため陳腐化していた。
+        「存在しない」ことを確認する形に変更する。
+        """
         db_manager = DatabaseManager("sqlite:///test.db")
-        assert db_manager._warned_about_str_sql is False
+        assert not hasattr(db_manager, "_warned_about_str_sql")
 
     def test_get_session_returns_async_session(self):
         """get_session メソッドが AsyncSession を返すことを確認"""
@@ -311,7 +180,13 @@ class TestDatabaseManager:
 
     @pytest.mark.asyncio
     async def test_get_conn_creates_connection_wrapper(self):
-        """get_conn メソッドが DatabaseConnectionWrapper を返すことを確認"""
+        """get_conn が互換ラッパーを返すことを確認。
+
+        2026-10-04: 削除された `DatabaseConnectionWrapper`（`pass` だけのシム、
+        `src/` 内に呼び出し元ゼロ）の代わりに、`get_conn()` が実際に返すのは
+        内部の `_CompatWrapper` である。（旧テストはシムの型を前提にしていたため
+        11 件が `takes no arguments` で落ちていた）
+        """
         db_manager = DatabaseManager("sqlite:///test.db")
 
         mock_sql_conn = Mock()
@@ -326,9 +201,14 @@ class TestDatabaseManager:
 
             result = await db_manager.get_conn()
 
-            assert isinstance(result, DatabaseConnectionWrapper)
-            assert result.sql_conn == mock_sql_conn
-            assert result.dbapi_conn == mock_dbapi_conn
+            # `_CompatWrapper` は get_conn の局所クラスなので、
+            # 「ラッパーの公開面」を確認する（名前で束縛しない）
+            assert result is not None
+            assert result.sql_conn is mock_sql_conn
+            assert result.dbapi_conn is mock_dbapi_conn
+            # ラッパーの最小の委譲面が生きていること
+            result.cursor()
+            mock_dbapi_conn.cursor.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_get_read_conn_returns_same_as_get_conn(self):
@@ -374,26 +254,38 @@ class TestDatabaseManager:
         await db_manager.flush_writes()
 
     @pytest.mark.asyncio
-    async def test_execute_with_string_issues_warning_and_converts_to_text(self):
-        """execute メソッドが文字列 SQL に対して警告を出し text() に変換することを確認"""
+    async def test_execute_rejects_raw_string(self):
+        """execute が生の文字列 SQL を拒否することを確認。
+
+        2026-10-04: 当初は「警告を出し text() に変換する」仕様だったが、
+        現在の実装は **hard reject**（TypeError）に変更されている。
+        「呼び出し規約の強制」としての意図であり、変換ではない。
+        このため拒否されることの固定が正しい（かつ旧テストが Conversion を
+        前提にしていたため陳腐化していた）。
+        """
         db_manager = DatabaseManager("sqlite:///test.db")
-        db_manager._warned_about_str_sql = False  # Reset warning flag
+
+        with pytest.raises(TypeError) as exc:
+            await db_manager.execute("SELECT * FROM test WHERE id = :id", {"id": 1})
+        assert "no longer accepts raw strings" in str(exc.value)
+
+    @pytest.mark.asyncio
+    async def test_execute_accepts_text_clause(self):
+        """text() を渡した場合は通ること（拒否が正常系を壊していないことの確認）。"""
+        from sqlalchemy import text
+
+        db_manager = DatabaseManager("sqlite:///test.db")
 
         mock_conn = Mock()
-        mock_conn.__enter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__exit__ = AsyncMock()
+        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_conn.__aexit__ = AsyncMock(return_value=None)
         mock_conn.execute = AsyncMock()
 
         with patch.object(db_manager, 'engine') as mock_engine:
             mock_engine.begin = Mock(return_value=mock_conn)
 
-            await db_manager.execute("SELECT * FROM test WHERE id = :id", {"id": 1})
-
-            # Warning が発行されることを確認（実際のテストでは警告キャプチャが必要だが、ここでは省略）
-            # text() に変換されていることを確認するため、execute の呼び出しをチェック
+            await db_manager.execute(text("SELECT * FROM test WHERE id = :id"), {"id": 1})
             mock_conn.execute.assert_called_once()
-            # ここで実際に text() オブジェクトが渡されているかを確認する必要があるが、
-            # 簡略化のために呼び出しが発生したことを確認
 
     @pytest.mark.asyncio
     async def test_fetch_one_returns_mapped_result(self):
@@ -406,14 +298,15 @@ class TestDatabaseManager:
         mock_result.mappings.return_value = mock_mappings
 
         mock_conn = Mock()
-        mock_conn.__enter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__exit__ = AsyncMock()
+        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_conn.__aexit__ = AsyncMock(return_value=None)
         mock_conn.execute = AsyncMock(return_value=mock_result)
 
         with patch.object(db_manager, 'engine') as mock_engine:
             mock_engine.connect = Mock(return_value=mock_conn)
 
-            result = await db_manager.fetch_one("SELECT * FROM test", (1,))
+            from sqlalchemy import text
+            result = await db_manager.fetch_one(text("SELECT * FROM test"), {"1": 1})
 
             assert result == {"col1": "val1", "col2": "val2"}
             mock_conn.execute.assert_called_once()
@@ -432,14 +325,15 @@ class TestDatabaseManager:
         mock_result.mappings.return_value = mock_mappings
 
         mock_conn = Mock()
-        mock_conn.__enter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__exit__ = AsyncMock()
+        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_conn.__aexit__ = AsyncMock(return_value=None)
         mock_conn.execute = AsyncMock(return_value=mock_result)
 
         with patch.object(db_manager, 'engine') as mock_engine:
             mock_engine.connect = Mock(return_value=mock_conn)
 
-            result = await db_manager.fetch_all("SELECT * FROM test", (1,))
+            from sqlalchemy import text
+            result = await db_manager.fetch_all(text("SELECT * FROM test"), {"1": 1})
 
             assert result == [mock_result1, mock_result2]
             mock_conn.execute.assert_called_once()
@@ -453,17 +347,19 @@ class TestDatabaseManager:
         mock_result.lastrowid = 42
 
         mock_conn = Mock()
-        mock_conn.__enter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__exit__ = AsyncMock()
-        mock_conn.exec_driver_sql = AsyncMock(return_value=mock_result)
+        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_conn.__aexit__ = AsyncMock(return_value=None)
+        # 実装は exec_driver_sql ではなく conn.execute() を使う（バインド済みパラメータ）
+        mock_conn.execute = AsyncMock(return_value=mock_result)
 
         with patch.object(db_manager, 'engine') as mock_engine:
             mock_engine.begin = Mock(return_value=mock_conn)
 
-            result = await db_manager.fetch_lastrowid("INSERT INTO test VALUES (1)", ())
+            from sqlalchemy import text
+            result = await db_manager.fetch_lastrowid(text("INSERT INTO test VALUES (1)"))
 
             assert result == 42
-            mock_conn.exec_driver_sql.assert_called_once()
+            mock_conn.execute.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_save_internal_state_upserts_record(self):
@@ -471,18 +367,32 @@ class TestDatabaseManager:
         db_manager = DatabaseManager("sqlite:///test.db")
 
         mock_session = Mock()
-        mock_session.begin = Mock(return_value=Mock())
-        mock_session.begin.__enter__ = AsyncMock()
-        mock_session.begin.__exit__ = AsyncMock()
+        # `async with self.get_session()` / `async with session.begin()` なので
+        # モックは非同期 CM プロトコルに対応する
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock(return_value=None)
+        mock_begin = Mock()
+        mock_begin.__aenter__ = AsyncMock(return_value=mock_begin)
+        mock_begin.__aexit__ = AsyncMock(return_value=None)
+        mock_session.begin = Mock(return_value=mock_begin)
 
         mock_stmt = Mock()
         mock_result = Mock()
         mock_scalar_result = Mock()
 
-        with patch('src.backend.database.core.select', return_value=mock_stmt):
+        # `save_internal_state` は `from sqlalchemy import select` を**関数内**で
+        # 行うため、モジュール属性 `src.backend.database.core.select` は存在せず、
+        # 旧テストの patch は AttributeError になっていた。patch 先は
+        # 実際の import 元（`sqlalchemy`）でなければならない。
+        with patch('sqlalchemy.select', return_value=mock_stmt):
             with patch.object(db_manager, 'get_session', return_value=mock_session):
-                with patch.object(mock_session, 'execute', return_value=mock_result):
-                    with patch.object(mock_result, 'scalar_one_or_none', return_value=mock_scalar_result):
+                # `await session.execute(...)` なので AsyncMock。
+                # 実装は `result.scalar_one_or_none()` を使う。
+                with patch.object(mock_session, 'execute', new_callable=AsyncMock) as mock_execute:
+                    mock_execute.return_value = mock_result
+                    with patch.object(
+                        mock_result, 'scalar_one_or_none', return_value=mock_scalar_result
+                    ):
 
                         # Test UPDATE case (record exists)
                         mock_scalar_result.value = "old_value"
@@ -495,7 +405,7 @@ class TestDatabaseManager:
                         mock_result.scalar_one_or_none.return_value = None
                         mock_new_state = Mock()
 
-                        with patch('src.backend.database.core.InternalState', return_value=mock_new_state):
+                        with patch('src.backend.database.models.InternalState', return_value=mock_new_state):
                             await db_manager.save_internal_state("test_key", "new_value")
 
                             mock_session.add.assert_called_once_with(mock_new_state)
@@ -557,7 +467,7 @@ class TestDatabaseManager:
             assert result.db_path == "sqlite:///test.db"
 
     def test_set_db_manager_issues_warning_and_tries_override(self):
-        """set_db_manager 関数が警告を発行し、AppContainer の override を試みることを確認"""
+        """set_db_manager が非推奨警告を出し、AppContainer の override を試みることを確認"""
         mock_manager = Mock()
 
         with patch('src.backend.database.core.logger') as mock_logger:
@@ -566,9 +476,31 @@ class TestDatabaseManager:
 
                 set_db_manager(mock_manager)
 
-                mock_logger.warning.assert_any_call("set_db_manager is deprecated. Use DI container instead.")
-                mock_logger.warning.assert_any_call("AppContainer.db.override に失敗: %s", mock.ANY)
+                mock_logger.warning.assert_any_call(
+                    "set_db_manager is deprecated. Use DI container instead."
+                )
+                # 正常系では "override に失敗" は出ない
+                # （その警告は override が例外を投げた場合のみ）
                 mock_app_container.db.override.assert_called_once_with(mock_manager)
+
+    def test_set_db_manager_warns_when_override_fails(self):
+        """override が例外を投げた場合に警告を出すことを確認。
+
+        旧テストは正常系で「override に失敗」の警告を期待していたが、
+        実装上その警告は `override()` が例外を投げた場合のみ出る。
+        正常系と異常系を分離して固定する。
+        """
+        mock_manager = Mock()
+
+        with patch('src.backend.database.core.logger') as mock_logger:
+            with patch('src.core.container.AppContainer') as mock_app_container:
+                mock_app_container.db.override = Mock(side_effect=RuntimeError("boom"))
+
+                set_db_manager(mock_manager)
+
+                mock_logger.warning.assert_any_call(
+                    "AppContainer.db.override に失敗: %s", ANY, exc_info=True
+                )
 
 
 class TestProxies:

@@ -9,9 +9,7 @@ from src.models.writing import FullAutoWorkflowResult
 def _resolve_erotic_gate(kwargs):
     # Resolve erotic gate from kwargs. Returns (enable_erotic, erotic_intensity).
     enable_erotic = bool(
-        kwargs.get("enable_erotic", False)
-        or kwargs.get("enable_nsfw", False)
-        or kwargs.get("nsfw_enabled", False)
+        kwargs.get("enable_erotic", False) or kwargs.get("enable_nsfw", False) or kwargs.get("nsfw_enabled", False)
     )
     erotic_intensity = int(kwargs.get("erotic_intensity", 0) or 0)
     return enable_erotic, erotic_intensity
@@ -22,21 +20,18 @@ def map_fullauto_kwargs_to_context(kwargs: dict[str, Any]) -> WorkflowContext:
     enable_erotic, erotic_intensity = _resolve_erotic_gate(kwargs)
     ctx = WorkflowContext(
         genre=kwargs["genre"],
-        keywords=", ".join(kwargs["keywords"])
-        if isinstance(kwargs["keywords"], list)
-        else kwargs["keywords"],
+        keywords=", ".join(kwargs["keywords"]) if isinstance(kwargs["keywords"], list) else kwargs["keywords"],
         archetype_key=kwargs["archetype_key"],
         target_eps=kwargs["target_eps"],
         initial_limit=kwargs["initial_limit"],
         word_count=kwargs["word_count"],
         concept=kwargs.get("concept", ""),
+        title=kwargs.get("title", ""),
         tone_vibe=kwargs.get("tone_vibe", 0.6),
         user_prompt=kwargs.get("user_prompt", ""),
         start_ep=kwargs.get("start_ep", 1),
         end_ep=kwargs.get("end_ep"),
-        enable_illustration=bool(
-            kwargs.get("illustration_settings", {}).get("enableIllustration", False)
-        ),
+        enable_illustration=bool(kwargs.get("illustration_settings", {}).get("enableIllustration", False)),
         illustration_settings=kwargs.get("illustration_settings", {}),
         enable_spice_guard=kwargs.get("enable_spice_guard", False),
         enable_catharsis_analysis=True,
@@ -72,6 +67,7 @@ def map_easymode_kwargs_to_context(
         initial_limit=3,
         word_count=words_per_episode,
         concept=kwargs.get("concept", ""),
+        title=kwargs.get("title", ""),
         tone_vibe=kwargs.get("tone_vibe", 0.6),
         user_prompt=kwargs.get("user_prompt", ""),
         start_ep=start_ep,
@@ -92,9 +88,7 @@ def map_easymode_kwargs_to_context(
     return ctx
 
 
-def map_context_to_fullauto_result(
-    ctx: WorkflowContext, result: FullAutoWorkflowResult
-) -> dict[str, Any]:
+def map_context_to_fullauto_result(ctx: WorkflowContext, result: FullAutoWorkflowResult) -> dict[str, Any]:
     """WorkflowContext と FullAutoWorkflowResult を既存インターフェース互換の dict に変換"""
     return {
         "book_id": result.book_id,
@@ -111,9 +105,7 @@ def map_context_to_fullauto_result(
     }
 
 
-def map_context_to_easymode_result(
-    ctx: WorkflowContext, result: FullAutoWorkflowResult
-) -> dict[str, Any]:
+def map_context_to_easymode_result(ctx: WorkflowContext, result: FullAutoWorkflowResult) -> dict[str, Any]:
     """WorkflowContext と FullAutoWorkflowResult を EasyMode 互換の dict に変換"""
     episodes_list: list[dict[str, Any]] = []
     for ep in result.episodes_detail:

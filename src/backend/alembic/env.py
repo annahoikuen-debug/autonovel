@@ -24,7 +24,24 @@ if config is not None:
     if config.config_file_name is not None:
         import logging.config
 
-        logging.config.fileConfig(config.config_file_name)
+        # `disable_existing_loggers=False` を明示する。
+        #
+        # `logging.config.fileConfig` の `disable_existing_loggers` 既定は **True** で、
+        # この呼び出し時点までに生成済みのロガーすべてに `disabled=True` が焼き付く。
+        # 結果としてアプリ本体のログ（`src.*` の各モジュール）が無言で消える。
+        #
+        # 2026-10-04 の公開前調査でこれが実際に観測された:
+        #   1. `TestClient(app)` の lifespan が `init_db()` → `_run_alembic_upgrade()`
+        #      → この fileConfig を呼ぶ
+        #   2. 同時にそれまでに生成済みのロガー（実測 500 個）が 一括で disable される
+        #   3. `caplog.at_level(...)` は level だけを下げ `disabled` は解除しないため、
+        #      以降のログ依存テストが無言で失敗する（順序依存）
+        #
+        # Alembic 用の設定を読み込みたいだけで、既存アプリケーションのロガーを
+        # 無効化する意図はないため、明示的に False を渡す。
+        logging.config.fileConfig(
+            config.config_file_name, disable_existing_loggers=False
+        )
 
 target_metadata = Base.metadata
 

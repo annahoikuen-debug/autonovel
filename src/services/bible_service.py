@@ -29,17 +29,23 @@ except ImportError:
 MODEL_PLANNING = getattr(_settings, "GEMINI_MODEL", "gemini-1.5-flash")
 MODEL_PLOT_EXPANSION = getattr(_settings, "GEMINI_MODEL", "gemini-1.5-flash")
 
+#: プロットを保存する既定ブランチ（``branches`` は作品間で共有される既定値 1）。
+PLOT_BRANCH_ID = 1
+
 logger = logging.getLogger(__name__)
 
 
 class WorldBibleGenerator:
-    def __init__(self, repo, llm, pm, debate, marketing, auditor):
+    def __init__(self, repo, llm, pm, debate, marketing, auditor, user_id=None):
         self.repo = repo
         self.llm = llm
         self.pm = pm
         self.debate = debate
         self.marketing = marketing
         self.auditor = auditor
+        # ``Book.user_id`` は nullable なので未指定（None）で作品を作れる。
+        # CLI / スクリプトからはユーザー概念が無いまま企画を生成する。
+        self.user_id = user_id
 
     async def record_setting_delta(
         self,
@@ -77,9 +83,7 @@ class WorldBibleGenerator:
             source=source,
             patch_review_id=patch_review_id,
         )
-        logger.info(
-            f"Recorded setting delta: {field_path} = {old_value} -> {new_value} (type={delta_type})"
-        )
+        logger.info(f"Recorded setting delta: {field_path} = {old_value} -> {new_value} (type={delta_type})")
         return delta_id
 
     async def create_setting_snapshot(
@@ -128,9 +132,7 @@ class WorldBibleGenerator:
             created_by=created_by,
             base_version_id=base_version_id,
         )
-        logger.info(
-            f"Created setting version {max_ver + 1} for book_id={book_id}: {change_summary}"
-        )
+        logger.info(f"Created setting version {max_ver + 1} for book_id={book_id}: {change_summary}")
         return version_id
 
     async def apply_manual_setting_change(
@@ -235,20 +237,12 @@ class WorldBibleGenerator:
         self, bible_core: WorldBibleCore, genre: str, keywords: str, engine_key: str
     ) -> str:
         mc_name = (bible_core.mc_profile.name if bible_core.mc_profile else "") or "主人公"
-        surface = (
-            bible_core.mc_profile.surface_persona if bible_core.mc_profile else ""
-        ) or "一見平凡な冒険者"
-        conflict = (
-            bible_core.mc_profile.inner_conflict if bible_core.mc_profile else ""
-        ) or "生存への危機感と野望"
-        constraint = (
-            bible_core.mc_profile.iron_constraint if bible_core.mc_profile else ""
-        ) or "絶対的なルールの遵守"
+        surface = (bible_core.mc_profile.surface_persona if bible_core.mc_profile else "") or "一見平凡な冒険者"
+        conflict = (bible_core.mc_profile.inner_conflict if bible_core.mc_profile else "") or "生存への危機感と野望"
+        constraint = (bible_core.mc_profile.iron_constraint if bible_core.mc_profile else "") or "絶対的なルールの遵守"
 
         arc_summaries = (
-            "\n".join([f"・章「{arc.title}」: {arc.summary}" for arc in bible_core.arcs])
-            if bible_core.arcs
-            else ""
+            "\n".join([f"・章「{arc.title}」: {arc.summary}" for arc in bible_core.arcs]) if bible_core.arcs else ""
         )
 
         details = DomainProfileService.get_fallback_synopsis_details(genre, keywords, engine_key)
@@ -315,9 +309,7 @@ class WorldBibleGenerator:
                 book_id, bible_obj = await self._create_standard_plan(config, reporter)
             return book_id, bible_obj
 
-    async def _create_ultra_fast_plan(
-        self, config: PlanningConfig, reporter
-    ) -> tuple[int, WorldBible]:
+    async def _create_ultra_fast_plan(self, config: PlanningConfig, reporter) -> tuple[int, WorldBible]:
         if reporter:
             reporter.report("⚡ 超高速モード（統合プランニング）を起動しました...", "info")
 
@@ -360,23 +352,22 @@ class WorldBibleGenerator:
             )
 
         bible_dict = bible_core.model_dump()
-        bible_dict["full_story_roadmap"] = [
-            item.model_dump() for item in uf_bible.full_story_roadmap
-        ]
+        bible_dict["full_story_roadmap"] = [item.model_dump() for item in uf_bible.full_story_roadmap]
         bible_dict["engine_key"] = config.engine_key
         bible_dict["style_key"] = config.style_key
 
         bible_obj = safe_model_validate(WorldBible, bible_dict)
+        # ``create_book`` は ``user_id`` を位置引数で要求する。``Book.user_id`` は
+        # nullable なので、未指定の None を明示的に渡して作品行を作る。
         book_id = await self.repo.create_book(
+            user_id=self.user_id,
             title=config.title,
             genre=config.genre,
             concept=bible_obj.concept or config.keywords,
             synopsis=bible_obj.synopsis,
             target_eps=config.target_eps,
             style_dna={"mode": config.style_key},
-            marketing_data=bible_obj.marketing_assets.model_dump()
-            if bible_obj.marketing_assets
-            else {},
+            marketing_data=bible_obj.marketing_assets.model_dump() if bible_obj.marketing_assets else {},
         )
         await self.repo.save_full_world_bible(bible_obj, book_id=book_id)
 
@@ -397,12 +388,14 @@ class WorldBibleGenerator:
                         reporter=reporter,
                     )
                     if not plot_res.success:
-                        raise RuntimeError(
-                            f"プロットバッチ生成に失敗しました: {plot_res.error_message}"
-                        )
+                        raise RuntimeError(f"プロットバッチ生成に失敗しました: {plot_res.error_message}")
                     plots = UltraFastPlotBatch.model_validate(plot_res.metadata).plots
+                    # ``PlotRepository.save_plot`` の第1引数は branch_id で、book_id は
+                    # ブランチ行から逆引きされる。生成直後の作品には Branch 行が
+                    # 無く「最新 Book」にフォールバックするため、ここでは book_id を
+                    # 明示して他作品のプロットを掴まないようにする。
                     for p in plots:
-                        await self.repo.save_plot(book_id, p.ep_num, p)
+                        await self.repo.save_plot(PLOT_BRANCH_ID, p.ep_num, p, book_id=book_id)
 
             async with asyncio.TaskGroup() as tg:
                 _ = [tg.create_task(_process_batch_item([ep])) for ep in ep_list]
@@ -410,9 +403,7 @@ class WorldBibleGenerator:
 
         return book_id, bible_obj
 
-    async def _create_standard_plan(
-        self, config: PlanningConfig, reporter
-    ) -> tuple[int, WorldBible]:
+    async def _create_standard_plan(self, config: PlanningConfig, reporter) -> tuple[int, WorldBible]:
         if reporter:
             reporter.report("🌍 企画の深層検証を開始...", "info")
 
@@ -468,14 +459,10 @@ class WorldBibleGenerator:
         await self._audit_and_repair(bible_core, reporter)
 
         # 7. マーケティングA/Bテスト
-        await self._apply_marketing_ab_test(
-            bible_core, config.genre, config.engine_key, config.title, reporter
-        )
+        await self._apply_marketing_ab_test(bible_core, config.genre, config.engine_key, config.title, reporter)
 
         # 8. ストーリーアークおよびロードマップの構築
-        roadmap = await self._generate_roadmap(
-            bible_core, config.target_eps, config.genre, config.engine_key, reporter
-        )
+        roadmap = await self._generate_roadmap(bible_core, config.target_eps, config.genre, config.engine_key, reporter)
 
         # 9. ロードマップを包含した最終的なWorldBibleオブジェクトの生成・保存
         if not bible_core.synopsis or len(bible_core.synopsis) < 50:
@@ -502,9 +489,7 @@ class WorldBibleGenerator:
 
         if config.initial_plot_limit > 0:
             # We will delegate back or use PlotExpander
-            expander = PlotExpander(
-                self.repo, self.llm, self.pm, self.auditor, self._generate_fallback_synopsis
-            )
+            expander = PlotExpander(self.repo, self.llm, self.pm, self.auditor, self._generate_fallback_synopsis)
             await expander.expand_plots(
                 book_id,
                 list(range(1, config.initial_plot_limit + 1)),
@@ -549,19 +534,13 @@ class WorldBibleGenerator:
         world_res = await self.llm.generate_json(
             MODEL_PLANNING, prompt, response_schema=WorldRules, temp=0.8, reporter=reporter
         )
-        world_rules = (
-            WorldRules.model_validate(world_res.metadata) if world_res.success else WorldRules()
-        )
+        world_rules = WorldRules.model_validate(world_res.metadata) if world_res.success else WorldRules()
         world_rules.tension_threshold = tension_threshold
         world_rules.tension_gain = tension_gain
         # causality_map が空の場合、ジャンル・エンジン依存のデフォルトを設定
         if not world_rules.causality_map:
-            logger.warning(
-                "causality_map が LLM から返されませんでした。ジャンル別デフォルトを設定します。"
-            )
-            world_rules.causality_map = DomainProfileService.get_default_causality_map(
-                genre, engine_key
-            )
+            logger.warning("causality_map が LLM から返されませんでした。ジャンル別デフォルトを設定します。")
+            world_rules.causality_map = DomainProfileService.get_default_causality_map(genre, engine_key)
         return world_rules
 
     async def _generate_characters(
@@ -584,9 +563,7 @@ class WorldBibleGenerator:
             engine_key=engine_key,
             book_id=None,
         )
-        mc_res = await self.llm.generate_json(
-            MODEL_PLANNING, mc_prompt, temp=0.8, reporter=reporter
-        )
+        mc_res = await self.llm.generate_json(MODEL_PLANNING, mc_prompt, temp=0.8, reporter=reporter)
         mc_data = mc_res.metadata or {}
 
         sub_prompt = await self.pm.build_sub_char_creation_prompt(
@@ -598,9 +575,7 @@ class WorldBibleGenerator:
             keywords=keywords,
             book_id=None,
         )
-        sub_res = await self.llm.generate_json(
-            MODEL_PLANNING, sub_prompt, temp=0.8, reporter=reporter
-        )
+        sub_res = await self.llm.generate_json(MODEL_PLANNING, sub_prompt, temp=0.8, reporter=reporter)
         subs_data = safe_get(sub_res.metadata, "characters", []) if sub_res.success else []
 
         return mc_data, subs_data
@@ -635,9 +610,7 @@ class WorldBibleGenerator:
         bible_core = WorldBibleCore.model_validate(bible_res.metadata)
 
         bible_core.world_settings = world_rules
-        bible_core.mc_profile = (
-            CharacterRegistry.model_validate(mc_data) if mc_data else CharacterRegistry()
-        )
+        bible_core.mc_profile = CharacterRegistry.model_validate(mc_data) if mc_data else CharacterRegistry()
         bible_core.sub_characters = [CharacterRegistry.model_validate(s) for s in subs_data[:5]]
 
         if engine_key == "enigma":
@@ -689,9 +662,7 @@ class WorldBibleGenerator:
                     conflict_report=audit_res.conflict_report,
                     synopsis=bible_core.synopsis,
                     world_rules=bible_core.world_settings.model_dump_json(),
-                    mc_profile=bible_core.mc_profile.model_dump_json()
-                    if bible_core.mc_profile
-                    else "{}",
+                    mc_profile=bible_core.mc_profile.model_dump_json() if bible_core.mc_profile else "{}",
                 )
                 repair_res = await self.llm.generate_json(
                     MODEL_PLANNING,
@@ -703,20 +674,14 @@ class WorldBibleGenerator:
                     repair_data = GlobalLogicRepairResult.model_validate(repair_res.metadata)
                     bible_core.synopsis = repair_data.synopsis
                     if repair_data.world_rules:
-                        bible_core.world_settings = bible_core.world_settings.model_copy(
-                            update=repair_data.world_rules
-                        )
+                        bible_core.world_settings = bible_core.world_settings.model_copy(update=repair_data.world_rules)
                     if repair_data.mc_profile and bible_core.mc_profile:
-                        bible_core.mc_profile = bible_core.mc_profile.model_copy(
-                            update=repair_data.mc_profile
-                        )
+                        bible_core.mc_profile = bible_core.mc_profile.model_copy(update=repair_data.mc_profile)
 
     async def _apply_marketing_ab_test(
         self, bible_core: WorldBibleCore, genre: str, engine_key: str, title: str, reporter
     ) -> None:
-        prompt = await self.pm.build_marketing_ab_test_prompt(
-            bible_core.concept, genre=genre, engine_key=engine_key
-        )
+        prompt = await self.pm.build_marketing_ab_test_prompt(bible_core.concept, genre=genre, engine_key=engine_key)
         mkt_res = await self.llm.generate_json(MODEL_PLANNING, prompt, reporter=reporter)
         if mkt_res.success and safe_get(mkt_res.metadata, "ab_test_candidates") is not None:
             candidates = safe_get(mkt_res.metadata, "ab_test_candidates")

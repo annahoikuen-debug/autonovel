@@ -539,23 +539,150 @@ def test_trim_tight_budget_trims_concepts():
 
 
 def test_trim_all_pinned_cannot_reduce():
-    """Step 56: 残りが全てピン留めなら予算超過分を削れず、そのまま保持する。"""
+    """Step 56: 残りが全てピン留めなら予算超過分を削れず、そのまま保持する。
+
+    2026-10-05: 旧テストは `assert out.token_count > 300` と絶対値を
+    ハードコードしていたが、`count_tokens()` は tiktoken があれば BPE
+    （`"F"*200` → 25 トークン）、無ければ `len(text) * 1.5`（→ 300）に
+    フォールバックする。tiktoken は必須依存なので CI では常に BPE 経路となり、
+    旧アサーションは構造的に成立しModeling 있었다。
+
+    そこで期待値を**実装の権威ある源**（`count_tokens()`）から導出し、
+    さらにトークン計算に一切依存しない不変条件
+    （"ピン留めされた事実は1バイトも削られていない"）を併せて固定する。
+    """
     t = Layer4SceneTrimmer()
+    fact = "F" * 200
     abstraction = AbstractionLayerOutput(
         abstract_concepts=[],
         categorized_facts={
-            "主要キャラ": [{"entity": "E", "fact": "F" * 200, "dual_name": "E"}],
+            "主要キャラ": [{"entity": "E", "fact": fact, "dual_name": "E"}],
         },
     )
     protected = ProtectedContext(active_characters=["E"])
-    # 事実自体のトークン数(300)で採用され、マークダウン整形(324)だけが予算を超える。
-    # 削除候補の非ピン留め事実が無いので break し、ピン留め事実は保持される。
-    out = t.trim(abstraction, max_tokens=300, protected_context=protected)
+
+    # 事実自体のトークン数を予算にして採用され、整形結果だけが予算を超える
+    budget = count_tokens(fact)
+    out = t.trim(abstraction, max_tokens=budget, protected_context=protected)
+
     assert out.pinned_count == 1
-    assert out.token_count > 300
+    # 予算tokens には、「予算を超えた」ことが要以「的事实の完全保持」で担保する
+    # （絶対 token 数は tiktoken 依存のため比較しない）
+    assert fact in out.compressed_text, "ピン留めされた事実が削られている"
+    assert out.token_count >= budget
+
     # なお初期採用の予算ゲートはピン留めでも効く（予算が事実1件にも満たない場合は採用されない）。
     tiny = t.trim(abstraction, max_tokens=1, protected_context=protected)
     assert tiny.pinned_count == 0
+
+
+def test_trim_all_pinned_keeps_fact_byte_identical():
+    """トークナイザに一切依存しない不変条件：ピン留め事実は byte 単位で保持される。
+
+    `test_trim_all_pinned_cannot_reduce` の tiktoken 依存部分
+    （max_tokens の与え方）を除いた「本质的な契約」だけを単独で固定する。
+    tiktoken 有無の両方で成立するため、
+    BPE とフォールバックのどちらが混ざっても緑になる。
+    """
+    t = Layer4SceneTrimmer()
+    fact = "F" * 200
+    abstraction = AbstractionLayerOutput(
+        abstract_concepts=[],
+        categorized_facts={
+            "主要キャラ": [{"entity": "E", "fact": fact, "dual_name": "E"}],
+        },
+    )
+    protected = ProtectedContext(active_characters=["E"])
+
+    for budget in (1, 10, count_tokens(fact), 10_000):
+        out = t.trim(abstraction, max_tokens=budget, protected_context=protected)
+        if out.pinned_count:
+            assert fact in out.compressed_text, (
+                f"予算={budget} でピン留め事実が削られた: "
+                f"{len(out.compressed_text)} 文字"
+            )
+
+
+class TestCountTokensBackends:
+    """`count_tokens()` の両バックエンドの契約を固定する。
+
+    現状 tiktoken なし（フォールバック）経路のテストが 1 件も無く、
+    「どちらの経路で動いても正しい」ことが検証されていない。
+    """
+
+    def test_fallback_is_length_times_one_point_five(self, monkeypatch):
+        """tiktoken が import できない場合、`len(text) * 1.5` にフォールバックすること。"""
+        import builtins
+
+        real_import = builtins.__import__
+
+        def _fail_tiktoken(name, *args, **kwargs):
+            if name == "tiktoken" or name.startswith("tiktoken."):
+                raise ImportError("tiktoken unavailable (test)")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", _fail_tiktoken)
+
+        text = "a" * 100
+        assert count_tokens(text) == int(len(text) * 1.5)
+
+    def test_empty_string_returns_zero(self, monkeypatch):
+        """空文字列は 0 を返す（両バックエンドに依らず）。
+
+        `count_tokens` は先頭で `if not text: return 0` するため、
+        tiktoken があってもなくても 0。フォールバックの
+        `max(1, ...)` より**前**に短絡される点に注意。
+        """
+        import builtins
+
+        real_import = builtins.__import__
+
+        def _fail_tiktoken(name, *args, **kwargs):
+            if name == "tiktoken" or name.startswith("tiktoken."):
+                raise ImportError("tiktoken unavailable (test)")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", _fail_tiktoken)
+        assert count_tokens("") == 0
+
+    def test_fallback_never_returns_zero_for_non_empty(self, monkeypatch):
+        """非空文字列ではフォールバックが 0 を返さないこと。
+
+        `max(1, int(len(text) * 1.5))` により、少なくとも 1 は返る。
+        0 が返ると「予算判定で常に圧縮缓解」になる。
+        """
+        import builtins
+
+        real_import = builtins.__import__
+
+        def _fail_tiktoken(name, *args, **kwargs):
+            if name == "tiktoken" or name.startswith("tiktoken."):
+                raise ImportError("tiktoken unavailable (test)")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", _fail_tiktoken)
+        for text in ("a", "短", "x" * 3):
+            assert count_tokens(text) >= 1, f"非空文字列で 0 が返った: {text!r}"
+
+    def test_monotonic_in_both_backends(self, monkeypatch):
+        """どちらのバックエンドでも「長いほどトークン数が増える」こと。"""
+        short, long = "a" * 50, "a" * 500
+
+        # 通常のバックエンド（tiktoken が使えるなら BPE）
+        assert count_tokens(long) >= count_tokens(short)
+
+        # フォールバックバックエンド
+        import builtins
+
+        real_import = builtins.__import__
+
+        def _fail_tiktoken(name, *args, **kwargs):
+            if name == "tiktoken" or name.startswith("tiktoken."):
+                raise ImportError("tiktoken unavailable (test)")
+            return real_import(name, *args, **kwargs)
+
+        monkeypatch.setattr(builtins, "__import__", _fail_tiktoken)
+        assert count_tokens(long) >= count_tokens(short)
 
 
 def test_trim_empty_facts():

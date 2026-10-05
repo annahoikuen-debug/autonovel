@@ -335,7 +335,14 @@ class AuditAggregatorNode:
             report = await unified.audit(draft_text)
 
             # 後方互換スコアの生成
-            from src.services.book_score_mapping import BookScoreResult
+            # `BookScoreResult` はファイル冒頭で
+            # `from src.services.audit_aggregator import AuditAggregator, BookScoreResult`
+            # として既に import 済み。
+            # ここに `from src.services.book_score_mapping import BookScoreResult` が
+            # 残っていたが、`book_score_mapping` には同名のクラスが存在しない
+            # （定義は `src/services/audit/aggregator.py`）ため
+            # **AuditAggregatorNode の全実行が ImportError で abort され、
+            # 常に `audit_error` アーティファクトを返していた**。
             by_sp = {
                 "reader_hook": report.qualitative.hook_score,
                 "emotion_curve": report.qualitative.emotional_score,

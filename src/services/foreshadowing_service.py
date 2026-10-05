@@ -3,8 +3,10 @@
 執筆完了時に本文を解析し、回収された伏線を自動的に
 ForeshadowingStatus.RESOLVED に更新する。
 """
+
 from __future__ import annotations
 
+import inspect
 import logging
 from typing import Any, Optional
 
@@ -92,13 +94,26 @@ class ForeshadowingService:
                     kpi=kpi,
                 )
             except Exception as e:
-                logger.warning(
-                    f"伏線 id={f_id} の判定をスキップしました（他伏線は継続処理）: {e}"
-                )
+                logger.warning(f"伏線 id={f_id} の判定をスキップしました（他伏線は継続処理）: {e}")
                 continue
 
             if outcome:
                 resolved_titles.append(outcome)
+
+        # 1話1コミット。変更系メソッドは flush() までで止まるため、ここを
+        # 書かないと「回収した」とログに出るだけで DB には何も残らない
+        # （呼び出し側がセッションを閉じた瞬間に破棄される）。
+        # `async def commit` を持つ実装だけ呼ぶ。同期実装や MagicMock 等の
+        # テストダブルは getattr で毎回 '*' を返してくるため、そのまま
+        # await すると TypeError になり「回収判定は正常だが警告が出る」
+        # という壊れた状態をPUBLICに見せてしまう。
+        commit = getattr(self.repo, "commit", None)
+        if inspect.iscoroutinefunction(commit):
+            try:
+                await commit()
+            except Exception as e:
+                # 永続化に失敗しても本文の執筆は成立させない（品質向上の補助なので）。
+                logger.warning(f"Ep.{episode_num}: 伏線更新の commit に失敗しました: {e}")
 
         return resolved_titles
 
@@ -121,9 +136,7 @@ class ForeshadowingService:
         # `target_ep is None` のときに契約済みとみなす旧挙動は、
         # 契約情報を持たない全伏線を無条件に「本话回収必須」扱いしていたため撤廃する。
         in_contract = bool(contract_ids and f_id in contract_ids)
-        is_contracted = in_contract or (
-            target_ep is not None and target_ep == episode_num
-        )
+        is_contracted = in_contract or (target_ep is not None and target_ep == episode_num)
 
         # Metadata report matching
         meta_report = None
@@ -161,26 +174,17 @@ class ForeshadowingService:
             if success:
                 resolved_title = f.title
                 await kpi.report_transition(prior_status, ForeshadowingStatus.RESOLVED.value)
-                logger.info(
-                    f"伏線「{f.title}」を RESOLVED に更新 ({judgment.rationale})"
-                )
+                logger.info(f"伏線「{f.title}」を RESOLVED に更新 ({judgment.rationale})")
         elif judgment.status == "PROGRESSED":
             success = await self.repo.progress(f_id)
             if success:
-                await kpi.report_transition(
-                    prior_status, ForeshadowingStatus.PROGRESSED.value
-                )
-                logger.info(
-                    f"伏線「{f.title}」を PROGRESSED に更新 ({judgment.rationale})"
-                )
+                await kpi.report_transition(prior_status, ForeshadowingStatus.PROGRESSED.value)
+                logger.info(f"伏線「{f.title}」を PROGRESSED に更新 ({judgment.rationale})")
             else:
                 # progressed → progressed などの拒否は意図的なガード命中であり
                 # 異常ではない。回復済み伏線の巻き戻り等は rowcount=0 で弾かれるが、
                 # ここでは静かに「変化なし」と記録する（WARNING は出さない）。
-                logger.info(
-                    f"伏線「{f.title}」は既に PROGRESSED（変化なし）"
-                    f" ({judgment.rationale})"
-                )
+                logger.info(f"伏線「{f.title}」は既に PROGRESSED（変化なし） ({judgment.rationale})")
 
         # Reschedule if target episode passed or contracted but not resolved
         if judgment.should_reschedule:
@@ -197,9 +201,7 @@ class ForeshadowingService:
                 # これを放置すると terminal(回収放棄) への遷移が永久に無く、
                 # KPI の collection_rate が原理的に 1.0 / 0.0 しか取れなくなる。
                 if await self.repo.abandon(f_id):
-                    await kpi.report_transition(
-                        prior_status, ForeshadowingStatus.ABANDONED.value
-                    )
+                    await kpi.report_transition(prior_status, ForeshadowingStatus.ABANDONED.value)
                     logger.info(
                         "伏線「%s」は作品末尾（第%s話）まで回収できなかったため回収放棄としました",
                         f.title,
@@ -266,7 +268,11 @@ class ForeshadowingService:
         if target_ids:
             records = await self.repo.get_by_ids(target_ids)
             # 未回収のものだけに限定
-            active_records = [r for r in records if r.book_id == book_id and getattr(r, "status", "") in ForeshadowingStatus.active_statuses()]
+            active_records = [
+                r
+                for r in records
+                if r.book_id == book_id and getattr(r, "status", "") in ForeshadowingStatus.active_statuses()
+            ]
         else:
             # target_idsが明示されていない場合は目標話数が本話のものを検索
             unresolved = await self.repo.get_unresolved(book_id)

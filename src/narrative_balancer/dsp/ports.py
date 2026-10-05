@@ -1,7 +1,8 @@
 """DSP Tension Balancer interface protocols."""
 
 from typing import List, Protocol, runtime_checkable
-from src.narrative_balancer.dsp.models import Beat, SagDetection
+from src.narrative_balancer.models import Beat
+from src.narrative_balancer.dsp.models import SagDetection
 
 
 @runtime_checkable

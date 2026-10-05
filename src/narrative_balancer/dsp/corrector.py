@@ -2,7 +2,7 @@
 
 from typing import List, Set
 import numpy as np
-from src.narrative_balancer.dsp.models import Beat, BeatType
+from src.narrative_balancer.models import Beat, BeatType
 
 
 def apply_impulse_correction(

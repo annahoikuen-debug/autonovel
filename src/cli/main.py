@@ -7,6 +7,7 @@ grammar-balance 等）を単一コマンド ``autonovel`` のサブコマンド�
 使い方例:
     autonovel --version
     autonovel balance --type dsp
+    autonovel generate --episodes 10 --genre ファンタジー
     autonovel export --book-id 1 --format zip
     autonovel init-db
     autonovel check-env
@@ -75,7 +76,12 @@ def cmd_export(args: argparse.Namespace) -> int:
     try:
         service = ExportService()
         if hasattr(service, "export"):
-            result = service.export(book_id=args.book_id, fmt=args.format)
+            kwargs = {"book_id": args.book_id, "fmt": args.format}
+            if getattr(args, "out_dir", None):
+                kwargs["output_dir"] = args.out_dir
+            if getattr(args, "out", None):
+                kwargs["out_path"] = args.out
+            result = service.export(**kwargs)
         else:
             result = {"status": "done", "book_id": args.book_id, "format": args.format}
         print(f"[export] completed: {result}")
@@ -106,11 +112,7 @@ def cmd_plugins(args: argparse.Namespace) -> int:
     registry = get_plugin_registry()
     print(f"{'NAME':<18}{'ENABLED':<10}{'LOADED':<10}")
     for entry in registry.list_plugins():
-        print(
-            f"{entry.name:<18}"
-            f"{'yes' if entry.enabled else 'no':<10}"
-            f"{'yes' if entry.loaded else 'no':<10}"
-        )
+        print(f"{entry.name:<18}{'yes' if entry.enabled else 'no':<10}{'yes' if entry.loaded else 'no':<10}")
     if args.load:
         results = registry.load_all()
         for name, ok in results.items():
@@ -128,16 +130,12 @@ def build_parser() -> argparse.ArgumentParser:
         description=DESCRIPTION,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument(
-        "--version", action="store_true", help="show version and exit"
-    )
+    parser.add_argument("--version", action="store_true", help="show version and exit")
 
     subparsers = parser.add_subparsers(dest="command")
 
     # balance
-    balance_parser = subparsers.add_parser(
-        "balance", help="run narrative balancer (dsp / csp / grammar)"
-    )
+    balance_parser = subparsers.add_parser("balance", help="run narrative balancer (dsp / csp / grammar)")
     balance_parser.add_argument(
         "--type",
         "-t",
@@ -148,35 +146,34 @@ def build_parser() -> argparse.ArgumentParser:
     balance_parser.set_defaults(func=cmd_balance)
 
     # export
-    export_parser = subparsers.add_parser(
-        "export", help="export a novel (zip / epub / txt)"
-    )
+    export_parser = subparsers.add_parser("export", help="export a novel (zip / epub / txt)")
     export_parser.add_argument("--book-id", "-b", type=int, required=True, help="book id")
+    export_parser.add_argument("--format", "-f", choices=["zip", "epub", "txt"], default="zip", help="format")
+    export_parser.add_argument("--out-dir", default="", help="出力先ディレクトリ（既定: output/）")
     export_parser.add_argument(
-        "--format", "-f", choices=["zip", "epub", "txt"], default="zip", help="format"
+        "--out",
+        default="",
+        help="出力ファイルのパス（拡張子は --format に合わせる。既定: output/export_<id>.<ext>）",
     )
     export_parser.set_defaults(func=cmd_export)
 
+    # generate
+    from src.cli.generate_command import add_generate_parser
+
+    add_generate_parser(subparsers)
+
     # init-db
-    init_db_parser = subparsers.add_parser(
-        "init-db", help="initialize SQLite database safely"
-    )
+    init_db_parser = subparsers.add_parser("init-db", help="initialize SQLite database safely")
     init_db_parser.set_defaults(func=cmd_init_db)
 
     # check-env
-    check_env_parser = subparsers.add_parser(
-        "check-env", help="run environment self-check"
-    )
+    check_env_parser = subparsers.add_parser("check-env", help="run environment self-check")
     check_env_parser.add_argument("--json", action="store_true", help="output as JSON")
     check_env_parser.set_defaults(func=cmd_check_env)
 
     # plugins
-    plugins_parser = subparsers.add_parser(
-        "plugins", help="list plugin status (registry)"
-    )
-    plugins_parser.add_argument(
-        "--load", action="store_true", help="load all enabled plugins"
-    )
+    plugins_parser = subparsers.add_parser("plugins", help="list plugin status (registry)")
+    plugins_parser.add_argument("--load", action="store_true", help="load all enabled plugins")
     plugins_parser.set_defaults(func=cmd_plugins)
 
     return parser

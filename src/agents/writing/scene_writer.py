@@ -9,9 +9,9 @@ from src.agents.base import BaseAgent
 from src.agents.context_builder_agent import ContextBuilderAgent
 from src.agents.orchestrator import AgentContext, AgentResult
 from src.agents.prompt_composer import PromptComposer
-from src.agents.writing.prose_refiner_agent import ProseRefinerAgent
 from src.domain.entities.scene import Scene, SceneRole
 from src.services.llm_service import LLMService
+from src.agents.writing.prose_refiner_agent import ProseRefinerAgent, AdapterOnlyLLMService
 
 logger = logging.getLogger(__name__)
 
@@ -134,7 +134,13 @@ class SceneWriter(BaseAgent):
             style_intensity = context.get("style_intensity", "balanced")
             prose_refiner_enabled = context.get("prose_refiner_enabled", True)
             if prose_refiner_enabled:
-                refiner = ProseRefinerAgent()
+                # 引数なしだと ProseRefinerAgent が自分の LLMService
+                # （= .env の実キー）を新規作成し、注入されたアダプタを無視する。
+                # LLM_PROVIDER=mock でも実ネットワークを叩いてしまうため、
+                # EpisodeWriter と同じ「アダプタを 1 つ持つ包み」を渡す。
+                refiner = ProseRefinerAgent(
+                    llm_service=AdapterOnlyLLMService(getattr(self.llm, "adapter", self.llm))
+                )
                 refinement_result = await refiner.refine(
                     draft_text=content,
                     genre=genre,

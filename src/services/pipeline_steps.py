@@ -62,9 +62,7 @@ def _emit_skip(
 class PlanStep(WorkflowStep):
     """企画生成 Step (FullAutoWorkflow + EasyMode プリセット統合版)"""
 
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         # 統合プリセット読み込み
         preset = load_preset_for_pipeline(ctx.genre, ctx.archetype_key)
 
@@ -82,13 +80,12 @@ class PlanStep(WorkflowStep):
                 system_assist=get_system_assist(preset),
                 cost_severity=get_cost_severity(preset),
                 target_eps=ctx.target_eps,
-                initial_plot_limit=3,
-                enable_erotic=ctx.easy_parameters.get("enable_erotic", False)
-                if ctx.easy_parameters
-                else False,
-                erotic_intensity=ctx.easy_parameters.get("erotic_intensity", 2)
-                if ctx.easy_parameters
-                else 2,
+                # 初期プロットは「今回執筆する話数」分だけ用意する。
+                # 以前は 3 話固定で target_eps を無視していたため、4話目以降は
+                # Plot を参照できず EpisodePipeline が「0文字生成」で落ちていた。
+                initial_plot_limit=max(3, ctx.initial_limit),
+                enable_erotic=ctx.easy_parameters.get("enable_erotic", False) if ctx.easy_parameters else False,
+                erotic_intensity=ctx.easy_parameters.get("erotic_intensity", 2) if ctx.easy_parameters else 2,
                 reporter=reporter,
             )
             ctx.book_id = book_id
@@ -116,9 +113,7 @@ class PlanStep(WorkflowStep):
 
                     # branch_id は作品間で共有されるため book_id も渡す（既定ブランチ 1）
                     plots = await engine.repo.plot.get_all_plots(1, book_id=book_id)
-                    tension_history = (
-                        [getattr(p, "tension", 50) for p in plots] if plots else [50] * 5
-                    )
+                    tension_history = [getattr(p, "tension", 50) for p in plots] if plots else [50] * 5
 
                     wave_analyzer = WavePatternAnalyzer(
                         threshold=ProjectContext.get_setting("catharsis_threshold", 65),
@@ -166,9 +161,7 @@ class PlanStep(WorkflowStep):
             if (
                 hasattr(engine.planner, "plan_auditor")
                 and engine.planner.plan_auditor
-                and not await engine.planner.plan_auditor.audit_bible_completeness(
-                    bible, reporter=reporter
-                )
+                and not await engine.planner.plan_auditor.audit_bible_completeness(bible, reporter=reporter)
             ):
                 return False
 
@@ -191,9 +184,7 @@ class PlanStep(WorkflowStep):
 class WriteStep(WorkflowStep):
     """本文執筆 Step (共通リトライロジック使用版)"""
 
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         if ctx.book_id is None:
             return False
         try:
@@ -252,9 +243,7 @@ class WriteStep(WorkflowStep):
 class CatharsisAnalysisStep(WorkflowStep):
     """カタルシスパターン分析 Step (FullAuto 由来・独立化)"""
 
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         if not ctx.enable_catharsis_analysis:
             _emit_skip(reporter, ctx, "catharsis", "enable_catharsis_analysis=False")
             return True
@@ -306,9 +295,7 @@ class AuditRewriteStep(WorkflowStep):
     - max_rewrite_iterations 回まで繰り返し
     """
 
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         if not ctx.enable_spice_guard:
             logger.info("SpiceGuard 無効: AuditRewriteStep をスキップ")
             return True
@@ -325,9 +312,7 @@ class AuditRewriteStep(WorkflowStep):
             if reporter.state.should_stop():
                 return False
 
-            reporter.update_progress(
-                2, 4, f"STEP 3/4: 第{ep_num}話 監査・リライト中... ({ep_num}/{ctx.target_eps})"
-            )
+            reporter.update_progress(2, 4, f"STEP 3/4: 第{ep_num}話 監査・リライト中... ({ep_num}/{ctx.target_eps})")
 
             try:
                 # 1. エピソード本文取得
@@ -374,18 +359,23 @@ class AuditRewriteStep(WorkflowStep):
                     if not improvements:
                         break
 
-                    rewrite_prompt = spice_guard.build_rewrite_prompt(
-                        final_content, improvements, spice_elements
-                    )
+                    rewrite_prompt = spice_guard.build_rewrite_prompt(final_content, improvements, spice_elements)
 
                     try:
-                        rewritten = await engine.llm.generate(rewrite_prompt, {})
+                        # 第2引数は system_prompt。以前は `{}`（空 dict）を渡して
+                        # アダプタ側に dict のまま system メッセージが届いていたため、
+                        # OpenAI 互換エンドポイントで 400 になっていた。
+                        rewritten = await engine.llm.generate(
+                            rewrite_prompt,
+                            system_prompt=(
+                                "プロのWeb小説作家兼編集者。指摘に従って本文のみを推敲し、前置きや解説は付けない。"
+                            ),
+                            max_tokens=max(2000, len(final_content) * 2),
+                        )
                         if rewritten and rewritten.strip():
                             final_content = spice_guard.clean_markers(rewritten)
                             # 再監査
-                            audit_result = await audit_adapter.audit_episode(
-                                final_content, audit_context
-                            )
+                            audit_result = await audit_adapter.audit_episode(final_content, audit_context)
                             rewrite_count += 1
                         else:
                             break
@@ -447,9 +437,7 @@ class AuditRewriteStep(WorkflowStep):
 class PackageStep(WorkflowStep):
     """納品パッケージ準備 Step (結果集約拡張版)"""
 
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         if ctx.book_id is None:
             _emit_skip(reporter, ctx, "package", "book_id is None")
             return False
@@ -498,16 +486,12 @@ class PackageStep(WorkflowStep):
 class IllustrationStep(WorkflowStep):
     """挿絵生成 Step (FullAutoWorkflow 由来)"""
 
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         if not ctx.enable_illustration:
             _emit_skip(reporter, ctx, "illustration", "enable_illustration=False")
             return True
         if not ctx.illustration_settings or not ctx.illustration_settings.get("enableIllustration"):
-            _emit_skip(
-                reporter, ctx, "illustration", "illustration_settings.enableIllustration is not set"
-            )
+            _emit_skip(reporter, ctx, "illustration", "illustration_settings.enableIllustration is not set")
             return True
         if ctx.book_id is None:
             _emit_skip(reporter, ctx, "illustration", "book_id is None")
@@ -525,9 +509,8 @@ class IllustrationStep(WorkflowStep):
                 from src.agents.illustration_agent import IllustrationAgent
                 from src.services.image_service import ImageService
                 from src.backend.config import settings
-                ill_agent = IllustrationAgent(
-                    image_service=ImageService(api_key=settings.get_gemini_api_key())
-                )
+
+                ill_agent = IllustrationAgent(image_service=ImageService(api_key=settings.get_gemini_api_key()))
 
             ill_workflow = IllustrationWorkflow(
                 illustration_agent=ill_agent,
@@ -545,9 +528,7 @@ class IllustrationStep(WorkflowStep):
 
             return True
         except Exception as e:
-            reporter.report(
-                f"⚠️ 挿絵生成中にエラーが発生しましたが、作品は完成しています: {e}", "warning"
-            )
+            reporter.report(f"⚠️ 挿絵生成中にエラーが発生しましたが、作品は完成しています: {e}", "warning")
             return True  # 挿絵失敗でも本編は継続
 
 
@@ -565,9 +546,7 @@ class MarketingStep(WorkflowStep):
       3) 固定テンプレ (f"{genre}の物語")
     """
 
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         if not ctx.enable_marketing:
             _emit_skip(reporter, ctx, "marketing", "enable_marketing=False")
             return True
@@ -637,6 +616,7 @@ class MarketingStep(WorkflowStep):
             reporter.report(f"⚠️ マーケティング生成エラー (継続): {e}", "warning")
             return True
 
+
 # ============================================================================
 # Step 20: HookGenerationStep (骨格のみ)
 # ============================================================================
@@ -645,9 +625,7 @@ class MarketingStep(WorkflowStep):
 class HookGenerationStep(WorkflowStep):
     """フック生成 Step (骨格実装)"""
 
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         # 骨格実装: 暫定的に常に成功を返す
         # 実際の実装は後で行う
         return True
@@ -661,9 +639,7 @@ class HookGenerationStep(WorkflowStep):
 class IllustrationPointGenerationStep(WorkflowStep):
     """挿絵ポイント詳細生成 Step (ストーリーとキャラクターから挿絵の指示を生成)"""
 
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         if not ctx.enable_illustration:
             _emit_skip(reporter, ctx, "illustration_point", "enable_illustration=False")
             return True
@@ -685,12 +661,12 @@ class IllustrationPointGenerationStep(WorkflowStep):
 
             # 2. キャラクター情報を抽出
             characters = {}
-            if hasattr(bible, 'characters') and bible.characters:
+            if hasattr(bible, "characters") and bible.characters:
                 for char in bible.characters:
-                    if hasattr(char, 'name'):
+                    if hasattr(char, "name"):
                         characters[char.name] = char
-                    elif isinstance(char, dict) and 'name' in char:
-                        characters[char['name']] = char
+                    elif isinstance(char, dict) and "name" in char:
+                        characters[char["name"]] = char
 
             # 3. 重要なシーンを特定して挿絵ポイントを生成
             illustration_points = []
@@ -698,7 +674,7 @@ class IllustrationPointGenerationStep(WorkflowStep):
             # 口絵用の挿絵ポイント（第1話の重要シーン）
             if episodes and len(episodes) > 0:
                 episodes[0]
-                ip_id = f"IP-{len(illustration_points)+1:03d}"
+                ip_id = f"IP-{len(illustration_points) + 1:03d}"
                 illustration_point = IllustrationPoint(
                     id=ip_id,
                     page="口絵1",
@@ -707,35 +683,35 @@ class IllustrationPointGenerationStep(WorkflowStep):
                     props="物語の象徴的なアイテムまたは武器",
                     expressions={list(characters.keys())[0] if characters else "主人公": "決意と期待に満ちた表情"},
                     background="物語の舞台となる世界の代表的な風景",
-                    notes="読者を物語の世界に引き込むためのオープニングイラスト"
+                    notes="読者を物語の世界に引き込むためのオープニングイラスト",
                 )
                 illustration_points.append(illustration_point)
 
             # クライマックスシーン用の挿絵ポイント
             if len(episodes) >= 3:
-                episodes[len(episodes)//2]  # 中盤のエピソードをクライマックスとして扱う
-                ip_id = f"IP-{len(illustration_points)+1:03d}"
+                episodes[len(episodes) // 2]  # 中盤のエピソードをクライマックスとして扱う
+                ip_id = f"IP-{len(illustration_points) + 1:03d}"
                 illustration_point = IllustrationPoint(
                     id=ip_id,
-                    page=str((len(episodes)//2) * 10 + 5),  # 概算ページ番号
+                    page=str((len(episodes) // 2) * 10 + 5),  # 概算ページ番号
                     scene_description="主人公と主要 antagonistic force の対峙シーン",
                     composition="二人のキャラクターが画面中央で対角線上に配置され、緊張感を表現",
                     props="それぞれのキャラクターが持つ象徴的なアイテムまたは武器",
                     expressions={
                         list(characters.keys())[0] if characters else "主人公": "真剣かつ焦点の定まった表情",
-                        list(characters.keys())[1] if len(characters) > 1 else "ライバル": "挑戦的かつ余裕のある表情"
-                    } if len(characters) >= 2 else {
-                        list(characters.keys())[0] if characters else "主人公": "真剣かつ焦点の定まった表情"
-                    },
+                        list(characters.keys())[1] if len(characters) > 1 else "ライバル": "挑戦的かつ余裕のある表情",
+                    }
+                    if len(characters) >= 2
+                    else {list(characters.keys())[0] if characters else "主人公": "真剣かつ焦点の定まった表情"},
                     background="対峙に適したドラマチックな背景（廃墟、戦場、神殿など）",
-                    notes="物語の中盤クライマックスを視覚化する重要な挿絵"
+                    notes="物語の中盤クライマックスを視覚化する重要な挿絵",
                 )
                 illustration_points.append(illustration_point)
 
             # エンディング用の挿絵ポイント
             if episodes and len(episodes) > 0:
                 episodes[-1]
-                ip_id = f"IP-{len(illustration_points)+1:03d}"
+                ip_id = f"IP-{len(illustration_points) + 1:03d}"
                 illustration_point = IllustrationPoint(
                     id=ip_id,
                     page="口絵2",
@@ -744,7 +720,7 @@ class IllustrationPointGenerationStep(WorkflowStep):
                     props="旅での経験を象徴するアイテムまたは記念品",
                     expressions={list(characters.keys())[0] if characters else "主人公": "穏やかで満足感のある表情"},
                     background="物語のテーマを表す美しい風景（昇る朝日、満開の桜、星空など）",
-                    notes="物語の余韻と希望を伝えるエンディングイラスト"
+                    notes="物語の余韻と希望を伝えるエンディングイラスト",
                 )
                 illustration_points.append(illustration_point)
 
@@ -769,9 +745,7 @@ class IllustrationPointGenerationStep(WorkflowStep):
 class ForeshadowingRegistrationStep(WorkflowStep):
     """伏線登録 Step (プロットから伏線を抽出しリポジトリまたはコンテキストに保存)"""
 
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         if ctx.book_id is None:
             _emit_skip(reporter, ctx, "foreshadowing_registration", "book_id is None")
             return True
@@ -854,7 +828,7 @@ class ForeshadowingRegistrationStep(WorkflowStep):
                 hang_episode=episode,
                 hang_chapter=chapter,
                 hang_type=hang_type,
-                importance=importance
+                importance=importance,
             )
             foreshadowings.append(fs)
 

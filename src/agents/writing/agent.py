@@ -1,5 +1,6 @@
 # src/agents/writing/agent.py
 """WritingAgent - 本文生成を担当するスキルエージェント"""
+
 import logging
 from typing import Any
 from src.agents.skill_base import SkillAgent
@@ -24,6 +25,7 @@ class WritingAgent(SkillAgent):
         reporter_factory: Any = None,
         model_name: str = None,
         temperature: float = None,
+        session_factory: Any = None,
     ):
         super().__init__(repo=repo, llm=llm, style_rag=style_rag, rag_prefetch=rag_prefetch)
         self.pm = pm
@@ -31,6 +33,10 @@ class WritingAgent(SkillAgent):
         self.reporter_factory = reporter_factory
         self.model_name = model_name
         self.temperature = temperature
+        # 伏線自動回収 / 事実ダイジェスト保存用のセッション工場。
+        # ``async with factory() as session:`` できる callable を渡す。
+        # None の場合、この2つは「本文は書けるが後処理はスキップ」になる。
+        self.session_factory = session_factory
         # generator は遅延初期化
         self._generator = None
 
@@ -38,6 +44,7 @@ class WritingAgent(SkillAgent):
         """Generator 遅延初期化"""
         if self._generator is None:
             from src.agents.writing.generator import WritingGenerator
+
             self._generator = WritingGenerator(
                 repo=self.repo,
                 llm=self.llm,
@@ -45,6 +52,7 @@ class WritingAgent(SkillAgent):
                 style_rag=self.style_rag,
                 ctx_mgr=self.ctx_mgr,
                 reporter_factory=self.reporter_factory,
+                session_factory=self.session_factory,
             )
         return self._generator
 
@@ -107,11 +115,14 @@ class WritingAgent(SkillAgent):
             )
 
             if failed_episodes:
-                self.emit_event("writing.failed", {
-                    "book_id": book_id,
-                    "ep_num": ep_num,
-                    "failed_episodes": failed_episodes,
-                })
+                self.emit_event(
+                    "writing.failed",
+                    {
+                        "book_id": book_id,
+                        "ep_num": ep_num,
+                        "failed_episodes": failed_episodes,
+                    },
+                )
                 return AgentResult(
                     next_agent=None,
                     artifacts={
@@ -123,18 +134,17 @@ class WritingAgent(SkillAgent):
                 )
 
             # 最後の生成テキストを取得（簡易実装）
-            chapter = (
-                await self.repo.get_chapter(branch_id, end_ep, book_id=book_id)
-                if self.repo
-                else None
-            )
+            chapter = await self.repo.get_chapter(branch_id, end_ep, book_id=book_id) if self.repo else None
             drafted_text: str = chapter.content if chapter else ""
 
-            self.emit_event("writing.completed", {
-                "book_id": book_id,
-                "ep_num": ep_num,
-                "word_count": total_chars,
-            })
+            self.emit_event(
+                "writing.completed",
+                {
+                    "book_id": book_id,
+                    "ep_num": ep_num,
+                    "word_count": total_chars,
+                },
+            )
 
             return AgentResult(
                 next_agent=AgentName.ENRICHMENT,
@@ -143,18 +153,21 @@ class WritingAgent(SkillAgent):
                     "word_count": total_chars,
                     "failed_episodes": [],
                 },
-)
+            )
 
         except AttributeError:
             # 契約違反（リポジトリに必須メソッドが無い等）は programming error。
             # 握り潰さず上位へ伝播させる。
             raise
         except Exception as e:
-            self.emit_event("writing.error", {
-                "book_id": book_id,
-                "ep_num": ep_num,
-                "error": str(e),
-            })
+            self.emit_event(
+                "writing.error",
+                {
+                    "book_id": book_id,
+                    "ep_num": ep_num,
+                    "error": str(e),
+                },
+            )
             return AgentResult(
                 next_agent=None,
                 artifacts={},
@@ -175,7 +188,7 @@ class WritingAgent(SkillAgent):
         style_tag: Any = None,
         regeneration_focus: list[str] | None = None,
         writing_focus: list[str] | None = None,
-) -> tuple[int, list[dict[str, Any]]]:
+    ) -> tuple[int, list[dict[str, Any]]]:
         """WritingService 互換: パイプライン執筆"""
         generator = self._get_generator()
         return await generator.generate_episodes_pipeline(
@@ -266,9 +279,7 @@ class WritingAgent(SkillAgent):
             reporter.report(f"Ep.{ep_num}: {focus} フォーカスで書き直し開始", "info")
 
         # 既存の章を取得（branch_id は作品間で共有されるため book_id も渡す）
-        chapter = (
-            await self.repo.get_chapter(1, ep_num, book_id=book_id) if self.repo else None
-        )
+        chapter = await self.repo.get_chapter(1, ep_num, book_id=book_id) if self.repo else None
         if not chapter or not chapter.content:
             return {"status": "error", "message": "Chapter not found or empty"}
 
@@ -322,6 +333,7 @@ class WritingAgent(SkillAgent):
 
         import inspect
         import time
+
         start_time = time.perf_counter()
 
         # LLM で書き直し実行
@@ -347,6 +359,7 @@ class WritingAgent(SkillAgent):
         if rewritten_text:
             try:
                 from src.backend.sanitizer import TextFormatter
+
                 rewritten_text = TextFormatter.remove_ai_isms(rewritten_text).strip()
             except Exception:
                 pass
@@ -371,10 +384,8 @@ class WritingAgent(SkillAgent):
         if branch_id is None:
             branch_id = 1
         # `book_id` を渡さないと、branch_id を共有する他作品の同番の章を上書きする。
-        if self.repo and hasattr(self.repo, 'update_chapter_content'):
-            res = self.repo.update_chapter_content(
-                branch_id, ep_num, rewritten_text, book_id=book_id
-            )
+        if self.repo and hasattr(self.repo, "update_chapter_content"):
+            res = self.repo.update_chapter_content(branch_id, ep_num, rewritten_text, book_id=book_id)
             if inspect.isawaitable(res):
                 await res
 
@@ -427,9 +438,7 @@ class WritingAgent(SkillAgent):
             reporter.report(f"Ep.{ep_num}: {dimension} ディメンションで書き直し開始", "info")
 
         # 既存の章を取得
-        chapter = (
-            await self.repo.get_chapter(branch_id, ep_num, book_id=book_id) if self.repo else None
-        )
+        chapter = await self.repo.get_chapter(branch_id, ep_num, book_id=book_id) if self.repo else None
         if not chapter or not chapter.content:
             return {"status": "error", "message": "Chapter not found or empty"}
 
@@ -476,8 +485,6 @@ class WritingAgent(SkillAgent):
             f"【改稿後の本文】"
         )
 
-
-
         rewritten_text = None
 
         if self.llm is not None:
@@ -507,6 +514,7 @@ class WritingAgent(SkillAgent):
         if rewritten_text:
             try:
                 from src.backend.sanitizer import TextFormatter
+
                 rewritten_text = TextFormatter.remove_ai_isms(rewritten_text).strip()
             except Exception:
                 pass
@@ -525,10 +533,8 @@ class WritingAgent(SkillAgent):
         # 従来は `chapter.id` を `branch_id` に、`rewritten_text` を `ep_num` に
         # 渡しており `content` が欠落して TypeError になっていた。
         # `book_id` を渡さないと、branch_id を共有する他作品の同番の章を上書きする。
-        if self.repo and hasattr(self.repo, 'update_chapter_content'):
-            res = self.repo.update_chapter_content(
-                branch_id, ep_num, rewritten_text, book_id=book_id
-            )
+        if self.repo and hasattr(self.repo, "update_chapter_content"):
+            res = self.repo.update_chapter_content(branch_id, ep_num, rewritten_text, book_id=book_id)
             if inspect.isawaitable(res):
                 await res
 

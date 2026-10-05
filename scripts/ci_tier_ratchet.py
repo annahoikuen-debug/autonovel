@@ -42,6 +42,62 @@ TIER1_PATHS = (
 )
 
 
+def run_tier1_isolated() -> tuple[set[str], list[str]]:
+    """`tests/regression` の各ファイルを**単独で**実行して失敗を列挙する。
+
+    なぜこれが要るのか
+    ----------------
+    2026-10-04 の調査で、本 ratchet の blind spot が判明した。
+    `tests/regression/test_v53_concurrent_transition.py` は:
+
+    - 単独実行 → **7 件失敗**
+    - Tier1 の固定順序（`tests/unit` → ... → `tests/regression`） → **通過**
+
+    原因は他テストの import 副作用（`models_tenant` が
+    `Base.metadata` に登録される）。ratchet は固定順序で 1 回だけ実行するため、
+    この種の「順序依存」は**原理的に検出できない**。
+
+    ゲート自身は緑なのに、そのファイルに回帰が入っても誰も気づかない。
+    そこで回帰ゲートは「ファイル単独実行」を必須にし、
+    順序依存そのものを検出可能にする。
+
+    Returns:
+        (単独実行で失敗したファイル集合, 実行できなかったファイル一覧)
+    """
+    failed: set[str] = set()
+    skipped: list[str] = []
+
+    files = sorted(Path("tests/regression").glob("test_*.py"))
+    if not files:
+        return failed, ["tests/regression にテストファイルが無い"]
+
+    for path in files:
+        proc = subprocess.run(
+            [
+                sys.executable, "-m", "pytest",
+                str(path).replace("\\", "/"),
+                "-q", "--tb=no",
+                "--continue-on-collection-errors",
+                "-p", "no:cacheprovider",
+                "--timeout=300",
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=1800,
+        )
+        rel = str(path).replace("\\", "/")
+        if not _has_summary_line(proc.stdout):
+            # 取得できなかったものは「失敗」として扱わず、実行不能として報告する
+            skipped.append(rel)
+            continue
+        if proc.returncode != 0:
+            failed.add(rel)
+
+    return failed, skipped
+
+
 def run_tier1() -> tuple[int, set[str]]:
     """Tier1 を実行し、(終了コード, 失敗ファイル集合, 完了したか) を返す。
 
@@ -130,6 +186,11 @@ def parse_failing_files(stdout: str) -> set[str]:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--update", action="store_true", help="ベースラインを書き換える")
+    ap.add_argument(
+        "--skip-isolation",
+        action="store_true",
+        help="回帰ゲートの単独実行検査を省く（高速化・検出力低下）",
+    )
     args = ap.parse_args()
 
     _, actual, completed = run_tier1()
@@ -144,16 +205,27 @@ def main() -> int:
         )
         return 1
 
+    # 順序依存検出（別項で検査する）
+    isolated_failures: set[str] = set()
+    isolation_skipped: list[str] = []
+    if not args.skip_isolation:
+        isolated_failures, isolation_skipped = run_tier1_isolated()
+
     if args.update:
+        combined = sorted(set(actual_sorted) | isolated_failures)
         BASELINE.parent.mkdir(parents=True, exist_ok=True)
         BASELINE.write_text(
             json.dumps(
                 {
-                    "tier1_failing_files": actual_sorted,
+                    "tier1_failing_files": combined,
+                    "tier1_failing_files_bulk_run": actual_sorted,
+                    "tier1_failing_files_isolated": sorted(isolated_failures),
                     "note": (
                         "Tier1 の既知の失敗ファイル。新たな失敗が 1 件でも出たら fail する。"
                         "ファイルを直したら必ずこのリストからも削除すること。"
                         "既存ファイルをリストに足すのは自己申告であり防御にならない。"
+                        "bulk_run = 一括実行での失敗、isolated = 単独実行での失敗。"
+                        "差分があるファイルは順序依存を持つ（他テストの import 副作用）。"
                     ),
                 },
                 ensure_ascii=False,
@@ -161,9 +233,20 @@ def main() -> int:
             ),
             encoding="utf-8",
         )
-        print(f"baseline updated: {len(actual_sorted)} files")
-        for f in actual_sorted:
-            print(f"  - {f}")
+        print(f"baseline updated: {len(combined)} files (bulk {len(actual_sorted)}, isolated {len(isolated_failures)})")
+        for f in combined:
+            marks = []
+            if f in isolated_failures and f not in actual_sorted:
+                marks.append("ISOLATED-ONLY(順序依存)")
+            elif f in isolated_failures:
+                marks.append("bulk+isolated")
+            else:
+                marks.append("bulk")
+            print(f"  - {f}  [{', '.join(marks)}]")
+        if isolation_skipped:
+            print(f"  (実行できなかった回帰ファイル: {len(isolation_skipped)})")
+            for f in isolation_skipped:
+                print(f"    ? {f}")
         return 0
 
     if not BASELINE.exists():
@@ -175,7 +258,7 @@ def main() -> int:
         return 1
 
     recorded = set(json.loads(BASELINE.read_text(encoding="utf-8"))["tier1_failing_files"])
-    new_failures = sorted(actual - recorded)
+    new_failures = sorted(set(actual) | isolated_failures) - recorded
     fixed = sorted(recorded - actual)
 
     print(f"Tier1 failing files: actual={len(actual)} baseline={len(recorded)}")

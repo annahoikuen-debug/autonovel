@@ -38,6 +38,15 @@ from src.backend.database.models_billing import (  # noqa: F401
 from src.backend.database.models_digest import EpisodeDigestModel  # noqa: F401
 from src.backend.database.models_foreshadowing import ForeshadowingModel  # noqa: F401
 from src.backend.database.models_relation import CharacterRelationModel  # noqa: F401
+# `tenants` もここで登録する。
+# 漏れていた結果、本ファイル内の `books.tenant_id = ForeignKey("tenants.id")` が
+# 解決できず、`Base.metadata.create_all()`（開発用フォールバック経路）が
+# `sqlalchemy.exc.NoReferencedTableError: Foreign key associated with column
+# 'books.tenant_id' could not find table 'tenants'` で失敗していた。
+# さらに `tests/regression/test_v53_concurrent_transition.py` は部分スキーマを
+# 自作するため単独実行で 7 件失敗し、他のテストが本モジュールを import して
+# いないと通らないという順序依存を生んでいた。
+from src.backend.database.models_tenant import Tenant, TenantMember  # noqa: F401
 from src.infrastructure.database.types import CompatibleJSON, CompatibleDateTime, CompatibleVector
 
 """

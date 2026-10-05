@@ -8,7 +8,7 @@ from src.agents.context_builder_agent import ContextBuilderAgent
 from src.agents.erotic_enhancer import EroticEnhancer
 from src.agents.orchestrator import AgentContext, AgentResult
 from src.agents.prompt_composer import PromptComposer
-from src.agents.writing.prose_refiner_agent import ProseRefinerAgent
+from src.agents.writing.prose_refiner_agent import AdapterOnlyLLMService, ProseRefinerAgent
 from src.agents.writing.scene_writer import SceneWriter, SceneWriterOrchestrator
 from src.domain.entities.scene import SceneRole
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
@@ -92,9 +92,7 @@ async def _resolve_total_episodes(
 
         from src.backend.database.models import Book as BookModel
 
-        res = await session.execute(
-            select(BookModel.target_eps).where(BookModel.id == book_id)
-        )
+        res = await session.execute(select(BookModel.target_eps).where(BookModel.id == book_id))
         row = res.first()
         value = row[0] if row is not None else None
         return int(value) if isinstance(value, int) and value > 0 else None
@@ -103,16 +101,51 @@ async def _resolve_total_episodes(
         return None
 
 
+def _is_usable_async_session(candidate: Any) -> bool:
+    """伏線 / ダイジェストのリポジトリが要求する「非同期セッション」かどうか。
+
+    ``DbForeshadowingRepository`` / ``EpisodeDigestRepository`` は
+    ``await self.db.execute(...)`` / ``await self.db.flush()`` を行うため、
+    SQLAlchemy の **非同期**セッションが要る。次の3つは全て不可：
+
+    - ``None``: セッション压根渡されていない
+    - ``sqlalchemy.orm.Session``（同期）: ``flush()`` が ``None`` を返すので
+      ``await`` で TypeError。**本番経路はこれが原因で常に死んでいた**
+    - coroutine function（``DataRepositoryFacade.__getattr__`` がメソッド名で
+      引くのを失敗した際の結果）: ``'function' object has no attribute
+      'execute'``
+    """
+    if candidate is None:
+        return False
+    # ``run_sync`` は AsyncSession 固有の属性で、同期 Session には無い。
+    if hasattr(candidate, "run_sync"):
+        return True
+    return False
+
+
 def _resolve_session(repo: Any, session: Any) -> Any:
     """伏線・ダイジェスト・3層記憶で共通して使うセッション解決。
 
     v5.3 までは伏線側が `or repo.session`、ダイジェスト側が
     `artifacts.get("session")` のみで、`repo.session` しか持たない呼び出し元では
     ダイジェストだけ空振りしていた。ここに一本化する。
+
+    解決結果が「使える非同期セッション」でない場合は ``None`` を返し、
+    理由を 1 回だけ警告する。以前は非同期セッションでない値もそのまま
+    ``None`` でないものとして後処理に進み、AttributeError が
+    「伏線自動回収でエラー」という**原因不明の警告**に化けていた。
     """
-    if session is not None:
-        return session
-    return getattr(repo, "session", None)
+    resolved = session if session is not None else getattr(repo, "session", None)
+    if _is_usable_async_session(resolved):
+        return resolved
+    if resolved is not None:
+        logger.warning(
+            "伏線回収・事実ダイジェストをスキップします: 利用可能な非同期セッションが"
+            "ありません（resolved=%s）。session_factory を注入するか、"
+            "非同期セッションを渡してください。",
+            type(resolved).__name__,
+        )
+    return None
 
 
 class EpisodeWriter(BaseAgent):
@@ -238,7 +271,7 @@ class EpisodeWriter(BaseAgent):
             style_intensity = context.get("style_intensity", "balanced")
             prose_refiner_enabled = context.get("prose_refiner_enabled", True)
             if prose_refiner_enabled:
-                refiner = ProseRefinerAgent()
+                refiner = ProseRefinerAgent(llm_service=AdapterOnlyLLMService(getattr(self.llm, "adapter", self.llm)))
                 refinement_result = await refiner.refine(
                     draft_text=composed_text,
                     genre=genre,
@@ -319,6 +352,7 @@ class EpisodeWriter(BaseAgent):
         repo: Any = None,
         session: Any = None,
         writing_context: dict[str, Any] | None = None,
+        session_factory: Any = None,
     ) -> list[str]:
         """エピソード終了後の共通後処理（伏線回収 + ダイジェスト永続化）。
 
@@ -333,8 +367,14 @@ class EpisodeWriter(BaseAgent):
             written_text: 生成された本文
             writing_metadata: LLM が返したメタデータ（無ければ None）
             repo: リポジトリ（無ければ伏線回収はスキップ）
-            session: DB セッション（無ければ `repo.session` を使う）
+            session: DB セッション（無ければ `session_factory` / `repo.session` を使う）
             writing_context: 執筆コンテキスト（契約伏線IDの取得に使用）
+            session_factory: ``async with`` 可能なセッション工場。
+                与えられた場合は本メソッドが **短いスコープだけ** 開き、
+                `finally` で閉じる。書き込みが要るのは伏線回収と
+                ダイジェスト保存だけで、LLM 呼び出しを含む本文生成は
+                スコープ外なので、SQLite の書き込みロックを保持したまま
+                LLM を待つ時間が生じない。
 
         Returns:
             回収された伏線タイトルのリスト
@@ -342,10 +382,59 @@ class EpisodeWriter(BaseAgent):
         if not written_text:
             return []
 
+        resolved_repo = repo if repo is not None else getattr(self, "repo", None)
+
+        # 書き込みが要るのは後処理だけ。本文生成（= LLM 呼び出し）が終わって
+        # から短いスコープを開くので、SQLite の書き込みロックを保持したまま
+        # LLM を待つ時間が生じない。セッションを 1 つ持ち回すと
+        # UnitOfWork / SchedulerCoordinator の並列コミットと衝突する。
+        if session_factory is not None:
+            try:
+                async with session_factory() as owned_session:
+                    return await self._finalize_with_session(
+                        resolved_repo=resolved_repo,
+                        session=owned_session,
+                        book_id=book_id,
+                        ep_num=ep_num,
+                        written_text=written_text,
+                        writing_metadata=writing_metadata,
+                        writing_context=writing_context,
+                    )
+            except Exception as e:  # noqa: BLE001 - 後処理は失敗しても執筆は成立させる
+                logger.warning(
+                    f"Ep.{ep_num}: 後処理セッションの確保に失敗しました"
+                    f"（伏線回収・ダイジェストはスキップ、本文は保持）: {e}"
+                )
+                return []
+
+        return await self._finalize_with_session(
+            resolved_repo=resolved_repo,
+            session=session,
+            book_id=book_id,
+            ep_num=ep_num,
+            written_text=written_text,
+            writing_metadata=writing_metadata,
+            writing_context=writing_context,
+        )
+
+    async def _finalize_with_session(
+        self,
+        resolved_repo: Any,
+        session: Any,
+        book_id: int,
+        ep_num: int,
+        written_text: str,
+        writing_metadata: Any,
+        writing_context: dict[str, Any] | None,
+    ) -> list[str]:
+        """実際の後処理（セッション解決・検証と、伏線回収 / ダイジェスト保存）。
+
+        ``_post_episode_finalize`` がセッションスコープの open/close を
+        担当し、こちらは「セッションを使う処理」だけを擔当する。
+        """
         resolved_titles: list[str] = []
 
         # 1) 伏線自動回収
-        resolved_repo = repo if repo is not None else getattr(self, "repo", None)
         resolved_session = _resolve_session(resolved_repo, session)
         if resolved_repo is not None and resolved_session is not None:
             try:
@@ -365,9 +454,7 @@ class EpisodeWriter(BaseAgent):
                 # 延期の上限として渡す。production の呼び出し元が
                 # `total_episodes` を渡さないため `max_episode` が常に None に
                 # なり、100話本でも延期不能が正しく判定されていなかった。
-                total_episodes = await _resolve_total_episodes(
-                    resolved_session, book_id, (writing_context or {})
-                )
+                total_episodes = await _resolve_total_episodes(resolved_session, book_id, (writing_context or {}))
 
                 foreshadowing_repo = DbForeshadowingRepository(resolved_session)
                 foreshadowing_service = ForeshadowingService(foreshadowing_repo)
@@ -380,9 +467,7 @@ class EpisodeWriter(BaseAgent):
                     total_episodes=total_episodes,
                 )
                 if resolved_titles:
-                    logger.info(
-                        f"Ep.{ep_num}: 伏線自動回収 - {', '.join(resolved_titles)}"
-                    )
+                    logger.info(f"Ep.{ep_num}: 伏線自動回収 - {', '.join(resolved_titles)}")
             except Exception as e:
                 logger.warning(f"Ep.{ep_num}: 伏線自動回収でエラー: {e}")
 
@@ -392,19 +477,13 @@ class EpisodeWriter(BaseAgent):
         # これを失ってまで1話-rollbackする理由がない。T6 Step 11:
         # 隔離 + 警告に揃え、握り潰しも無言化も避ける。
         try:
-            await self._persist_episode_digest(
-                resolved_session, book_id, ep_num, written_text
-            )
+            await self._persist_episode_digest(resolved_session, book_id, ep_num, written_text)
         except Exception as e:
-            logger.warning(
-                f"Ep.{ep_num}: ダイジェスト永続化でエラー（本文と伏線回収は保持）: {e}"
-            )
+            logger.warning(f"Ep.{ep_num}: ダイジェスト永続化でエラー（本文と伏線回収は保持）: {e}")
 
         return resolved_titles
 
-    def detect_resolved_foreshadowings(
-        self, content: str, pending_list: List[ForeshadowingEntity]
-    ) -> List[str]:
+    def detect_resolved_foreshadowings(self, content: str, pending_list: List[ForeshadowingEntity]) -> List[str]:
         """生成された本文中から解決された伏線を簡易検知する。
 
         Args:
@@ -498,11 +577,9 @@ class EpisodeWriter(BaseAgent):
             style_intensity = context.get("style_intensity", "balanced")
             prose_refiner_enabled = context.get("prose_refiner_enabled", True)
             if prose_refiner_enabled:
-                refiner = ProseRefinerAgent()
+                refiner = ProseRefinerAgent(llm_service=AdapterOnlyLLMService(getattr(self.llm, "adapter", self.llm)))
                 refinement_result = await refiner.refine(
-                    draft_text=result,
-                    genre=genre,
-                    style_intensity=style_intensity
+                    draft_text=result, genre=genre, style_intensity=style_intensity
                 )
                 result = refinement_result.refined_text
         except Exception:
@@ -523,10 +600,7 @@ class EpisodeWriter(BaseAgent):
                     climax_text = result[-100:] if len(result) > 100 else result  # フォールバック
 
                 # 配信コメントを生成
-                comments = await social_generator.generate_stream_comments(
-                    highlight_description=climax_text,
-                    count=20
-                )
+                comments = await social_generator.generate_stream_comments(highlight_description=climax_text, count=20)
 
                 # コメントブロックをフォーマット
                 if comments:
@@ -566,6 +640,7 @@ class EpisodeWriter(BaseAgent):
             writing_metadata=writing_metadata,
             repo=ctx.artifacts.get("repo"),
             session=ctx.artifacts.get("session"),
+            session_factory=ctx.artifacts.get("session_factory"),
             writing_context=writing_context,
         )
 
@@ -605,9 +680,7 @@ class EpisodeWriter(BaseAgent):
         if session is None or not written_text:
             return
         if not _is_episode_digest_enabled():
-            logger.info(
-                f"Ep.{ep_num}: 事実ダイジェスト生成は ENABLE_EPISODE_DIGEST=0 で無効化されています"
-            )
+            logger.info(f"Ep.{ep_num}: 事実ダイジェスト生成は ENABLE_EPISODE_DIGEST=0 で無効化されています")
             return
         try:
             from src.services.context_compression.digest_service import (

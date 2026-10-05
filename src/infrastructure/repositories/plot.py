@@ -36,11 +36,7 @@ class PlotRepository(BaseRepository):
         ``book_id`` は省略可（後方互換）だが、呼び出し側は必ず渡すこと。
         """
         target_branch_id = branch_id if branch_id is not None else book_id_or_branch_id
-        stmt = (
-            select(Plot)
-            .where(Plot.branch_id == target_branch_id)
-            .where(Plot.ep_num == ep_num)
-        )
+        stmt = select(Plot).where(Plot.branch_id == target_branch_id).where(Plot.ep_num == ep_num)
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
         result = await self.session.execute(stmt)
@@ -49,9 +45,7 @@ class PlotRepository(BaseRepository):
             return None
         from src.models import PlotDbModel
 
-        return PlotDbModel(
-            **self._parse_row(self._to_dict(plot), ["scenes", "next_hook", "healed_fields"])
-        )
+        return PlotDbModel(**self._parse_row(self._to_dict(plot), ["scenes", "next_hook", "healed_fields"]))
 
     async def get_all_plots(
         self,
@@ -185,9 +179,7 @@ class PlotRepository(BaseRepository):
         plot_obj.summary = summary  # type: ignore[assignment]
         plot_obj.detailed_blueprint = detailed_blueprint  # type: ignore[assignment]
         plot_obj.next_hook = (
-            json.dumps(next_hook, ensure_ascii=False)
-            if isinstance(next_hook, (dict, list))
-            else (next_hook or "{}")
+            json.dumps(next_hook, ensure_ascii=False) if isinstance(next_hook, (dict, list)) else (next_hook or "{}")
         )  # type: ignore[assignment]
         plot_obj.tension = tension  # type: ignore[assignment]
         plot_obj.tension_delta = tension_delta  # type: ignore[assignment]
@@ -196,9 +188,7 @@ class PlotRepository(BaseRepository):
         plot_obj.is_catharsis = is_catharsis  # type: ignore[assignment]
         plot_obj.catharsis_type = catharsis_type  # type: ignore[assignment]
         plot_obj.scenes = (
-            json.dumps(scenes, ensure_ascii=False)
-            if isinstance(scenes, (list, dict))
-            else (scenes or "[]")
+            json.dumps(scenes, ensure_ascii=False) if isinstance(scenes, (list, dict)) else (scenes or "[]")
         )  # type: ignore[assignment]
         plot_obj.status = status  # type: ignore[assignment]
         plot_obj.misunderstanding_gap = misunderstanding_gap  # type: ignore[assignment]
@@ -230,23 +220,31 @@ class PlotRepository(BaseRepository):
         plot_obj.erotic_intensity = erotic_intensity  # type: ignore[assignment]
 
     @retry_on_lock()
-    async def save_plot(self, branch_id: int, ep_num: int, plot: Any) -> None:
-        """Pydanticモデル（PlotEpisode）をデータベースのplotテーブルに一括登録/更新する。"""
-        branch_result = await self.session.execute(
-            select(Branch.book_id).where(Branch.id == branch_id)
-        )
-        row = branch_result.fetchone()
-        if not row:
-            book_result = await self.session.execute(
-                select(Book.id).order_by(Book.id.desc()).limit(1)
-            )
-            latest_book = book_result.scalar_one_or_none()
-            if latest_book:
-                book_id = latest_book
-            else:
-                raise ValueError(f"Branch with ID {branch_id} does not exist and no books found.")
+    async def save_plot(self, branch_id: int, ep_num: int, plot: Any, book_id: int | None = None) -> None:
+        """Pydanticモデル（PlotEpisode）をデータベースのplotテーブルに一括登録/更新する。
+
+        ``book_id`` を渡すと ``branches`` テーブルを見ずにその作品へ直接書き込む。
+        従来は ``branches.id == branch_id`` から ``book_id`` を逆引きしていたため、
+        Branch 行が 1 つも無い状態では「最新の Book」にフォールバックし、
+        結果が他作品のプロットになる可能性があった。生成呼び出し側
+        （``src/services/bible_service.py``）は既に book_id を持っているので、
+        必ず渡すこと。
+        """
+        if book_id is not None:
+            resolved_book_id = book_id
         else:
-            book_id = row[0]
+            branch_result = await self.session.execute(select(Branch.book_id).where(Branch.id == branch_id))
+            row = branch_result.fetchone()
+            if not row:
+                book_result = await self.session.execute(select(Book.id).order_by(Book.id.desc()).limit(1))
+                latest_book = book_result.scalar_one_or_none()
+                if latest_book:
+                    book_id = latest_book
+                else:
+                    raise ValueError(f"Branch with ID {branch_id} does not exist and no books found.")
+            else:
+                book_id = row[0]
+            resolved_book_id = book_id
 
         next_hook_data = {}
         if hasattr(plot, "next_hook") and plot.next_hook:
@@ -273,7 +271,7 @@ class PlotRepository(BaseRepository):
             healed_fields_data = list(plot.healed_fields)
 
         await self.create_or_replace_plot(
-            book_id=book_id,
+            book_id=resolved_book_id,
             ep_num=ep_num,
             thought_process=getattr(plot, "thought_process", "") or "",
             title=getattr(plot, "title", "") or f"第{ep_num}話",
@@ -301,9 +299,7 @@ class PlotRepository(BaseRepository):
             healed_fields=healed_fields_data,
             branch_id=branch_id,
             is_micro_catharsis=bool(getattr(plot, "is_micro_catharsis", False)),
-            information_asymmetry_level=float(
-                getattr(plot, "information_asymmetry_level", 0.0) or 0.0
-            ),
+            information_asymmetry_level=float(getattr(plot, "information_asymmetry_level", 0.0) or 0.0),
             cost_score=float(getattr(plot, "cost_score", 0.0) or 0.0),
             qol_delta=int(getattr(plot, "qol_delta", 0) or 0),
             discovery_item=getattr(plot, "discovery_item", "") or "",
@@ -324,25 +320,15 @@ class PlotRepository(BaseRepository):
         love_meter: int,
         book_id: int | None = None,
     ) -> None:
-        stmt = (
-            update(Plot)
-            .where(Plot.branch_id == branch_id)
-            .where(Plot.ep_num == ep_num)
-        )
+        stmt = update(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num == ep_num)
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
-        await self.session.execute(
-            stmt.values(status="completed", tension_delta=tension_delta, love_meter=love_meter)
-        )
+        await self.session.execute(stmt.values(status="completed", tension_delta=tension_delta, love_meter=love_meter))
 
     @retry_on_lock()
     async def reset_plot_status(self, branch_id: int, ep_num: int, book_id: int | None = None) -> None:
         """プロットのステータスを計画済みに戻し、設計図や個別統計を完全にリセットする"""
-        stmt = (
-            update(Plot)
-            .where(Plot.branch_id == branch_id)
-            .where(Plot.ep_num == ep_num)
-        )
+        stmt = update(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num == ep_num)
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
         await self.session.execute(
@@ -363,11 +349,7 @@ class PlotRepository(BaseRepository):
         self, branch_id: int, ep_num: int, detailed_blueprint: str, book_id: int | None = None
     ) -> None:
         """プロットの設計図を直接更新する"""
-        stmt = (
-            update(Plot)
-            .where(Plot.branch_id == branch_id)
-            .where(Plot.ep_num == ep_num)
-        )
+        stmt = update(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num == ep_num)
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
         await self.session.execute(stmt.values(detailed_blueprint=detailed_blueprint))
@@ -377,19 +359,13 @@ class PlotRepository(BaseRepository):
         self, branch_id: int, ep_num: int, is_locked: bool, book_id: int | None = None
     ) -> None:
         """プロットのロック状態を更新する"""
-        stmt = (
-            update(Plot)
-            .where(Plot.branch_id == branch_id)
-            .where(Plot.ep_num == ep_num)
-        )
+        stmt = update(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num == ep_num)
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
         await self.session.execute(stmt.values(is_locked=is_locked))
 
     @retry_on_lock()
-    async def delete_plots_from(
-        self, branch_id: int, start_ep: int, book_id: int | None = None
-    ) -> None:
+    async def delete_plots_from(self, branch_id: int, start_ep: int, book_id: int | None = None) -> None:
         stmt = delete(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num >= start_ep)
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
@@ -399,11 +375,7 @@ class PlotRepository(BaseRepository):
         self, branch_id: int, ep_num: int, book_id: int | None = None
     ) -> PlotDbModel | None:
         """ep_num より前の最新プロットを1件取得（直前プロットの状態参照用）"""
-        stmt = (
-            select(Plot)
-            .where(Plot.branch_id == branch_id)
-            .where(Plot.ep_num < ep_num)
-        )
+        stmt = select(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num < ep_num)
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
         result = await self.session.execute(stmt.order_by(Plot.ep_num.desc()).limit(1))
@@ -423,11 +395,7 @@ class PlotRepository(BaseRepository):
         self, branch_id: int, start_ep: int, end_ep: int, book_id: int | None = None
     ) -> list[PlotDbModel]:
         """start_ep〜end_ep の範囲のプロットを取得"""
-        stmt = (
-            select(Plot)
-            .where(Plot.branch_id == branch_id)
-            .where(Plot.ep_num.between(start_ep, end_ep))
-        )
+        stmt = select(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num.between(start_ep, end_ep))
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
         result = await self.session.execute(stmt.order_by(Plot.ep_num))
@@ -469,9 +437,7 @@ class PlotRepository(BaseRepository):
         self.session.add(fw)
 
     @retry_on_lock()
-    async def update_foreshadowing_recovery(
-        self, fw_id: str, recovery_ep: int, note: str = ""
-    ) -> None:
+    async def update_foreshadowing_recovery(self, fw_id: str, recovery_ep: int, note: str = "") -> None:
         """伏線の回収エピソードを登録し、ステータスを recovered に更新する"""
         await self.session.execute(
             update(Foreshadowing)
@@ -479,9 +445,7 @@ class PlotRepository(BaseRepository):
             .values(recovery_ep=recovery_ep, status="recovered", note=note)
         )
 
-    async def get_unrecovered_foreshadowings(
-        self, book_id: int, branch_id: int = 1
-    ) -> list[Foreshadowing]:
+    async def get_unrecovered_foreshadowings(self, book_id: int, branch_id: int = 1) -> list[Foreshadowing]:
         """未回収の伏線一覧を取得する"""
         result = await self.session.execute(
             select(Foreshadowing)
@@ -543,9 +507,7 @@ class PlotRepository(BaseRepository):
         arc_obj.trigger_event = trigger_event
         arc_obj.confidence = confidence
 
-    async def get_character_arc_history(
-        self, book_id: int, branch_id: int, character_id: int
-    ) -> list[CharacterArc]:
+    async def get_character_arc_history(self, book_id: int, branch_id: int, character_id: int) -> list[CharacterArc]:
         """特定のキャラクターの全エピソードにおけるアーク履歴を取得する
 
         ``CharacterArc`` の一意制約は ``save_character_arc`` と同じく作品スコープ
