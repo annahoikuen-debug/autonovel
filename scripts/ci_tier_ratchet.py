@@ -258,8 +258,9 @@ def main() -> int:
         return 1
 
     recorded = set(json.loads(BASELINE.read_text(encoding="utf-8"))["tier1_failing_files"])
-    new_failures = sorted(set(actual) | isolated_failures) - recorded
-    fixed = sorted(recorded - actual)
+    actual_set = set(actual)
+    new_failures = sorted((actual_set | isolated_failures) - recorded)
+    fixed = sorted(recorded - actual_set)
 
     print(f"Tier1 failing files: actual={len(actual)} baseline={len(recorded)}")
 

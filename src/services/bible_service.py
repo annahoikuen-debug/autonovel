@@ -4,6 +4,9 @@ import logging
 from datetime import datetime
 from typing import Any
 
+from src.services.foreshadowing.flags import is_foreshadowing_planting_enabled
+from src.services.foreshadowing.planting_service import plant_from_roadmap
+
 from src.agents.plot import PlotAgent as PlotExpander
 from src.backend.config import settings as _settings
 from src.backend.engine_utils import safe_get, safe_model_validate
@@ -371,6 +374,25 @@ class WorldBibleGenerator:
         )
         await self.repo.save_full_world_bible(bible_obj, book_id=book_id)
 
+        # P0-1-a: 伏線自動設置 (フラグ OFF なら副作用ゼロ)
+        try:
+            if is_foreshadowing_planting_enabled():
+                from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
+
+                async with self.repo.db.get_session() as session:
+                    fs_repo = DbForeshadowingRepository(session)
+                    roadmap = bible_obj.full_story_roadmap or []
+                    await plant_from_roadmap(
+                        repo=fs_repo,
+                        book_id=book_id,
+                        roadmap_items=roadmap,
+                        total_episodes=config.target_eps,
+                        planting_enabled=True,  # flag already checked
+                    )
+                    await fs_repo.commit()
+        except Exception as e:
+            logger.warning(f"Foreshadowing planting failed (non-fatal): book_id={book_id} error={e}")
+
         if config.initial_plot_limit > 0:
             ep_list = list(range(1, config.initial_plot_limit + 1))
             bible_json_str = json.dumps(bible_obj.model_dump(), ensure_ascii=False)
@@ -486,6 +508,25 @@ class WorldBibleGenerator:
             cost_severity=config.cost_severity,
             target_eps=config.target_eps,
         )
+
+        # P0-1-b: 伏線自動設置 (フラグ OFF なら副作用ゼロ)
+        try:
+            if is_foreshadowing_planting_enabled():
+                from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
+
+                async with self.repo.db.get_session() as session:
+                    fs_repo = DbForeshadowingRepository(session)
+                    roadmap = bible_obj.full_story_roadmap or []
+                    await plant_from_roadmap(
+                        repo=fs_repo,
+                        book_id=book_id,
+                        roadmap_items=roadmap,
+                        total_episodes=config.target_eps,
+                        planting_enabled=True,
+                    )
+                    await fs_repo.commit()
+        except Exception as e:
+            logger.warning(f"Foreshadowing planting failed (non-fatal): book_id={book_id} error={e}")
 
         if config.initial_plot_limit > 0:
             # We will delegate back or use PlotExpander
