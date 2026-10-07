@@ -69,10 +69,15 @@ def upgrade():
 
 def downgrade():
     for table in reversed(_USER_ID_TABLES):
-        index_name = f"idx_{table}_user_id"
-        if _table_exists(table) and _index_exists(table, index_name):
-            op.drop_index(index_name, table_name=table)
-        if _table_exists(table) and _column_exists(table, "user_id"):
+        if not _table_exists(table):
+            continue
+        # SQLite は DROP COLUMN 時にその列を参照する index が残ると
+        # "error in index ... after drop column" で落ちるため、先に全て落とす。
+        # idx_* (0027) と ix_* (create_all 由来) の両方が存在し得る。
+        for index_name in (f"idx_{table}_user_id", f"ix_{table}_user_id"):
+            if _index_exists(table, index_name):
+                op.drop_index(index_name, table_name=table)
+        if _column_exists(table, "user_id"):
             op.drop_column(table, "user_id")
     if _table_exists("users"):
         op.drop_table("users")

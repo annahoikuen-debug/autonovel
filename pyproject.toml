@@ -117,6 +117,12 @@ epub = [
     # v5 の目玉機能（商用縦書き EPUB 3）なので、無条件列入を推奨。
     "ebooklib>=0.18",
 ]
+publishing = [
+    # なろう投稿用 (src/services/publishers/narou.py)
+    # selenium + webdriver-manager でブラウザ自動操作
+    "selenium>=4.15",
+    "webdriver-manager>=4.0",
+]
 # 重い任意依存。requirements.txt / Dockerfile には含めない (ビルド時間と
 # イメージサイズが大きく増える)。GPU メモリ情報の取得が必要な環境でのみ
 # 手動インストールすること。
@@ -199,6 +205,7 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
 ]
+fail_under = 55
 precision = 2
 show_missing = true
 skip_covered = false

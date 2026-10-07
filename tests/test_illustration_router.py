@@ -7,7 +7,7 @@ Step 32: R15 safety の検証 (test_image_service.py に集約済み)。
 from __future__ import annotations
 
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -51,6 +51,9 @@ def test_illustration_router_batch_queues_task():
 
     旧: バッチが同期で workflow.execute() の戻り値を返していた
     新: task_id を返してバックグラウンドで実行 → GET /status/{task_id} で取得
+
+    所有権検証 (verify_book_ownership) と Huey タスク投入は mock 化し、
+    実 DB / 実キューに依存しない。
     """
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
@@ -82,11 +85,22 @@ def test_illustration_router_batch_queues_task():
     app.include_router(router, prefix="/api/illustrations")
     app.dependency_overrides[get_illustration_workflow] = _override_workflow
 
-    with TestClient(app) as client:
-        resp = client.post(
-            "/api/illustrations/batch",
-            json={"book_id": 1, "settings": {"enableIllustration": True}},
-        )
+    # verify_book_ownership は router 関数内で遅延 import されるため
+    # 所有権ガードを patch して実 DB への依存を排除する。
+    with patch(
+        "src.backend.routers.illustrations.verify_book_ownership",
+        new=AsyncMock(return_value=MagicMock()),
+    ):
+        # illustrate_batch_task は router 内で遅延 import されるため
+        # タスクモジュール側の属性を patch する。
+        import src.backend.tasks.illustration_tasks as _it
+
+        with patch.object(_it, "illustrate_batch_task"):
+            with TestClient(app) as client:
+                resp = client.post(
+                    "/api/illustrations/batch",
+                    json={"book_id": 1, "settings": {"enableIllustration": True}},
+                )
     assert resp.status_code == 200, resp.text
     body = resp.json()
     assert body["status"] == "queued"
@@ -121,7 +135,8 @@ def test_illustration_router_generate_validation_error_returns_400():
             "/api/illustrations/generate",
             json={"illustration_type": "cover"},
         )
-    assert resp.status_code == 400
+    # FastAPI の標準バリデーションエラーは 422
+    assert resp.status_code == 422
 
 
 def test_illustration_batch_queues_huey_task():
@@ -145,6 +160,23 @@ def test_illustration_batch_queues_huey_task():
         from src.backend.routers.illustrations import router
 
         app.include_router(router, prefix="/api/illustrations")
+        async def _override_workflow():
+            class _FakeWorkflow:
+                illustration_agent = MagicMock()
+
+                async def execute(self, **kwargs):
+                    return {"status": "success"}
+
+            return _FakeWorkflow()
+
+        from src.backend.routers.illustrations import get_illustration_workflow
+
+        app.dependency_overrides[get_illustration_workflow] = _override_workflow
+        patcher = patch(
+            "src.backend.routers.illustrations.verify_book_ownership",
+            new=AsyncMock(return_value=MagicMock()),
+        )
+        patcher.start()
 
         with TestClient(app) as client:
             resp = client.post(
@@ -157,6 +189,8 @@ def test_illustration_batch_queues_huey_task():
         assert body["status"] in ("queued", "completed")
     finally:
         huey_instance.immediate = original_immediate
+        if "patcher" in dir():
+            patcher.stop()
 
 
 def test_illustration_status_endpoint_404():

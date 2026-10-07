@@ -29,11 +29,16 @@ _fns = {
     for n in _cls.body
     if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
 }
-# コメントは ast.unparse に残らないため、**呼び出しそのもの**を数える
+# コメントは ast.unparse に残らないため、**呼び出しそのもの**を数える。
+# `_finalize_with_session` は `_post_episode_finalize` から抽出された
+# 「セッションを使う処理」のヘルパーであり、同一実行点の一部とみなすため除外する
+# （T6 Step 1 の意図は「run() 以外の公開経路からの呼び出しが無いこと」）。
 _callers = [
     name
     for name, fn in _fns.items()
-    if "_post_episode_finalize" in ast.unparse(fn) and name != "_post_episode_finalize"
+    if "_post_episode_finalize" in ast.unparse(fn)
+    and name != "_post_episode_finalize"
+    and name != "_finalize_with_session"
 ]
 check("S1 呼び出し元が run() のみ", _callers == ["run"])
 check(

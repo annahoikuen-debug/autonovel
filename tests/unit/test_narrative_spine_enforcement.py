@@ -17,7 +17,7 @@ def test_narrative_spine_composer() -> None:
         subordinate_to_quality=True,
     )
     edge = SharpEdgeSpec(
-        edge_type="madness",
+        edge_type="protagonist_flaw",
         description="主人公の狂気的な執着",
         key_phrase="絶対に許さない",
         preserve_on_quality_polish=True,
@@ -27,5 +27,5 @@ def test_narrative_spine_composer() -> None:
 
     assert "despair_to_hope" in constraints
     assert "絶望からの一筋の光" in constraints
-    assert "madness" in constraints
+    assert "protagonist_flaw" in constraints
     assert "絶対に許さない" in constraints

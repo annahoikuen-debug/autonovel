@@ -129,11 +129,12 @@ async def test_should_skip_audit_type_many_negatives(learning_service, mock_chro
     mock_collection = mock_chroma.get_collection.return_value
 
     # negative 10件, positive 2件
+    # ChromaDB の query 応答は metadatas[0] がフラットな結果リスト
     mock_collection.query.side_effect = [
         # negative patterns
-        {"metadatas": [[{"audit_type": "deai"}] for _ in range(10)]},
+        {"metadatas": [[{"audit_type": "deai"}] * 10]},
         # positive patterns
-        {"metadatas": [[{"audit_type": "deai"}] for _ in range(2)]},
+        {"metadatas": [[{"audit_type": "deai"}] * 2]},
     ]
 
     should_skip, conf_adj = await learning_service.should_skip_audit_type("deai")
@@ -148,9 +149,10 @@ async def test_should_skip_audit_type_some_negatives(learning_service, mock_chro
     mock_collection = mock_chroma.get_collection.return_value
 
     # negative 5件, positive 3件
+    # ChromaDB の query 応答は metadatas[0] がフラットな結果リスト
     mock_collection.query.side_effect = [
-        {"metadatas": [[{"audit_type": "causal_integrity"}] for _ in range(5)]},
-        {"metadatas": [[{"audit_type": "causal_integrity"}] for _ in range(3)]},
+        {"metadatas": [[{"audit_type": "causal_integrity"}] * 5]},
+        {"metadatas": [[{"audit_type": "causal_integrity"}] * 3]},
     ]
 
     should_skip, conf_adj = await learning_service.should_skip_audit_type("causal_integrity")

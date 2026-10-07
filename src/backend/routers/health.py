@@ -48,7 +48,7 @@ class LivenessResponse(BaseModel):
 @router.get("/health/liveness")
 async def health_liveness():
     """Liveness Probe: プロセスが生きているか即座に応答（外部依存なし）"""
-    return {"status": "alive"}
+    return LivenessResponse(status="alive", timestamp=datetime.now(UTC).isoformat())
 
 
 @router.get("/health/ready")

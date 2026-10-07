@@ -139,19 +139,20 @@ def test_post_export_package_endpoint(client, real_db_manager):
     # 開発用の autonovel.db を汚さないよう一時 SQLite に束縛し直して投入する。
     AppContainer.db.override(providers.Object(DatabaseManager(os.environ["DATABASE_URL"])))
     db = real_db_manager
-    db.add(User(id=1, email="owner@example.com", hashed_password="x", display_name="owner"))
-    db.add(
-        Book(
-            id=1,
-            user_id=1,
-            title="テスト作品",
-            genre="ファンタジー",
-            concept="テスト",
-            synopsis="テストあらすじ",
-            target_eps=1,
-        )
+    user = User(id=1, email="owner@example.com", hashed_password="x", display_name="owner")
+    db.add(user)
+    book = Book(
+        user_id=1,
+        title="テスト作品",
+        genre="ファンタジー",
+        concept="テスト",
+        synopsis="テストあらすじ",
+        target_eps=1,
     )
+    db.add(book)
     db.commit()
+    db.refresh(book)
+    book_id = book.id
 
     fake_zip = b"PK\x03\x04fake_zip_bytes"
     fake_engine = MagicMock()
@@ -169,7 +170,7 @@ def test_post_export_package_endpoint(client, real_db_manager):
 
         with TestClient(app) as tc:
             resp = tc.post(
-                "/api/marketing/export_package/1",
+                f"/api/marketing/export_package/{book_id}",
                 json={"api_key": "test-key"},
             )
             assert resp.status_code == 200

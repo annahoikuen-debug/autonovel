@@ -47,8 +47,8 @@ def test_example_chromadb_usage(chromadb_container):
     import time
 
     # Get connection details from the container
-    chromadb_container.get_container_host_ip()
-    chromadb_container.get_exposed_port(8000)
+    host = chromadb_container.get_container_host_ip()
+    port = chromadb_container.get_exposed_port(8000)
 
     # Wait a bit for ChromaDB to fully start up (additional safety)
     time.sleep(2)
@@ -56,6 +56,6 @@ def test_example_chromadb_usage(chromadb_container):
     # Verify we can reach the container's exposed port
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(5)
-    result = sock.connect_ex((chadb_host, int(chadb_port)))
+    result = sock.connect_ex((host, int(port)))
     sock.close()
-    assert result == 0, f"Cannot connect to ChromaDB at {chadb_host}:{chadb_port}"
+    assert result == 0, f"Cannot connect to ChromaDB at {host}:{port}"

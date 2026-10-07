@@ -110,6 +110,8 @@ class TestMain:
         import tomllib
         from pathlib import Path
 
+        import pytest  # noqa: F401 -- 遅延 import で skip を使用
+
         pyproject = Path(__file__).resolve().parents[3] / "pyproject.toml"
         if not pyproject.exists():
             pytest.skip("pyproject.toml が見つからない（配布物での実行）")

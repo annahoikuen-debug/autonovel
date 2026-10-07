@@ -1,4 +1,6 @@
 import pytest
+from unittest.mock import PropertyMock
+
 from src.backend.tasks.huey import huey, execute_agent_node_task, check_huey_health
 
 
@@ -51,8 +53,12 @@ async def test_async_wait_huey_result():
     assert val == {"ok": True}
 
     # 2. タイムアウトする場合
+    # 素の MagicMock は `is_ready()` に常に truthy を返すため、pending 状態を
+    # 模擬できない。`is_ready` を False を返す callable として設定し、
+    # 結果が来ない経路を確実に通す。
     mock_res_timeout = MagicMock()
     mock_res_timeout.get.return_value = None
+    mock_res_timeout.is_ready = MagicMock(return_value=False)
     with pytest.raises(TimeoutError):
         await async_wait_huey_result(mock_res_timeout, timeout=0.1, poll_interval=0.02)
 

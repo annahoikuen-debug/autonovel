@@ -38,7 +38,9 @@ async def test_image_service_unified_genai_call():
     mock_client.models.generate_images.return_value = mock_response
 
     with patch.object(ImageService, "_save_image", return_value="/static/illustrations/img_test.png"):
-        service = ImageService(api_key="dummy-key")
+        # NOTE: "dummy" は ImageService のプレースホルダーガードに引っかかるため
+        # ガードを通過するダミーキーを使用する。
+        service = ImageService(api_key="test-key-12345")
         service.client = mock_client
 
         url = await service.generate(prompt="A beautiful fantasy cover")

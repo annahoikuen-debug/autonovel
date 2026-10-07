@@ -136,10 +136,36 @@ class EmbeddingService:
         self._cache: EmbeddingCache = cache or LRUEmbeddingCache()
         self._lock = threading.Lock()
 
+    #: プレースホルダーとみなすダミーキー（.env.example 等に書かれた値）。
+    #: これらが設定されている場合は「キー無し」扱いとし、実ネットワーク呼び出しを
+    #: 行わず疑似埋め込みフォールバックに落ちることでテスト実行のハングを防ぐ。
+    _PLACEHOLDER_KEY_MARKERS: tuple[str, ...] = (
+        "your_openai",
+        "your-api-key",
+        "your_ope",
+        "here",
+        "changeme",
+        "change_me",
+        "example",
+        "dummy",
+        "placeholder",
+        "xxx",
+    )
+
+    @classmethod
+    def _is_placeholder_key(cls, key: str) -> bool:
+        """ダミー/プレースホルダーの API キーか判定する (小文字比較・部分一致)."""
+        k = key.strip().lower()
+        if not k or k in {"test", "none", "sk-xxx", "sk-..."}:
+            return True
+        if k.startswith("sk-proj-xxx"):
+            return True
+        return any(marker in k for marker in cls._PLACEHOLDER_KEY_MARKERS)
+
     def _get_client(self) -> Any:
         if self._client is None:
             resolved_key = self._api_key or settings.OPENAI_API_KEY
-            if resolved_key:
+            if resolved_key and not self._is_placeholder_key(resolved_key):
                 from openai import OpenAI
 
                 kwargs: dict[str, Any] = {"api_key": resolved_key}

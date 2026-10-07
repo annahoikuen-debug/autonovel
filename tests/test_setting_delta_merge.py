@@ -3,10 +3,21 @@
 from __future__ import annotations
 
 import pytest
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
 from src.services.bible_service import WorldBibleGenerator
 from src.services.graphrag_sync_service import GraphRAGSyncService
+
+
+def _make_session(max_ver: int = 0):
+    """bible_service が `await session.execute(...)` + `result.scalar()` を使うため、
+    scalar を MagicMock にした結果オブジェクトを返す AsyncMock を構築する。"""
+    session = AsyncMock()
+    session.execute = AsyncMock(
+        return_value=SimpleNamespace(scalar=MagicMock(return_value=max_ver))
+    )
+    return session
 
 
 @pytest.fixture
@@ -14,7 +25,7 @@ def mock_repo():
     repo = MagicMock()
     repo.misc = MagicMock()
     repo.bible = MagicMock()
-    repo.session = MagicMock()
+    repo.session = _make_session()
     return repo
 
 
@@ -63,7 +74,8 @@ async def test_create_setting_snapshot(bible_generator, mock_repo):
     mock_bible.model_dump.return_value = {"title": "Test", "world_rules": {}}
     mock_repo.bible.get_bible = AsyncMock(return_value=mock_bible)
     mock_repo.misc.create_setting_version = AsyncMock(return_value=3)
-    mock_repo.session.execute = AsyncMock()
+    # 既存バージョンなし (scalar -> 0)
+    mock_repo.session = _make_session(max_ver=0)
 
     version_id = await bible_generator.create_setting_snapshot(
         book_id=1,
@@ -85,6 +97,8 @@ async def test_apply_manual_setting_change(bible_generator, mock_repo):
     mock_repo.save_full_world_bible = AsyncMock()
     mock_repo.misc.create_setting_delta = AsyncMock(return_value=7)
     mock_repo.misc.create_setting_version = AsyncMock(return_value=4)
+    # スナップショット作成内の session.execute をモック (既存バージョンなし)
+    mock_repo.session = _make_session(max_ver=0)
 
     success = await bible_generator.apply_manual_setting_change(
         book_id=1,

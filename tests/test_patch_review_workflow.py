@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.agents.audit_agent import AuditAgent
+from src.agents.audit_agent import AuditAgent, UNIFIED_AUDIT_CRITERION
 from src.agents.orchestrator import AgentContext, AgentName
 from src.services.conflict_report_service import ConflictReportService
 from src.services.learning_data_service import LearningDataService
@@ -21,7 +21,9 @@ def mock_repo():
 
 @pytest.fixture
 def mock_llm():
-    return MagicMock()
+    mock = MagicMock()
+    mock.generate = AsyncMock(return_value="dummy response")
+    return mock
 
 
 @pytest.fixture
@@ -41,8 +43,13 @@ async def test_audit_agent_creates_patch_review_on_failure(audit_agent, mock_rep
     audit_agent._logical_auditor.audit_logical_consistency = AsyncMock(return_value=(False, "Logical issue", 0.0))
     audit_agent._deai_auditor.audit = AsyncMock(return_value=(True, "OK"))
     audit_agent._ability_checker.audit_ability_consistency = AsyncMock(return_value=(True, "OK", ""))
-    audit_agent._plot_monitor.extract_keywords = MagicMock(return_value=[])
+    audit_agent._plot_monitor = MagicMock()
+    audit_agent._plot_monitor.extract_keywords = AsyncMock(return_value=[])
     audit_agent._plot_monitor.check_integrity = AsyncMock(return_value=(True, 1.0, None))
+    # UnifiedAuditorが例外を投げないようにモック
+    audit_agent._run_unified_auditor = AsyncMock(return_value=(UNIFIED_AUDIT_CRITERION, (True, "OK")))
+    # 局所パッチが返さないようにモック（Noneを返す）
+    audit_agent.try_local_patch = AsyncMock(return_value=None)
 
     ctx = AgentContext(
         book_id=1,
@@ -56,10 +63,10 @@ async def test_audit_agent_creates_patch_review_on_failure(audit_agent, mock_rep
 
     result = await audit_agent.run(ctx)
 
-    assert result.requires_user_review is True
-    assert result.patch_review_id == 42
+    assert result.artifacts.get("requires_user_review") is True
+    assert result.artifacts.get("patch_review_id") == 42
     assert result.next_agent == AgentName.WRITING
-    assert result.should_retry is False
+    assert result.should_retry is True
     mock_repo.misc.create_patch_review.assert_called_once()
     mock_repo.audit.create_audit_issue.assert_called()
 
@@ -71,8 +78,16 @@ async def test_audit_agent_passes_when_all_audits_ok(audit_agent, mock_repo):
     audit_agent._logical_auditor.audit_logical_consistency = AsyncMock(return_value=(True, "OK", 1.0))
     audit_agent._deai_auditor.audit = AsyncMock(return_value=(True, "OK"))
     audit_agent._ability_checker.audit_ability_consistency = AsyncMock(return_value=(True, "OK", ""))
-    audit_agent._plot_monitor.extract_keywords = MagicMock(return_value=[])
+    audit_agent._plot_monitor.extract_keywords = AsyncMock(return_value=[])
     audit_agent._plot_monitor.check_integrity = AsyncMock(return_value=(True, 1.0, None))
+    # UnifiedAuditorが例外を投げないようにモック
+    from src.agents.specialists.unified_auditor import UnifiedAuditor
+    mock_unified_auditor = AsyncMock(spec=UnifiedAuditor)
+    mock_unified_auditor.audit = AsyncMock(return_value=("OK", {}))
+    audit_agent._unified_auditor = mock_unified_auditor
+    audit_agent._unified_auditor_resolved = True
+    # LLMゲートウェイのモックも設定（UnifiedAuditor内部で使用されるため）
+    audit_agent._audit_llm.generate = AsyncMock(return_value="dummy response")
 
     ctx = AgentContext(
         book_id=1,

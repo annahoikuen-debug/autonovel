@@ -114,17 +114,20 @@ def _sqlite_foreign_keys_off():
         bind.exec_driver_sql("PRAGMA foreign_keys=ON")
 
 
-def _rebuild_table(old: str, new: str, columns: list[sa.Column], select_expr: str) -> None:
+def _rebuild_table(old: str, new: str, columns: list, select_expr: str) -> None:
     """``old`` を ``columns`` 定义的テーブルに置き換えて ``old`` の行を複写する。
 
     ``select_expr`` は複写元から新テーブルへの SELECT 文（列名を新テーブル順に揃える）。
     SQLite / PostgreSQL の両方で動く（``op.rename_table`` は両対応）。
     """
     op.create_table(new, *columns)
+    # columns には制約 (PrimaryKeyConstraint / ForeignKeyConstraint) も含まれ得る。
+    # 制約オブジェクトの .name は None のため、実列のみ抽出する。
+    col_names = [c.name for c in columns if isinstance(c, sa.Column) and c.name]
     op.execute(
         "INSERT INTO {new} ({cols}) {select_expr}".format(
             new=new,
-            cols=", ".join(c.name for c in columns),
+            cols=", ".join(col_names),
             select_expr=select_expr,
         )
     )

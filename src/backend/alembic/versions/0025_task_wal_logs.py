@@ -66,10 +66,23 @@ def upgrade() -> None:
     )
 
 
+def _index_exists(table_name: str, index_name: str) -> bool:
+    inspector = sa.inspect(op.get_bind())
+    if table_name not in inspector.get_table_names():
+        return False
+    return any(ix["name"] == index_name for ix in inspector.get_indexes(table_name))
+
+
 def downgrade() -> None:
     if _table_exists("task_wal_logs"):
-        op.drop_index(op.f("ix_task_wal_logs_heartbeat"), table_name="task_wal_logs")
-        op.drop_index(op.f("ix_task_wal_logs_task_id"), table_name="task_wal_logs")
-        op.drop_index(op.f("ix_task_wal_logs_node_id"), table_name="task_wal_logs")
-        op.drop_index(op.f("ix_task_wal_logs_dag_id"), table_name="task_wal_logs")
+        # create_all 由来の idx_* と本リビジョンの ix_* が混在し得るため、
+        # 実在する index だけを落とす（冪等）。
+        for index_name in (
+            op.f("ix_task_wal_logs_heartbeat"),
+            op.f("ix_task_wal_logs_task_id"),
+            op.f("ix_task_wal_logs_node_id"),
+            op.f("ix_task_wal_logs_dag_id"),
+        ):
+            if _index_exists("task_wal_logs", index_name):
+                op.drop_index(index_name, table_name="task_wal_logs")
         op.drop_table("task_wal_logs")

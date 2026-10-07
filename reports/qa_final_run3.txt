@@ -1,0 +1,248 @@
+.......F................................................................ [  0%]
+........................................................................ [  1%]
+.....................................F.................................. [  2%]
+........................................................................ [  2%]
+........s..........................ss................................... [  3%]
+................................FFFFFF............................F.FFF. [  4%]
+.............FFF..FF.....E...............FFF.........FF.........FF...... [  5%]
+sEE................ssssssssssssssssssssss................F.............. [  5%]
+s...FFF........F...........FFF.F.............FFFFF.......F............ss [  6%]
+sE.....................EEEF...........F......F..F....................... [  7%]
+FF......F............................................................... [  8%]
+........................................................................ [  8%]
+........................................................................ [  9%]
+.............................FFEEFF+++++++++++++++++++++++++++++++++++ Timeout +++++++++++++++++++++++++++++++++++
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Captured stdout ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+2026-10-07 12:55:11,191 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.443203 seconds (retry 1 of 2)
+2026-10-07 12:55:13,697 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.899053 seconds (retry 2 of 2)
+2026-10-07 12:55:16,651 WARNING embedding_service [AutoNovel/testing]: Primary embedding model  failed: Connection error.. Trying fallback: 
+2026-10-07 12:55:18,694 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.377558 seconds (retry 1 of 2)
+2026-10-07 12:55:21,113 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.860005 seconds (retry 2 of 2)
+2026-10-07 12:55:24,032 WARNING embedding_service [AutoNovel/testing]: Fallback embedding model  failed: Connection error.. Using pseudo-embeddings.
+2026-10-07 12:55:26,085 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.377653 seconds (retry 1 of 2)
+2026-10-07 12:55:28,528 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.982181 seconds (retry 2 of 2)
+2026-10-07 12:55:31,536 WARNING embedding_service [AutoNovel/testing]: Primary embedding model  failed: Connection error.. Trying fallback: 
+2026-10-07 12:55:33,567 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.451343 seconds (retry 1 of 2)
+2026-10-07 12:55:36,068 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.951193 seconds (retry 2 of 2)
+2026-10-07 12:55:39,078 WARNING embedding_service [AutoNovel/testing]: Fallback embedding model  failed: Connection error.. Using pseudo-embeddings.
+2026-10-07 12:55:41,136 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.474952 seconds (retry 1 of 2)
+2026-10-07 12:55:43,638 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.903254 seconds (retry 2 of 2)
+2026-10-07 12:55:46,565 WARNING embedding_service [AutoNovel/testing]: Primary embedding model  failed: Connection error.. Trying fallback: 
+2026-10-07 12:55:48,614 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.463257 seconds (retry 1 of 2)
+2026-10-07 12:55:51,127 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.872790 seconds (retry 2 of 2)
+2026-10-07 12:55:54,049 WARNING embedding_service [AutoNovel/testing]: Fallback embedding model  failed: Connection error.. Using pseudo-embeddings.
+2026-10-07 12:55:56,090 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.418297 seconds (retry 1 of 2)
+2026-10-07 12:55:58,543 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.983707 seconds (retry 2 of 2)
+2026-10-07 12:56:01,554 WARNING embedding_service [AutoNovel/testing]: Primary embedding model  failed: Connection error.. Trying fallback: 
+2026-10-07 12:56:03,599 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.441176 seconds (retry 1 of 2)
+2026-10-07 12:56:06,080 INFO openai._base_client [AutoNovel/testing]: Retrying request in 0.857973 seconds (retry 2 of 2)
+2026-10-07 12:56:08,983 WARNING embedding_service [AutoNovel/testing]: Fallback embedding model  failed: Connection error.. Using pseudo-embeddings.
+~~~~~~~~~~~~~~~~~~~~~~ Stack of loguru-writer-2 (20104) ~~~~~~~~~~~~~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\loguru\_handler.py", line 300, in _queued_writer
+    message = queue.get()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\queues.py", line 387, in get
+    res = self._reader.recv_bytes()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\connection.py", line 216, in recv_bytes
+    buf = self._recv_bytes(maxlength)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\multiprocessing\connection.py", line 321, in _recv_bytes
+    waitres = _winapi.WaitForMultipleObjects(
+~~~~~~~~~~~ Stack of Thread-789 (_connection_worker_thread) (20664) ~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\aiosqlite\core.py", line 59, in _connection_worker_thread
+    future, function = tx.get()
+~~~~~~~~~~~ Stack of Thread-771 (_connection_worker_thread) (21400) ~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\aiosqlite\core.py", line 59, in _connection_worker_thread
+    future, function = tx.get()
+~~~~~~~~~~~ Stack of Thread-751 (_connection_worker_thread) (17676) ~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\aiosqlite\core.py", line 59, in _connection_worker_thread
+    future, function = tx.get()
+~~~~~~~~~~~ Stack of Thread-702 (_connection_worker_thread) (6452) ~~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\aiosqlite\core.py", line 59, in _connection_worker_thread
+    future, function = tx.get()
+~~~~~~~~~~~ Stack of Thread-687 (_connection_worker_thread) (16148) ~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\aiosqlite\core.py", line 59, in _connection_worker_thread
+    future, function = tx.get()
+~~~~~~~~~~~ Stack of Thread-609 (_connection_worker_thread) (10152) ~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\aiosqlite\core.py", line 59, in _connection_worker_thread
+    future, function = tx.get()
+~~~~~~~~~~~ Stack of Thread-581 (_connection_worker_thread) (12508) ~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\aiosqlite\core.py", line 59, in _connection_worker_thread
+    future, function = tx.get()
+~~~~~~~~~~~ Stack of Thread-575 (_connection_worker_thread) (6904) ~~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\aiosqlite\core.py", line 59, in _connection_worker_thread
+    future, function = tx.get()
+~~~~~~~~~~~ Stack of Thread-566 (_connection_worker_thread) (13296) ~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\aiosqlite\core.py", line 59, in _connection_worker_thread
+    future, function = tx.get()
+~~~~~~~~~~~ Stack of Thread-189 (_connection_worker_thread) (15124) ~~~~~~~~~~~
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1032, in _bootstrap
+    self._bootstrap_inner()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1075, in _bootstrap_inner
+    self.run()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\threading.py", line 1012, in run
+    self._target(*self._args, **self._kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\aiosqlite\core.py", line 59, in _connection_worker_thread
+    future, function = tx.get()
+~~~~~~~~~~~~~~~~~~~~~~~~~ Stack of MainThread (9656) ~~~~~~~~~~~~~~~~~~~~~~~~~~
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pytest\__main__.py", line 9, in <module>
+    raise SystemExit(_console_main())
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\config\__init__.py", line 253, in _console_main
+    code = _main(prog=_get_prog_name(sys.argv))
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\config\__init__.py", line 229, in _main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\main.py", line 377, in pytest_cmdline_main
+    return wrap_session(config, _main)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\main.py", line 330, in wrap_session
+    session.exitstatus = doit(config, session) or 0
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\main.py", line 384, in _main
+    config.hook.pytest_runtestloop(session=session)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\main.py", line 408, in pytest_runtestloop
+    item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\runner.py", line 118, in pytest_runtest_protocol
+    runtestprotocol(item, nextitem=nextitem)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\runner.py", line 139, in runtestprotocol
+    reports.append(call_and_report(item, "call", log))
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\runner.py", line 249, in call_and_report
+    call = CallInfo.from_call(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\runner.py", line 361, in from_call
+    result: TResult | None = func()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\runner.py", line 250, in <lambda>
+    lambda: runtest_hook(item=item, **kwds),
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\runner.py", line 184, in pytest_runtest_call
+    item.runtest()
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\python.py", line 1707, in runtest
+    self.ihook.pytest_pyfunc_call(pyfuncitem=self)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\pluggy\_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\_pytest\python.py", line 167, in pytest_pyfunc_call
+    result = testfunction(**testargs)
+  File "E:\autonovel\tests\perf\test_performance_regression.py", line 182, in test_embedding_generation_1000_texts_performance
+    embeddings = [embedding_service.get_embedding(text) for text in texts]
+  File "e:\autonovel\src\services\embedding_service.py", line 173, in get_embedding
+    results = self.get_embeddings_batch([text], batch_size=1)
+  File "e:\autonovel\src\services\embedding_service.py", line 228, in get_embeddings_batch
+    response = client.embeddings.create(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\openai\resources\embeddings.py", line 113, in create
+    return self._post(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\openai\_base_client.py", line 1440, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\openai\_base_client.py", line 1148, in request
+    response = self._send_request(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\openai\_client.py", line 601, in _send_request
+    response = self._send_with_auth_retry(request, stream=stream, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\openai\_client.py", line 580, in _send_with_auth_retry
+    response = super()._send_request(request, stream=stream, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\openai\_base_client.py", line 1069, in _send_request
+    return self._client.send(request, stream=stream, **kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx2\_client.py", line 980, in send
+    response = self._send_handling_auth(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx2\_client.py", line 1008, in _send_handling_auth
+    response = self._send_handling_redirects(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx2\_client.py", line 1043, in _send_handling_redirects
+    response = self._send_single_request(request)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx2\_client.py", line 1076, in _send_single_request
+    response = transport.handle_request(request)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpx2\_transports\default.py", line 245, in handle_request
+    resp = self._pool.handle_request(req)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore2\_sync\connection_pool.py", line 224, in handle_request
+    response = connection.handle_request(pool_request.request)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore2\_sync\http_proxy.py", line 279, in handle_request
+    connect_response = self._connection.handle_request(connect_request)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore2\_sync\connection.py", line 74, in handle_request
+    stream = self._connect(request)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore2\_sync\connection.py", line 117, in _connect
+    stream = self._network_backend.connect_tcp(**kwargs)
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\site-packages\httpcore2\_backends\sync.py", line 204, in connect_tcp
+    sock = socket.create_connection(
+  File "C:\Users\user\AppData\Local\Programs\Python\Python312\Lib\socket.py", line 850, in create_connection
+    sock.connect(sa)
++++++++++++++++++++++++++++++++++++ Timeout +++++++++++++++++++++++++++++++++++

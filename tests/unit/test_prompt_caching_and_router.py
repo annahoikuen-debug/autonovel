@@ -50,7 +50,8 @@ def test_model_router():
 
     # Test tier 2 (default)
     assert resolve_optimized_model("writing", False, "free") == ROUTING_TIERS["tier2_standard"]
-    assert resolve_optimized_model("plot_expansion", False, "free") == ROUTING_TIERS["tier2_standard"]
+    # plot_expansion は LIGHT_TASK_TYPES に含まれるため tier1
+    assert resolve_optimized_model("plot_expansion", False, "free") == ROUTING_TIERS["tier1_light"]
 
     # Test tier 3 (climax or pro plan)
     assert resolve_optimized_model("writing", True, "free") == ROUTING_TIERS["tier3_premium"]

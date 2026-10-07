@@ -14,6 +14,7 @@ from src.backend.schemas.illustrations import (
 )
 from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
+from src.core.exceptions import NotFoundError
 from src.dependencies import get_illustration_workflow
 from src.models.illustration import (
     IllustrationModel,
@@ -215,6 +216,8 @@ async def batch_generate_illustrations(
         return {"task_id": task_id, "status": "queued"}
     except HTTPException:
         raise
+    except NotFoundError as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except KeyError as e:
         raise HTTPException(status_code=422, detail=f"必須パラメータがありません: {e}") from e
     except Exception as e:

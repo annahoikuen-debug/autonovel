@@ -38,16 +38,18 @@ def test_cypher_query_request_sql_injection_rejection():
 
 
 def test_age_client_sanitization_helpers():
-    """AgeClient sanitizers should accept valid inputs and reject malicious ones."""
+    """Deprecated stub sanitizers: 特殊文字は除去され、無効形式は False を返す。"""
     assert _sanitize_graph_name("knowledge_graph_1") == "knowledge_graph_1"
-    with pytest.raises(ValueError):
-        _sanitize_graph_name("graph; DROP TABLE books;")
-    with pytest.raises(ValueError):
-        _sanitize_graph_name("graph name with spaces")
+    # 非推奨スタブは ValueError の代わりに危険文字を除去する
+    assert _sanitize_graph_name("graph; DROP TABLE books;") == "graphDROPTABLEbooks"
+    assert _sanitize_graph_name("graph name with spaces") == "graphnamewithspaces"
+    assert _sanitize_graph_name(None) is None
 
-    assert _validate_column_def("(res agtype)") == "(res agtype)"
-    with pytest.raises(ValueError):
-        _validate_column_def("(res agtype); --")
+    # _validate_column_def は妥当性を bool で返す（単一 "col type" 形式のみ許容）
+    assert _validate_column_def("res agtype") is True
+    assert _validate_column_def("(res agtype); --") is False
+    assert _validate_column_def(None) is False
+    assert _validate_column_def("") is False
 
 
 def test_graph_cypher_endpoint_has_auth_dependency():

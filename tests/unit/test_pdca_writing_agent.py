@@ -19,12 +19,14 @@ class DummyRepo:
         self.chapter = DummyChapter(1, 1, content)
         self.updated_content = None
 
-    async def get_chapter(self, branch_id: int, ep_num: int):
+    async def get_chapter(self, branch_id: int, ep_num: int, book_id: int | None = None):
         return self.chapter
 
-    async def update_chapter_content(self, chapter_id: int, new_content: str):
-        self.updated_content = new_content
-        self.chapter.content = new_content
+    async def update_chapter_content(
+        self, branch_id: int, ep_num: int, content: str, book_id: int | None = None
+    ):
+        self.updated_content = content
+        self.chapter.content = content
 
 
 class DummyLLM:
@@ -32,9 +34,12 @@ class DummyLLM:
         self.rewritten_output = rewritten_output
         self.last_prompt = None
 
-    async def generate_text(self, prompt: str, system_prompt: str = None, max_tokens: int = 2000, **kwargs):
-        self.last_prompt = prompt
-        return self.rewritten_output
+    async def agenerate(self, req):
+        self.last_prompt = req.prompt
+        # LLMResponse 相当の最小オブジェクトを返す
+        from types import SimpleNamespace
+
+        return SimpleNamespace(content=self.rewritten_output)
 
 
 @pytest.mark.asyncio

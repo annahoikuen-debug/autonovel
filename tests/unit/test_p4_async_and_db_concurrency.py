@@ -176,8 +176,13 @@ class TestTasksRouterAsyncRedis:
             mock_get.return_value = mock_redis
 
             from src.backend.routers.tasks import get_task_status
+            from src.backend.database.models import User
 
-            await get_task_status("test_task")
+            # 所有権検証 (fail-closed) を通すため管理者ユーザーを注入する。
+            # 状態に `user_id` が無いタスクは管理者のみアクセス可能。
+            admin = User(id=1, email="admin@test.com", role="admin", status="active")
+
+            await get_task_status("test_task", current_user=admin)
 
             mock_get.assert_called_once()
             mock_redis.get.assert_called_once_with("task_status:test_task")

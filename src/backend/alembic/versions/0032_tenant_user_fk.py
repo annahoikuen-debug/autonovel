@@ -52,8 +52,15 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
+    # SQLite は FK 制約名を保持しないため、batch モードの反映時には
+    # naming_convention で upgrade と同じ名前を付けてから drop する。
+    conv = {
+        "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+        "uq": "uq_%(table_name)s_%(column_0_name)s",
+        "ck": "ck_%(table_name)s_%(constraint_name)s",
+    }
     for table in reversed(_TABLES):
         if not _table_exists(table) or not _has_fk(table, "user_id", "users"):
             continue
-        with op.batch_alter_table(table) as batch:
+        with op.batch_alter_table(table, naming_convention=conv) as batch:
             batch.drop_constraint(f"fk_{table}_user_id_users", type_="foreignkey")

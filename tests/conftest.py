@@ -35,6 +35,17 @@ def pytest_configure(config):
     # テスト収集時に ValidationError で全滅する。pydantic-settings は
     # 環境変数を .env より優先するので、ここで固定する。
     os.environ["HUEY_BACKEND"] = "sqlite"
+    # プレースホルダーのダミー API キー (.env.example 由来) をクリアする。
+    # これが残っていると ImageService などが「キーあり」と誤判定し、
+    # テストが実ネットワークやダミーキー前提の挙動を経由して失敗する。
+    for _key in ("OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_GENAI_API_KEY",
+                 "GOOGLE_API_KEY", "ANTHROPIC_API_KEY"):
+        _val = os.environ.get(_key, "")
+        if not _val or "your_" in _val.lower() or _val.lower() in {"test", "dummy", "changeme"}:
+            os.environ.pop(_key, None)
+    # .env ファイル由来のダミーキーも読み込まれないよう明示的に空に固定する。
+    os.environ["OPENAI_API_KEY"] = ""
+    os.environ["GEMINI_API_KEY"] = ""
 
     def dummy_init_db(*args, **kwargs):
         pass

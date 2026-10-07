@@ -48,9 +48,22 @@ def upgrade() -> None:
     op.create_index(op.f("ix_cost_log_timestamp"), "cost_consumption_logs", ["timestamp"], unique=False)
 
 
+def _index_exists(table_name: str, index_name: str) -> bool:
+    inspector = sa.inspect(op.get_bind())
+    if table_name not in inspector.get_table_names():
+        return False
+    return any(ix["name"] == index_name for ix in inspector.get_indexes(table_name))
+
+
 def downgrade() -> None:
     if _table_exists("cost_consumption_logs"):
-        op.drop_index(op.f("ix_cost_log_timestamp"), table_name="cost_consumption_logs")
-        op.drop_index(op.f("ix_cost_log_agent_name"), table_name="cost_consumption_logs")
-        op.drop_index(op.f("ix_cost_log_book_id"), table_name="cost_consumption_logs")
+        # create_all 由来の idx_* と本リビジョンの ix_* が混在し得るため、
+        # 実在する index だけを落とす（冪等）。
+        for index_name in (
+            op.f("ix_cost_log_timestamp"),
+            op.f("ix_cost_log_agent_name"),
+            op.f("ix_cost_log_book_id"),
+        ):
+            if _index_exists("cost_consumption_logs", index_name):
+                op.drop_index(index_name, table_name="cost_consumption_logs")
         op.drop_table("cost_consumption_logs")

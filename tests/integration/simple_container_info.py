@@ -22,11 +22,11 @@ def test_container_info(postgres_container, redis_container, chromadb_container)
         print(f"Error getting Redis port: {e}")
 
     print("\n=== ChromaDB ===")
-    print(f"Host: {chadb_container.get_container_host_ip()}")
+    print(f"Host: {chromadb_container.get_container_host_ip()}")
     try:
-        port = chadb_container.get_exposed_port(8000)
+        port = chromadb_container.get_exposed_port(8000)
         print(f"Port 8000: {port}")
     except Exception as e:
         print(f"Error getting ChromaDB port: {e}")
         # Let's try to see what ports ARE exposed
-        print("Container ID:", chadb_container.get_container_id())
+        print("Container ID:", chromadb_container.get_container_id())

@@ -104,13 +104,39 @@ class IllustrationAgent(SkillAgent):
         raise ValueError("Invalid or missing illustration request")
 
     async def run(self, **kwargs) -> dict[str, Any]:
-        """エージェントのメイン実行ロジック (将来の画像生成用)。
+        """エージェントのメイン実行ロジック。
 
         kwargs:
             - request: IllustrationRequest
+
+        image_service が利用可能な場合は実画像を生成し、
+        生成に失敗した場合はプロンプトのみを返すフォールバックに落ちる。
         """
-        # 現在は画像生成未実装。プロンプトのみ返す generate_prompt_only を使用
-        return await self.generate_prompt_only(**kwargs)
+        request = self._coerce_request(kwargs.get("request"))
+        try:
+            kind = _type_value(request.illustration_type)
+            if kind == IllustrationType.COVER.value:
+                result = await self._generate_cover(request)
+            elif kind == IllustrationType.CHARACTER.value:
+                result = await self._generate_character(request)
+            elif kind == IllustrationType.YONKOMA.value:
+                result = await self._generate_episode(request)
+            else:
+                result = await self._generate_episode(request)
+
+            illustration_id = await self._persist(request, result)
+            result.illustration_id = illustration_id
+            return {
+                "status": "success",
+                "result": result,
+                "prompt": result.prompt,
+                "image_generated": True,
+            }
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                "IllustrationAgent: 画像生成に失敗したため prompt のみ返します: %s", e
+            )
+            return await self.generate_prompt_only(request=request)
 
     async def generate_prompt_only(self, **kwargs) -> dict[str, Any]:
         """プロンプトのみ生成するメソッド (画像生成は将来実装)。

@@ -92,7 +92,14 @@ def downgrade() -> None:
     if _index_exists("tasks", _INDEX_NAME):
         op.drop_index(_INDEX_NAME, table_name="tasks")
     if _has_fk("tasks", "user_id", "users"):
-        with op.batch_alter_table("tasks") as batch:
+        # SQLite は FK 制約名を保持しないため、batch モードの反映時には
+        # naming_convention で upgrade と同じ名前を付けてから drop する。
+        conv = {
+            "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+            "uq": "uq_%(table_name)s_%(column_0_name)s",
+            "ck": "ck_%(table_name)s_%(constraint_name)s",
+        }
+        with op.batch_alter_table("tasks", naming_convention=conv) as batch:
             batch.drop_constraint(_CONSTRAINT_NAME, type_="foreignkey")
     if _column_exists("tasks", "user_id"):
         with op.batch_alter_table("tasks") as batch:

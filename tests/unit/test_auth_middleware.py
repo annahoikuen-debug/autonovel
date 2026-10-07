@@ -38,7 +38,10 @@ def test_public_path_allows_unauthenticated(test_app):
     assert res.json() == {"status": "ok"}
 
 
-def test_protected_path_rejects_unauthenticated(test_app):
+def test_protected_path_rejects_unauthenticated(test_app, monkeypatch):
+    # conftest.py が全テストに AUTH_DISABLED=true を適用するため、
+    # 認証経路を検証する本テストでは明示的に無効化する
+    monkeypatch.setattr(settings, "AUTH_DISABLED", False)
     client = TestClient(test_app)
     res = client.get("/api/protected-resource")
     assert res.status_code == 401
@@ -53,7 +56,10 @@ def test_protected_path_allows_valid_jwt(test_app):
     assert res.json() == {"data": "secret"}
 
 
-def test_protected_path_rejects_invalid_jwt(test_app):
+def test_protected_path_rejects_invalid_jwt(test_app, monkeypatch):
+    # conftest.py が全テストに AUTH_DISABLED=true を適用するため、
+    # 認証経路を検証する本テストでは明示的に無効化する
+    monkeypatch.setattr(settings, "AUTH_DISABLED", False)
     client = TestClient(test_app)
     res = client.get("/api/protected-resource", headers={"Authorization": "Bearer invalid.token.payload"})
     assert res.status_code == 401

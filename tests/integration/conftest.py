@@ -8,11 +8,22 @@ import redis
 from pathlib import Path
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+def _docker_available() -> bool:
+    """Docker デーモンに接続できるか判定する (testcontainers 実行の前提条件)."""
+    try:
+        import docker as _docker
+
+        _docker.from_env().ping()
+        return True
+    except Exception:
+        return False
+
+
 try:
     from testcontainers.core.container import DockerContainer
     from testcontainers.postgres import PostgresContainer
     from testcontainers.redis import RedisContainer
-    HAS_TESTCONTAINERS = True
+    HAS_TESTCONTAINERS = _docker_available()
 except ImportError:
     DockerContainer = None
     PostgresContainer = None
@@ -114,6 +125,8 @@ def postgres_session(postgres_engine):
 @pytest.fixture(scope="session")
 def redis_container():
     """Redis コンテナをセッションスコープで起動."""
+    if not HAS_TESTCONTAINERS:
+        pytest.skip("testcontainers/Docker is not available")
     with RedisContainer("redis:7-alpine") as redis:
         yield redis
 
@@ -133,6 +146,8 @@ def redis_client(redis_container):
 @pytest.fixture(scope="session")
 def chromadb_container():
     """ChromaDB コンテナをセッションスコープで起動."""
+    if not HAS_TESTCONTAINERS:
+        pytest.skip("testcontainers/Docker is not available")
     with DockerContainer("chromadb/chroma:latest") as chromadb:
         chromadb.with_exposed_ports(8000)
         chromadb.with_command("chroma run --host 0.0.0.0 --port 8000")
@@ -152,7 +167,7 @@ def chromadb_container():
 
 
 @pytest.fixture
-def chromadb_client(chadb_container):
+def chromadb_client(chromadb_container):
     """ChromaDB クライアントフィクスチャ (テストごとにインスタンスを提供)."""
     # Wait a bit more for ChromaDB to fully initialize
     time.sleep(2)
@@ -166,11 +181,11 @@ def chromadb_client(chadb_container):
         yield None
         return
 
-    chadb_container.get_container_host_ip()
-    chadb_container.get_exposed_port(8000)
+    host = chromadb_container.get_container_host_ip()
+    port = chromadb_container.get_exposed_port(8000)
 
     # Create ChromaDB client
-    client = chromadb.HttpClient(host=chadb_host, port=int(chadb_port))
+    client = chromadb.HttpClient(host=host, port=int(port))
 
     # Test connection
     try:

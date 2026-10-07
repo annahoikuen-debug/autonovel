@@ -22,6 +22,24 @@ class ImageService:
     生成を担う。モデルIDは config.imagen_models を介して解決する。
     """
 
+    #: プレースホルダーとみなすダミーキーの目印 (部分一致・小文字比較)。
+    _PLACEHOLDER_KEY_MARKERS: tuple[str, ...] = (
+        "your_",
+        "changeme",
+        "change_me",
+        "example",
+        "dummy",
+        "placeholder",
+    )
+
+    @classmethod
+    def _is_placeholder_key(cls, key: str) -> bool:
+        """ダミー/プレースホルダーの API キーか判定する (保守的・部分一致)."""
+        k = key.strip().lower()
+        if not k or k == "none":
+            return True
+        return any(marker in k for marker in cls._PLACEHOLDER_KEY_MARKERS)
+
     def __init__(
         self,
         api_key: str | None = None,
@@ -29,9 +47,10 @@ class ImageService:
         default_model: str = "fast",
     ):
         resolved_key = api_key
-        if not resolved_key:
+        if not resolved_key or self._is_placeholder_key(resolved_key):
             from src.backend.config import settings
-            resolved_key = settings.get_gemini_api_key()
+            candidate = settings.get_gemini_api_key()
+            resolved_key = candidate if candidate and not self._is_placeholder_key(candidate) else None
         if not resolved_key:
             raise ValueError(
                 "ImageService requires a non-empty api_key. "

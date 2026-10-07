@@ -138,7 +138,7 @@ class TestSceneContinuityTracker:
         # Ep 2: Third person
         text_ep2 = "グレースは静かに空を見上げた。"
         issues = tracker.check_perspective_continuity(2, "Grace", text_ep2)
-        assert any("視点が変更" in issue for issue in issues)
+        assert any("視点警告" in issue for issue in issues)
 
     def test_time_continuity(self, temp_db):
         tracker = SceneContinuityTracker(db_path=temp_db)
