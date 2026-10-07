@@ -2,6 +2,8 @@
 
 import pytest
 from datetime import datetime, timedelta
+from unittest.mock import patch
+
 from src.domain.entities.review_session import ReviewRound, ReviewSession
 
 
@@ -58,14 +60,30 @@ class TestReviewSession:
     def test_add_round_updates_timestamp(self):
         session = ReviewSession(request_id="req_123")
         initial_updated = session.updated_at
-        round_ = ReviewRound(
-            round_number=0,
-            timestamp=datetime.now(),
-            plan_scores={"plan_a": 85.0},
-            plan_critiques={},
-            gate_config_hash="abc123",
-        )
-        session.add_round(round_)
+        # 連続する `datetime.now()` が同一値を返す環境
+        # （Windows のクロック解像度が粗い場合等）では
+        # `updated_at > initial_updated` が成立しない。
+        # クロックを確実に前進させてから add_round させる。
+        fake_now = initial_updated + timedelta(seconds=1)
+
+        class _AdvancingDatetime:
+            @staticmethod
+            def now():
+                nonlocal fake_now
+                current = fake_now
+                fake_now = fake_now + timedelta(seconds=1)
+                return current
+
+        with patch("src.domain.entities.review_session.datetime", _AdvancingDatetime):
+            round_ = ReviewRound(
+                round_number=0,
+                timestamp=_AdvancingDatetime.now(),
+                plan_scores={"plan_a": 85.0},
+                plan_critiques={},
+                gate_config_hash="abc123",
+            )
+            session.add_round(round_)
+
         assert session.updated_at > initial_updated
         assert len(session.rounds) == 1
 

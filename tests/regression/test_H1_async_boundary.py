@@ -39,6 +39,11 @@ ALLOWLIST: dict[str, str] = {
         "argparse の main()。プロセス起動時に 1 回だけ呼ばれる同期 entry point。"
         "TODO(H1-6): なし（構造的に安全）"
     ),
+    "src/cli/generate_command.py": (
+        "argparse の main()。プロセス起動時に 1 回だけ呼ばれる同期 entry point。"
+        "`asyncio.run(_run(args))` はプロセス起動時のエントリーポイントとして安全。"
+        "TODO(H1-6): なし（構造的に安全）"
+    ),
     "src/infrastructure/api/api_client.py": (
         "close_client() はアプリケーション終了時の同期ファサード。"
         "docstring が「実行中のイベントループがないコンテキスト」を前提と明記し、"

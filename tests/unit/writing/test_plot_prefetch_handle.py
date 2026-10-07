@@ -35,6 +35,13 @@ async def test_handle_is_kept_when_expander_returns_task():
     writer._track_plot_prefetch(task)
     assert len(holder["kw"]) == 3
     await asyncio.sleep(0.01)
+    # done callback は `loop.call_soon` でスケジュールされるため、
+    # タスク完了からさらに 1 サイクル必要。ループの進行速度に
+    # 依存しないよう、片付くまで上限付きで待つ。
+    for _ in range(100):
+        if not writer._plot_prefetch_tasks:
+            break
+        await asyncio.sleep(0)
     assert len(writer._plot_prefetch_tasks) == 0  # 完了後は必ず片付く
 
 
@@ -54,6 +61,10 @@ async def test_long_running_handle_is_retained_until_done():
     assert task in writer._plot_prefetch_tasks  # 握り潰していない
     task.cancel()
     await asyncio.sleep(0.01)
+    for _ in range(100):
+        if not writer._plot_prefetch_tasks:
+            break
+        await asyncio.sleep(0)
     assert len(writer._plot_prefetch_tasks) == 0
 
 

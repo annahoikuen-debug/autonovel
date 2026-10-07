@@ -1,14 +1,8 @@
 {
   "tier1_failing_files": [
-    "tests/regression/test_H1_async_boundary.py",
-    "tests/regression/test_lint_budget.py",
     "tests/regression/test_t6_plan_completion.py",
-    "tests/unit/backend/test_backend_database_core.py",
-    "tests/unit/database/test_database_manager.py",
-    "tests/unit/infrastructure/test_api_client_endpoints.py",
     "tests/unit/nlp/test_predicate_analyzer_fallback.py",
     "tests/unit/pipeline/test_prompt_builder.py",
-    "tests/unit/services/test_episode_context_session_resolution.py",
     "tests/unit/test_auth_middleware.py",
     "tests/unit/test_health_endpoints.py",
     "tests/unit/test_huey_queue.py",
@@ -21,34 +15,6 @@
     "tests/unit/test_prompt_caching_and_router.py",
     "tests/unit/test_repository_concurrency.py",
     "tests/unit/test_security_patches.py"
-  ],
-  "tier1_failing_files_bulk_run": [
-    "tests/regression/test_H1_async_boundary.py",
-    "tests/regression/test_lint_budget.py",
-    "tests/regression/test_t6_plan_completion.py",
-    "tests/unit/backend/test_backend_database_core.py",
-    "tests/unit/database/test_database_manager.py",
-    "tests/unit/infrastructure/test_api_client_endpoints.py",
-    "tests/unit/nlp/test_predicate_analyzer_fallback.py",
-    "tests/unit/pipeline/test_prompt_builder.py",
-    "tests/unit/services/test_episode_context_session_resolution.py",
-    "tests/unit/test_auth_middleware.py",
-    "tests/unit/test_health_endpoints.py",
-    "tests/unit/test_huey_queue.py",
-    "tests/unit/test_marketing_agent.py",
-    "tests/unit/test_narrative_spine_enforcement.py",
-    "tests/unit/test_p1_fixes.py",
-    "tests/unit/test_p4_async_and_db_concurrency.py",
-    "tests/unit/test_pdca_writing_agent.py",
-    "tests/unit/test_problem_details.py",
-    "tests/unit/test_prompt_caching_and_router.py",
-    "tests/unit/test_repository_concurrency.py",
-    "tests/unit/test_security_patches.py"
-  ],
-  "tier1_failing_files_isolated": [
-    "tests/regression/test_H1_async_boundary.py",
-    "tests/regression/test_lint_budget.py",
-    "tests/regression/test_t6_plan_completion.py"
   ],
   "note": "Tier1 の既知の失敗ファイル。新たな失敗が 1 件でも出たら fail する。ファイルを直したら必ずこのリストからも削除すること。既存ファイルをリストに足すのは自己申告であり防御にならない。bulk_run = 一括実行での失敗、isolated = 単独実行での失敗。差分があるファイルは順序依存を持つ（他テストの import 副作用）。"
 }

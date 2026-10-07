@@ -6,7 +6,9 @@ from typing import Any
 
 from src.agents.plot import PlotAgent as PlotExpander
 from src.backend.config import settings as _settings
+from src.backend.database.uow_context import current_uow
 from src.backend.engine_utils import safe_get, safe_model_validate
+from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
 from src.models import (
     ArcBlueprint,
     ArcList,
@@ -20,6 +22,8 @@ from src.models import (
     WorldRules,
 )
 from src.models.planning_config import PlanningConfig
+from src.services.foreshadowing.flags import is_foreshadowing_planting_enabled
+from src.services.foreshadowing.planting_service import plant_from_roadmap
 
 try:
     from config.domain_profile_manager import DomainProfileService
@@ -309,6 +313,65 @@ class WorldBibleGenerator:
                 book_id, bible_obj = await self._create_standard_plan(config, reporter)
             return book_id, bible_obj
 
+    async def _plant_foreshadowings_from_roadmap(
+        self,
+        book_id: int,
+        bible_obj: WorldBible,
+        total_episodes: int,
+    ) -> None:
+        """``full_story_roadmap`` から伏線を自動設置する（フラグ制御）。
+
+        ``FORESHADOW_PLANTING`` が OFF（既定）なら何もしない。
+        ON のときは **現在の UoW トランザクションと同じセッション** で
+        設置する。``create_hegemony_plan`` は ``UnitOfWork`` の中で
+        本メソッドの呼び出し元（``_create_*_plan``）を実行しており、
+        book 行はまだコミットされていない。別セッションで設置すると
+        ``PRAGMA foreign_keys=ON`` の下で FK 参照先が見えず
+        ``database is locked`` / FK 違反になる（実測済み）。
+        同一セッションなら book・Bible・伏線が原子的にコミットされる。
+
+        設置失敗で Bible 生成全体を落とさない（非致命）。
+        """
+        if not is_foreshadowing_planting_enabled():
+            return
+
+        roadmap_items = getattr(bible_obj, "full_story_roadmap", None) or []
+        if not roadmap_items:
+            return
+
+        uow = current_uow.get()
+        session = getattr(uow, "session", None) if uow is not None else None
+        try:
+            if session is not None:
+                # UoW トランザクション内: commit せず flush まで。
+                # UoW.__aexit__ が book / Bible とまとめてコミットする。
+                fs_repo = DbForeshadowingRepository(session)
+                await plant_from_roadmap(
+                    repo=fs_repo,
+                    book_id=book_id,
+                    roadmap_items=roadmap_items,
+                    total_episodes=total_episodes,
+                    planting_enabled=True,
+                )
+            else:
+                # UoW 外の防御経路（現状の呼び出し元は存在しない）。
+                # この場合 book は既にコミット済みなので別セッションで安全。
+                async with self.repo.db.get_session() as owned_session:
+                    fs_repo = DbForeshadowingRepository(owned_session)
+                    await plant_from_roadmap(
+                        repo=fs_repo,
+                        book_id=book_id,
+                        roadmap_items=roadmap_items,
+                        total_episodes=total_episodes,
+                        planting_enabled=True,
+                    )
+                    await fs_repo.commit()
+        except Exception as e:
+            logger.warning(
+                f"伏線自動設置に失敗しました（Bible 生成は継続）: "
+                f"book_id={book_id} error={e}"
+            )
+
     async def _create_ultra_fast_plan(self, config: PlanningConfig, reporter) -> tuple[int, WorldBible]:
         if reporter:
             reporter.report("⚡ 超高速モード（統合プランニング）を起動しました...", "info")
@@ -370,6 +433,15 @@ class WorldBibleGenerator:
             marketing_data=bible_obj.marketing_assets.model_dump() if bible_obj.marketing_assets else {},
         )
         await self.repo.save_full_world_bible(bible_obj, book_id=book_id)
+
+        # 伏線自動設置（FORESHADOW_PLANTING が OFF なら副作用ゼロ）。
+        # UoW トランザクション内の同一セッションで設置するため、
+        # book 行のコミット待ちを発生させない。
+        await self._plant_foreshadowings_from_roadmap(
+            book_id=book_id,
+            bible_obj=bible_obj,
+            total_episodes=config.target_eps,
+        )
 
         if config.initial_plot_limit > 0:
             ep_list = list(range(1, config.initial_plot_limit + 1))
@@ -485,6 +557,13 @@ class WorldBibleGenerator:
             system_assist=config.system_assist,
             cost_severity=config.cost_severity,
             target_eps=config.target_eps,
+        )
+
+        # 伏線自動設置（FORESHADOW_PLANTING が OFF なら副作用ゼロ）。
+        await self._plant_foreshadowings_from_roadmap(
+            book_id=book_id,
+            bible_obj=bible_obj,
+            total_episodes=config.target_eps,
         )
 
         if config.initial_plot_limit > 0:

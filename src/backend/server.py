@@ -79,6 +79,16 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     """アプリケーション起動時にログ設定と DB 初期化を行う lifespan ハンドラ。"""
     configure_logging()
     init_db()
+    # 認証無効化は本番では起動拒否される（config.py のバリデータ）が、
+    # 開発 / staging では黙って通る。設定し忘れを検知不能にしないため、
+    # 起動時に必ず警告を出す（LLM キー欠落の warning と同じ階層）。
+    if settings.AUTH_DISABLED:
+        logger.warning(
+            "[SECURITY WARNING] AUTH_DISABLED=true: authentication is BYPASSED "
+            "and every request is treated as an admin user. "
+            "This must never be enabled in a reachable environment. "
+            "Remove it from .env immediately if this is unexpected."
+        )
     # Step 46: Huey タスクキュー接続確認
     try:
         from src.backend.tasks.huey import check_huey_health
