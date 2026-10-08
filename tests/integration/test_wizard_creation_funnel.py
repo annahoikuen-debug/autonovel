@@ -155,7 +155,11 @@ def test_wizard_creation_funnel_full_flow(client: TestClient) -> None:
         )
         assert resp.status_code == 200
         beats = resp.json()
-        assert len(beats) == 12
+        # 12ステップ固定は廃止。STORY_SPINE (resolve_spine) が解決した
+        # 構造テンプレートの beat 数だけ受け付ける（web_volume/20話 → 11 beat）。
+        assert len(beats) >= 1
+        assert all("cliffhanger_type" in b for b in beats)
+        assert all("sensory_focus" in b for b in beats)
 
     # Step 2: ビート確定（ウィザード保存）
     wizard_payload = {
@@ -218,12 +222,10 @@ def test_wizard_creation_funnel_error_cases(client: TestClient) -> None:
             "/api/plots/expand-beats",
             json={"title": "テスト", "genre": "fantasy"},
         )
-        assert resp.status_code == 200
-        beats = resp.json()
-        # フォールバック12ステップが返る
-        assert len(beats) == 12
-        assert all("cliffhanger_type" in b for b in beats)
-        assert all("sensory_focus" in b for b in beats)
+        # LLM 呼び出しの失敗（認証エラー・レート制限・プロバイダ障害）は
+        # 縮退の根拠にならない。「モデルが出力した」と「API キーが無効」を
+        # クライアントが区別できるよう 502 Bad Gateway で返すのが仕様。
+        assert resp.status_code == 502
 
     # 不正なchapter_idでのストリーム接続 → SSEエラーイベント
     resp = client.get("/api/stream/writing/999/999?branch_id=999")

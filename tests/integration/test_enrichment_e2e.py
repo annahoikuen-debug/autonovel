@@ -209,6 +209,23 @@ class TestEnrichmentE2E:
 class TestEnrichmentFallback:
     """フォールバック動作テスト"""
 
+    @pytest.fixture
+    def sample_context(self):
+        """サンプルコンテキスト (TestEnrichmentE2E と同様の最小構成)。"""
+        return AgentContext(
+            book_id=1,
+            branch_id=1,
+            ep_num=1,
+            artifacts={
+                "drafted_text": "主人公は魔法システムAを使って敵と戦った。悲しかったが剣を振るった。",
+                "writing_context": {
+                    "location": "決戦の野",
+                    "characters": ["主人公", "敵将軍"],
+                    "pov": "third_person",
+                },
+            },
+        )
+
     @pytest.mark.asyncio
     async def test_rag_failure_fallback(self, sample_context):
         """RAG失敗時のフォールバック"""

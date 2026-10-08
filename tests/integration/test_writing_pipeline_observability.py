@@ -124,7 +124,10 @@ async def test_foreshadowing_failure_is_actually_logged(caplog, monkeypatch):
     """伏線自動回収で例外が出ても warning が記録されること。"""
 
     class _BoomRepo:
-        session = object()
+        # _is_usable_async_session は run_sync 属性（AsyncSession 固有）で
+        # 判定するため、object() だと「スキップ」警告になり
+        # get_unresolved に到達しない。MagicMock は全属性を持つので通る。
+        session = MagicMock()
 
         async def get_unresolved(self, book_id):
             raise RuntimeError("伏線読み込みに失敗")

@@ -81,14 +81,15 @@ A goes to B.
         count = persistence.persist_beats(parsed.beats, 15)
         assert count == 2
 
-        # VectorStoreに保存確認
-        stored = vector_store.get_latest("annotation", ("A", "B"))
-        assert stored is not None
-
-        fear_val = stored.get_value("A", "B", EmotionType.FEAR)
+        # VectorStoreに保存確認（ペアごとに get_latest で取得）
+        stored_ab = vector_store.get_latest("annotation", ("A", "B"))
+        assert stored_ab is not None
+        fear_val = stored_ab.get_value("A", "B", EmotionType.FEAR)
         assert fear_val == 0.8
 
-        sadness_val = stored.get_value("B", "A", EmotionType.SADNESS)
+        stored_ba = vector_store.get_latest("annotation", ("B", "A"))
+        assert stored_ba is not None
+        sadness_val = stored_ba.get_value("B", "A", EmotionType.SADNESS)
         assert sadness_val == 0.6
 
     def test_annotation_priority_in_prompt(self, vector_store):
@@ -110,13 +111,16 @@ A goes to B.
         vector_store.upsert("pipeline", "ep15", pipe_vec)
 
         # 4. fused prompt で優先度確認
-        fused_prompt = build_fused_emotional_context_prompt(16, vector_store)
+        fused_prompt = build_fused_emotional_context_prompt(16, vector_store=vector_store)
 
         # annotationの値（0.8）が採用される
         assert "0.8" in fused_prompt
-        # rule_engineの-0.5やpipelineの0.2は採用されない
-        assert "-0.5" not in fused_prompt
-        assert "0.2" not in fused_prompt
+        # 融合済みセクションで annotation が primary_source として採用される
+        assert "[annotation]" in fused_prompt
+        # rule_engineやpipelineの値は「矛盾検出（要確認）」セクションに
+        # 出力こそされるが、融合値としては採用されない
+        assert "[rule_engine]" not in fused_prompt
+        assert "[pipeline]" not in fused_prompt
 
     def test_annotation_only_prompt(self, vector_store):
         """annotationのみの場合"""
@@ -125,10 +129,12 @@ A goes to B.
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.FEAR, 0.8, 0.9, "...", "ep14", "ep14 betrayal"))
         vector_store.upsert("annotation", "ep14", vec)
 
-        prompt = build_fused_emotional_context_prompt(15, vector_store)
+        prompt = build_fused_emotional_context_prompt(15, vector_store=vector_store)
 
         assert "0.8" in prompt
-        assert "fear" in prompt
+        # テンプレートは日本語感情名で描画する
+        assert "恐怖" in prompt
+        assert "[annotation]" in prompt
 
     def test_rule_engine_fallback(self, vector_store):
         """annotationなしの場合rule_engineが使われる"""
@@ -137,7 +143,7 @@ A goes to B.
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.FEAR, -0.5, 0.5, "...", "ep14"))
         vector_store.upsert("rule_engine", "ep14", vec)
 
-        prompt = build_fused_emotional_context_prompt(15, vector_store)
+        prompt = build_fused_emotional_context_prompt(15, vector_store=vector_store)
 
         assert "-0.5" in prompt
 
@@ -148,16 +154,16 @@ A goes to B.
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.FEAR, 0.2, 0.3, "...", "ep14"))
         vector_store.upsert("pipeline", "ep14", vec)
 
-        prompt = build_fused_emotional_context_prompt(15, vector_store)
+        prompt = build_fused_emotional_context_prompt(15, vector_store=vector_store)
 
         assert "0.2" in prompt
 
     def test_empty_prompt(self, vector_store):
         """データなしの場合"""
-        prompt = build_fused_emotional_context_prompt(1, vector_store)  # ep0は存在しない
+        prompt = build_fused_emotional_context_prompt(1, vector_store=vector_store)  # ep0は存在しない
         assert prompt == ""
 
-        prompt = build_fused_emotional_context_prompt(99, vector_store)  # 存在しないep
+        prompt = build_fused_emotional_context_prompt(99, vector_store=vector_store)  # 存在しないep
         assert prompt == ""
 
     def test_graph_log_consistency(self, vector_store):

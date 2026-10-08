@@ -92,7 +92,10 @@ class PlanStep(WorkflowStep):
             ctx.title = bible.title
 
             # 易パラメータ保存 (可視化・遷移用)
-            ctx.easy_parameters = {
+            # 既存の easy_parameters（enable_erotic / erotic_intensity 等、
+            # EasyMode や pipeline_param_mapper が設定した値）は保持し、
+            # 上書きしない。丸ごと置き換えると官能設定が消える。
+            new_params = {
                 "genre": ctx.genre,
                 "archetype": ctx.archetype_key,
                 "style_key": get_style_key(preset),
@@ -104,6 +107,9 @@ class PlanStep(WorkflowStep):
                 "tone_vibe": ctx.tone_vibe,
                 "preset_name": ctx.preset_name,
             }
+            if ctx.easy_parameters:
+                new_params.update(ctx.easy_parameters)
+            ctx.easy_parameters = new_params
 
             # カタルシスパターン情報保存 (FullAuto 由来)
             if ctx.enable_catharsis_analysis:

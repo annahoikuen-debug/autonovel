@@ -11,7 +11,7 @@ env:
   NODE_VERSION: "20"
 
 jobs:
-  backend:
+  test:
     name: Backend Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -125,7 +125,7 @@ jobs:
     name: Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [backend, frontend]
+    needs: [test, frontend]
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -172,15 +172,69 @@ jobs:
           AUTH_DISABLED: "true"
           AUTONOVEL_RAG_MODE: memory
 
+  static-analysis:
+    name: Static Analysis (Ratchet)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev,rag]"
+          pip install pytest-timeout
+
+      - name: Run lint ratchet (hard gate)
+        run: |
+          python scripts/ci_lint_ratchet.py
+
+      - name: Run tier ratchet (hard gate)
+        run: |
+          python scripts/ci_tier_ratchet.py
+
+      - name: Run marker-filtered regression tests
+        run: |
+          pytest -q -m "not perf and not slow and not flaky" tests/regression --tb=short --timeout=120
+
+  release-consistency:
+    name: Release Consistency
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev]"
+          pip install pytest-timeout
+
+      - name: Run release consistency tests
+        run: |
+          pytest tests/regression/test_v5_version_consistency.py tests/regression/test_tenant_fk_integrity.py tests/regression/test_H1_tautology_guard.py tests/regression/test_server_route_mount_parity.py -v --tb=short --timeout=120
+
   verify:
     name: Verify All Checks
     runs-on: ubuntu-latest
-    needs: [backend, frontend, integration]
+    needs: [test, frontend, integration, static-analysis, release-consistency]
     if: always()
     steps:
       - name: Check job status
         run: |
-          if [ "${{ needs.backend.result }}" != "success" ] || [ "${{ needs.frontend.result }}" != "success" ] || [ "${{ needs.integration.result }}" != "success" ]; then
+          if [ "${{ needs.test.result }}" != "success" ] || [ "${{ needs.frontend.result }}" != "success" ] || [ "${{ needs.integration.result }}" != "success" ] || [ "${{ needs.static-analysis.result }}" != "success" ] || [ "${{ needs.release-consistency.result }}" != "success" ]; then
             echo "Some jobs failed"
             exit 1
           fi

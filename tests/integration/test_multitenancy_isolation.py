@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.backend.server import app
-from src.backend.database import get_db
+from src.backend.database import get_db, get_async_db
 from src.backend.database.models import Base, User
 from src.backend.security.jwt import create_access_token
 from src.backend.security.password import hash_password
@@ -32,17 +32,26 @@ async def override_get_db():
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def init_test_db():
+async def init_test_db(monkeypatch):
+    # tests/conftest.py が AUTH_DISABLED=true を設定するため、
+    # マルチテナント隔離テストでは認証を有効化（＝バイパス無効化）する。
+    from src.backend.config import settings as _settings
+
+    monkeypatch.setattr(_settings, "AUTH_DISABLED", False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     # AppContainer の db をテスト用セッションファクトリに差し替え
     original_db = AppContainer.db
     AppContainer.db = TestingSessionLocal
+    # `get_current_user` は `get_async_db` を使うため、こちらも差し替えないと
+    # 本番 DB に接続して認証ユーザー解決が壊れる（IDOR 判定が意味を失う）。
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_async_db] = override_get_db
 
     yield
 
     app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_async_db, None)
     AppContainer.db = original_db
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

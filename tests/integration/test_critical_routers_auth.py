@@ -27,7 +27,13 @@ async def override_get_db():
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def setup_db():
+async def setup_db(monkeypatch):
+    # tests/conftest.py の pytest_configure がグローバルに AUTH_DISABLED=true を
+    # 設定するため、認証境界テストでは明示的に無効化（＝認証を有効化）する。
+    # settings は import 時に確定しているため、属性を直接差し替える。
+    from src.backend.config import settings as _settings
+
+    monkeypatch.setattr(_settings, "AUTH_DISABLED", False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     original_db = AppContainer.db

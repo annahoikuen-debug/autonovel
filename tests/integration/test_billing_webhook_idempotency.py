@@ -7,7 +7,7 @@ from sqlalchemy.pool import StaticPool
 from unittest.mock import patch, MagicMock
 
 from src.backend.server import app
-from src.backend.database import get_db
+from src.backend.database import get_db, get_async_db
 from src.backend.database.models import Base, User
 from src.core.container import AppContainer
 
@@ -33,11 +33,26 @@ async def setup_db():
     original_db = AppContainer.db
     AppContainer.db = TestingSessionLocal
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_async_db] = override_get_db
     yield
     app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_async_db, None)
     AppContainer.db = original_db
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+
+@pytest.fixture(autouse=True)
+def allow_unsigned_webhooks(monkeypatch):
+    """署名検証を省略する明示的オプトイン (ALLOW_UNSIGNED_WEBHOOKS=true) を有効にする。
+
+    本テストは署名検証ではなくべき等性（イベントID単位の重複排除）を対象とする。
+    tests/conftest.py は ALLOW_UNSIGNED_WEBHOOKS を設定しないため、
+    Webhook シークレット未設定の環境では 400 になるのを防ぐ。
+    """
+    from src.backend.routers import billing_webhook
+    monkeypatch.setattr(billing_webhook, "WEBHOOK_SECRET", "")
+    monkeypatch.setattr(billing_webhook, "ALLOW_UNSIGNED_WEBHOOKS", True)
 
 
 @pytest.mark.asyncio

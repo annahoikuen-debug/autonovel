@@ -181,9 +181,10 @@ class TestRelationalMemoryE2E:
         assert context_ep3["layer2_summary"]["unresolved_foreshadowings"][0]["title"] == "聖剣エクスカリバー"
 
         # --- Step 5: 第3話本文生成後の伏線自動回収 ---
-        # 回収キーワード「聖剣エクスカリバー」「正体」を含む本文
+        # 回収キーワード「聖剣エクスカリバー」＋ RESOLVED 述語「明らかになる」を含む本文
+        # （「知る」は MENTION_ONLY 述語のため、回収トリガーにはならない）
         draft_text_ep3 = (
-            "アルスは剣を振り上げ、その正体が伝説の聖剣エクスカリバーであることを知った。"
+            "アルスは剣を振り上げ、その正体が伝説の聖剣エクスカリバーであることが明らかになった。"
             "剣は光を放ち、古の力が覚醒した。"
         )
 
@@ -373,13 +374,17 @@ class TestRelationalMemoryE2E:
         mock_session.execute.side_effect = mock_execute_error
 
         # コンテキスト構築時のエラーハンドリング
-        # 実装では例外が伝播するため、呼び出し側でtry/exceptが必要
-        with pytest.raises(Exception, match="Database connection failed"):
-            await episode_context_builder.build_context(
-                book_id=1,
-                ep_num=1,
-                target_word_count=3000,
-            )
+        # 実装 (_safe_execute) は DB エラーをグレースフルデグレード
+        # （空リスト + デフォルトコンテキスト）で処理する。例外は伝播しない。
+        context = await episode_context_builder.build_context(
+            book_id=1,
+            ep_num=1,
+            target_word_count=3000,
+        )
+        assert isinstance(context, dict)
+        # 層情報は必ず返る（失敗時は available=False が明示される）
+        assert "layer1_bible" in context
+        assert "layer2_summary" in context
 
         # 伏線回収時のエラーハンドリング
         # check_and_resolve 内部で例外をキャッチして空リストを返す実装の場合

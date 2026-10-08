@@ -305,10 +305,17 @@ class Layer4SceneTrimmer:
                     is_pinned = True
                     pin_reason = "critical_keyword"
 
-                # キーワード一致ボーナス
+                # キーワード一致ボーナス（双方向部分一致）:
+                # seed 「関税政策」から派生したエンティティ「関税」のように、
+                # エンティティ名が seed キーワードの部分語になるケースでも
+                # ボーナスを与えないと Layer4 の予算超過時に優先的に削除され、
+                # 重要エンティティが落ちてしまう。
                 kw_bonus = 1.0
-                if any(k in display_text.lower() or k in entity.lower() for k in kws):
-                    kw_bonus = 1.4
+                entity_lower = entity.lower() if entity else ""
+                for k in kws:
+                    if k in display_text.lower() or k in entity_lower or (entity_lower and entity_lower in k):
+                        kw_bonus = 1.4
+                        break
 
                 score = (cat_weight * kw_bonus) + (100.0 if is_pinned else 0.0)
                 is_mandatory = is_pinned or (cat in self.preserve_categories)

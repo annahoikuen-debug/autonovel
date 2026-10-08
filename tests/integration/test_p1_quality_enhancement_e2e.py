@@ -30,7 +30,13 @@ def mock_llm():
 @pytest.fixture
 def mock_context_builder():
     builder = Mock(spec=ContextBuilderAgent)
-    builder.execute = Mock(return_value=Mock(artifacts={"writing_context": {}}))
+    # SceneWriter.build_scene_context は `await context_builder.execute(ctx)`
+    # で呼び出すため AsyncMock である必要がある（同期 Mock だと
+    # "object Mock can't be used in 'await' expression" で 3シーン全滅する）。
+    # また result.error は真値判定されるため None を明示する。
+    builder.execute = AsyncMock(
+        return_value=Mock(error=None, artifacts={"writing_context": {}})
+    )
     return builder
 
 
@@ -122,8 +128,15 @@ async def test_p1_e2e_pipeline_mocked(
     assert "本話で意識・回収すべき伏線・設定" in foreshadowing_context
 
     # Step 2: 執筆 (Writing)
-    written_text = await episode_writer.write(book_id=1, ep_num=1, context={})
-    assert written_text == "テスト本文"
+    # prose_refiner は実 LLM アダプタへ差し替えられるため、モック環境では無効化する。
+    # v5.3 以降の既定経路 (use_beat_to_scene=True) は 1話を3シーン
+    # （導入・衝突・引き）に分割して生成し結合するため、
+    # モック本文がシーン数 (=3) 回繰り返される。
+    written_text = await episode_writer.write(
+        book_id=1, ep_num=1, context={"prose_refiner_enabled": False}
+    )
+    assert "テスト本文" in written_text
+    assert written_text.count("テスト本文") == 3
 
     # Step 3: 感情付き音声合成 (Audio Synthesis with emotion)
     audio_result = mock_audio_synthesizer.synthesize_chapter(
@@ -154,9 +167,13 @@ async def test_p1_e2e_pipeline_mocked(
     assert epub_path == "/tmp/test.epub"
 
     # Verify that all mocks were called as expected
-    assert mock_context_retriever.retrieve_writing_context.call_count == 2
-    assert mock_context_retriever.format_context_for_prompt.call_count == 2
-    assert episode_writer.llm.generate_text.called
+    # v5.3 以降の既定経路 (use_beat_to_scene=True) では EpisodeWriter が
+    # retrieve_writing_context / format_context_for_prompt を直接呼ばない
+    # （Step 1 の検索はテスト本体が明示的に 1 回呼び出した分のみ）。
+    assert mock_context_retriever.retrieve_writing_context.call_count == 1
+    assert mock_context_retriever.format_context_for_prompt.call_count == 1
+    # 3シーン（導入・衝突・引き）で 3 回 LLM が呼ばれる
+    assert episode_writer.llm.generate_text.call_count == 3
     mock_audio_synthesizer.synthesize_chapter.assert_called_once()
     mock_media_script_agent.generate_manga_script.assert_called_once()
     mock_media_script_agent.generate_audio_script.assert_called_once()
@@ -195,11 +212,14 @@ async def test_writing_with_foreshadowing_retrieval_e2e(
     # Execute writing
     written_text = await episode_writer.write(book_id=1, ep_num=2, context={})
 
-    # Verify that the foreshadowing context was used in the prompt (via the mock)
-    mock_context_retriever.retrieve_writing_context.assert_called_with(
-        book_id=1, current_ep=2, plot_outline="", character_names=[]
-    )
-    mock_context_retriever.format_context_for_prompt.assert_called_once()
+    # v5.3 以降の既定経路 (use_beat_to_scene=True) では
+    # SceneWriter → PromptComposer.compose_scene_prompt が使われ、
+    # 伏線ヒントは context["foreshadowing_ctx"] / contract_foreshadowings
+    # から供給されるため、EpisodeWriter が
+    # retrieve_writing_context / format_context_for_prompt を
+    # 直接呼ぶことはない（context={} で伏線は供給されない）。
+    mock_context_retriever.retrieve_writing_context.assert_not_called()
+    mock_context_retriever.format_context_for_prompt.assert_not_called()
 
     # Verify that the writing happened (llm.generate_text was called)
     assert episode_writer.llm.generate_text.called

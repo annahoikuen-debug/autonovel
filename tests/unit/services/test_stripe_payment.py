@@ -45,9 +45,14 @@ async def test_stripe_webhook_grants_credits(monkeypatch):
                     # Call the handler
                     await handle_stripe_webhook(mock_request, db=mock_session)
 
-                    # Assert that the user's credits were increased by 100
-                    assert mock_user.credits == 110
+                    # クレジット加算は CreditService.grant_credits の
+                    # アトミック UPDATE (db.execute) に一任される。
+                    # 旧実装のような user.credits の直接加算 (二重付与) は行わない。
                     assert mock_user.plan_tier == "pro"
+                    executed_statements = [
+                        c for c in mock_session.execute.await_args_list
+                    ]
+                    assert executed_statements, "grant_credits のアトミック UPDATE が実行されていない"
                     # Assert that a StripeWebhookEvent record was added
                     assert mock_session.add.call_count >= 1
                     # Assert that commit was called

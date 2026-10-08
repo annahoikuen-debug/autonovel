@@ -20,7 +20,9 @@ client = TestClient(app)
 def test_health_live_endpoint():
     response = client.get("/health/live")
     assert response.status_code == 200
-    assert response.json() == {"status": "alive"}
+    data = response.json()
+    assert data["status"] == "alive"
+    assert "timestamp" in data
 
 
 @pytest.mark.asyncio

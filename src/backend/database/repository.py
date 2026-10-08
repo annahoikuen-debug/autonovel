@@ -407,7 +407,13 @@ class BookRepository:
                 self.session.add(book)
                 self._safe_commit()
                 self._safe_refresh(book)
-            # else: book exists, we will update it
+            else:
+                # book exists: title / genre を更新する
+                # (旧実装は title/genre を新規作成時しか使わず、既存本の
+                #  タイトル・ジャンルが生成結果で更新されなかった)。
+                book.title = title
+                book.genre = genre
+                self.session.add(book)
 
         # 第1話の更新または作成
         if chapter_text:

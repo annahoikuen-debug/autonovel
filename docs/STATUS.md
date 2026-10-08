@@ -77,7 +77,7 @@
 | `py -m pytest tests/perf -v --benchmark-only` | パフォーマンス（`make test-perf`） |
 | `make verify` | lint → format-check → typecheck → test-unit → test-contract → test-migration |
 
-CI (`.github/workflows/ci.yml`) は `pytest -q -m "not integration and not perf and not slow" --timeout=120` を実行する。
+CI (`.github/workflows/ci.yml`) は `pytest -q -m "not perf and not slow and not flaky" --timeout=120` を実行する。
 `--timeout` は pytest-timeout 導入済み CI 専用の引数で、ローカル既定には入っていない（`pytest.ini` のコメント参照）。
 
 ### フロントエンド（vitest）

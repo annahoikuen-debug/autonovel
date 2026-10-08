@@ -70,6 +70,24 @@ class EroticDensityController:
 
         return max(0, min(5, recommended))
 
+    def suggest_next_intensity(
+        self,
+        history: Sequence[int],
+        requested_intensity: int,
+    ) -> int:
+        """直近の履歴とリクエスト強度から、次エピソードの官能強度を提案する。
+
+        連続ピーク抑制が発動する場合（履歴直近に limit 回以上のピーク）は
+        ピーク閾値未満に抑えた強度を返す。それ以外はリクエスト強度をそのまま返す。
+        """
+        # 直近2話の平均強度がしきい値以上、または連続ピーク抑制が発動する場合は
+        # 過剰刺激を避けるためピーク閾値未満に抑える
+        recent = list(history)[-2:]
+        avg_recent = sum(recent) / len(recent) if recent else 0.0
+        if not self.should_allow_peak(history) or avg_recent >= self.peak_threshold:
+            return min(requested_intensity, self.peak_threshold - 1)
+        return requested_intensity
+
     def compute_avg_intensity(self, intensities: Sequence[int | float]) -> float:
         """エピソード群の平均官能強度を計算する。"""
         if not intensities:

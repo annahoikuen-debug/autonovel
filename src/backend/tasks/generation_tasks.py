@@ -42,6 +42,93 @@ def _get_user_id_from_book_id(book_id: int) -> int:
         session.close()
 
 
+def _sync_deduct_credits(
+    user_id: int, amount: int, task_id: str | None, description: str
+) -> None:
+    """同期セッション上でクレジットをアトミックに控除する。
+
+    CreditService.deduct_credits は AsyncSession を前提とするため、
+    Huey ワーカー (同期タスク) からは使えない。同等の残高不足ガード付き
+    UPDATE を同期 SQL で実行する。
+    """
+    from sqlalchemy import select, update
+
+    from src.backend.database.models import User
+
+    session = database.SessionLocal()
+    try:
+        stmt = (
+            update(User)
+            .where(User.id == user_id, User.credits >= amount)
+            .values(credits=User.credits - amount)
+        )
+        result = session.execute(stmt)
+        if result.rowcount == 0:
+            user_exists = session.execute(
+                select(User.id).where(User.id == user_id)
+            ).scalar_one_or_none()
+            if not user_exists:
+                raise ValueError(f"ユーザーが見つかりません: {user_id}")
+            session.rollback()
+            raise ValueError(f"クレジット残高不足: user_id={user_id}, amount={amount}")
+        # balance_after は NOT NULL のため、控除後の残高を取得して記録する。
+        new_balance = session.execute(
+            select(User.credits).where(User.id == user_id)
+        ).scalar_one()
+        tx = _credit_transaction(user_id, -amount, "consumption", description, task_id)
+        tx.balance_after = new_balance
+        session.add(tx)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def _sync_grant_credits(
+    user_id: int, amount: int, task_id: str | None, description: str, tx_type: str = "refund"
+) -> None:
+    """同期セッション上でクレジットを付与する (CreditService.grant_credits の同期版)。"""
+    from sqlalchemy import select, update
+
+    from src.backend.database.models import User
+
+    session = database.SessionLocal()
+    try:
+        session.execute(
+            update(User).where(User.id == user_id).values(credits=User.credits + amount)
+        )
+        # balance_after は NOT NULL のため、付与後の残高を取得して記録する。
+        new_balance = session.execute(
+            select(User.credits).where(User.id == user_id)
+        ).scalar_one()
+        tx = _credit_transaction(user_id, amount, tx_type, description, task_id)
+        tx.balance_after = new_balance
+        session.add(tx)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
+
+
+def _credit_transaction(
+    user_id: int, amount: int, tx_type: str, description: str, task_id: str | None
+) -> Any:
+    """CreditTransaction 台帳レコードを構築する。"""
+    from src.backend.database.models_billing import CreditTransaction
+
+    return CreditTransaction(
+        user_id=user_id,
+        amount=amount,
+        transaction_type=tx_type,
+        description=description,
+        task_id=task_id,
+    )
+
+
 def _run_async(coro: Any) -> Any:
     """新規 event loop を作成して coroutine を同期実行する。"""
     loop = asyncio.new_event_loop()
@@ -364,7 +451,9 @@ def _update_task_in_db(
             if payload:
                 try:
                     res_dict = json.loads(result_json)
-                    output_text = res_dict.get("output", "")
+                    # _generate の戻り値は "output" または "text" キーを持ちうるため
+                    # 両方に対応する (旧実装は "output" 固定で章テキストが空になっていた)。
+                    output_text = res_dict.get("output") or res_dict.get("text", "")
                     char_params = payload.get("character", {})
                     genre = (
                         char_params.get("genre", "ファンタジー (R15)")
@@ -424,20 +513,19 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
         credit_service = None
         credits_deducted = False
     else:
-        credit_session = database.SessionLocal()
         try:
             user_id = _get_user_id_from_book_id(book_id)
             # テキスト執筆クレジットコスト: COST_PER_EPISODE (1クレジット)
             credit_cost = CreditService.COST_PER_EPISODE
-            # 新しいDBセッションでCreditServiceを初期化
-            credit_service = CreditService(credit_session)
             # クレジットを仮押さえ（即時引き落とし）
-            credit_service.deduct_credits(
+            # CreditService は AsyncSession 前提のため、同期ワーカーからは
+            # 同期版ヘルパーを使う (旧実装は await せずコルーチンを作成する
+            # だけで、クレジット控除が実際には実行されていなかった)。
+            _sync_deduct_credits(
                 user_id=user_id,
                 amount=credit_cost,
-                transaction_type="consumption",
-                description="Chapter generation (easy mode) credit hold",
                 task_id=str(task_id) if task_id else None,
+                description="Chapter generation (easy mode) credit hold",
             )
             credits_deducted = True
         except Exception as e:
@@ -446,9 +534,6 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
             if task_id:
                 _update_task_in_db(str(task_id), "failed")
             return {"error": f"Credit deduction failed: {str(e)}", "text": "", "time": 0}
-        finally:
-            # セッションを確実にクローズ
-            credit_session.close()
 
     try:
         result = _run_async(_generate(payload))
@@ -469,23 +554,18 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
         if task_id:
             _update_task_in_db(str(task_id), "failed")
         # クレジットを返金（失敗時）
-        if credits_deducted and credit_service is not None and user_id is not None:
-            refund_session = database.SessionLocal()
+        if credits_deducted and user_id is not None:
             try:
-                # 新しいセッションで返金処理
-                refund_service = CreditService(refund_session)
-                refund_service.grant_credits(
+                # 同期版ヘルパーで返金処理
+                _sync_grant_credits(
                     user_id=user_id,
                     amount=credit_cost,
-                    transaction_type="refund",
-                    description="Refund for failed chapter generation (easy mode)",
                     task_id=str(task_id) if task_id else None,
+                    description="Refund for failed chapter generation (easy mode)",
+                    tx_type="refund",
                 )
             except Exception as refund_err:
                 logger.error(f"Failed to refund credits: {refund_err}")
-            finally:
-                # 返金セッションも確実にクローズ
-                refund_session.close()
         return {"error": str(exc), "text": "", "time": 0}
 
 

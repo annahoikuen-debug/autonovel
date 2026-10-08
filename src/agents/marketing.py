@@ -227,7 +227,12 @@ class MarketingAgent(BaseAgent):
                 else:
                     book = result
         if not book and not book_data:
-            raise ValueError("作品が見つかりません。")
+            # repo に作品が無い場合 (かんたんモード等の単体実行) は
+            # デフォルトフォールバックデータでエクスポートする。
+            # (旧実装は ValueError を送出しており、MarketingService と挙動が不一致だった)
+            from src.services.marketing.export_package import DEFAULT_FALLBACK
+
+            book_data = dict(DEFAULT_FALLBACK)
 
         branch_id = book.current_branch_id if book and book.current_branch_id else 1
         # book_data 提供時はクライアントの最新ステートを優先して反映
@@ -248,10 +253,24 @@ class MarketingAgent(BaseAgent):
             ))
             chars = await self._maybe_await(self.repo.get_all_characters(book_id))
             bible = await self._maybe_await(self.repo.get_latest_bible(book_id))
-            plots = await self._maybe_await(
-                # branch_id は作品間で共有されるため book_id も渡す
-                self.repo.get_all_plots(branch_id, branch_id=branch_id, book_id=book_id)
-            )
+            get_plots = getattr(self.repo, "get_all_plots", None)
+            if get_plots is not None:
+                # 同期 BookRepository は (book_id, branch_id=1)、
+                # 非同期 infra リポジトリは (branch_id, book_id=None) という
+                # 異なるシグネチャを持つため、実シグネチャから第一引数を判定する。
+                # (旧実装は branch_id を第一引数に渡し、同期リポジトリでは
+                #  'book_id' との重複 TypeError になっていた)
+                import inspect
+
+                params = list(inspect.signature(get_plots).parameters)
+                if params and params[0] == "book_id":
+                    plots = await self._maybe_await(
+                        get_plots(book_id, branch_id=branch_id)
+                    )
+                else:
+                    plots = await self._maybe_await(
+                        get_plots(branch_id, book_id=book_id)
+                    )
 
         # book_data 提供時は repo アクセスを省略しオーバーライド値を使用
         if book_data is not None:
@@ -314,7 +333,11 @@ class MarketingAgent(BaseAgent):
                             reg = {}
                     except Exception:
                         reg = {}
-                    setting_text += f"■ {c.name} ({c.role})\n性格: {reg.get('personality', '')}\n能力: {reg.get('ability', '')}\n\n"
+                    # registry_data に無い場合は Character のカラム (personality/ability) に
+                    # フォールバックする (旧実装は registry_data 固定でカラム値が空になった)。
+                    personality = reg.get("personality") or getattr(c, "personality", "") or ""
+                    ability = reg.get("ability") or getattr(c, "ability", "") or ""
+                    setting_text += f"■ {c.name} ({c.role})\n性格: {personality}\n能力: {ability}\n\n"
             z.writestr("02_キャラクター・世界観設定集.txt", _to_win_txt_bytes(setting_text))
 
             # 03: プロット概要

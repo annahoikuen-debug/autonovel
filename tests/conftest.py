@@ -385,6 +385,27 @@ def pytest_collection_modifyitems(config, items):
                     reason="Legacy age_client tests are deprecated (replaced by Relational Memory)"
                 )
             )
+        # Step 18: Apache AGE / pgvector 依存の perf テストは SQLite 上では
+        # 動作しない (AGE は Postgres 拡張、pgvector_store は Postgres コンテナ
+        # フィクスチャを要求する)。テストソースが AGE/pgvector を import する
+        # か、pgvector_store フィクスチャを要求する場合のみ対象外にする。
+        if item.get_closest_marker("perf") is not None:
+            try:
+                import importlib.util as _util
+
+                _age_or_pgvector = (
+                    _util.find_spec("pgvector") is not None
+                    or "age_client" in str(item.source)
+                    or "pgvector_store" in item.fixturenames
+                )
+            except Exception:
+                _age_or_pgvector = False
+            if _age_or_pgvector:
+                item.add_marker(
+                    pytest.mark.skip(
+                        reason="perf test requires Apache AGE / pgvector (Postgres). Run via make test-perf with Docker."
+                    )
+                )
         if not _ORTOOLS_AVAILABLE and _rel_path(item.fspath) in _ORTOOLS_REQUIRED_TESTS:
             item.add_marker(pytest.mark.skip(reason="ortools is not installed in environment"))
         # reportlab は任意依存。PDF 出力を行うテストだけを対象外にする

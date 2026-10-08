@@ -271,8 +271,9 @@ async def _handle_checkout_session_completed(
         user.plan_tier = get_tier_for_price_id(price_id)
 
     if credits_to_grant > 0:
-        if hasattr(user, "credits"):
-            user.credits = (user.credits or 0) + credits_to_grant
+        # 加算は credit_service.grant_credits のアトミック UPDATE に一任する。
+        # 旧実装はここで user.credits を直接加算したうえで grant_credits でも
+        # 加算しており、1イベントで二重付与 (2x credits) されていた。
         await credit_service.grant_credits(
             user_id=user_id,
             amount=credits_to_grant,

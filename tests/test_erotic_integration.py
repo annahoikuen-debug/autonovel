@@ -116,9 +116,12 @@ async def test_erotic_parameters_propagated_to_planner():
     mock_engine.planner.create_hegemony_plan.assert_awaited_once()
 
     call_args = mock_engine.planner.create_hegemony_plan.call_args
-    # 第1引数はWorkflowContext、第2引数はreporter
-    assert call_args[0][0] == ctx  # コンテキストが渡されている
-    assert call_args[0][1] == mock_reporter  # レポーターが渡されている
+    # PlanStep はキーワード引数で呼び出すため kwargs から確認する
+    # （reporter は ProgressReporterAdapter でラップされるため None でないことのみ確認）
+    assert call_args.kwargs.get("reporter") is not None  # レポーターが渡されている
+    # エロティックパラメータが planner に伝播していることを確認
+    assert call_args.kwargs.get("enable_erotic") is True
+    assert call_args.kwargs.get("erotic_intensity") == 3
 
     # コンテキストにエロティックパラメータが設定されていることを確認
     assert ctx.easy_parameters.get("enable_erotic") is True
@@ -203,8 +206,9 @@ async def test_full_auto_pipeline_with_erotic():
     # 各ステップが呼ばれたことを確認（PlanStepにおいてエロティックパラメータが使われたことを確認）
     mock_engine.planner.create_hegemony_plan.assert_awaited()
     # 呼び出し時にエロティックパラメータがコンテキストに設定されていることを確認
+    # PlanStep はキーワード引数で呼び出すため kwargs から確認する
     call_args = mock_engine.planner.create_hegemony_plan.call_args
-    assert call_args[0][0].easy_parameters.get("enable_erotic") is True
-    assert call_args[0][0].easy_parameters.get("erotic_intensity") == 4
+    assert call_args.kwargs.get("enable_erotic") is True
+    assert call_args.kwargs.get("erotic_intensity") == 4
 
 

@@ -22,7 +22,8 @@ router = APIRouter(prefix="/api/books", tags=["books"])
 async def list_books(current_user: User = Depends(get_current_user)):
     async with UnitOfWork(AppContainer.db()) as uow:
         use_cases = BookUseCases(uow=uow)
-        return await use_cases.list_books(user_id=current_user.id)
+        # current_user.id は ORM Column に型付けされることがあるため int へ正規化する
+        return await use_cases.list_books(user_id=int(current_user.id))
 
 
 @router.get("/{book_id}", response_model=BookSchema)

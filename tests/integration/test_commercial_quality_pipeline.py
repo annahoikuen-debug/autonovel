@@ -23,9 +23,10 @@ async def test_commercial_quality_pipeline_flow() -> None:
         one_line_intent="圧倒的絶望からの逆転",
         target_tension_peak=85,
     )
+    # edge_type は SHARP_EDGE_TYPES 語彙集の既知種別のみ受け付ける
     edge = SharpEdgeSpec(
-        edge_type="cunning",
-        description="打算的な生存戦略",
+        edge_type="protagonist_flaw",
+        description="打算的な生存戦略という主人公の欠陥",
         key_phrase="利益計算は済んでいる",
     )
     composer = NarrativeSpineComposer(hook_spec=hook, edge_spec=edge)

@@ -6651,8 +6651,13 @@
           "marketing"
         ],
         "summary": "Export Package Post",
-        "description": "作品データ一式 (本文 / 設定 / プロット / JSON) を ZIP で返す.",
+        "description": "作品データ一式 (本文 / 設定 / プロット / JSON) を ZIP で返す (POST)。\n\n所有権検証は GET 版 (`export_package_get`) と同一で**必須**。\n認証は `GlobalAuthMiddleware` (default-deny) が担保するが、\n「任意の認証済みユーザーが任意の book_id を走査して\n他人の作品 ZIP を一括取得できる」水平権限昇格 (IDOR) になるため、\n`verify_book_ownership` を通さないと公開阻害となる。",
         "operationId": "export_package_post_api_marketing_export_package__book_id__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -8827,6 +8832,7 @@
           "collab"
         ],
         "summary": "Resolve Comment",
+        "description": "コメントを解決済みにする。\n\n所有権検証が必須。`comment_id` はグローバル採番で、呼び出し側から\nどの作品のコメントかは判断できないため、まず `comment.book_id` を\n解決して `_verify_book_access` を通す。これが無いと\n任意の認証ユーザーが他人のレビューコメントを握り潰せた。",
         "operationId": "resolve_comment_api_collab_comments__comment_id__resolve_patch",
         "security": [
           {
@@ -8888,6 +8894,7 @@
           "collab"
         ],
         "summary": "Delete Comment",
+        "description": "コメントを削除する。所有権検証は必須（`resolve_comment` 参照）。",
         "operationId": "delete_comment_api_collab_comments__comment_id__delete",
         "security": [
           {
@@ -19863,7 +19870,6 @@
         "properties": {
           "email": {
             "type": "string",
-            "format": "email",
             "title": "Email"
           },
           "password": {
@@ -19929,7 +19935,6 @@
         "properties": {
           "email": {
             "type": "string",
-            "format": "email",
             "title": "Email",
             "description": "メールアドレス"
           },

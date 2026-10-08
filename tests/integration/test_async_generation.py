@@ -11,7 +11,7 @@ DB 上の ``Task`` レコードへ結果を保存した後、そのレコード�
 from __future__ import annotations
 
 from src.backend import database
-from src.backend.database.models import Book, Chapter, Character
+from src.backend.database.models import Book, Chapter, Character, User
 from src.backend.database.repository import BookRepository
 from src.backend.tasks import generation_tasks
 from src.backend.tasks.generation_tasks import generate_chapter_task
@@ -71,9 +71,23 @@ def test_generation_task_saves_to_specified_book_id(real_db_manager, monkeypatch
     repo = BookRepository(real_db_manager)
 
     # 指定した book_id の本を事前に作成しておく
+    # 生成タスクは book.user_id からクレジット控除先ユーザーを解決するため、
+    # ユーザーと紐づいた本を作成する。
+    user = User(
+        email="gen-owner@example.com",
+        hashed_password="hashed",
+        display_name="Gen Owner",
+        status="active",
+        credits=100,
+    )
+    repo.session.add(user)
+    repo._safe_commit()
+    repo._safe_refresh(user)
+
     specified_book_id = 999
     book = Book(
         id=specified_book_id,
+        user_id=user.id,
         title="元のタイトル",
         genre="元のジャンル",
         concept="元のコンセプト",
@@ -152,9 +166,21 @@ def test_generation_task_creates_new_book_when_book_id_not_provided(real_db_mana
     # real_db_manager が差し替えた engine 上でセッションを取得
     repo = BookRepository(real_db_manager)
 
-    # 既存の book_id=1 の本を作成しておく
+    # 既存の book_id=1 の本を作成しておく (クレジット控除先ユーザーと紐づける)
+    user = User(
+        email="gen-owner2@example.com",
+        hashed_password="hashed",
+        display_name="Gen Owner 2",
+        status="active",
+        credits=100,
+    )
+    repo.session.add(user)
+    repo._safe_commit()
+    repo._safe_refresh(user)
+
     existing_book = Book(
         id=1,
+        user_id=user.id,
         title="既存のタイトル",
         genre="既存のジャンル",
         concept="既存のコンセプト",
@@ -164,6 +190,19 @@ def test_generation_task_creates_new_book_when_book_id_not_provided(real_db_mana
     repo.session.add(existing_book)
     repo._safe_commit()
     repo._safe_refresh(existing_book)
+
+    # 既存本の ep_num=1 に空の初期章を作成しておく
+    # (テスト後半で「第1話が変更されていない」ことを検証するため)
+    empty_chapter = Chapter(
+        book_id=1,
+        ep_num=1,
+        title="第1話",
+        content="",
+        summary="",
+    )
+    repo.session.add(empty_chapter)
+    repo._safe_commit()
+    repo._safe_refresh(empty_chapter)
 
     # タスクレコードを事前に作成して ID を採番
     task = repo.create_task()

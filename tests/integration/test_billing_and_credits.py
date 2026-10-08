@@ -13,7 +13,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy import select
 
 from src.backend.server import app
-from src.backend.database import get_db
+from src.backend.database import get_db, get_async_db
 from src.backend.database.models import Base, User
 from src.backend.database.models_billing import (
     CreditTransaction,
@@ -46,6 +46,18 @@ async def override_get_db():
             await session.close()
 
 
+@pytest.fixture(autouse=True)
+def allow_unsigned_webhooks(monkeypatch):
+    """署名検証を省略する明示的オプトイン (ALLOW_UNSIGNED_WEBHOOKS=true) を有効にする。
+
+    本テストは署名検証ではなくクレジット反映を対象とする。Webhook シークレットが
+    未設定の環境では 400 になるのを防ぐ（tests/unit/test_webhook_idempotency.py 参照）。
+    """
+    from src.backend.routers import billing_webhook
+    monkeypatch.setattr(billing_webhook, "WEBHOOK_SECRET", "")
+    monkeypatch.setattr(billing_webhook, "ALLOW_UNSIGNED_WEBHOOKS", True)
+
+
 @pytest_asyncio.fixture(autouse=True)
 async def setup_db():
     """データベーステーブルの初期化とクリーンアップ"""
@@ -53,8 +65,12 @@ async def setup_db():
         await conn.run_sync(Base.metadata.create_all)
 
     app.dependency_overrides[get_db] = override_get_db
+    # /api/billing/balance 等は get_async_db に依存するため、同一テストDBを
+    # 指すようにオーバーライドしないと前回実行のDB残存値 (例: 101199) を読む。
+    app.dependency_overrides[get_async_db] = override_get_db
     yield
     app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_async_db, None)
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -262,7 +278,8 @@ async def test_stripe_webhook_handling(client: AsyncClient, db: AsyncSession, te
     subscription = result.scalar_one_or_none()
     assert subscription is not None
     assert subscription.stripe_subscription_id == "sub_test_123"
-    assert subscription.plan_tier == "price_starter"
+    # plan_tier は PLAN_CONFIG の price_id→ティア解決結果 ("starter") が保存される
+    assert subscription.plan_tier == "starter"
     assert subscription.status == "active"
 
 
