@@ -38,6 +38,7 @@ class WritingService:
         reporter_factory: Any = None,
         book_score_calculator: Any = None,
         score_threshold: float = 70.0,
+        pdca_controller: Any = None,
         # QualityLoop dependencies
         writing_agent: Any = None,
         context_builder_agent: Any = None,
@@ -59,6 +60,7 @@ class WritingService:
             "reporter_factory": reporter_factory,
             "book_score_calculator": book_score_calculator,
             "score_threshold": score_threshold,
+            "pdca_controller": pdca_controller,
         }
 
         # QualityLoop に渡す引数を準備

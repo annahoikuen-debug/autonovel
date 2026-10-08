@@ -164,6 +164,8 @@ async def test_pillar1_full_pipeline_e2e(long_novel_draft):
         book_id=1, ep_num=1, context=writing_context
     )
 
-    # --- Quality Assertion 3: Directive prepended at very top ---
-    assert final_writing_prompt.startswith("==================================================\n【最優先・再生成修正ディレクティブ】")
+    # --- Quality Assertion 3: Directive prepended (PLAN 03 により raw_emotion_instruction が
+    # さらに前置されるため「先頭」ではなく「含まれる」ことを検証する) ---
+    assert "【最優先・再生成修正ディレクティブ】" in final_writing_prompt
+    assert final_writing_prompt.index("【最優先・再生成修正ディレクティブ】") < final_writing_prompt.index("[ベース執筆プロンプト]")
     assert "[ベース執筆プロンプト]" in final_writing_prompt

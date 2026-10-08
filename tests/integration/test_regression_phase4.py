@@ -73,7 +73,7 @@ class TestRegressionPhase4:
         with open("config/enrichment.yaml", "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
         assert "enrichment" in config
-        assert config["enrichment"]["enabled"] is False  # デフォルトOFF
+        assert config["enrichment"]["enabled"] is True  # v6.0.0 でデフォルトONに変更
 
     @pytest.mark.asyncio
     async def test_orchestrator_with_enrichment_node(self):

@@ -73,7 +73,7 @@ def mock_repo():
 async def test_context_builder_with_reflective_rag_success(mock_repo, sample_candidates):
     """ReflectiveRAGServiceとContextBuilderAgentの統合テスト：正常系."""
     mock_rag = MagicMock(spec=GraphRAGService)
-    mock_rag.search_similar_chunks.return_value = sample_candidates
+    mock_rag.search_similar_chunks = AsyncMock(return_value=sample_candidates)
     mock_rag.age_client = None
 
     reflective_rag = ReflectiveRAGService(

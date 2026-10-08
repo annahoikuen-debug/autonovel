@@ -20,9 +20,9 @@ def _is_admin(current_user: Any) -> bool:
 
 
 async def verify_book_ownership(
-    book_id: int,
-    current_user: User,
-    uow: UnitOfWork | None = None,
+     book_id: int,
+     current_user: User,
+     uow: UnitOfWork | None = None,
 ) -> Book:
     """指定された book_id が current_user に帰属しているか検証する。
 
@@ -38,7 +38,7 @@ async def verify_book_ownership(
         result = await session.execute(stmt)
         book = result.scalar_one_or_none()
         if not book:
-            raise NotFoundError(f"作品が見つかりません: {book_id}", resource_type="Book", resource_id=str(book_id))
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"作品が見つかりません: {book_id}")
 
         if _is_admin(current_user):
             return book

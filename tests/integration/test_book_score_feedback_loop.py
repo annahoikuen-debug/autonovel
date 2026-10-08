@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from src.backend.writing_service import WritingService
 from src.services.book_score_service import BookScoreCalculator
+from src.generation.pdca_controller import PDCAController
 
 
 @pytest.fixture
@@ -69,6 +70,9 @@ async def test_writing_service_regeneration_loop_success(
 
     mock_book_score_calculator.calculate = mock_calculate
 
+    # Allow full text regeneration (default max_regenerations=0 disables it)
+    pdca_controller = PDCAController(max_regenerations=3)
+
     service = WritingService(
         writer=mock_writer,
         repo=mock_repo,
@@ -78,6 +82,7 @@ async def test_writing_service_regeneration_loop_success(
         reporter_factory=MagicMock(),
         book_score_calculator=mock_book_score_calculator,
         score_threshold=70.0,
+        pdca_controller=pdca_controller,
     )
 
     # 執筆実行
@@ -108,6 +113,9 @@ async def test_writing_service_regeneration_max_retries(
         reader_experience_score=50.0,
     ))
 
+    # Allow full text regeneration (default max_regenerations=0 disables it)
+    pdca_controller = PDCAController(max_regenerations=3)
+
     service = WritingService(
         writer=mock_writer,
         repo=mock_repo,
@@ -117,6 +125,7 @@ async def test_writing_service_regeneration_max_retries(
         reporter_factory=MagicMock(),
         book_score_calculator=mock_book_score_calculator,
         score_threshold=70.0,
+        pdca_controller=pdca_controller,
     )
 
     reporter = MagicMock()

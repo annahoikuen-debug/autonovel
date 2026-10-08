@@ -466,12 +466,17 @@ class ReflectiveRAGService:
                             top_k=self.initial_fetch_k,
                         )
                     else:
-                        candidates = self.rag_service.search_similar_chunks(
+                        candidates_raw = self.rag_service.search_similar_chunks(
                             session,
                             query=current_query,
                             limit=self.initial_fetch_k,
                             min_score=0.0,
                         )
+                        import inspect
+                        if inspect.isawaitable(candidates_raw):
+                            candidates = await candidates_raw
+                        else:
+                            candidates = candidates_raw
                 except Exception as search_err:
                     import logging
                     logging.getLogger(__name__).warning(f"search_similar_chunks error: {search_err}")

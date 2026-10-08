@@ -30,6 +30,7 @@ from src.backend.database.series_loader import SeriesDataLoader
 from src.backend.multimedia_service import MultimediaService
 from src.backend.routers import branches as branches_router
 from src.backend.routers import multimedia as multimedia_router
+from src.core.container import AppContainer
 
 
 # 1x1 透明 PNG バイト列 (テスト用)
@@ -48,6 +49,7 @@ def p0_e2e_setup(monkeypatch, tmp_path: Path):
     同一の SQLite ファイルを共有する。
     """
     monkeypatch.setattr(config.settings, "ENABLE_MULTIMEDIA", True)
+    monkeypatch.setattr(config.settings, "AUTH_DISABLED", True)
     output_dir = tmp_path / "e2e_output"
     output_dir.mkdir(parents=True, exist_ok=True)
     monkeypatch.setattr(config.settings, "MULTIMEDIA_OUTPUT_DIR", str(output_dir))
@@ -169,6 +171,9 @@ def p0_e2e_setup(monkeypatch, tmp_path: Path):
         sync_session.add(chap1)
         sync_session.add(chap2)
         sync_session.commit()
+        # Debug: verify book exists
+        book_check = sync_session.query(Book).get(1)
+        print(f"DEBUG: Book after commit: {book_check}")
     finally:
         sync_session.close()
 
@@ -195,6 +200,16 @@ def p0_e2e_setup(monkeypatch, tmp_path: Path):
             yield sess
 
     app.dependency_overrides[branches_router.get_branch_session] = override_get_branch_session
+
+    # Override AppContainer.db to use our test async engine
+    class TestDatabaseManager:
+        def __init__(self, async_engine):
+            self._async_engine = async_engine
+
+        def get_session(self):
+            return AsyncSessionLocal()
+
+    monkeypatch.setattr("src.core.container.AppContainer.db", lambda: TestDatabaseManager(async_engine))
 
     client = TestClient(app)
 

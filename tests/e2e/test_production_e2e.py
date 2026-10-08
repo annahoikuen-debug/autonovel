@@ -1,6 +1,12 @@
 import time
 import subprocess
 import requests
+import pytest
+import shutil
+
+# Skip if Docker is not available
+docker_available = shutil.which("docker") is not None
+pytestmark = pytest.mark.skipif(not docker_available, reason="Docker not available")
 
 def compose_up():
     """Start docker compose in detached mode."""
