@@ -4,6 +4,41 @@
 
 ## [Unreleased] - 2026-10-02 - 公開前ハードニング（セキュリティ・データ整合性）
 
+## [6.0.2] - 2026-10-13 - MCP・監査・RAG の改善と QA 監査対応
+
+前回リリース（v6.0.0）以降の変更をまとめたパッチリリース。
+
+### 追加
+
+- MCP サーバー / プロバイダの整備
+    - `src/mcp_servers/providers/transition_provider.py` の拡張と
+      `tests/unit/mcp_servers/test_transition_provider_custom.py` による回帰防止。
+- 監査（audit）周りの強化
+    - `src/agents/audit.py` と `tests/unit/agents/test_audit_comprehensive.py` /
+      `tests/unit/agents/test_deai_auditor_regression.py` を追加・更新。
+    - v6 監査ゲート系の契約テスト（advisory gate / 閾値 / 並行等価 /
+      再生成バジェット / 外科的パッチ）を拡充。
+
+### 修正
+
+- RAG / 反射的 RAG の永続化改善
+    - `src/services/rag/reflective_rag.py` と
+      `tests/unit/services/test_reflective_rag_persistence.py`。
+- LLM フォールバックの堅牢化
+    - `src/services/llm/robust_fallback.py`。
+- 聖書（bible）サービスの更新（`src/services/bible_service.py`）。
+- シャープエッジ語彙の更新（`config/sharp_edge_vocabulary.py`）と回帰テスト追加。
+
+### ドキュメント
+
+- README のバージョン表記を 6.0.2 に更新。
+
+## [6.0.1] - 2026-10-02 - 公開前監査の残修正
+
+- 公開前デバッグ・回帰ゲート修復・伏線自動設置フック実装（`0a6abad`）。
+- QA 監査の修正をまとめてコミット（`882b609`）。
+- セキュリティ・RAG・テスト更新（`242ef3b`）。
+
 公開前の多角監査で見つかった欠陥をまとめて修正した。個別（約 60 件）の内訳ではなく、
 影響領域ごとにまとめる。破壊的変更（開発環境での認証必須化）を含む。
 

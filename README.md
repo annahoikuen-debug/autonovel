@@ -6,7 +6,7 @@
 
 <img src="docs/images/hero.svg" alt="AutoNovel の全体像: 設定を入れる → AI が執筆する → 納品物を受け取る" width="100%">
 
-[![Version](https://img.shields.io/badge/version-6.0.0-brightgreen?logo=semver)](https://github.com/herbmatsui-spec/autonovel/releases/tag/v6.0.0)
+[![Version](https://img.shields.io/badge/version-6.0.2-brightgreen?logo=semver)](https://github.com/herbmatsui-spec/autonovel/releases/tag/v6.0.2)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![React 18](https://img.shields.io/badge/react-18.3-61dafb?logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -600,7 +600,7 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 |---|---:|---|
 | ダイジェスト LLM 入力 | 約 2,636 字（≒1,318 token） | 1話につき1回のブロッキング呼出。本文冒頭2,500字が上限。 |
 | ダイジェスト LLM 出力 | 13〜150 字 | `MAX_DIGEST_LENGTH=150` で頭打ち。 |
-| ダイジェスト cost（tier1 / gemini-2.0-flash） | **約 0.00013 USD/話** | v6.0.0 でダイジェスト用 tier 割り当てを実装。 |
+| ダイジェスト cost（tier1 / gemini-2.0-flash） | **約 0.00013 USD/話** | v6.0.2 でダイジェスト用 tier 割り当てを実装。 |
 | ダイジェスト cost（tier2 / claude-3-5-haiku だった場合） | 約 0.00108 USD/話 | 約 8 倍。tier 割り当ての効果はそのままコスト差になる。 |
 | ダイジェスト生成の wall clock | 執筆プロンプト 1 回に対して +1 回 | 直列化されるため、モデル応答時間が 1話分上加わる。 |
 
