@@ -68,8 +68,6 @@ class EroticEnhancer:
         params = None
 
         try:
-            from config.erotic_pacing import EroticCurve
-
             # 激しく官能的なシーンの場合のみ強化を適用
             if erotic_intensity >= 4:
                 specialist = "erotic"

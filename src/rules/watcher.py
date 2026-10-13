@@ -79,7 +79,7 @@ def recompute_from_episode(
     num_events = 0
 
     for ep in target_eps:
-        vector = engine.process_episode(
+        engine.process_episode(
             ep, events_by_ep[ep],
             previous_snapshot=snapshot,
             previous_episode=prev_ep,

@@ -54,8 +54,8 @@ class ConflictDetector:
             top1 = sorted_entries[0]
             top2 = sorted_entries[1]
 
-            v1, c1 = top1[1], top1[2]
-            v2, c2 = top2[1], top2[2]
+            v1, _ = top1[1], top1[2]
+            v2, _ = top2[1], top2[2]
 
             # 符号反転判定: (v1 > 0 and v2 < 0) or (v1 < 0 and v2 > 0)
             sign_flip = (v1 > 0 and v2 < 0) or (v1 < 0 and v2 > 0)

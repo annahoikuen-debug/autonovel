@@ -741,7 +741,6 @@ async def get_playthrough(
     """プレイスルー記録 (history + context) を取得."""
     if not _validate_uuid(session_id):
         raise HTTPException(status_code=400, detail="Invalid session_id (UUID required)")
-    repo = BranchRepository(session)
     # IDOR 防止: 他人のプレイスルー記録を読み取れないようにする
     sess = await _assert_play_session_ownership(session_id, current_user, session)
 

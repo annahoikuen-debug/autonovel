@@ -60,6 +60,9 @@ htmlcov/
 
 # Temporary and backup files
 temp_*.py
+tmp_*.py
+tmp_*.txt
+tmp_*.db
 *.bak
 *.bak_*
 *.backup*

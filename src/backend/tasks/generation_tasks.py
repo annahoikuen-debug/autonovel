@@ -510,7 +510,6 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
         # ただし、本番環境ではエラーにするべき
         user_id = None
         credit_cost = 0
-        credit_service = None
         credits_deducted = False
     else:
         try:

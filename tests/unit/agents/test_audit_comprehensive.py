@@ -153,7 +153,8 @@ async def test_internal_logic_validator_stubs():
 @pytest.mark.asyncio
 async def test_logical_auditor_no_pm():
     """LogicalAuditor without prompt manager returns default guidance."""
-    auditor = LogicalAuditor(pm=None)
+    with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
+        auditor = LogicalAuditor(pm=None)
     fb = await auditor.generate_critic_feedback(
         LogicalAuditIssueList(issues=[]), "draft", "blueprint"
     )
@@ -176,7 +177,8 @@ async def test_logical_auditor_with_pm_and_generate_json():
     }
     mock_pm = MagicMock()
     mock_pm.build_critic_feedback_prompt = AsyncMock(return_value="prompt")
-    auditor = LogicalAuditor(pm=mock_pm, llm=mock_llm)
+    with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
+        auditor = LogicalAuditor(pm=mock_pm, llm=mock_llm)
 
     fb = await auditor.generate_critic_feedback(
         LogicalAuditIssueList(issues=[]), "draft", "blueprint"
@@ -204,7 +206,8 @@ async def test_logical_auditor_with_pm_and_callable_llm():
     }
     mock_pm = MagicMock()
     mock_pm.build_critic_feedback_prompt = AsyncMock(return_value="prompt")
-    auditor = LogicalAuditor(pm=mock_pm, llm=mock_llm)
+    with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
+        auditor = LogicalAuditor(pm=mock_pm, llm=mock_llm)
 
     fb = await auditor.generate_critic_feedback(
         LogicalAuditIssueList(issues=[]), "draft", "blueprint"
@@ -216,7 +219,8 @@ async def test_logical_auditor_with_pm_and_callable_llm():
 @pytest.mark.asyncio
 async def test_logical_auditor_stubs():
     """LogicalAuditor stub methods."""
-    auditor = LogicalAuditor()
+    with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
+        auditor = LogicalAuditor()
     ok, issues = await auditor.validate_alibi_and_timeline("bp", "script")
     assert ok is True
     assert issues == []
@@ -228,7 +232,8 @@ async def test_logical_auditor_stubs():
 @pytest.mark.asyncio
 async def test_logical_auditor_analyze_tension_wave_no_repo():
     """analyze_tension_wave returns default pattern when repo is None."""
-    auditor = LogicalAuditor()
+    with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
+        auditor = LogicalAuditor()
     pattern = await auditor.analyze_tension_wave(book_id=1, ep_range=(1, 5))
     # Should return a NarrativeWavePattern instance
     from src.models.audit import NarrativeWavePattern
@@ -238,7 +243,8 @@ async def test_logical_auditor_analyze_tension_wave_no_repo():
 @pytest.mark.asyncio
 async def test_logical_auditor_score_narrative_metrics_empty_content():
     """score_narrative_metrics returns default scores for empty content."""
-    auditor = LogicalAuditor()
+    with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
+        auditor = LogicalAuditor()
     scores = await auditor.score_narrative_metrics(
         book_id=1, branch_id=1, ep_num=1, scene_num=1, scene_content=""
     )
@@ -274,7 +280,8 @@ async def test_logical_auditor_score_narrative_metrics_with_llm():
             "catharsis_density": 0.6,
         }
     }
-    auditor = LogicalAuditor(llm=mock_llm)
+    with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
+        auditor = LogicalAuditor(llm=mock_llm)
     # Patch the ImmersionScore calculation? We'll just call and check that llm was called.
     scores = await auditor.score_narrative_metrics(
         book_id=1, branch_id=1, ep_num=1, scene_num=1, scene_content="Hello world"
