@@ -13,16 +13,19 @@ SHARP_EDGE_TYPES: List[str] = [
     "protagonist_flaw",
     "abnormal_dialogue",
     "sharp_conflict",
+    "emotional_hook",
 ]
 
 SHARP_EDGE_DESCRIPTIONS: Dict[str, str] = {
     "ending_pullback": "結末の引き方（期待を裏切る余韻のある終わり方）",
     "protagonist_flaw": "主人公の1つの欠陥（共感を誘う弱点）",
     "abnormal_dialogue": "異常なセリフ（キャラクターを際立たせる非日常的な発言）",
+    "emotional_hook": "感情フック（読者の情動を揺さぶる重要伏線）",
 }
 
 SHARP_EDGE_KEY_PHRASE_GUIDANCE: Dict[str, str] = {
     "ending_pullback": "本文中の結末に関する具体的描写（20文字以内）",
     "protagonist_flaw": "本文中の主人公欠陥を示す直接的表現（20文字以内）",
     "abnormal_dialogue": "本文から直接引用した異常セリフ（20文字以内）",
+    "emotional_hook": "本文中の情動を刺激する重要描写（20文字以内）",
 }

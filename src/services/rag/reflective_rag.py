@@ -7,6 +7,8 @@ GraphRAG consistency checks.
 
 from __future__ import annotations
 
+import inspect
+import logging
 import time
 from collections import Counter
 from dataclasses import dataclass, field
@@ -144,28 +146,22 @@ class ReflectiveRAGService:
             min_iterations=1,
         )
 
-    def save_reflection_history(
-        self,
-        session: Session,
+    @staticmethod
+    def _build_reflection_history_stmt_and_params(
         result: ReflectiveRetrievalResult,
-        *,
-        book_id: int | None = None,
-        session_id: str | None = None,
-    ) -> None:
-        """Persist reflective retrieval metrics into rag_reflection_history table (Step 22)."""
-        if not session or not hasattr(session, "execute"):
-            return
-
+        book_id: int | None,
+        session_id: str | None,
+    ) -> tuple[Any, dict[str, Any]]:
+        """rag_reflection_history 挿入用の SQL 文とパラメータを構築する（DRYヘルパー）。"""
         import json
         import uuid
         from datetime import datetime, timezone
+
         from sqlalchemy import text
 
         sess_id = session_id or str(uuid.uuid4())
         refined_json = json.dumps(result.refined_queries, ensure_ascii=False)
-        # Log citations for debugging/traceability
         citations_json = json.dumps(result.get_citations(), ensure_ascii=False)
-        import logging
         logging.getLogger(__name__).debug(f"Reflection citations: {citations_json}")
         now = datetime.now(timezone.utc)
 
@@ -178,25 +174,85 @@ class ReflectiveRAGService:
                 :iterations, :initial_doc_count, :final_doc_count, :converged, :created_at
             )
         """)
+        params = {
+            "session_id": sess_id,
+            "book_id": book_id,
+            "original_query": result.original_query,
+            "refined_queries_json": refined_json,
+            "iterations": result.iterations,
+            "initial_doc_count": result.initial_doc_count,
+            "final_doc_count": result.final_doc_count,
+            "converged": result.converged,
+            "created_at": now,
+        }
+        return stmt, params
+
+    async def save_reflection_history_async(
+        self,
+        session: Any,
+        result: ReflectiveRetrievalResult,
+        *,
+        book_id: int | None = None,
+        session_id: str | None = None,
+    ) -> None:
+        """Persist reflective retrieval metrics into rag_reflection_history table asynchronously (Step 22).
+
+        非同期セッション（AsyncSession）を対象とする第一級の永続化インターフェース。
+        """
+        if not session or not hasattr(session, "execute"):
+            return
+
+        stmt, params = self._build_reflection_history_stmt_and_params(result, book_id, session_id)
         try:
-            session.execute(
-                stmt,
-                {
-                    "session_id": sess_id,
-                    "book_id": book_id,
-                    "original_query": result.original_query,
-                    "refined_queries_json": refined_json,
-                    "iterations": result.iterations,
-                    "initial_doc_count": result.initial_doc_count,
-                    "final_doc_count": result.final_doc_count,
-                    "converged": result.converged,
-                    "created_at": now,
-                },
-            )
-            if hasattr(session, "flush"):
-                session.flush()
+            res = session.execute(stmt, params)
+            if inspect.iscoroutine(res):
+                await res
+            if hasattr(session, "commit"):
+                commit_res = session.commit()
+                if inspect.iscoroutine(commit_res):
+                    await commit_res
         except Exception as e:
-            import logging
+            logging.getLogger(__name__).warning(f"Failed to persist rag_reflection_history: {e}")
+
+    def save_reflection_history(
+        self,
+        session: Any,
+        result: ReflectiveRetrievalResult,
+        *,
+        book_id: int | None = None,
+        session_id: str | None = None,
+    ) -> None:
+        """Persist reflective retrieval metrics into rag_reflection_history table (Step 22).
+
+        同期 Session のみを対象とする。非同期セッションが渡された場合は
+        save_reflection_history_async の使用を促す警告を出力して安全にスキップする。
+        稼働中イベントループからの asyncio.run() 呼び出しは行わない。
+        """
+        if not session or not hasattr(session, "execute"):
+            return
+
+        # 非同期セッション検出: execute/commit が coroutine を返す場合はスキップ
+        if type(session).__name__ == "AsyncSession" or hasattr(session, "run_sync"):
+            logging.getLogger(__name__).warning(
+                "save_reflection_history received an async session; "
+                "use save_reflection_history_async instead. Skipping persistence."
+            )
+            return
+
+        stmt, params = self._build_reflection_history_stmt_and_params(result, book_id, session_id)
+        try:
+            res = session.execute(stmt, params)
+            if inspect.iscoroutine(res):
+                # 同期文脈で coroutine が返された場合は非同期セッションとみなし安全にスキップ
+                res.close()
+                logging.getLogger(__name__).warning(
+                    "save_reflection_history got a coroutine from session.execute; "
+                    "use save_reflection_history_async instead. Skipping persistence."
+                )
+                return
+            if hasattr(session, "commit"):
+                session.commit()
+        except Exception as e:
             logging.getLogger(__name__).warning(f"Failed to persist rag_reflection_history: {e}")
 
     def _bm25_keyword_extract(self,

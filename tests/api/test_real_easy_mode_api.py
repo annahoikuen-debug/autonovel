@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 
 
 @pytest.fixture
-def test_client(client, db_session):
+def test_client(client, db_session, monkeypatch):
     """FastAPI TestClient フィクスチャ。
 
     独自の ``TestClient(app)`` を作ると環境変数 ``DATABASE_URL``（リポジトリの
@@ -23,6 +23,9 @@ def test_client(client, db_session):
     ``users.id`` への外部キーのため、``users`` に 1 行も無いと
     ``sqlite3.IntegrityError: FOREIGN KEY constraint failed`` で 500 になる。
     """
+    from src.backend.config import settings
+    monkeypatch.setattr(settings, "AUTH_DISABLED", True)
+
     from src.backend.auth import _get_dev_mock_user
     from src.backend.database.models import User
 

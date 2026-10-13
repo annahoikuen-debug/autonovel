@@ -9,12 +9,12 @@ from src.agents.specialists.adapter import AuditAggregatorNode
 
 class MockAuditLLM:
     """Mock LLM that returns valid JSON for UnifiedAuditor."""
-    
+
     async def generate(self, prompt: str, temperature: float = 0.2) -> str:
         # Return high qualitative score to compensate for potentially low quantitative score
         # final = q_score * 0.4 + overall_score * 0.6, need final >= 70
         return '{"hook_score": 90.0, "emotional_score": 92.0, "character_consistency": 95.0, "overall_score": 95.0, "critique": "優秀な文章です", "actionable_patch": null}'
-    
+
     async def generate_text(self, prompt: str, temperature: float = 0.2) -> str:
         return await self.generate(prompt, temperature)
 

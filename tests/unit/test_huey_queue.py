@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import PropertyMock
 
 from src.backend.tasks.huey import huey, execute_agent_node_task, check_huey_health
 

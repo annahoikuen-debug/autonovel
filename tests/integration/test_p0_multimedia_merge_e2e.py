@@ -30,7 +30,6 @@ from src.backend.database.series_loader import SeriesDataLoader
 from src.backend.multimedia_service import MultimediaService
 from src.backend.routers import branches as branches_router
 from src.backend.routers import multimedia as multimedia_router
-from src.core.container import AppContainer
 
 
 # 1x1 透明 PNG バイト列 (テスト用)

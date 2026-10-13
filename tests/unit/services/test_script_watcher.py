@@ -4,8 +4,14 @@ from __future__ import annotations
 import pytest
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
-from src.services.script_watcher import ScriptWatcher, WatchConfig, create_script_watcher
+from src.services.script_watcher import (
+    ScriptWatcher,
+    WatchConfig,
+    PollingScriptWatcher,
+    create_script_watcher,
+)
 from src.pipeline.emotional_residue import EmotionType
 from src.stores.vector_store import RedisVectorStore
 
@@ -67,6 +73,13 @@ class TestScriptWatcher:
         hash3 = watcher._compute_hash(file_path)
         assert hash1 != hash3
 
+    def test_compute_hash_read_error(self, watcher, temp_dir):
+        """ハッシュ計算時のファイル読み込みエラーをテスト"""
+        file_path = temp_dir / "nonexistent.md"
+        # 存在しないファイル
+        hash_result = watcher._compute_hash(file_path)
+        assert hash_result == ""  # 空文字列を返すべき
+
     def test_process_file_no_episode(self, watcher, temp_dir):
         """エピソード番号なしファイルはスキップ"""
         file_path = temp_dir / "readme.md"
@@ -98,6 +111,36 @@ A「行くぞ」
         stored = mock_vector_store.get_latest("annotation", ("A", "B"))
         assert stored is not None
         assert stored.get_value("A", "B", EmotionType.FEAR) > 0
+
+    def test_process_file_read_error(self, watcher, temp_dir):
+        """ファイル読み込みエラー時の処理をテスト"""
+        file_path = temp_dir / "episode_14.md"
+        file_path.touch()  # 空ファイルを作成
+
+        # ファイル読み込み時に例外を発生させる
+        with patch.object(Path, "read_text", side_effect=OSError("Permission denied")):
+            result = watcher._process_file(file_path)
+            assert result is False  # エラー時はFalseを返すべき
+
+    def test_process_file_parse_error(self, watcher, temp_dir):
+        """パースエラー時の処理をテスト"""
+        file_path = temp_dir / "episode_14.md"
+        # 有効な前 matter を含むコンテンツを作成
+        content = """---
+beats:
+  - source: "A"
+    target: "B"
+    emotion: "fear"
+    delta: 0.5
+    cause: "test"
+---
+"""
+        file_path.write_text(content, encoding="utf-8")
+
+        # パース時に例外を発生させる
+        with patch.object(watcher._parser, "parse_script", side_effect=ValueError("Parse error")):
+            result = watcher._process_file(file_path)
+            assert result is False  # エラー時はFalseを返すべき
 
     def test_hash_change_detection(self, watcher, temp_dir, mock_vector_store):
         """ハッシュ変更検出テスト"""
@@ -147,6 +190,21 @@ beats:
         processed = watcher.scan_once()
         assert processed == 1
 
+    def test_scan_once_no_files(self, watcher, temp_dir):
+        """ファイルが存在しない場合のスキャンテスト"""
+        # 対象パターンに一致するファイルがない場合
+        (temp_dir / "readme.md").write_text("# Readme", encoding="utf-8")
+
+        processed = watcher.scan_once()
+        assert processed == 0
+
+    def test_scan_once_root_not_exists(self, watcher):
+        """スクリプト ルートが存在しない場合のスキャンテスト"""
+        # 存在しないディレクトリを設定
+        watcher.config.script_root = Path("/nonexistent/path")
+        processed = watcher.scan_once()
+        assert processed == 0
+
     def test_force_process(self, watcher, temp_dir, mock_vector_store):
         """強制処理テスト"""
         file_path = temp_dir / "episode_14.md"
@@ -188,22 +246,42 @@ beats:
         stored = mock_vector_store.get_latest("annotation", ("X", "B"))
         assert stored is None
 
+    def test_on_change_callback_error(self, watcher, temp_dir, mock_vector_store):
+        """on_changeコールバックエラー時の処理をテスト"""
+        file_path = temp_dir / "episode_14.md"
+        content = """---
+beats:
+  - source: "A"
+    target: "B"
+    emotion: "fear"
+    delta: 0.5
+    cause: "test"
+---"""
+        file_path.write_text(content, encoding="utf-8")
 
-class TestCreateScriptWatcher:
-    """create_script_watcher ヘルパーテスト"""
+        # エラーを発生させるコールバックを設定
+        def failing_callback(episode, filename):
+            raise ValueError("Callback error")
 
-    @pytest.fixture
-    def temp_dir(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            yield Path(tmpdir)
+        watcher.on_change = failing_callback
 
-    @pytest.fixture
-    def mock_vector_store(self):
-        import fakeredis
-        redis_client = fakeredis.FakeRedis(decode_responses=True)
-        store = RedisVectorStore(skip_connection_check=True)
-        store.client = redis_client
-        return store
+        # エラーが発生しても処理は継続されるべき
+        result = watcher._process_file(file_path)
+        assert result is True  # 処理自体は成功するべき
+
+        # 永続化は行われるべき
+        stored = mock_vector_store.get_latest("annotation", ("A", "B"))
+        assert stored is not None
+
+    def test_polling_script_watcher_instantiation(self, config, mock_vector_store):
+        """PollingScriptWatcherのインスタンス化テスト"""
+        watcher = PollingScriptWatcher(
+            config=config,
+            vector_store=mock_vector_store,
+            character_dict={"A", "B"},
+        )
+        assert isinstance(watcher, PollingScriptWatcher)
+        assert isinstance(watcher, ScriptWatcher)  # 継承関係を確認
 
     def test_create_script_watcher(self, temp_dir, mock_vector_store):
         """ヘルパー関数テスト"""
@@ -214,7 +292,7 @@ class TestCreateScriptWatcher:
             poll_interval=0.1,
         )
 
-        assert isinstance(watcher, ScriptWatcher)
+        assert isinstance(watcher, PollingScriptWatcher)  # デフォルトでPollingScriptWatcherを返す
         assert watcher.config.script_root == temp_dir
         assert watcher.config.poll_interval == 0.1
 

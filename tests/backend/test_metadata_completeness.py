@@ -57,7 +57,6 @@ class TestMetadataSelfContained:
         `create_all()` は FK 解決できない時点で失敗する。
         したがってこれは「create_all が成功する」ことの直接的な代理検査。
         """
-        from sqlalchemy import ForeignKey
 
         missing: list[str] = []
         for table_name, table in metadata.tables.items():

@@ -46,7 +46,7 @@ class LowQualityMockLLM:
     async def generate(self, prompt: str, temperature: float = 0.2) -> str:
         resp = await self.ainvoke(prompt)
         return resp.content
-    
+
     async def generate_text(self, prompt: str, temperature: float = 0.2) -> str:
         return await self.generate(prompt, temperature)
 
@@ -72,7 +72,7 @@ class HighQualityMockLLM:
     async def generate(self, prompt: str, temperature: float = 0.2) -> str:
         resp = await self.ainvoke(prompt)
         return resp.content
-    
+
     async def generate_text(self, prompt: str, temperature: float = 0.2) -> str:
         return await self.generate(prompt, temperature)
 
