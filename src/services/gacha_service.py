@@ -54,7 +54,31 @@ class GachaService:
         async with self._db.get_session() as session:
             repo = EasyModeDraftRepository(session)
             await repo.save_gacha_plans(request_id, plans_json)
-            await session.commit()
+            try:
+                await session.commit()
+            except Exception as e:
+                # DB 保存エラーは握りつぶし、警告ログのみ出力して生成処理は継続
+                logger.warning(f"[gacha-pitch] Failed to save gacha plans to DB: {e}")
+
+    async def _save_gacha_plans_db_safe(self, request_id: str, plans_json: dict) -> bool:
+        """DB 保存の競合（一意制約違反等）を握りつぶして継続する安全版。
+
+        生成結果の返却は DB 永続化に依存すべきではないため、
+        競合発生時はログを残して False を返す。
+
+        Returns:
+            保存に成功した場合 True、競合等で失敗した場合 False。
+        """
+        try:
+            await self._save_gacha_plans_db(request_id, plans_json)
+            return True
+        except Exception as e:
+            logger.warning(
+                "[gacha-pitch] Failed to persist gacha plans (request_id=%s): %s",
+                request_id,
+                e,
+            )
+            return False
 
     async def _save_review_session(self, review_session: ReviewSession) -> None:
         """ReviewSession を DB に保存。"""
@@ -252,13 +276,26 @@ JSONキー:
                         content = json.loads(content)
 
                     plan_id = f"plan_{uuid.uuid4().hex[:6]}"
+                    # 空文字列の場合はデフォルト値を使用
+                    title = content.get("title", "")
+                    if not title or not title.strip():
+                        title = f"{request.genre}【{plan_type.value}案】"
+                    logline = content.get("logline", "")
+                    if not logline or not logline.strip():
+                        logline = "あらすじ準備中"
+                    protagonist_summary = content.get("protagonist_summary", "")
+                    if not protagonist_summary or not protagonist_summary.strip():
+                        protagonist_summary = "主人公詳細準備中"
+                    charm_point = content.get("charm_point", "")
+                    if not charm_point or not charm_point.strip():
+                        charm_point = "魅力ポイント準備中"
                     return GachaPlan(
                         plan_id=plan_id,
                         plan_type=plan_type,
-                        title=content.get("title", f"{request.genre}【{plan_type.value}案】"),
-                        logline=content.get("logline", "あらすじ準備中"),
-                        protagonist_summary=content.get("protagonist_summary", "主人公詳細準備中"),
-                        charm_point=content.get("charm_point", "魅力ポイント準備中"),
+                        title=title,
+                        logline=logline,
+                        protagonist_summary=protagonist_summary,
+                        charm_point=charm_point,
                     )
                 except (ValidationError, json.JSONDecodeError, BaseException) as e:
                     logger.warning(
@@ -351,8 +388,7 @@ JSONキー:
                 logger.debug(f"Failed to publish blind gacha event: {e}")
 
         if self._db is not None:
-            await self._save_gacha_plans_db(request_id, plans_json)
-        else:
-            raise RuntimeError("GachaService._db is None; this should be unreachable.")
+            # DB 競合（一意制約違反等）が発生しても生成結果の返却は継続する
+            await self._save_gacha_plans_db_safe(request_id, plans_json)
 
         return response

@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 from src.backend.routers.graph import CypherQueryRequest, router as graph_router
 from src.backend.routers.system import router as system_router
-from src.backend.auth import require_api_key
+from src.backend.auth import require_admin_user_or_key, require_api_key
 from src.services.age_client import _sanitize_graph_name, _validate_column_def
 
 
@@ -60,10 +60,19 @@ def test_graph_cypher_endpoint_has_auth_dependency():
 
 
 def test_system_admin_endpoints_have_auth_dependencies():
-    """All /admin/ endpoints in system router must require an API key."""
+    """All /admin/ endpoints in system router must require admin authentication.
+
+    ハードニング（Phase 2）で全管理者ルートは ``require_admin_user_or_key`` に
+    昇格した。このテストは「admin エンドポイントに何らかの認証依存性が必ず
+    存在する」という安全 invariants を検証する。``require_api_key`` だけを
+    要求するのではなく、管理者 JWT または API Key のいずれかを問じる
+    require_admin_user_or_key を期待する（key 利用者は api_readonly に降格）。
+    """
     admin_routes = [r for r in system_router.routes if "/admin/" in getattr(r, "path", "")]
     assert len(admin_routes) >= 6, f"Expected at least 6 admin routes, got {len(admin_routes)}"
 
     for r in admin_routes:
         dep_calls = [d.dependency for d in r.dependencies]
-        assert require_api_key in dep_calls, f"Route {r.path} missing require_api_key dependency"
+        assert require_admin_user_or_key in dep_calls, (
+            f"Route {r.path} missing require_admin_user_or_key dependency"
+        )

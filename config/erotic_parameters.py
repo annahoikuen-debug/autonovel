@@ -43,7 +43,7 @@ class EroticParameters:
     video_pattern_preference: List[str] = field(default_factory=list)
 
     def __post_init__(self):
-        """パラメータの-validation"""
+        """パラメータのバリデーション"""
         if not 0 <= self.base_intensity <= 5:
             raise ValueError("base_intensity must be between 0 and 5")
 
@@ -74,7 +74,7 @@ class EroticParameters:
 
         Args:
             phase: フェーズ ("build", "peak", "afterglow")
-            base_senses:  기본感覚リスト
+            base_senses: 基本感覚リスト
 
         Returns:
             重み順でソートされた感覚リスト

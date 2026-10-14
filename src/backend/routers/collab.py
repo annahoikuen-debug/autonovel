@@ -53,9 +53,13 @@ async def _verify_book_access(uow: UnitOfWork, book_id: int, current_user: User)
 
     # メンバーリストに含まれるかを確認（所有者以外はメンバーのみ許可）。
     # `user_id is None` の場合もここに到達し、メンバーでなければ 403 になる。
+    # 脆弱性対策: `display_name` はユーザーが任意に変更できるため、表示名一致による
+    # なりすましアクセスを禁止する。一意な `email` または `user_id` 文字列でのみ照合する。
     members = await uow.collab.list_members(book_id)
-    member_names = {m.user_name for m in members}
-    if current_user.display_name not in member_names and current_user.email not in member_names:
+    member_identifiers = {m.user_name for m in members}
+    user_email = getattr(current_user, "email", None) or ""
+    user_id_str = str(getattr(current_user, "id", ""))
+    if user_email not in member_identifiers and user_id_str not in member_identifiers:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="この作品へのアクセス権限がありません",

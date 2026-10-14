@@ -197,7 +197,7 @@ class DomainProfileService:
     # ジャンル・エンジンキー別 causality_map デフォルトテーブル
     _CAUSALITY_MAP_DEFAULTS: Dict[str, List[str]] = {
         "追放": [
-            "不当な追放 → 主人公の孤立と実力の秘輟 → 圧倒的成長 → 旧勢力との逆転",
+            "不当な追放 → 主人公の孤立と実力の秘匿 → 圧倒的成長 → 旧勢力との逆転",
             "追放した側の慢心 → 主人公の暗躍を見落とす → 断罪フラグの積み上がり",
             "追放理由の隠蔽 → 真実が明るみに出た時の社会的崩壊",
         ],
@@ -493,14 +493,14 @@ class ABTestConfig:
     # テストパターン定義
     TEST_PATTERNS: Dict[str, Dict[str, Any]] = {
         "opening_hook": {
-            "A": {"type": "question_hook", "description": "疑問形で 시작"},
+            "A": {"type": "question_hook", "description": "疑問形で開始"},
             "B": {"type": "action_hook", "description": "アクション開始で開始"},
             "C": {"type": "mystery_hook", "description": "謎かけで開始"},
         },
         "villain_defeat_pattern": {
             "A": {"type": "direct_confrontation", "description": "直接対決で撃破"},
             "B": {"type": "strategic_defeat", "description": "智略で翻弄して撃破"},
-            "C": {"type": "humiliation_reversal", "description": " Former victimsによる逆襲"},
+            "C": {"type": "humiliation_reversal", "description": "かつての被害者たちによる逆襲"},
         },
         "romance_progression": {
             "A": {"type": "slow_burn", "description": "缓慢な感情浸透"},

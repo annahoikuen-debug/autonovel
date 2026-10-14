@@ -2,9 +2,35 @@
 
 本プロジェクトの変更履歴。[Semantic Versioning](https://semver.org/lang/ja/) に準拠。
 
-## [Unreleased] - 2026-10-02 - 公開前ハードニング（セキュリティ・データ整合性）
+## [Unreleased] - 2026-10-14 - 商用化・セキュリティハードニング（36ステップ実装完了）
 
-## [6.0.2] - 2026-10-13 - MCP・監査・RAG の改善と QA 監査対応
+公開前最終監査および商用プロダクト品質審査に基づくセキュリティ強化・アーキテクチャ統合リリース。
+
+### セキュリティ・認可 (Security & Authorization)
+- **NULL所有者バイパスの撲滅**:
+  - `src/backend/routers/publishing.py` および `src/backend/routers/orchestrated.py` のエクスポート所有権検証を `verify_book_ownership` に統一。
+  - 所有者 `user_id` が未設定 (NULL) の作品に対する非管理者からの不正エクスポートを 403 で完全遮断。
+  - 回帰防止テスト `tests/regression/test_no_null_owner_bypass.py` を追加。
+- **コラボレーター偽装の防止**:
+  - `src/backend/routers/collab.py` のメンバー認可から変更可能な `display_name` 文字列一致を排除し、一意な `email` / `user_id` 判定へ移行。
+  - 回帰防止テスト `tests/unit/backend/test_collab_spoofing_prevented.py` を追加。
+- **管理者APIの認可昇格**:
+  - `src/backend/routers/system.py` の全管理者ルート（スキル切替、BookScore再計算、サーキットブレーカー等 13箇所）を `require_admin_user_or_key` に昇格。
+  - 一般APIキー利用者を `api_readonly` に降格し、特権操作を遮断。
+  - 回帰防止テスト `tests/regression/test_admin_endpoints_require_admin_role.py` を追加。
+
+### アーキテクチャ・データ層 (Architecture & Data)
+- **`BookRepository` 二重定義の解消**:
+  - `src/backend/database/repository.py` の旧同期クラスを `LegacySyncBookRepository` にリネーム・非推奨化し、後方互換エイリアスを設定。
+  - 非同期 UoW (`src/infrastructure/repositories/book.py`) を単一の正本として確立。
+
+### パイプライン・文体 (Pipeline & Quality)
+- **文体リファイン境界判定の強化**:
+  - `src/services/anti_ai/syntax_refiner.py` の文頭・読点直後・会話文境界でのフィラー除去エッジケースを検証する単体テスト `tests/unit/services/test_syntax_refiner_boundary.py` を追加。
+- **伏線プロンプト配線の検証**:
+  - `tests/unit/writing/test_foreshadowing_prompt_injection.py` による執筆プロンプトへの伏線データ注入保証。
+
+## [Unreleased] - 2026-10-02 - 公開前ハードニング（セキュリティ・データ整合性）
 
 前回リリース（v6.0.0）以降の変更をまとめたパッチリリース。
 
@@ -31,9 +57,7 @@
 
 ### ドキュメント
 
-- README のバージョン表記を 6.0.2 に更新。
-
-## [6.0.1] - 2026-10-02 - 公開前監査の残修正
+- README のバージョン表記を 6.0.0 に更新。
 
 - 公開前デバッグ・回帰ゲート修復・伏線自動設置フック実装（`0a6abad`）。
 - QA 監査の修正をまとめてコミット（`882b609`）。

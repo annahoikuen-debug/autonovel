@@ -1,5 +1,5 @@
 """
-SpiceGuard - 面白さの��（��り）を自動保護するリライト支援
+SpiceGuard - 面白さの核（スパイス）を自動保護するリライト支援
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from src.presets.loader import load_preset
 
 @dataclass
 class SpiceElement:
-    """��り要素"""
+    """スパイス要素"""
 
     type: str  # "unique_metaphor", "character_voice", "plot_twist_marker", "emotional_raw", "rule_break_for_effect"
     text: str  # 元のテキスト

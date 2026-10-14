@@ -229,7 +229,7 @@ class WritingGraphManager:
             f"ep{state.get('ep_num', 'unknown')}_{genre_str}_{state.get('is_easy_mode', False)}"
         )
 
-        # キャッシュからgen_ctxを取得 시도
+        # キャッシュからgen_ctxを取得（試み）
         cached_gen_ctx = self._get_cached_gen_ctx(cache_key)
         if cached_gen_ctx is not None:
             logger.info(f"Using cached gen_ctx for Ep.{state.get('ep_num', 'unknown')}")

@@ -50,6 +50,10 @@ class EroticEnhancer:
         """
         官能コンテンツを強化する (GraphRAG 心理連携)。
 
+        ゲートが有効な場合、直接表現の比喩フィルタリング (metaphor_filter)
+        を適用して文学的な官能表現へ変換する。LLM再生成は上位パイプラインの
+        責務であり、ここでは決定的な後処理のみを行う。
+
         Args:
             prompt: 元のプロンプト
             result: LLMによって生成された結果
@@ -64,38 +68,20 @@ class EroticEnhancer:
             return result
         erotic_intensity = gate.intensity
 
-        specialist = None
-        params = None
-
         try:
-            # 激しく官能的なシーンの場合のみ強化を適用
-            if erotic_intensity >= 4:
-                specialist = "erotic"
-                params = {"intensity": erotic_intensity}
+            from src.engine.prompts.erotic_specialist import EroticSpecialist
 
-            # GraphRAG パラメータを解決
-            graphrag_params = self._resolve_graphrag_parameters(context)
-            if graphrag_params:
-                params = {**(params or {}), **graphrag_params}
-
-            # 官能専門スペシャリストを使用して強化
-            if specialist:
-                from src.engine.prompts.erotic_specialist import EroticSpecialist
-                specialist = EroticSpecialist()
-                specialist.build_scene_prompt(
-                    curve=None,  # 簡略化のためNone
-                    context={**context, **(params or {})},
-                    params=params,
-                )
-                # 実際の強化処理は省略（元のロジックを保持）
-                # ここでは結果をそのまま返すが、本来はLLMで再生成する
-                return result  # 簡略化
+            specialist = EroticSpecialist()
+            # 強度3以上: 比喩フィルタによる直接表現の緩和を適用
+            # （強度1-2の焦らし表現は原文の緊張感を優先し無変換）
+            if erotic_intensity >= 3:
+                result = specialist.metaphor_filter(result, erotic_intensity)
         except ImportError:
             # エロティック関連のモジュールが見つからない場合は元の結果を返す
-            pass
+            return result
         except Exception:
             # その他のエラーも元の結果を返す
-            pass
+            return result
 
         return result
 

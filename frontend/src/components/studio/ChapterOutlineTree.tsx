@@ -44,7 +44,7 @@ const orderAfterMove = (
 /**
  * 話数を連番に振り直す。
  *
- * `reorderChapters` の話数・タイトルの振り直しを 그대로借用している
+ * `reorderChapters` の話数・タイトルの振り直しをそのまま借用している
  * （同じ添字への移動は「並びはそのまま・話数だけ付け替え」になる）。
  */
 const renumberChapters = (list: ChapterItem[]): ChapterItem[] =>
@@ -52,7 +52,7 @@ const renumberChapters = (list: ChapterItem[]): ChapterItem[] =>
 
 interface ChapterOutlineTreeProps {
   onSelectChapter?: (epNum: number) => void;
-   onMessage?: (msg: string, type: "success" | "error" | "info") => void;
+  onMessage?: (msg: string, type: "success" | "error" | "info") => void;
 }
 
 export const ChapterOutlineTree: React.FC<ChapterOutlineTreeProps> = ({ onSelectChapter, onMessage }) => {
@@ -346,7 +346,7 @@ export const ChapterOutlineTree: React.FC<ChapterOutlineTreeProps> = ({ onSelect
       </div>
 
       <ChapterProgressBar />
-       {/* 現在執筆中の章のプロット目標カード */}
+      {/* 現在執筆中の章のプロット目標カード */}
       {activeChapter && (
         <div
           style={{
@@ -386,48 +386,48 @@ export const ChapterOutlineTree: React.FC<ChapterOutlineTreeProps> = ({ onSelect
           const meta = statusMeta(ch.status);
 
           return (
-<div
-               key={ch.ep_num}
-               onClick={() => handleSelect(ch.ep_num)}
-               onKeyDown={(e) => {
-                 if (e.key === "Enter" || e.key === " ") {
-                   e.preventDefault();
-                   handleSelect(ch.ep_num);
-                 }
-               }}
-               onDragStart={() => handleDragStart(ch.ep_num)}
-               onDragOver={handleDragOver}
-               onDragLeave={handleDragLeave}
-               onDrop={() => handleDrop(ch.ep_num)}
-               draggable={true}
-               data-chapter-index={index}
-               role="button"
-               tabIndex={0}
-               aria-current={isActive ? "true" : undefined}
-               aria-label={`第${ch.ep_num}話 ${ch.title}`}
-style={{
-                  background: dragOverIndex === index ? "rgba(139, 92, 246, 0.1)" : isActive ? "rgba(139, 92, 246, 0.25)" : "rgba(255, 255, 255, 0.03)",
-                  border: `1px solid ${isActive ? "var(--accent-purple, #8b5cf6)" : "rgba(255, 255, 255, 0.08)"}`,
-                  borderLeft: `4px solid ${meta.color}`,
-                  borderRadius: "6px",
-                  padding: "8px 10px",
-                  cursor: "pointer",
-                  opacity: draggedIndex === index ? 0.5 : 1,
-                  transition: "all 0.15s ease",
-                }}
-               data-testid={`chapter-item-${ch.ep_num}`}
-             >
+            <div
+              key={ch.ep_num}
+              onClick={() => handleSelect(ch.ep_num)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSelect(ch.ep_num);
+                }
+              }}
+              onDragStart={() => handleDragStart(ch.ep_num)}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={() => handleDrop(ch.ep_num)}
+              draggable={true}
+              data-chapter-index={index}
+              role="button"
+              tabIndex={0}
+              aria-current={isActive ? "true" : undefined}
+              aria-label={`第${ch.ep_num}話 ${ch.title}`}
+              style={{
+                background: dragOverIndex === index ? "rgba(139, 92, 246, 0.1)" : isActive ? "rgba(139, 92, 246, 0.25)" : "rgba(255, 255, 255, 0.03)",
+                border: `1px solid ${isActive ? "var(--accent-purple, #8b5cf6)" : "rgba(255, 255, 255, 0.08)"}`,
+                borderLeft: `4px solid ${meta.color}`,
+                borderRadius: "6px",
+                padding: "8px 10px",
+                cursor: "pointer",
+                opacity: draggedIndex === index ? 0.5 : 1,
+                transition: "all 0.15s ease",
+              }}
+              data-testid={`chapter-item-${ch.ep_num}`}
+            >
               {isEditing ? (
-                 <form
-                   onSubmit={(e) => handleSaveTitle(ch.ep_num, e)}
-                   style={{ display: "flex", gap: "4px", alignItems: "center" }}
-                   onClick={(e) => e.stopPropagation()}
-                   // 親の章枠は Enter / Space で話を選択する（role="button" の役割）。
-                   // stopPropagation しないと、入力欄で Enter を押しても
-                   // preventDefault で form の submit が潰れ、タイトルが保存されないまま
-                   // 半角スペースも入力されなくなる（= インライン編集が使えなくなる）。
-                   onKeyDown={(e) => e.stopPropagation()}
-                 >
+                <form
+                  onSubmit={(e) => handleSaveTitle(ch.ep_num, e)}
+                  style={{ display: "flex", gap: "4px", alignItems: "center" }}
+                  onClick={(e) => e.stopPropagation()}
+                  // 親の章枠は Enter / Space で話を選択する（role="button" の役割）。
+                  // stopPropagation しないと、入力欄で Enter を押しても
+                  // preventDefault で form の submit が潰れ、タイトルが保存されないまま
+                  // 半角スペースも入力されなくなる（= インライン編集が使えなくなる）。
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
                   <input
                     className="input"
                     style={{ padding: "3px 6px", fontSize: "0.78rem", flex: 1 }}
@@ -443,89 +443,89 @@ style={{
                   </button>
                 </form>
               ) : (
-<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                   <div style={{ display: "flex", alignItems: "center", gap: "4px", flex: 1 }}>
-                     <span style={{ fontWeight: isActive ? 700 : 500, fontSize: "0.82rem", color: isActive ? "#f3f4f6" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                       {ch.title}
-                     </span>
-<span style={{ backgroundColor: "var(--bg-muted)", color: "var(--text)", padding: "2px 6px", borderRadius: "4px", fontSize: "0.7rem", marginLeft: "8px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "4px", flex: 1 }}>
+                    <span style={{ fontWeight: isActive ? 700 : 500, fontSize: "0.82rem", color: isActive ? "#f3f4f6" : "var(--text-muted)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      {ch.title}
+                    </span>
+                    <span style={{ backgroundColor: "var(--bg-muted)", color: "var(--text)", padding: "2px 6px", borderRadius: "4px", fontSize: "0.7rem", marginLeft: "8px" }}>
                       {(ch.content?.length ?? 0) > 0 ? (ch.content?.length ?? 0).toLocaleString() + "字" : "未執筆"}
                     </span>
-                   </div>
-<div style={{ display: "flex", gap: "4px", alignItems: "center", marginLeft: "4px" }}>
+                  </div>
+                  <div style={{ display: "flex", gap: "4px", alignItems: "center", marginLeft: "4px" }}>
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); handleStatusChange(ch.ep_num); }}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        color: meta.color,
+                        cursor: "pointer",
+                        fontSize: "0.75rem",
+                        padding: "1px 3px",
+                      }}
+                      title={meta.label}
+                      aria-label={`第${ch.ep_num}話の状態: ${meta.label}`}
+                    >
+                      {meta.icon}
+                    </button>
+                    {/* Up/Down buttons */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        moveChapter(index, index - 1);
+                      }}
+                      disabled={index === 0}
+                      aria-label={`第${ch.ep_num}話を上へ移動`}
+                      data-testid={`btn-move-up-${ch.ep_num}`}
+                      style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", padding: "1px 3px" }}
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        moveChapter(index, index + 1);
+                      }}
+                      disabled={index === chapters.length - 1}
+                      aria-label={`第${ch.ep_num}話を下へ移動`}
+                      data-testid={`btn-move-down-${ch.ep_num}`}
+                      style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", padding: "1px 3px" }}
+                    >
+                      ▼
+                    </button>
+                    <button
+                      type="button"
+                      style={{ background: "transparent", border: "none", color: ch.is_catharsis ? "#fbbf24" : "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", padding: "1px 3px" }}
+                      onClick={(e) => handleToggleCatharsis(ch.ep_num, e)}
+                      title={ch.is_catharsis ? "カタルシス解除" : "カタルシス回に設定"}
+                    >
+                      {ch.is_catharsis ? "⭐" : "☆"}
+                    </button>
+                    <button
+                      type="button"
+                      style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", padding: "1px 3px" }}
+                      onClick={(e) => handleStartEdit(ch, e)}
+                      title="タイトル編集"
+                      data-testid={`btn-edit-title-${ch.ep_num}`}
+                    >
+                      ✏️
+                    </button>
+                    {chapters.length > 1 && (
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); handleStatusChange(ch.ep_num); }}
-                        style={{
-                          background: "transparent",
-                          border: "none",
-                          color: meta.color,
-                          cursor: "pointer",
-                          fontSize: "0.75rem",
-                          padding: "1px 3px",
-                        }}
-                        title={meta.label}
-                        aria-label={`第${ch.ep_num}話の状態: ${meta.label}`}
+                        style={{ background: "transparent", border: "none", color: "rgba(239, 68, 68, 0.7)", cursor: "pointer", fontSize: "0.75rem", padding: "1px 3px" }}
+                        onClick={(e) => handleDeleteChapter(ch.ep_num, e)}
+                        title="章を削除"
+                        data-testid={`btn-delete-chapter-${ch.ep_num}`}
                       >
-                        {meta.icon}
+                        🗑️
                       </button>
-                      {/* Up/Down buttons */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          moveChapter(index, index - 1);
-                        }}
-                        disabled={index === 0}
-                        aria-label={`第${ch.ep_num}話を上へ移動`}
-                        data-testid={`btn-move-up-${ch.ep_num}`}
-                        style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", padding: "1px 3px" }}
-                      >
-                        ▲
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          moveChapter(index, index + 1);
-                        }}
-                        disabled={index === chapters.length - 1}
-                        aria-label={`第${ch.ep_num}話を下へ移動`}
-                        data-testid={`btn-move-down-${ch.ep_num}`}
-                        style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", padding: "1px 3px" }}
-                      >
-                        ▼
-                      </button>
-                      <button
-                        type="button"
-                        style={{ background: "transparent", border: "none", color: ch.is_catharsis ? "#fbbf24" : "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", padding: "1px 3px" }}
-                        onClick={(e) => handleToggleCatharsis(ch.ep_num, e)}
-                        title={ch.is_catharsis ? "カタルシス解除" : "カタルシス回に設定"}
-                      >
-                        {ch.is_catharsis ? "⭐" : "☆"}
-                      </button>
-                      <button
-                        type="button"
-                        style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "0.75rem", padding: "1px 3px" }}
-                        onClick={(e) => handleStartEdit(ch, e)}
-                        title="タイトル編集"
-                        data-testid={`btn-edit-title-${ch.ep_num}`}
-                      >
-                        ✏️
-                      </button>
-                      {chapters.length > 1 && (
-                        <button
-                          type="button"
-                          style={{ background: "transparent", border: "none", color: "rgba(239, 68, 68, 0.7)", cursor: "pointer", fontSize: "0.75rem", padding: "1px 3px" }}
-                          onClick={(e) => handleDeleteChapter(ch.ep_num, e)}
-                          title="章を削除"
-                          data-testid={`btn-delete-chapter-${ch.ep_num}`}
-                        >
-                          🗑️
-                        </button>
-                      )}
-                    </div>
-                 </div>
+                    )}
+                  </div>
+                </div>
               )}
 
               {ch.summary && (

@@ -26,7 +26,7 @@ from src.agents.specialists import (
 
 class LowQualityMockLLM:
     """Returns low scores for draft with contradictions and weak hooks.
-    
+
     The UnifiedAuditor prompt template doesn't contain specialist-specific keywords,
     so we always return scores with character_consistency being the lowest
     to simulate a consistency failure scenario.
@@ -53,7 +53,7 @@ class LowQualityMockLLM:
 
 class HighQualityMockLLM:
     """Returns high scores for improved revised draft.
-    
+
     Always returns high scores with character_consistency being the highest
     to simulate a successfully fixed consistency issue.
     """

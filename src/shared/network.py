@@ -1,5 +1,5 @@
 """
-src/shared/network.py - � ネットワーク関連のユーティリティ
+src/shared/network.py - ネットワーク関連のユーティリティ
 """
 
 import uuid

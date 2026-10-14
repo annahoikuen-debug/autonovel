@@ -27,10 +27,10 @@ SENSORY_PRIORITY = {
 }
 
 FEELING_LAYERS = [
-    "（感覚） body's primal response - 心臓の鼓動、脈の押し、速すぎる呼吸",
-    "（解釈） cognitive interpretation - 思考が溶け落ちる、意識が曖昧になる",
-    "（評価） emotional evaluation - この感覚が怖いほど心地よい、抵抗できない",
-    "（欲動） instinctive impulse - 抗うことをやめたくなる、もっと近くたい",
+    "（感覚） 身体の原始的反応 - 心臓の鼓動、脈の打ち寄せ、速すぎる呼吸",
+    "（解釈） 認知的解釈 - 思考が溶け落ちる、意識が曖昧になる",
+    "（評価） 感情的評価 - この感覚が怖いほど心地よい、抵抗できない",
+    "（欲動） 本能的衝動 - 抗うことをやめたくなる、もっと近くりたい",
 ]
 
 
@@ -110,19 +110,55 @@ class EroticSpecialist:
             parts.append(self._build_sensory_detail(beat, intensity, params))
 
         parts.append("\n" + "=" * 50)
-        parts.append("【語彙 안내】")
-        parts.append(
-            f"\n・使用可能な官能比喩表現（{metaphor_sample_size}件）:\n"
-            + "\n".join(f"  - {m}" for m in vocab["metaphors"][:metaphor_sample_size])
-        )
-        parts.append(
-            f"\n・使用可能な心理描写表現（{psychology_sample_size}件）:\n"
-            + "\n".join(f"  - {p}" for p in vocab["psychology"][:psychology_sample_size])
-        )
-        parts.append(
-            f"\n・使用可能な擬音・擬態語（{min(6 + intensity, 15)}件）:\n"
-            + "\n".join(f"  - {o}" for o in vocab["onomatopoeia"][: min(6 + intensity, 15)])
-        )
+        parts.append("【語彙案内】")
+
+        # 提案4: MCP による情動強度連動サンプリング（トークン削減 & マンネリ防止）
+        import os
+        use_mcp_vocab = context.get("use_mcp_vocab_sampling") or (os.getenv("ENABLE_MCP_VOCAB_SAMPLING") == "1")
+        if use_mcp_vocab:
+            try:
+                from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
+                bridge = AgentMCPBridge()
+                norm_intensity = min(1.0, max(0.1, intensity / 5.0))
+                m_res = bridge.sample_vocab_by_intensity(category="metaphor", intensity=norm_intensity, count=min(5, metaphor_sample_size))
+                p_res = bridge.sample_vocab_by_intensity(category="psychological", intensity=norm_intensity, count=min(5, psychology_sample_size))
+                o_res = bridge.sample_vocab_by_intensity(category="onomatopoeia", intensity=norm_intensity, count=4)
+
+                sampled_m = [item["word"] for item in m_res.get("items", [])]
+                sampled_p = [item["word"] for item in p_res.get("items", [])]
+                sampled_o = [item["word"] for item in o_res.get("items", [])]
+
+                if sampled_m or sampled_p or sampled_o:
+                    parts.append(
+                        f"\n・動的推奨の官能比喩表現（強度 {intensity} 連動）:\n"
+                        + "\n".join(f"  - {m}" for m in (sampled_m or vocab["metaphors"][:metaphor_sample_size]))
+                    )
+                    parts.append(
+                        f"\n・動的推奨の心理描写表現:\n"
+                        + "\n".join(f"  - {p}" for p in (sampled_p or vocab["psychology"][:psychology_sample_size]))
+                    )
+                    parts.append(
+                        f"\n・動的推奨の擬音・擬態表現:\n"
+                        + "\n".join(f"  - {o}" for o in (sampled_o or vocab["onomatopoeia"][: min(6 + intensity, 15)]))
+                    )
+                else:
+                    use_mcp_vocab = False
+            except Exception:
+                use_mcp_vocab = False
+
+        if not use_mcp_vocab:
+            parts.append(
+                f"\n・使用可能な官能比喩表現（{metaphor_sample_size}件）:\n"
+                + "\n".join(f"  - {m}" for m in vocab["metaphors"][:metaphor_sample_size])
+            )
+            parts.append(
+                f"\n・使用可能な心理描写表現（{psychology_sample_size}件）:\n"
+                + "\n".join(f"  - {p}" for p in vocab["psychology"][:psychology_sample_size])
+            )
+            parts.append(
+                f"\n・使用可能な擬音・擬態語（{min(6 + intensity, 15)}件）:\n"
+                + "\n".join(f"  - {o}" for o in vocab["onomatopoeia"][: min(6 + intensity, 15)])
+            )
 
         parts.append(self._build_layered_psychology_prompt(intensity, params))
         parts.append(self._build_narrative_flow_prompt(curve))
@@ -192,9 +228,9 @@ class EroticSpecialist:
             lines.append("")
             lines.append("【官能の四要素】")
             lines.append("以下の四要素を各ビートで必ず1つ以上言及すること:")
-            lines.append("  1. 体温: 肌の熱、汗、（火照り）")
+            lines.append("  1. 体温: 肌の熱、汗、火照り")
             lines.append("  2. 呼吸: 浅い息、荒い息、息継ぎ")
-            lines.append("  3. 湿度: 汗、潤滑、張り付く感触")
+            lines.append("  3. 湿度: 汗、潤い、張り付く感触")
             lines.append("  4. 重力: 沈む、浮く、引き寄せられる")
         return "\n".join(lines)
 
@@ -309,19 +345,19 @@ class EroticSpecialist:
         density_addition = ""
         if params and params.metaphor_density:
             if params.metaphor_density >= 80:
-                density_addition = "\n8. 比喩の密度を上げ、感覚の多层構造を明示的に描写すること"
+                density_addition = "\n8. 比喩の密度を上げ、感覚の多層構造を明示的に描写すること"
             elif params.metaphor_density <= 30:
                 density_addition = "\n8. 比喩は控えめにし、直接的な感覚描写を重視すること"
 
         return f"""
 【強度5（過激）専用の品質基準】
-1. 身体的感觉の「変容」を描写せよ（通常の感覚描写ではない）
+1. 身体感覚の「変容」を描写せよ（通常の感覚描写ではない）
 2. 精神の「崩壊」または「溶解」を描写せよ（正常な心理状態ではない）
 3. 快楽の「飽和」または「決壊」を描写せよ（穏やかな快感ではない）
 4. 自我の「喪失」を描写せよ（意識が清明な状態ではない）
 5. 比喩は身体的・感覚的な根拠を持つこと（抽象的表現は避ける）
 6. 「体温」「呼吸」「脈拍」「湿度」の4要素を統合すること
-7. 「滞留」（反復的な高まり）を許容し、单一のピークで終わらないこと{density_addition}
+7. 「滞留」（反復的な高まり）を許容し、単一のピークで終わらないこと{density_addition}
 """
 
     def build_aftercare_prompt(self, context: dict[str, Any]) -> str:

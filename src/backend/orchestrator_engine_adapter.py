@@ -24,7 +24,7 @@ _JSON_FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
 def _extract_json(text: str) -> dict[str, Any]:
     """LLM 出力から JSON オブジェクトを取り出す。
 
-    Markdown のコードフェンスで囲まれている場合と、回过神的后ろに
+    Markdown のコードフェンスで囲まれている場合と、JSON の後ろに
     説明文が付く場合の両方に対応する。
     """
     if not text:

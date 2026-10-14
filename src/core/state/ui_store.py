@@ -1,5 +1,5 @@
 """
-src/core/state/ui_store.py — UI�層の状態アクセスをカプセル化するストア
+src/core/state/ui_store.py — UI層の状態アクセスをカプセル化するストア
 """
 
 from collections.abc import Callable
@@ -16,9 +16,9 @@ from src.core.state.state_manager import SessionManager, get_session
 
 class UIStateStore:
     """
-    UI�層における状態アクセスをカプセル化するストア。
+    UI層における状態アクセスをカプセル化するストア。
     st.session_state への直接アクセスを排除し、AppStateModel / AppRuntimeState 経由での
-    �� 型安全な操作を強制する。
+    型安全な操作を強制する。
     """
 
     _subscribers: dict[str, list[Callable[[Any], None]]] = {}
@@ -72,7 +72,7 @@ class UIStateStore:
 
     @staticmethod
     def subscribe(key: str, callback: Callable[[Any], None]) -> None:
-        """特定のキーの�値が変更されたときに呼び出されるコールバックを登録する"""
+        """特定のキーの値が変更されたときに呼び出されるコールバックを登録する"""
         if key not in UIStateStore._subscribers:
             UIStateStore._subscribers[key] = []
         UIStateStore._subscribers[key].append(callback)

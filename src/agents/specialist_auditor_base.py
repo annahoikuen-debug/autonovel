@@ -278,7 +278,72 @@ class SpecialistAuditor(ABC):
         SpecialistAuditResult with score in [0, 100].
         """
 
+    def _run_deterministic_pre_screen(self, ctx: dict[str, Any]) -> dict[str, Any] | None:
+        """MCP/ローカル決定論的プレ・オーディットを実行する（LLM呼び出し削減・事前検知）"""
+        import os
+        if os.getenv("DISABLE_DETERMINISTIC_PRE_AUDIT") == "1":
+            return None
+
+        # コンテキストから対象テキストを抽出
+        text = (
+            ctx.get("text")
+            or ctx.get("content")
+            or ctx.get("episode_text")
+            or ctx.get("chapter_text")
+            or ""
+        )
+        if not text or len(text.strip()) < 10:
+            return None
+
+        try:
+            from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
+            bridge = AgentMCPBridge()
+            res = bridge.pre_screen_for_auditor(
+                text=text,
+                specialist_name=self.specialist_name,
+                bypass_threshold=float(os.getenv("PRE_AUDIT_BYPASS_THRESHOLD", "92.0")),
+            )
+            return res
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.debug(f"Pre-audit screening skipped due to: {e}")
+            return None
+
     async def _safe_audit(self, ctx: dict[str, Any]) -> SpecialistAuditResult:
+        import os
+        # 提案2: 決定論的プレ・オーディットの実行
+        pre_res = self._run_deterministic_pre_screen(ctx)
+        if pre_res:
+            ctx["_pre_audit_result"] = pre_res
+            # バイパス条件（明示的フラグまたは環境変数で有効化時）
+            allow_bypass = ctx.get("allow_pre_audit_bypass") or (
+                os.getenv("ENABLE_PRE_AUDIT_BYPASS") == "1"
+            )
+            if allow_bypass and pre_res.get("bypass_eligible"):
+                logger = logging.getLogger(__name__)
+                logger.info(
+                    f"{self.specialist_name}: deterministic pre-audit bypassed LLM "
+                    f"(score={pre_res.get('score')}, violations={len(pre_res.get('violations', []))})"
+                )
+                suggestions = [
+                    v.get("suggestion")
+                    for v in pre_res.get("violations", [])
+                    if v.get("suggestion")
+                ]
+                return SpecialistAuditResult(
+                    specialist_name=self.specialist_name,
+                    score=float(pre_res.get("score", 100.0)),
+                    feedback={
+                        "critique": "決定論的作法・ルールチェックを正常に通過しました（LLM監査バイパス承認）。",
+                        "deterministic_pre_audit": True,
+                        "details": pre_res.get("details", {}),
+                    },
+                    suggestions=suggestions,
+                    confidence=1.0,
+                    reasoning_trace="Deterministic pre-audit bypass: no critical rule violations detected.",
+                    degraded=False,
+                )
+
         try:
             result = await self.audit(ctx)
             # Auto-fallback if LLM confidence is too low

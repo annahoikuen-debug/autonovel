@@ -157,7 +157,7 @@ class QualityScorer:
             "目に",
             "顔に",
             "いだく",
-            " 느끼다",
+            "感じ",
         ]
         emotion_count = sum(1 for word in emotion_words if word in text)
 

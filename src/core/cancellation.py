@@ -37,7 +37,7 @@ class CancellationToken:
         """キャンセルを通知する。
 
         `asyncio.Event` はスレッドセーフではないため、別スレッドから呼ばれても
-        落ち 않도록 `RuntimeError` は握り潰す。
+        落ちないよう `RuntimeError` は握り潰す。
         """
         try:
             self._event.set()

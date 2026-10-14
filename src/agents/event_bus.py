@@ -121,7 +121,7 @@ class EventBus:
         """非同期イベント発行。全ハンドラ完了を待ち、例外はログに記録する。
 
         以前は ``await self.publish(event)`` とするだけでタスク一覧を捨てていたため、
-        await してもハンドラ完了の保証にならず、参照を 잃ったタスクは GC 対象となり、
+        await してもハンドラ完了の保証にならず、参照を失ったタスクは GC 対象となり、
         ハンドラ例外は「Task exception was never retrieved」として不可視になっていた。
         """
         tasks = await self.publish(event, payload)
@@ -145,7 +145,7 @@ class EventBus:
 
         ``SkillAgent.emit_event`` は同期・非同期両方のコンテキストから 36 箇所で呼ばれる
         ため、``async def`` 化すると呼び出し側 36 箇所の変更が必要になる。
-        そのため这里では「ループがあれば安全に登録、なければ警告して落とす」設計にする。
+        そのためここでは「ループがあれば安全に登録、なければ警告して落とす」設計にする。
         """
         try:
             loop = asyncio.get_running_loop()

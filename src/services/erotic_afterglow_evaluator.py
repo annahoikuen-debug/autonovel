@@ -10,7 +10,7 @@ class AfterglowEvaluator:
     """afterglow フェーズの質評価を行う。"""
 
     EMOTIONAL_SETTLING_KEYWORDS = [
-        "沈静",
+        "静寂",
         "静けさ",
         "余韻",
         "穏やか",
@@ -18,9 +18,37 @@ class AfterglowEvaluator:
         "安らぎ",
         "沈降",
         "静まる",
+        "落ち着き",
+        "呼吸を整え",
+        "荒い息が収ま",
+        "火照りが引け",
     ]
-    DISTANCE_RECONFIRM_KEYWORDS = ["距離", "近了", "確認", "並べ", "隣", "寄り添う", "離れた"]
-    FOREShadow_KEYWORDS = ["次", "話", "伏線", "予感", "接下来", "明らかになる", "待ち望む"]
+    DISTANCE_RECONFIRM_KEYWORDS = [
+        "距離",
+        "確認",
+        "隣",
+        "寄り添う",
+        "離れた",
+        "並んで",
+        "肩を寄せ",
+        "腕の中",
+        "抱き寄せられたまま",
+    ]
+    FORESHADOW_KEYWORDS = [
+        "伏線",
+        "予感",
+        "予兆",
+        "明らかになる",
+        "待ち望む",
+        "次の話",
+        "次話",
+        "次に",
+        "これから",
+        "まだ",
+        "再び",
+    ]
+    # 後方互換用エイリアス
+    FOREShadow_KEYWORDS = FORESHADOW_KEYWORDS
 
     def count_paragraphs(self, text: str) -> int:
         """空行で区切られた段落数をカウントする。"""

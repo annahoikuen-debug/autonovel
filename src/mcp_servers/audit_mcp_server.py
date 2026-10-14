@@ -42,10 +42,43 @@ class AuditMCPServer:
                                 "rule_id": v.rule_id,
                                 "message": v.message,
                                 "severity": v.severity,
+                                "line_number": v.line_number,
+                                "snippet": v.snippet,
+                                "suggestion": v.suggestion,
                             }
                             for v in res.violations
                         ],
                         "score": res.score,
+                    },
+                    "id": req_id,
+                }
+            elif method == "pre_screen":
+                text = params.get("text", "")
+                specialist_name = params.get("specialist_name")
+                bypass_threshold = float(params.get("bypass_threshold", 90.0))
+                res = self.provider.pre_screen(
+                    text=text,
+                    specialist_name=specialist_name,
+                    bypass_threshold=bypass_threshold,
+                )
+                return {
+                    "jsonrpc": "2.0",
+                    "result": {
+                        "passed": res.passed,
+                        "score": res.score,
+                        "bypass_eligible": res.bypass_eligible,
+                        "violations": [
+                            {
+                                "rule_id": v.rule_id,
+                                "message": v.message,
+                                "severity": v.severity,
+                                "line_number": v.line_number,
+                                "snippet": v.snippet,
+                                "suggestion": v.suggestion,
+                            }
+                            for v in res.violations
+                        ],
+                        "details": res.details,
                     },
                     "id": req_id,
                 }

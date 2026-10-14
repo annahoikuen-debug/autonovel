@@ -1,5 +1,5 @@
 """
-prompt_composer.py - プロンプト構�築ユーティリティ
+prompt_composer.py - プロンプト構築ユーティリティ
 """
 
 from __future__ import annotations
@@ -72,15 +72,15 @@ class PromptComposer:
         ep_num: int,
         context: dict[str, Any],
     ) -> str:
-        """�執�筆用プロンプトを構�築する。
+        """執筆用プロンプトを構築する。
 
         Args:
             book_id: 書籍ID
             ep_num: エピソード番号
-            context: プロット情報、キャラ設定、世界設定などを含む�辞書
+            context: プロット情報、キャラ設定、世界設定などを含む辞書
 
         Returns:
-            �� 構�築されたプロンプト文字列
+            構築されたプロンプト文字列
         """
         if getattr(self.agent, "prompt_manager", None) is None:
             raise ValueError("PromptManager is not injected into WritingAgent")
@@ -119,13 +119,50 @@ class PromptComposer:
                         f"Ep.{ep_num}: Failed to get foreshadowing context: {e}"
                     )
                 foreshadowing_context = ""
+
+        # 提案1: 動的コンテキスト・プルーニング MCP の適用 (30%〜70%トークン削減)
+        char_static_ctx = context.get("char_static_ctx", "")
+        three_layer_ctx = self._format_three_layer_context(context.get("three_layer_context"))
+        contract_foreshadowings = context.get("contract_foreshadowings") or []
+        unresolved_foreshadowings = await self._load_unresolved_foreshadowings(
+            book_id, ep_num, context
+        )
+
+        if context.get("enable_mcp_pruning"):
+            try:
+                from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
+
+                bridge = getattr(self.agent, "mcp_bridge", None)
+                if not isinstance(bridge, AgentMCPBridge):
+                    bridge = AgentMCPBridge()
+                plot_outline = plot_data.get("detailed_blueprint") or plot_data.get("summary") or script_text
+                prune_res = bridge.prune_context(
+                    plot_blueprint=plot_outline,
+                    characters=context.get("characters_list", []),
+                    world_lore=context.get("world_lore_list", []),
+                    foreshadowings=contract_foreshadowings + unresolved_foreshadowings,
+                    target_token_budget=context.get("pruning_token_budget", 1500),
+                    current_episode=ep_num,
+                    pov_character=context.get("pov_character_name"),
+                )
+                if prune_res and prune_res.get("formatted_prompt_context"):
+                    context["mcp_pruned_result"] = prune_res
+                    context["mcp_pruned_stats"] = prune_res.get("stats")
+                    context["token_reduction_rate"] = prune_res.get("token_reduction_rate")
+                    # プルーニング後の最適化テキストを char_static_ctx または専用キーへ格納
+                    if context.get("override_char_static_with_pruned", True):
+                        char_static_ctx = prune_res.get("formatted_prompt_context")
+            except Exception as e:
+                if hasattr(self.agent, "logger"):
+                    self.agent.logger.warning("Ep.%s: Failed to apply MCP pruning: %s", ep_num, e)
+
         prompt = await getattr(self.agent, "prompt_manager").build_final_writing_prompt(
             ep_num=ep_num,
             plot_data=plot_data,
             script_text=script_text,
             target_word_count=context.get("target_word_count", 2000),
             book_id=book_id,
-            char_static_ctx=context.get("char_static_ctx", ""),
+            char_static_ctx=char_static_ctx,
             char_dynamic_ctx=context.get("char_dynamic_ctx", ""),
             prev_ctx=context.get("prev_ctx", ""),
             pov_character_name=context.get("pov_character_name", ""),
@@ -134,14 +171,12 @@ class PromptComposer:
             style_tag=context.get("style_tag"),
             foreshadowing_context=foreshadowing_context,
             # v5.3: 契約伏線（伏線ステートマシンの target_episode == 本話）
-            contract_foreshadowings=context.get("contract_foreshadowings") or [],
+            contract_foreshadowings=contract_foreshadowings,
             # v5.3: 3層ローリング記憶（Layer1 バイブル / Layer2 過去ダイジェスト / Layer3 直前本文）
-            three_layer_ctx=self._format_three_layer_context(context.get("three_layer_context")),
+            three_layer_ctx=three_layer_ctx,
             # v5.3 / Step 29: 背景（継続中）の未回収伏線。契約伏線と重複排除して
             # PromptManager 側で上限・省略サマリを行う。
-            unresolved_foreshadowings=await self._load_unresolved_foreshadowings(
-                book_id, ep_num, context
-            ),
+            unresolved_foreshadowings=unresolved_foreshadowings,
         )
 
         regeneration_directive = context.get("regeneration_directive")
@@ -154,6 +189,28 @@ class PromptComposer:
                 f"==================================================\n\n"
                 + prompt
             )
+
+        # 提案7: 感情曲線・テンションカーブ制御 MCP のディレクション注入
+        curve_type = context.get("emotional_curve_type") or context.get("tension_curve_type")
+        if curve_type:
+            try:
+                from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
+
+                bridge = getattr(self.agent, "mcp_bridge", None)
+                if not isinstance(bridge, AgentMCPBridge):
+                    bridge = AgentMCPBridge()
+                curve_data = bridge.generate_target_curve(curve_type=str(curve_type))
+                if curve_data and curve_data.get("prompt_directive"):
+                    context["mcp_target_curve"] = curve_data
+                    prompt = (
+                        f"==================================================\n"
+                        f"{curve_data['prompt_directive']}\n"
+                        f"==================================================\n\n"
+                        + prompt
+                    )
+            except Exception as e:
+                if hasattr(self.agent, "logger"):
+                    self.agent.logger.warning("Ep.%s: Failed to inject emotional curve directive: %s", ep_num, e)
 
         # PLAN 03: 生々しいエゴ・打算・身体反応の強制指示（AI優等生病の外科的切除）
         try:

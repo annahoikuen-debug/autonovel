@@ -10,10 +10,21 @@ import re
 class SensoryWord:
     """感覚・レトリック語彙定義"""
     word: str
-    category: str  # visual, auditory, olfactory, tactile, psychological
+    category: str  # visual, auditory, olfactory, tactile, psychological, metaphor, onomatopoeia
     example_sentence: str
     nuance: str = ""
+    intensity: float = 0.5  # 0.0 (穏やか/日常) 〜 1.0 (極限/熱狂)
     metadata: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class SampledVocabResult:
+    """情動強度サンプリング結果"""
+    category: str
+    target_intensity: float
+    items: List[Dict[str, Any]]
+    count: int
+    genre: str = "general"
 
 
 @dataclass

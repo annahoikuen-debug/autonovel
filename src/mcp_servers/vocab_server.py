@@ -29,8 +29,38 @@ class VocabMCPServer:
             elif method == "suggest_metaphors":
                 keyword = params.get("keyword", "")
                 genre = params.get("genre", "general")
-                suggestions = self.provider.suggest_metaphors(keyword, genre)
+                intensity = params.get("intensity")
+                suggestions = self.provider.suggest_metaphors(
+                    keyword,
+                    genre,
+                    intensity=float(intensity) if intensity is not None else None,
+                )
                 return {"jsonrpc": "2.0", "result": {"suggestions": suggestions}, "id": req_id}
+
+            elif method == "sample_by_intensity":
+                category = params.get("category", "all")
+                intensity = float(params.get("intensity", 0.5))
+                genre = params.get("genre", "erotic")
+                count = int(params.get("count", 4))
+                seed = params.get("seed")
+                res = self.provider.sample_by_intensity(
+                    category=category,
+                    intensity=intensity,
+                    genre=genre,
+                    count=count,
+                    seed=int(seed) if seed is not None else None,
+                )
+                return {
+                    "jsonrpc": "2.0",
+                    "result": {
+                        "category": res.category,
+                        "target_intensity": res.target_intensity,
+                        "genre": res.genre,
+                        "count": res.count,
+                        "items": res.items,
+                    },
+                    "id": req_id,
+                }
 
             elif method == "resources/list":
                 resources = []

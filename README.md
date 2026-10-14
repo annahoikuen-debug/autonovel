@@ -6,7 +6,7 @@
 
 <img src="docs/images/hero.svg" alt="AutoNovel の全体像: 設定を入れる → AI が執筆する → 納品物を受け取る" width="100%">
 
-[![Version](https://img.shields.io/badge/version-6.0.2-brightgreen?logo=semver)](https://github.com/herbmatsui-spec/autonovel/releases/tag/v6.0.2)
+[![Version](https://img.shields.io/badge/version-6.0.0-brightgreen?logo=semver)](https://github.com/herbmatsui-spec/autonovel/releases/tag/v6.0.0)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![React 18](https://img.shields.io/badge/react-18.3-61dafb?logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)

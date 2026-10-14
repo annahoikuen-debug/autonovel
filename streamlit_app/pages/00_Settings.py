@@ -119,7 +119,7 @@ def main():
 
     tab_models, tab_features, tab_safety, tab_costs, tab_advanced = st.tabs([
         "🤖 モデル設定",
-        "🔧 機能开关",
+        "🔧 機能設定",
         "🔒 安全・品質設定",
         "💰 コスト・保存",
         "🔬 詳細設定",
@@ -244,7 +244,7 @@ def main():
             )
 
     with tab_features:
-        st.subheader("🔧 機能开关")
+        st.subheader("🔧 機能設定")
         st.markdown("各機能を有効/無効に切り替えできます")
 
         with st.container(border=True):

@@ -36,7 +36,7 @@ class AuditCriterion:
     """監査1件を表す不変レコード。
 
     ``audit_id`` はイベント追跡用の安定 ID（Step 21）。
-    ``severity`` は「不合格했을 때の重篤さ」で、ゲート集約の重み付けに使う。
+    ``severity`` は「不合格だった場合の重篤さ」で、ゲート集約の重み付けに使う。
     ``learning_key`` は ``_check_learning_adjustment`` に渡す学習データキー。
     ``blocking`` は False のときゲート判定の集計対象から外れる
     （UnifiedAuditor は LLM 未設定時に fail-closed するため、

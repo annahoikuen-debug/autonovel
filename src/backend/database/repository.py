@@ -130,10 +130,11 @@ class DataRepositoryFacade:
 DataRepository = DataRepositoryFacade
 
 
-class BookRepository:
+class LegacySyncBookRepository:
     """
-    作品データおよびタスク管理へのアクセスを抽象化するリポジトリ。
+    [DEPRECATED in v6.0+] 作品データおよびタスク管理へのアクセスを抽象化する旧リポジトリ。
     同期セッションまたは DatabaseManager を受け付けて操作を行う。
+    新規コードでは `src.infrastructure.repositories.book.BookRepository` (非同期 UoW) を使用すること。
     """
 
     def __init__(self, session_or_db: Any = None) -> None:
@@ -543,6 +544,9 @@ class BookRepository:
         return book
 
 
+# Backward-compatible alias
+BookRepository = LegacySyncBookRepository
+
 # Re-export individual repositories for compatibility
 from .repositories.audit import AuditRepository  # noqa: E402
 from .repositories.bible import BibleRepository  # noqa: E402
@@ -556,6 +560,7 @@ __all__ = [
     "DataRepositoryFacade",
     "DataRepository",
     "BookRepository",
+    "LegacySyncBookRepository",
     "AsyncBookRepository",
     "ChapterRepository",
     "CharacterRepository",

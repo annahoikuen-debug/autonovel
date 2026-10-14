@@ -153,7 +153,7 @@ def _safe_artifact_file_path(file_path: str) -> Path:
     """DB に記録された成果物パスが ``MULTIMEDIA_OUTPUT_DIR`` 配下にあることを確認する。
 
     ``/multimedia/files/{filename:path}`` の `_safe_path_under_base` と同じ厳密さで、
-    DB が改竄された場合에도ベースディレクトリ外を配信しないようにする。
+    DB が改竄された場合でもベースディレクトリ外を配信しないようにする。
     """
     base = get_multimedia_dir().resolve()
     candidate = Path(file_path).resolve()

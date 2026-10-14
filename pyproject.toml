@@ -192,6 +192,18 @@ omit = [
     "src/services/age_client.py",
     "src/services/llm/provider_failover.py",
     "src/services/state_manager.py",
+    # 到達不能 / 未参照のレガシースタブ (coverage 測定対象外)
+    #   - observability.py / core/exceptions.py / services/marketing.py は同名
+    #     package ディレクトリによりシャドウイングされており import 不能（到達不能）。
+    #   - anthropic_client / foreshadowing_repository / hook_repository /
+    #     schemas/easy_mode は src 全体で参照されておらず dead code。
+    "src/backend/observability.py",
+    "src/core/exceptions.py",
+    "src/services/marketing.py",
+    "src/schemas/easy_mode.py",
+    "src/infrastructure/external/anthropic_client.py",
+    "src/infrastructure/repositories/foreshadowing_repository.py",
+    "src/infrastructure/repositories/hook_repository.py",
 ]
 branch = true
 concurrency = ["multiprocessing", "thread"]
@@ -205,6 +217,7 @@ exclude_lines = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
 ]
+# Phase gate plan: fail_under: 55 → 65 → 70 → 75 → 80
 fail_under = 55
 precision = 2
 show_missing = true

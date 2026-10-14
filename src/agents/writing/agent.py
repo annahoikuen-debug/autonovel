@@ -461,8 +461,29 @@ class WritingAgent(SkillAgent):
 
         rewrite_instructions = [base_instruction]
 
-        # Actionable Diff があれば反映
+        # 提案3: MCP 外科的パッチ置換（Surgical Patch）の即時試行
+        surgical_patch_applied = False
+        saved_tokens = 0
         if actionable_diffs:
+            try:
+                from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
+                bridge = AgentMCPBridge()
+                patch_res = bridge.apply_surgical_diffs(original_text, actionable_diffs, allow_fuzzy=True)
+                if patch_res.get("is_fully_applied") and patch_res.get("applied_count", 0) > 0:
+                    rewritten_text = patch_res["patched_text"]
+                    surgical_patch_applied = True
+                    saved_tokens = patch_res.get("token_savings_estimate", 0)
+                    if reporter:
+                        reporter.report(
+                            f"Ep.{ep_num}: MCP外科的パッチ適用成功 "
+                            f"({patch_res['applied_count']}件置換, 推定節約: {saved_tokens}tok)",
+                            "info",
+                        )
+            except Exception as patch_err:
+                logger.debug(f"Surgical patch skipped: {patch_err}")
+
+        # Actionable Diff があれば反映
+        if not surgical_patch_applied and actionable_diffs:
             for diff in actionable_diffs:
                 if isinstance(diff, dict):
                     loc = diff.get("location", "")
@@ -485,30 +506,31 @@ class WritingAgent(SkillAgent):
             f"【改稿後の本文】"
         )
 
-        rewritten_text = None
+        if not surgical_patch_applied:
+            rewritten_text = None
 
-        if self.llm is not None:
-            try:
-                if hasattr(self.llm, "agenerate"):
-                    req = LLMRequest(
-                        prompt=rewrite_prompt,
-                        system_prompt="プロの小説家として、指示に従い本文を魅力的に改稿してください。解説や挨拶は含めず本文のみを出力してください。",
-                        temperature=0.7,
-                        max_tokens=max(2000, int(len(original_text) * 1.5)),
-                        model=None,
-                        json_mode=False,
-                        response_schema=None,
-                        extra_params={},
-                    )
-                    resp: LLMResponse = await self.llm.agenerate(req)
-                    rewritten_text = resp.content
-                elif hasattr(self.llm, "generate_text"):
-                    rewritten_text = await self.llm.generate_text(
-                        rewrite_prompt,
-                        system_prompt="プロの小説家として、指示に従い本文を魅力的に改稿してください。解説や挨拶は含めず本文のみを出力してください。",
-                    )
-            except Exception as llm_err:
-                logger.warning(f"WritingAgent rewrite_for_dimension LLM error: {llm_err}")
+            if self.llm is not None:
+                try:
+                    if hasattr(self.llm, "agenerate"):
+                        req = LLMRequest(
+                            prompt=rewrite_prompt,
+                            system_prompt="プロの小説家として、指示に従い本文を魅力的に改稿してください。解説や挨拶は含めず本文のみを出力してください。",
+                            temperature=0.7,
+                            max_tokens=max(2000, int(len(original_text) * 1.5)),
+                            model=None,
+                            json_mode=False,
+                            response_schema=None,
+                            extra_params={},
+                        )
+                        resp: LLMResponse = await self.llm.agenerate(req)
+                        rewritten_text = resp.content
+                    elif hasattr(self.llm, "generate_text"):
+                        rewritten_text = await self.llm.generate_text(
+                            rewrite_prompt,
+                            system_prompt="プロの小説家として、指示に従い本文を魅力的に改稿してください。解説や挨拶は含めず本文のみを出力してください。",
+                        )
+                except Exception as llm_err:
+                    logger.warning(f"WritingAgent rewrite_for_dimension LLM error: {llm_err}")
 
         # 出力テキストのサニタイズ（AI前置き・コードブロック等の除去）
         if rewritten_text:

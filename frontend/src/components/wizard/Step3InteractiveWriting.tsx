@@ -23,7 +23,7 @@ interface Step3Props {
    *
    * 以前は textarea に `onChange` が無く、生成完了後に編集できても
    * `value` が props 参照のためキー入力が丸ごと飲み込まれていた。
-   * 編集内容を親へ返すことで、下書き保存と「執筆済み」カウントに 반영できる。
+   * 編集内容を親へ返すことで、下書き保存と「執筆済み」カウントに反映できる。
    */
   onManualEdit?: (content: string) => void;
   /**

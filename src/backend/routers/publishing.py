@@ -13,6 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.backend.auth import get_current_user
 from src.backend.database import get_async_db
 from src.backend.database.models import User, Book
+from src.backend.security.owner_guard import verify_book_ownership
 from src.services.formatters.ruby_transpiler import PublishPlatform
 from src.services.formatters.platform_formatter import PlatformFormatter
 from src.backend.database.series_loader import SeriesDataLoader, SeriesDataLoaderConfig
@@ -27,15 +28,7 @@ class PublishExportRequest(BaseModel):
 
 async def _verify_publish_access(db: AsyncSession, book_id: int, current_user: User) -> None:
     """リクエストユーザーがブックの所有者または管理者であることを検証する。"""
-    book = await db.get(Book, book_id)
-    if not book:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された作品が存在しません")
-    if current_user.role != "admin" and getattr(book, "user_id", None) is not None:
-        if book.user_id != current_user.id:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="この作品の出版データを操作する権限がありません",
-            )
+    await verify_book_ownership(book_id, current_user, db)
 
 
 @router.post("/{platform}")

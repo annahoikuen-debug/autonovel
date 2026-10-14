@@ -199,12 +199,7 @@ async def export_orchestrated_package(
     from fastapi import Response
 
     repo = BookRepository(session)
-    book = repo.get_book(book_id)
-    if not book:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された作品が存在しません")
-    if current_user.role != "admin" and getattr(book, "user_id", None) is not None:
-        if book.user_id != current_user.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="この作品のエクスポート権限がありません")
+    await verify_book_ownership(book_id, current_user, session)
 
     logger.info("Orchestrated export requested: book_id=%s", book_id)
     metrics.increment("orchestrated_exports_attempted")

@@ -70,7 +70,7 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
           setCards(rawCards);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       isMounted = false;
     };
@@ -172,7 +172,7 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
       {/* 見出しは既存導線との後方互換のため `Step 1: ...` のまま据え置く */}
       <h2 className="text-2xl font-bold mb-2 text-sky-400">Step 1: 企画アイデアと成長曲線の設計</h2>
       <p className="text-slate-400 mb-6 text-sm">
-        主人公にどの程度の「 유리」を与えるか、どう成長させていくかを決めます。
+        主人公にどの程度の「有利さ」を与えるか、どう成長させていくかを決めます。
         <strong className="text-slate-200">
           迷ったら上の「構造テンプレート」を1つ選ぶだけで設定が入ります。
         </strong>
@@ -190,9 +190,8 @@ export const Step1PlotInput: React.FC<Step1Props> = ({ onNext }) => {
                 <div
                   key={cid}
                   onClick={() => handleSelectCard(card)}
-                  className={`p-2 rounded border cursor-pointer transition-colors text-xs ${
-                    isSelected ? 'border-sky-400 bg-sky-950/60' : 'border-slate-700 bg-slate-800/40 hover:bg-slate-800'
-                  }`}
+                  className={`p-2 rounded border cursor-pointer transition-colors text-xs ${isSelected ? 'border-sky-400 bg-sky-950/60' : 'border-slate-700 bg-slate-800/40 hover:bg-slate-800'
+                    }`}
                 >
                   <div className="font-semibold">{card.label}</div>
                   <div className="text-slate-400 text-[10px] mt-0.5">{card.length} / {card.market}</div>

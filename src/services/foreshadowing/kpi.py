@@ -2,7 +2,7 @@
 
 ロードマップが掲げる主要KPI「伏線回収率」を実測可能にする。
 
-v5.2 までは `DbForeshadowingRepository.get_balance` が 완성しているのに
+v5.2 までは `DbForeshadowingRepository.get_balance` が完成しているのに
 本番から一度も呼ばれておらず、伏線に関する Prometheus メトリクスも 0 個だった。
 つまり「伏線がどれだけ回収されているか」を数値で追う手段が存在しなかった。
 """

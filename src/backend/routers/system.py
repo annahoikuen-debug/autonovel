@@ -12,7 +12,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from src.backend.auth import require_api_key
+from src.backend.auth import require_admin_user_or_key, require_api_key
 from src.services import resilience
 
 
@@ -94,13 +94,13 @@ async def offline_flag() -> dict[str, Any]:
     }
 
 
-@router.get("/admin/llm/providers/status", dependencies=[Depends(require_api_key)])
+@router.get("/admin/llm/providers/status", dependencies=[Depends(require_admin_user_or_key)])
 async def get_llm_provider_status() -> dict[str, Any]:
     gateway = _get_llm_gateway()
     return {"providers": gateway.status()}
 
 
-@router.post("/admin/llm/circuit-breaker/reset", dependencies=[Depends(require_api_key)])
+@router.post("/admin/llm/circuit-breaker/reset", dependencies=[Depends(require_admin_user_or_key)])
 async def reset_llm_circuit_breaker(
     request: CircuitResetRequest | None = None,
 ) -> dict[str, Any]:
@@ -127,7 +127,7 @@ class SkillVersionSwitchRequest(BaseModel):
     version: str
 
 
-@router.post("/api/system/admin/skills/switch_version", dependencies=[Depends(require_api_key)])
+@router.post("/api/system/admin/skills/switch_version", dependencies=[Depends(require_admin_user_or_key)])
 async def switch_skill_version(req: SkillVersionSwitchRequest) -> dict[str, Any]:
     """スキルバージョンを切り替える (v1, v2)"""
     if req.version not in ("v1", "v2"):
@@ -145,7 +145,7 @@ async def switch_skill_version(req: SkillVersionSwitchRequest) -> dict[str, Any]
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@router.get("/api/system/admin/skills/version", dependencies=[Depends(require_api_key)])
+@router.get("/api/system/admin/skills/version", dependencies=[Depends(require_admin_user_or_key)])
 async def get_skill_version() -> dict[str, Any]:
     """現在のスキルバージョンを取得"""
     orch = get_shared_orchestrator()
@@ -155,7 +155,7 @@ async def get_skill_version() -> dict[str, Any]:
     }
 
 
-@router.post("/api/system/admin/book_score/recalc", dependencies=[Depends(require_api_key)])
+@router.post("/api/system/admin/book_score/recalc", dependencies=[Depends(require_admin_user_or_key)])
 async def recalc_all_book_scores() -> dict[str, Any]:
     """全書籍の BookScore を再計算する（管理者用・並列化対応）"""
     import asyncio
@@ -254,7 +254,7 @@ class ImprovementPriorityItem(BaseModel):
     target_agent: str
 
 
-@router.get("/api/system/admin/book_score/improvement_priorities", dependencies=[Depends(require_api_key)])
+@router.get("/api/system/admin/book_score/improvement_priorities", dependencies=[Depends(require_admin_user_or_key)])
 async def get_improvement_priorities(book_id: int) -> dict[str, Any]:
     """書籍の改善優先順位を取得する（管理者用）"""
     try:
@@ -335,7 +335,7 @@ async def get_improvement_priorities(book_id: int) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@router.get("/api/system/admin/skills/metrics", dependencies=[Depends(require_api_key)])
+@router.get("/api/system/admin/skills/metrics", dependencies=[Depends(require_admin_user_or_key)])
 async def get_skill_metrics() -> dict[str, Any]:
     """スキル実行メトリクスを取得する（デバッグ用）"""
     try:
@@ -360,7 +360,7 @@ class ABTestRequest(BaseModel):
     samples: int = 10
 
 
-@router.post("/api/system/admin/skills/ab_test", dependencies=[Depends(require_api_key)])
+@router.post("/api/system/admin/skills/ab_test", dependencies=[Depends(require_admin_user_or_key)])
 async def run_ab_test(req: ABTestRequest) -> dict[str, Any]:
     """A/Bテストを即時実行する"""
     try:
@@ -383,7 +383,7 @@ async def run_ab_test(req: ABTestRequest) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@router.get("/api/system/admin/skills/ab_test/history", dependencies=[Depends(require_api_key)])
+@router.get("/api/system/admin/skills/ab_test/history", dependencies=[Depends(require_admin_user_or_key)])
 async def get_ab_test_history(skill_name: str | None = None) -> dict[str, Any]:
     """A/Bテスト履歴を取得する
 
@@ -408,7 +408,7 @@ class ABTestScheduleRequest(BaseModel):
     min_samples: int = 10
 
 
-@router.post("/api/system/admin/skills/ab_test/schedule", dependencies=[Depends(require_api_key)])
+@router.post("/api/system/admin/skills/ab_test/schedule", dependencies=[Depends(require_admin_user_or_key)])
 async def schedule_ab_test(req: ABTestScheduleRequest) -> dict[str, Any]:
     """定期的なA/Bテストをスケジュールする"""
     try:
@@ -432,7 +432,7 @@ async def schedule_ab_test(req: ABTestScheduleRequest) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
-@router.delete("/api/system/admin/skills/ab_test/schedule/{task_id}", dependencies=[Depends(require_api_key)])
+@router.delete("/api/system/admin/skills/ab_test/schedule/{task_id}", dependencies=[Depends(require_admin_user_or_key)])
 async def cancel_ab_test_schedule(task_id: int) -> dict[str, Any]:
     """スケジュール済みA/Bテストをキャンセルする
 
@@ -454,7 +454,7 @@ class AuditModelRoutingRequest(BaseModel):
     new_model: str
 
 
-@router.get("/admin/audit/model-routing", dependencies=[Depends(require_api_key)])
+@router.get("/admin/audit/model-routing", dependencies=[Depends(require_admin_user_or_key)])
 async def get_audit_model_routing() -> dict[str, Any]:
     """現在のオーディターごとのモデル割り当てを一覧返却"""
     from src.agents.specialists.model_router import AuditorModelRouter
@@ -476,7 +476,7 @@ async def get_audit_model_routing() -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e)) from e
 
 
-@router.post("/admin/audit/model-routing", dependencies=[Depends(require_api_key)])
+@router.post("/admin/audit/model-routing", dependencies=[Depends(require_admin_user_or_key)])
 async def update_audit_model_routing(req: AuditModelRoutingRequest) -> dict[str, Any]:
     """オーディターのモデル割り当てを動的に変更する
 
@@ -498,7 +498,7 @@ class ABTestAutoPromoteRequest(BaseModel):
     auto_promote: bool = True
 
 
-@router.post("/api/system/admin/skills/ab_test/auto_promote", dependencies=[Depends(require_api_key)])
+@router.post("/api/system/admin/skills/ab_test/auto_promote", dependencies=[Depends(require_admin_user_or_key)])
 async def auto_promote_ab_winner(req: ABTestAutoPromoteRequest) -> dict[str, Any]:
     """A/Bテスト勝者バージョンを自動本番昇格する"""
     try:

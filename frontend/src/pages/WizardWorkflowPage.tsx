@@ -68,7 +68,7 @@ function loadBookId(): number | null {
 export interface WizardWorkflowPageProps {
   /**
    * 別ページへ移るための関数。
-   * 既定は window.location による遷移で、Router なしでも動く（単体テスト 대응）。
+   * 既定は window.location による遷移で、Router なしでも動く（単体テスト対応）。
    */
   onNavigate?: (path: string) => void;
 }

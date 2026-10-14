@@ -2,14 +2,14 @@
 
 統合イラスト生成エンジン（`src/services/illustration/unified_generator.py`）が
 参照する**唯一の**モデル定義場所。モデルID・クライアント種別・単価・機能対応を
-ここに集約し、コード中の他釈所には一切書かない。
+ここに集約し、コード中の他箇所には一切書かない。
 
 - 既定モデルは NanoBanana2Lite（`gemini-3.1-flash-lite-image`）。
 - Imagen 系は切替候補／後方互換としてカタログに**残す**。
 - 実環境の切替は環境変数 `AUTONOVEL_IMAGE_MODEL` 1つで行う（コード改変ゼロ）。
 
 関連: `config/imagen_models.py` は旧 Imagen 専用カタログ。
-本モジュールへの移行は段階的に進め、既存テストを壊さないため当面两者併存する。
+本モジュールへの移行は段階的に進め、既存テストを壊さないため当面両者併存する。
 """
 
 from __future__ import annotations

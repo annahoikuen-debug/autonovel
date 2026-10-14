@@ -512,7 +512,7 @@ class SemanticCacheManager:
         l2_size = len(self._l2_embedding_cache)
         l2_max = self._l2_embedding_cache.maxsize
 
-        # ウォーム度スコア (L1とL2のカバー率を합算)
+        # ウォーム度スコア (L1とL2のカバー率を合算)
         warmth_score = (l1_size / l1_max * 0.7) + (l2_size / l2_max * 0.3)
 
         return {

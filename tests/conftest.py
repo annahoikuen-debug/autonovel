@@ -21,31 +21,135 @@ if ROOT not in sys.path:
 # という無関係な collection error しか生まさないため使用しない。
 # tests/regression/test_v5_repo_cleanliness.py が `src.agent` の再導入を禁止している。
 
+# NOTE: 環境変数はモジュールレベル（この conftest の import 時）に設定する。
+# pytest_configure フックは「初期 conftest の読み込み」の後 — つまり
+# tests/contract/conftest.py の `from src.backend.server import app` など
+# サブ conftest のインポートが既に完了した時点で実行されるため、そこで env を
+# セットしても settings シングルトンは既に .env
+# （AUTH_DISABLED=false / APP_ENV=development）で生成済みとなってしまう。
+# モジュール先頭で設定することで、いかなるサブ conftest のインポートより前に
+# テスト用 env を確定でき、.env が settings に反映されるのを防ぐ
+# （pydantic-settings は process env を .env より優先する）。
+os.environ.setdefault("APP_ENV", "testing")
+os.environ.setdefault("AUTONOVEL_RAG_MODE", "memory")
+os.environ.setdefault("RAG_FALLBACK_MODE", "memory")
+os.environ.setdefault("AUTH_DISABLED", "true")
+# 開発者のローカル .env に HUEY_BACKEND=memory が残っていても、
+# Settings.HUEY_BACKEND は Literal["sqlite","redis"] しか許容しないため
+# テスト収集時に ValidationError で全滅する。pydantic-settings は
+# 環境変数を .env より優先するので、ここで固定する。
+os.environ["HUEY_BACKEND"] = "sqlite"
+# プレースホルダーのダミー API キー (.env.example 由来) をクリアする。
+# これが残っていると ImageService などが「キーあり」と誤判定し、
+# テストが実ネットワークやダミーキー前提の挙動を経由して失敗する。
+for _key in ("OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_GENAI_API_KEY",
+             "GOOGLE_API_KEY", "ANTHROPIC_API_KEY"):
+    _val = os.environ.get(_key, "")
+    if not _val or "your_" in _val.lower() or _val.lower() in {"test", "dummy", "changeme"}:
+        os.environ.pop(_key, None)
+# .env ファイル由来のダミーキーも読み込まれないよう明示的に空に固定する。
+os.environ["OPENAI_API_KEY"] = ""
+os.environ["GEMINI_API_KEY"] = ""
+
+
 from tests.mocks.llm_adapter import LLMMocker, MockLLMAdapter
 
 
+class MockUnitOfWork:
+    """テスト用モック UnitOfWork。
+
+    実際の DB 接続を必要とせず、リポジトリ操作をスタブ化する。
+    """
+
+    def __init__(self) -> None:
+        self._committed = False
+        self._rolled_back = False
+        self._staged_chroma_adds = []
+        self._staged_chroma_deletes = []
+        self._repos = {}
+
+    async def __aenter__(self) -> MockUnitOfWork:
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            await self.rollback()
+        else:
+            await self.commit()
+        return False
+
+    async def commit(self) -> None:
+        self._committed = True
+
+    async def rollback(self) -> None:
+        self._rolled_back = True
+
+    def stage_chroma_add(self, collection: str, doc_id: str, doc_content: str, embedding: list[float], metadata: dict | None = None) -> None:
+        self._staged_chroma_adds.append({
+            "collection": collection,
+            "id": doc_id,
+            "content": doc_content,
+            "embedding": embedding,
+            "metadata": metadata,
+        })
+
+    def stage_chroma_delete(self, collection: str, ids: list[str]) -> None:
+        self._staged_chroma_deletes.append({"collection": collection, "ids": ids})
+
+    def get_staged_chroma_adds(self) -> list[dict]:
+        return self._staged_chroma_adds
+
+    def get_staged_chroma_deletes(self) -> list[dict]:
+        return self._staged_chroma_deletes
+
+    @property
+    def committed(self) -> bool:
+        return self._committed
+
+    @property
+    def rolled_back(self) -> bool:
+        return self._rolled_back
+
+    def __getattr__(self, name: str):
+        if name in self._repos:
+            return self._repos[name]
+        if name.endswith("_repository") or name in ("bible", "books", "branches", "chapters", "characters",
+                                                      "misc", "plots", "rules", "audit", "book_scores",
+                                                      "prompt_versions", "prompt_metrics", "pdca_history",
+                                                      "illustrations", "collab", "cost", "narrative_metrics", "trace"):
+            mock_repo = MockRepository()
+            self._repos[name] = mock_repo
+            return mock_repo
+        raise AttributeError(f"'MockUnitOfWork' has no attribute '{name}'")
+
+
+class MockRepository:
+    """汎用モックリポジトリ"""
+
+    def __init__(self):
+        self._data = {}
+        self._id_counter = 0
+
+    def __getattr__(self, name: str):
+        async def mock_method(*args, **kwargs):
+            if name.startswith("get_") or name.startswith("find_") or name.startswith("list_"):
+                return None
+            if name.startswith("create_") or name.startswith("add_") or name.startswith("save_"):
+                self._id_counter += 1
+                return {"id": self._id_counter}
+            if name.startswith("update_") or name.startswith("delete_") or name.startswith("remove_"):
+                return True
+            return None
+        return mock_method
+
+
 def pytest_configure(config):
-    """テスト収集前に環境変数を設定し、早期のDB初期化を防ぐ。"""
-    os.environ.setdefault("APP_ENV", "testing")
-    os.environ.setdefault("AUTONOVEL_RAG_MODE", "memory")
-    os.environ.setdefault("RAG_FALLBACK_MODE", "memory")
-    os.environ.setdefault("AUTH_DISABLED", "true")
-    # 開発者のローカル .env に HUEY_BACKEND=memory が残っていても、
-    # Settings.HUEY_BACKEND は Literal["sqlite","redis"] しか許可しないため
-    # テスト収集時に ValidationError で全滅する。pydantic-settings は
-    # 環境変数を .env より優先するので、ここで固定する。
-    os.environ["HUEY_BACKEND"] = "sqlite"
-    # プレースホルダーのダミー API キー (.env.example 由来) をクリアする。
-    # これが残っていると ImageService などが「キーあり」と誤判定し、
-    # テストが実ネットワークやダミーキー前提の挙動を経由して失敗する。
-    for _key in ("OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_GENAI_API_KEY",
-                 "GOOGLE_API_KEY", "ANTHROPIC_API_KEY"):
-        _val = os.environ.get(_key, "")
-        if not _val or "your_" in _val.lower() or _val.lower() in {"test", "dummy", "changeme"}:
-            os.environ.pop(_key, None)
-    # .env ファイル由来のダミーキーも読み込まれないよう明示的に空に固定する。
-    os.environ["OPENAI_API_KEY"] = ""
-    os.environ["GEMINI_API_KEY"] = ""
+    """テスト収集前に早期のDB初期化を防ぐ。
+
+    NOTE: 環境変数はモジュールレベル（上記）で既に設定済み。
+    pytest_configure はサブ conftest のインポート後に呼ばれるため、
+    ここで env を設定しても settings シングルトンには反映されない。
+    """
 
     def dummy_init_db(*args, **kwargs):
         pass
@@ -266,6 +370,16 @@ def client(db_session: Session):
 def llm_mocker() -> LLMMocker:
     """LLM モックの振る舞いを設定するための LLMMocker フィクスチャ。"""
     return LLMMocker()
+
+
+@pytest.fixture
+def mock_uow() -> MockUnitOfWork:
+    """テスト用モック UnitOfWork フィクスチャ (function scope).
+
+    実際の DB 接続を必要とせず、リポジトリ操作をスタブ化する。
+    並列実行時も独立したインスタンスが提供される。
+    """
+    return MockUnitOfWork()
 
 
 @pytest.fixture(autouse=True)

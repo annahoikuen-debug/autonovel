@@ -37,7 +37,7 @@ class SessionManager:
 
     @classmethod
     def _get_storage_path(cls) -> pathlib.Path:
-        """セッション�固��の保存パスを生成する"""
+        """セッション状態の保存パスを生成する"""
         try:
             from streamlit.runtime.scriptrunner import get_script_run_ctx
 
@@ -63,7 +63,7 @@ class SessionManager:
 
     @classmethod
     def save_state(cls, state: AppStateModel) -> None:
-        """モデルをセッション状態に書き�戻し、ディスクに永久化する"""
+        """モデルをセッション状態に書き戻し、ディスクに永続化する"""
         st.session_state[cls._STATE_KEY] = state
         cls._save_to_disk(state)
 
@@ -95,7 +95,7 @@ class SessionManager:
 
     @classmethod
     def reset(cls) -> None:
-        """状��をリセットする"""
+        """状態をリセットする"""
         if cls._STATE_KEY in st.session_state:
             del st.session_state[cls._STATE_KEY]
 

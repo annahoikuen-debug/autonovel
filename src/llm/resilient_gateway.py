@@ -56,7 +56,7 @@ class ResilientLLMGateway:
     # プロセス共有の ProviderFailoverManager。ResilientLLMGateway は
     # src/backend/engine.py と src/backend/routers/system.py の 2 箇所で
     # 生成されるため、インスタンスごとに作るとブレーカー状態が共有されず
-    # どちらかの网关だけ衰退する。
+    # どちらかのゲートウェイだけ衰退する。
     _failover_manager_singleton: ProviderFailoverManager | None = None
 
     def __init__(

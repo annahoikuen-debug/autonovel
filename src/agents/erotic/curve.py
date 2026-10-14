@@ -29,7 +29,7 @@ class EroticCurve:
         # positionでソート
         self.points = sorted(points, key=lambda p: p.position)
 
-        # 位置の�範�囲チェック
+        # 位置の範囲チェック
         for point in self.points:
             if not 0.0 <= point.position <= 1.0:
                 raise ValueError(
@@ -52,7 +52,7 @@ class EroticCurve:
             生成されたEroticCurveインスタンス
         """
         # ここでは簡易的なカーブを生成
-        # 実際の実装では、パラメータに基づいてより複�雑なカーブを生成する
+        # 実際の実装では、パラメータに基づいてより複雑なカーブを生成する
         points = [
             EroticPoint(position=0.0, intensity=params.base_intensity * 0.3),
             EroticPoint(position=0.3, intensity=params.base_intensity * 0.7),
@@ -63,7 +63,7 @@ class EroticCurve:
 
     def get_intensity_at(self, position: float) -> float:
         """
-        � 指定された位置での官能強度を線形補間で取得する
+        指定された位置での官能強度を線形補間で取得する
 
         Args:
             position: 0.0-1.0の相対位置
@@ -113,5 +113,5 @@ class EroticCurve:
         return sum(p.intensity for p in self.points) / len(self.points)
 
 
-# 下位互�換性のためのエイリアス（将来的に�削除予定）
+# 下位互換性のためのエイリアス（将来的に削除予定）
 EroticCurveModel = EroticCurve
