@@ -26,9 +26,11 @@ class WritingAgent(SkillAgent):
         model_name: str = None,
         temperature: float = None,
         session_factory: Any = None,
+        mcp_bridge: Any = None,
     ):
         super().__init__(repo=repo, llm=llm, style_rag=style_rag, rag_prefetch=rag_prefetch)
         self.pm = pm
+        self.mcp_bridge = mcp_bridge
         self.ctx_mgr = ctx_mgr
         self.reporter_factory = reporter_factory
         self.model_name = model_name
@@ -466,8 +468,8 @@ class WritingAgent(SkillAgent):
         saved_tokens = 0
         if actionable_diffs:
             try:
-                from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
-                bridge = AgentMCPBridge()
+                from src.mcp_servers.agent_mcp_bridge import get_default_bridge
+                bridge = getattr(self, "mcp_bridge", None) or get_default_bridge()
                 patch_res = bridge.apply_surgical_diffs(original_text, actionable_diffs, allow_fuzzy=True)
                 if patch_res.get("is_fully_applied") and patch_res.get("applied_count", 0) > 0:
                     rewritten_text = patch_res["patched_text"]

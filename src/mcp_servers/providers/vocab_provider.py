@@ -1,8 +1,11 @@
 """Sensory Vocabulary Provider for Rhetoric and Sensory Expressions (Proposal 4)."""
 from __future__ import annotations
 
+import logging
 import random
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger(__name__)
 from src.mcp_servers.vocab_schemas import (
     SensoryWord,
     SampledVocabResult,
@@ -102,8 +105,8 @@ class SensoryVocabProvider:
 
             self.register_words("erotic", erotic_words)
             self.register_words("romance", [w for w in erotic_words if w.intensity <= 0.7])
-        except Exception:
-            pass  # フォールバック安全設計
+        except Exception as e:
+            logger.warning("Failed to initialize builtin erotic vocabulary: %s", e)
 
     def register_words(self, genre: str, words: List[SensoryWord]) -> None:
         """指定ジャンルに感覚語彙リストを登録する"""

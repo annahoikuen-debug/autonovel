@@ -117,8 +117,8 @@ class EroticSpecialist:
         use_mcp_vocab = context.get("use_mcp_vocab_sampling") or (os.getenv("ENABLE_MCP_VOCAB_SAMPLING") == "1")
         if use_mcp_vocab:
             try:
-                from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
-                bridge = AgentMCPBridge()
+                from src.mcp_servers.agent_mcp_bridge import get_default_bridge
+                bridge = get_default_bridge()
                 norm_intensity = min(1.0, max(0.1, intensity / 5.0))
                 m_res = bridge.sample_vocab_by_intensity(category="metaphor", intensity=norm_intensity, count=min(5, metaphor_sample_size))
                 p_res = bridge.sample_vocab_by_intensity(category="psychological", intensity=norm_intensity, count=min(5, psychology_sample_size))

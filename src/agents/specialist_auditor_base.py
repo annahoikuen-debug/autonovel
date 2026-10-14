@@ -246,9 +246,15 @@ class SpecialistAuditor(ABC):
     # Maximum allowed standard deviation across samples (0-100)
     LLM_MAX_SCORE_STDEV = 15.0
 
-    def __init__(self, llm: Any | None = None, model_router: Any | None = None) -> None:
+    def __init__(
+        self,
+        llm: Any | None = None,
+        model_router: Any | None = None,
+        mcp_bridge: Any | None = None,
+    ) -> None:
         self.llm = llm
         self._model_router = model_router
+        self.mcp_bridge = mcp_bridge
         from src.agents.specialists.windowing import NovelSectionExtractor
         self.section_extractor = NovelSectionExtractor()
         # Allow runtime override via environment variable
@@ -296,8 +302,9 @@ class SpecialistAuditor(ABC):
             return None
 
         try:
-            from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
-            bridge = AgentMCPBridge()
+            from src.mcp_servers.agent_mcp_bridge import get_default_bridge
+
+            bridge = getattr(self, "mcp_bridge", None) or get_default_bridge()
             res = bridge.pre_screen_for_auditor(
                 text=text,
                 specialist_name=self.specialist_name,

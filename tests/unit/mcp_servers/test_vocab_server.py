@@ -6,7 +6,7 @@ from src.mcp_servers.vocab_server import VocabMCPServer
 
 
 def test_vocab_mcp_server_json_rpc():
-    provider = SensoryVocabProvider()
+    provider = SensoryVocabProvider(auto_load_defaults=False)
     server = VocabMCPServer(provider)
 
     # 1. Register words via JSON-RPC

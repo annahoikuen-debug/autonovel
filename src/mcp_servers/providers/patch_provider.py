@@ -135,8 +135,10 @@ class SurgicalPatchProvider:
         else:
             patched_text = original_text
 
-        # 全文再生成（平均4000トークン想定）と比較した節約トークン推定
-        saved_tokens = max(0, int(len(original_text) * 1.2)) if applied else 0
+        # 全文再生成をスキップしたことによる推定節約トークン（日本語: 約2文字で1トークン）
+        full_regen_tokens = max(1, len(original_text) // 2)
+        diff_tokens = sum(len(d.get("improved_suggestion", "")) // 2 for d in applied)
+        saved_tokens = max(0, full_regen_tokens - diff_tokens) if applied else 0
 
         return PatchApplicationResult(
             patched_text=patched_text,
@@ -200,7 +202,7 @@ class SurgicalPatchProvider:
 
         return windows
 
-    def _find_fuzzy_match(self, text: str, query: str, threshold: float = 0.75) -> Optional[str]:
+    def _find_fuzzy_match(self, text: str, query: str, threshold: float = 0.90) -> Optional[str]:
         """改行や空白の揺らぎを吸収して本文中から最も一致する部分文字列を探す"""
         norm_query = re.sub(r"\s+", "", query)
         if not norm_query:

@@ -19,7 +19,7 @@ def test_create_checkout_request():
     req = CreateCheckoutRequest(price_id="price_123", mode="payment")
     assert req.price_id == "price_123"
     assert req.mode == "payment"
-    
+
     with pytest.raises(ValueError):
         CreateCheckoutRequest(price_id="price_123", mode="invalid")
 

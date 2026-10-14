@@ -130,11 +130,11 @@ class PromptComposer:
 
         if context.get("enable_mcp_pruning"):
             try:
-                from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
+                from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge, get_default_bridge
 
                 bridge = getattr(self.agent, "mcp_bridge", None)
                 if not isinstance(bridge, AgentMCPBridge):
-                    bridge = AgentMCPBridge()
+                    bridge = get_default_bridge()
                 plot_outline = plot_data.get("detailed_blueprint") or plot_data.get("summary") or script_text
                 prune_res = bridge.prune_context(
                     plot_blueprint=plot_outline,
@@ -194,11 +194,11 @@ class PromptComposer:
         curve_type = context.get("emotional_curve_type") or context.get("tension_curve_type")
         if curve_type:
             try:
-                from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
+                from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge, get_default_bridge
 
                 bridge = getattr(self.agent, "mcp_bridge", None)
                 if not isinstance(bridge, AgentMCPBridge):
-                    bridge = AgentMCPBridge()
+                    bridge = get_default_bridge()
                 curve_data = bridge.generate_target_curve(curve_type=str(curve_type))
                 if curve_data and curve_data.get("prompt_directive"):
                     context["mcp_target_curve"] = curve_data

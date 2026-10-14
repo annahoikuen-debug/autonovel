@@ -1,5 +1,5 @@
 """MCP Servers package for AutoNovel."""
-from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
+from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge, get_default_bridge, reset_default_bridge
 from src.mcp_servers.audit_mcp_server import AuditMCPServer
 from src.mcp_servers.formatter_server import FormatterMCPServer
 from src.mcp_servers.providers.audit_provider import AuditProvider
@@ -27,4 +27,6 @@ __all__ = [
     "TensionAnalyzer",
     "TensionMCPServer",
     "VocabMCPServer",
+    "get_default_bridge",
+    "reset_default_bridge",
 ]
