@@ -44,7 +44,11 @@ class DummyLLM:
 
 @pytest.mark.asyncio
 async def test_writing_agent_rewrite_for_dimension_calls_llm_and_updates_chapter():
-    """Step 10: WritingAgent.rewrite_for_dimension executes actual LLM rewrite and updates chapter."""
+    """Step 10: WritingAgent.rewrite_for_dimension が LLM 改稿を実行し章を更新する。
+
+    本文中に一致しない original_quote を指定することで MCP 外科的パッチ経路を
+    回避し、LLM フォールバック経路を検証する。
+    """
     orig_text = "少年は立ち上がった。"
     repo = DummyRepo(content=orig_text)
     expected_rewrite = "少年は膝の痛みに耐え、歯を食いしばりながら立ち上がった。"
@@ -55,7 +59,8 @@ async def test_writing_agent_rewrite_for_dimension_calls_llm_and_updates_chapter
     diffs = [
         {
             "location": "冒頭",
-            "original_quote": "少年は立ち上がった。",
+            # 本文中に存在しない引用 → パッチ適用不可 → LLM 経路にフォールバック
+            "original_quote": "存在しない引用文です。",
             "improved_suggestion": "もっと痛みの描写を加えるべき",
             "rationale": "切迫感を出すため",
         }
@@ -80,6 +85,40 @@ async def test_writing_agent_rewrite_for_dimension_calls_llm_and_updates_chapter
     assert repo.updated_content == expected_rewrite
     # Prompt contained instructions and actionable diff
     assert "【修正箇所: 冒頭】" in agent._get_generator().llm.last_prompt
+
+
+@pytest.mark.asyncio
+async def test_writing_agent_rewrite_for_dimension_surgical_patch_applies_directly():
+    """本文中に一致する original_quote がある場合は MCP 外科的パッチで即時置換される。"""
+    orig_text = "少年は立ち上がった。"
+    repo = DummyRepo(content=orig_text)
+    suggestion = "少年は膝の痛みに耐え、歯を食いしばりながら立ち上がった。"
+    llm = DummyLLM(rewritten_output="LLM は呼ばれないはず")
+
+    agent = WritingAgent(repo=repo, llm=llm)
+
+    diffs = [
+        {
+            "location": "冒頭",
+            "original_quote": "少年は立ち上がった。",
+            "improved_suggestion": suggestion,
+            "rationale": "切迫感を出すため",
+        }
+    ]
+
+    result = await agent.rewrite_for_dimension(
+        book_id=1,
+        branch_id=1,
+        ep_num=1,
+        dimension="reader_experience",
+        actionable_diffs=diffs,
+    )
+
+    assert result["status"] == "success"
+    # パッチ適用本文（= improved_suggestion）がそのまま反映される
+    assert result["rewritten_text"] == suggestion
+    assert result["rewritten_length"] == len(suggestion)
+    assert repo.updated_content == suggestion
 
 
 @pytest.mark.asyncio

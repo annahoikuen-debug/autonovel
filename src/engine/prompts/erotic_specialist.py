@@ -134,11 +134,11 @@ class EroticSpecialist:
                         + "\n".join(f"  - {m}" for m in (sampled_m or vocab["metaphors"][:metaphor_sample_size]))
                     )
                     parts.append(
-                        f"\n・動的推奨の心理描写表現:\n"
+                        "\n・動的推奨の心理描写表現:\n"
                         + "\n".join(f"  - {p}" for p in (sampled_p or vocab["psychology"][:psychology_sample_size]))
                     )
                     parts.append(
-                        f"\n・動的推奨の擬音・擬態表現:\n"
+                        "\n・動的推奨の擬音・擬態表現:\n"
                         + "\n".join(f"  - {o}" for o in (sampled_o or vocab["onomatopoeia"][: min(6 + intensity, 15)]))
                     )
                 else:

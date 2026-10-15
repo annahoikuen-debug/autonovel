@@ -12,7 +12,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from src.backend.auth import require_admin_user_or_key, require_api_key
+from src.backend.auth import require_admin_user_or_key
 from src.services import resilience
 
 

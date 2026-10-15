@@ -18,15 +18,18 @@ def run_with_reruns(test_path, reruns=3, timeout_per_run=60):
         except subprocess.TimeoutExpired:
             passed = False
             result = None
-        except Exception:
+        except Exception as e:
             passed = False
             result = None
+            err_msg = f"Exception: {e}"
             # For other exceptions, we treat as failed
+        else:
+            err_msg = ""
         results.append({
             "run": i+1,
             "passed": passed,
             "stdout": result.stdout if result else "",
-            "stderr": result.stderr if result else f"Exception: {e}"
+            "stderr": result.stderr if result else err_msg
         })
     return results
 

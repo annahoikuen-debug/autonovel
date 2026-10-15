@@ -17,6 +17,13 @@ def client():
     import tempfile
     from pathlib import Path
 
+    # モジュールレベルの状態を退避し、テスト後に必ず復元する。
+    # (復元しないと他テストで core.get_db_manager がスタブのまま残り、
+    #  シングルトンの検証テストが別インスタンスを返して壊れる)
+    import src.backend.database.core as _core_backup
+    _saved_get_db_manager = _core_backup.get_db_manager
+    _saved_database_url = _core_backup.DATABASE_URL
+
     tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
     tmp.close()
     db_path = Path(tmp.name)
@@ -79,7 +86,13 @@ def client():
     # branches ルーターは `dependencies=[Depends(get_current_user)]` を持つ
     app.dependency_overrides[get_current_user] = lambda: owner
     app.include_router(bmod.router)
-    return TestClient(app)
+    try:
+        yield TestClient(app)
+    finally:
+        # モジュールレベルのモンキーパッチを復元して他テストへの漏出を防ぐ
+        _core_backup.get_db_manager = _saved_get_db_manager
+        _core_backup.DATABASE_URL = _saved_database_url
+        asyncio.run(test_engine.dispose())
 
 
 def test_ws_flow(client):

@@ -171,6 +171,8 @@ class ContextPruningProvider:
             score = 0
             if title and title in plot:
                 score += 15
+            elif content and any(w in content for w in plot.split()[:5] if len(w) > 3):
+                score += 5
 
             for kw in keywords:
                 if kw in plot:
@@ -221,6 +223,8 @@ class ContextPruningProvider:
             # プロット内にタイトルまたは説明文のキーワードが含まれるか
             if title and title in plot:
                 score += 40
+            elif desc and any(w in desc for w in plot.split()[:5] if len(w) > 3):
+                score += 20
 
             prioritized.append((score, f))
 

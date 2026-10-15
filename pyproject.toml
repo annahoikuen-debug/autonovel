@@ -218,7 +218,8 @@ exclude_lines = [
     "if TYPE_CHECKING:",
 ]
 # Phase gate plan: fail_under: 55 → 65 → 70 → 75 → 80
-fail_under = 55
+# 2026-10: 実測 81.0% 到達に伴い最終目標の 80 に引き上げ。
+fail_under = 80
 precision = 2
 show_missing = true
 skip_covered = false
