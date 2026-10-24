@@ -1,4 +1,5 @@
 """Character continuity: SQLite persistence, detection and transition contracts."""
+
 import sqlite3
 
 import pytest
@@ -29,20 +30,24 @@ def test_character_snapshot_defaults():
 
 
 def test_continuity_report_model():
-    report = ContinuityReport(is_consistent=True, issues=[], checked_dimensions=["stamina"],
-                              character_name="Aki", episode_num=2)
+    report = ContinuityReport(
+        is_consistent=True, issues=[], checked_dimensions=["stamina"], character_name="Aki", episode_num=2
+    )
     assert report.is_consistent is True
     assert report.character_name == "Aki"
 
 
 def test_persistence_across_instances_and_isolation(tracker):
-    snapshot = CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                      stamina_level="exhausted",
-                                      psych_state="distressed",
-                                      clothing_state="fully_undressed",
-                                      intimacy_level="stranger",
-                                      location="indoor",
-                                      custom_flags={"quest": "active"})
+    snapshot = CharacterStateSnapshot(
+        character_name="Aki",
+        episode_num=1,
+        stamina_level="exhausted",
+        psych_state="distressed",
+        clothing_state="fully_undressed",
+        intimacy_level="stranger",
+        location="indoor",
+        custom_flags={"quest": "active"},
+    )
     tracker.save_snapshot(snapshot)
 
     # Reopened tracker loads from SQLite
@@ -80,14 +85,11 @@ def test_persistence_across_instances_and_isolation(tracker):
 def test_get_snapshot_db_errors_and_corrupt_flags(tmp_path):
     db_path = str(tmp_path / "corrupt.db")
     tracker = ContinuityTracker(db_path)
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                custom_flags={"a": "b"}))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, custom_flags={"a": "b"}))
     # Drop the memory cache entry so reads go through SQLite
     tracker._snapshots.clear()
 
     import sqlite3 as sqlite3_module
-
-    original_connect = sqlite3_module.connect
 
     def broken_connect(*args, **kwargs):
         raise RuntimeError("db down")
@@ -147,8 +149,7 @@ def test_extract_snapshot_stamina_and_location(tracker):
 
 
 def test_extract_snapshot_explicit_clothing_state(tracker):
-    snapshot = tracker.extract_snapshot("Aki", 1, "平穏な会話。",
-                                        clothing_state="partially_undressed")
+    snapshot = tracker.extract_snapshot("Aki", 1, "平穏な会話。", clothing_state="partially_undressed")
     assert snapshot.clothing_state == "partially_undressed"
 
 
@@ -232,8 +233,7 @@ def test_static_numeric_mappers():
 def test_check_stamina_continuity(tracker):
     # No history -> no issues
     assert tracker.check_stamina_continuity(2, "Aki", "元気に歩く。") == []
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                stamina_level="exhausted"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, stamina_level="exhausted"))
     # exhausted -> energetic is not allowed
     text = "前半" * 20 + "元気元気"
     issues = tracker.check_stamina_continuity(2, "Aki", text)
@@ -246,8 +246,7 @@ def test_check_stamina_continuity(tracker):
 
 def test_check_recovery_description(tracker):
     assert tracker.check_recovery_description(2, "Aki", "元気に歩く。") == []
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                stamina_level="exhausted"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, stamina_level="exhausted"))
     # Recovered without any recovery keyword -> warning
     text = "前半" * 20 + "元気元気"
     issues = tracker.check_recovery_description(2, "Aki", text)
@@ -260,8 +259,7 @@ def test_check_recovery_description(tracker):
 
 def test_check_stamina_jump(tracker):
     assert tracker.check_stamina_jump(2, "Aki", "元気に歩く。") == []
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                stamina_level="exhausted"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, stamina_level="exhausted"))
     # exhausted(0) -> energetic(3): jump >= 2
     text = "前半" * 20 + "元気元気"
     issues = tracker.check_stamina_jump(2, "Aki", text)
@@ -274,8 +272,7 @@ def test_check_stamina_jump(tracker):
 
 def test_check_psych_continuity(tracker):
     assert tracker.check_psych_continuity(2, "Aki", "安心して歩く。") == []
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                psych_state="distressed"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, psych_state="distressed"))
     # distressed -> euphoric not allowed
     text = "前半" * 20 + "恍惚恍惚"
     issues = tracker.check_psych_continuity(2, "Aki", text)
@@ -288,8 +285,7 @@ def test_check_psych_continuity(tracker):
 
 def test_check_psych_trigger(tracker):
     assert tracker.check_psych_trigger(2, "Aki", "安心して歩く。") == []
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                psych_state="distressed"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, psych_state="distressed"))
     # distressed -> content without trigger keyword -> warning
     text = "前半" * 40 + "安心安心"
     issues = tracker.check_psych_trigger(2, "Aki", text)
@@ -299,8 +295,7 @@ def test_check_psych_trigger(tracker):
     text = "前半" * 40 + "救われて安心安心"
     assert tracker.check_psych_trigger(2, "Aki", text) == []
     # euphoric -> distressed without trigger -> warning
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                psych_state="euphoric"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, psych_state="euphoric"))
     text = "前半" * 40 + "絶望絶望"
     issues = tracker.check_psych_trigger(2, "Aki", text)
     assert len(issues) == 1
@@ -309,8 +304,7 @@ def test_check_psych_trigger(tracker):
 
 def test_check_psych_jump(tracker):
     assert tracker.check_psych_jump(2, "Aki", "安心して歩く。") == []
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                psych_state="distressed"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, psych_state="distressed"))
     # distressed(0) -> content(3): jump >= 2
     text = "前半" * 20 + "安心安心"
     issues = tracker.check_psych_jump(2, "Aki", text)
@@ -323,8 +317,7 @@ def test_check_psych_jump(tracker):
 
 def test_check_clothing_continuity(tracker):
     assert tracker.check_clothing_continuity(2, "Aki", "着る。") == []
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                clothing_state="fully_undressed"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, clothing_state="fully_undressed"))
     # Undressed + no time passage + no dress description -> warning
     text = "前半" * 60 + "会話をする。"
     issues = tracker.check_clothing_continuity(2, "Aki", text)
@@ -340,8 +333,7 @@ def test_check_clothing_continuity(tracker):
     text = "前半" * 60 + "着直す。"
     assert tracker.check_clothing_continuity(2, "Aki", text) == []
     # Fully dressed previous state -> no check
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                clothing_state="fully_dressed"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, clothing_state="fully_dressed"))
     assert tracker.check_clothing_continuity(2, "Aki", "会話をする。") == []
 
 
@@ -350,20 +342,17 @@ def test_check_intimacy_regression_and_rush(tracker):
     assert tracker.check_intimacy_regression(2, "Aki", "信頼する。") == []
     assert tracker.check_intimacy_rush(2, "Aki", "信頼する。") == []
     # bonded(4) -> stranger(0): regression >= 2
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                intimacy_level="bonded"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, intimacy_level="bonded"))
     issues = tracker.check_intimacy_regression(2, "Aki", "初対面のような距離。")
     assert len(issues) == 1
     assert "[親密度後退]" in issues[0]
     # stranger(0) -> bonded(4): rush >= 2
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                intimacy_level="stranger"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, intimacy_level="stranger"))
     issues = tracker.check_intimacy_rush(2, "Aki", "運命の絆、一つに。")
     assert len(issues) == 1
     assert "[親密度急進]" in issues[0]
     # Small change -> no issues (close(2) -> acquaintance(1))
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                intimacy_level="close"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, intimacy_level="close"))
     assert tracker.check_intimacy_regression(2, "Aki", "平穏な挨拶。") == []
     # close(2) -> stranger(0) is a 2-level regression -> warning
     issues = tracker.check_intimacy_regression(2, "Aki", "初対面の挨拶。")
@@ -375,21 +364,18 @@ def test_check_intimacy_regression_and_rush(tracker):
 
 def test_check_intimacy_vs_erotic_level(tracker):
     assert tracker.check_intimacy_vs_erotic_level(2, "Aki", "口づけ。") == []
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                intimacy_level="stranger"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, intimacy_level="stranger"))
     issues = tracker.check_intimacy_vs_erotic_level(2, "Aki", "肌を重ねる。")
     assert len(issues) == 1
     assert "[親密度不足]" in issues[0]
     # intimate level is fine
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                intimacy_level="intimate"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, intimacy_level="intimate"))
     assert tracker.check_intimacy_vs_erotic_level(2, "Aki", "肌を重ねる。") == []
 
 
 def test_check_location_continuity(tracker):
     assert tracker.check_location_continuity(2, "Aki", "部屋に戻る。") == []
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                location="indoor"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, location="indoor"))
     # Same location -> no issues
     text = "前半" * 60 + "部屋で話す。"
     assert tracker.check_location_continuity(2, "Aki", text) == []
@@ -405,8 +391,7 @@ def test_check_location_continuity(tracker):
     text = "翌朝、森を歩く。"
     assert tracker.check_location_continuity(2, "Aki", text) == []
     # Unknown previous location -> skip
-    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1,
-                                                location="unknown"))
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="Aki", episode_num=1, location="unknown"))
     assert tracker.check_location_continuity(2, "Aki", "森を歩く。") == []
 
 

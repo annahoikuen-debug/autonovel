@@ -187,13 +187,19 @@ def with_llm_retry():
                     err_msg = str(e).lower() or repr(e).lower()
 
                     # 1. トークン超過の判定（Fail-Fast対象）
+                    # 注意: "resource exhausted" は Google 系 API がレート制限/クォータ
+                    # 溢出時にも返すメッセージ (ResourceExhausted, HTTP 429) であり、
+                    # ここに入れるとリトライ可能な 429 が致命的と誤判定されて
+                    # フォールバックまで全滅していた。429/quota は下方の
+                    # リトライ判定 (429, quota) に一任する。
                     if any(
                         x in err_msg
                         for x in [
                             "token limit",
                             "context window",
                             "too many tokens",
-                            "resource exhausted",
+                            "exceeds max output tokens",
+                            "input token count",
                         ]
                     ):
                         logger.error("❌ Token limit exceeded. Fail-Fast. Error: %s", e)
@@ -325,33 +331,35 @@ def with_llm_retry():
                             fail_count = getattr(self, "_consecutive_5xx", 0)
 
                         if fail_count >= 2:
-                            from config import MODEL_STABLE_FALLBACK
-
                             try:
-                                from config import MODEL_ULTRA_STABLE
-                            except ImportError:
-                                MODEL_ULTRA_STABLE = MODEL_STABLE_FALLBACK
+                                from src.backend.config import settings
+                                model_fallback = settings.get_task_model("fallback")
+                                model_ultra_stable = settings.get_task_model("ultra_stable")
+                            except Exception:
+                                from config import MODEL_STABLE_FALLBACK, MODEL_ULTRA_STABLE
+                                model_fallback = MODEL_STABLE_FALLBACK
+                                model_ultra_stable = MODEL_ULTRA_STABLE
 
-                            if state.model_name != MODEL_ULTRA_STABLE and (
-                                state.attempt >= 2 or state.model_name == MODEL_STABLE_FALLBACK
+                            if state.model_name != model_ultra_stable and (
+                                state.attempt >= 2 or state.model_name == model_fallback
                             ):
                                 state.model_name = (
-                                    MODEL_ULTRA_STABLE
-                                    if MODEL_ULTRA_STABLE
-                                    else "gemini-3.1-flash-lite"
+                                    model_ultra_stable
+                                    if model_ultra_stable
+                                    else state.model_name
                                 )
                                 logger.warning(
                                     "[Gemini FALLBACK] Persistent 5xx. Switching to ULTRA_STABLE: %s",
                                     state.model_name,
                                 )
                             elif (
-                                state.model_name != MODEL_STABLE_FALLBACK
-                                and MODEL_STABLE_FALLBACK != state.original_model_name
+                                state.model_name != model_fallback
+                                and model_fallback != state.original_model_name
                             ):
                                 state.model_name = (
-                                    MODEL_STABLE_FALLBACK
-                                    if MODEL_STABLE_FALLBACK
-                                    else "gemini-3.1-flash-lite"
+                                    model_fallback
+                                    if model_fallback
+                                    else state.model_name
                                 )
                                 logger.warning(
                                     "[Gemini FALLBACK] 5xx detected. Switching to STABLE_FALLBACK: %s",

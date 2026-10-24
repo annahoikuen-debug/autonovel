@@ -110,17 +110,36 @@ def test_openapi_json_has_no_path_drift_against_the_app():
         p for p in spec["paths"] if not p.startswith(("/openapi", "/docs", "/redoc"))
     }
     live = set()
-    for r in app.routes:
-        path = getattr(r, "path", None)
-        if not isinstance(path, str) or not path.startswith("/"):
-            continue
-        if path.startswith(("/openapi", "/docs", "/redoc")):
-            continue
-        if "WebSocket" in type(r).__name__:
-            continue  # WebSocket は OpenAPI 仕様に現れない
-        if getattr(r, "include_in_schema", True) is False:
-            continue  # include_in_schema=False のエイリアスは仕様書に出さない
-        live.add(path)
+    try:
+        from fastapi.openapi.utils import _get_api_route_for_openapi
+        from fastapi.routing import iter_route_contexts
+
+        for ctx in iter_route_contexts(app.routes):
+            r = _get_api_route_for_openapi(ctx)
+            if r is None:
+                continue
+            path = getattr(r, "path", None)
+            if not isinstance(path, str) or not path.startswith("/"):
+                continue
+            if path.startswith(("/openapi", "/docs", "/redoc")):
+                continue
+            if "WebSocket" in type(r).__name__:
+                continue  # WebSocket は OpenAPI 仕様に現れない
+            if getattr(r, "include_in_schema", True) is False:
+                continue  # include_in_schema=False のエイリアスは仕様書に出さない
+            live.add(path)
+    except ImportError:
+        for r in app.routes:
+            path = getattr(r, "path", None)
+            if not isinstance(path, str) or not path.startswith("/"):
+                continue
+            if path.startswith(("/openapi", "/docs", "/redoc")):
+                continue
+            if "WebSocket" in type(r).__name__:
+                continue  # WebSocket は OpenAPI 仕様に現れない
+            if getattr(r, "include_in_schema", True) is False:
+                continue  # include_in_schema=False のエイリアスは仕様書に出さない
+            live.add(path)
     missing = sorted(live - documented)
     extra = sorted(documented - live)
     assert not missing and not extra, (

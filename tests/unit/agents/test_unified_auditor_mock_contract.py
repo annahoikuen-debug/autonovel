@@ -1,6 +1,6 @@
 """Unit tests verifying UnifiedAuditor qualitative & quantitative contracts with mock LLM."""
+
 import pytest
-from unittest.mock import AsyncMock
 
 from src.agents.specialists.unified_auditor import UnifiedAuditor
 

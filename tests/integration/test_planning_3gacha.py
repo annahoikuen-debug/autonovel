@@ -1,7 +1,8 @@
 # tests/integration/test_planning_3gacha.py
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -36,41 +37,20 @@ def mock_repo():
 @pytest.fixture
 def mock_book_score_calculator():
     calc = MagicMock(spec=BookScoreCalculator)
-    calc._get_weights = MagicMock(return_value={
-        "structure": 35, "coherency": 10, "factual_grounding": 10,
-        "visual_textual_synergy": 5, "reader_experience": 40,
-    })
-    return calc
-
-
-@pytest.fixture
-def mock_bible_generator():
-    gen = MagicMock()
-    gen.create_hegemony_plan = AsyncMock(return_value=(1, {"arcs": []}))
-    return gen
-
-
-@pytest.fixture
-def mock_repo():
-    repo = MagicMock()
-    repo._session_factory = MagicMock()
-    return repo
-
-
-@pytest.fixture
-def mock_book_score_calculator():
-    calc = MagicMock(spec=BookScoreCalculator)
-    calc._get_weights = MagicMock(return_value={
-        "structure": 35, "coherency": 10, "factual_grounding": 10,
-        "visual_textual_synergy": 5, "reader_experience": 40,
-    })
+    calc._get_weights = MagicMock(
+        return_value={
+            "structure": 35,
+            "coherency": 10,
+            "factual_grounding": 10,
+            "visual_textual_synergy": 5,
+            "reader_experience": 40,
+        }
+    )
     return calc
 
 
 @pytest.mark.asyncio
-async def test_planning_service_3gacha_comparison(
-    mock_bible_generator, mock_repo, mock_book_score_calculator
-):
+async def test_planning_service_3gacha_comparison(mock_bible_generator, mock_repo, mock_book_score_calculator):
     """3案企画ガチャの比較評価・推奨案選出"""
     service = PlanningService(
         bible_generator=mock_bible_generator,
@@ -102,9 +82,7 @@ async def test_planning_service_3gacha_comparison(
 
     proposals = [proposal_a, proposal_b, proposal_c]
 
-    results = await service.predict_book_score_for_proposals(
-        proposals, genre="literary", target_eps=10
-    )
+    results = await service.predict_book_score_for_proposals(proposals, genre="literary", target_eps=10)
 
     # 3案分の結果が返る
     assert len(results) == 3
@@ -134,9 +112,7 @@ async def test_planning_service_3gacha_comparison(
 
 
 @pytest.mark.asyncio
-async def test_planning_service_single_proposal(
-    mock_bible_generator, mock_repo, mock_book_score_calculator
-):
+async def test_planning_service_single_proposal(mock_bible_generator, mock_repo, mock_book_score_calculator):
     """単一案の予測も正常動作"""
     service = PlanningService(
         bible_generator=mock_bible_generator,
@@ -163,9 +139,7 @@ async def test_planning_service_single_proposal(
 
 
 @pytest.mark.asyncio
-async def test_planning_service_empty_arcs(
-    mock_bible_generator, mock_repo, mock_book_score_calculator
-):
+async def test_planning_service_empty_arcs(mock_bible_generator, mock_repo, mock_book_score_calculator):
     """空アークリストで低スコア返却"""
     service = PlanningService(
         bible_generator=mock_bible_generator,
@@ -184,9 +158,7 @@ async def test_planning_service_empty_arcs(
 
 
 @pytest.mark.asyncio
-async def test_planning_service_no_calculator(
-    mock_bible_generator, mock_repo
-):
+async def test_planning_service_no_calculator(mock_bible_generator, mock_repo):
     """BookScoreCalculator なしでもエラーにならない"""
     service = PlanningService(
         bible_generator=mock_bible_generator,

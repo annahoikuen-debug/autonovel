@@ -502,10 +502,38 @@ async def test_cancel_task(monkeypatch):
 
     monkeypatch.setattr(easy_mode, "BookRepository", DummyRepo)
     monkeypatch.setattr(huey_mod, "revoke_by_id", lambda tid: None)
+    # 所有者が記録されていないタスクは管理者のみキャンセルできる (fail-closed)。
+    monkeypatch.setattr(huey_mod, "result", lambda tid: None)
 
-    response = await easy_mode.cancel_task("task-123")
+    response = await easy_mode.cancel_task("task-123", current_user=make_admin_user())
     assert response["task_id"] == "task-123"
     assert response["status"] == "cancelled"
+
+
+@pytest.mark.asyncio
+async def test_cancel_task_rejects_task_without_owner(monkeypatch):
+    """所有者が不明なタスクは非管理者からキャンセルできない (IDOR 対策)。"""
+
+    class DummyRepo:
+        def __init__(self, session=None):
+            self.session = session
+
+        @property
+        def is_async(self) -> bool:
+            return False
+
+        def update_task_status(self, task_id, status):
+            pass
+
+    monkeypatch.setattr(easy_mode, "BookRepository", DummyRepo)
+    monkeypatch.setattr(huey_mod, "revoke_by_id", lambda tid: None)
+    monkeypatch.setattr(huey_mod, "result", lambda tid: None)
+
+    from fastapi import HTTPException
+
+    with pytest.raises(HTTPException) as exc:
+        await easy_mode.cancel_task("task-123", current_user=MagicMock(id=2, role="user"))
+    assert exc.value.status_code == 403
 
 @pytest.mark.asyncio
 async def test_generate_content_validation_error(monkeypatch, dummy_session, dummy_request):

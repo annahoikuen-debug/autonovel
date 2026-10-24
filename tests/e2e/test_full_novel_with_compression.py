@@ -1,4 +1,5 @@
 """E2Eテスト - 実書籍生成フローでの圧縮統合確認"""
+
 from __future__ import annotations
 
 import pytest
@@ -65,21 +66,22 @@ class TestFullNovelWithCompression:
     @pytest.fixture
     def writing_service(self, compressor, context_builder_agent):
         writing_agent = Mock()
-        writing_agent.execute = AsyncMock(return_value=AgentResult(
-            next_agent=None,
-            artifacts={"written_text": "生成された本文\n" * 50},
-            should_retry=False,
-            error=None
-        ))
+        writing_agent.execute = AsyncMock(
+            return_value=AgentResult(
+                next_agent=None, artifacts={"written_text": "生成された本文\n" * 50}, should_retry=False, error=None
+            )
+        )
         book_score_calculator = Mock()
-        book_score_calculator.calculate = AsyncMock(return_value=Mock(
-            overall_score=85.0,
-            structure_score=85.0,
-            coherency_score=85.0,
-            factual_grounding_score=85.0,
-            visual_textual_synergy_score=85.0,
-            reader_experience_score=85.0,
-        ))
+        book_score_calculator.calculate = AsyncMock(
+            return_value=Mock(
+                overall_score=85.0,
+                structure_score=85.0,
+                coherency_score=85.0,
+                factual_grounding_score=85.0,
+                visual_textual_synergy_score=85.0,
+                reader_experience_score=85.0,
+            )
+        )
         illustration_agent = Mock()
         return WritingService(
             writing_agent=writing_agent,
@@ -93,7 +95,7 @@ class TestFullNovelWithCompression:
 
     @pytest.fixture
     def episode_writer(self, compressor, context_builder_agent):
-        llm = Mock()
+        Mock()
         return EpisodeWriter(
             llm=Mock(),
             context_builder=context_builder_agent,
@@ -120,7 +122,7 @@ class TestFullNovelWithCompression:
                     "target_word_count": 3000,
                     "style_tag": "fantasy",
                     "session": mock_session,
-                }
+                },
             )
 
             # WritingService の _build_context_with_compression メソッドをテスト
@@ -153,7 +155,7 @@ class TestFullNovelWithCompression:
             book_id=1,
             branch_id=1,
             ep_num=1,
-            artifacts={"repo": Mock(), "target_word_count": 3000, "session": mock_session}
+            artifacts={"repo": Mock(), "target_word_count": 3000, "session": mock_session},
         )
 
         # _build_context_with_compression を使って圧縮率をテスト
@@ -177,7 +179,7 @@ class TestFullNovelWithCompression:
             book_id=1,
             branch_id=1,
             ep_num=1,
-            artifacts={"repo": Mock(), "target_word_count": 3000, "session": mock_session}
+            artifacts={"repo": Mock(), "target_word_count": 3000, "session": mock_session},
         )
 
         # _build_context_with_compression が正常に動作することを確認
@@ -191,10 +193,7 @@ class TestFullNovelWithCompression:
         """生成完了まで例外なし"""
         for ep_num in [1, 2, 3]:
             ctx = AgentContext(
-                book_id=1,
-                branch_id=1,
-                ep_num=ep_num,
-                artifacts={"repo": Mock(), "target_word_count": 3000}
+                book_id=1, branch_id=1, ep_num=ep_num, artifacts={"repo": Mock(), "target_word_count": 3000}
             )
 
             # 例外が発生しないこと
@@ -226,7 +225,7 @@ class TestEpisodeWriterCompressionE2E:
 
     @pytest.fixture
     def episode_writer(self, compressor, context_builder_agent):
-        llm = Mock()
+        Mock()
         return EpisodeWriter(
             llm=Mock(),
             context_builder=context_builder_agent,
@@ -262,7 +261,7 @@ class TestEpisodeWriterCompressionE2E:
                 "target_word_count": 3000,
                 "style_tag": None,
                 "session": mock_session,
-            }
+            },
         )
 
         # ContextBuilderAgent.execute が正常に動作することを確認

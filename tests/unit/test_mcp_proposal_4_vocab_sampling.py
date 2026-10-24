@@ -1,13 +1,12 @@
 """Tests for MCP Proposal 4: Sensory & Erotic Vocabulary Sampling Server."""
+
 from __future__ import annotations
 
-import pytest
 from unittest.mock import MagicMock
 
 from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
 from src.mcp_servers.vocab_server import VocabMCPServer
 from src.mcp_servers.providers.vocab_provider import SensoryVocabProvider
-from src.mcp_servers.vocab_schemas import SensoryWord
 from src.engine.prompts.erotic_specialist import EroticSpecialist
 
 

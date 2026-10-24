@@ -20,7 +20,7 @@ def generate_usage_report(
     sample_texts: list[str],
     dict_path: Path = Path("data/subtext/tokens.yaml"),
 ) -> dict:
-    expander = TokenExpander(dict_path=dict_path)
+    TokenExpander(dict_path=dict_path)
     counts: dict[str, int] = {}
     total_tokens = 0
 

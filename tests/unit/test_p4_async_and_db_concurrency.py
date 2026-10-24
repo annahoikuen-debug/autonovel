@@ -197,7 +197,9 @@ class TestTasksRouterAsyncRedis:
 
             from src.backend.routers.tasks import get_dag_status
 
-            await get_dag_status("test_dag")
+            # DAG 所有権検証 (IDOR 対策) を通すため管理者を渡す
+            admin = MagicMock(id=1, role="admin")
+            await get_dag_status("test_dag", current_user=admin)
 
             mock_get.assert_called_once()
             mock_redis.get.assert_called_once_with("dag_status:test_dag")

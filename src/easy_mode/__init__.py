@@ -56,6 +56,20 @@ class SeriesResult:
         self.metadata = metadata
         self.created_at = created_at
         self.status = status
+        self._synopsis = None
+
+    @property
+    def synopsis(self) -> str:
+        """あらすじ・シノプシス。未設定時は metadata['synopsis'] または concept をフォールバック返却。"""
+        if self._synopsis:
+            return self._synopsis
+        if isinstance(self.metadata, dict) and self.metadata.get("synopsis"):
+            return str(self.metadata["synopsis"])
+        return self.concept or ""
+
+    @synopsis.setter
+    def synopsis(self, value: str | None) -> None:
+        self._synopsis = value
 
 
 __all__ = [

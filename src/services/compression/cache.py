@@ -24,9 +24,21 @@ class CompressionCache:
         ep_num: int | None,
         scene_type: str,
         content_hash: str,
+        budget: int | None = None,
+        config_hash: str = "",
+        protected_hash: str = "",
     ) -> str:
-        """Generate consistent cache key."""
-        raw = f"ctx_comp:{book_id or 0}:{ep_num or 0}:{scene_type}:{content_hash}"
+        """Generate consistent cache key.
+
+        予算 (max_tokens)・圧縮設定・保護コンテキストもキーに含める。
+        これらが無いと budget=8000 で作った結果が budget=500 の呼び出しに
+        返されたり、伏線ピン留め済みの結果がピン留めなしとして返されたり
+        して、保護すべき文脈が切り捨てられる恐れがあった。
+        """
+        raw = (
+            f"ctx_comp:{book_id or 0}:{ep_num or 0}:{scene_type}:{content_hash}"
+            f":{budget or 0}:{config_hash}:{protected_hash}"
+        )
         return hashlib.sha256(raw.encode("utf-8")).hexdigest()
 
     def get(self, key: str) -> dict[str, Any] | None:

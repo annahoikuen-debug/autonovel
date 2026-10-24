@@ -594,7 +594,7 @@ class TestSDWebUIClient:
                 return _Resp()
 
         monkeypatch.setattr(httpx, "AsyncClient", _FakeClient)
-        monkeypatch.setattr("src.services.illustration.sd_client.time.sleep", AsyncMock())
+        monkeypatch.setattr("src.services.illustration.sd_client.asyncio.sleep", AsyncMock())
         c = SDWebUIClient(max_retries=2)
         with pytest.raises(RuntimeError, match="no images"):
             await c.generate_image(ImageGenerationRequest(prompt="p"))
@@ -614,7 +614,7 @@ class TestSDWebUIClient:
                 raise httpx.HTTPError("500")
 
         monkeypatch.setattr(httpx, "AsyncClient", _FakeClient)
-        monkeypatch.setattr("src.services.illustration.sd_client.time.sleep", AsyncMock())
+        monkeypatch.setattr("src.services.illustration.sd_client.asyncio.sleep", AsyncMock())
         c = SDWebUIClient(max_retries=2)
         with pytest.raises(RuntimeError, match="after 2 attempts"):
             await c.generate_image(ImageGenerationRequest(prompt="p"))

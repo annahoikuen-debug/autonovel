@@ -2,6 +2,7 @@
 40話商業ライフサイクルE2E結合テスト
 40話ビートシート策定から10万字商業EPUB納品までの一連のライフサイクルを自動検証。
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.agents.planning import PlanningAgent
@@ -25,7 +26,7 @@ async def test_40ep_commercial_lifecycle():
             phase="テストフェーズ",
             mission=f"第{i}話のミッション",
             tension_target=0.5,
-            visual_scene_focus=f"第{i}話のビジュアルフォーカス"
+            visual_scene_focus=f"第{i}話のビジュアルフォーカス",
         )
         for i in range(1, 41)
     ]
@@ -33,7 +34,7 @@ async def test_40ep_commercial_lifecycle():
 
     # 2. 伏線サービスのモック
     mock_foreshadowing_repo = AsyncMock()
-    mock_foreshadowing_service = ForeshadowingService(mock_foreshadowing_repo)
+    ForeshadowingService(mock_foreshadowing_repo)
 
     # 短期伏線と長期伏線のモックデータ
     short_term_foreshadowing = [
@@ -45,16 +46,18 @@ async def test_40ep_commercial_lifecycle():
 
     mock_foreshadowing_repo.get_unresolved_by_scope.side_effect = [
         short_term_foreshadowing,  # SHORT_TERM呼び出し
-        long_term_foreshadowing    # LONG_TERM呼び出し
+        long_term_foreshadowing,  # LONG_TERM呼び出し
     ]
 
     # 3. エピソードコンテンツ生成（シンプルなダミーデータ）
     episodes_content = []
     for i in range(1, 41):
-        episodes_content.append({
-            "title": f"第{i}話",
-            "content": f"これは第{i}話のダミーコンテンツです。" * 100  # 約400文字/話 × 40話 = 16000文字
-        })
+        episodes_content.append(
+            {
+                "title": f"第{i}話",
+                "content": f"これは第{i}話のダミーコンテンツです。" * 100,  # 約400文字/話 × 40話 = 16000文字
+            }
+        )
 
     # 4. 原稿結合エクスポーターのテスト
     manuscript_exporter = CommercialManuscriptExporter()
@@ -69,22 +72,16 @@ async def test_40ep_commercial_lifecycle():
     epub_builder = PureCommercialEpubBuilder()
 
     # EPUBビルダーの入力データ準備
-    title = "テスト小説"
-    author = "テスト作者"
-    chapters = [
-        {"title": ep["title"], "body": ep["content"]}
-        for ep in episodes_content
-    ]
+    [{"title": ep["title"], "body": ep["content"]} for ep in episodes_content]
 
     # 実際のEPUB生成は複雑なので、インスタンス生成と基本的な呼び出し可否のみテスト
     assert epub_builder is not None
     # build_epubメソッドが存在することを確認（実際の呼び出しは省略）
-    assert hasattr(epub_builder, 'build_epub')
+    assert hasattr(epub_builder, "build_epub")
 
     # 6. ビートシート生成の確認
     beat_sheet_result = await mock_planning_agent.generate_commercial_beat_sheet(
-        title="テスト小説",
-        synopsis="これはテスト用のあらすじです。"
+        title="テスト小説", synopsis="これはテスト用のあらすじです。"
     )
 
     assert len(beat_sheet_result) == 40
@@ -93,12 +90,10 @@ async def test_40ep_commercial_lifecycle():
 
     # 7. 伏線スコープ別取得の確認
     short_term_result = await mock_foreshadowing_repo.get_unresolved_by_scope(
-        book_id=1,
-        scope=ForeshadowingScope.SHORT_TERM
+        book_id=1, scope=ForeshadowingScope.SHORT_TERM
     )
     long_term_result = await mock_foreshadowing_repo.get_unresolved_by_scope(
-        book_id=1,
-        scope=ForeshadowingScope.LONG_TERM
+        book_id=1, scope=ForeshadowingScope.LONG_TERM
     )
 
     assert len(short_term_result) == 1

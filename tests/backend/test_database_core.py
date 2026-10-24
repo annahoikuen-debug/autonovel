@@ -11,7 +11,7 @@ from src.backend.database.core import (
     get_db_manager,
     set_db_manager,
     SessionLocal,
-    engine
+    engine,
 )
 
 
@@ -88,14 +88,14 @@ class TestWorkspaceManager:
 
     def test_get_path_returns_correct_path(self):
         """get_path が正しいパスを返すことを確認（OS 非依存）"""
-        with patch('src.backend.database.core.BASE_DIR', Path('/tmp/test')):
+        with patch("src.backend.database.core.BASE_DIR", Path("/tmp/test")):
             result = WorkspaceManager.get_path("test.txt")
-            expected = Path('/tmp/test') / "test.txt"
+            expected = Path("/tmp/test") / "test.txt"
             assert result == str(expected)
 
     def test_list_backups_returns_sorted_list(self):
         """list_backups がソートされたリストを返すことを確認"""
-        with patch('src.backend.database.core.BASE_DIR') as mock_base_dir:
+        with patch("src.backend.database.core.BASE_DIR") as mock_base_dir:
             # Mock Path.glob to return specific backup files
             mock_path1 = Mock()
             mock_path1.stat().st_mtime = 1000
@@ -114,34 +114,30 @@ class TestWorkspaceManager:
             assert result[2] == mock_path1  # mtime=1000
 
     def test_create_snapshot_creates_backup(self):
-            """create_snapshot がバックアップを作成することを確認
+        """create_snapshot がバックアップを作成することを確認
 
-            2026-10-04: 旧テストは `patch('pathlib.Path')` を使っていたが、
-            `core.py` は `from pathlib import Path` で**名前を束縛**している
-            ため、この patch は効いていなかった（実体の Path が使われ、
-            POSIX リテラルの比較が Windows で失敗していた）。
-            patch 先は束縛名（`src.backend.database.core.Path`）でなければならない。
-            """
-            with patch('src.backend.database.core.BASE_DIR', Path('/tmp')):
-                with patch('src.backend.database.core.Path.exists', return_value=True):
-                    with patch('src.backend.database.core.shutil.copy2') as mock_copy:
-                        with patch('src.backend.database.core.logger') as mock_logger:
-                            with patch('time.time', return_value=1234567890):
-                                result = WorkspaceManager.create_snapshot(str(Path('/tmp/test.db')))
+        2026-10-04: 旧テストは `patch('pathlib.Path')` を使っていたが、
+        `core.py` は `from pathlib import Path` で**名前を束縛**している
+        ため、この patch は効いていなかった（実体の Path が使われ、
+        POSIX リテラルの比較が Windows で失敗していた）。
+        patch 先は束縛名（`src.backend.database.core.Path`）でなければならない。
+        """
+        with patch("src.backend.database.core.BASE_DIR", Path("/tmp")):
+            with patch("src.backend.database.core.Path.exists", return_value=True):
+                with patch("src.backend.database.core.shutil.copy2") as mock_copy:
+                    with patch("src.backend.database.core.logger") as mock_logger:
+                        with patch("time.time", return_value=1234567890):
+                            result = WorkspaceManager.create_snapshot(str(Path("/tmp/test.db")))
 
-                                # 実 Path で計算された結果を比較する（プラットフォーム非依存）
-                                expected = str(
-                                    Path('/tmp/test.db').with_suffix('.bak_1234567890.db')
-                                )
-                                assert result == expected, (result, expected)
-                                mock_copy.assert_called_once()
-                                mock_logger.info.assert_called_once_with(
-                                    f"Snapshot created: {Path(expected).name}"
-                                )
+                            # 実 Path で計算された結果を比較する（プラットフォーム非依存）
+                            expected = str(Path("/tmp/test.db").with_suffix(".bak_1234567890.db"))
+                            assert result == expected, (result, expected)
+                            mock_copy.assert_called_once()
+                            mock_logger.info.assert_called_once_with(f"Snapshot created: {Path(expected).name}")
 
     def test_create_snapshot_returns_empty_if_source_not_exists(self):
         """Test that create_snapshot returns empty string when source does not exist"""
-        with patch('pathlib.Path.exists', return_value=False):
+        with patch("pathlib.Path.exists", return_value=False):
             result = WorkspaceManager.create_snapshot("/nonexistent.db")
             assert result == ""
 
@@ -155,8 +151,8 @@ class TestDatabaseManager:
 
         assert db_manager.db_path == "sqlite:///test.db"
         assert db_manager._pool_size == 5
-        assert hasattr(db_manager, 'engine')
-        assert hasattr(db_manager, 'session_factory')
+        assert hasattr(db_manager, "engine")
+        assert hasattr(db_manager, "session_factory")
 
     def test_init_does_not_carry_warning_flag(self):
         """`_warned_about_str_sql` が残っていないことを確認。
@@ -174,7 +170,7 @@ class TestDatabaseManager:
         db_manager = DatabaseManager("sqlite:///test.db")
         mock_session = Mock()
 
-        with patch.object(db_manager, 'session_factory', return_value=mock_session):
+        with patch.object(db_manager, "session_factory", return_value=mock_session):
             result = db_manager.get_session()
             assert result == mock_session
 
@@ -196,7 +192,7 @@ class TestDatabaseManager:
         mock_sql_conn.get_raw_connection = AsyncMock(return_value=mock_raw_conn)
         mock_raw_conn._connection = mock_dbapi_conn
 
-        with patch.object(db_manager, 'engine') as mock_engine:
+        with patch.object(db_manager, "engine") as mock_engine:
             mock_engine.connect = AsyncMock(return_value=mock_sql_conn)
 
             result = await db_manager.get_conn()
@@ -215,7 +211,7 @@ class TestDatabaseManager:
         """get_read_conn メソッドが get_conn と同じ結果を返すことを確認"""
         db_manager = DatabaseManager("sqlite:///test.db")
 
-        with patch.object(db_manager, 'get_conn') as mock_get_conn:
+        with patch.object(db_manager, "get_conn") as mock_get_conn:
             mock_result = Mock()
             mock_get_conn.return_value = mock_result
 
@@ -241,7 +237,7 @@ class TestDatabaseManager:
         db_manager = DatabaseManager("sqlite:///test.db")
         mock_execute = AsyncMock()
 
-        with patch.object(db_manager, 'execute', mock_execute):
+        with patch.object(db_manager, "execute", mock_execute):
             await db_manager.enqueue_write("SELECT * FROM test", (1, 2))
 
             mock_execute.assert_called_once_with("SELECT * FROM test", (1, 2))
@@ -281,7 +277,7 @@ class TestDatabaseManager:
         mock_conn.__aexit__ = AsyncMock(return_value=None)
         mock_conn.execute = AsyncMock()
 
-        with patch.object(db_manager, 'engine') as mock_engine:
+        with patch.object(db_manager, "engine") as mock_engine:
             mock_engine.begin = Mock(return_value=mock_conn)
 
             await db_manager.execute(text("SELECT * FROM test WHERE id = :id"), {"id": 1})
@@ -302,10 +298,11 @@ class TestDatabaseManager:
         mock_conn.__aexit__ = AsyncMock(return_value=None)
         mock_conn.execute = AsyncMock(return_value=mock_result)
 
-        with patch.object(db_manager, 'engine') as mock_engine:
+        with patch.object(db_manager, "engine") as mock_engine:
             mock_engine.connect = Mock(return_value=mock_conn)
 
             from sqlalchemy import text
+
             result = await db_manager.fetch_one(text("SELECT * FROM test"), {"1": 1})
 
             assert result == {"col1": "val1", "col2": "val2"}
@@ -329,10 +326,11 @@ class TestDatabaseManager:
         mock_conn.__aexit__ = AsyncMock(return_value=None)
         mock_conn.execute = AsyncMock(return_value=mock_result)
 
-        with patch.object(db_manager, 'engine') as mock_engine:
+        with patch.object(db_manager, "engine") as mock_engine:
             mock_engine.connect = Mock(return_value=mock_conn)
 
             from sqlalchemy import text
+
             result = await db_manager.fetch_all(text("SELECT * FROM test"), {"1": 1})
 
             assert result == [mock_result1, mock_result2]
@@ -352,10 +350,11 @@ class TestDatabaseManager:
         # 実装は exec_driver_sql ではなく conn.execute() を使う（バインド済みパラメータ）
         mock_conn.execute = AsyncMock(return_value=mock_result)
 
-        with patch.object(db_manager, 'engine') as mock_engine:
+        with patch.object(db_manager, "engine") as mock_engine:
             mock_engine.begin = Mock(return_value=mock_conn)
 
             from sqlalchemy import text
+
             result = await db_manager.fetch_lastrowid(text("INSERT INTO test VALUES (1)"))
 
             assert result == 42
@@ -384,16 +383,13 @@ class TestDatabaseManager:
         # 行うため、モジュール属性 `src.backend.database.core.select` は存在せず、
         # 旧テストの patch は AttributeError になっていた。patch 先は
         # 実際の import 元（`sqlalchemy`）でなければならない。
-        with patch('sqlalchemy.select', return_value=mock_stmt):
-            with patch.object(db_manager, 'get_session', return_value=mock_session):
+        with patch("sqlalchemy.select", return_value=mock_stmt):
+            with patch.object(db_manager, "get_session", return_value=mock_session):
                 # `await session.execute(...)` なので AsyncMock。
                 # 実装は `result.scalar_one_or_none()` を使う。
-                with patch.object(mock_session, 'execute', new_callable=AsyncMock) as mock_execute:
+                with patch.object(mock_session, "execute", new_callable=AsyncMock) as mock_execute:
                     mock_execute.return_value = mock_result
-                    with patch.object(
-                        mock_result, 'scalar_one_or_none', return_value=mock_scalar_result
-                    ):
-
+                    with patch.object(mock_result, "scalar_one_or_none", return_value=mock_scalar_result):
                         # Test UPDATE case (record exists)
                         mock_scalar_result.value = "old_value"
                         await db_manager.save_internal_state("test_key", "new_value")
@@ -405,19 +401,19 @@ class TestDatabaseManager:
                         mock_result.scalar_one_or_none.return_value = None
                         mock_new_state = Mock()
 
-                        with patch('src.backend.database.models.InternalState', return_value=mock_new_state):
+                        with patch("src.backend.database.models.InternalState", return_value=mock_new_state):
                             await db_manager.save_internal_state("test_key", "new_value")
 
                             mock_session.add.assert_called_once_with(mock_new_state)
 
     def test_init_db_uses_alembic_as_schema_source_of_truth(self):
         """init_db は Alembic migration を適用する（create_all では作らない）"""
-        with patch('os.environ.get', return_value=""):
-            with patch('src.backend.database.core.DATABASE_URL', "sqlite:///test.db"):
-                with patch('src.backend.database.core._run_alembic_upgrade') as mock_alembic:
-                    with patch('src.backend.database.core.create_engine') as mock_create_engine:
-                        with patch('src.infrastructure.database.models.Base') as mock_infra_base:
-                            with patch('src.backend.database.models.Base') as mock_backend_base:
+        with patch("os.environ.get", return_value=""):
+            with patch("src.backend.database.core.DATABASE_URL", "sqlite:///test.db"):
+                with patch("src.backend.database.core._run_alembic_upgrade") as mock_alembic:
+                    with patch("src.backend.database.core.create_engine"):
+                        with patch("src.infrastructure.database.models.Base") as mock_infra_base:
+                            with patch("src.backend.database.models.Base") as mock_backend_base:
                                 init_db()
 
                                 # 正常系は Alembic upgrade のみ。
@@ -430,12 +426,12 @@ class TestDatabaseManager:
         """Alembic が失敗しても、非本番では create_all へフォールバックする。"""
         from src.backend.config import settings
 
-        with patch('os.environ.get', return_value=""):
-            with patch('src.backend.database.core.DATABASE_URL', "sqlite:///test.db"):
+        with patch("os.environ.get", return_value=""):
+            with patch("src.backend.database.core.DATABASE_URL", "sqlite:///test.db"):
                 with patch.object(settings, "APP_ENV", "development"):
-                    with patch('src.backend.database.core._run_alembic_upgrade', side_effect=RuntimeError("boom")):
-                        with patch('src.backend.database.core.create_engine') as mock_create_engine:
-                            with patch('src.infrastructure.database.models.Base') as mock_infra_base:
+                    with patch("src.backend.database.core._run_alembic_upgrade", side_effect=RuntimeError("boom")):
+                        with patch("src.backend.database.core.create_engine") as mock_create_engine:
+                            with patch("src.infrastructure.database.models.Base") as mock_infra_base:
                                 mock_engine = Mock()
                                 mock_create_engine.return_value = mock_engine
 
@@ -447,12 +443,12 @@ class TestDatabaseManager:
         """本番では Alembic 失敗時に create_all へ落とさず、起動を失敗させる。"""
         from src.backend.config import settings
 
-        with patch('os.environ.get', return_value=""):
-            with patch('src.backend.database.core.DATABASE_URL', "postgresql+psycopg2://u:p@db/x"):
+        with patch("os.environ.get", return_value=""):
+            with patch("src.backend.database.core.DATABASE_URL", "postgresql+psycopg2://u:p@db/x"):
                 with patch.object(settings, "APP_ENV", "production"):
-                    with patch('src.backend.database.core._run_alembic_upgrade', side_effect=RuntimeError("boom")):
-                        with patch('src.backend.database.core.create_engine') as mock_create_engine:
-                            with patch('src.infrastructure.database.models.Base') as mock_infra_base:
+                    with patch("src.backend.database.core._run_alembic_upgrade", side_effect=RuntimeError("boom")):
+                        with patch("src.backend.database.core.create_engine"):
+                            with patch("src.infrastructure.database.models.Base") as mock_infra_base:
                                 with pytest.raises(RuntimeError, match="Alembic"):
                                     init_db()
 
@@ -460,7 +456,7 @@ class TestDatabaseManager:
 
     def test_get_db_manager_returns_database_manager_instance(self):
         """get_db_manager 関数が DatabaseManager のインスタンスを返すことを確認"""
-        with patch('src.backend.database.core.DATABASE_URL', "sqlite:///test.db"):
+        with patch("src.backend.database.core.DATABASE_URL", "sqlite:///test.db"):
             result = get_db_manager()
 
             assert isinstance(result, DatabaseManager)
@@ -470,15 +466,13 @@ class TestDatabaseManager:
         """set_db_manager が非推奨警告を出し、AppContainer の override を試みることを確認"""
         mock_manager = Mock()
 
-        with patch('src.backend.database.core.logger') as mock_logger:
-            with patch('src.core.container.AppContainer') as mock_app_container:
+        with patch("src.backend.database.core.logger") as mock_logger:
+            with patch("src.core.container.AppContainer") as mock_app_container:
                 mock_app_container.db.override = Mock()
 
                 set_db_manager(mock_manager)
 
-                mock_logger.warning.assert_any_call(
-                    "set_db_manager is deprecated. Use DI container instead."
-                )
+                mock_logger.warning.assert_any_call("set_db_manager is deprecated. Use DI container instead.")
                 # 正常系では "override に失敗" は出ない
                 # （その警告は override が例外を投げた場合のみ）
                 mock_app_container.db.override.assert_called_once_with(mock_manager)
@@ -492,15 +486,13 @@ class TestDatabaseManager:
         """
         mock_manager = Mock()
 
-        with patch('src.backend.database.core.logger') as mock_logger:
-            with patch('src.core.container.AppContainer') as mock_app_container:
+        with patch("src.backend.database.core.logger") as mock_logger:
+            with patch("src.core.container.AppContainer") as mock_app_container:
                 mock_app_container.db.override = Mock(side_effect=RuntimeError("boom"))
 
                 set_db_manager(mock_manager)
 
-                mock_logger.warning.assert_any_call(
-                    "AppContainer.db.override に失敗: %s", ANY, exc_info=True
-                )
+                mock_logger.warning.assert_any_call("AppContainer.db.override に失敗: %s", ANY, exc_info=True)
 
 
 class TestProxies:
@@ -511,7 +503,7 @@ class TestProxies:
         mock_factory = Mock()
         mock_factory.return_value = "session_instance"
 
-        with patch('src.backend.database.core._get_sync_engine_and_factory') as mock_getter:
+        with patch("src.backend.database.core._get_sync_engine_and_factory") as mock_getter:
             mock_getter.return_value = (None, mock_factory)
 
             result = SessionLocal()
@@ -524,7 +516,7 @@ class TestProxies:
         mock_engine = Mock()
         mock_engine.some_attribute = "test_value"
 
-        with patch('src.backend.database.core._get_sync_engine_and_factory') as mock_getter:
+        with patch("src.backend.database.core._get_sync_engine_and_factory") as mock_getter:
             mock_getter.return_value = (mock_engine, None)
 
             result = engine.some_attribute

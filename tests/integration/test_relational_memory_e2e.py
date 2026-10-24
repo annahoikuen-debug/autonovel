@@ -3,6 +3,7 @@
 第1話で伏線を設置し、第3話で回収される一連のライフサイクルが
 自動実行されることを検証する。
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -101,6 +102,7 @@ class TestRelationalMemoryE2E:
                     result.rowcount = 1
 
                 return result
+
             return mock_execute
 
         # --- Step 1: 第1話執筆時のコンテキスト構築（伏線設置前）---
@@ -220,9 +222,7 @@ class TestRelationalMemoryE2E:
         # 必要であれば別途「回収済み伏線一覧」として実装可能
 
     @pytest.mark.asyncio
-    async def test_token_budget_within_limits(
-        self, mock_session, episode_context_builder
-    ):
+    async def test_token_budget_within_limits(self, mock_session, episode_context_builder):
         """50話まで継続してもトークン予算内に収まることを検証"""
 
         # 大量のキャラ・チャプター・伏線をモック
@@ -242,9 +242,9 @@ class TestRelationalMemoryE2E:
                 title=f"伏線{i}",
                 description=f"伏線{i}の説明",
                 planted_episode=i,
-                target_episode=i+5 if i <= 25 else None,
+                target_episode=i + 5 if i <= 25 else None,
                 status="planted" if i <= 25 else "resolved",
-                resolved_episode=i+5 if i <= 25 else 30
+                resolved_episode=i + 5 if i <= 25 else 30,
             )
             for i in range(1, 31)  # 30本の伏線
         ]
@@ -293,12 +293,12 @@ class TestRelationalMemoryE2E:
         # 合計: 想定上限（例: 20,000トークン）以内
         assert total_estimated < 20000
 
-        print(f"Token estimates - Layer1: {layer1_tokens}, Layer2: {layer2_tokens}, Layer3: {layer3_tokens}, Total: {total_estimated}")
+        print(
+            f"Token estimates - Layer1: {layer1_tokens}, Layer2: {layer2_tokens}, Layer3: {layer3_tokens}, Total: {total_estimated}"
+        )
 
     @pytest.mark.asyncio
-    async def test_multiple_foreshadowings_parallel(
-        self, mock_session, foreshadowing_service, episode_context_builder
-    ):
+    async def test_multiple_foreshadowings_parallel(self, mock_session, foreshadowing_service, episode_context_builder):
         """複数の伏線が並行して設置・進展・回収されることを検証"""
 
         mock_chars = [MagicMock(id=1, name="主人公", role="主人公", personality="", ability="")]
@@ -306,11 +306,14 @@ class TestRelationalMemoryE2E:
 
         # 3本の伏線：A(回収済み), B(進展中), C(未設置→設置)
         mock_foreshadowings = []
-        for i, (title, planted, target, status, resolved) in enumerate([
-            ("伏線A: 最初の謎", 1, 3, "resolved", 3),
-            ("伏線B: 続く謎", 1, 5, "progressed", None),
-            ("伏線C: 新たな謎", 3, 7, "planted", None),
-        ], 1):
+        for i, (title, planted, target, status, resolved) in enumerate(
+            [
+                ("伏線A: 最初の謎", 1, 3, "resolved", 3),
+                ("伏線B: 続く謎", 1, 5, "progressed", None),
+                ("伏線C: 新たな謎", 3, 7, "planted", None),
+            ],
+            1,
+        ):
             f = MagicMock(spec=ForeshadowingModel)
             f.id = i
             f.title = title
@@ -362,9 +365,7 @@ class TestRelationalMemoryE2E:
         assert foreshadowing_c["status"] == "planted"
 
     @pytest.mark.asyncio
-    async def test_error_handling_in_pipeline(
-        self, mock_session, foreshadowing_service, episode_context_builder
-    ):
+    async def test_error_handling_in_pipeline(self, mock_session, foreshadowing_service, episode_context_builder):
         """エラー時の適切なハンドリングを検証"""
 
         # DBエラーをシミュレート
@@ -453,7 +454,7 @@ class TestRegressionPrevention:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             # 新しいインスタンスを作成（警告が出るはず）
-            client = AgeClient()
+            AgeClient()
             # DeprecationWarning が出ていることを確認
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
             # 警告が出ない環境でもテストが通るように、警告の有無をチェック

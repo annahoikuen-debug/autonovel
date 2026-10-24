@@ -1,4 +1,5 @@
 """Full flow integration test for annotations (editor -> API -> store -> prompt)."""
+
 from __future__ import annotations
 
 import pytest
@@ -21,6 +22,7 @@ class TestFullAnnotationFlow:
     @pytest.fixture
     def vector_store(self):
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         store = RedisVectorStore(skip_connection_check=True)
         store.client = redis_client
@@ -74,6 +76,7 @@ A goes to B.
         # 検証
         validator = MagicMock()
         from src.annotations.validator import ValidationResult
+
         validator.validate.return_value = ValidationResult(is_valid=True, errors=[], warnings=[])
 
         # 永続化
@@ -180,22 +183,34 @@ A goes to B.
         # テスト用ビート
         beats = [
             EmotionalBeat(
-                episode=15, scene=3, source="A", target="B",
-                emotion=EmotionType.FEAR, delta=0.8,
-                cause="ep14 betrayal", confidence=0.9, hidden=True,
+                episode=15,
+                scene=3,
+                source="A",
+                target="B",
+                emotion=EmotionType.FEAR,
+                delta=0.8,
+                cause="ep14 betrayal",
+                confidence=0.9,
+                hidden=True,
                 beat_id="beat123",
             ),
             EmotionalBeat(
-                episode=15, scene=3, source="B", target="A",
-                emotion=EmotionType.SADNESS, delta=0.6,
-                cause="ep14 betrayal", confidence=0.8, hidden=False,
+                episode=15,
+                scene=3,
+                source="B",
+                target="A",
+                emotion=EmotionType.SADNESS,
+                delta=0.6,
+                cause="ep14 betrayal",
+                confidence=0.8,
+                hidden=False,
                 beat_id="beat456",
             ),
         ]
 
         # 永続化
         persistence = AnnotationPersistence(vector_store, graph_store, log_store)
-        count = persistence.persist_beats(beats, 15)
+        persistence.persist_beats(beats, 15)
 
         # Graph確認
         edge_ab = graph_store.get_latest_edge("A", "B")

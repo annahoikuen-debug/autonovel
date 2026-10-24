@@ -40,14 +40,23 @@
 | 物語の空気 | ジャンル・キーワード（異世界転生、ダンジョン…） |
 | きっかけ | 1 行のプロンプト（例: 封印された古代の魔剣を抜いた） |
 
-<div align="center">
+<details>
+<summary><b>🖱 3つの入口の比較</b></summary>
 
-| 🎯 まずは触ってみたい | 🛠 本格的に使い分けたい | 📦 最後に受け取るもの |
-|---|---|---|
-| ブラウザだけで完結するデモをすぐ開く | 3 つの入口を使い分ける | 本文・設定集・プロット・データを 1 つの ZIP で受け取る |
-| インストール不要・サーバー不要 | テーマ別プリセット・8 専門オーディター監査 | なろう・カクヨム・EPUB へ自動整形 |
+| 入口 | URL | 向いている人 | 主な機能 |
+|---|---|---|---|
+| ⚡ かんたん執筆 | `/` | はじめて書きたい人 | 2 手順（約 1 分）で本文生成・納品ZIP入手 |
+| ✨ 共創ウィザード | `/wizard` | 物語の骨組みから作りたい人 | 3 手順（方針 → 構成 → 執筆）で逐話作成 |
+| 🚀 Studio | `/studio` | 仕上げや設定を担う人 | 既存作品から開いて細部を編集・公開 |
 
-</div>
+- **初回アクセス** すると `/welcome`（入口選択）が自動表示されます。「あとで決める」を押すと かんたん執筆 へ直行します。
+- **ヘッダーのメニュー** からいつでも 3 つの入口へ移動でき、いまいる入口がハイライトされます。
+- **入口のつなぎ方**
+  - かんたん執筆 → 「Studio へ昇格」でそのまま Studio へ
+  - 共創ウィザード → Step3 で「もう 1 話書く」か「Studio で細部を手入れする」を選ぶ
+  - Studio → 既存作品をそのまま開いて編集
+
+</details>
 
 ---
 
@@ -60,13 +69,6 @@
 | ⚡ かんたん執筆 | `/` | はじめて書きたい人 | 2 手順（約 1 分） |
 | ✨ 共創ウィザード | `/wizard` | 物語の骨組みから作りたい人 | 3 手順（方針 → 構成 → 執筆） |
 | 🚀 Studio | `/studio` | 仕上げや設定を担う人 | 既存作品からすぐ |
-
-- **初回アクセス** すると `/welcome`（入口選択）が自動で表示されます。「あとで決める」を押すと かんたん執筆 へ直行します。
-- **ヘッダーのメニュー** からいつでも 3 つの入口へ移動でき、いまいる入口がハイライトされます。
-- **入口のつなぎ方**
-  - かんたん執筆 → 「Studio へ昇格」でそのまま Studio へ
-  - 共創ウィザード → Step3 で「もう 1 話書く」か「Studio で細部を手入れする」を選ぶ
-  - Studio → 既存作品をそのまま開いて編集
 
 <details>
 <summary><b>🖱 かんたん執筆の操作ステップ（クリックで展開）</b></summary>
@@ -150,11 +152,7 @@ flowchart LR
 BM25 キーワード抽出と GraphRAG 文脈適合性チェックを組み合わせた **反復クエリ精緻化ループ**（最大 3 回で収束）で、
 長編物語でも必要な設定を正確に拾えます。
 
----
-
-## 🗜️ 4層圧縮 ── 「情報を捨てずに、会話量を減らす」
-
-<img src="docs/images/compression.svg" alt="4層圧縮モジュール" width="100%">
+### 🔹 4層圧縮 ── 「情報を捨てずに、会話量を減らす」
 
 LLM プロンプト・過去の文脈・キャラクター設定を 4 層で段階的に圧縮し、**トークン使用量を削減しながら伏線や主要キャラクターを確実に保持** します。
 
@@ -173,7 +171,7 @@ compressor  = container.compressor()        # FourLayerCompressor
 writing     = container.writing_service()   # 執筆ドメインの中核
 ```
 
-主な設定値（既定値は `src/services/compression/models.py`）：
+主な設定値（既定値は `src/services/compression/models.py`）:
 
 | パラメータ | 既定値 | 意味 |
 |---|---|---|
@@ -190,7 +188,7 @@ writing     = container.writing_service()   # 執筆ドメインの中核
 
 ---
 
-## 🏗️ システム構成
+## 🗜️ システム構成
 
 ```mermaid
 flowchart TB
@@ -254,22 +252,18 @@ flowchart TB
 
 ## 🚀 クイックスタート
 
-<div align="center">
-
-| ① まず触ってみる | ② ローカルで動かす | ③ コンテナで動かす |
-|---|---|---|
-| **ブラウザデモ**<br>インストール不要 | **Windows ワンクリック**<br>ローカル Python + SQLite | **Docker Compose**<br>PostgreSQL + Redis |
-
-</div>
-
-### ① ブラウザデモ（インストール不要・サーバー不要）
+<details>
+<summary><b>ブラウザデモ（インストール不要・サーバー不要）</b></summary>
 
 `web/demo/index.html` を Chrome / Edge / Firefox などで **ダブルクリック** するだけです。
 
 企画ガチャ、逆算プロットビルダー、かんたん執筆モック、納品パッケージ（ZIP）ダウンロードを即座に体験できます。
 詳細は [web/demo/README_DEMO.md](web/demo/README_DEMO.md) を参照してください。
 
-### ② Windows ワンクリック起動（正式対応）
+</details>
+
+<details>
+<summary><b>Windows ワンクリック起動（正式対応）</b></summary>
 
 1. **`アプリ起動_ローカル.bat`** をダブルクリック（軽量 / ローカル Python + SQLite 構成）
    - Docker を使わず、ローカル Python と SQLite で起動します
@@ -280,8 +274,8 @@ flowchart TB
      4. `scripts\init_db.py` による安全な Alembic マイグレーション（既存 DB は保護）
      5. Backend（Uvicorn `:8200`）+ Huey Worker + Frontend（Vite `:5173`）の協調起動
      6. **ヘルスチェックが通るまで待ってから**ブラウザを開く
-2. ブラウザで **<http://localhost:5173>** が開きます
-3. 停止するときは **`アプリ停止.bat`** をダブルクリック（PID ファイル → ポート → コマンドラインの 3 段構えで安全に解放）
+   2. ブラウザで **<http://localhost:5173>** が開きます
+   3. 停止するときは **`アプリ停止.bat`** をダブルクリック（PID ファイル → ポート → コマンドラインの 3 段構えで安全に解放）
 
 > **起動しないときは [`起動診断.bat`](起動診断.bat) を先に実行してください。**
 > Python・依存関係・`.env`・DB・ポート・メモリ・import 時間を一括で診断し、
@@ -301,12 +295,15 @@ flowchart TB
 
 > 詳しい症状別の対処は **[docs/STARTUP_TROUBLESHOOTING.md](docs/STARTUP_TROUBLESHOOTING.md)** にまとめています。
 
-### ③ ローカル手動セットアップ（開発者向け）
+</details>
+
+<details>
+<summary><b>ローカル手動セットアップ（開発者向け）</b></summary>
 
 ```powershell
 # 1. バックエンド
 py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
+\.venv\Scripts\Activate.ps1
 py -m pip install --upgrade pip
 py -m pip install -e ".[dev,rag]"
 
@@ -326,8 +323,10 @@ py -m huey.bin.huey_consumer src.backend.tasks.huey.huey
 # 5. ターミナル 3 : フロントエンド
 cd frontend; npm run dev      # → http://localhost:5173
 ```
+</details>
 
-### ④ Docker Compose
+<details>
+<summary><b>Docker Compose</b></summary>
 
 ```powershell
 Copy-Item .env.example .env    # 必要に応じて LLM_PROVIDER などを設定
@@ -370,9 +369,12 @@ Swagger UI（<http://localhost:8200/docs>）上でも「Authorize」ボタンか
 > `CORS_ORIGINS` にワイルドカード `*` を設定していると起動時エラーになります
 > （`CORS_ORIGINS=*` は `APP_ENV=production` で拒否されます。実 Origin を
 > カンマ区切りで列挙してください）。また `STRIPE_WEBHOOK_SECRET` が未設定で
-> `ALLOW_UNSIGNED_WEBHOOKS=true` でもない場合、本番起動は拒否されます。
+> `ALLOW_UNSIGNED_WEBHOOKS=true` でもない場合、本産起動は拒否されます。
 
-### ⑤ 本番デプロイ（docker-compose.prod.yml）
+</details>
+
+<details>
+<summary><b>本番デプロイ（docker-compose.prod.yml）</b></summary>
 
 本番構成（backend / worker / frontend(nginx) / PostgreSQL(pgvector) / Redis）は
 `docker-compose.yml` とは別の `docker-compose.prod.yml` で定義されている。
@@ -423,6 +425,8 @@ frontend は backend のヘルスチェック（`/health/liveness`）が OK に�
 - `POSTGRES_PASSWORD` の既定値 `autonovel_dev_password_change_me` は開発用のみ。
   本番では必ずランダム値に変更すること。
 
+</details>
+
 ---
 
 ## 💻 コマンドリファレンス
@@ -436,7 +440,7 @@ frontend は backend のヘルスチェック（`/health/liveness`）が OK に�
 | `autonovel init-db` | データベース初期化・マイグレーション（既存 DB は保護） |
 | `autonovel balance --type dsp --book-id 1` | 執筆物質バランサー（`dsp` / `csp` / `grammar`） |
 | `autonovel export --book-id 1 --format zip` | エクスポート（`zip` / `narou` / `kakuyomu` / `epub`） |
-| `autonovel plugins` | プラグイン（`PluginRegistry`）の状態一覧 |
+| `autonovel plugins` | プラグイン（`PluginRegistry）`の状態一覧 |
 
 ```powershell
 autonovel --version
@@ -462,7 +466,6 @@ make test-migration # alembic 整合性チェック（往復）
 make verify         # 全品質ゲートを一括実行（PR 前必須）
 make clean          # キャッシュや一時 DB ファイルをクリーンアップ
 ```
-
 ---
 
 ## 📦 納品パッケージ（ZIP）の構造
@@ -607,12 +610,12 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 > **T6 Step 1 で修正**: v5.3.0〜v6.0.0 の初期実装では
 > `_post_episode_finalize` が `run()` と `write_beat_to_scene()` の両方から呼ばれ、
 > **1話につきダイジェスト生成が2回**走っていました（既定経路）。
-> 実行点は `run()` の1箇所に集約済みで、上記のコストは**1話1回**のものです。
+> 実行点を `run()` の1箇所に集約済みで、上記のコストは**1話1回**のものです。
 > 回帰防止: `tests/unit/writing/test_episode_finalize_called_once.py`
->
+
 > **1話全体の LLM 呼出回数**は 10 回（実測・目標 4-5回は**未達**）、
 > うち 5 回（50%）が監査フェーズです。詳細は `docs/STATUS.md` §5 参照。
->
+
 > 1話あたりのコスト内訳は `scripts/report_episode_cost.py --db <sqlite> --json` で出力できます。
 
 - ダイジェスト生成を止めたい場合は環境変数で無効化できます:
@@ -621,6 +624,7 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
   ```
   （この場合 `episode_digests` への書き込みは行われず、Layer2 は本文冒頭100字へ
   フォールバックします。）
+
 - 伏線回収判定（`ForeshadowingService.check_and_resolve`）は **LLM 呼び出し0回** です
   （アンサンブル判定のみ）。ここだけはコストに影響しません。
 
@@ -679,7 +683,7 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 ## 📸 画面デモ
 
 <p align="center">
-  <img src="docs/demo.gif" alt="AutoNovel UI &amp; Workflow Demo" width="880" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+  <img src="docs/demo.gif" alt="AutoNovel UI & Workflow Demo" width="880" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
 </p>
 
 *▲ v5.3.0 のデモアニメーション（説明用）。実際の AI 生成品質・所要時間・外部サービス接続を示すものではありません。*
@@ -689,3 +693,4 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 <div align="center">
   <sub>© 2026 HerbMatsui-spec. All rights reserved. — Built with ❤️ for Novelists, Creators, and AI Engineers Worldwide.</sub>
 </div>
+</content>

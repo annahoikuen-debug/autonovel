@@ -3,9 +3,9 @@
 Pure-logic coverage: metrics calculation (char count, dialogue ratio, ruby),
 and editor/beat synchronization.
 """
+
 from __future__ import annotations
 
-import pytest
 
 from src.domain.writing.jit_expander import EditorMetrics, JITBeatExpander
 

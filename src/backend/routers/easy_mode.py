@@ -9,13 +9,14 @@ from fastapi import status as http_status
 from pydantic import ValidationError
 
 from src.backend import database
-from src.backend.auth import get_current_user, oauth2_scheme, require_api_key
+from src.backend.auth import get_current_user, oauth2_scheme
 from src.backend.config import settings
 from src.backend.database import get_async_db
 from src.backend.database.core import get_db_manager
 from src.backend.database.repository import BookRepository
 from src.backend.observability.health import metrics
 from src.backend.rate_limit import generate_limiter
+from src.backend.security.credit_guard import check_generation_credits
 from src.backend.security.owner_guard import verify_book_ownership
 from src.domain.entities.easy_mode import EasyModeInput, GenerationResponse
 from src.services.digest_service import process_chapter
@@ -250,11 +251,7 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
             prompt=suggestions_prompt,
             max_tokens=300,
         )
-        suggestions = [
-            line.lstrip("- ").strip()
-            for line in suggestions_raw.strip().split("\n")
-            if line.strip()
-        ][:3]
+        suggestions = [line.lstrip("- ").strip() for line in suggestions_raw.strip().split("\n") if line.strip()][:3]
 
     except Exception:
         logger.warning("Failed to generate suggestions, using defaults", exc_info=True)
@@ -312,26 +309,30 @@ async def _ensure_dev_user_row(db: Any) -> None:
         logger.warning("Failed to seed AUTH_DISABLED dev user row", exc_info=True)
 
 
-async def get_current_user_or_api_key_owner(
+async def get_easy_mode_user(
     token: str = Depends(oauth2_scheme),
     db=Depends(get_async_db),
 ) -> Any:
-    """easy-mode のタスク所有者を解決する FastAPI 依存。
+    """easy-mode のタスク所有者を解決する FastAPI 依存 (JWT 専用)。
 
-    easy-mode はフロントエンドが API キー（``Authorization`` ヘッダー）で叩くため、
-    ``require_api_key`` を認証手段として採用している。一方で投入される Huey タスクは
+    easy-mode は ``Authorization: Bearer <JWT>`` で叩く。投入される Huey タスクは
     ``/status/{task_id}`` から参照されるため、所有者を必ず特定できる必要がある
-    （``Task.user_id`` が NULL のままだと ``_assert_task_ownership`` が
-    *自分の* タスクまで拒否する = エンドポイント相互運用性の破綻）。
+    (``Task.user_id`` が NULL のままだと ``_assert_task_ownership`` が
+    *自分の* タスクまで拒否する = エンドポイント相互運用性の破綻)。
 
-    そのためここでもう 1 本、ユーザーを解決する:
-    1. ``AUTH_DISABLED``（開発/テスト）なら開発用モックユーザーを返す。
+    1. ``AUTH_DISABLED`` (開発/テスト) なら開発用モックユーザーを返す。
     2. JWT (Bearer) が引ければそのユーザーを返す。
-    3. どちらでも所有者を特定できない場合は 403 で拒否する。
+    3. 引けない場合は 403 で拒否する。
 
-    3 の 403 は意図的な仕様変更である。所有者を特定できないまま
-    帰属不明のタスクを作る（= 事後に必ず読めなくなる）よりも、
-    enqueue 時点で明示的に失敗させるほうが安全で原因も追える。
+    3 の 403 は意図的な仕様。旧実装は ``require_api_key`` も同時に要求しており、
+    JWT と API キーを同じ Authorization ヘッダーで受け取る以上、本番では
+    どちらかしか送れないため **両方を満たすリクエストが原理的に存在せず到達不能**
+    だった (実測で本番到達不能を確認)。API キー経由の所有者解決
+    (``_get_dev_mock_user()`` への user id=1 への丸め込み) は
+    「共有 API キー 1 本で全ユーザーのタスクを投入できる」権限昇格だったため廃止し、
+    JWT のみに統一した。所有者を特定できない状態でタスクを作る
+    ( = 事後に必ず読めなくなる) より、enqueue 時点で明示的に失敗させるほうが
+    安全で原因も追える。
     """
     if settings.AUTH_DISABLED:
         await _ensure_dev_user_row(db)
@@ -342,7 +343,7 @@ async def get_current_user_or_api_key_owner(
     try:
         return await get_current_user(token=token, db=db)
     except HTTPException as exc:
-        # API キー単独の呼び出しでは所有者が不明。
+        # Bearer トークンが無い/無効の呼び出しでは所有者が不明。
         # 401 のまま「タスクを投入できたように見える」結果を返さない。
         raise HTTPException(
             status_code=http_status.HTTP_403_FORBIDDEN,
@@ -358,15 +359,19 @@ async def generate_content(
     input_data: EasyModeInput,
     request: Request,
     session=Depends(database.get_db),
-    api_key: str = Depends(require_api_key),
-    current_user: Any = Depends(get_current_user_or_api_key_owner),
+    current_user: Any = Depends(get_easy_mode_user),
 ) -> GenerationResponse:
     """章単位の対話型自動生成 [Interactive Writer]"""
     await generate_limiter.check(request)
     try:
-        # 所有者を先に解決する（依存 `get_current_user_or_api_key_owner` が
+        # 所有者を先に解決する（依存 `get_easy_mode_user` が
         # 解決できない場合は 403 で弾かれている）。
         owner_id = getattr(current_user, "id", None)
+
+        # 課金ガド: タスク投入前に残高を検証する (不足なら 402)。
+        # タスク側 (generate_chapter_orchestrated_task) が
+        # _sync_deduct_credits で控除するため、チェックの要件は一致する。
+        check_generation_credits(current_user)
 
         # 章の中身処理
         processed_chapter = process_chapter(input_data.current_chapter)
@@ -376,7 +381,7 @@ async def generate_content(
             input_data.character_params.model_dump()
             if hasattr(input_data.character_params, "model_dump")
             else dict(input_data.character_params)
-)
+        )
 
         # 生成パラメータ準備
         params: dict[str, Any] = {
@@ -414,9 +419,7 @@ async def generate_content(
         # `/status/{task_id}` が `_assert_task_ownership` で自分のタスクを拒否する。
         repo = BookRepository(session)
         if repo.is_async:
-            await repo.create_task_async(
-                task_id=huey_task_id, status="running", user_id=owner_id
-            )
+            await repo.create_task_async(task_id=huey_task_id, status="running", user_id=owner_id)
         else:
             repo.create_task(task_id=huey_task_id, status="running", user_id=owner_id)
 
@@ -478,9 +481,7 @@ async def export_easy_mode_package(
         content=zip_bytes,
         media_type="application/zip",
         headers={
-            "Content-Disposition": (
-                f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"
-            ),
+            "Content-Disposition": (f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"),
             "Cache-Control": "no-store",
         },
     )
@@ -526,10 +527,24 @@ async def get_task_status(
 async def cancel_task(
     task_id: str = Path(min_length=1, max_length=128, pattern=r"^[a-zA-Z0-9_\-]+$"),
     session=Depends(database.get_db),
-    api_key: str = Depends(require_api_key),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, str]:
     """タスクをキャンセルまたは削除する。"""
     from src.backend.tasks.huey import huey
+
+    # 所有者が確認できないタスクは操作させない (fail-closed)。
+    # 旧実装は API キーのみで全員のタスクをキャンセルできた。
+    # commercial.cancel_scheduled_publish_task と同じ判定に揃える。
+    result = huey.result(task_id)
+    if isinstance(result, dict):
+        from src.backend.routers.tasks import _assert_task_ownership
+
+        _assert_task_ownership(result, current_user)
+    elif getattr(current_user, "role", None) != "admin":
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail="このタスクの所有者が記録されていないためキャンセルできません",
+        )
 
     # Hueyのタスクを取り消し試行
     try:
@@ -567,11 +582,10 @@ from src.services.promotion_service import PromotionService
 @router.post("/gacha", response_model=GachaResponse)
 async def gacha_endpoint(
     req: GachaRequest,
-    api_key: str = Depends(require_api_key),
+    current_user: Any = Depends(get_current_user),
 ) -> GachaResponse:
     """3案ガチャ企画生成 [Gacha Pitch]"""
     from fastapi import HTTPException
-
 
     db = get_db_manager()
     svc = GachaService(db=db)
@@ -586,11 +600,10 @@ async def gacha_endpoint(
 @router.post("/digest", response_model=DigestResponse)
 async def digest_endpoint(
     req: DigestRequest,
-    api_key: str = Depends(require_api_key),
+    current_user: Any = Depends(get_current_user),
 ) -> DigestResponse:
     """ダイジェスト生成 [Quick Digest]"""
     from fastapi import HTTPException
-
 
     db = get_db_manager()
     svc = DigestService(db=db)
@@ -603,7 +616,7 @@ async def digest_endpoint(
 @router.post("/promote", response_model=PromotionResponse)
 async def promote_endpoint(
     req: PromotionRequest,
-    api_key: str = Depends(require_api_key),
+    current_user: Any = Depends(get_current_user),
 ) -> PromotionResponse:
     """上級者モード昇格 [Producer Handoff]"""
     from fastapi import HTTPException
@@ -619,7 +632,7 @@ async def promote_endpoint(
 @router.post("/reverse-generate")
 async def reverse_generate_endpoint(
     req: ReversePlotGeneratePayload,
-    api_key: str = Depends(require_api_key),
+    current_user: Any = Depends(get_current_user),
 ) -> dict[str, Any]:
     """逆算プロットビルダー用同期生成エンドポイント [Reverse Plot Builder]"""
     from src.backend.workflows.reverse_plot_workflow import ReversePlotGenerationWorkflow
@@ -639,6 +652,7 @@ async def export_with_data_endpoint(
     payload: ExportRequestPayload,
     book_id: int = 1,
     session=Depends(database.get_db),
+    current_user: Any = Depends(get_current_user),
 ) -> Response:
     """クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする"""
     logger.info("Export with custom data requested: book_id=%s title=%s", book_id, payload.title)
@@ -694,9 +708,7 @@ async def export_with_data_endpoint(
             {
                 "ep_num": 1,
                 "title": "第1話 運命の覚醒",
-                "one_line_summary": payload.current_text[:100]
-                if payload.current_text
-                else "冒険の始まり",
+                "one_line_summary": payload.current_text[:100] if payload.current_text else "冒険の始まり",
             }
         ],
         "bible_settings": {},
@@ -712,9 +724,7 @@ async def export_with_data_endpoint(
         content=zip_bytes,
         media_type="application/zip",
         headers={
-            "Content-Disposition": (
-                f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"
-            ),
+            "Content-Disposition": (f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"),
             "Cache-Control": "no-store",
         },
     )

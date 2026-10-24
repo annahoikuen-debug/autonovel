@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from src.backend import database
-from src.backend.auth import get_current_user, require_api_key
+from src.backend.auth import get_current_user
 from src.backend.config import settings
 from src.backend.database.models import Character as CharacterModel
 from src.backend.database.models import Chapter as ChapterModel, User
@@ -52,9 +52,7 @@ def _is_admin(user: User | None) -> bool:
     return getattr(user, "role", None) == "admin"
 
 
-async def _assert_chapter_ownership(
-    chapter_id: int, current_user: User, session: AsyncSession
-) -> None:
+async def _assert_chapter_ownership(chapter_id: int, current_user: User, session: AsyncSession) -> None:
     """``chapter_id`` から ``book_id`` を解決して所有権を検証する。"""
     result = await session.execute(select(ChapterModel).where(ChapterModel.id == chapter_id))
     chapter = result.scalar_one_or_none()
@@ -66,9 +64,7 @@ async def _assert_chapter_ownership(
     await verify_book_ownership(int(chapter.book_id), current_user, session)
 
 
-async def _require_book_scope(
-    book_id: int | None, current_user: User
-) -> int:
+async def _require_book_scope(book_id: int | None, current_user: User) -> int:
     """RAG 系で book_id 任意になっている経路の認可を行う。
 
     ``book_id`` が指定されていれば通常どおり所有権を検証する。
@@ -107,7 +103,9 @@ async def _run_blocking(fn: Callable[..., Any], /, **kwargs: Any) -> Any:
 # ============================================================
 
 
-ALLOWED_COLUMN_DEF_PATTERN = re.compile(r"^\s*\(\s*[a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)?(?:\s*,\s*[a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)?)*\s*\)\s*$")
+ALLOWED_COLUMN_DEF_PATTERN = re.compile(
+    r"^\s*\(\s*[a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)?(?:\s*,\s*[a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)?)*\s*\)\s*$"
+)
 
 
 class CypherQueryRequest(BaseModel):
@@ -122,7 +120,9 @@ class CypherQueryRequest(BaseModel):
     @classmethod
     def validate_column_definition(cls, v: str) -> str:
         if not ALLOWED_COLUMN_DEF_PATTERN.match(v) or any(char in v for char in (";", "-", "/", "\\", "*", "$")):
-            raise ValueError("Invalid column_definition format: must be in form '(col_name type, ...)' with no special SQL characters")
+            raise ValueError(
+                "Invalid column_definition format: must be in form '(col_name type, ...)' with no special SQL characters"
+            )
         return v
 
 
@@ -268,9 +268,8 @@ async def get_graph_data(
 
         # キャラクター情報も追加
         from sqlalchemy import select
-        characters = await session.execute(
-            select(CharacterModel).where(CharacterModel.book_id == book_id)
-        )
+
+        characters = await session.execute(select(CharacterModel).where(CharacterModel.book_id == book_id))
         character_list = characters.scalars().all()
 
         character_nodes = []
@@ -307,6 +306,7 @@ async def get_graph_data(
 
         # キャラクター関係も追加
         from src.backend.database.models_relation import CharacterRelationModel
+
         char_relations = await session.execute(
             select(CharacterRelationModel).where(CharacterRelationModel.book_id == book_id)
         )
@@ -340,9 +340,7 @@ async def get_graph_data(
 @router.get("/foreshadowing/kpi")
 async def get_foreshadowing_kpi(
     book_id: int = Query(..., description="作品ID"),
-    current_episode: int | None = Query(
-        None, ge=1, description="現在話数（指定時は期限超過数も計測）"
-    ),
+    current_episode: int | None = Query(None, ge=1, description="現在話数（指定時は期限超過数も計測）"),
     session: AsyncSession = Depends(database.get_async_db),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
@@ -357,9 +355,7 @@ async def get_foreshadowing_kpi(
     await verify_book_ownership(book_id, current_user, session)
     try:
         repo = DbForeshadowingRepository(session)
-        kpi = await ForeshadowingKpiService(repo).compute(
-            book_id=book_id, current_episode=current_episode
-        )
+        kpi = await ForeshadowingKpiService(repo).compute(book_id=book_id, current_episode=current_episode)
         return kpi.to_dict()
     except Exception as e:
         logger.error(f"Failed to compute foreshadowing KPI for book_id={book_id}: {e}")
@@ -411,7 +407,7 @@ async def list_chapter_chunks(
 # ============================================================
 
 
-@router.post("/cypher", response_model=CypherQueryResponse, dependencies=[Depends(require_api_key)])
+@router.post("/cypher", response_model=CypherQueryResponse)
 def execute_cypher(
     request: CypherQueryRequest,
     current_user: User = Depends(get_current_user),
@@ -422,6 +418,11 @@ def execute_cypher(
     呼び出し側が指定した Cypher をそのまま渡せるため、認可は
     GraphRAG の有効無効（インストールフラグ）より **先に** 判定する。
     フラグで無効の場合でも、管理者以外は 403 で拒否する。
+
+    認証は admin JWT のみ（API キーは読み取り専用のため不可）。
+    旧実装は router レベルの JWT に加えて ``require_api_key`` も要求しており、
+    同一の Authorization ヘッダーで JWT と API キーの両方を満たす
+    リクエストが本番では作れない到達不能ルートだった。
     """
     # 認可をフラグ判定より先に行い、無効設定でも攻撃者の取りこぼしを防ぐ
     if not _is_admin(current_user):
@@ -433,7 +434,9 @@ def execute_cypher(
     if not settings.ENABLE_GRAPHRAG or not settings.DATABASE_URL.startswith("postgresql"):
         raise HTTPException(status_code=400, detail="GraphRAG is not enabled or not on PostgreSQL")
 
-    return CypherQueryResponse(records=[], summary="Cypher execution is deprecated/disabled in Relational Memory mode", execution_time_ms=0.0)
+    return CypherQueryResponse(
+        records=[], summary="Cypher execution is deprecated/disabled in Relational Memory mode", execution_time_ms=0.0
+    )
 
 
 # ============================================================

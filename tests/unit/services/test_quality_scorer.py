@@ -1,10 +1,10 @@
 """Unit tests for src/services/quality_scorer.py (pure logic quality scoring)."""
+
 from __future__ import annotations
 
 import pytest
 
 from src.services.quality_scorer import QualityScorer
-from src.models.report import QualityMetricsReport
 
 
 class TestQualityScorer:
@@ -40,14 +40,19 @@ class TestQualityScorer:
 
     @pytest.mark.asyncio
     async def test_score_coherence_with_flow_keywords(self, scorer):
-        text = ("\u305d\u308c\u3067\u3001\u305d\u308c\u3086\u3048\u306b\u3001\u305d\u3046\u3057\u3066\u3001"
-                "\u305d\u308c\u3067\u3001\u305d\u308c\u3067\u3001\u305f\u3060\u304b\u3002") * 5
+        text = (
+            "\u305d\u308c\u3067\u3001\u305d\u308c\u3086\u3048\u306b\u3001\u305d\u3046\u3057\u3066\u3001"
+            "\u305d\u308c\u3067\u3001\u305d\u308c\u3067\u3001\u305f\u3060\u304b\u3002"
+        ) * 5
         m = await scorer.score_coherence(text)
         assert 0.4 <= m <= 1.0
 
     @pytest.mark.asyncio
     async def test_score_coherence_no_flow_keywords(self, scorer):
-        text = "\u3053\u308c\u306f\u30c6\u30b9\u30c8\u3067\u3059\u3002\u6587\u7ae0\u3067\u3059\u3002\u7d42\u308f\u308a\u3067\u3059\u3002" * 10
+        text = (
+            "\u3053\u308c\u306f\u30c6\u30b9\u30c8\u3067\u3059\u3002\u6587\u7ae0\u3067\u3059\u3002\u7d42\u308f\u308a\u3067\u3059\u3002"
+            * 10
+        )
         m = await scorer.score_coherence(text)
         assert m == pytest.approx(0.4, abs=0.1)
 
@@ -73,8 +78,10 @@ class TestQualityScorer:
     async def test_score_character_consistency_many_names(self, scorer):
         # Japanese names with particles: \u592a\u90ce\u306f, \u82b1\u5b50\u306f, \u6b21\u90ce\u306f, \u592a\u90ce\u306f
         # Repeat to make text > 100 chars
-        text = ("\u592a\u90ce\u306f\u8d70\u3063\u305f\u3002\u82b1\u5b50\u306f\u7b11\u3063\u305f\u3002"
-                "\u6b21\u90ce\u306f\u6cf3\u3044\u305f\u3002\u592a\u90ce\u306f\u6cf3\u3044\u305f\u3002") * 4
+        text = (
+            "\u592a\u90ce\u306f\u8d70\u3063\u305f\u3002\u82b1\u5b50\u306f\u7b11\u3063\u305f\u3002"
+            "\u6b21\u90ce\u306f\u6cf3\u3044\u305f\u3002\u592a\u90ce\u306f\u6cf3\u3044\u305f\u3002"
+        ) * 4
         score = await scorer.score_character_consistency(text)
         assert score == 0.85
 
@@ -97,7 +104,9 @@ class TestQualityScorer:
 
     @pytest.mark.asyncio
     async def test_score_pacing_many_tension(self, scorer):
-        text = ("\u7a81\u7136\u3001\u732b\u7136\u3068\u3001\u4e00\u9806\u3067\u3001\u6025\u901f\u306b\u3001\u6c7a\u610f\u3001\u9697\u5fd7") * 10
+        text = (
+            "\u7a81\u7136\u3001\u732b\u7136\u3068\u3001\u4e00\u9806\u3067\u3001\u6025\u901f\u306b\u3001\u6c7a\u610f\u3001\u9697\u5fd7"
+        ) * 10
         score = await scorer.score_pacing(text)
         assert 0.5 <= score <= 1.0
 
@@ -114,17 +123,17 @@ class TestQualityScorer:
 
     @pytest.mark.asyncio
     async def test_score_hook_retention_many_hooks(self, scorer):
-        text = ("\u3060\u308d\u3046\u304b\uff1f\u3053\u3046\u3057\u305f\u3089\u3044\u3044\u3001"
-                "\u3069\u3046\u3057\u3088\u3046\uff1f") * 10
+        text = (
+            "\u3060\u308d\u3046\u304b\uff1f\u3053\u3046\u3057\u305f\u3089\u3044\u3044\u3001"
+            "\u3069\u3046\u3057\u3088\u3046\uff1f"
+        ) * 10
         score = await scorer.score_hook_retention(text)
         assert 0.7 <= score <= 1.0
 
     @pytest.mark.asyncio
     async def test_score_hook_retention_unresolved(self, scorer):
         # Need hooks and unresolved in last third (matches .*だろうか and ...?)
-        text = ("だろうか\n" * 10
-                + "x" * 500
-                + "どうなる...?")
+        text = "だろうか\n" * 10 + "x" * 500 + "どうなる...?"
         score = await scorer.score_hook_retention(text)
         assert 0.7 <= score <= 1.0
 
@@ -141,18 +150,22 @@ class TestQualityScorer:
 
     @pytest.mark.asyncio
     async def test_score_emotional_resonance_many_emotions(self, scorer):
-        text = ("\u559c\u3073\u3001\u61b2\u3073\u3001\u6012\u308a\u3001\u6050\u308c\u3001\u9a05\u304d\u3001\u611b\u60c5\u3001"
-                "\u6191\u3057\u307f\u3001\u7de0\u5f35\u3001\u5b89\u5803\u3001\u8a87\u308a\u3001"
-                "\u7f8e\u671b\u3001\u6050\u6016\u3001\u6b4f\u559c\u3001\u80b8\u304c\u3001"
-                "\u5fc3\u304c\u3001\u76ee\u306b\u3001\u8138\u306b\u3001\u3044\u3060\u304f\u3001"
-                "\u611f\u3058\u3002") + "\u80b8\u304c\u5fc3\u304c\u76ee\u306b\u8138\u306b" * 10
+        text = (
+            "\u559c\u3073\u3001\u61b2\u3073\u3001\u6012\u308a\u3001\u6050\u308c\u3001\u9a05\u304d\u3001\u611b\u60c5\u3001"
+            "\u6191\u3057\u307f\u3001\u7de0\u5f35\u3001\u5b89\u5803\u3001\u8a87\u308a\u3001"
+            "\u7f8e\u671b\u3001\u6050\u6016\u3001\u6b4f\u559c\u3001\u80b8\u304c\u3001"
+            "\u5fc3\u304c\u3001\u76ee\u306b\u3001\u8138\u306b\u3001\u3044\u3060\u304f\u3001"
+            "\u611f\u3058\u3002"
+        ) + "\u80b8\u304c\u5fc3\u304c\u76ee\u306b\u8138\u306b" * 10
         score = await scorer.score_emotional_resonance(text)
         assert 0.5 <= score <= 1.0
 
     @pytest.mark.asyncio
     async def test_score_emotional_resonance_with_contrast(self, scorer):
-        text = ("\u559c\u3073\u3001\u305d\u308c\u3067\u3001\u61b2\u3073\u3001\u3060\u304c\u3001"
-                "\u6012\u308a\u3001\u3068\u3053\u308d\u3001\u6050\u308c\u3001\u305d\u308c\u3067\u3082") + "x" * 100
+        text = (
+            "\u559c\u3073\u3001\u305d\u308c\u3067\u3001\u61b2\u3073\u3001\u3060\u304c\u3001"
+            "\u6012\u308a\u3001\u3068\u3053\u308d\u3001\u6050\u308c\u3001\u305d\u308c\u3067\u3082"
+        ) + "x" * 100
         score = await scorer.score_emotional_resonance(text)
         assert 0.5 <= score <= 1.0
 
@@ -163,8 +176,10 @@ class TestQualityScorer:
 
     @pytest.mark.asyncio
     async def test_score_commercial_viability_keywords(self, scorer):
-        text = ("\u6700\u5f3a\u3001\u8987\u8005\u3001\u4f1d\u8aac\u3001\u904b\u547d\u3001\u6b66\u8005\u3001"
-                "\u52c7\u8005\u3001\é9b54\uff0c\u8986\u901f") + "x" * 3000
+        text = (
+            "\u6700\u5f3a\u3001\u8987\u8005\u3001\u4f1d\u8aac\u3001\u904b\u547d\u3001\u6b66\u8005\u3001"
+            "\u52c7\u8005\u3001\\é9b54\uff0c\u8986\u901f"
+        ) + "x" * 3000
         score = await scorer.score_commercial_viability(text)
         assert 0.5 <= score <= 1.0
 
@@ -189,16 +204,21 @@ class TestQualityScorer:
     async def test_score_all(self, scorer):
         text = (
             "\u305d\u308c\u3067\u3001\u305d\u308c\u3086\u3048\u306b\u3001\u305d\u3046\u3057\u3066\u3001"
-            "\u305d\u308c\u3067\u3001\u305f\u3060\u304b\u3002" * 5
+            "\u305d\u308c\u3067\u3001\u305f\u3060\u304b\u3002"
+            * 5
             + "\u592a\u90ce\u306f\u8d70\u3063\u305f\u3002\u82b1\u5b50\u306f\u7b11\u3063\u305f\u3002"
-            "\u6b21\u90ce\u306f\u6cf3\u3044\u305f\u3002" * 3
+            "\u6b21\u90ce\u306f\u6cf3\u3044\u305f\u3002"
+            * 3
             + "\u7a81\u7136\u3001\u732b\u7136\u3068\u3001\u4e00\u980a\u3067\u3001"
-            "\u6025\u901f\u306b\u3001\u6c7a\u610f\u3001\u9697\u5fd7" * 5
+            "\u6025\u901f\u306b\u3001\u6c7a\u610f\u3001\u9697\u5fd7"
+            * 5
             + "\u3060\u308d\u3046\u304b\uff1f\u3053\u3046\u3057\u305f\u3089\u3001"
-            "\u7a81\u7136\u3001\u732b\u7136\u3068" * 3
+            "\u7a81\u7136\u3001\u732b\u7136\u3068"
+            * 3
             + "\u559c\u3073\u3001\u614b\u3073\u3001\u6012\u308a\u3001\u305d\u308c\u3067\u3001"
             "\u3060\u304c\u3001\u6012\u308a\u3001\u3068\u3053\u308d\u3001\u305d\u308c\u3067\u3082"
-            + "x" * 2000
+            + "x"
+            * 2000
             + "\u6700\u5f3a\u3001\u8987\u8005\u3001\u4f1d\u8aac\u3001\u904b\u547d\u3001"
             "\u6b66\u8005\u3001\u52c7\u8005\u3001\u9b54\u738b\u3001\u89e3\u9034" + "x" * 100
         )
@@ -214,8 +234,12 @@ class TestQualityScorer:
 
         # All scores should be between 0 and 1
         for attr in [
-            "coherence_score", "character_consistency", "pacing_score",
-            "hook_retention", "emotional_resonance", "commercial_viability"
+            "coherence_score",
+            "character_consistency",
+            "pacing_score",
+            "hook_retention",
+            "emotional_resonance",
+            "commercial_viability",
         ]:
             val = getattr(report, attr)
             assert 0.0 <= val <= 1.0, f"{attr} = {val} out of range"

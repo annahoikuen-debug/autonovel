@@ -181,11 +181,13 @@ class TestEroticCurve:
 
     def test_get_phase_intensity(self):
         """位置別強度取得 (get_intensity_at の線形補間)"""
-        curve = EroticCurve(points=[
-            EroticPoint(position=0.1, intensity=30.0),
-            EroticPoint(position=0.5, intensity=80.0),
-            EroticPoint(position=0.8, intensity=20.0),
-        ])
+        curve = EroticCurve(
+            points=[
+                EroticPoint(position=0.1, intensity=30.0),
+                EroticPoint(position=0.5, intensity=80.0),
+                EroticPoint(position=0.8, intensity=20.0),
+            ]
+        )
 
         assert curve.get_intensity_at(0.1) == 30.0
         assert curve.get_intensity_at(0.5) == 80.0
@@ -193,11 +195,13 @@ class TestEroticCurve:
 
     def test_curve_validation_u_shape(self):
         """U字カーブ（Build短→Peak長→Afterglow短）の検証"""
-        curve = EroticCurve(points=[
-            EroticPoint(position=0.1, intensity=30.0),
-            EroticPoint(position=0.5, intensity=80.0),
-            EroticPoint(position=0.8, intensity=20.0),
-        ])
+        curve = EroticCurve(
+            points=[
+                EroticPoint(position=0.1, intensity=30.0),
+                EroticPoint(position=0.5, intensity=80.0),
+                EroticPoint(position=0.8, intensity=20.0),
+            ]
+        )
 
         # Build < Peak > Afterglow の関係
         assert curve.get_intensity_at(0.1) < curve.get_intensity_at(0.5)
@@ -404,45 +408,45 @@ class TestContinuityTracker:
 
     def test_stamina_transition_validation(self):
         """スタミナ遷移の検証 (スナップショット上書き)"""
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=1, stamina_level="normal"
-        ))
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=2, stamina_level="tired"
-        ))
+        self.tracker.save_snapshot(
+            CharacterStateSnapshot(character_name="キャラ", episode_num=1, stamina_level="normal")
+        )
+        self.tracker.save_snapshot(
+            CharacterStateSnapshot(character_name="キャラ", episode_num=2, stamina_level="tired")
+        )
         state = self.tracker.get_snapshot(2, "キャラ")
         assert state.stamina_level == "tired"
 
     def test_psychological_transition_validation(self):
         """心理状態遷移の検証 (スナップショット上書き)"""
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=1, psych_state="neutral"
-        ))
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=2, psych_state="content"
-        ))
+        self.tracker.save_snapshot(
+            CharacterStateSnapshot(character_name="キャラ", episode_num=1, psych_state="neutral")
+        )
+        self.tracker.save_snapshot(
+            CharacterStateSnapshot(character_name="キャラ", episode_num=2, psych_state="content")
+        )
         state = self.tracker.get_snapshot(2, "キャラ")
         assert state.psych_state == "content"
 
     def test_invalid_stamina_transition(self):
         """無効なスタミナ遷移 (実装は値の検証をしないため許容)"""
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=1, stamina_level="exhausted"
-        ))
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=2, stamina_level="energetic"
-        ))
+        self.tracker.save_snapshot(
+            CharacterStateSnapshot(character_name="キャラ", episode_num=1, stamina_level="exhausted")
+        )
+        self.tracker.save_snapshot(
+            CharacterStateSnapshot(character_name="キャラ", episode_num=2, stamina_level="energetic")
+        )
         state = self.tracker.get_snapshot(2, "キャラ")
         assert state.stamina_level in ["exhausted", "energetic"]
 
     def test_invalid_psychological_transition(self):
         """無効な心理状態遷移 (実装は値の検証をしないため許容)"""
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=1, psych_state="distressed"
-        ))
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=2, psych_state="euphoric"
-        ))
+        self.tracker.save_snapshot(
+            CharacterStateSnapshot(character_name="キャラ", episode_num=1, psych_state="distressed")
+        )
+        self.tracker.save_snapshot(
+            CharacterStateSnapshot(character_name="キャラ", episode_num=2, psych_state="euphoric")
+        )
         state = self.tracker.get_snapshot(2, "キャラ")
         assert state.psych_state in ["distressed", "euphoric"]
 
@@ -450,39 +454,41 @@ class TestContinuityTracker:
         """親密度の進行"""
         levels = ["stranger", "acquaintance", "close", "intimate", "bonded"]
         for i, level in enumerate(levels, start=1):
-            self.tracker.save_snapshot(CharacterStateSnapshot(
-                character_name="キャラ", episode_num=i, intimacy_level=level
-            ))
+            self.tracker.save_snapshot(
+                CharacterStateSnapshot(character_name="キャラ", episode_num=i, intimacy_level=level)
+            )
             state = self.tracker.get_snapshot(i, "キャラ")
             assert state.intimacy_level == level
 
     def test_location_transition(self):
         """場所遷移"""
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=1, location="bedroom"
-        ))
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=2, location="bathroom"
-        ))
+        self.tracker.save_snapshot(CharacterStateSnapshot(character_name="キャラ", episode_num=1, location="bedroom"))
+        self.tracker.save_snapshot(CharacterStateSnapshot(character_name="キャラ", episode_num=2, location="bathroom"))
         state = self.tracker.get_snapshot(2, "キャラ")
         assert state.location == "bathroom"
 
     def test_items_held_tracking(self):
         """所持アイテムの追跡 (custom_flags に保存)"""
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=1,
-            custom_flags={"items_held": "指輪,手紙"},
-        ))
+        self.tracker.save_snapshot(
+            CharacterStateSnapshot(
+                character_name="キャラ",
+                episode_num=1,
+                custom_flags={"items_held": "指輪,手紙"},
+            )
+        )
         state = self.tracker.get_snapshot(1, "キャラ")
         assert "指輪" in state.custom_flags.get("items_held", "")
         assert "手紙" in state.custom_flags.get("items_held", "")
 
     def test_body_marks_tracking(self):
         """身体的特徴の追跡 (custom_flags に保存)"""
-        self.tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="キャラ", episode_num=1,
-            custom_flags={"body_marks": "キスマーク,あざ"},
-        ))
+        self.tracker.save_snapshot(
+            CharacterStateSnapshot(
+                character_name="キャラ",
+                episode_num=1,
+                custom_flags={"body_marks": "キスマーク,あざ"},
+            )
+        )
         state = self.tracker.get_snapshot(1, "キャラ")
         assert "キスマーク" in state.custom_flags.get("body_marks", "")
         assert "あざ" in state.custom_flags.get("body_marks", "")
@@ -784,9 +790,9 @@ class TestEroticPipelineIntegration:
     def test_pipeline_rejects_coercive_content(self):
         """強制的コンテンツを拒否 (実装の検出仕様に合わせる)"""
         text = "「嫌だ、やめて」と懇願した。そのまま無理やり続けられた。痛みと恐怖。"
-        scene_type = self.detector.detect(text)
+        self.detector.detect(text)
 
-        report = self.scorer.score_quality(text)
+        self.scorer.score_quality(text)
         # 品質スコアは出るが...
 
         coercion_passed, issues = self.checker.check_coercive_context(text)
@@ -799,24 +805,28 @@ class TestEroticPipelineIntegration:
         tracker = ContinuityTracker(db_path=self.temp_db.name)
 
         # エピソード1
-        tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="ヒロイン",
-            episode_num=1,
-            clothing_state="fully_dressed",
-            location="bedroom",
-            psych_state="content",
-            intimacy_level="close",
-        ))
+        tracker.save_snapshot(
+            CharacterStateSnapshot(
+                character_name="ヒロイン",
+                episode_num=1,
+                clothing_state="fully_dressed",
+                location="bedroom",
+                psych_state="content",
+                intimacy_level="close",
+            )
+        )
 
         # エピソード2
-        tracker.save_snapshot(CharacterStateSnapshot(
-            character_name="ヒロイン",
-            episode_num=2,
-            clothing_state="partially_undressed",
-            location="bedroom",
-            psych_state="euphoric",
-            intimacy_level="intimate",
-        ))
+        tracker.save_snapshot(
+            CharacterStateSnapshot(
+                character_name="ヒロイン",
+                episode_num=2,
+                clothing_state="partially_undressed",
+                location="bedroom",
+                psych_state="euphoric",
+                intimacy_level="intimate",
+            )
+        )
 
         state = tracker.get_snapshot(2, "ヒロイン")
         assert state is not None
@@ -862,6 +872,7 @@ class TestEroticVocabularyConstants:
             CONSENT_CONTINUATION_KEYWORDS,
             CONSENT_ALL_CHARACTERS_KEYWORDS,
         )
+
         assert len(CONSENT_EXPLICIT_KEYWORDS) > 0
         assert len(CONSENT_IMPLICIT_KEYWORDS) > 0
         assert len(CONSENT_REFUSAL_KEYWORDS) > 0
@@ -871,6 +882,7 @@ class TestEroticVocabularyConstants:
     def test_stamina_levels_defined(self):
         """スタミナレベル定義"""
         from src.agents.erotic.vocabulary import STAMINA_LEVELS, STAMINA_ALLOWED_TRANSITIONS
+
         assert STAMINA_LEVELS == ["exhausted", "tired", "normal", "energetic"]
         assert "exhausted" in STAMINA_ALLOWED_TRANSITIONS
         assert "energetic" in STAMINA_ALLOWED_TRANSITIONS
@@ -878,6 +890,7 @@ class TestEroticVocabularyConstants:
     def test_psych_states_defined(self):
         """心理状態定義"""
         from src.agents.erotic.vocabulary import PSYCH_STATES, PSYCH_ALLOWED_TRANSITIONS
+
         assert PSYCH_STATES == ["distressed", "anxious", "neutral", "content", "euphoric"]
         assert "distressed" in PSYCH_ALLOWED_TRANSITIONS
         assert "euphoric" in PSYCH_ALLOWED_TRANSITIONS
@@ -885,6 +898,7 @@ class TestEroticVocabularyConstants:
     def test_intimacy_levels_defined(self):
         """親密度レベル定義"""
         from src.agents.erotic.vocabulary import INTIMACY_LEVELS
+
         assert INTIMACY_LEVELS == ["stranger", "acquaintance", "close", "intimate", "bonded"]
 
 

@@ -34,11 +34,7 @@ class TestWritingServiceFacade:
     @pytest.fixture
     def mock_context_builder_agent(self):
         agent = AsyncMock()
-        result = AgentResult(
-            next_agent=None,
-            artifacts={"writing_context": {}},
-            error=None
-        )
+        result = AgentResult(next_agent=None, artifacts={"writing_context": {}}, error=None)
         agent.execute = AsyncMock(return_value=result)
         return agent
 
@@ -47,8 +43,9 @@ class TestWritingServiceFacade:
         return AsyncMock()
 
     @pytest.fixture
-    def writing_service(self, mock_writer, mock_book_score_calculator,
-                        mock_context_builder_agent, mock_illustration_agent):
+    def writing_service(
+        self, mock_writer, mock_book_score_calculator, mock_context_builder_agent, mock_illustration_agent
+    ):
         return WritingService(
             writer=mock_writer,
             repo=MagicMock(),
@@ -84,8 +81,7 @@ class TestWritingServiceFacade:
         """Test generate_episodes_pipeline delegates to coordinator."""
         reporter = MagicMock()
         result = await writing_service.generate_episodes_pipeline(
-            book_id=1, start_ep=1, end_ep=3, passion=0.8,
-            target_word_count=2000, is_easy_mode=True, reporter=reporter
+            book_id=1, start_ep=1, end_ep=3, passion=0.8, target_word_count=2000, is_easy_mode=True, reporter=reporter
         )
         assert result == (1000, [])
         mock_writer.generate_episodes_pipeline.assert_called_once()
@@ -95,9 +91,14 @@ class TestWritingServiceFacade:
         """Test generate_episodes delegates to coordinator."""
         reporter = MagicMock()
         result = await writing_service.generate_episodes(
-            book_id=1, start_ep=1, end_ep=1, passion=0.8,
-            target_word_count=2000, is_easy_mode=True, reporter=reporter,
-            auto_regenerate=False
+            book_id=1,
+            start_ep=1,
+            end_ep=1,
+            passion=0.8,
+            target_word_count=2000,
+            is_easy_mode=True,
+            reporter=reporter,
+            auto_regenerate=False,
         )
         assert result == 1000
         mock_writer.generate_episodes.assert_called_once()
@@ -132,7 +133,7 @@ class TestWritingServiceFacade:
     async def test_generate_with_quality_assurance_delegates(self, writing_service, mock_writer):
         """Test generate_with_quality_assurance delegates to quality_loop."""
         ctx = AgentContext(book_id=1, branch_id=1, ep_num=1, artifacts={})
-        result = await writing_service.generate_with_quality_assurance(ctx)
+        await writing_service.generate_with_quality_assurance(ctx)
         # Just verify the method was called - the actual result depends on mock setup
         mock_writer.execute.assert_called()
 
@@ -164,4 +165,5 @@ class TestWritingServiceFacade:
     def test_backward_compatibility_aliases(self):
         """Test WritingServices alias exists."""
         from src.domain.writing import WritingServices
+
         assert WritingServices is WritingService

@@ -33,18 +33,19 @@ class MockAudioClient(AudioSynthesisClient):
     def _generate_test_wav(self) -> AudioSynthesisResult:
         """Generate a minimal valid WAV file"""
         import struct
+
         sample_rate = 24000
         duration = 0.1
         n_samples = int(sample_rate * duration)
-        audio_data = struct.pack('<' + 'h' * n_samples, *([0] * n_samples))
+        audio_data = struct.pack("<" + "h" * n_samples, *([0] * n_samples))
 
         # WAV header
         header = struct.pack(
-            '<4sI4s4sIHHIIHH4sI',
-            b'RIFF',
+            "<4sI4s4sIHHIIHH4sI",
+            b"RIFF",
             36 + len(audio_data),
-            b'WAVE',
-            b'fmt ',
+            b"WAVE",
+            b"fmt ",
             16,
             1,
             1,
@@ -52,14 +53,11 @@ class MockAudioClient(AudioSynthesisClient):
             sample_rate * 2,
             2,
             16,
-            b'data',
-            len(audio_data)
+            b"data",
+            len(audio_data),
         )
         return AudioSynthesisResult(
-            audio_bytes=header + audio_data,
-            format="wav",
-            duration_seconds=duration,
-            sample_rate=sample_rate
+            audio_bytes=header + audio_data, format="wav", duration_seconds=duration, sample_rate=sample_rate
         )
 
 
@@ -72,7 +70,7 @@ def test_dialogue_line_emotion_fields():
         speaker_name="主人公",
         speaker_id=3,
         emotion=SpeechEmotion.JOY,
-        acoustics=AcousticParameters(speed_scale=1.15, pitch_scale=0.05)
+        acoustics=AcousticParameters(speed_scale=1.15, pitch_scale=0.05),
     )
     assert line.emotion == SpeechEmotion.JOY
     assert line.acoustics is not None
@@ -89,7 +87,7 @@ def test_dialogue_extractor_emotion_classification():
 
     # Both dialogue and narration lines are extracted
     # Filter to only dialogue lines
-    dialogue_lines = [l for l in lines if l.is_dialogue]
+    dialogue_lines = [ln for ln in lines if ln.is_dialogue]
     assert len(dialogue_lines) == 2
     # First line should be angry/shout
     assert dialogue_lines[0].emotion in [SpeechEmotion.ANGER, SpeechEmotion.SHOUT]
@@ -106,7 +104,7 @@ def test_dialogue_extractor_acoustics_attached():
     lines = extractor.extract_lines(chapter_text, characters=characters)
 
     # Filter to only dialogue lines
-    dialogue_lines = [l for l in lines if l.is_dialogue]
+    dialogue_lines = [ln for ln in lines if ln.is_dialogue]
     assert len(dialogue_lines) == 1
     assert dialogue_lines[0].acoustics is not None
     assert isinstance(dialogue_lines[0].acoustics, AcousticParameters)
@@ -127,13 +125,15 @@ def test_synthesizer_emotion_linked_style_id():
         "ヒロイン": {"gender": "female", "role": "heroine"},
     }
 
-    asyncio.run(synthesizer.synthesize_chapter(
-        book_id=1,
-        episode_num=1,
-        chapter_text=chapter_text,
-        characters=characters,
-        character_details=character_details,
-    ))
+    asyncio.run(
+        synthesizer.synthesize_chapter(
+            book_id=1,
+            episode_num=1,
+            chapter_text=chapter_text,
+            characters=characters,
+            character_details=character_details,
+        )
+    )
 
     # Check that requests were made with correct parameters
     assert mock_client.call_count >= 1
@@ -155,13 +155,15 @@ def test_synthesizer_emotion_distribution_metadata():
         "ヒロイン": {"gender": "female", "role": "heroine"},
     }
 
-    result = asyncio.run(synthesizer.synthesize_chapter(
-        book_id=1,
-        episode_num=1,
-        chapter_text=chapter_text,
-        characters=characters,
-        character_details=character_details,
-    ))
+    result = asyncio.run(
+        synthesizer.synthesize_chapter(
+            book_id=1,
+            episode_num=1,
+            chapter_text=chapter_text,
+            characters=characters,
+            character_details=character_details,
+        )
+    )
 
     assert "emotion_distribution" in result
     dist = result["emotion_distribution"]
@@ -176,12 +178,7 @@ def test_synthesizer_emotion_distribution_metadata():
 def test_audio_synthesis_request_volume_scale():
     """Test AudioSynthesisRequest includes volume_scale"""
     req = AudioSynthesisRequest(
-        text="テスト",
-        speaker_id=3,
-        speed_scale=1.0,
-        pitch_scale=0.0,
-        intonation_scale=1.0,
-        volume_scale=1.2
+        text="テスト", speaker_id=3, speed_scale=1.0, pitch_scale=0.0, intonation_scale=1.0, volume_scale=1.2
     )
     assert req.volume_scale == 1.2
 
@@ -192,6 +189,7 @@ def test_voicevox_client_volume_scale():
 
     # Check that the code includes volumeScale
     import inspect
+
     source = inspect.getsource(VoicevoxClient.synthesize)
     assert "volumeScale" in source
 
@@ -202,16 +200,17 @@ def test_variable_pause_combine_wav():
 
     # Generate test WAV clips
     import struct
+
     def make_wav(duration=0.1):
         sample_rate = 24000
         n_samples = int(sample_rate * duration)
-        audio_data = struct.pack('<' + 'h' * n_samples, *([0] * n_samples))
+        audio_data = struct.pack("<" + "h" * n_samples, *([0] * n_samples))
         header = struct.pack(
-            '<4sI4s4sIHHIIHH4sI',
-            b'RIFF',
+            "<4sI4s4sIHHIIHH4sI",
+            b"RIFF",
             36 + len(audio_data),
-            b'WAVE',
-            b'fmt ',
+            b"WAVE",
+            b"fmt ",
             16,
             1,
             1,
@@ -219,8 +218,8 @@ def test_variable_pause_combine_wav():
             sample_rate * 2,
             2,
             16,
-            b'data',
-            len(audio_data)
+            b"data",
+            len(audio_data),
         )
         return header + audio_data
 
@@ -261,12 +260,14 @@ def test_synthesizer_error_handling_skip():
     chapter_text = "「セリフ1」（主人公）\n「セリフ2」（ヒロイン）\n「セリフ3」（主人公）"
     characters = ["主人公", "ヒロイン"]
 
-    result = asyncio.run(synthesizer.synthesize_chapter(
-        book_id=1,
-        episode_num=1,
-        chapter_text=chapter_text,
-        characters=characters,
-    ))
+    result = asyncio.run(
+        synthesizer.synthesize_chapter(
+            book_id=1,
+            episode_num=1,
+            chapter_text=chapter_text,
+            characters=characters,
+        )
+    )
 
     # Should have processed remaining lines despite error
     # Both dialogue and narration lines are extracted
@@ -282,12 +283,14 @@ def test_synthesizer_parallel_processing():
     chapter_text = "\n".join([f"「セリフ{i}」（主人公）" for i in range(10)])
     characters = ["主人公"]
 
-    result = asyncio.run(synthesizer.synthesize_chapter(
-        book_id=1,
-        episode_num=1,
-        chapter_text=chapter_text,
-        characters=characters,
-    ))
+    result = asyncio.run(
+        synthesizer.synthesize_chapter(
+            book_id=1,
+            episode_num=1,
+            chapter_text=chapter_text,
+            characters=characters,
+        )
+    )
 
     # Both dialogue and narration lines extracted
     assert result["lines_count"] >= 10

@@ -1,4 +1,5 @@
 """Tests for character extractor."""
+
 from __future__ import annotations
 
 import pytest
@@ -53,7 +54,7 @@ class TestCharacterExtractor:
         # 辞書に「主人公」があるとき、「主」だけでもマッチするか（部分マッチ）
         text = "主は立ち上がった。"
         doc = nlp(text)
-        mentions = extractor.extract(doc)
+        extractor.extract(doc)
 
         # 部分マッチは実装依存なので、完全一致の場合のみテスト
         text2 = "主人公は立ち上がった。"

@@ -11,14 +11,17 @@ import pytest
 from fastapi.testclient import TestClient
 
 from src.backend.server import app
-from src.backend.auth import require_api_key
+from src.backend.auth import _get_dev_mock_user, require_admin_user_or_key, require_api_key
+from src.backend.config import settings
 from src.backend.observability.health import metrics
 
 
 @pytest.fixture
-def client():
+def client(monkeypatch):
     # Bypass auth for test client
+    monkeypatch.setattr(settings, "AUTH_DISABLED", True)
     app.dependency_overrides[require_api_key] = lambda: "mock-valid-key"
+    app.dependency_overrides[require_admin_user_or_key] = _get_dev_mock_user
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

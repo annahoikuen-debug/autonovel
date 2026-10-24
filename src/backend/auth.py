@@ -1,5 +1,20 @@
 """
 src/backend/auth.py — API 認証・認可ユーティリティ
+
+認証手段と書き込み権限の対応（運用方針）:
+
+=============  ==========================================================
+手段           許可される操作
+=============  ==========================================================
+JWT (Bearer)   読み書きすべて（``get_current_user`` / ``require_admin_user``）
+API キー        **読み取り専用**（GET/HEAD/OPTIONS）
+=============  ==========================================================
+
+書き込み系 (POST/PUT/PATCH/DELETE) に ``require_api_key`` を付けるのは不可。
+同一の Authorization ヘッダーで JWT と API キーの両方を要求すると、
+本番では到達不能なエンドポイントになる（片方しか送れない）。
+サーバー間連携で API キーによる書き込みが必要な場合のみ
+``get_current_user_or_service_key`` + ``ALLOW_API_KEY_WRITES=True`` を使う。
 """
 
 from __future__ import annotations
@@ -8,7 +23,7 @@ import logging
 import os
 from typing import Any
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -88,6 +103,71 @@ async def require_admin_user(
     return current_user
 
 
+async def get_current_user_or_service_key(
+    token: str = Depends(oauth2_scheme),
+    authorization: str = Header(default="", alias="Authorization"),
+    db: AsyncSession = Depends(get_async_db),
+) -> User:
+    """サーバー間連携向けの書き込み認証依存性（commercial 系）。
+
+    書き込みは既定で **JWT のみ** を受け付ける（API キーは読み取り専用、
+    :func:`require_admin_user_or_key` と同じ方針）。
+
+    旧実装は ``require_api_key`` を個別エンドポイントに並べていたが、
+    これは JWT と API キーを **同じ Authorization ヘッダー** で要求しているため、
+    本番 (``AUTH_DISABLED=False``) ではどちらか一方しか送れない以上、
+    両方を通過するリクエストは原理的に存在せず到達不能になっていた。
+    さらに API キー経由の書き込みは ``_get_dev_mock_user()`` に user id=1 を
+    与えてしまっていたため、共有 API キー 1 本で全ユーザーを装える権限昇格でもある。
+    この依存は JWT 優先 + 設定オプトインの API キー受付に置き換え、
+    API キー経由時のみサービスアカウントを解決する。
+
+    設定:
+        ``ALLOW_API_KEY_WRITES`` が True の環境のみ、有効な API キーを
+        サーバー間連携の資格情報として受け付ける。その場合の書き込み主体は
+        ``API_KEY_SERVICE_EMAIL`` で指定されたサービスアカウントであり、
+        任意ユーザーへのなりすましは行わない。アカウントが未登録なら
+        「誰の権限で書き込んでいるか不明」のまま実行させないため 403 で拒否する。
+    """
+    if settings.AUTH_DISABLED:
+        return _get_dev_mock_user()
+
+    if token:
+        return await get_current_user(token=token, db=db)
+
+    if not getattr(settings, "ALLOW_API_KEY_WRITES", False):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="この操作には JWT (Bearer トークン) が必要です (API キーは読み取り専用です)",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    key = await require_api_key(authorization)
+    if not key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="認証が必要です",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    from sqlalchemy import select
+
+    service_email = getattr(settings, "API_KEY_SERVICE_EMAIL", "") or ""
+    user = None
+    if service_email:
+        user = (await db.execute(select(User).where(User.email == service_email))).scalar_one_or_none()
+    if user is None or user.status != "active":
+        logger.error(
+            "ALLOW_API_KEY_WRITES=True ですがサービスアカウント %r が見つからないか無効です。書き込みは拒否しました。",
+            service_email,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=("API キーによる書き込みは許可されていません（サービスアカウントが未登録です）"),
+        )
+    return user
+
+
 async def require_api_key(
     authorization: str = Header(default="", alias="Authorization"),
 ) -> str:
@@ -118,8 +198,16 @@ async def require_admin_user_or_key(
     token: str = Depends(oauth2_scheme),
     authorization: str = Header(default="", alias="Authorization"),
     db: AsyncSession = Depends(get_async_db),
+    request: Request = None,
 ) -> User:
-    """管理者JWTまたは有効なAPI Keyのいずれかを要求する依存性関数。"""
+    """管理者JWTまたは有効なAPI Keyのいずれかを要求する依存性関数。
+
+    API キー経由のアクセスは **読み取り専用** とする (``api_readonly`` ロール)。
+    旧実装は api_readonly を返すだけで、それを検査する依存が無かったため、
+    共有 API キー 1 本で全管理者 POST (サーキットブレイカーリセット、
+    スキル切替、A/B テスト実行など) を実行できる権限昇格が発生していた。
+    書き込み系メソッド (POST/PUT/PATCH/DELETE) は admin JWT を要求する。
+    """
     if settings.AUTH_DISABLED:
         return _get_dev_mock_user()
 
@@ -136,9 +224,16 @@ async def require_admin_user_or_key(
     key = await require_api_key(authorization)
     if key:
         # API Key 保持者には読み取り専用ロールを付与（admin 昇格しない）
-        api_user = _get_dev_mock_user()
-        api_user.role = "api_readonly"
-        return api_user
+        method = request.method if request is not None else "GET"
+        if method in ("GET", "HEAD", "OPTIONS"):
+            api_user = _get_dev_mock_user()
+            api_user.role = "api_readonly"
+            return api_user
+        # 書き込み系は API キーでは実行不可 (権限昇格の防止)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="この操作には管理者 JWT が必要です (API キーは読み取り専用です)",
+        )
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -157,6 +252,7 @@ def validate_api_key_sync(api_key: str) -> str | bool:
     if not allowed_keys:
         return False
     import hmac
+
     is_valid = any(hmac.compare_digest(api_key, k) for k in allowed_keys)
     if not is_valid:
         return False
@@ -204,6 +300,7 @@ def get_prompt_manager() -> Any:
 
 __all__ = [
     "get_current_user",
+    "get_current_user_or_service_key",
     "get_prompt_manager",
     "oauth2_scheme",
     "require_admin_user",

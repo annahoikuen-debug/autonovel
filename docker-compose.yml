@@ -38,7 +38,7 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-3-5-sonnet-20241022}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434}
@@ -50,6 +50,9 @@ services:
         required: false
     volumes:
       - ./storage:/app/storage
+      - ./output:/app/output
+      - ./src:/app/src
+      - ./config:/app/config
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8200/health/liveness || exit 1"]
       interval: 15s
@@ -82,7 +85,7 @@ services:
       - OPENAI_BASE_URL=${OPENAI_BASE_URL:-}
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o-mini}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash}
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
       - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-claude-3-5-sonnet-20241022}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://localhost:11434}
@@ -94,6 +97,9 @@ services:
         required: false
     volumes:
       - ./storage:/app/storage
+      - ./output:/app/output
+      - ./src:/app/src
+      - ./config:/app/config
     healthcheck:
       disable: true
     depends_on:

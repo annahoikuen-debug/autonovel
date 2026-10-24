@@ -113,8 +113,8 @@ def _retry_after_seconds(exc: BaseException) -> float | None:
 
 async def with_retry[T](
     async_func: Callable[[], Coroutine[Any, Any, T]],
-    max_retries: int = 3,
-    initial_delay: float = 1.0,
+    max_retries: int = 5,
+    initial_delay: float = 2.0,
     backoff_factor: float = 2.0,
     max_retry_after_seconds: float = 120.0,
 ) -> T:

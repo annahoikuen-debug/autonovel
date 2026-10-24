@@ -23,9 +23,22 @@ def upgrade() -> None:
     if not _is_postgres():
         return
 
+    import sqlalchemy as sa
+
+    bind = op.get_bind()
+    has_age = bool(
+        bind.execute(
+            sa.text("SELECT 1 FROM pg_available_extensions WHERE name = 'age';")
+        ).scalar()
+    )
+
     # Ensure extensions
-    op.execute("CREATE EXTENSION IF NOT EXISTS age;")
     op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
+
+    if not has_age:
+        return
+
+    op.execute("CREATE EXTENSION IF NOT EXISTS age;")
     op.execute("LOAD 'age';")
     op.execute('SET search_path = ag_catalog, "$user", public;')
 
@@ -62,6 +75,17 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     if not _is_postgres():
+        return
+
+    import sqlalchemy as sa
+
+    bind = op.get_bind()
+    has_age = bool(
+        bind.execute(
+            sa.text("SELECT 1 FROM pg_available_extensions WHERE name = 'age';")
+        ).scalar()
+    )
+    if not has_age:
         return
 
     labels = ["Character", "Location", "Item", "Event", "Faction", "Concept"]

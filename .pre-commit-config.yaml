@@ -5,14 +5,10 @@ repos:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
       - id: ruff-format
-  - repo: https://github.com/psf/black
-    rev: 24.10.0
-    hooks:
-      - id: black
-        language_version: python3.12
-        # pyproject.toml の [tool.black] (line-length=100) を尊重する
-        # black はフォーマッタ重複チェック用 ruff format --check と二重化するが
-        # black-check ジョブ (CI) との同一性を担保するため残す
+  # black は削除 (2026-10)。CI の `ruff format --check` (line-length=120) と
+  # 二重化しており、black (既定 line-length=88、[tool.black] も未定義) で整形すると
+  # CI の format gate が落ちる ping-pong 状態になっていた。
+  # フォーマッタは ruff に一元化する。
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v2.3.1
     hooks:
@@ -24,7 +20,14 @@ repos:
     hooks:
       - id: pytest-unit
         name: pytest unit tests
-        entry: python -m pytest tests/unit/ -q --tb=short --cov-fail-under=40
+        # --cov=src を明示しないと fail-under が無条件で死蔵する (計測自体が無効のため)。
+        # 閾値は CI (.github/workflows/ci.yml) と Makefile と一致させる (tests/unit 単独)。
+        entry: python -m pytest tests/unit/ -q --tb=short --cov=src --cov-fail-under=70
         language: system
         pass_filenames: false
         stages: [pre-push]
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]

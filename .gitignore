@@ -148,3 +148,57 @@ tmp/
 # output/ 内の生成物（MULTIMEDIA_OUTPUT_DIR 配下の WAV 等）
 output/multimedia/
 
+# --- キャッシュ・生成物・個人環境ファイル (追加) ---
+# pytest-benchmark / Hypothesis のキャッシュ
+.benchmarks/
+.hypothesis/
+
+# エージェント用メモリディレクトリ (リポジトリに含めない)
+.mimocode/
+
+# pyenv ローカル Python バージョン (個人環境依存)
+.python-version
+
+# VS Code ワークスペース (個人設定)
+autonovel.code-workspace
+
+# 生成物: novella テキスト / zip
+output/novella_*.txt
+output/novella_*.zip
+
+# ベンチマーク結果・レポート出力
+benchmarks/
+reports/
+
+# 個人用ローカル起動バッチ (Docker 用 start_docker/stop_docker は除く)
+アプリ起動*.bat
+アプリ停止.bat
+起動診断.bat
+
+# --- キャッシュ・生成物・個人環境ファイル (追加) ---
+# pytest-benchmark / Hypothesis のキャッシュ
+.benchmarks/
+.hypothesis/
+
+# エージェント用メモリディレクトリ (リポジトリに含めない)
+.mimocode/
+
+# pyenv ローカル Python バージョン (個人環境依存)
+.python-version
+
+# VS Code ワークスペース (個人設定)
+autonovel.code-workspace
+
+# 生成物: novella テキスト / zip
+output/novella_*.txt
+output/novella_*.zip
+
+# ベンチマーク結果・レポート出力
+benchmarks/
+reports/
+
+# 個人用ローカル起動バッチ (Docker 用 start_docker/stop_docker は除く)
+アプリ起動*.bat
+アプリ停止.bat
+起動診断.bat
+

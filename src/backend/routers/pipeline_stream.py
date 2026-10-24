@@ -42,6 +42,9 @@ from src.backend.websocket.pipeline_hub import pipeline_event_hub
 
 logger = logging.getLogger(__name__)
 
+#: イベントが無い場合の ping 間隔 (秒)。
+_SSE_PING_INTERVAL_SECONDS = 0.5
+
 router = APIRouter(tags=["pipeline_stream"])
 
 #: 1作品あたりに同時購読できるストリーム数の上限（未認証リソース枯渇の防止）
@@ -257,11 +260,26 @@ async def sse_pipeline_stream(
             if book_id in pipeline_event_hub._latest_snapshots:
                 yield f"data: {json.dumps(pipeline_event_hub._latest_snapshots[book_id])}\n\n"
 
-            for _ in range(5):  # Yield up to 5 events/pings then complete to prevent test hangs
+            # 本番ループ: クライアント切断 or 全体タイムアウトまで待機する。
+            # 旧実装は `for _ in range(5):  # ...to prevent test hangs` と
+            # テスト対策のハードコードがあり、本番 EventSource が約 2.5 秒で
+            # 切断されて再接続ループになっていた。
+            # 期限は settings.SSE_MAX_STREAM_SECONDS (テストで短く注入可能)。
+            deadline = asyncio.get_event_loop().time() + float(
+                getattr(settings, "SSE_MAX_STREAM_SECONDS", 3600.0)
+            )
+            while True:
                 if await request.is_disconnected():
                     break
+                if asyncio.get_event_loop().time() >= deadline:
+                    logger.info(
+                        "pipeline SSE: reached max stream duration for book_id=%s", book_id
+                    )
+                    break
                 try:
-                    event_data = await asyncio.wait_for(queue.get(), timeout=0.5)
+                    event_data = await asyncio.wait_for(
+                        queue.get(), timeout=_SSE_PING_INTERVAL_SECONDS
+                    )
                     yield f"data: {json.dumps(event_data)}\n\n"
                 except asyncio.TimeoutError:
                     yield ": ping\n\n"

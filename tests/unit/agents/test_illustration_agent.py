@@ -9,7 +9,7 @@ Step 16: エラー系
 from __future__ import annotations
 
 import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -17,7 +17,6 @@ from src.agents.illustration_agent import IllustrationAgent
 from src.models.illustration import (
     IllustrationModel,
     IllustrationRequest,
-    IllustrationResult,
     IllustrationType,
     SafetyLevel,
 )
@@ -295,7 +294,7 @@ class TestStreamingResponse:
             ["シーン", "イラスト", "の", "プロンプト"],
         )
 
-        request = IllustrationRequest(
+        IllustrationRequest(
             book_id=1,
             illustration_type=IllustrationType.CHARACTER,
             model=IllustrationModel.QUALITY,

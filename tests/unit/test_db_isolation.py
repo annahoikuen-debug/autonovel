@@ -6,14 +6,11 @@
 
 from __future__ import annotations
 
-import os
 import tempfile
 from pathlib import Path
 
 import pytest
 from sqlalchemy import text
-
-from tests.conftest import real_db_manager
 
 
 def test_real_db_manager_creates_unique_db_per_test(real_db_manager):
@@ -56,10 +53,12 @@ def test_parallel_db_isolation_parametrized(real_db_manager, test_id):
     session = real_db_manager
 
     # 各テストで固有のデータを書き込み
-    session.execute(text("CREATE TABLE IF NOT EXISTS parallel_test (id INTEGER PRIMARY KEY, test_id INTEGER, worker_data TEXT)"))
+    session.execute(
+        text("CREATE TABLE IF NOT EXISTS parallel_test (id INTEGER PRIMARY KEY, test_id INTEGER, worker_data TEXT)")
+    )
     session.execute(
         text("INSERT INTO parallel_test (test_id, worker_data) VALUES (:tid, :data)"),
-        {"tid": test_id, "data": f"worker_data_{test_id}"}
+        {"tid": test_id, "data": f"worker_data_{test_id}"},
     )
     session.commit()
 
@@ -80,7 +79,6 @@ def test_real_db_manager_uses_tmp_path():
 
 def test_db_file_is_unique_per_fixture_call():
     """フィクスチャ呼び出しごとに異なる DB ファイルが作成されることを確認。"""
-    import tempfile
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
@@ -116,7 +114,6 @@ def test_db_file_is_unique_per_fixture_call():
 
 def test_concurrent_db_access_simulation():
     """同時アクセスシミュレーション: 複数セッションが独立して動作することを確認。"""
-    import tempfile
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 

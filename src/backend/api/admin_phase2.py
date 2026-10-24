@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.auth import require_api_key
+from src.backend.auth import require_admin_user_or_key
 from src.backend.config import settings
 from src.core.container import AppContainer
 from src.config.audit_weights import load_weights
@@ -32,7 +32,7 @@ from src.agents.orchestrator import AgentContext
 router = APIRouter(
     prefix="/admin/audit",
     tags=["admin-audit"],
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(require_admin_user_or_key)],
 )
 
 
@@ -157,7 +157,7 @@ async def get_audit_weights(
 rag_router = APIRouter(
     prefix="/admin/rag",
     tags=["admin-rag"],
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(require_admin_user_or_key)],
 )
 
 
@@ -241,7 +241,7 @@ async def get_reflection_stats(
 enrichment_router = APIRouter(
     prefix="/admin/enrichment",
     tags=["admin-enrichment"],
-    dependencies=[Depends(require_api_key)],
+    dependencies=[Depends(require_admin_user_or_key)],
 )
 
 

@@ -43,14 +43,31 @@ EROTIC_INTENSITY_SCALE: Final[int] = 3
 GENRE_EROTIC: Final[str] = "ero"
 MAX_CONCURRENCY_DEFAULT: Final[int] = 0
 MAX_PROMPT_CHARS: Final[int] = 8000
-MODEL_CLIMAX: Final[str] = "gemma-4-31b-it"
-MODEL_EMBEDDING: Final[str] = "text-embedding-004"
-MODEL_PLANNING: Final[str] = "gemini-3.5-flash-lite"
-MODEL_PLOT_EXPANSION: Final[str] = "gemma-4-31b-it"
-MODEL_FAST_EXPANSION: Final[str] = os.getenv("MODEL_FAST_EXPANSION", "gemini-3.5-flash-lite")
-MODEL_STABLE_FALLBACK: Final[str] = "gemma-4-31b-it"
-MODEL_ULTRA_STABLE: Final[str] = "gemma-4-31b-it"
-MODEL_WRITING: Final[str] = "gemma-4-31b-it"
+def _resolve_const_model(task: str, default: str) -> str:
+    try:
+        from src.backend.config import settings
+        return settings.get_task_model(task)
+    except Exception:
+        env_val = os.getenv(f"LLM_MODEL_{task.upper()}") or os.getenv(f"MODEL_{task.upper()}")
+        if env_val:
+            return env_val
+        provider = os.getenv("LLM_PROVIDER", "gemini").lower()
+        if provider == "gemini":
+            return os.getenv("GEMINI_MODEL", default)
+        elif provider == "openai":
+            return os.getenv("OPENAI_MODEL", default)
+        elif provider == "claude":
+            return os.getenv("ANTHROPIC_MODEL", default)
+        return default
+
+MODEL_CLIMAX: Final[str] = _resolve_const_model("climax", "gemini-2.5-flash")
+MODEL_EMBEDDING: Final[str] = os.getenv("EMBEDDING_MODEL") or os.getenv("KAKU_MODEL_EMBEDDING", "text-embedding-004")
+MODEL_PLANNING: Final[str] = _resolve_const_model("planning", "gemini-2.5-flash")
+MODEL_PLOT_EXPANSION: Final[str] = _resolve_const_model("plot_expansion", "gemini-2.5-flash")
+MODEL_FAST_EXPANSION: Final[str] = _resolve_const_model("planning", "gemini-2.5-flash")
+MODEL_STABLE_FALLBACK: Final[str] = _resolve_const_model("fallback", "gemini-2.5-flash")
+MODEL_ULTRA_STABLE: Final[str] = _resolve_const_model("ultra_stable", "gemini-2.5-flash")
+MODEL_WRITING: Final[str] = _resolve_const_model("writing", "gemini-2.5-flash")
 NSFW_DEFAULT_ENABLED: Final[bool] = False
 POLISHING_MIN_CONTENT_RATIO: Final[float] = 0.5
 SAFE_APPEND_MODE_DEFAULT: Final[str] = "auto"

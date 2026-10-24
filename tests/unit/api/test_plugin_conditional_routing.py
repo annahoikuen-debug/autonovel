@@ -28,11 +28,21 @@ def _fresh_server_module(monkeypatch, enable_multimedia: bool | None):
     return server, registry
 
 
+def _mounted_paths(app: FastAPI) -> set[str]:
+    """マウント済みルートのパス一覧を返す。
+
+    FastAPI 0.141 以降 ``include_router`` は ``_IncludedRouter`` という遅延
+    ラッパーを ``app.routes`` に積むため、``route.path`` を直接列挙すると
+    マウント済みのルーターまで「無い」ことになってしまう（偽陰性）。
+    OpenAPI スキーマを生成させると遅延分も解決済みのパスが返るため、
+    そちらを正とする。
+    """
+    return set(app.openapi().get("paths", {}))
+
+
 def _has_multimedia_route(app: FastAPI) -> bool:
-    """/multimedia プレフィックスのルートが存在するか。"""
-    return any(
-        getattr(route, "path", "").startswith("/multimedia") for route in app.routes
-    )
+    """/multimedia プレフィックスのルートがマウントされているか。"""
+    return any(path.startswith("/multimedia") for path in _mounted_paths(app))
 
 
 class TestConditionalRouting:
@@ -49,8 +59,7 @@ class TestConditionalRouting:
     def test_core_routes_mounted_regardless(self, monkeypatch):
         """コアルーター (/health) はフラグに関係なくマウントされること。"""
         server, _ = _fresh_server_module(monkeypatch, enable_multimedia=None)
-        paths = [getattr(route, "path", "") for route in server.app.routes]
-        assert "/health" in paths
+        assert "/health" in _mounted_paths(server.app)
 
     def test_explicit_false_disables(self, monkeypatch):
         server, _ = _fresh_server_module(monkeypatch, enable_multimedia=False)

@@ -1,9 +1,9 @@
 """Unit tests for src/backend/patch_validator.py (pure AST/JSON safety guard)."""
+
 from __future__ import annotations
 
-import pytest
 
-from src.backend.patch_validator import PatchValidator, ValidationResult
+from src.backend.patch_validator import PatchValidator
 
 
 class TestValidateConfigPatchParsing:

@@ -1,0 +1,163 @@
+.landing-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.app-header {
+    text-align: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    margin: -20px -20px 40px;
+    border-radius: 0 0 20px 20px;
+}
+
+.app-header h1 {
+    font-size: 2.5rem;
+    margin-bottom: 5px;
+}
+
+.app-header p {
+    font-size: 1.2rem;
+    opacity: 0.9;
+}
+
+.hero {
+    padding: 60px 20px;
+    text-align: center;
+    background: #f8f9fa;
+}
+
+.hero-content h2 {
+    font-size: 2.8rem;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.hero-content p {
+    font-size: 1.2rem;
+    margin-bottom: 40px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero-buttons .btn {
+    display: inline-block;
+    margin: 0 10px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    text-decoration: none;
+    font-weight: 500;
+    transition: transform 0.2s;
+}
+
+.hero-buttons .btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.hero-buttons .btn-secondary {
+    background: transparent;
+    color: #667eea;
+    border: 2px solid #667eea;
+}
+
+.hero-buttons .btn:hover {
+    transform: translateY(-2px);
+}
+
+.features {
+    padding: 60px 20px;
+    background: white;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.feature-card {
+    padding: 30px 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+}
+
+.feature-card h3 {
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+.feature-card p {
+    color: #666;
+    line-height: 1.6;
+}
+
+.architecture {
+    padding: 60px 20px;
+    background: #f8f9fa;
+}
+
+.architecture h2 {
+    text-align: center;
+    margin-bottom: 40px;
+    color: #333;
+}
+
+.architecture ul {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 0;
+    list-style: none;
+}
+
+.architecture li {
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 1.1rem;
+    color: #555;
+}
+
+.architecture li:last-child {
+    border-bottom: none;
+}
+
+.app-footer {
+    padding: 40px 20px;
+    text-align: center;
+    background: #2d3748;
+    color: #aaa;
+    margin-top: 60px;
+}
+
+.app-footer .footer-links {
+    margin-top: 20px;
+}
+
+.app-footer a {
+    color: #667eea;
+    margin: 0 15px;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+@media (max-width: 600px) {
+    .app-header h1 { font-size: 2rem; }
+    .hero-content h2 { font-size: 2rem; }
+    .hero-buttons .btn { display: block; margin: 10px 0; }
+}

@@ -1,4 +1,5 @@
 """Tests for emotional residue extractor integration."""
+
 from __future__ import annotations
 
 import pytest
@@ -14,6 +15,7 @@ class TestEmotionalResidueExtractor:
     @pytest.fixture
     def vector_store(self):
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         store = RedisVectorStore(skip_connection_check=True)
         store.client = redis_client
@@ -45,7 +47,7 @@ class TestEmotionalResidueExtractor:
         assert vector.episode_id == "ep01"
 
         # Redisに保存されたか確認
-        stored = vector_store.get_latest("pipeline", ("A", "B"))
+        vector_store.get_latest("pipeline", ("A", "B"))
         # 空白モデルでは依存構造がないためシグナルが出ない可能性がある
         # 実行エラーにならないことのみ確認
 

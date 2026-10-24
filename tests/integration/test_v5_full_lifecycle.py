@@ -7,6 +7,7 @@ from src.services.auditors.hybrid_auditor import TwoTierAuditor
 from src.services.formatters.platform_copy_formatter import PlatformCopyFormatter
 from src.services.exporters.commercial_epub_builder import PureCommercialEpubBuilder
 
+
 @pytest.mark.asyncio
 async def test_v5_full_novel_lifecycle():
     # 1. プロジェクト・章（五感ビート・引き）・キャラ（心理葛藤・語尾）・伏線定義
@@ -26,7 +27,7 @@ async def test_v5_full_novel_lifecycle():
         scene_beats=[SceneBeat(beat_num=1, physical_action="剣を抜く", sensory_tags=["sound"])],
         cliffhanger=CliffhangerDef(type="Shocking Truth", description="黒幕の正体"),
     )
-    fore = ForeshadowingCreateRequest(book_id=1, title="銀の鍵", description="鍵の由来", planted_episode=1)
+    ForeshadowingCreateRequest(book_id=1, title="銀の鍵", description="鍵の由来", planted_episode=1)
 
     assert proj.name and char.surface_persona and chap.cliffhanger.type == "Shocking Truth"
 

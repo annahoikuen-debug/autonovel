@@ -1,4 +1,5 @@
 """Coverage tests for src/backend/tasks DAG stack (models, engine, policies, numa, resources, metrics, persistence, scheduler)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -41,6 +42,7 @@ from src.backend.tasks.dag_scheduler import DAGScheduler
 # --------------------------------------------------------------------------
 # dag_models
 # --------------------------------------------------------------------------
+
 
 def _node(tid: str, **kw) -> DAGTaskNode:
     return DAGTaskNode(task_id=tid, func_name=kw.pop("func_name", "f"), **kw)
@@ -146,6 +148,7 @@ def test_dag_graph_status_predicates():
 # dag_engine
 # --------------------------------------------------------------------------
 
+
 def test_dag_engine_validate_and_sort():
     assert DAGEngine.topological_sort(DAGGraph(dag_id="e")) == []
 
@@ -186,6 +189,7 @@ def test_dag_engine_execution_stages_sorted_by_priority():
 # scheduling_policies
 # --------------------------------------------------------------------------
 
+
 def test_affinity_priority_policy_sorts():
     aff_map = {"1:1": "w1"}
     p = AffinityPriorityPolicy(aff_map)
@@ -217,6 +221,7 @@ def test_deadline_aware_policy():
 # numa_topology
 # --------------------------------------------------------------------------
 
+
 def test_numa_topology_accessors():
     t = NUMATopology(
         cpu_to_numa={0: 0, 1: 0, 2: 1},
@@ -244,6 +249,7 @@ def test_detect_gpu_numa_handles_missing_pynvml():
 # --------------------------------------------------------------------------
 # resource_manager
 # --------------------------------------------------------------------------
+
 
 class _FakeMem:
     def __init__(self, available):
@@ -277,11 +283,16 @@ def test_resource_manager_snapshots_and_limits(monkeypatch):
 def test_resource_manager_can_schedule(monkeypatch):
     topo = NUMATopology()
     rm = ResourceManager(numa_topology=topo)
-    monkeypatch.setattr(rm, "get_available_resources", lambda: TaskResourceRequirement(cpu_cores=4, ram_mb=1024, gpu_mem_mb=0))
+    monkeypatch.setattr(
+        rm, "get_available_resources", lambda: TaskResourceRequirement(cpu_cores=4, ram_mb=1024, gpu_mem_mb=0)
+    )
     assert rm.can_schedule(TaskResourceRequirement(cpu_cores=1, ram_mb=512), TaskResourceRequirement()) is True
     assert rm.can_schedule(TaskResourceRequirement(cpu_cores=8, ram_mb=512), TaskResourceRequirement()) is False
     assert rm.can_schedule(TaskResourceRequirement(cpu_cores=1, ram_mb=4096), TaskResourceRequirement()) is False
-    assert rm.can_schedule(TaskResourceRequirement(cpu_cores=1, ram_mb=512, gpu_mem_mb=1), TaskResourceRequirement()) is False
+    assert (
+        rm.can_schedule(TaskResourceRequirement(cpu_cores=1, ram_mb=512, gpu_mem_mb=1), TaskResourceRequirement())
+        is False
+    )
 
 
 def test_resource_manager_numa_affinity_and_env(monkeypatch):
@@ -338,9 +349,18 @@ def test_resource_manager_fallbacks(monkeypatch):
 # metrics_collector
 # --------------------------------------------------------------------------
 
+
 def test_noop_metrics_collector():
     c = NoOpMetricsCollector()
-    m = TaskMetrics(task_id="t", dag_id="d", duration_seconds=1.0, status="completed", retry_count=0, worker_id="w", resource_usage={})
+    m = TaskMetrics(
+        task_id="t",
+        dag_id="d",
+        duration_seconds=1.0,
+        status="completed",
+        retry_count=0,
+        worker_id="w",
+        resource_usage={},
+    )
     c.record_task_start("t", "d", "w")
     c.record_task_end(m)
     c.record_queue_depth("d", 1, 0, 0)
@@ -351,7 +371,15 @@ def test_noop_metrics_collector():
 @pytest.mark.skipif(not PROMETHEUS_AVAILABLE, reason="prometheus_client not installed")
 def test_prometheus_metrics_collector():
     c = PrometheusMetricsCollector(namespace="test_dag_ns")
-    m = TaskMetrics(task_id="t", dag_id="d", duration_seconds=1.0, status="completed", retry_count=0, worker_id="w", resource_usage={})
+    m = TaskMetrics(
+        task_id="t",
+        dag_id="d",
+        duration_seconds=1.0,
+        status="completed",
+        retry_count=0,
+        worker_id="w",
+        resource_usage={},
+    )
     c.record_task_start("t", "d", "w")
     c.record_task_end(m)
     c.record_queue_depth("d", 1, 2, 3)
@@ -378,6 +406,7 @@ def test_otel_collector_wraps_function():
 # --------------------------------------------------------------------------
 # dag_persistence
 # --------------------------------------------------------------------------
+
 
 def test_filesystem_persistence_roundtrip(tmp_path):
     p = FileSystemDAGPersistence(base_dir=str(tmp_path / "cps"))
@@ -414,6 +443,7 @@ def test_redis_persistence_guarded():
 # --------------------------------------------------------------------------
 # dag_scheduler
 # --------------------------------------------------------------------------
+
 
 def _sched(tmp_path=None, **kw) -> DAGScheduler:
     kwargs = {}
@@ -601,6 +631,7 @@ async def test_execute_task_wrapper_huey_path(monkeypatch):
     import sys
 
     import src.backend.tasks.huey  # noqa: F401  (registers the module)
+
     huey_mod = sys.modules["src.backend.tasks.huey"]
 
     async def fake_wait(res, timeout=60.0):
@@ -622,6 +653,7 @@ async def test_execute_task_wrapper_huey_error(monkeypatch):
     import sys
 
     import src.backend.tasks.huey  # noqa: F401
+
     huey_mod = sys.modules["src.backend.tasks.huey"]
 
     async def fake_wait(res, timeout=60.0):
@@ -667,7 +699,6 @@ def test_retry_failed_subgraph():
     g.mark_completed("a")
     g.mark_failed("b", "err")
 
-    reset = g and None
     s = _sched()
     out = s.retry_failed_subgraph(g, "b")
     assert out == ["b", "c"]
@@ -895,9 +926,7 @@ async def test_resume_from_checkpoint_with_wal():
     entry_ok = MagicMock(output_json=json.dumps({"v": 1}), created_at="2024-01-01")
     entry_bad = MagicMock(output_json="{bad json", created_at="2024-01-01")
     entry_none = MagicMock(output_json=None, created_at=None)
-    recovery.get_latest_wal_for_node = AsyncMock(
-        side_effect=[entry_ok, entry_none, entry_bad, entry_ok]
-    )
+    recovery.get_latest_wal_for_node = AsyncMock(side_effect=[entry_ok, entry_none, entry_bad, entry_ok])
     s2 = _sched(worker_recovery=recovery, db_manager=MagicMock())
     out2 = await s2.resume_from_checkpoint_with_wal("wal", g)
     assert out2.nodes["a"].status == "completed"

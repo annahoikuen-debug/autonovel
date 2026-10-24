@@ -106,11 +106,10 @@ class TestSyntaxRefiner:
 
         # Test with newlines
         text2 = "第一段落\n第二段落\n第三段落"
-        sentences2 = refiner._split_sentences_keep_delimiters(text2)
+        refiner._split_sentences_keep_delimiters(text2)
         # Should handle newlines as delimiters
 
-
-# ------------------------------------------------------------------
+    # ------------------------------------------------------------------
     # フィラー除去の契約（旧実装の不具合に対する回帰防止）
     #
     # 旧実装の FILLER_PATTERNS は先頭 `\s+` を必須にしていたため、
@@ -134,15 +133,11 @@ class TestSyntaxRefiner:
             ("さぞ彼は驚くだろう。", "さぞ"),
         ],
     )
-    def test_filler_removed_regardless_of_position(
-        self, text: str, must_be_absent: str
-    ) -> None:
+    def test_filler_removed_regardless_of_position(self, text: str, must_be_absent: str) -> None:
         """フィラーは前後に空白や句読点がなくても除去されること。"""
         refiner = SyntaxRefiner()
         result, _, _ = refiner.refine_paragraph(text, 0, 0)
-        assert must_be_absent not in result, (
-            f"フィラー {must_be_absent!r} が除去されなかった: {result}"
-        )
+        assert must_be_absent not in result, f"フィラー {must_be_absent!r} が除去されなかった: {result}"
 
     @pytest.mark.parametrize(
         "text",
@@ -167,9 +162,7 @@ class TestSyntaxRefiner:
         日本語約物の直前と行頭読点の整理が必要。
         """
         refiner = SyntaxRefiner()
-        result, _, _ = refiner.refine_paragraph(
-            "たぶん、彼はきっと成功するでしょう。", 0, 0
-        )
+        result, _, _ = refiner.refine_paragraph("たぶん、彼はきっと成功するでしょう。", 0, 0)
         assert not result.startswith("、"), f"行頭に読点が残った: {result}"
         assert " 。" not in result, f"約物直前の空白が残った: {result}"
         assert "  " not in result, f"連続空白が残った: {result}"

@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 
-from src.backend.auth import get_current_user, require_admin_user_or_key, require_api_key
+from src.backend.auth import get_current_user, require_admin_user, require_admin_user_or_key
 from src.backend.database.models import InternalState, TaskWALLogModel, User
 from src.backend.redis_util import get_async_redis_client
 from src.backend.sse import task_event_generator
@@ -46,6 +46,52 @@ def _assert_task_ownership(data: dict, current_user: User | None) -> None:
         )
 
 
+def _extract_book_id_from_dag_id(dag_id: str) -> int | None:
+    """``novel_b{book_id}_ep{ep_num}`` 形式の dag_id から book_id を復元する。
+
+    復元できない形式 (カスタム DAG 名など) は None を返す。
+    """
+    import re
+
+    m = re.match(r"^novel_b(\d+)_ep\d+$", dag_id)
+    if not m:
+        return None
+    try:
+        return int(m.group(1))
+    except (TypeError, ValueError):
+        return None
+
+
+async def _assert_dag_ownership(dag_id: str, current_user: User | None) -> None:
+    """DAG の所有権を検証する (fail-closed)。
+
+    - 管理者は常に許可
+    - ``novel_b{book_id}_...`` 形式なら book 所有権を DB で検証
+    - 復元できない形式は所有者が不明なため **非管理者を拒否**する
+      (従来は所有権チェックが無く、任意の DAG チェックポイントを
+      列挙・参照できた)。
+    """
+    if current_user is not None and getattr(current_user, "role", None) == "admin":
+        return
+
+    book_id = _extract_book_id_from_dag_id(dag_id)
+    if book_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="この DAG の所有者が特定できないためアクセスできません",
+        )
+
+    from src.backend.security.owner_guard import verify_book_ownership
+
+    db = AppContainer.db()
+    if db is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="所有権を検証できないためアクセスできません",
+        )
+    await verify_book_ownership(book_id, current_user, db)
+
+
 @router.get("/{task_id}/status")
 async def get_task_status(
     task_id: str,
@@ -59,9 +105,7 @@ async def get_task_status(
             if val:
                 data = json.loads(val)
         except Exception as exc:
-            logger.warning(
-                "Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True
-            )
+            logger.warning("Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True)
 
     if data is None:
         db = AppContainer.db()
@@ -82,10 +126,18 @@ async def get_task_status(
 
 
 @router.get("/dag/{dag_id}")
-async def get_dag_status(dag_id: str):
+async def get_dag_status(
+    dag_id: str,
+    current_user: User | None = Depends(get_current_user),
+):
     """Step 57: Get DAG workflow status, progress, and node execution states."""
     from src.backend.tasks.dag_persistence import FileSystemDAGPersistence
     from src.backend.tasks.dag_scheduler import DAGScheduler
+
+    # IDOR 対策: dag_id は "novel_b{book_id}_ep{ep_num}" 形式のため、
+    # book_id を復元して所有権を検証する (従来は認証のみで全ユーザーが
+    # 任意の DAG チェックポイント内容を読めた)。
+    await _assert_dag_ownership(dag_id, current_user)
 
     persistence = FileSystemDAGPersistence()
     checkpoints = persistence.list_checkpoints(dag_id)
@@ -124,9 +176,7 @@ async def _load_task_state(task_id: str) -> dict:
             if val:
                 return json.loads(val)
         except Exception as exc:
-            logger.warning(
-                "Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True
-            )
+            logger.warning("Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True)
 
     db = AppContainer.db()
     if db is None:
@@ -165,7 +215,6 @@ async def stream_task_status(
 @router.post("/{task_id}/stop")
 async def stop_task(
     task_id: str,
-    api_key: str = Depends(require_api_key),
     current_user: User = Depends(get_current_user),
 ):
     # PLAN_W6 Step 10: ユーザー中断時に、進行中の投機プリフェッチを即殺する。
@@ -186,9 +235,7 @@ async def stop_task(
             if val:
                 state_dict = json.loads(val)
         except Exception as exc:
-            logger.warning(
-                "Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True
-            )
+            logger.warning("Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True)
 
     db = AppContainer.db()
     if not state_dict:
@@ -200,7 +247,7 @@ async def stop_task(
             raise NotFoundError("Task not found", resource_type="TaskStatus", resource_id=task_id)
         state_dict = json.loads(row.value)
 
-    # API キー保持者が任意のタスクでタスクを停止できないよう所有権も検証する
+    # 書き込み系は JWT のみ (API キーは読み取り専用)。所有者が不明なタスクは拒否する。
     _assert_task_ownership(state_dict, current_user)
 
     state_dict["is_running"] = False
@@ -217,22 +264,22 @@ async def stop_task(
             await redis_client.set(f"task_status:{task_id}", state_json, ex=86400)
             return {"message": "Stop request registered via Redis"}
         except Exception as exc:
-            logger.warning(
-                "Redis task_status 保存失敗、DB にフォールバックします: %s", exc, exc_info=True
-            )
+            logger.warning("Redis task_status 保存失敗、DB にフォールバックします: %s", exc, exc_info=True)
 
-    await db.save_internal_state(
-        f"task_status:{task_id}", state_json, time.strftime("%Y-%m-%d %H:%M:%S")
-    )
+    await db.save_internal_state(f"task_status:{task_id}", state_json, time.strftime("%Y-%m-%d %H:%M:%S"))
     return {"message": "Stop request registered"}
 
 
-@router.post("/admin/recover", dependencies=[Depends(require_api_key)])
+@router.post("/admin/recover", dependencies=[Depends(require_admin_user)])
 async def trigger_task_recovery():
     """Step 58: Manual trigger for orphan task detection and recovery.
 
     Scans for zombie tasks (running with stale heartbeat) and resets them to pending
     for re-scheduling. Returns count of recovered tasks.
+
+    全ユーザーのタスク状態を書き換えるため admin JWT のみを要求する。
+    旧実装は ``require_api_key`` で、共有 API キー 1 本で全タスクを
+    「再スケジュール可能」に書き換えられた。
     """
     db_manager = AppContainer.db()
     recovery_manager = WorkerRecoveryManager(
@@ -291,9 +338,12 @@ async def get_wal_logs(dag_id: str):
     db_manager = AppContainer.db()
 
     async with db_manager.get_session() as session:
-        stmt = select(TaskWALLogModel).where(
-            TaskWALLogModel.dag_id == dag_id
-        ).order_by(TaskWALLogModel.created_at.desc()).limit(100)
+        stmt = (
+            select(TaskWALLogModel)
+            .where(TaskWALLogModel.dag_id == dag_id)
+            .order_by(TaskWALLogModel.created_at.desc())
+            .limit(100)
+        )
         result = await session.execute(stmt)
         logs = result.scalars().all()
 

@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from src.backend.auth import get_current_user, require_valid_api_key
 from src.backend.database.models import User
 from src.backend.database.uow import UnitOfWork
+from src.backend.security.credit_guard import check_generation_credits
 from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.security.branch_guard import verify_branch_belongs_to_book
 from src.backend.task_helpers import create_task as _create_task
@@ -182,6 +183,9 @@ async def generate_episodes(
     if req.api_key:
         require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
+    # 課金ガド: タスク投入前に残高を検証する (不足なら 402)。
+    # これが無いとサーバー側 LLM キーで無課金実行が可能だった。
+    check_generation_credits(current_user)
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("write")
@@ -220,6 +224,8 @@ async def generate_episodes_candidates(
     if req.api_key:
         require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
+    # 課金ガド: タスク投入前に残高を検証する (不足なら 402)。
+    check_generation_credits(current_user)
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("write_candidates")
@@ -258,6 +264,9 @@ async def retry_failed_episodes(
     if req.api_key:
         require_valid_api_key(req.api_key)
     await verify_book_ownership(req.book_id, current_user, AppContainer.db())
+    # 課金ガド: 失敗リトライも本番生成と同じコストを消費するため、
+    # タスク投入 (enqueue / DB レコード作成) の前に残高を検証する (不足なら 402)。
+    check_generation_credits(current_user)
 
     # PLAN_W6 Step 10: リトライ前に、進行中の投機プリフェッチをすべて取り消す。
     await _cancel_prefetch_for_book(req.book_id)

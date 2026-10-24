@@ -17,7 +17,7 @@ def test_polish_preserves_context(mock_call_llm):
     polished = LocalPolisher().polish(
         original,
         target_range=(start_pos, start_pos + len(target_text)),
-        improvement_instruction="より感情豊かに書き直して"
+        improvement_instruction="より感情豊かに書き直して",
     )
     assert polished.startswith("最初の文。")
     assert polished.endswith("最後の文。")
@@ -51,7 +51,6 @@ def test_polish_calls_llm_with_correct_prompt(mock_call_llm):
     # モックの設定
     mock_call_llm.return_value = "改善されたテキスト"
 
-    original = "前文脈。対象テキスト。後文脈。"
     polisher = LocalPolisher()
 
     # 対象範囲を指定（ここでは「対象テキスト」の部分）
@@ -63,7 +62,7 @@ def test_polish_calls_llm_with_correct_prompt(mock_call_llm):
     polished = polisher.polish(
         text,
         target_range=(start_pos, start_pos + len(target_part)),
-        improvement_instruction="より詳細に説明してください"
+        improvement_instruction="より詳細に説明してください",
     )
 
     # 結果を検証
@@ -93,7 +92,7 @@ def test_polish_handles_llm_failure():
         polished = polisher.polish(
             original,
             target_range=(5, 9),  # 「テストです」の部分（概算）
-            improvement_instruction="改善して"
+            improvement_instruction="改善して",
         )
 
         # LLM失敗時は元のテキストを返すはず

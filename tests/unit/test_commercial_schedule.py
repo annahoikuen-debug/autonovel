@@ -112,7 +112,7 @@ async def test_commercial_router_cancel_schedule():
     mock_session.execute.return_value = mock_result_none
 
     with pytest.raises(HTTPException) as exc:
-        await cancel_schedule(schedule_id=999, db=mock_session, api_key="test-key")
+        await cancel_schedule(schedule_id=999, db=mock_session)
     assert exc.value.status_code == 404
 
     # Case 2: Schedule not pending (e.g., completed)
@@ -126,7 +126,7 @@ async def test_commercial_router_cancel_schedule():
         "src.backend.routers.commercial.verify_book_ownership", new_callable=AsyncMock
     ):
         with pytest.raises(HTTPException) as exc:
-            await cancel_schedule(schedule_id=123, db=mock_session, api_key="test-key")
+            await cancel_schedule(schedule_id=123, db=mock_session)
         assert exc.value.status_code == 400
         assert "Only pending schedules can be cancelled" in exc.value.detail
 
@@ -137,7 +137,7 @@ async def test_commercial_router_cancel_schedule():
         mock_result_pending.scalar_one_or_none.return_value = mock_schedule_pending
         mock_session.execute.return_value = mock_result_pending
 
-        res = await cancel_schedule(schedule_id=123, db=mock_session, api_key="test-key")
+        res = await cancel_schedule(schedule_id=123, db=mock_session)
         assert res["success"] is True
         assert mock_schedule_pending.status == "cancelled"
         mock_session.commit.assert_called()
@@ -186,7 +186,7 @@ async def test_commercial_router_create_schedule():
             scheduled_at=datetime.now(timezone.utc)
         )
 
-        res = await create_schedule(req=req, db=mock_session, api_key="test-key", current_user=None)
+        res = await create_schedule(req=req, db=mock_session, current_user=None)
 
         assert res.id == 123
         assert res.book_id == 1
@@ -225,7 +225,7 @@ async def test_commercial_router_get_schedules():
     from unittest.mock import AsyncMock as _AsyncMock
 
     with patch("src.backend.routers.commercial.verify_book_ownership", new_callable=_AsyncMock):
-        res = await get_schedules(book_id=1, db=mock_session, api_key="test-key", current_user=None)
+        res = await get_schedules(book_id=1, db=mock_session, current_user=None)
 
     assert len(res) == 1
     assert res[0].id == 123
@@ -260,7 +260,7 @@ async def test_commercial_router_run_schedule_now():
     with patch(
         "src.backend.routers.commercial.verify_book_ownership", new_callable=AsyncMock
     ), patch("src.backend.tasks.commercial_tasks.execute_publication_task") as mock_task:
-        res = await run_schedule_now(schedule_id=123, db=mock_session, api_key="test-key")
+        res = await run_schedule_now(schedule_id=123, db=mock_session)
 
         assert res["success"] is True
         assert "triggered successfully" in res["message"]
@@ -270,6 +270,6 @@ async def test_commercial_router_run_schedule_now():
         mock_schedule.status = "running"
         from fastapi import HTTPException
         with pytest.raises(HTTPException) as exc:
-            await run_schedule_now(schedule_id=123, db=mock_session, api_key="test-key")
+            await run_schedule_now(schedule_id=123, db=mock_session)
         assert exc.value.status_code == 400
         assert "Only pending schedules can be triggered" in exc.value.detail

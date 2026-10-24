@@ -1,18 +1,18 @@
 """Tests for MCP Proposal 2 (Deterministic Pre-Audit) and Proposal 9 (Novel Formatter & Linter)."""
+
 from __future__ import annotations
 
 import pytest
-from unittest.mock import AsyncMock
 
 from src.mcp_servers.agent_mcp_bridge import AgentMCPBridge
 from src.mcp_servers.audit_mcp_server import AuditMCPServer
-from src.mcp_servers.formatter_server import FormatterMCPServer
-from src.mcp_servers.providers.audit_provider import AuditProvider, AuditRequest
+from src.mcp_servers.providers.audit_provider import AuditProvider
 from src.mcp_servers.providers.formatter_provider import NovelFormatterProvider
-from src.agents.specialist_auditor_base import SpecialistAuditor, SpecialistAuditResult
+from src.agents.specialist_auditor_base import SpecialistAuditor
 
 
 # --- Proposal 2: Deterministic Pre-Audit Screening Tests ---
+
 
 def test_audit_provider_clean_text_bypass_eligible():
     """作法に問題がないテキストは高スコアで bypass_eligible=True となること。"""
@@ -33,10 +33,10 @@ def test_audit_provider_detects_all_stylistic_violations():
 
     dirty_text = (
         "「開かないドアがある。\n"  # unclosed quotes
-        "「これは危険だ。」\n"       # dialogue trailing period
-        "沈黙が流れる…\n"          # odd ellipses
-        "\n\n\n\n"                  # excessive blank lines
-        "魔王城の秘密が暴かれた。"    # forbidden word
+        "「これは危険だ。」\n"  # dialogue trailing period
+        "沈黙が流れる…\n"  # odd ellipses
+        "\n\n\n\n"  # excessive blank lines
+        "魔王城の秘密が暴かれた。"  # forbidden word
     )
     res = provider.pre_screen(dirty_text)
 
@@ -74,6 +74,7 @@ def test_audit_mcp_server_pre_screen_rpc():
 @pytest.mark.asyncio
 async def test_specialist_auditor_deterministic_pre_audit_bypass():
     """SpecialistAuditor が allow_pre_audit_bypass=True の場合、LLMを呼ばずに決定論的にパスすること。"""
+
     class DummySpecialist(SpecialistAuditor):
         specialist_name = "style"
 
@@ -95,16 +96,11 @@ async def test_specialist_auditor_deterministic_pre_audit_bypass():
 
 # --- Proposal 9: Novel Formatter & Multi-Platform Linter Tests ---
 
+
 def test_formatter_provider_typography_normalization():
     """地の文の字下げ、会話文の非字下げ、奇数三点リーダー補完、会話文末の句点除去。"""
     provider = NovelFormatterProvider()
-    raw = (
-        "朝が来た。\n"
-        "「早く起きてよ。」\n"
-        "少女はため息をついた…\n"
-        "\n\n\n\n"
-        "　すでに街は動き出していた。"
-    )
+    raw = "朝が来た。\n「早く起きてよ。」\n少女はため息をついた…\n\n\n\n\n　すでに街は動き出していた。"
 
     res = provider.format_novel(raw, platform="kakuyomu")
     lines = res.formatted_text.split("\n")

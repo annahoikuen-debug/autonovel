@@ -3,7 +3,8 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-from src.backend.auth import require_api_key
+from src.backend.auth import get_current_user
+from src.backend.database.models import User
 from src.models.publishing_assistant import TargetPlatform, FormattedChapterPayload
 from src.services.publishing.content_splitter import ContentSplitter
 from src.services.publishing.ai_disclosure_generator import AIDisclosureGenerator
@@ -14,6 +15,7 @@ router = APIRouter(
     tags=["publishing_assistant"],
 )
 
+
 class FormatRequest(BaseModel):
     platform: TargetPlatform = Field(TargetPlatform.KAKUYOMU, description="投稿先プラットフォーム")
     chapter_title: str = Field(..., description="話・章のタイトル")
@@ -22,9 +24,14 @@ class FormatRequest(BaseModel):
 
 
 @router.post("/format", response_model=FormattedChapterPayload)
-async def format_chapter_for_publishing(request: FormatRequest, api_key: str = Depends(require_api_key)):
+async def format_chapter_for_publishing(
+    request: FormatRequest,
+    current_user: User = Depends(get_current_user),
+):
     """小説テキストをプラットフォーム別（カクヨム・なろう等）に分割・整形し、
     AI開示文言および規約バリデーション結果を返却する。
+
+    書き込み系 (POST) のため JWT を要求する（API キーは読み取り専用）。
     """
     try:
         # 1. 前書き・本文・後書きの自動分割
@@ -58,7 +65,7 @@ async def format_chapter_for_publishing(request: FormatRequest, api_key: str = D
             chapter_title=request.chapter_title,
             main_content=main_content,
             foreword=foreword,
-            afterword=afterword
+            afterword=afterword,
         )
 
         return FormattedChapterPayload(
@@ -69,7 +76,7 @@ async def format_chapter_for_publishing(request: FormatRequest, api_key: str = D
             afterword=afterword,
             char_count=total_chars,
             ai_disclosure_statement=ai_statement,
-            validation_warnings=warnings
+            validation_warnings=warnings,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Publishing assistant formatting failed: {str(e)}")

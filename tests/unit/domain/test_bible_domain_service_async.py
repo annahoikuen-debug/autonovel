@@ -22,7 +22,7 @@ def make_repo() -> MagicMock:
     repo.get_by_novel = AsyncMock(return_value=None)
     repo.save = AsyncMock(side_effect=lambda b: b)
     repo.save_setting = AsyncMock(side_effect=lambda n, s: s)
-    repo.save_lore = AsyncMock(side_effect=lambda n, l: l)
+    repo.save_lore = AsyncMock(side_effect=lambda n, lore: lore)
     repo.get_all_lore = AsyncMock(return_value=[])
     repo.get_lore = AsyncMock(return_value=None)
     repo.get_setting = AsyncMock(return_value=None)
@@ -442,4 +442,3 @@ class TestBibleDomainServiceChecks:
         svc, _ = make_service()
         assert isinstance(svc._validator, BibleValidator)
         assert isinstance(svc._consistency_checker, BibleConsistencyChecker)
-

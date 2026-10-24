@@ -4,6 +4,7 @@ Step 28: AppContainer import バグ修正の検証。
 Step 29-30: バッチ Huey 化 + status endpoint の検証。
 Step 32: R15 safety の検証 (test_image_service.py に集約済み)。
 """
+
 from __future__ import annotations
 
 import os
@@ -144,7 +145,6 @@ def test_illustration_batch_queues_huey_task():
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-
     # Huey を immediate モードに切替 (CI で redis/sqlite 不要)
     # 重要: src.backend.tasks パッケージは `huey` を属性に持つので、
     # モジュールは sys.modules から直接取得する。
@@ -160,6 +160,7 @@ def test_illustration_batch_queues_huey_task():
         from src.backend.routers.illustrations import router
 
         app.include_router(router, prefix="/api/illustrations")
+
         async def _override_workflow():
             class _FakeWorkflow:
                 illustration_agent = MagicMock()
@@ -177,6 +178,12 @@ def test_illustration_batch_queues_huey_task():
             new=AsyncMock(return_value=MagicMock()),
         )
         patcher.start()
+        # タスクは immediate で同期実行されるため、課金 (クレジット控除) だけは
+        # パッチして実 DB の残高を触らせない (キュー投入の検証が本テストの目的)。
+        import src.backend.tasks.illustration_tasks as _it
+
+        deduct_patcher = patch.object(_it, "_deduct_batch_credits", return_value=(0, 0))
+        deduct_patcher.start()
 
         with TestClient(app) as client:
             resp = client.post(
@@ -191,6 +198,8 @@ def test_illustration_batch_queues_huey_task():
         huey_instance.immediate = original_immediate
         if "patcher" in dir():
             patcher.stop()
+        if "deduct_patcher" in dir():
+            deduct_patcher.stop()
 
 
 def test_illustration_status_endpoint_404():

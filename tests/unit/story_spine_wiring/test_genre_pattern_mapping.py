@@ -2,6 +2,7 @@
 
 レビューで `g_entry.get("pattern")` が常に None（=常に exile_rise）が判明した。
 """
+
 from __future__ import annotations
 
 from config.story_spine import PATTERNS
@@ -31,7 +32,7 @@ def test_genres_do_not_all_collapse_to_one_pattern():
 def test_resolve_pattern_key_returns_distinct_values_for_distinct_genres():
     a = resolve_pattern_key("ミステリー")
     b = resolve_pattern_key("ホラー")
-    c = resolve_pattern_key("ZFantasy")
+    resolve_pattern_key("ZFantasy")
     assert a != b, f"ミステリーとホラーが同じパターン {a} になった"
 
 

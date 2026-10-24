@@ -249,9 +249,10 @@ def test_factory_testing_env_returns_mock(monkeypatch):
     assert isinstance(get_llm_adapter("openai", api_key="k"), MockLLMAdapter)
 
 
-def test_factory_unimplemented_falls_back(prod):
-    adapter = get_llm_adapter("unknown-provider")
-    assert isinstance(adapter, MockLLMAdapter)
+def test_factory_unimplemented_raises(prod):
+    """未実装プロバイダは例外を送出する (無条件モックフォールバック廃止)。"""
+    with pytest.raises(RuntimeError, match="未実装"):
+        get_llm_adapter("unknown-provider")
 
 
 def test_factory_mock(prod):

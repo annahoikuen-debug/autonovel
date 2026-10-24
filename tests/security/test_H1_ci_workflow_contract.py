@@ -6,6 +6,7 @@ ruff/mypy の警告が「数」としてしか残らない状態だった。
 """
 from __future__ import annotations
 
+import os
 import re
 
 WORKFLOW = ".github/workflows/ci.yml"
@@ -68,6 +69,11 @@ def test_release_consistency_runs_more_than_version_check():
     assert "test_tenant_fk_integrity.py" in block, "release-consistency が tenant_fk を検証していない"
     assert "test_H1_tautology_guard.py" in block, "release-consistency が tautology を検証していない"
     assert "test_server_route_mount_parity.py" in block, "release-consistency が route mount parity を検証していない"
+    # ファイル名の部分一致だけではディレクトリ誤り (tests/regression に存在しない) を
+    # 検出できないため、パスが実在することを追加で要求する。
+    parity_paths = re.findall(r"(\S*test_server_route_mount_parity\.py)", block)
+    for path in parity_paths:
+        assert os.path.exists(path), f"CI が存在しないテストパスを参照している: {path}"
 
 
 def test_hard_gate_jobs_never_continue_on_error():

@@ -21,10 +21,7 @@ class TestPurpleProseFilter:
 
     def test_init_custom(self) -> None:
         """Test custom initialization."""
-        filter_obj = PurpleProseFilter(
-            max_aggressive_per_episode=5,
-            max_metaphor_per_1k_chars=10
-        )
+        filter_obj = PurpleProseFilter(max_aggressive_per_episode=5, max_metaphor_per_1k_chars=10)
         assert filter_obj.max_aggressive_per_episode == 5
         assert filter_obj.max_metaphor_per_1k_chars == 10
 
@@ -46,7 +43,7 @@ class TestPurpleProseFilter:
         """Test processing empty text."""
         filter_obj = PurpleProseFilter()
         assert filter_obj.process("") == ""
-        assert filter_obj.process(None) == None  # type: ignore
+        assert filter_obj.process(None) is None  # type: ignore
 
     def test_process_no_matches(self) -> None:
         """Test processing text with no matches."""
@@ -63,7 +60,7 @@ class TestPurpleProseFilter:
 
         # Process text with 3 aggressive reactions - should limit to 2
         text = "彼は歯を食いしばり、舌打ちし、拳を握りしめた。"
-        result = filter_obj.process(text)
+        filter_obj.process(text)
 
         # Should have replaced the third one (拳を握りしめた -> 拳を握った)
         # Or depending on implementation, may have transformed patterns
@@ -72,8 +69,8 @@ class TestPurpleProseFilter:
 
         # Process another chunk - should continue limiting
         text2 = "さらに奥歯を軋ませた。"
-        result2 = filter_obj.process(text2)
-        stats2 = filter_obj.get_stats()
+        filter_obj.process(text2)
+        filter_obj.get_stats()
         # Should still be at 2 or less (the third+ should be transformed/limited)
 
     def test_metaphor_limit(self) -> None:
@@ -82,9 +79,9 @@ class TestPurpleProseFilter:
 
         # Process text with metaphors
         text = "彼はまるで獣のように叫び、星のように輝く目をして、夢のように遠い未来を見ていた。"
-        result = filter_obj.process(text)
+        filter_obj.process(text)
 
-        stats = filter_obj.get_stats()
+        filter_obj.get_stats()
         # Should limit metaphors to 3 per 1000 chars
         # Depending on text length, this might be under or over limit
 
@@ -94,7 +91,7 @@ class TestPurpleProseFilter:
 
         # First "episode"
         text1 = "彼は歯を食いしばった。"
-        result1 = filter_obj.process(text1)
+        filter_obj.process(text1)
         stats1 = filter_obj.get_stats()
         assert stats1["aggressive_count"] == 1
 
@@ -103,7 +100,7 @@ class TestPurpleProseFilter:
 
         # Second "episode" - should allow aggressive reaction again
         text2 = "彼は舌打ちした。"
-        result2 = filter_obj.process(text2)
+        filter_obj.process(text2)
         stats2 = filter_obj.get_stats()
         assert stats2["aggressive_count"] == 1  # Fresh count
 

@@ -28,9 +28,7 @@ class TestProseDetoxPipeline:
         syntax_refiner = SyntaxRefiner()
 
         pipeline = ProseDetoxPipeline(
-            stream_guard=stream_guard,
-            density_scorer=density_scorer,
-            syntax_refiner=syntax_refiner
+            stream_guard=stream_guard, density_scorer=density_scorer, syntax_refiner=syntax_refiner
         )
 
         assert pipeline.stream_guard.max_aggressive_per_episode == 5
@@ -112,12 +110,12 @@ class TestProseDetoxPipeline:
         # First episode - use up aggressive limit
         text1 = "彼は歯を食いしばった。さらに舌打ちした。"  # 2 aggressive
         result1, metrics1 = pipeline.process(text1, episode_id="episode_A")
-        stats1_after = metrics1["stream_guard"]["stats"]
+        metrics1["stream_guard"]["stats"]
 
         # Second episode - should allow aggressive again
         text2 = "彼は拳を握りしめた。さらに奥歯を軋ませた。"  # 2 more aggressive
         result2, metrics2 = pipeline.process(text2, episode_id="episode_B")
-        stats2_after = metrics2["stream_guard"]["stats"]
+        metrics2["stream_guard"]["stats"]
 
         # Each episode should have its own count
         # The exact counts depend on implementation, but they should be tracked separately
@@ -154,6 +152,7 @@ class TestProseDetoxPipeline:
 # ──────────────────────────────────────────────
 # Edge case tests
 # ──────────────────────────────────────────────
+
 
 def test_edge_cases() -> None:
     """Test edge cases."""

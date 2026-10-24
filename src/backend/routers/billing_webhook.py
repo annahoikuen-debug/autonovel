@@ -143,8 +143,18 @@ async def handle_stripe_webhook(
         await db.commit()
     except Exception as e:
         logger.error(f"Error handling Stripe webhook event {event_id}: {e}", exc_info=True)
-        webhook_record.status = "failed"
-        await db.commit()
+        # 途中まで適用された変更 (クレジット付与等) を残さないようロールバックする。
+        # 部分適用状態を commit すると、再試行の際に再度付与されて二重付与になる。
+        await db.rollback()
+        try:
+            # 失敗ステータスのみを新しいトランザクションで確定する
+            fresh = await db.get(StripeWebhookEvent, event_id)
+            if fresh is not None:
+                fresh.status = "failed"
+                await db.commit()
+        except Exception as mark_err:
+            logger.error(f"Failed to mark Stripe event {event_id} as failed: {mark_err}")
+            await db.rollback()
         # 処理に失敗した場合は 5xx を返して Stripe に再試行させる。
         # 200 を返すとイベントが "成功" と記録され、永久に処理されなくなる。
         raise HTTPException(
@@ -317,8 +327,9 @@ async def _handle_invoice_payment_succeeded(
         user.plan_tier = get_tier_for_price_id(price_id)
 
     if credits_to_grant > 0:
-        if hasattr(user, "credits"):
-            user.credits = (user.credits or 0) + credits_to_grant
+        # 加算は credit_service.grant_credits のアトミック UPDATE に一任する。
+        # 旧実装はここで user.credits を直接加算したうえで grant_credits でも
+        # 加算しており、1イベントで二重付与 (2x credits) されていた。
         await credit_service.grant_credits(
             user_id=user.id,
             amount=credits_to_grant,

@@ -26,10 +26,13 @@ from src.backend.database.repository import BookRepository
 from src.backend.observability.health import metrics
 from src.backend.rate_limit import generate_limiter
 from src.backend.routers.tasks import _assert_task_ownership
+from src.backend.security.credit_guard import check_generation_credits
 from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.tasks.generation_tasks import generate_chapter_orchestrated_task
 from src.backend.tasks.huey import huey
 from src.agents.event_bus import EventBus, AgentEvent
+from src.core.container import AppContainer
+
 try:
     from sse_starlette.sse import EventSourceResponse
 except ImportError:
@@ -103,9 +106,14 @@ async def generate_orchestrated(
     book = repo.get_book(input_data.book_id)
     if not book:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された作品が存在しません")
-    if current_user.role != "admin" and getattr(book, "user_id", None) is not None:
-        if book.user_id != current_user.id:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対する生成権限がありません")
+    # owner_guard に統一する。旧実装は `book.user_id が NULL` の作品で検証を
+    # スキップしており、所有者未設定の作品を誰でも生成できていた (NULL owner bypass)。
+    # 所有者が NULL の作品は管理者以外 403、それ以外は所有者一致を要求する。
+    await verify_book_ownership(input_data.book_id, current_user, AppContainer.db())
+
+    # 課金ガド: タスク投入 (enqueue / DB レコード作成) の前に残高を検証する (不足なら 402)。
+    # try 節の外に置くことで、下の `except Exception` による 500 変換を防ぐ。
+    check_generation_credits(current_user)
 
     try:
         # リクエストを dict に変換
@@ -144,9 +152,7 @@ async def get_orchestrated_task_status(
     # IDOR 防止: task_id は連番/推測可能なため、タスク所有者を必ず検証する。
     # `tasks.py` の `_assert_task_ownership` と同じ fail-closed 方針に従う
     # （所有者が記録されていないタスクは管理者のみ参照可）。
-    _assert_task_ownership(
-        result if isinstance(result, dict) else {}, current_user
-    )
+    _assert_task_ownership(result if isinstance(result, dict) else {}, current_user)
 
     if result is None:
         logger.info("Orchestrated task status polled (pending): task_id=%s", task_id)
@@ -226,9 +232,7 @@ async def export_orchestrated_package(
         content=zip_bytes,
         media_type="application/zip",
         headers={
-            "Content-Disposition": (
-                f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"
-            ),
+            "Content-Disposition": (f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"),
             "Cache-Control": "no-store",
         },
     )

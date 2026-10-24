@@ -34,9 +34,7 @@ class TestStep2ScorerLayer:
     """Step 2: スコアラーレイヤーの結合確認。"""
 
     def test_high_ctr_catchphrase_scores(self) -> None:
-        score = score_catchphrase_ctr(
-            "「お前はクビだ」――そう言った元パーティが翌日全滅していた件。"
-        )
+        score = score_catchphrase_ctr("「お前はクビだ」――そう言った元パーティが翌日全滅していた件。")
         assert 0 <= score <= 100
         assert score >= 80
 
@@ -109,7 +107,6 @@ class TestP1FullFlow:
 
     def test_end_to_end_kakuyomu_flow(self) -> None:
         # --- 1. 企画情報入力 ---
-        project_settings = "ジャンル: 異世界ファンタジー、追放ざまぁ、実は神鑑定士"
         work_id = "123456"
 
         # --- 2. 35文字キャッチコピー生成＆スコアリング ---
@@ -157,9 +154,7 @@ class TestP1FullFlow:
         # --- 4. 投稿用ペイロード出力 ---
         pub = KakuyomuPublisher()
         handoff = pub.build_episode_handoff(work_id, "第1話 旅立ち", res.body)
-        assert handoff.episode_creation_url == (
-            "https://kakuyomu.jp/works/123456/episodes/new"
-        )
+        assert handoff.episode_creation_url == ("https://kakuyomu.jp/works/123456/episodes/new")
         assert handoff.body == res.body
         assert handoff.total_characters == len(res.body)
 

@@ -48,16 +48,15 @@ _llm_circuit_breaker = None
 async def get_models_info() -> dict[str, Any]:
     """サーバー既定のモデル構成および利用可能プロバイダ一覧を返す。"""
     from src.backend.config import settings
-    from src.llm.model_router import _DEFAULTS
 
     return {
         "status": "success",
         "current_provider": settings.LLM_PROVIDER,
         "server_defaults": {
-            "planning": _DEFAULTS.get("planning", "gemini-3.5-flash-lite"),
-            "plot_expansion": _DEFAULTS.get("plot_expansion", "gemma-4-31b-it"),
-            "writing": _DEFAULTS.get("writing", "gemma-4-31b-it"),
-            "audit": _DEFAULTS.get("audit", "gemini-3.5-flash-lite"),
+            "planning": settings.get_task_model("planning"),
+            "plot_expansion": settings.get_task_model("plot_expansion"),
+            "writing": settings.get_task_model("writing"),
+            "audit": settings.get_task_model("audit"),
             "embedding": settings.EMBEDDING_MODEL or "text-embedding-3-small",
         },
         "configured_keys": {

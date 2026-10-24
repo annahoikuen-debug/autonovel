@@ -188,7 +188,7 @@ class TestPerformanceRegression:
             headers = get_auth_headers(user)
 
             start = time.time()
-            res = await ac.get("/api/cost/summary", headers=headers)
+            await ac.get("/api/cost/summary", headers=headers)
             elapsed = time.time() - start
 
             # 応答時間が 5 秒以内（CI環境では緩めに設定）

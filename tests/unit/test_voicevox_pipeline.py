@@ -25,14 +25,14 @@ def test_dialogue_extraction_and_speaker_resolution():
     lines = extractor.extract_lines(sample, characters=["アイリス", "ルクス"])
     assert len(lines) >= 4
 
-    dialogues = [l for l in lines if l.is_dialogue]
+    dialogues = [ln for ln in lines if ln.is_dialogue]
     assert len(dialogues) == 2
     assert dialogues[0].text == "おはよう、アイリス"
     assert dialogues[0].speaker_name == "ルクス"
     assert dialogues[1].text == "ええ、いい朝ね"
     assert dialogues[1].speaker_name == "アイリス"
 
-    narrations = [l for l in lines if not l.is_dialogue]
+    narrations = [ln for ln in lines if not ln.is_dialogue]
     assert any("今日も平和な一日が始まる" in n.text for n in narrations)
 
 

@@ -22,7 +22,7 @@ def _is_admin(current_user: Any) -> bool:
 async def verify_book_ownership(
      book_id: int,
      current_user: User,
-     uow: UnitOfWork | None = None,
+     uow: UnitOfWork | Any = None,
 ) -> Book:
     """指定された book_id が current_user に帰属しているか検証する。
 

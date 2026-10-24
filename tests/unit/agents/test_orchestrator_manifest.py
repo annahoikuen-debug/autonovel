@@ -177,7 +177,7 @@ def test_from_manifest_registers_with_dag_scheduler(tmp_path):
         """,
     )
     dag = MagicMock()
-    orch = Orchestrator.from_manifest(manifest, dag_scheduler=dag, use_dag_scheduler=True)
+    Orchestrator.from_manifest(manifest, dag_scheduler=dag, use_dag_scheduler=True)
     dag.register_task.assert_called_once()
 
 

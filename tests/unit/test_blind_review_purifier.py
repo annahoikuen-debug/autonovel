@@ -1,4 +1,5 @@
 """Unit tests for BlindReview Purifier (Part 1 / Checkpoint 1: Steps 1-6)."""
+
 from __future__ import annotations
 
 import pytest
@@ -16,9 +17,9 @@ def test_detect_proposal_leaks():
     text = "A案の主人公の行動は性急であり、案2における世界観設定と矛盾している。また候補Bの結末も気になる。"
     leaks = detect_proposal_leaks(text)
     assert len(leaks) >= 3
-    assert any("A案" in l for l in leaks)
-    assert any("案2" in l for l in leaks)
-    assert any("候補B" in l for l in leaks)
+    assert any("A案" in ln for ln in leaks)
+    assert any("案2" in ln for ln in leaks)
+    assert any("候補B" in ln for ln in leaks)
 
 
 def test_blind_feedback_purifier_rule_based():

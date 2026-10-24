@@ -202,7 +202,7 @@ class TestMangaScriptGenerator:
 
     def test_extract_dialogue_and_narration(self):
         gen = MangaScriptGenerator("fantasy", PRESET)
-        assert gen._extract_dialogue("「a」『b』\"c\"")
+        assert gen._extract_dialogue('「a」『b』"c"')
         assert gen._extract_narration("前に「a」 後ろ") == "前に 後ろ"
 
     def test_generate_sfx_action(self):
@@ -324,7 +324,7 @@ class TestAudioDramaScriptGenerator:
         gen = AudioDramaScriptGenerator("fantasy", PRESET)
         lines = gen._scene_to_voice_lines("導入の文。「セリフ」")
         assert lines[0].character == "ナレーション"
-        assert any(l.text == "セリフ" for l in lines)
+        assert any(ln.text == "セリフ" for ln in lines)
 
     def test_guess_speaker_variants(self):
         gen = AudioDramaScriptGenerator("fantasy", PRESET)
@@ -458,7 +458,7 @@ class TestVideoScriptGenerator:
 
     def test_shot_dialogue_and_narration(self):
         gen = VideoScriptGenerator("fantasy", PRESET)
-        assert gen._extract_dialogue_for_shot("「a」『b』\"c\"") == ["a", "b", "c"]
+        assert gen._extract_dialogue_for_shot('「a」『b』"c"') == ["a", "b", "c"]
         assert gen._extract_narration_for_shot("前「a」後") == "前後"
 
 

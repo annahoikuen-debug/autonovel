@@ -58,6 +58,9 @@ dependencies = [
     "tiktoken>=0.7.0",
     # リソース監視 (src/backend/tasks/resource_manager.py:14 が psutil を遅延 import)
     "psutil>=5.9.0",
+    # 日本語形態素解析・伏線述語解析・感情残差抽出 (src/services/nlp/*.py, spaCy ja トークナイザ)
+    "sudachipy>=0.6.8",
+    "sudachidict_core>=20240109",
 ]
 
 [project.scripts]
@@ -219,6 +222,11 @@ exclude_lines = [
 ]
 # Phase gate plan: fail_under: 55 → 65 → 70 → 75 → 80
 # 2026-10: 実測 81.0% 到達に伴い最終目標の 80 に引き上げ。
+#
+# 【この値の適用範囲】これは**全体テスト実行** (pytest 全体) のゲート。
+# CI / Makefile / pre-commit の `tests/unit` 単独ジョブは測定範囲が異なる
+# ため CLI の `--cov-fail-under=70` で別途指定している (unit 単独の実測は約 77%)。
+# CLI フラグはこの設定を上書きするので、両者の役割を混同しないこと。
 fail_under = 80
 precision = 2
 show_missing = true

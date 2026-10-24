@@ -1,4 +1,5 @@
 """ContextBuilderAgent coverage: flaw resolution, budgets, context building, social ctx."""
+
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -29,8 +30,7 @@ def make_repo(plot=None, book=None, chars=None, prev_chapter=None, session=None)
 
 
 def make_ctx(artifacts=None, book_id=1, branch_id=1, ep_num=1):
-    return AgentContext(book_id=book_id, branch_id=branch_id, ep_num=ep_num,
-                        artifacts=artifacts or {})
+    return AgentContext(book_id=book_id, branch_id=branch_id, ep_num=ep_num, artifacts=artifacts or {})
 
 
 # ============================================================================
@@ -39,9 +39,12 @@ def make_ctx(artifacts=None, book_id=1, branch_id=1, ep_num=1):
 
 
 def test_resolve_flaw_existing_dict():
-    data = {"name": "アキ", "personality": "冷静", "secret_flaw": {
-        "motive_type": "復讐", "inner_monologue_sample": "まだだめだ",
-        "physical_trigger": "拳を握る"}, "target_of_contempt": "旧勢力"}
+    data = {
+        "name": "アキ",
+        "personality": "冷静",
+        "secret_flaw": {"motive_type": "復讐", "inner_monologue_sample": "まだだめだ", "physical_trigger": "拳を握る"},
+        "target_of_contempt": "旧勢力",
+    }
     profile = resolve_character_flaw(data)
     assert profile.character_name == "アキ"
     assert profile.surface_persona == "冷静"
@@ -51,9 +54,8 @@ def test_resolve_flaw_existing_dict():
 
 def test_resolve_flaw_existing_secret_motive_instance():
     from src.models.character_flaw import SecretMotive
-    data = {"name": "B", "secret_flaw": SecretMotive(motive_type="m",
-                                                     inner_monologue_sample="i",
-                                                     physical_trigger="p")}
+
+    data = {"name": "B", "secret_flaw": SecretMotive(motive_type="m", inner_monologue_sample="i", physical_trigger="p")}
     profile = resolve_character_flaw(data)
     assert profile.character_name == "B"
     assert profile.secret_flaw.motive_type == "m"
@@ -87,8 +89,9 @@ def test_resolve_flaw_defaults():
 @pytest.mark.asyncio
 async def test_build_context_simple():
     agent = make_agent()
-    result = await agent.build_context(1, 2, {"world_name": "ワ", "rules": ["r1"]},
-                                       [{"name": "アキ"}, {"n": "non-dict"}], "前話")
+    result = await agent.build_context(
+        1, 2, {"world_name": "ワ", "rules": ["r1"]}, [{"name": "アキ"}, {"n": "non-dict"}], "前話"
+    )
     assert result["book_id"] == 1
     assert result["episode_number"] == 2
     assert result["world_name"] == "ワ"
@@ -109,18 +112,21 @@ def test_context_builder_models():
 # ============================================================================
 
 
-@pytest.mark.parametrize("scene_type,rag_ratio", [
-    ("mystery", 0.55),
-    ("political", 0.55),
-    ("flashback", 0.55),
-    ("romance", 0.25),
-    ("daily", 0.25),
-    ("combat", 0.30),
-    ("survival", 0.30),
-    ("general", 0.40),
-    ("unknown", 0.40),
-    ("MYSTERY", 0.55),
-])
+@pytest.mark.parametrize(
+    "scene_type,rag_ratio",
+    [
+        ("mystery", 0.55),
+        ("political", 0.55),
+        ("flashback", 0.55),
+        ("romance", 0.25),
+        ("daily", 0.25),
+        ("combat", 0.30),
+        ("survival", 0.30),
+        ("general", 0.40),
+        ("unknown", 0.40),
+        ("MYSTERY", 0.55),
+    ],
+)
 def test_allocate_token_budgets(scene_type, rag_ratio):
     agent = make_agent()
     budgets = agent.allocate_token_budgets(1000, scene_type)
@@ -158,18 +164,33 @@ def make_async_session(digest=None):
 @pytest.mark.asyncio
 async def test_execute_success_with_minimal_repo():
     agent = make_agent()
-    plot = SimpleNamespace(detailed_blueprint="bp", scenes=[], summary="sum",
-                           tension=70, is_catharsis=False)
-    repo = make_repo(plot=plot, book=MagicMock(title="T"),
-                     chars=[SimpleNamespace(name="アキ", to_safe_dict=MagicMock(
-                         return_value={"surface_persona": "sp", "location": "room",
-                                       "status": "ok", "personality": "calm",
-                                       "speech_pattern": "normal", "forbidden_words": ["x"],
-                                       "catchphrase": "yo"}))],
-                     prev_chapter=SimpleNamespace(content="前話本文" * 100,
-                                                  summary="前話sum",
-                                                  ai_insight="insight",
-                                                  world_state='{"character_status_changes": ["change1"]}'))
+    plot = SimpleNamespace(detailed_blueprint="bp", scenes=[], summary="sum", tension=70, is_catharsis=False)
+    repo = make_repo(
+        plot=plot,
+        book=MagicMock(title="T"),
+        chars=[
+            SimpleNamespace(
+                name="アキ",
+                to_safe_dict=MagicMock(
+                    return_value={
+                        "surface_persona": "sp",
+                        "location": "room",
+                        "status": "ok",
+                        "personality": "calm",
+                        "speech_pattern": "normal",
+                        "forbidden_words": ["x"],
+                        "catchphrase": "yo",
+                    }
+                ),
+            )
+        ],
+        prev_chapter=SimpleNamespace(
+            content="前話本文" * 100,
+            summary="前話sum",
+            ai_insight="insight",
+            world_state='{"character_status_changes": ["change1"]}',
+        ),
+    )
     session = make_async_session(digest=SimpleNamespace(digest_text="digest"))
     ctx = make_ctx(artifacts={"repo": repo, "session": session, "target_word_count": 1000})
     result = await agent.execute(ctx)
@@ -204,8 +225,14 @@ async def test_execute_with_missing_plot_creates_fallback():
 async def test_execute_plot_dict_passthrough_and_model_dump():
     agent = make_agent()
     # dict plot
-    plot_dict = {"ep_num": 3, "detailed_blueprint": "bp3", "scenes": ["s"],
-                 "summary": "sum3", "tension": 85, "foreshadowings": [{"id": "FS-1"}]}
+    plot_dict = {
+        "ep_num": 3,
+        "detailed_blueprint": "bp3",
+        "scenes": ["s"],
+        "summary": "sum3",
+        "tension": 85,
+        "foreshadowings": [{"id": "FS-1"}],
+    }
     session = make_async_session()
     repo = make_repo(plot=plot_dict, chars=[], session=session)
     ctx = make_ctx(artifacts={"repo": repo, "session": session}, ep_num=3)
@@ -236,20 +263,27 @@ async def test_execute_plot_dict_passthrough_and_model_dump():
 @pytest.mark.asyncio
 async def test_execute_with_regeneration_focus():
     agent = make_agent()
-    plot = SimpleNamespace(detailed_blueprint="bp", scenes=[], summary="sum",
-                           tension=50, is_catharsis=False)
-    char = SimpleNamespace(name="アキ", to_safe_dict=MagicMock(
-        return_value={"surface_persona": "sp", "speech_sample": "ss",
-                      "vocab_tendency": "vt", "location": "room", "status": "ok",
-                      "personality": "calm"}))
-    prev = SimpleNamespace(content="本文" * 100, summary="s", ai_insight="i",
-                           arc_info="【アーク情報】\n第1章")
+    plot = SimpleNamespace(detailed_blueprint="bp", scenes=[], summary="sum", tension=50, is_catharsis=False)
+    char = SimpleNamespace(
+        name="アキ",
+        to_safe_dict=MagicMock(
+            return_value={
+                "surface_persona": "sp",
+                "speech_sample": "ss",
+                "vocab_tendency": "vt",
+                "location": "room",
+                "status": "ok",
+                "personality": "calm",
+            }
+        ),
+    )
+    prev = SimpleNamespace(content="本文" * 100, summary="s", ai_insight="i", arc_info="【アーク情報】\n第1章")
     session = make_async_session()
     repo = make_repo(plot=plot, chars=[char], prev_chapter=prev, session=session)
     # ep_num=2 で前話（ep1）が取得される
-    ctx = make_ctx(artifacts={"repo": repo, "session": session,
-                              "regeneration_focus": ["coherency", "structure"]},
-                   ep_num=2)
+    ctx = make_ctx(
+        artifacts={"repo": repo, "session": session, "regeneration_focus": ["coherency", "structure"]}, ep_num=2
+    )
     result = await agent.execute(ctx)
     wc = result.artifacts["writing_context"]
     assert "口調サンプル" in wc["char_static_ctx"]
@@ -261,21 +295,22 @@ async def test_execute_with_regeneration_focus():
 
 @pytest.mark.asyncio
 async def test_execute_with_reflective_rag_and_compressor():
-    plot = SimpleNamespace(detailed_blueprint="bp", scenes=["s1"], summary="sum",
-                           tension=50, is_catharsis=False)
+    plot = SimpleNamespace(detailed_blueprint="bp", scenes=["s1"], summary="sum", tension=50, is_catharsis=False)
 
     doc = SimpleNamespace(content="rag content", metadata={"k": "v"}, score=0.9)
     reflective_rag = MagicMock()
-    reflective_rag.retrieve_with_reflection = AsyncMock(
-        return_value=SimpleNamespace(documents=[doc]))
+    reflective_rag.retrieve_with_reflection = AsyncMock(return_value=SimpleNamespace(documents=[doc]))
 
     compressor = MagicMock()
-    c_res = SimpleNamespace(final_context_text="compressed",
-                            overall_reduction_ratio=0.5, final_token_count=100,
-                            from_cache=True, layer4=SimpleNamespace(scene_type="general"))
+    c_res = SimpleNamespace(
+        final_context_text="compressed",
+        overall_reduction_ratio=0.5,
+        final_token_count=100,
+        from_cache=True,
+        layer4=SimpleNamespace(scene_type="general"),
+    )
     compressor.compress = AsyncMock(return_value=c_res)
-    compressor.detect_scene_type_multi = MagicMock(
-        return_value=[("combat", 0.9), ("general", 0.1)])
+    compressor.detect_scene_type_multi = MagicMock(return_value=[("combat", 0.9), ("general", 0.1)])
 
     agent = make_agent(reflective_rag=reflective_rag, compressor=compressor)
     session = make_async_session(digest=SimpleNamespace(digest_text="digest"))
@@ -296,8 +331,7 @@ async def test_execute_with_reflective_rag_and_compressor():
 @pytest.mark.asyncio
 async def test_execute_rag_and_compressor_errors_are_non_fatal():
     agent = make_agent()
-    plot = SimpleNamespace(detailed_blueprint="bp", scenes=[], summary="sum",
-                           tension=50, is_catharsis=False)
+    plot = SimpleNamespace(detailed_blueprint="bp", scenes=[], summary="sum", tension=50, is_catharsis=False)
     reflective_rag = MagicMock()
     reflective_rag.retrieve_with_reflection = AsyncMock(side_effect=RuntimeError("rag fail"))
     compressor = MagicMock()
@@ -316,19 +350,16 @@ async def test_execute_rag_and_compressor_errors_are_non_fatal():
 @pytest.mark.asyncio
 async def test_execute_with_social_manager_fallback():
     agent = make_agent()
-    plot = SimpleNamespace(detailed_blueprint="bp", scenes=[], summary="sum",
-                           tension=50, is_catharsis=False)
+    plot = SimpleNamespace(detailed_blueprint="bp", scenes=[], summary="sum", tension=50, is_catharsis=False)
     # social_manager without social_repo -> fallback path
-    rel = SimpleNamespace(char_a="アキ", char_b="ライバル", trust_score=80,
-                          tension_score=30, affinity_score=60)
+    rel = SimpleNamespace(char_a="アキ", char_b="ライバル", trust_score=80, tension_score=30, affinity_score=60)
     social_manager = MagicMock(spec=["get_all_relationships_for_character"])
     social_manager.get_all_relationships_for_character = MagicMock(return_value=[rel])
     # Re-add social_repo attribute as None
     social_manager.social_repo = None
 
     repo = make_repo(plot=plot, chars=[], session=make_async_session())
-    ctx = make_ctx(artifacts={"repo": repo, "session": make_async_session(),
-                              "social_manager": social_manager})
+    ctx = make_ctx(artifacts={"repo": repo, "session": make_async_session(), "social_manager": social_manager})
     result = await agent.execute(ctx)
     wc = result.artifacts["writing_context"]
     assert "動的心理関係性" in wc or True
@@ -345,24 +376,27 @@ def test_format_unresolved_foreshadowings_empty():
 
 
 def test_format_unresolved_foreshadowings_dict_and_model():
-    data = [{"title": "伏線A", "planted_episode": 2, "description": "説明A"},
-            {"title": "伏線B", "planted_episode": 3, "description": "説明B",
-             "target_episode": 5}]
+    data = [
+        {"title": "伏線A", "planted_episode": 2, "description": "説明A"},
+        {"title": "伏線B", "planted_episode": 3, "description": "説明B", "target_episode": 5},
+    ]
     result = ContextBuilderAgent.format_unresolved_foreshadowings(data)
     assert "伏線A" in result
     assert "第2話" in result
     assert "第5話" in result
     assert "回収予定" in result
 
-    model = SimpleNamespace(id=42, title="伏線C", planted_episode=1, description="d",
-                            target_episode=None, status="planted")
+    model = SimpleNamespace(
+        id=42, title="伏線C", planted_episode=1, description="d", target_episode=None, status="planted"
+    )
     result2 = ContextBuilderAgent.format_unresolved_foreshadowings([model])
     assert "伏線C" in result2
     assert "- **42**" in result2
 
     # id を持たないオブジェクト（プロット由来の未登録情報）も Graceful に描画される
-    model_no_id = SimpleNamespace(title="伏線D", planted_episode=4, description="d",
-                                  target_episode=None, status="planted")
+    model_no_id = SimpleNamespace(
+        title="伏線D", planted_episode=4, description="d", target_episode=None, status="planted"
+    )
     result3 = ContextBuilderAgent.format_unresolved_foreshadowings([model_no_id])
     assert "伏線D" in result3
     assert "- **" not in result3
@@ -425,9 +459,19 @@ def test_build_char_static_and_dynamic_ctx():
     assert agent._build_char_static_ctx([]) == ""
     assert agent._build_char_dynamic_ctx([], None) == ""
 
-    char = SimpleNamespace(name="アキ", role="hero", to_safe_dict=MagicMock(
-        return_value={"surface_persona": "sp", "personality": "calm",
-                      "location": "room", "inventory": ["sword"], "status": "ok"}))
+    char = SimpleNamespace(
+        name="アキ",
+        role="hero",
+        to_safe_dict=MagicMock(
+            return_value={
+                "surface_persona": "sp",
+                "personality": "calm",
+                "location": "room",
+                "inventory": ["sword"],
+                "status": "ok",
+            }
+        ),
+    )
     static = agent._build_char_static_ctx([char])
     assert "アキ" in static
     assert "表層" in static
@@ -461,7 +505,7 @@ def test_build_prev_ctx():
     assert "前話あらすじ" in ctx
     assert "確定事実" in ctx
     # content truncated to 500
-    assert len([l for l in ctx.split("\n") if l.startswith("本文")][0]) <= 520
+    assert len([ln for ln in ctx.split("\n") if ln.startswith("本文")][0]) <= 520
 
     prev2 = SimpleNamespace(content=None, summary=None, ai_insight=None)
     assert agent._build_prev_ctx(prev2, 1, 1, 2) == ""
@@ -472,9 +516,12 @@ def test_build_prev_ctx():
 
 def test_build_dialogue_profiles():
     agent = make_agent()
-    char = SimpleNamespace(name="アキ", to_safe_dict=MagicMock(
-        return_value={"speech_pattern": "normal", "forbidden_words": ["x", "y"],
-                      "catchphrase": "ze!"}))
+    char = SimpleNamespace(
+        name="アキ",
+        to_safe_dict=MagicMock(
+            return_value={"speech_pattern": "normal", "forbidden_words": ["x", "y"], "catchphrase": "ze!"}
+        ),
+    )
     char2 = SimpleNamespace(name=None)
     profiles = agent._build_dialogue_profiles([char, char2])
     assert "アキ" in profiles
@@ -508,9 +555,7 @@ async def test_get_social_dynamic_context_truncation():
     # Long text from social repo
     social_manager = MagicMock()
     social_manager.social_repo = MagicMock()
-    social_manager.social_repo.get_important_journals_summary = AsyncMock(
-        return_value="あ" * 2000)
-    result = await agent._get_social_dynamic_context(
-        social_manager=social_manager, book_id=1, ep_num=1, max_chars=100)
+    social_manager.social_repo.get_important_journals_summary = AsyncMock(return_value="あ" * 2000)
+    result = await agent._get_social_dynamic_context(social_manager=social_manager, book_id=1, ep_num=1, max_chars=100)
     assert len(result) <= 103
     assert result.endswith("...")

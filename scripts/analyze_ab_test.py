@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 MIN_SAMPLES_PER_VARIANT = 30
 P_VALUE_THRESHOLD = 0.05
 EFFECT_SIZE_THRESHOLD = 0.2  # Cohen's d / Cliff's delta minimum
-MIN_IMPROVEMENT_PCT = 1.0    # Minimum 1% relative improvement
+MIN_IMPROVEMENT_PCT = 1.0  # Minimum 1% relative improvement
 
 
 def cliffs_delta(x: np.ndarray, y: np.ndarray) -> float:
@@ -177,20 +177,16 @@ def analyze_variant_pair(
         else:
             result["recommendation"] = "REJECT"
             result["recommendation_reason"] = (
-                f"Statistically significant degradation ({result['relative_improvement_pct']:.1f}%), "
-                f"p={p_val:.4f}"
+                f"Statistically significant degradation ({result['relative_improvement_pct']:.1f}%), p={p_val:.4f}"
             )
     elif is_significant and not has_meaningful_effect:
         result["recommendation"] = "INCONCLUSIVE"
         result["recommendation_reason"] = (
-            f"Statistically significant but effect size too small "
-            f"(Cliff's delta={delta:.3f} < {EFFECT_SIZE_THRESHOLD})"
+            f"Statistically significant but effect size too small (Cliff's delta={delta:.3f} < {EFFECT_SIZE_THRESHOLD})"
         )
     else:
         result["recommendation"] = "NO_DECISION"
-        result["recommendation_reason"] = (
-            f"Not statistically significant (p={p_val:.4f}) or insufficient improvement"
-        )
+        result["recommendation_reason"] = f"Not statistically significant (p={p_val:.4f}) or insufficient improvement"
 
     return result
 
@@ -267,7 +263,7 @@ def run_analysis(
     logger.info(f"Loaded {len(variant_data)} variants with data")
 
     # Identify control variants (v1) and treatment variants (v2+)
-    control_variants = [v for v in variant_data if v.endswith("_v1")]
+    [v for v in variant_data if v.endswith("_v1")]
     treatment_variants = [v for v in variant_data if not v.endswith("_v1")]
 
     results = {
@@ -309,9 +305,7 @@ def run_analysis(
 
         logger.info(f"Analyzing {control} (n={len(control_scores)}) vs {treatment} (n={len(treatment_scores)})")
 
-        comparison = analyze_variant_pair(
-            control_scores, treatment_scores, control, treatment
-        )
+        comparison = analyze_variant_pair(control_scores, treatment_scores, control, treatment)
         results["comparisons"].append(comparison)
         results["summary"]["total_comparisons"] += 1
 
@@ -357,17 +351,23 @@ def print_results(results: dict[str, Any]) -> None:
             print(f"    Reason: {comp.get('skip_reason', 'Unknown')}")
             continue
 
-        print(f"\n  {comp['control_variant']} (n={comp['control_n']}) "
-              f"vs {comp['treatment_variant']} (n={comp['treatment_n']})")
-        print(f"    Mean: {comp['control_mean']:.2f} -> {comp['treatment_mean']:.2f} "
-              f"({comp['relative_improvement_pct']:+.1f}%)")
+        print(
+            f"\n  {comp['control_variant']} (n={comp['control_n']}) "
+            f"vs {comp['treatment_variant']} (n={comp['treatment_n']})"
+        )
+        print(
+            f"    Mean: {comp['control_mean']:.2f} -> {comp['treatment_mean']:.2f} "
+            f"({comp['relative_improvement_pct']:+.1f}%)"
+        )
         print(f"    Median: {comp['control_median']:.2f} -> {comp['treatment_median']:.2f}")
         print(f"    Welch's t-test: t={comp['welch_t_stat']:.3f}, p={comp['welch_p_value']:.4f}")
         print(f"    Mann-Whitney: U={comp['mannwhitney_u']:.0f}, p={comp['mannwhitney_p_value']:.4f}")
         print(f"    Cohen's d: {comp['cohens_d']:.3f}, Cliff's delta: {comp['cliffs_delta']:.3f}")
-        print(f"    Significant: {comp['statistically_significant']}, "
-              f"Meaningful effect: {comp['meaningful_effect_size']}, "
-              f"Min improvement: {comp['meets_min_improvement']}")
+        print(
+            f"    Significant: {comp['statistically_significant']}, "
+            f"Meaningful effect: {comp['meaningful_effect_size']}, "
+            f"Min improvement: {comp['meets_min_improvement']}"
+        )
         print(f"    RECOMMENDATION: {comp['recommendation']}")
         print(f"    Reason: {comp['recommendation_reason']}")
 

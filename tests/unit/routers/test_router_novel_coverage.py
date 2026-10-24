@@ -71,7 +71,7 @@ async def test_produce_novel_success(monkeypatch):
         m.setattr(novel_module.producer, "create_project", fake_create)
         m.setattr(novel_module.producer, "generate_all_episodes",
                   AsyncMock(return_value=None))
-        result = await produce_novel(req, api_key="key")
+        result = await produce_novel(req)
     assert result.project_id == 1
     assert result.status == "completed"
     assert len(created) == 1
@@ -87,7 +87,7 @@ async def test_produce_novel_generation_error(monkeypatch):
         m.setattr(novel_module.producer, "generate_all_episodes",
                   AsyncMock(side_effect=RuntimeError("gen fail")))
         with pytest.raises(HTTPException) as exc:
-            await produce_novel(req, api_key="key")
+            await produce_novel(req)
     assert exc.value.status_code == 500
 
 
@@ -434,9 +434,8 @@ async def test_get_novel_social_relationships(monkeypatch):
         m.setattr("src.backend.database.social_repository.SocialRepository",
                   lambda d: repo)
         patch_book_ownership(m, 1)
-        result = await get_novel_social_relationships(1, api_key="key",
-                                                      current_user=make_current_user())
-    assert result["book_id"] == 1
+        result = await get_novel_social_relationships(1, current_user=make_current_user())
+
     assert len(result["relationships"]) == 1
     assert result["relationships"][0]["char_a"] == "A"
     assert result["relationships"][0]["dynamics_state"] == "warm"
@@ -453,7 +452,7 @@ async def test_get_novel_social_journals(monkeypatch):
                   lambda d: repo)
         patch_book_ownership(m, 1)
         result = await get_novel_social_journals(1, ep_num=2, character_name="A",
-                                                 limit=10, api_key="key",
+                                                 limit=10,
                                                  current_user=make_current_user())
     assert result["journals"] == [{"id": 1}]
     repo.get_journals.assert_awaited_once_with(book_id=1, episode_num=2,
@@ -470,6 +469,5 @@ async def test_get_novel_social_trends(monkeypatch):
         m.setattr("src.backend.database.social_repository.SocialRepository",
                   lambda d: repo)
         patch_book_ownership(m, 1)
-        result = await get_novel_social_trends(1, api_key="key",
-                                               current_user=make_current_user())
+        result = await get_novel_social_trends(1, current_user=make_current_user())
     assert result["trends_summary"] == "trend text"

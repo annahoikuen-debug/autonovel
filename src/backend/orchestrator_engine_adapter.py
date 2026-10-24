@@ -115,7 +115,7 @@ class LLMJsonBridge:
             if prompt is None:
                 prompt = next((a for a in args if isinstance(a, str)), "")
 
-        max_tokens = int(kwargs.get("max_tokens") or 8000)
+        max_tokens = int(kwargs.get("max_tokens") or 16384)
         try:
             raw = await self._adapter.generate_text(
                 prompt,

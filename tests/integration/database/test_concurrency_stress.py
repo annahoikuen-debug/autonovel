@@ -1,4 +1,5 @@
 """Database concurrency stress test to verify no 'database is locked' errors under load."""
+
 import asyncio
 import pytest
 from src.backend.database.core import DatabaseManager
@@ -44,27 +45,22 @@ class TestDatabaseConcurrency:
                     state = await uow.misc.get_internal_state("test_key")
 
                     # Perform a write
-                    await uow.misc.save_internal_state(
-                        f"worker_{worker_id}",
-                        f"value_{worker_id}"
-                    )
+                    await uow.misc.save_internal_state(f"worker_{worker_id}", f"value_{worker_id}")
 
                     # Perform another read to verify
                     verify_state = await uow.misc.get_internal_state(f"worker_{worker_id}")
 
-                    results.append({
-                        "worker_id": worker_id,
-                        "success": True,
-                        "initial_state": state,
-                        "written_value": f"value_{worker_id}",
-                        "verified_value": verify_state
-                    })
+                    results.append(
+                        {
+                            "worker_id": worker_id,
+                            "success": True,
+                            "initial_state": state,
+                            "written_value": f"value_{worker_id}",
+                            "verified_value": verify_state,
+                        }
+                    )
             except Exception as e:
-                results.append({
-                    "worker_id": worker_id,
-                    "success": False,
-                    "error": str(e)
-                })
+                results.append({"worker_id": worker_id, "success": False, "error": str(e)})
 
         # Run 20 concurrent workers (as specified in the plan)
         results: list = []
@@ -100,7 +96,7 @@ class TestDatabaseConcurrency:
                 async with UnitOfWork(db_manager) as uow:
                     # Read internal state
                     for i in range(5):  # 5 reads per worker
-                        state = await uow.misc.get_internal_state("counter")
+                        await uow.misc.get_internal_state("counter")
                         await asyncio.sleep(0.001)  # Small delay
 
                     # Occasionally write
@@ -124,11 +120,7 @@ class TestDatabaseConcurrency:
 
                     # Read back
                     final_value = await uow.misc.get_internal_state("counter")
-                    results.append({
-                        "worker_id": worker_id,
-                        "success": True,
-                        "final_counter": final_value
-                    })
+                    results.append({"worker_id": worker_id, "success": True, "final_counter": final_value})
             except Exception as e:
                 results.append({"worker_id": worker_id, "success": False, "error": str(e)})
 

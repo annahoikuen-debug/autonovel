@@ -36,11 +36,8 @@ def _apply_config_overrides(config_dict: dict | None) -> None:
         logger.warning(f"Failed to apply config overrides: {e}")
 
 
-@huey.task(retries=3, retry_delay=5)
-@with_trace_context
-def process_vector_event(event_type: str, payload: dict, trace_id: str | None = None):
-    """非同期でChromaDBへの操作を実行するタスク"""
-    logger.info(f"Processing vector event: {event_type}")
+def _dispatch_vector_event(event_type: str, payload: dict):
+    """イベント種別に応じて ChromaDB へ直接操作を適用する。"""
     from src.services.vector_store import DefaultVectorStore
 
     store = DefaultVectorStore()
@@ -58,6 +55,14 @@ def process_vector_event(event_type: str, payload: dict, trace_id: str | None = 
     return None
 
 
+@huey.task(retries=3, retry_delay=5)
+@with_trace_context
+def process_vector_event(event_type: str, payload: dict, trace_id: str | None = None):
+    """非同期でChromaDBへの操作を実行するタスク"""
+    logger.info(f"Processing vector event: {event_type}")
+    return _dispatch_vector_event(event_type, payload)
+
+
 @huey.periodic_task(crontab(minute="*"))
 def process_outbox_events():
     """Huey periodic task for processing Outbox events."""
@@ -71,6 +76,8 @@ def process_outbox_events():
 
 
 async def _process_outbox_events_async():
+    import json
+
     from src.backend.database.uow import UnitOfWork
     from src.core.container import AppContainer
 
@@ -81,10 +88,25 @@ async def _process_outbox_events_async():
 
     for event in events:
         try:
+            # イベントを実際にディスパッチ (ChromaDB への追加/削除) してから
+            # 処理済みにする。旧実装はディスパッチせずに「done」にしており、
+            # ベクトル索引への同期が無言で失われていた。
+            payload = event.payload
+            if isinstance(payload, str):
+                payload = json.loads(payload)
+            _dispatch_vector_event(event.event_type, payload)
+        except Exception as e:
+            logger.error(
+                f"Failed to dispatch outbox event {event.id} ({event.event_type}): {e}",
+                exc_info=True,
+            )
+            continue
+
+        try:
             async with UnitOfWork(db=db) as event_uow:
                 await event_uow.mark_outbox_event_processed(event.id)
         except Exception as e:
-            logger.error(f"Failed to process outbox event {event.id}: {e}")
+            logger.error(f"Failed to mark outbox event {event.id} processed: {e}")
 
 
 def _create_workflow(method_name: str, **services):

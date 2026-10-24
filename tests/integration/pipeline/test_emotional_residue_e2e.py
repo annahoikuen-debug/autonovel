@@ -1,4 +1,5 @@
 """E2E integration test for emotional residue pipeline."""
+
 from __future__ import annotations
 
 import pytest
@@ -15,6 +16,7 @@ class TestEmotionalResidueE2E:
     @pytest.fixture
     def vector_store(self):
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         store = RedisVectorStore(skip_connection_check=True)
         store.client = redis_client
@@ -46,7 +48,7 @@ class TestEmotionalResidueE2E:
         assert isinstance(vector.signals, dict)
 
         # Redisに保存確認 (キー形式: ep{episode_id})
-        stored = vector_store.get_latest("pipeline", ("A", "B"))
+        vector_store.get_latest("pipeline", ("A", "B"))
         # 空白モデルでは依存構造解析不可のためシグナルなしの可能性
         # 少なくともエラーなく実行完了すること
 

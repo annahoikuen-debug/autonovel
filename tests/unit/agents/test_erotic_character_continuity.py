@@ -50,8 +50,6 @@ def test_save_and_get_snapshot_memory_and_db(tracker):
 def test_save_snapshot_db_failure_is_logged(tracker, monkeypatch):
     import sqlite3
 
-    real_connect = sqlite3.connect
-
     def boom(*a, **k):
         raise RuntimeError("no db")
 
@@ -155,9 +153,7 @@ def test_extract_snapshot(tracker):
 
 def test_check_stamina_continuity(tracker):
     assert tracker.check_stamina_continuity(2, "A", "x") == []
-    tracker.save_snapshot(
-        CharacterStateSnapshot(character_name="A", episode_num=1, stamina_level="exhausted")
-    )
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="A", episode_num=1, stamina_level="exhausted"))
     issues = tracker.check_stamina_continuity(2, "A", "元気と活力と力が漲る" * 20)
     assert any("体力矛盾" in i for i in issues)
     assert tracker.check_stamina_continuity(2, "A", "疲弊と限界で動けない" * 20) == []
@@ -170,48 +166,32 @@ def test_check_recovery_description(tracker):
     assert tracker.check_recovery_description(2, "A", "朝、目覚めて回復した" * 30) == []
 
 
-@pytest.mark.parametrize(
-    "level,num", [("exhausted", 0), ("tired", 1), ("normal", 2), ("energetic", 3), ("zzz", 2)]
-)
+@pytest.mark.parametrize("level,num", [("exhausted", 0), ("tired", 1), ("normal", 2), ("energetic", 3), ("zzz", 2)])
 def test_stamina_to_num(level, num):
     assert ContinuityTracker._stamina_to_num(level) == num
 
 
 def test_check_stamina_jump(tracker):
     assert tracker.check_stamina_jump(2, "A", "x") == []
-    tracker.save_snapshot(
-        CharacterStateSnapshot(character_name="A", episode_num=1, stamina_level="exhausted")
-    )
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="A", episode_num=1, stamina_level="exhausted"))
     assert any("体力急変" in i for i in tracker.check_stamina_jump(2, "A", "何でもない" * 40))
 
 
 def test_check_psych_continuity(tracker):
     assert tracker.check_psych_continuity(2, "A", "x") == []
-    tracker.save_snapshot(
-        CharacterStateSnapshot(character_name="A", episode_num=1, psych_state="distressed")
-    )
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="A", episode_num=1, psych_state="distressed"))
     assert any("心理矛盾" in i for i in tracker.check_psych_continuity(2, "A", "恍惚と歓喜と至福" * 20))
     assert tracker.check_psych_continuity(2, "A", "不安と怯えと緊張" * 20) == []
 
 
 def test_check_psych_trigger(tracker):
     assert tracker.check_psych_trigger(2, "A", "x") == []
-    tracker.save_snapshot(
-        CharacterStateSnapshot(character_name="A", episode_num=1, psych_state="distressed")
-    )
-    assert any(
-        "心理トリガー不足" in i
-        for i in tracker.check_psych_trigger(2, "A", "安心と満足と穏やか" * 20)
-    )
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="A", episode_num=1, psych_state="distressed"))
+    assert any("心理トリガー不足" in i for i in tracker.check_psych_trigger(2, "A", "安心と満足と穏やか" * 20))
     assert tracker.check_psych_trigger(2, "A", "受け入れられ、許されて救われた" * 20) == []
 
-    tracker.save_snapshot(
-        CharacterStateSnapshot(character_name="A", episode_num=1, psych_state="euphoric")
-    )
-    assert any(
-        "心理トリガー不足" in i
-        for i in tracker.check_psych_trigger(2, "A", "絶望と恐怖と崩壊" * 20)
-    )
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="A", episode_num=1, psych_state="euphoric"))
+    assert any("心理トリガー不足" in i for i in tracker.check_psych_trigger(2, "A", "絶望と恐怖と崩壊" * 20))
     assert tracker.check_psych_trigger(2, "A", "別れを告げ、失った" * 20) == []
 
 
@@ -224,9 +204,7 @@ def test_psych_to_num(state, num):
 
 def test_check_psych_jump(tracker):
     assert tracker.check_psych_jump(2, "A", "x") == []
-    tracker.save_snapshot(
-        CharacterStateSnapshot(character_name="A", episode_num=1, psych_state="distressed")
-    )
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="A", episode_num=1, psych_state="distressed"))
     assert any("心理急変" in i for i in tracker.check_psych_jump(2, "A", "恍惚と歓喜と至福" * 20))
 
 
@@ -237,9 +215,7 @@ def test_has_time_passage(tracker):
 
 def test_check_clothing_continuity(tracker):
     assert tracker.check_clothing_continuity(2, "A", "x") == []
-    tracker.save_snapshot(
-        CharacterStateSnapshot(character_name="A", episode_num=1, clothing_state="fully_undressed")
-    )
+    tracker.save_snapshot(CharacterStateSnapshot(character_name="A", episode_num=1, clothing_state="fully_undressed"))
     assert any("衣服引き継ぎ矛盾" in i for i in tracker.check_clothing_continuity(2, "A", "彼は歩いた"))
     assert tracker.check_clothing_continuity(2, "A", "翌朝彼は歩いた") == []
 
@@ -297,9 +273,7 @@ def test_check_location_continuity(tracker):
 
 def test_check_environment_consistency(tracker):
     assert tracker.check_environment_consistency("雪が降る", "霧が深い") == []
-    assert any(
-        "環境矛盾" in i for i in tracker.check_environment_consistency("雨が降っていた", "空は晴れていた")
-    )
+    assert any("環境矛盾" in i for i in tracker.check_environment_consistency("雨が降っていた", "空は晴れていた"))
     assert tracker.check_environment_consistency("雨が降っていた", "翌朝、晴れていた") == []
     assert tracker.check_environment_consistency("雪", "晴れ") != []
     assert tracker.check_environment_consistency("嵐", "晴れ") != []

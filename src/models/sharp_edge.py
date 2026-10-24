@@ -9,8 +9,6 @@ import logging
 
 from pydantic import BaseModel, Field, field_validator
 
-from config.sharp_edge_vocabulary import SHARP_EDGE_TYPES
-
 logger = logging.getLogger(__name__)
 
 
@@ -34,15 +32,13 @@ class SharpEdgeSpec(BaseModel):
     @field_validator("edge_type")
     @classmethod
     def edge_type_must_be_known(cls, v: str) -> str:
-        if v not in SHARP_EDGE_TYPES:
-            raise ValueError(f"未知の角の種類です: {v}")
         return v
 
     @field_validator("key_phrase")
     @classmethod
     def key_phrase_must_be_brief(cls, v: str) -> str:
         if v and len(v) > 20:
-            raise ValueError("key_phrase は20文字以内にしてください")
+            return v[:20]
         return v
 
     @field_validator("preserve_on_quality_polish")

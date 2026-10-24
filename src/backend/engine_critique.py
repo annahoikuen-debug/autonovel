@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-from config import MODEL_PLANNING
+from src.llm.model_router import select_model
 from config.project_context import ProjectContext
 from src.backend.sharp_edge_preserver import SemanticEdgePreserver, check_edges_preserved
 from src.models import GenerateResult
@@ -40,7 +40,7 @@ class CritiqueAgent:
         prompt = await self.pm.build_critique_quality_prompt(
             book.title, json.dumps(summary_data, ensure_ascii=False, indent=2), book_id=book_id
         )
-        res = await self.generate_json(MODEL_PLANNING, prompt, temp=0.3)
+        res = await self.generate_json(select_model("planning"), prompt, temp=0.3)
         return res.story_content
 
     async def run_iterative_gap_analysis(
@@ -116,7 +116,7 @@ class CritiqueAgent:
             if error_feedback:
                 current_prompt = f"【🚨パッチ検証エラー報告🚨】\n前回の出力に以下の不備がありました。修正したJSONを出力してください:\n{error_feedback}\n\n{batch_analysis_prompt}"
 
-            res = await self.generate_json(MODEL_PLANNING, current_prompt, temp=0.3)
+            res = await self.generate_json(select_model("planning"), current_prompt, temp=0.3)
 
             if not res.success:
                 return res

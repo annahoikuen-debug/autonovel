@@ -35,6 +35,10 @@ ALLOWLIST: dict[str, str] = {
         "@huey.task 修飾のワーカー用 _run_async ヘルパー。"
         "TODO(H1-5): immediate モード時の経路を確認"
     ),
+    "src/backend/tasks/multimedia_tasks.py": (
+        "@huey.task 修飾のワーカー entry point。音声合成・アセット生成。"
+        "TODO(H1-5): immediate モード時の経路を確認"
+    ),
     "src/cli/illustration_cli.py": (
         "argparse の main()。プロセス起動時に 1 回だけ呼ばれる同期 entry point。"
         "TODO(H1-6): なし（構造的に安全）"

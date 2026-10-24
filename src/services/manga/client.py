@@ -25,7 +25,16 @@ class NanoBananaClient:
                 from google import genai
                 self.client = genai.Client(api_key=self.config.api_key)
             except Exception as e:
-                logger.warning("Could not initialize genai.Client (%s). Falling back to mock mode.", e)
+                # SDK 初期化失敗時はパイプラインを落とさずモックへ縮退する
+                # (test_genai_init_failure_falls_back_to_mock で契約)。
+                # ただしこれが無音だとダミー PNG が本物と区別できず紛れるため、
+                # エラーレベルで明示し、ダミー生成であることを強調する。
+                logger.error(
+                    "genai.Client の初期化に失敗したためモック出力に縮退します "
+                    "(以降の画像はダミーで本物ではありません): %s",
+                    e,
+                    exc_info=True,
+                )
                 self.mock_mode = True
 
     def generate_sheet(

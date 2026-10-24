@@ -1,6 +1,6 @@
-import pytest
-from src.services.anti_ai.corrector import _apply_replacements, BaseCorrector, CorrectedText
+from src.services.anti_ai.corrector import _apply_replacements, BaseCorrector
 from src.services.anti_ai.models import AICategory, ViolationSpan
+
 
 def test_apply_replacements():
     text = "Hello world"
@@ -9,12 +9,15 @@ def test_apply_replacements():
 
     # Test overlap warning
     replacements = [(0, 5, "Hi"), (2, 7, "bad")]
-    assert _apply_replacements(text, replacements) == "Hi world" # cursor will skip overlapping
+    assert _apply_replacements(text, replacements) == "Hi world"  # cursor will skip overlapping
+
 
 class MockCorrector(BaseCorrector):
     category = AICategory.SAME_STRUCTURE
+
     def _build_replacements(self, text, violations):
         return [(v.start, v.end, "replaced") for v in violations]
+
 
 def test_base_corrector():
     corrector = MockCorrector()

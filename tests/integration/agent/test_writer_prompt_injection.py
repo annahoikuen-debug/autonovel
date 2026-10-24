@@ -1,4 +1,5 @@
 """Tests for writer prompt emotional context injection."""
+
 from __future__ import annotations
 
 import pytest
@@ -14,6 +15,7 @@ class TestWriterPromptInjection:
     @pytest.fixture
     def mock_vector_store(self):
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         store = RedisVectorStore(skip_connection_check=True)
         store.client = redis_client
@@ -45,7 +47,7 @@ class TestWriterPromptInjection:
                     pm.registry = AsyncMock()
                     pm.registry.render_async = AsyncMock(return_value="RENDERED_PROMPT")
 
-                    result = await pm.build_final_writing_prompt(
+                    await pm.build_final_writing_prompt(
                         ep_num=15,
                         plot_data={},
                         script_text="テスト脚本",
@@ -71,6 +73,7 @@ class TestWriterPromptInjection:
         # 一時的に利用不可に設定
         original = EMOTIONAL_RESIDUE_AVAILABLE
         import prompts.manager
+
         prompts.manager.EMOTIONAL_RESIDUE_AVAILABLE = False
 
         try:
@@ -78,7 +81,7 @@ class TestWriterPromptInjection:
             pm.registry = AsyncMock()
             pm.registry.render_async = AsyncMock(return_value="RENDERED_PROMPT")
 
-            result = await pm.build_final_writing_prompt(
+            await pm.build_final_writing_prompt(
                 ep_num=15,
                 plot_data={},
                 script_text="テスト",

@@ -7,7 +7,7 @@ import os
 import uuid
 from typing import Any
 
-from config import MODEL_EMBEDDING
+from src.backend.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -112,25 +112,25 @@ class SemanticCacheManager:
 
     COLLECTION_NAME = "semantic_cache"
 
-    def __init__(self, vector_store: Any, client: Any, embedding_model: str = MODEL_EMBEDDING):
+    def __init__(self, vector_store: Any, client: Any, embedding_model: str | None = None):
         """
         Args:
             vector_store: ChromaVectorStore 等のインスタンス
             client: genai.Client (Gemini API クライアント)
-            embedding_model: 埋め込みモデル名
+            embedding_model: 埋め込みモデル名 (未指定時は settings.EMBEDDING_MODEL)
         """
         self.vector_store = vector_store
         self.client = client
-        self.embedding_model = embedding_model
+        self.embedding_model = embedding_model or getattr(settings, "EMBEDDING_MODEL", "text-embedding-004")
         # L1 インメモリキャッシュ (最大1000件)
         self._l1_cache = LRUCache(maxsize=1000)
         # L2-B (Fast-Path) インメモリ・ベクトルキャッシュ
         # 重複するプロンプトの埋め込み計算を省くため、直近の embedding を保持
         self._l2_embedding_cache = LRUCache(maxsize=500)
 
-    def _get_l1_key(self, prompt: str, task_type: str, genre: str, temperature: float) -> str:
+    def _get_l1_key(self, prompt: str, task_type: str, genre: str, temperature: float, scope: str = "") -> str:
         """プロンプトおよびパラメータのハッシュ値からL1キャッシュキーを生成"""
-        key_str = f"{prompt}:{task_type}:{genre}:{temperature}"
+        key_str = f"{prompt}:{task_type}:{genre}:{temperature}:{scope}"
         return hashlib.sha256(key_str.encode("utf-8")).hexdigest()
 
     async def _get_embedding(self, text: str) -> list[float]:
@@ -165,13 +165,20 @@ class SemanticCacheManager:
         genre: str = "general",
         temperature: float = 0.7,
         threshold: float = 0.95,
+        scope: str | None = None,
         **kwargs: Any,
     ) -> Any | None:
         """
         類似したキャッシュエントリを検索する。
+
+        Args:
+            scope: テナント/作品境界 (例: ``f"book:{book_id}"``)。
+                指定すると L1 キーと L2 検索フィルタに反映され、
+                他の作品・ユーザーの生成結果が返ることを防ぐ。
+                未指定時は後方互換のグローバルスコープ扱い。
         """
         # 1. L1 完全一致インメモリキャッシュチェック
-        l1_key = self._get_l1_key(prompt, task_type, genre, temperature)
+        l1_key = self._get_l1_key(prompt, task_type, genre, temperature, scope or "")
         if l1_key in self._l1_cache:
             logger.info(
                 f"🧠 [L1 EXACT CACHE HIT] Bypassing Embedding API & ChromaDB! (task_type={task_type})"
@@ -187,7 +194,10 @@ class SemanticCacheManager:
             return None
 
         # ハイブリッド検索フィルタリング (task_type と genre の完全一致)
-        where = {"$and": [{"task_type": task_type}, {"genre": genre}]}
+        clauses: list[dict[str, Any]] = [{"task_type": task_type}, {"genre": genre}]
+        if scope is not None:
+            clauses.append({"scope": scope})
+        where: dict[str, Any] = {"$and": clauses}
 
         # コサイン類似度の閾値判定
         # cosine distance = 1 - cosine_similarity
@@ -228,19 +238,16 @@ class SemanticCacheManager:
                 best_hit = res
 
         if best_hit:
-            doc_id = best_hit["id"]
             meta = best_hit["metadata"]
-            meta["last_accessed"] = datetime.datetime.now().isoformat()
 
-            # 非同期でアクセス日時を更新して保存
+            # 注意: 旧実装はここで `add_documents(ids=[doc_id], embeddings=[vec])` と
+            # して「タッチ」していたが、`vec` はキャッシュされたドキュメントではなく
+            # **クエリ側の埋め込み**であり、応答テキストと無関係なベクトルを
+            # 同一 ID に上書きしてストアを破壊していた (類似検索の精度が劣化する)。
+            # さらに Chroma の add は同一 ID への重複追加となる。
+            # last_accessed の更新は metastore のみで行う (埋め込み・本文は変更しない)。
             _spawn_background(
-                self.vector_store.add_documents(
-                    collection_name=self.COLLECTION_NAME,
-                    ids=[doc_id],
-                    documents=[best_hit["content"]],
-                    embeddings=[vec],
-                    metadatas=[meta],
-                ),
+                self._touch_metadata(best_hit["id"], meta),
                 name="semantic_cache.touch",
             )
 
@@ -258,6 +265,27 @@ class SemanticCacheManager:
 
         return None
 
+    async def _touch_metadata(self, doc_id: str, meta: dict[str, Any]) -> None:
+        """キャッシュエントリの last_accessed のみを更新する (埋め込み・本文は変更しない)。
+
+        Chroma の ``update`` は metadata のみを上書きできるため、
+        埋め込みを壊さずに LRU  eviction 用のアクセス日時を更新できる。
+        """
+        try:
+            meta = {**meta, "last_accessed": datetime.datetime.now().isoformat()}
+            collection = self.vector_store.get_collection(self.COLLECTION_NAME, metadata={"hnsw:space": "cosine"})
+            if not collection:
+                return
+
+            from src.core.executor_manager import executor_manager
+
+            def _update():
+                return collection.update(ids=[doc_id], metadatas=[meta])
+
+            await executor_manager.run_io(_update)
+        except Exception:
+            logger.debug("[SEMANTIC CACHE] touch failed for %s", doc_id, exc_info=True)
+
     async def add(
         self,
         prompt: str,
@@ -265,13 +293,18 @@ class SemanticCacheManager:
         task_type: str,
         genre: str = "general",
         temperature: float = 0.7,
+        scope: str | None = None,
         **kwargs: Any,
     ) -> None:
         """
         キャッシュを追加する。
+
+        Args:
+            scope: テナント/作品境界 (例: ``f"book:{book_id}"``)。
+                search と同じ値を渡すこと。
         """
         # L1キャッシュへの登録
-        l1_key = self._get_l1_key(prompt, task_type, genre, temperature)
+        l1_key = self._get_l1_key(prompt, task_type, genre, temperature, scope or "")
         self._l1_cache[l1_key] = response
 
         if not self.vector_store or not self.client:
@@ -295,6 +328,7 @@ class SemanticCacheManager:
             "temperature": temperature,
             "input_length": len(prompt),
             "is_json": is_json,
+            "scope": scope or "",
             "created_at": datetime.datetime.now().isoformat(),
             "last_accessed": datetime.datetime.now().isoformat(),
         }

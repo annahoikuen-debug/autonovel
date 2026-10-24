@@ -10,7 +10,8 @@ from collections.abc import AsyncIterator
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
-from src.backend.auth import require_api_key
+from src.backend.auth import get_current_user
+from src.backend.database.models import User
 
 from src.backend.rate_limit import stream_limiter
 from src.domain.entities.easy_mode import EasyModeInput, StreamQueryInput
@@ -63,6 +64,7 @@ async def _stream_generator(input_data: EasyModeInput, request: Request) -> Asyn
 
     llm_cfg = input_data.llm_config
     from src.llm.model_router import resolve_model_for_purpose
+
     writing_model = resolve_model_for_purpose("writing", llm_cfg)
 
     adapter = get_llm_adapter(
@@ -71,7 +73,6 @@ async def _stream_generator(input_data: EasyModeInput, request: Request) -> Asyn
         model_name=writing_model,
         base_url=llm_cfg.base_url if llm_cfg else None,
     )
-
 
     yield f"data: {json.dumps({'type': 'start'}, ensure_ascii=False)}\n\n"
 
@@ -127,7 +128,7 @@ async def stream_generation(
     character_ability: str | None = Query(default=None),
     character_genre: str | None = Query(default=None),
     content_length_limit: int | None = Query(default=None, ge=1, le=10000),
-    api_key: str = Depends(require_api_key),
+    current_user: User = Depends(get_current_user),
 ) -> StreamingResponse:
     """小説執筆を SSE でストリーミング配信する (GET)。
 
@@ -137,8 +138,11 @@ async def stream_generation(
     * JSON リクエストボディ (``EasyModeInput``) — `llm_config` を使いたい場合はこちら
     * クエリの個別フィールド (``current_chapter`` / ``character_*`` など)
 
-    認証は POST 版と同じ ``require_api_key`` に統一した。base64 ``payload``
-    (クエリ文字列に `llm_config.api_key` / `base_url` を埋め込む仕組み) は
+    認証は JWT (Bearer) 必須。生成は有償操作なので書き込みと同じ扱いとし、
+    API キーは受け付けない（API キーは読み取り専用、src/backend/auth.py の方針）。
+    ブラウザの EventSource はカスタムヘッダーを付けられないため、
+    フロントエンドは POST 版 (``apiFetch`` で JWT を付与できる) を使うこと。
+    base64 ``payload`` (クエリ文字列に `llm_config.api_key` / `base_url` を埋め込む仕組み) は
     アクセスログとブラウザ履歴に平文で残り、かつ攻撃者が指定したホストへの
     SSRF の起点になるため、受け取った場合は明示的に拒否する。
     """
@@ -159,9 +163,7 @@ async def stream_generation(
         input_data = body_input
     else:
         history_list = (
-            [line for line in (chapter_history or "").split("\n") if line]
-            if chapter_history is not None
-            else None
+            [line for line in (chapter_history or "").split("\n") if line] if chapter_history is not None else None
         )
         query_input = StreamQueryInput(
             chapter_history=history_list,
@@ -189,9 +191,12 @@ async def stream_generation(
 async def stream_generation_post(
     input_data: EasyModeInput,
     request: Request,
-    api_key: str = Depends(require_api_key),
+    current_user: User = Depends(get_current_user),
 ) -> StreamingResponse:
-    """POST endpoint for SSE streaming (fully implemented)."""
+    """POST endpoint for SSE streaming (fully implemented).
+
+    認証は JWT (Bearer) 必須。生成は有償操作のため書き込みと同じ扱い。
+    """
     await stream_limiter.check(request)
     return StreamingResponse(
         _stream_generator(input_data, request),

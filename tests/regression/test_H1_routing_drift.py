@@ -33,9 +33,22 @@ def _server_paths() -> set[str]:
     """app に実際に載っているルートパス（include_router 後の実測値）。"""
     from src.backend.server import app
 
-    return {
-        r.path for r in app.routes if isinstance(getattr(r, "path", None), str) and r.path.startswith("/")
-    }
+    try:
+        from fastapi.openapi.utils import _get_api_route_for_openapi
+        from fastapi.routing import iter_route_contexts
+
+        paths = set()
+        for ctx in iter_route_contexts(app.routes):
+            route = _get_api_route_for_openapi(ctx)
+            if route is not None and isinstance(route.path, str) and route.path.startswith("/"):
+                paths.add(route.path)
+        return paths
+    except ImportError:
+        return {
+            r.path
+            for r in app.routes
+            if isinstance(getattr(r, "path", None), str) and r.path.startswith("/")
+        }
 
 
 def _root_prefixes(paths: set[str]) -> set[str]:

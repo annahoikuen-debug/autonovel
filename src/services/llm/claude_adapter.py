@@ -7,7 +7,7 @@ from collections.abc import AsyncIterator
 from typing import Any
 
 from src.backend.config import settings
-from src.services.llm.base import BaseLLMAdapter
+from src.services.llm.base import BaseLLMAdapter, ensure_api_key_configured
 from src.services.llm.retry import with_retry
 
 logger = logging.getLogger(__name__)
@@ -28,6 +28,9 @@ class ClaudeAdapter(BaseLLMAdapter):
     def _get_client(self) -> Any:
         """クライアントを遅延初期化する。"""
         if self._client is None:
+            # キー未設定/プレースホルダを検出する (Gemini と同様)。
+            # 旧実装は `or ""` で素通しして不透明な 401 になっていた。
+            ensure_api_key_configured(self.api_key, provider="Anthropic", env_var="ANTHROPIC_API_KEY")
             from anthropic import AsyncAnthropic
 
             self._client = AsyncAnthropic(api_key=self.api_key)
@@ -59,7 +62,12 @@ class ClaudeAdapter(BaseLLMAdapter):
                 system=system,
                 messages=messages,
             )
-            return response.content[0].text
+            # content が空 (refusal 等) のとき IndexError にならないよう安全に取得
+            if not response.content:
+                logger.warning("Claude returned empty content (model=%s)", self.model_name)
+                return ""
+            first = response.content[0]
+            return getattr(first, "text", "") or ""
 
         return await with_retry(_call)
 

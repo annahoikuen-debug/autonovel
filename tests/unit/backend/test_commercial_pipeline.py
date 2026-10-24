@@ -6,10 +6,9 @@ commercial_pipeline.py テストモジュール (Phase 2 Steps 17-20)
 from __future__ import annotations
 
 import asyncio
-import json
 import os
 import tempfile
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 
@@ -20,6 +19,7 @@ from src.core.exceptions import PipelineError
 # =============================================================================
 # Step 17: パイプライン全ステージモック接続
 # =============================================================================
+
 
 @pytest.mark.asyncio
 async def test_commercial_pipeline_plan_stage_mock():
@@ -34,7 +34,7 @@ async def test_commercial_pipeline_plan_stage_mock():
         "target_eps": 3,
         "target_word_count_per_episode": 3000,
         "platforms": ["kakuyomu"],
-        "trend_memo": "異世界ブーム"
+        "trend_memo": "異世界ブーム",
     }
 
     bible = await pipeline._step_plan_async(series_config)
@@ -193,6 +193,7 @@ async def test_commercial_pipeline_export_stage_mock():
 # Step 18: 正常フロー
 # =============================================================================
 
+
 @pytest.mark.asyncio
 async def test_commercial_pipeline_full_success_flow():
     """全ステージ成功の正常フローテスト"""
@@ -208,7 +209,7 @@ async def test_commercial_pipeline_full_success_flow():
             "target_eps": 2,
             "target_word_count_per_episode": 3000,
             "platforms": ["kakuyomu"],
-            "trend_memo": "異世界ブーム"
+            "trend_memo": "異世界ブーム",
         }
 
         mock_writer = AsyncMock()
@@ -221,10 +222,7 @@ async def test_commercial_pipeline_full_success_flow():
 
         with patch("src.backend.workflows.commercial_pipeline.EpisodeWriter", return_value=mock_writer):
             result = await pipeline.run(
-                series_config=series_config,
-                samples=[],
-                platforms=["kakuyomu"],
-                do_publish=False
+                series_config=series_config, samples=[], platforms=["kakuyomu"], do_publish=False
             )
 
         assert "error" not in result
@@ -266,10 +264,7 @@ async def test_commercial_pipeline_partial_episodes_generated():
 
         with patch("src.backend.workflows.commercial_pipeline.EpisodeWriter", return_value=mock_writer):
             result = await pipeline.run(
-                series_config=series_config,
-                samples=[],
-                platforms=["kakuyomu"],
-                do_publish=False
+                series_config=series_config, samples=[], platforms=["kakuyomu"], do_publish=False
             )
 
         assert "error" in result
@@ -281,6 +276,7 @@ async def test_commercial_pipeline_partial_episodes_generated():
 # =============================================================================
 # Step 19: 失敗時リトライ・スキップ・部分完了での成果物保存
 # =============================================================================
+
 
 @pytest.mark.asyncio
 async def test_async_retry_decorator_success_on_retry():
@@ -303,6 +299,7 @@ async def test_async_retry_decorator_success_on_retry():
 @pytest.mark.asyncio
 async def test_async_retry_decorator_max_attempts_exceeded():
     """リトライデコレータ：最大試行回数超過でPipelineError"""
+
     @async_retry(max_attempts=2, base_delay=0.01)
     async def always_failing():
         raise RuntimeError("常に失敗")
@@ -414,10 +411,7 @@ async def test_commercial_pipeline_partial_completion_saves_artifacts():
 
         with patch("src.backend.workflows.commercial_pipeline.EpisodeWriter", return_value=mock_writer):
             result = await pipeline.run(
-                series_config=series_config,
-                samples=[],
-                platforms=["kakuyomu"],
-                do_publish=False
+                series_config=series_config, samples=[], platforms=["kakuyomu"], do_publish=False
             )
 
         assert "error" in result
@@ -428,10 +422,11 @@ async def test_commercial_pipeline_partial_completion_saves_artifacts():
 # Step 20: 並行実行時のリソース競合回避
 # =============================================================================
 
+
 @pytest.mark.asyncio
 async def test_commercial_pipeline_concurrent_execution_semaphore():
     """並行実行時のセマフォ制限テスト"""
-    pipeline = CommercialPipeline()
+    CommercialPipeline()
 
     semaphore = asyncio.Semaphore(2)
     active_count = 0
@@ -457,6 +452,7 @@ async def test_commercial_pipeline_concurrent_execution_semaphore():
 async def test_commercial_pipeline_parallel_pipeline_runs():
     """複数パイプライン並行実行のテスト"""
     with tempfile.TemporaryDirectory() as tmpdir:
+
         async def run_pipeline(book_id: int):
             csv_path = os.path.join(tmpdir, f"schedule_{book_id}.csv")
             pipeline = CommercialPipeline(csv_path=csv_path)
@@ -481,10 +477,7 @@ async def test_commercial_pipeline_parallel_pipeline_runs():
 
             with patch("src.backend.workflows.commercial_pipeline.EpisodeWriter", return_value=mock_writer):
                 return await pipeline.run(
-                    series_config=series_config,
-                    samples=[],
-                    platforms=["kakuyomu"],
-                    do_publish=False
+                    series_config=series_config, samples=[], platforms=["kakuyomu"], do_publish=False
                 )
 
         results = await asyncio.gather(
@@ -524,6 +517,7 @@ async def test_commercial_pipeline_db_pool_exhaustion_prevention():
 # 既存テストの再確認
 # =============================================================================
 
+
 @pytest.mark.asyncio
 async def test_commercial_pipeline_async_retry_success():
     """既存テスト: リトライ成功"""
@@ -545,6 +539,7 @@ async def test_commercial_pipeline_async_retry_success():
 @pytest.mark.asyncio
 async def test_commercial_pipeline_async_retry_permanent_failure():
     """既存テスト: 最大リトライ超過"""
+
     @async_retry(max_attempts=2, base_delay=0.01)
     async def always_failing_task():
         raise RuntimeError("always fail")

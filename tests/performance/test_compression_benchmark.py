@@ -1,4 +1,5 @@
 """性能回帰テスト - 圧縮ベンチマーク (簡易版)"""
+
 from __future__ import annotations
 
 import json
@@ -94,16 +95,21 @@ class TestCompressionPerformance:
     def test_memory_usage_estimate(self):
         """メモリ使用量の概算確認"""
         import sys
+
         compressor = make_compressor(cache_enabled=False)
         text = "これはテスト用のサンプルテキストです。" * 500  # ~10KB
         result = compressor.compress(text)
 
         result_size = sys.getsizeof(result)
         total_estimated = result_size
-        if result.layer1: total_estimated += sys.getsizeof(result.layer1)
-        if result.layer2: total_estimated += sys.getsizeof(result.layer2)
-        if result.layer3: total_estimated += sys.getsizeof(result.layer3)
-        if result.layer4: total_estimated += sys.getsizeof(result.layer4)
+        if result.layer1:
+            total_estimated += sys.getsizeof(result.layer1)
+        if result.layer2:
+            total_estimated += sys.getsizeof(result.layer2)
+        if result.layer3:
+            total_estimated += sys.getsizeof(result.layer3)
+        if result.layer4:
+            total_estimated += sys.getsizeof(result.layer4)
 
         print(f"\n[Memory Estimate] 10KB text: ~{total_estimated / 1024:.1f} KB")
         assert total_estimated < 500 * 1024 * 1024
@@ -181,8 +187,9 @@ class TestPerformanceRegression:
 
             print(f"  {size_name}: current={current_median:.2f}ms, baseline={baseline_median:.2f}ms")
 
-            assert current_median < regression_threshold, \
+            assert current_median < regression_threshold, (
                 f"{size_name} 性能劣化検出: {current_median:.2f}ms > {regression_threshold:.2f}ms"
+            )
 
             current_ratio = result.overall_reduction_ratio
             baseline_ratio = baseline_data["reduction_ratio"]

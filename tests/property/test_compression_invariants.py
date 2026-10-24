@@ -1,4 +1,5 @@
 """Property-based tests for compression invariants (Hypothesis)"""
+
 from __future__ import annotations
 
 import pytest
@@ -14,17 +15,21 @@ from src.services.compression.models import (
 
 @st.composite
 def valid_scene_type(draw):
-    return draw(sampled_from([
-        "general",
-        "combat",
-        "daily",
-        "psychological",
-        "political",
-        "romance",
-        "mystery",
-        "flashback",
-        "survival",
-    ]))
+    return draw(
+        sampled_from(
+            [
+                "general",
+                "combat",
+                "daily",
+                "psychological",
+                "political",
+                "romance",
+                "mystery",
+                "flashback",
+                "survival",
+            ]
+        )
+    )
 
 
 @st.composite
@@ -46,10 +51,10 @@ def compression_config_strategy(draw):
 @st.composite
 def meaningful_text(draw):
     chars = st.text(
-        alphabet="aiueokakikukeko" +
-                 "AIUEOKAKIKUKEKO" +
-                 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789" +
-                 ".,?!()[]",
+        alphabet="aiueokakikukeko"
+        + "AIUEOKAKIKUKEKO"
+        + "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        + ".,?!()[]",
         min_size=10,
         max_size=5000,
     )
@@ -147,7 +152,11 @@ class TestCompressionInvariants:
         result2 = compressor2.compress(text, bypass_cache=True)
         assert result2.final_token_count >= result1.final_token_count
 
-    @given(text=meaningful_text(), config=compression_config_strategy(), pinned=st.lists(text(min_size=1, max_size=10), min_size=1, max_size=5))
+    @given(
+        text=meaningful_text(),
+        config=compression_config_strategy(),
+        pinned=st.lists(text(min_size=1, max_size=10), min_size=1, max_size=5),
+    )
     @settings(max_examples=10, deadline=5000)
     def test_preserve_categories_entities_retained(self, text, config, pinned):
         assume(len(text) > 10)
@@ -183,7 +192,13 @@ class TestCompressionInvariants:
         assert result.final_token_count == 0
         assert result.overall_reduction_ratio == 0.0
 
-    @given(text=meaningful_text(), config=compression_config_strategy(), scene_type=sampled_from(["general", "combat", "daily", "psychological", "political", "romance", "mystery", "flashback", "survival"]))
+    @given(
+        text=meaningful_text(),
+        config=compression_config_strategy(),
+        scene_type=sampled_from(
+            ["general", "combat", "daily", "psychological", "political", "romance", "mystery", "flashback", "survival"]
+        ),
+    )
     @settings(max_examples=10, deadline=5000)
     def test_scene_type_affects_layer4_scene_type(self, text, config, scene_type):
         assume(len(text) > 10)
@@ -225,7 +240,17 @@ class TestCompressionInvariants:
         assert result.layer3 is not None
         assert result.layer4 is not None
 
-    @given(text=meaningful_text(), config=compression_config_strategy(), protected=st.builds(ProtectedContext, active_characters=lists(text(min_size=1, max_size=10), min_size=0, max_size=10), pending_foreshadowing_ids=lists(text(min_size=1, max_size=20), min_size=0, max_size=5), critical_keywords=lists(text(min_size=1, max_size=20), min_size=0, max_size=10), pinned_entities=sets(text(min_size=1, max_size=10), min_size=0, max_size=5)))
+    @given(
+        text=meaningful_text(),
+        config=compression_config_strategy(),
+        protected=st.builds(
+            ProtectedContext,
+            active_characters=lists(text(min_size=1, max_size=10), min_size=0, max_size=10),
+            pending_foreshadowing_ids=lists(text(min_size=1, max_size=20), min_size=0, max_size=5),
+            critical_keywords=lists(text(min_size=1, max_size=20), min_size=0, max_size=10),
+            pinned_entities=sets(text(min_size=1, max_size=10), min_size=0, max_size=5),
+        ),
+    )
     @settings(max_examples=10, deadline=5000)
     def test_protected_context_does_not_crash(self, text, config, protected):
         assume(len(text) > 10)
@@ -307,7 +332,7 @@ class TestBypassCache:
             preserve_categories=config.preserve_categories,
         )
         compressor = FourLayerCompressor(config=config_test)
-        result1 = compressor.compress(text, bypass_cache=False)
+        compressor.compress(text, bypass_cache=False)
         result2 = compressor.compress(text, bypass_cache=False)
         assert result2.from_cache is True
 

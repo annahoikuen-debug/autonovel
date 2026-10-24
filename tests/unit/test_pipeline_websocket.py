@@ -43,6 +43,10 @@ def test_pipeline_websocket_and_hub(monkeypatch):
 def test_sse_pipeline_stream(monkeypatch):
     from src.backend.config import settings
     monkeypatch.setattr(settings, "AUTH_DISABLED", True)
+    # 本番は切断/期限まで待機する無期限ループ (旧 range(5) ハードコード廃止)。
+    # TestClient は ASGI アプリ完了まで待つため、テストでは短い期限を注入して
+    # ストリームを早期に終了させる。
+    monkeypatch.setattr(settings, "SSE_MAX_STREAM_SECONDS", 1.0)
     client = TestClient(app)
     with client.stream("GET", "/api/stream/pipeline/999") as response:
         assert response.status_code == 200

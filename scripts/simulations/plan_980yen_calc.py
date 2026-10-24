@@ -2,11 +2,11 @@
 """980円プラン 利益率維持計算"""
 
 # 基準: 500クレジット=10円の利益率を維持
-BASE_PRICE = 10        # JPY
-BASE_TOKENS = 50_000   # トークン
-BASE_COST = 1.3        # DeepSeek-V4-Flash API原価
+BASE_PRICE = 10  # JPY
+BASE_TOKENS = 50_000  # トークン
+BASE_COST = 1.3  # DeepSeek-V4-Flash API原価
 BASE_PROFIT_RATE = 0.87  # 利益率87%
-BASE_COST_RATE = 0.13    # 原価率13%
+BASE_COST_RATE = 0.13  # 原価率13%
 
 # 980円プラン（同じ利益率）
 PLAN_PRICE = 980  # JPY
@@ -95,8 +95,7 @@ for name, price, tokens in plans:
     profit = price - cost
     episodes = tokens // 5000
 
-    print(f"{name:<12} JPY {price:>6,} {tokens:>12,} {episodes:>10}話 "
-          f"JPY {cost:>8,.2f} JPY {profit:>8,.2f}")
+    print(f"{name:<12} JPY {price:>6,} {tokens:>12,} {episodes:>10}話 JPY {cost:>8,.2f} JPY {profit:>8,.2f}")
 
 print("\n" + "=" * 70)
 print("月額980円の価値")
@@ -125,12 +124,12 @@ print("=" * 70)
 
 print(f"""
 【980円プランの設計】
-  付与トークン: {plan_tokens:,.0f}（約{plan_tokens/1000:.0f}K）
+  付与トークン: {plan_tokens:,.0f}（約{plan_tokens / 1000:.0f}K）
   月額利用可能:
-    - プロット15話: {plan_tokens/36000:.1f}回
-    - 本文: {plan_tokens/5000:.0f}話
-    - 長編1本: {plan_tokens/111000:.1f}本
-  
+    - プロット15話: {plan_tokens / 36000:.1f}回
+    - 本文: {plan_tokens / 5000:.0f}話
+    - 長編1本: {plan_tokens / 111000:.1f}本
+
   原価: JPY {plan_cost:.2f}
   利益: JPY {plan_profit:.2f}
   利益率: {BASE_PROFIT_RATE * 100:.0f}%
@@ -138,9 +137,9 @@ print(f"""
 【推奨構成】
   Free: 500クレジット/月（JPY 0）
   Starter: 980円/月（{plan_tokens:,.0f}トークン）
-  Pro: 2,980円/月（{plan_tokens*3:,.0f}トークン）
-  Studio: 9,800円/月（{plan_tokens*10:,.0f}トークン）
-  Enterprise: 29,800円/月（{plan_tokens*50:,.0f}トークン + 専用API）
+  Pro: 2,980円/月（{plan_tokens * 3:,.0f}トークン）
+  Studio: 9,800円/月（{plan_tokens * 10:,.0f}トークン）
+  Enterprise: 29,800円/月（{plan_tokens * 50:,.0f}トークン + 専用API）
 
 【差別化ポイント】
   - DeepSeek-V4-Flash採用で低価格実現

@@ -4,16 +4,16 @@ from typing import Any
 
 from src.config.cost_optimization import ROUTING_TIERS
 
-# デフォルトモデルマッピング（必要に応じて追加）
+# デフォルトモデルマッピング (.env / Settings の初期値と同期)
 _DEFAULTS = {
-    "planning": "gemini-3.5-flash-lite",
-    "plot_expansion": "gemma-4-31b-it",
-    "writing": "gemma-4-31b-it",
-    "climax": "gemma-4-31b-it",
-    "fallback": "gemma-4-31b-it",
-    "ultra_stable": "gemma-4-31b-it",
-    "audit": "gemini-3.5-flash-lite",
-    "marketing": "gemini-3.5-flash-lite",
+    "planning": "gemini-2.5-flash",
+    "plot_expansion": "gemini-2.5-flash",
+    "writing": "gemini-2.5-flash",
+    "climax": "gemini-2.5-flash",
+    "fallback": "gemini-2.5-flash",
+    "ultra_stable": "gemini-2.5-flash",
+    "audit": "gemini-2.5-flash",
+    "marketing": "gemini-2.5-flash",
 }
 
 # select_model() で「用途」として解釈するキー群。
@@ -62,14 +62,26 @@ def is_openai_compatible(model_name: str) -> bool:
 def select_model(purpose: str = "writing") -> str:
     """目的に応じたモデル名を返す。
 
-    環境変数や `config.streamlit_adapter` の上書き設定があればそちらを優先。
-    既知の「用途」でなければ、渡された文字列をそのままモデルIDとして返す。
+    SSOT:
+    1. src.backend.config.settings.get_task_model(purpose) (.env / 環境変数 / LLM_PROFILE)
+    2. config.project_context (settings.toml / GlobalConfigModel)
+    3. _DEFAULTS (.env の初期値と同期)
     """
     # 用途でない（リテラルのモデルID等）場合はそのまま返す
     if purpose not in _PURPOSES:
         return purpose
 
-    # 設定から取得を試みる (SSOT: GlobalConfigModel / settings.toml)
+    # 1. サーバー設定・環境変数 (.env) からの動的解決 (SSOT)
+    try:
+        from src.backend.config import settings
+
+        resolved = settings.get_task_model(purpose)
+        if resolved:
+            return resolved
+    except Exception:
+        pass
+
+    # 2. 設定から取得を試みる (SSOT: GlobalConfigModel / settings.toml)
     key = f"model_{purpose}"
     try:
         from config.project_context import get_config
@@ -79,7 +91,8 @@ def select_model(purpose: str = "writing") -> str:
             return str(value)
     except Exception:
         pass
-    return _DEFAULTS.get(purpose, "gemini-3.5-flash-lite")
+
+    return _DEFAULTS.get(purpose, "gemini-2.5-flash")
 
 
 def resolve_model(value: str) -> str:

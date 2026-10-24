@@ -1,5 +1,6 @@
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 from src.models.subversion import SubversionEngine, SubversionPattern
 
 # Test 1: Deterministic - same input produces same output
@@ -29,7 +30,12 @@ print("[OK] Interval scheduling: PASS")
 # Test 4: Disabled engine does nothing
 e5 = SubversionEngine(enabled=False, interval=3)
 e5.plan_schedule(10)
-class Mock: pass
+
+
+class Mock:
+    pass
+
+
 m = Mock()
 result = e5.apply_to_arc(m, 3)
 assert result is m
@@ -39,8 +45,12 @@ print("[OK] Disabled engine: PASS")
 # Test 5: apply_to_arc sets thematic_milestone
 e6 = SubversionEngine(interval=3)
 e6.plan_schedule(10)
+
+
 class MockArc:
     thematic_milestone = ""
+
+
 arc = MockArc()
 e6.apply_to_arc(arc, 3)
 assert "裏切り" in arc.thematic_milestone
@@ -50,10 +60,14 @@ print("[OK] apply_to_arc: PASS")
 # Test 6: apply_to_beat sets mission and tension
 e7 = SubversionEngine(interval=3)
 e7.plan_schedule(10)
+
+
 class MockBeat:
     mission = ""
     visual_scene_focus = ""
     tension_target = 0.5
+
+
 beat = MockBeat()
 e7.apply_to_beat(beat, 3)
 assert "裏切り" in beat.mission
@@ -67,7 +81,7 @@ e8.schedule = [
     SubversionPattern(pattern_type="A", trigger_ep=3, description="d", cost="c", payoff_hint="h"),
     SubversionPattern(pattern_type="B", trigger_ep=3, description="d", cost="c", payoff_hint="h"),  # duplicate
     SubversionPattern(pattern_type="C", trigger_ep=5, description="d", cost="c", payoff_hint="h"),  # interval < 3
-    SubversionPattern(pattern_type="A", trigger_ep=38, description="d", cost="c", payoff_hint="h"), # too late
+    SubversionPattern(pattern_type="A", trigger_ep=38, description="d", cost="c", payoff_hint="h"),  # too late
 ]
 errors = e8.validate_coherence(40)
 assert "重複発火話数あり" in errors

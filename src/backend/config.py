@@ -64,12 +64,14 @@ def _get_package_version() -> str:
         pyproject_path = ROOT_DIR / "pyproject.toml"
         if pyproject_path.exists():
             import tomllib
+
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
                 ver = data.get("project", {}).get("version")
                 if ver:
                     return str(ver)
         from importlib.metadata import version
+
         return version("autonovel")
     except Exception:
         return "5.0.2"
@@ -81,7 +83,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore",
+        extra="forbid",
     )
 
     # サーバー基本設定
@@ -93,17 +95,27 @@ class Settings(BaseSettings):
 
     # データベース設定
     DATABASE_URL: str = Field(default_factory=lambda: f"sqlite:///{STORAGE_DIR / 'autonovel.db'}")
+    # Docker Compose 用データベース認証情報（.env で設定可能。アプリ内では直接参照されないが、
+    # extra="forbid" 下で .env 読み込み時に拒否されないよう定義する）
+    POSTGRES_USER: str = ""
+    POSTGRES_PASSWORD: str = ""
+    POSTGRES_DB: str = ""
 
     # Redis/キュー設定
     HUEY_BACKEND: Literal["sqlite", "redis"] = "sqlite"
     HUEY_SQLITE_PATH: str = Field(default_factory=lambda: str(STORAGE_DIR / "huey.db"))
     REDIS_URL: str = "redis://localhost:6379/0"
+    REDIS_PASSWORD: str = ""
 
     # 認証・セキュリティ設定
     AUTH_DISABLED: bool = False
-    CORS_ORIGINS: str = (
-        "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:8080"
-    )
+
+    # SSE ストリーム (pipeline telemetry) の最大継続時間 (秒)。
+    # これを超えたらサーバ側で切断し、クライアント (EventSource) が自動再接続する。
+    # 終了条件は「クライアント切断 or この期限」のいずれか。
+    # テストでは小さい値を注入してストリームを早期に終了させる。
+    SSE_MAX_STREAM_SECONDS: float = 3600.0
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:8080"
     # `X-Forwarded-For` を信頼してよいプロキシの CIDR（カンマ区切り）。
     # 未設定（既定）または空の場合はヘッダーを一切信用せず、
     # 直接接続の peer (`request.client.host`) をクライアント IP として扱う。
@@ -111,6 +123,16 @@ class Settings(BaseSettings):
     FRONTEND_URL: str = "http://localhost:5173"
     CORS_ALLOW_HEADERS: str = "Content-Type,Authorization,X-API-Key,Accept,Origin,X-Requested-With"
     ALLOWED_API_KEYS: str = ""
+    # 書き込み系 (POST/PUT/PATCH/DELETE) で API キーを資格情報として許可するか。
+    # 既定 False: API キーは読み取り専用 (src/backend/auth.py の運用方針)。
+    # サーバー間連携 (commercial 系) だけを API キーで叩く必要がある環境で
+    # 明示的に True にする。True の場合でも書き込み主体は
+    # ``API_KEY_SERVICE_EMAIL`` のサービスアカウントであり、
+    # 任意のユーザーへのなりすましはできない。
+    ALLOW_API_KEY_WRITES: bool = False
+    # ``ALLOW_API_KEY_WRITES=True`` のときに API キー呼び出しの書き込み主体として
+    # 解決するサービスアカウントの email。存在しない場合は書き込みは 403 になる。
+    API_KEY_SERVICE_EMAIL: str = "api-key-service@autonovel.local"
     JWT_SECRET_KEY: str | None = Field(
         default=None,
         validation_alias=AliasChoices("JWT_SECRET_KEY", "SECRET_KEY"),
@@ -157,6 +179,7 @@ class Settings(BaseSettings):
         """JWTシークレットキーを取得し、本番環境での安全性を厳格に検証する。"""
         import os
         import logging
+
         key = self.JWT_SECRET_KEY or os.environ.get("JWT_SECRET_KEY") or os.environ.get("SECRET_KEY")
         insecure_keys = {
             "",
@@ -168,12 +191,7 @@ class Settings(BaseSettings):
             "secret",
         }
         if self.APP_ENV == "production":
-            if (
-                not key
-                or key in insecure_keys
-                or key in _load_example_secret_keys()
-                or len(key) < 32
-            ):
+            if not key or key in insecure_keys or key in _load_example_secret_keys() or len(key) < 32:
                 raise ValueError(
                     "CRITICAL SECURITY RISK: In production, JWT_SECRET_KEY must be set to a secure string of at least 32 bytes. "
                     "Current key is missing, default, or too short."
@@ -188,6 +206,7 @@ class Settings(BaseSettings):
         global _ephemeral_dev_jwt_secret
         if _ephemeral_dev_jwt_secret is None:
             import secrets
+
             _ephemeral_dev_jwt_secret = secrets.token_hex(32)
             logging.getLogger(__name__).warning(
                 "[SECURITY WARNING] JWT_SECRET_KEY is not set or insecure. "
@@ -248,6 +267,58 @@ class Settings(BaseSettings):
     VLLM_BASE_URL: str = "http://localhost:8000"
     VLLM_MODEL: str = "meta-llama/Llama-3.1-8B-Instruct"
 
+    # タスク別モデル個別指定 (未指定時はプロバイダのデフォルトまたは LLM_PROFILE に従う)
+    # 将来のモデル更新（Gemini 3, Claude 4, GPT-5 等）でも、ここを設定するだけでコード改修不要
+    LLM_PROFILE: Literal["custom", "all-gemini", "hybrid-quality", "all-openai", "local-offline"] = "custom"
+    LLM_MODEL_PLANNING: str | None = None
+    LLM_MODEL_PLOT_EXPANSION: str | None = None
+    LLM_MODEL_WRITING: str | None = None
+    LLM_MODEL_CLIMAX: str | None = None
+    LLM_MODEL_AUDIT: str | None = None
+    LLM_MODEL_MARKETING: str | None = None
+    LLM_MODEL_FALLBACK: str | None = None
+    LLM_MODEL_ULTRA_STABLE: str | None = None
+
+    def get_task_model(self, task: str) -> str:
+        """タスク種別 (planning / writing / climax / audit / marketing / fallback 等) のモデル名を解決する。"""
+        # 1. 明示的なタスク別個別設定 (最優先)
+        task_attr = f"LLM_MODEL_{task.upper()}"
+        explicit = getattr(self, task_attr, None)
+        if explicit:
+            return explicit
+
+        # 2. プロファイル別プリセット
+        if self.LLM_PROFILE == "all-gemini":
+            return self.GEMINI_MODEL
+        elif self.LLM_PROFILE == "hybrid-quality":
+            if task in ("writing", "climax"):
+                return self.ANTHROPIC_MODEL
+            return self.GEMINI_MODEL
+        elif self.LLM_PROFILE == "all-openai":
+            if task in ("writing", "climax"):
+                return "gpt-4o"
+            return self.OPENAI_MODEL
+        elif self.LLM_PROFILE == "local-offline":
+            return self.OLLAMA_MODEL
+
+        # 3. OpenRouter 使用時のタスク別ルーティング
+        if self.LLM_PROVIDER == "openrouter" and task in self.OPENROUTER_ROUTING:
+            return self.OPENROUTER_ROUTING[task]
+
+        # 4. プロバイダ別既定モデルへのフォールバック
+        if self.LLM_PROVIDER == "gemini":
+            return self.GEMINI_MODEL
+        elif self.LLM_PROVIDER == "openai":
+            return self.OPENAI_MODEL
+        elif self.LLM_PROVIDER == "claude":
+            return self.ANTHROPIC_MODEL
+        elif self.LLM_PROVIDER == "ollama":
+            return self.OLLAMA_MODEL
+        elif self.LLM_PROVIDER == "vllm":
+            return self.VLLM_MODEL
+
+        return self.GEMINI_MODEL
+
     # Embedding / GraphRAG (pgvector + Apache AGE) 設定
     EMBEDDING_MODEL: str = "text-embedding-3-small"
     EMBEDDING_MODEL_FALLBACK: str = "text-embedding-3-small"
@@ -268,6 +339,7 @@ class Settings(BaseSettings):
 
     # マルチメディア展開 (Phase 7: Asset Pack / Media Mix / IF Routes / eBook)
     ENABLE_MULTIMEDIA: bool = False
+    ENABLE_SOCIAL_POSTING: bool = False
     ENABLE_AUDIO_SYNTH: bool = False
     VOICEVOX_URL: str = "http://localhost:50021"
     VOICEVOX_DEFAULT_SPEAKER_ID: int = 3
@@ -322,6 +394,7 @@ class Settings(BaseSettings):
     def get_gemini_api_key(self) -> str:
         """GEMINI_API_KEY または GOOGLE_GENAI_API_KEY を安全・一元的に解決して返す (Step 38)."""
         import os
+
         return self.GEMINI_API_KEY or os.environ.get("GOOGLE_GENAI_API_KEY") or os.environ.get("GEMINI_API_KEY") or ""
 
 
@@ -329,6 +402,3 @@ class Settings(BaseSettings):
 settings = Settings()
 
 __all__ = ["Settings", "settings", "STORAGE_DIR", "ROOT_DIR"]
-
-
-

@@ -12,6 +12,7 @@ from src.backend.schemas.illustrations import (
     IllustrationGenerateRequest,
     YonkomaGenerateRequest,
 )
+from src.backend.security.credit_guard import check_illustration_credits
 from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
 from src.core.exceptions import NotFoundError
@@ -36,9 +37,7 @@ class _ReporterShim:
     def report(self, message: str, level: str = "info") -> None:
         pass
 
-    def update_progress(
-        self, current: int, total: int, message: str = "", sub_message: str = ""
-    ) -> None:
+    def update_progress(self, current: int, total: int, message: str = "", sub_message: str = "") -> None:
         pass
 
     @property
@@ -83,9 +82,7 @@ async def generate_illustration(
             illustration_type=IllustrationType(request.illustration_type),
             episode_number=request.episode_number,
             model=IllustrationModel(request.model),
-            safety_level=SafetyLevel.R15_CONTENT
-            if request.enable_r15
-            else SafetyLevel.BLOCK_SOME,
+            safety_level=SafetyLevel.R15_CONTENT if request.enable_r15 else SafetyLevel.BLOCK_SOME,
         )
 
         # 簡易的なレポート (Protocol なのでダミー化)
@@ -198,7 +195,10 @@ async def batch_generate_illustrations(
     """
     import uuid
 
-    from src.backend.tasks.illustration_tasks import illustrate_batch_task
+    from src.backend.tasks.illustration_tasks import (
+        estimate_illustration_batch_images,
+        illustrate_batch_task,
+    )
 
     try:
         # 文字列の book_id がそのまま Huey タスクへ流れるとクエリが壊れるため、
@@ -209,6 +209,10 @@ async def batch_generate_illustrations(
 
         # 生成是有偿的: 他人の book_id を指定してタスクを積ませないよう所有者を確認する。
         await verify_book_ownership(book_id, current_user, AppContainer.db())
+
+        # 課金ガド: タスク投入 (enqueue) の前に (単価 × 予想枚数) の残高を検証する
+        # (不足なら 402)。クレジットの控除はワーカー側のタスクで冪等に行う。
+        check_illustration_credits(current_user, estimate_illustration_batch_images(settings))
 
         # ワーカー側でも同じ task_id を使う（ずれると status が取れなくなる）
         illustrate_batch_task(book_id=book_id, settings=settings, task_id=task_id)
@@ -279,9 +283,7 @@ async def get_scene_illustration(
 
 
 @router.get("/status/{task_id}")
-async def get_illustration_status(
-    task_id: str, current_user: User = Depends(get_current_user)
-):
+async def get_illustration_status(task_id: str, current_user: User = Depends(get_current_user)):
     """Huey タスクのステータス・結果を取得する。"""
     from src.backend.database.core import get_db_manager
     from src.backend.database.repository import BookRepository

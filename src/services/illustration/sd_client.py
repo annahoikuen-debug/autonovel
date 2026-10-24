@@ -1,5 +1,5 @@
+import asyncio
 import base64
-import time
 
 import httpx
 
@@ -67,5 +67,7 @@ class SDWebUIClient(ImageGeneratorClient):
             except (httpx.HTTPError, ValueError, KeyError) as exc:
                 last_error = exc
                 if attempt < self.max_retries - 1:
-                    await time.sleep(2 ** attempt)
+                    # `await time.sleep(...)` は `import time` のため TypeError になる
+                    # (`time.sleep` は awaitable ではない)。指数バックオフは asyncio 側で行う。
+                    await asyncio.sleep(2**attempt)
         raise RuntimeError(f"SD WebUI generation failed after {self.max_retries} attempts") from last_error

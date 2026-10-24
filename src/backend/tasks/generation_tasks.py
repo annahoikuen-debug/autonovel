@@ -29,6 +29,23 @@ from src.services.billing.credit_service import CreditService
 
 logger = logging.getLogger(__name__)
 
+_SENSITIVE_PAYLOAD_KEYS = ("api_key", "apikey", "api-key", "token", "secret", "password")
+
+
+def _safe_payload_for_log(payload: dict[str, Any]) -> dict[str, Any]:
+    """ペイロードをログ出力用にマスクする (APIキー等の秘匿情報を除去)。"""
+    if not isinstance(payload, dict):
+        return {"_raw": "<non-dict payload>"}
+    masked: dict[str, Any] = {}
+    for key, value in payload.items():
+        if isinstance(key, str) and key.lower() in _SENSITIVE_PAYLOAD_KEYS:
+            masked[key] = "<redacted>"
+        elif isinstance(value, dict):
+            masked[key] = _safe_payload_for_log(value)
+        else:
+            masked[key] = value
+    return masked
+
 
 def _get_user_id_from_book_id(book_id: int) -> int:
     """書籍IDからユーザーIDを取得する。"""
@@ -43,20 +60,44 @@ def _get_user_id_from_book_id(book_id: int) -> int:
 
 
 def _sync_deduct_credits(
-    user_id: int, amount: int, task_id: str | None, description: str
+    user_id: int,
+    amount: int,
+    task_id: str | None,
+    description: str,
+    transaction_type: str = "consumption",
 ) -> None:
     """同期セッション上でクレジットをアトミックに控除する。
 
     CreditService.deduct_credits は AsyncSession を前提とするため、
     Huey ワーカー (同期タスク) からは使えない。同等の残高不足ガード付き
     UPDATE を同期 SQL で実行する。
+
+    冪等性: 同一 ``(task_id, transaction_type)`` の控除が台帳に既にあれば
+    控除をスキップする (Huey のリトライ / リプレイによる二重消費防止)。
+    ``task_id`` 無しの呼び出しはキーにできないため従来どおり毎回控除する。
     """
     from sqlalchemy import select, update
 
     from src.backend.database.models import User
+    from src.backend.database.models_billing import CreditTransaction
 
     session = database.SessionLocal()
     try:
+        # 台帳に同じ控除が既にあれば二重控除しない (冪等)。
+        if task_id is not None:
+            existing = session.execute(
+                select(CreditTransaction.id).where(
+                    CreditTransaction.task_id == task_id,
+                    CreditTransaction.transaction_type == transaction_type,
+                )
+            ).scalar_one_or_none()
+            if existing is not None:
+                logger.info(
+                    "Skip duplicate credit deduction: task_id=%s type=%s",
+                    task_id,
+                    transaction_type,
+                )
+                return
         stmt = (
             update(User)
             .where(User.id == user_id, User.credits >= amount)
@@ -75,7 +116,7 @@ def _sync_deduct_credits(
         new_balance = session.execute(
             select(User.credits).where(User.id == user_id)
         ).scalar_one()
-        tx = _credit_transaction(user_id, -amount, "consumption", description, task_id)
+        tx = _credit_transaction(user_id, -amount, transaction_type, description, task_id)
         tx.balance_after = new_balance
         session.add(tx)
         session.commit()
@@ -89,13 +130,33 @@ def _sync_deduct_credits(
 def _sync_grant_credits(
     user_id: int, amount: int, task_id: str | None, description: str, tx_type: str = "refund"
 ) -> None:
-    """同期セッション上でクレジットを付与する (CreditService.grant_credits の同期版)。"""
+    """同期セッション上でクレジットを付与する (CreditService.grant_credits の同期版)。
+
+    冪等性: 同一 ``(task_id, tx_type)`` の付与が台帳に既にあればスキップする。
+    控除側が冪等化されたことでリトライ毎に「控除 1 回・返金 2 回」が起きると
+    ユーザーが得をするため、返金 (refund) も同じキーで二重付与を防ぐ。
+    """
     from sqlalchemy import select, update
 
     from src.backend.database.models import User
+    from src.backend.database.models_billing import CreditTransaction
 
     session = database.SessionLocal()
     try:
+        if task_id is not None:
+            existing = session.execute(
+                select(CreditTransaction.id).where(
+                    CreditTransaction.task_id == task_id,
+                    CreditTransaction.transaction_type == tx_type,
+                )
+            ).scalar_one_or_none()
+            if existing is not None:
+                logger.info(
+                    "Skip duplicate credit grant: task_id=%s type=%s",
+                    task_id,
+                    tx_type,
+                )
+                return
         session.execute(
             update(User).where(User.id == user_id).values(credits=User.credits + amount)
         )
@@ -499,7 +560,7 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
 
     ワーカー上で ``generate_with_llm`` を実行し、結果を DB に保存する。
     """
-    logger.info("Starting generation task (easy): %s", payload)
+    logger.info("Starting generation task (easy): %s", _safe_payload_for_log(payload))
     task_id = payload.get("task_id")
 
     # クレジット消費の処理
@@ -574,7 +635,7 @@ def generate_chapter_orchestrated_task(payload: dict[str, Any]) -> dict[str, Any
 
     Orchestrator を使用して 8 エージェントを協調実行し、結果を DB に保存する。
     """
-    logger.info("Starting generation task (orchestrated): %s", payload)
+    logger.info("Starting generation task (orchestrated): %s", _safe_payload_for_log(payload))
     task_id = payload.get("task_id")
 
     # クレジット消費の処理
@@ -584,23 +645,21 @@ def generate_chapter_orchestrated_task(payload: dict[str, Any]) -> dict[str, Any
         # クレジット処理をスキップしてタスクを続行（後方互換性のため）
         user_id = None
         credit_cost = 0
-        credit_service = None
         credits_deducted = False
     else:
-        credit_session = database.SessionLocal()
         try:
             user_id = _get_user_id_from_book_id(book_id)
             # テキスト執筆クレジットコスト: COST_PER_EPISODE (1クレジット)
             credit_cost = CreditService.COST_PER_EPISODE
-            # 新しいDBセッションでCreditServiceを初期化
-            credit_service = CreditService(credit_session)
-            # クレジットを仮押さえ（即時引き落とし）
-            credit_service.deduct_credits(
+            # CreditService.deduct_credits は async (AsyncSession 前提) のため
+            # 同期 Hivey ワーカーからは使えない。同期版ヘルパーで控除する。
+            # (旧実装は await なしで async 関数を呼び、コルーチンが素通りして
+            #  控除が一切実行されないバグだった)
+            _sync_deduct_credits(
                 user_id=user_id,
                 amount=credit_cost,
-                transaction_type="consumption",
-                description="Chapter generation (orchestrated mode) credit hold",
                 task_id=str(task_id) if task_id else None,
+                description="Chapter generation (orchestrated mode) credit hold",
             )
             credits_deducted = True
         except Exception as e:
@@ -608,9 +667,6 @@ def generate_chapter_orchestrated_task(payload: dict[str, Any]) -> dict[str, Any
             if task_id:
                 _update_task_in_db(str(task_id), "failed")
             return {"error": f"Credit deduction failed: {str(e)}", "text": "", "time": 0}
-        finally:
-            # セッションを確実にクローズ
-            credit_session.close()
 
     try:
         result = _run_async(_generate_orchestrated(payload))
@@ -631,23 +687,17 @@ def generate_chapter_orchestrated_task(payload: dict[str, Any]) -> dict[str, Any
         if task_id:
             _update_task_in_db(str(task_id), "failed")
         # クレジットを返金（失敗時）
-        if credits_deducted and credit_service is not None and user_id is not None:
-            refund_session = database.SessionLocal()
+        if credits_deducted and user_id is not None:
             try:
-                # 新しいセッションで返金処理
-                refund_service = CreditService(refund_session)
-                refund_service.grant_credits(
+                _sync_grant_credits(
                     user_id=user_id,
                     amount=credit_cost,
-                    transaction_type="refund",
-                    description="Refund for failed chapter generation (orchestrated mode)",
                     task_id=str(task_id) if task_id else None,
+                    description="Refund for failed chapter generation (orchestrated mode)",
+                    tx_type="refund",
                 )
             except Exception as refund_err:
                 logger.error(f"Failed to refund credits: {refund_err}")
-            finally:
-                # 返金セッションも確実にクローズ
-                refund_session.close()
         return {"error": str(exc), "text": "", "time": 0}
 
 

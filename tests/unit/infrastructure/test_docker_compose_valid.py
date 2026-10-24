@@ -19,6 +19,24 @@ COMPOSE_FILES = [
     PROJECT_ROOT / "docker-compose.prod.yml",
 ]
 
+# `docker compose config` は `${VAR:?...}` の必須変数が未設定だと構文検証前に
+# エラーで落ちる。検証したいのは YAML 構文と compose の整合性なので、
+# 必須変数に検証専用のダミー値を注入する（本物のシークレットは使わない）。
+_DUMMY_COMPOSE_ENV = {
+    "POSTGRES_PASSWORD": "compose-syntax-check-only",
+    "REDIS_PASSWORD": "compose-syntax-check-only",
+    "LLM_PROVIDER": "mock",
+    "ALLOWED_API_KEYS": "compose-syntax-check-only-key",
+    "CORS_ORIGINS": "http://localhost:5173",
+    "JWT_SECRET_KEY": "compose-syntax-check-only-jwt-secret-32bytes",
+}
+
+
+def _compose_env():
+    import os
+
+    return {**os.environ, **_DUMMY_COMPOSE_ENV}
+
 
 def _docker_available() -> bool:
     return shutil.which("docker") is not None
@@ -35,15 +53,15 @@ class TestComposeConfigCommand:
             capture_output=True,
             text=True,
             timeout=60,
+            env=_compose_env(),
         )
         assert result.returncode == 0, (
-            f"docker compose config failed (rc={result.returncode})\n"
-            f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+            f"docker compose config failed (rc={result.returncode})\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
 
     @pytest.mark.skipif(not _docker_available(), reason="docker CLI not available")
     def test_prod_compose_config_valid(self):
-        """prod compose は必須変数 (POSTGRES_PASSWORD 等) を要求するため
+        """prod compose は必須変数 (POSTGRES_PASSWORD / JWT_SECRET_KEY 等) を要求するため
         構文検証用のダミー値を注入して `docker compose config` を実行する。"""
         result = subprocess.run(
             [
@@ -58,12 +76,7 @@ class TestComposeConfigCommand:
             capture_output=True,
             text=True,
             timeout=60,
-            env={
-                **__import__("os").environ,
-                "POSTGRES_PASSWORD": "test-password",
-                "REDIS_PASSWORD": "test-redis",
-                "LLM_PROVIDER": "mock",
-            },
+            env=_compose_env(),
         )
         assert result.returncode == 0, (
             f"docker compose config (prod) failed (rc={result.returncode})\n"

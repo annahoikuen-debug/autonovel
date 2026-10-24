@@ -1,4 +1,5 @@
 """EasyMode / EpisodeWriter 圧縮経路テスト"""
+
 from __future__ import annotations
 
 import pytest
@@ -28,10 +29,9 @@ class TestEasyModeCompression:
     @pytest.fixture
     def mock_context_builder(self):
         agent = Mock(spec=ContextBuilderAgent)
-        agent.execute = AsyncMock(return_value=AgentResult(
-            next_agent=None,
-            artifacts={"writing_context": {"test": "context"}}
-        ))
+        agent.execute = AsyncMock(
+            return_value=AgentResult(next_agent=None, artifacts={"writing_context": {"test": "context"}})
+        )
         return agent
 
     def test_create_easy_mode_pipeline_accepts_compressor(self, compressor):
@@ -67,10 +67,9 @@ class TestEpisodeWriterCompression:
     @pytest.fixture
     def mock_context_builder(self):
         agent = Mock(spec=ContextBuilderAgent)
-        agent.execute = AsyncMock(return_value=AgentResult(
-            next_agent=None,
-            artifacts={"writing_context": {"compressed_context": "test"}}
-        ))
+        agent.execute = AsyncMock(
+            return_value=AgentResult(next_agent=None, artifacts={"writing_context": {"compressed_context": "test"}})
+        )
         return agent
 
     def test_episode_writer_accepts_compressor(self, compressor, mock_llm, mock_context_builder):
@@ -99,14 +98,9 @@ class TestEpisodeWriterCompression:
             compressor=compressor,
         )
 
-        ctx = AgentContext(
-            book_id=1,
-            branch_id=1,
-            ep_num=1,
-            artifacts={}
-        )
+        AgentContext(book_id=1, branch_id=1, ep_num=1, artifacts={})
 
-        result = await writer.build_context(1, 1, 1, 3000)
+        await writer.build_context(1, 1, 1, 3000)
 
         # context_builder.execute が呼ばれる際に compressor が artifacts に含まれること
         call_args = mock_context_builder.execute.call_args
@@ -124,7 +118,7 @@ class TestEpisodeWriterCompression:
             compressor=None,
         )
 
-        result = await writer.build_context(1, 1, 1, 3000)
+        await writer.build_context(1, 1, 1, 3000)
 
         call_args = mock_context_builder.execute.call_args
         called_ctx = call_args[0][0]
@@ -146,6 +140,7 @@ class TestEasyModeRouterCompression:
         """generate_content 内で FourLayerCompressor が生成されること（実装確認）"""
         # 実装の確認はソースコードを見るため、ここではインポートができることを確認
         from src.backend.routers.easy_mode import execute_generation
+
         assert callable(execute_generation)
 
     def test_compressor_in_params_for_orchestrated_task(self, compressor):
@@ -153,6 +148,7 @@ class TestEasyModeRouterCompression:
         # 実装では execute_generation 内で params["compressor"] = FourLayerCompressor(...)
         # ここではインポートができることを確認
         from src.backend.routers.easy_mode import execute_generation
+
         assert callable(execute_generation)
 
 
@@ -167,11 +163,13 @@ class TestGenerationTasksCompression:
     def test_generate_orchestrated_has_compressor_in_dependencies(self):
         """_generate_orchestrated で dependencies に compressor が含まれること（実装確認）"""
         from src.backend.tasks.generation_tasks import _generate_orchestrated
+
         assert callable(_generate_orchestrated)
 
     def test_generate_adds_compressor_to_payload(self):
         """_generate で payload に compressor が追加されること（実装確認）"""
         from src.backend.tasks.generation_tasks import _generate
+
         assert callable(_generate)
 
 

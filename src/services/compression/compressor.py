@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import time
 from typing import Any
@@ -131,8 +132,33 @@ class FourLayerCompressor:
             )
 
         # キャッシュ確認
+        # キーには予算・圧縮設定・保護コンテキストも含める。
+        # これらが無いと別予算/別設定の結果が返り、保護文脈が切り捨てられた。
         content_hash = hashlib.sha256(raw_text.encode("utf-8")).hexdigest()[:16]
-        cache_key = self.cache.make_key(book_id, ep_num, target_scene, content_hash)
+        config_hash = hashlib.sha256(
+            json.dumps(self.config.model_dump(), sort_keys=True, default=str).encode("utf-8")
+        ).hexdigest()[:16]
+        protected_hash = ""
+        if protected_context is not None:
+            protected_hash = hashlib.sha256(
+                json.dumps(
+                    {
+                        "chars": list(getattr(protected_context, "active_characters", []) or []),
+                        "foreshadow": list(getattr(protected_context, "pending_foreshadowing_ids", []) or []),
+                    },
+                    sort_keys=True,
+                    default=str,
+                ).encode("utf-8")
+            ).hexdigest()[:16]
+        cache_key = self.cache.make_key(
+            book_id,
+            ep_num,
+            target_scene,
+            content_hash,
+            budget=budget,
+            config_hash=config_hash,
+            protected_hash=protected_hash,
+        )
 
         if self.config.cache_enabled and not bypass_cache:
             cached = self.cache.get(cache_key)

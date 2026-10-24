@@ -139,13 +139,17 @@ class GlobalAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable[[Request], Response]) -> Response:
         path = request.url.path
 
-        # 1. 開発/テスト用バイパス (AUTH_DISABLED=True またはテスト時の dependency_overrides)
+        # 1. 開発/テスト用バイパス (AUTH_DISABLED=True)
         if settings.AUTH_DISABLED:
             return await call_next(request)
 
+        # テスト時の dependency_overrides バイパスは、**本番以外のみ**許可する。
+        # 旧実装は「override が 1 つでも登録されていれば全ルートを認証スキップ」
+        # しており、本番プロセスにテスト用 override が 1 つ残っただけで
+        # default-deny が一斉に解除されていた。
         app_obj = request.scope.get("app")
         overrides = getattr(app_obj, "dependency_overrides", None) if app_obj else None
-        if overrides:
+        if overrides and getattr(settings, "APP_ENV", "development") != "production":
             from src.backend.auth import (
                 get_current_user,
                 require_admin_user_or_key,

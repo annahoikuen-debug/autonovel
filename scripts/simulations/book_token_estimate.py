@@ -9,9 +9,10 @@
 # 小説は会話・地の文・ルビが混在するため、やや低効率
 # 実測値: 1,000文字 ≈ 2,000-2,500トークン
 JAPANESE_CHARS_PER_TOKEN = 500  # 1トークンあたりの文字数（平均）
-BOOK_TOTAL_CHARS = 100_000       # 10万字
-BOOK_TOTAL_EPISODES = 50         # 50話
+BOOK_TOTAL_CHARS = 100_000  # 10万字
+BOOK_TOTAL_EPISODES = 50  # 50話
 CHARS_PER_EPISODE = BOOK_TOTAL_CHARS // BOOK_TOTAL_EPISODES  # 2,000文字/話
+
 
 # ============================================================
 # 見積もりモデル
@@ -24,8 +25,7 @@ class TokenEstimate:
         self.cache_hit_ratio = 0.0
         self.retry_rate = 0.0
 
-    def add(self, input_tokens: int, output_tokens: int,
-            cache_hit: float = 0.0, retry: float = 0.0):
+    def add(self, input_tokens: int, output_tokens: int, cache_hit: float = 0.0, retry: float = 0.0):
         self.input_tokens += input_tokens
         self.output_tokens += output_tokens
         self.cache_hit_ratio = max(self.cache_hit_ratio, cache_hit)
@@ -54,8 +54,7 @@ class TokenEstimate:
             "claude_sonnet": {"input": 1860.0, "output": 9300.0},
         }
         p = prices.get(model, prices["deepseek_v4_flash"])
-        return (self.effective_input * p["input"] +
-                self.effective_output * p["output"]) / 1_000_000
+        return (self.effective_input * p["input"] + self.effective_output * p["output"]) / 1_000_000
 
     def __str__(self) -> str:
         return f"""[{self.name}]
@@ -75,20 +74,20 @@ plot_50ch = TokenEstimate("プロット作成（50話分）")
 
 # 1.1 全体構成生成
 plot_50ch.add(
-    input_tokens=8_000,   # 企画書、世界観設定、ジャンル、ターゲット層
+    input_tokens=8_000,  # 企画書、世界観設定、ジャンル、ターゲット層
     output_tokens=4_000,  # 全体構成、章立て、感情曲線
-    cache_hit=0.3,        # 世界観設定は部分的にキャッシュ
-    retry=0.1
+    cache_hit=0.3,  # 世界観設定は部分的にキャッシュ
+    retry=0.1,
 )
 
 # 1.2 章別詳細プロット（50話）
 for i in range(50):
     # 前話の要約 + 現話の要求事項
     plot_50ch.add(
-        input_tokens=6_000,   # 前話要約3K + 世界観2K + プロット進捗1K
+        input_tokens=6_000,  # 前話要約3K + 世界観2K + プロット進捗1K
         output_tokens=2_500,  # 章タイトル、あらすじ、シーン設計
-        cache_hit=0.5,        # 世界観設定は共通
-        retry=0.15
+        cache_hit=0.5,  # 世界観設定は共通
+        retry=0.15,
     )
 
 # 1.3 伏線・キャラクター管理
@@ -96,7 +95,7 @@ plot_50ch.add(
     input_tokens=10_000,  # 50話分の伏線データ、キャラクター一覧
     output_tokens=3_000,  # 伏線回収計画、キャラクター成長曲線
     cache_hit=0.4,
-    retry=0.1
+    retry=0.1,
 )
 
 print(plot_50ch)
@@ -124,7 +123,7 @@ for i in range(50):
         input_tokens=input_tokens,
         output_tokens=output_tokens,
         cache_hit=0.6,  # システムプロンプト、世界観はキャッシュ
-        retry=0.2       # 品質基準を満たすまで再生成
+        retry=0.2,  # 品質基準を満たすまで再生成
     )
 
 print(episodes)
@@ -141,7 +140,7 @@ for i in range(50):
         input_tokens=10_000,  # 本文4K + 監査基準3K + 類似事例3K
         output_tokens=2_000,  # 8専門家のスコア、改善提案
         cache_hit=0.3,
-        retry=0.05
+        retry=0.05,
     )
 
 print(audit)
@@ -157,7 +156,7 @@ retry.add(
     input_tokens=episodes.effective_input // 10,  # 10%の入力量
     output_tokens=episodes.effective_output // 10,  # 10%の出力量
     cache_hit=0.3,
-    retry=0.0
+    retry=0.0,
 )
 
 print(retry)
@@ -173,7 +172,7 @@ context.add(
     input_tokens=20_000,  # GraphRAGクエリ、Embedding検索
     output_tokens=5_000,  # 検索結果の整形、コンテキスト抽出
     cache_hit=0.2,
-    retry=0.0
+    retry=0.0,
 )
 
 print(context)
@@ -186,10 +185,20 @@ print("=" * 70)
 print("1冊（50話10万字）トークン合計")
 print("=" * 70)
 
-total_input = (plot_50ch.effective_input + episodes.effective_input +
-               audit.effective_input + retry.effective_input + context.effective_input)
-total_output = (plot_50ch.effective_output + episodes.effective_output +
-                audit.effective_output + retry.effective_output + context.effective_output)
+total_input = (
+    plot_50ch.effective_input
+    + episodes.effective_input
+    + audit.effective_input
+    + retry.effective_input
+    + context.effective_input
+)
+total_output = (
+    plot_50ch.effective_output
+    + episodes.effective_output
+    + audit.effective_output
+    + retry.effective_output
+    + context.effective_output
+)
 total_tokens = total_input + total_output
 
 print(f"""
@@ -235,7 +244,7 @@ print(f"""
     - 本文生成: 10-20話
     - 監査: 適宜
   合計: 約150,000-300,000トークン/月
-  
+
   980円プランで余裕を持って利用可能
 """)
 
@@ -250,15 +259,15 @@ models = [
     ("Claude Sonnet", "claude_sonnet"),
 ]
 
-total_cost_4flash = (plot_50ch.cost_jpy("deepseek_v4_flash") +
-                     episodes.cost_jpy("deepseek_v4_flash") +
-                     audit.cost_jpy("deepseek_v4_flash"))
+total_cost_4flash = (
+    plot_50ch.cost_jpy("deepseek_v4_flash")
+    + episodes.cost_jpy("deepseek_v4_flash")
+    + audit.cost_jpy("deepseek_v4_flash")
+)
 
 print("\n1冊あたりAPI原価:")
 for name, model_key in models:
-    cost = (plot_50ch.cost_jpy(model_key) +
-            episodes.cost_jpy(model_key) +
-            audit.cost_jpy(model_key))
+    cost = plot_50ch.cost_jpy(model_key) + episodes.cost_jpy(model_key) + audit.cost_jpy(model_key)
     print(f"  {name:<20}: JPY {cost:>8,.2f}")
 
 print(f"""
@@ -266,7 +275,7 @@ print(f"""
   50話10万字の原価:
     DeepSeek-V4-Flash: JPY {total_cost_4flash:.2f}
     DeepSeek-V4-Pro:   JPY {plot_50ch.cost_jpy("deepseek_v4_pro") + episodes.cost_jpy("deepseek_v4_pro") + audit.cost_jpy("deepseek_v4_pro"):.2f}
-    
+
   980円プランで十分に賄える
   利益率: {(1 - total_cost_4flash / 980) * 100:.1f}%
 """)

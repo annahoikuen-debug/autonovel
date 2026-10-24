@@ -22,7 +22,7 @@ from src.backend.logging_config import configure as configure_logging
 from src.backend.observability.health import build_health_payload, metrics
 from src.backend.routers import (
     anti_ai,
-    annotations,
+    annotations as annotations_router,
     books,
     branches,
     chapters,
@@ -250,7 +250,7 @@ app.include_router(billing_webhook.router)
 app.include_router(trace.router)
 app.include_router(health_router.router)
 app.include_router(subtext.router)
-app.include_router(annotations.router)
+app.include_router(annotations_router.router)
 app.include_router(hooks.router)
 app.include_router(prompt_compare.router)
 app.include_router(structure.router)

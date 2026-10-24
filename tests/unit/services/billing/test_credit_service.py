@@ -1,7 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.services.billing.credit_service import CreditService, InsufficientCreditsError
+from src.services.billing.credit_service import CreditService
+
 
 @pytest.mark.asyncio
 async def test_credit_service_flow():
@@ -20,6 +21,7 @@ async def test_credit_service_flow():
     balance = await service.get_balance(1)
     assert balance == 100
 
+
 @pytest.mark.asyncio
 async def test_deduct_credits_flow():
     mock_session = AsyncMock(spec=AsyncSession)
@@ -31,8 +33,8 @@ async def test_deduct_credits_flow():
     mock_balance_result.scalar_one_or_none.return_value = 70
 
     mock_session.execute.side_effect = [
-        mock_update_result,      # UPDATE
-        mock_balance_result,     # get_balance
+        mock_update_result,  # UPDATE
+        mock_balance_result,  # get_balance
     ]
 
     service = CreditService(mock_session)
@@ -40,6 +42,7 @@ async def test_deduct_credits_flow():
     result = await service.deduct_credits(1, 30, "test", "Deduct test")
     assert result is True
     assert mock_update_result.rowcount == 1
+
 
 @pytest.mark.asyncio
 async def test_grant_credits_flow():
@@ -52,8 +55,8 @@ async def test_grant_credits_flow():
     mock_balance_result.scalar_one_or_none.return_value = 150
 
     mock_session.execute.side_effect = [
-        mock_update_result,      # UPDATE
-        mock_balance_result,     # get_balance
+        mock_update_result,  # UPDATE
+        mock_balance_result,  # get_balance
     ]
 
     service = CreditService(mock_session)

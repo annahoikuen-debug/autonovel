@@ -8,9 +8,10 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text
+from sqlalchemy import Column, ForeignKey, Integer, Text
 
 from src.infrastructure.database.models.base_orm import Base
+from src.infrastructure.database.types import CompatibleDateTime
 
 
 class EpisodeDigestModel(Base):
@@ -37,9 +38,9 @@ class EpisodeDigestModel(Base):
     )
     episode_num = Column(Integer, nullable=False, index=True)
     digest_text = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(CompatibleDateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+        CompatibleDateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
     def __repr__(self) -> str:

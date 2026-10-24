@@ -6,9 +6,10 @@
 ハングする場合がある。本テストはオーケストレーションルーターのみを
 ロードして検証する。
 """
+
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
@@ -39,16 +40,20 @@ class TestOrchestratedAPI:
         app.dependency_overrides[get_current_user] = lambda: admin
         return app
 
+    @patch("src.backend.routers.orchestrated.verify_book_ownership", new_callable=AsyncMock)
     @patch("src.backend.routers.orchestrated.BookRepository")
     @patch("src.backend.tasks.generation_tasks.generate_chapter_orchestrated_task")
-    def test_generate_endpoint_returns_task_id(self, mock_task, mock_repo_cls):
+    def test_generate_endpoint_returns_task_id(self, mock_task, mock_repo_cls, mock_verify):
         """POST /orchestrated/generate が task_id を返すこと。"""
         # テストごとにユニークな task_id を使う (共有DB の UNIQUE 制約回避)
         import uuid
+
         unique_id = f"test-task-{uuid.uuid4().hex[:8]}"
         mock_result = MagicMock()
         mock_result.id = unique_id
         mock_task.return_value = mock_result
+
+        mock_verify.return_value = MagicMock()
 
         mock_repo = MagicMock()
         mock_book = MagicMock()
@@ -103,6 +108,7 @@ class TestOrchestratedAPI:
         client = TestClient(app)
 
         import uuid
+
         unique_id = f"test-task-{uuid.uuid4().hex[:8]}"
         response = client.delete(f"/orchestrated/task/{unique_id}")
         assert response.status_code == 200
@@ -139,7 +145,5 @@ def test_orchestrated_does_not_leak_unguarded_root_routes():
     """
     from src.backend.routers.orchestrated import router as orchestrated_router
 
-    leaked = sorted(
-        r.path for r in orchestrated_router.routes if not r.path.startswith("/orchestrated")
-    )
+    leaked = sorted(r.path for r in orchestrated_router.routes if not r.path.startswith("/orchestrated"))
     assert not leaked, f"orchestrated が prefix 配下に無いルートがある: {leaked}"

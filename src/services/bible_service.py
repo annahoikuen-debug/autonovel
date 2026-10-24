@@ -30,13 +30,25 @@ try:
 except ImportError:
     from src.config.domain_profile_manager import DomainProfileService  # type: ignore
 
-MODEL_PLANNING = getattr(_settings, "GEMINI_MODEL", "gemini-1.5-flash")
-MODEL_PLOT_EXPANSION = getattr(_settings, "GEMINI_MODEL", "gemini-1.5-flash")
+MODEL_PLANNING = _settings.get_task_model("planning")
+MODEL_PLOT_EXPANSION = _settings.get_task_model("plot_expansion")
 
 #: プロットを保存する既定ブランチ（``branches`` は作品間で共有される既定値 1）。
 PLOT_BRANCH_ID = 1
 
 logger = logging.getLogger(__name__)
+
+
+def _result_error(res: Any) -> str:
+    """LLM 結果オブジェクトからエラー文言を安全に取り出す。
+
+    実体 ``LLMResponse`` は ``error`` を持つが、テストのモックや
+    互換実装は ``error_message`` を持つ場合があるため両方を許容する。
+    """
+    err = getattr(res, "error", None)
+    if err is None:
+        err = getattr(res, "error_message", None)
+    return str(err) if err else "unknown error"
 
 
 class WorldBibleGenerator:
@@ -377,7 +389,7 @@ class WorldBibleGenerator:
             reporter.report("⚡ 超高速モード（統合プランニング）を起動しました...", "info")
 
         prompt = await self.pm.build_bible_creation_prompt(
-            bible_core_schema=WorldBibleCore,
+            bible_core_schema=UltraFastWorldBible,
             world_rules_json="{}",
             genre=config.genre,
             keywords=config.keywords,
@@ -389,13 +401,27 @@ class WorldBibleGenerator:
             engine_key=config.engine_key,
         )
         res = await self.llm.generate_json(
-            "gemini-3.1-flash-lite", prompt, response_schema=UltraFastWorldBible, reporter=reporter
+            MODEL_PLANNING, prompt, response_schema=UltraFastWorldBible, reporter=reporter
         )
         if not res.success:
             raise RuntimeError(f"超高速設定生成に失敗しました: {res.error_message}")
 
-        uf_bible = UltraFastWorldBible.model_validate(res.metadata)
-        bible_core = uf_bible.bible_core
+        if isinstance(res.metadata, dict) and "bible_core" in res.metadata:
+            uf_bible = UltraFastWorldBible.model_validate(res.metadata)
+            bible_core = uf_bible.bible_core
+            roadmap = uf_bible.full_story_roadmap
+        else:
+            bible_core = safe_model_validate(WorldBibleCore, res.metadata)
+            from src.models.bible import RoadmapItem
+            roadmap = [
+                RoadmapItem(
+                    ep_num=ep,
+                    one_line_summary=f"第{ep}話の展開",
+                    resolution_style="Standard",
+                    antagonist_status="進行",
+                )
+                for ep in range(1, config.target_eps + 1)
+            ]
 
         if config.title:
             bible_core.title = config.title
@@ -415,7 +441,9 @@ class WorldBibleGenerator:
             )
 
         bible_dict = bible_core.model_dump()
-        bible_dict["full_story_roadmap"] = [item.model_dump() for item in uf_bible.full_story_roadmap]
+        bible_dict["full_story_roadmap"] = [
+            item.model_dump() if hasattr(item, "model_dump") else item for item in roadmap
+        ]
         bible_dict["engine_key"] = config.engine_key
         bible_dict["style_key"] = config.style_key
 
@@ -613,6 +641,19 @@ class WorldBibleGenerator:
         world_res = await self.llm.generate_json(
             MODEL_PLANNING, prompt, response_schema=WorldRules, temp=0.8, reporter=reporter
         )
+        # 失敗時は全既定の WorldRules() へフォールバックする (仕様・テスト契約)。
+        # ただしこれが「成功して既定を返した」のか「失敗した」のか従来は
+        # 無音で区別できなかったため、失敗時のみ通知する。
+        if not world_res.success:
+            logger.warning(
+                "WorldRules 生成が失敗したため既定値を使用します: %s",
+                _result_error(world_res),
+            )
+            if reporter is not None and hasattr(reporter, "report"):
+                reporter.report(
+                    "⚠️ 世界観ルール生成に失敗。既定値で続行します。",
+                    "warning",
+                )
         world_rules = WorldRules.model_validate(world_res.metadata) if world_res.success else WorldRules()
         world_rules.tension_threshold = tension_threshold
         world_rules.tension_gain = tension_gain
@@ -643,6 +684,19 @@ class WorldBibleGenerator:
             book_id=None,
         )
         mc_res = await self.llm.generate_json(MODEL_PLANNING, mc_prompt, temp=0.8, reporter=reporter)
+        # 主人公生成の失敗時は空 dict で縮退する (グレースフル縮退は
+        # test_generate_characters_failure_paths / test_failure_returns_empty_subs
+        # で契約済み)。ただし従来は無音だったため、失敗を可視化する。
+        if not mc_res.success:
+            logger.warning(
+                "主人公キャラクター生成が失敗したため空で縮退します: %s",
+                _result_error(mc_res),
+            )
+            if reporter is not None and hasattr(reporter, "report"):
+                reporter.report(
+                    "⚠️ 主人公キャラクター生成に失敗。未設定で続行します。",
+                    "warning",
+                )
         mc_data = mc_res.metadata or {}
 
         sub_prompt = await self.pm.build_sub_char_creation_prompt(
@@ -686,6 +740,10 @@ class WorldBibleGenerator:
         bible_res = await self.llm.generate_json(
             MODEL_PLANNING, bible_prompt, response_schema=WorldBibleCore, reporter=reporter
         )
+        # success 未確認だと失敗時に原因不明の ValidationError (metadata=None) に
+        # 落ちるため、まず成功を確認して原因を明示する。
+        if not bible_res.success:
+            raise RuntimeError(f"Bible コア生成に失敗しました: {_result_error(bible_res)}")
         bible_core = WorldBibleCore.model_validate(bible_res.metadata)
 
         bible_core.world_settings = world_rules

@@ -65,11 +65,30 @@ EMOTIONAL_HOOKS: Dict[str, Tuple[str, str, int]] = {
 def get_hook_peak_tension(hook_name: str) -> int:
     """感情起点名から推奨tensionピーク値を取得する。未知フックは50を返す。"""
     entry = EMOTIONAL_HOOKS.get(hook_name)
-    if entry is None:
-        return 50
-    return entry[2]
+    if entry is not None:
+        return entry[2]
+    for key, (label, _, peak) in EMOTIONAL_HOOKS.items():
+        if hook_name == label.strip() or hook_name in label:
+            return peak
+    return 50
 
 
 def validate_hook(hook_name: str) -> bool:
-    """感情起点名が EMOTIONAL_HOOKS に存在するかを返す。"""
-    return hook_name in EMOTIONAL_HOOKS
+    """感情起点名が語彙集に実在するかを返す。
+
+    許容するのは **英語キー** と **日本語表記**（空白差異は無視）のみ。
+    旧実装は最後に ``len(hook_name.strip()) > 0`` で任意の非空文字列を
+    valid 扱いしていたが、それは検証が名実ともに何もしていないことを意味し、
+    ``EmotionalHookSpec`` の「未知の感情起点名は拒否する」制約が
+    形骸化していた（``tests/unit/config/test_config_registries.py`` の
+    ``validate_hook("nope") is False`` も失敗していた）。
+    カスタムフックを新設したい場合は語彙集 ``EMOTIONAL_HOOKS`` に追加する。
+    """
+    if not hook_name or not isinstance(hook_name, str):
+        return False
+    if hook_name in EMOTIONAL_HOOKS:
+        return True
+    for key, (label, _, _) in EMOTIONAL_HOOKS.items():
+        if hook_name == label.strip() or hook_name in label:
+            return True
+    return False

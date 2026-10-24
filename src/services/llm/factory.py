@@ -26,8 +26,11 @@ def get_llm_adapter(
 ) -> BaseLLMAdapter:
     """設定または引数に応じた LLM アダプタインスタンスを返す。
 
-    未実装のプロバイダが指定された場合は WARNING ログを出力し、
-    MockLLMAdapter にフォールバックする。
+    未知のプロバイダが指定された場合は例外を送出する。
+    (旧実装は WARNING ログのみで MockLLMAdapter にフォールバックしていたため、
+    プロバイダ名のタイプミス等でモックの固定本文が本物の生成結果として
+    保存され得る事故が起きていた。モックは "mock" の明示指定または
+    APP_ENV=testing のみで返す。)
     """
     # In testing environment, always return mock to avoid API key requirements
     if os.environ.get("APP_ENV") == "testing":
@@ -36,13 +39,10 @@ def get_llm_adapter(
     p = (provider or settings.LLM_PROVIDER).lower()
 
     if p not in IMPLEMENTED_PROVIDERS:
-        logger.warning(
-            "LLMプロバイダ '%s' は未実装です。利用可能: %s。"
-            "MockLLMAdapter にフォールバックします。",
-            p,
-            sorted(IMPLEMENTED_PROVIDERS),
+        raise RuntimeError(
+            f"LLMプロバイダ '{p}' は未実装です。利用可能: {sorted(IMPLEMENTED_PROVIDERS)}。"
+            "意図的にモックを使いたい場合は provider='mock' を明示指定してください。"
         )
-        return MockLLMAdapter()
 
     if p == "gemini":
         resolved_key = api_key or settings.GEMINI_API_KEY
@@ -94,5 +94,3 @@ def get_llm_adapter(
 
     if p == "mock":
         return MockLLMAdapter()
-
-    return MockLLMAdapter()

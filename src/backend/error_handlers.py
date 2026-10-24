@@ -21,18 +21,47 @@ def register_error_handlers(app: FastAPI) -> None:
 
 
 async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
-    """HTTPException を RFC 7807 形式に変換"""
+    """HTTPException を RFC 7807 形式に変換する。
+
+    status 500 の detail は内部情報 (例外本文・DB エラー等) になり得るため
+    汎用文に置換してマスクし、原文はサーバログにのみ残す。
+    (旧実装は `HTTPException(500, str(exc))` の detail をそのまま返し、
+    ドメイン例外向けの 5xx マスク機構をバイパスして内部情報を漏洩していた。)
+
+    501-504 は「Multimedia disabled」「beat 生成に失敗」等の
+    **意図的なプロトコルメッセージ**であり、クライアントが分類に使うため
+    そのまま返す (マスクすると API 契約を壊す)。
+    """
+    status_code = exc.status_code
+    if status_code == 500:
+        logger.error(
+            "HTTPException %s on %s: detail=%r",
+            status_code,
+            request.url.path,
+            exc.detail,
+            exc_info=exc.__cause__ or None,
+        )
+        title = "サーバー内部でエラーが発生しました"
+        detail = "Internal Server Error"
+    else:
+        title = exc.detail if isinstance(exc.detail, str) else "HTTP Error"
+        detail = str(exc.detail)
+
     problem = ProblemDetails(
-        type=f"https://autonovel.local/errors/http-{exc.status_code}",
-        title=exc.detail if isinstance(exc.detail, str) else "HTTP Error",
-        status=exc.status_code,
-        detail=str(exc.detail),
+        type=f"https://autonovel.local/errors/http-{status_code}",
+        title=title,
+        status=status_code,
+        detail=detail,
         instance=request.url.path,
     )
+    # WWW-Authenticate (401) や Retry-After (429) 等のヘッダを転送する
+    response_headers = {"Content-Type": "application/problem+json"}
+    if exc.headers:
+        response_headers.update(exc.headers)
     return JSONResponse(
-        status_code=exc.status_code,
+        status_code=status_code,
         content=problem.model_dump(exclude_none=True),
-        headers={"Content-Type": "application/problem+json"},
+        headers=response_headers,
     )
 
 

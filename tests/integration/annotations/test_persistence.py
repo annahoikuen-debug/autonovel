@@ -1,4 +1,5 @@
 """Tests for annotation persistence."""
+
 from __future__ import annotations
 
 import pytest
@@ -15,6 +16,7 @@ class TestAnnotationPersistence:
     @pytest.fixture
     def vector_store(self):
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         store = RedisVectorStore(skip_connection_check=True)
         store.client = redis_client
@@ -23,6 +25,7 @@ class TestAnnotationPersistence:
     @pytest.fixture
     def mock_graph_store(self):
         """GraphStoreのモック"""
+
         class MockGraphStore:
             def __init__(self):
                 self.edges = []
@@ -35,6 +38,7 @@ class TestAnnotationPersistence:
     @pytest.fixture
     def mock_log_store(self):
         """EventLogStoreのモック"""
+
         class MockLogStore:
             def __init__(self):
                 self.signals = []
@@ -48,14 +52,26 @@ class TestAnnotationPersistence:
     def sample_beats(self):
         return [
             EmotionalBeat(
-                episode=14, scene=3, source="A", target="B",
-                emotion=EmotionType.FEAR, delta=0.8,
-                cause="ep14 betrayal", confidence=0.9, hidden=True,
+                episode=14,
+                scene=3,
+                source="A",
+                target="B",
+                emotion=EmotionType.FEAR,
+                delta=0.8,
+                cause="ep14 betrayal",
+                confidence=0.9,
+                hidden=True,
             ),
             EmotionalBeat(
-                episode=14, scene=3, source="B", target="A",
-                emotion=EmotionType.SADNESS, delta=0.6,
-                cause="ep14 betrayal", confidence=0.8, hidden=False,
+                episode=14,
+                scene=3,
+                source="B",
+                target="A",
+                emotion=EmotionType.SADNESS,
+                delta=0.6,
+                cause="ep14 betrayal",
+                confidence=0.8,
+                hidden=False,
             ),
         ]
 
@@ -129,8 +145,8 @@ class TestAnnotationPersistence:
         persistence.persist_beats(sample_beats, 14)
         persistence.persist_beats(sample_beats, 15)
 
-        ep14 = vector_store.get_latest("annotation", ("A", "B"))
-        ep15 = vector_store.get_latest("annotation", ("A", "B"))
+        vector_store.get_latest("annotation", ("A", "B"))
+        vector_store.get_latest("annotation", ("A", "B"))
 
         # 同じキーだが異なるエピソードとして保存される（キー形式: ep{num}）
         # 実装ではキーは "ep{episode}" なので上書きされる

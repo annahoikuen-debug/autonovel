@@ -79,9 +79,19 @@ def test_get_llm_adapter_default_provider(monkeypatch):
     assert adapter.__class__.__name__ == "OpenAIAdapter"
 
 
-def test_get_llm_adapter_unknown_provider_fallback():
-    """未知のプロバイダーは引き続きモックへフォールバック。"""
-    adapter = get_llm_adapter(provider="unknown")
+def test_get_llm_adapter_unknown_provider_raises():
+    """未知のプロバイダは例外を送出する (モックへの無条件フォールバック禁止)。
+
+    旧実装は WARNING のみで MockLLMAdapter を返したため、タイプミス等で
+    モックの固定本文が本物の生成結果として保存され得ていた。
+    """
+    with pytest.raises(RuntimeError, match="未実装"):
+        get_llm_adapter(provider="unknown")
+
+
+def test_get_llm_adapter_explicit_mock_still_works():
+    """明示的な provider='mock' 指定は引き続きモックを返す。"""
+    adapter = get_llm_adapter(provider="mock")
     assert isinstance(adapter, MockLLMAdapter)
 
 
