@@ -18,6 +18,7 @@ class TokenDebugger:
     @staticmethod
     def highlight_tokens(text: str) -> str:
         """Wraps [CATEGORY:KEY:MODIFIER] in styled HTML span tags."""
+
         def repl(m: Any) -> str:
             raw = html.escape(m.group(0))
             return f"<span style='background:#4338ca; color:#e0e7ff; padding:2px 6px; border-radius:4px; font-weight:bold;'>{raw}</span>"

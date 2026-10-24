@@ -1,4 +1,5 @@
 """NanoBanana 2 Lite Manga Pipeline package."""
+
 from src.services.manga.config import MangaPipelineConfig
 from src.services.manga.models import (
     AspectRatio,

@@ -1,4 +1,5 @@
 """WorldBibleGenerator coverage: setting deltas, snapshots, nested ops, generators."""
+
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -36,8 +37,7 @@ def make_repo():
 
 def make_llm():
     llm = MagicMock()
-    llm.generate_json = AsyncMock(return_value=SimpleNamespace(success=True, metadata={},
-                                                             error_message=""))
+    llm.generate_json = AsyncMock(return_value=SimpleNamespace(success=True, metadata={}, error_message=""))
     llm.generate = AsyncMock(return_value="text")
     return llm
 
@@ -65,19 +65,24 @@ def make_pm():
 async def test_record_setting_delta():
     repo = make_repo()
     gen = make_gen(repo=repo)
-    delta_id = await gen.record_setting_delta(1, "world_rules.mana", "10", "20",
-                                              delta_type="AUTO_REPAIR", source="audit_agent")
+    delta_id = await gen.record_setting_delta(
+        1, "world_rules.mana", "10", "20", delta_type="AUTO_REPAIR", source="audit_agent"
+    )
     assert delta_id == 101
     repo.misc.create_setting_delta.assert_awaited_once_with(
-        book_id=1, field_path="world_rules.mana", old_value="10", new_value="20",
-        delta_type="AUTO_REPAIR", source="audit_agent", patch_review_id=None,
+        book_id=1,
+        field_path="world_rules.mana",
+        old_value="10",
+        new_value="20",
+        delta_type="AUTO_REPAIR",
+        source="audit_agent",
+        patch_review_id=None,
     )
 
 
 @pytest.mark.asyncio
 async def test_record_setting_delta_no_repo():
-    gen = WorldBibleGenerator(repo=None, llm=None, pm=None, debate=None,
-                              marketing=None, auditor=None)
+    gen = WorldBibleGenerator(repo=None, llm=None, pm=None, debate=None, marketing=None, auditor=None)
     assert await gen.record_setting_delta(1, "a", "b", "c") == 0
 
 
@@ -107,8 +112,7 @@ async def test_create_setting_snapshot_with_base_version():
     bible.model_dump.return_value = {"title": "T"}
     repo.bible.get_bible = AsyncMock(return_value=bible)
     # max_ver=3, then base id=55
-    scalar_results = [MagicMock(scalar=MagicMock(return_value=3)),
-                      MagicMock(scalar=MagicMock(return_value=55))]
+    scalar_results = [MagicMock(scalar=MagicMock(return_value=3)), MagicMock(scalar=MagicMock(return_value=55))]
     repo.session.execute = AsyncMock(side_effect=scalar_results)
 
     gen = make_gen(repo=repo)
@@ -247,7 +251,9 @@ def make_bible_core(with_mc=True, with_arcs=True):
     core = MagicMock()
     core.title = "覇権小説"
     core.concept = "concept"
-    core.arcs = [MagicMock(title="第一章", summary="始まり"), MagicMock(title="第二章", summary="展開")] if with_arcs else []
+    core.arcs = (
+        [MagicMock(title="第一章", summary="始まり"), MagicMock(title="第二章", summary="展開")] if with_arcs else []
+    )
     if with_mc:
         mc = MagicMock()
         mc.name = "アキ"
@@ -271,8 +277,9 @@ def test_generate_fallback_synopsis_with_mc_and_arcs():
 
 def test_generate_fallback_synopsis_defaults():
     gen = make_gen()
-    synopsis = gen._generate_fallback_synopsis(make_bible_core(with_mc=False, with_arcs=False),
-                                               "fantasy", "magic", "default")
+    synopsis = gen._generate_fallback_synopsis(
+        make_bible_core(with_mc=False, with_arcs=False), "fantasy", "magic", "default"
+    )
     assert "主人公" in synopsis
     assert "一見平凡な冒険者" in synopsis
 
@@ -292,8 +299,9 @@ async def test_enrich_concept_without_debate():
 @pytest.mark.asyncio
 async def test_enrich_concept_with_debate():
     debate = MagicMock()
-    debate.run_debate = AsyncMock(return_value={"final_concept": {
-        "title": "T2", "concept": "C2", "keywords": "K2", "genre": "G2"}})
+    debate.run_debate = AsyncMock(
+        return_value={"final_concept": {"title": "T2", "concept": "C2", "keywords": "K2", "genre": "G2"}}
+    )
     gen = make_gen(debate=debate)
     result = await gen._enrich_concept("t", "c", "k", "g", run_debate=True)
     assert result == ("T2", "C2", "K2", "G2")
@@ -302,12 +310,11 @@ async def test_enrich_concept_with_debate():
 @pytest.mark.asyncio
 async def test_generate_world_rules_success_with_causality_map():
     from src.models.bible import WorldRules
+
     gen = make_gen()
     metadata = WorldRules().model_dump()
     metadata["causality_map"] = ["因果ルールA"]
-    gen.llm.generate_json = AsyncMock(
-        return_value=SimpleNamespace(success=True, metadata=metadata, error_message="")
-    )
+    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(success=True, metadata=metadata, error_message=""))
     rules = await gen._generate_world_rules("fantasy", "k", "default", 65, 1.5, None)
     assert rules.tension_threshold == 65
     assert rules.causality_map == ["因果ルールA"]
@@ -316,9 +323,7 @@ async def test_generate_world_rules_success_with_causality_map():
 @pytest.mark.asyncio
 async def test_generate_world_rules_failure_uses_defaults():
     gen = make_gen()
-    gen.llm.generate_json = AsyncMock(
-        return_value=SimpleNamespace(success=False, metadata=None, error_message="err")
-    )
+    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(success=False, metadata=None, error_message="err"))
     rules = await gen._generate_world_rules("fantasy", "k", "default", 65, 1.5, None)
     assert rules.tension_threshold == 65
     assert rules.causality_map  # default map set
@@ -327,12 +332,11 @@ async def test_generate_world_rules_failure_uses_defaults():
 @pytest.mark.asyncio
 async def test_generate_world_rules_empty_causality_map():
     from src.models.bible import WorldRules
+
     gen = make_gen()
     metadata = WorldRules().model_dump()
     metadata["causality_map"] = []  # empty list -> genre default set
-    gen.llm.generate_json = AsyncMock(
-        return_value=SimpleNamespace(success=True, metadata=metadata, error_message="")
-    )
+    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(success=True, metadata=metadata, error_message=""))
     rules = await gen._generate_world_rules("fantasy", "k", "default", 65, 1.5, None)
     assert rules.causality_map  # genre default set after warning
     assert isinstance(rules.causality_map, list)
@@ -346,16 +350,16 @@ async def test_generate_world_rules_empty_causality_map():
 @pytest.mark.asyncio
 async def test_generate_characters_success():
     from src.models.bible import WorldRules
+
     gen = make_gen()
     world_rules = WorldRules()
-    gen.llm.generate_json = AsyncMock(side_effect=[
-        SimpleNamespace(success=True, metadata={"name": "アキ", "role": "hero"},
-                        error_message=""),
-        SimpleNamespace(success=True, metadata={"characters": [{"name": "s1"}, {"name": "s2"}]},
-                        error_message=""),
-    ])
-    mc_data, subs_data = await gen._generate_characters(world_rules, "fantasy", "k", "c",
-                                                        "web", "default", None)
+    gen.llm.generate_json = AsyncMock(
+        side_effect=[
+            SimpleNamespace(success=True, metadata={"name": "アキ", "role": "hero"}, error_message=""),
+            SimpleNamespace(success=True, metadata={"characters": [{"name": "s1"}, {"name": "s2"}]}, error_message=""),
+        ]
+    )
+    mc_data, subs_data = await gen._generate_characters(world_rules, "fantasy", "k", "c", "web", "default", None)
     assert mc_data["name"] == "アキ"
     assert len(subs_data) == 2
 
@@ -363,14 +367,16 @@ async def test_generate_characters_success():
 @pytest.mark.asyncio
 async def test_generate_characters_failure_paths():
     from src.models.bible import WorldRules
+
     gen = make_gen()
     world_rules = WorldRules()
-    gen.llm.generate_json = AsyncMock(side_effect=[
-        SimpleNamespace(success=False, metadata=None, error_message=""),
-        SimpleNamespace(success=False, metadata=None, error_message=""),
-    ])
-    mc_data, subs_data = await gen._generate_characters(world_rules, "fantasy", "k", "c",
-                                                        "web", "default", None)
+    gen.llm.generate_json = AsyncMock(
+        side_effect=[
+            SimpleNamespace(success=False, metadata=None, error_message=""),
+            SimpleNamespace(success=False, metadata=None, error_message=""),
+        ]
+    )
+    mc_data, subs_data = await gen._generate_characters(world_rules, "fantasy", "k", "c", "web", "default", None)
     assert mc_data == {}
     assert subs_data == []
 
@@ -384,8 +390,7 @@ async def test_generate_characters_failure_paths():
 async def test_apply_marketing_data():
     gen = make_gen()
     marketing = MagicMock()
-    marketing.generate_marketing_pack = AsyncMock(
-        return_value={"catchcopies": ["c1"], "tags": ["t1"]})
+    marketing.generate_marketing_pack = AsyncMock(return_value={"catchcopies": ["c1"], "tags": ["t1"]})
     gen.marketing = marketing
 
     core = make_bible_core()
@@ -409,6 +414,7 @@ async def test_apply_marketing_data_no_marketing():
 @pytest.mark.asyncio
 async def test_audit_and_repair_inconsistent():
     from src.models.bible import WorldRules
+
     gen = make_gen()
     auditor = MagicMock()
     audit_res = MagicMock()
@@ -417,8 +423,12 @@ async def test_audit_and_repair_inconsistent():
     auditor.audit_plot_integrity = AsyncMock(return_value=audit_res)
     gen.auditor = auditor
 
-    repair_data = {"repair_summary": "fixed", "synopsis": "repaired",
-                   "world_rules": {"tension_threshold": 70}, "mc_profile": None}
+    repair_data = {
+        "repair_summary": "fixed",
+        "synopsis": "repaired",
+        "world_rules": {"tension_threshold": 70},
+        "mc_profile": None,
+    }
     gen.llm.generate_json = AsyncMock(
         return_value=SimpleNamespace(success=True, metadata=repair_data, error_message="")
     )
@@ -456,12 +466,11 @@ async def test_audit_and_repair_repair_failure():
     audit_res.conflict_report = "c"
     auditor.audit_plot_integrity = AsyncMock(return_value=audit_res)
     gen.auditor = auditor
-    gen.llm.generate_json = AsyncMock(
-        return_value=SimpleNamespace(success=False, metadata=None, error_message="e")
-    )
+    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(success=False, metadata=None, error_message="e"))
     core = make_bible_core()
     core.synopsis = "original"
     from src.models.bible import WorldRules
+
     core.world_settings = WorldRules()
     core.mc_profile = None
     await gen._audit_and_repair(core, None)
@@ -474,11 +483,13 @@ async def test_apply_marketing_ab_test_with_candidates():
     core = make_bible_core()
     core.marketing_assets = MagicMock()
     core.marketing_assets.tags = []
-    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(
-        success=True,
-        metadata={"ab_test_candidates": [{"title": "Win", "tags": ["a"]}, {"title": "Lose"}],
-                  "winning_index": 0},
-        error_message=""))
+    gen.llm.generate_json = AsyncMock(
+        return_value=SimpleNamespace(
+            success=True,
+            metadata={"ab_test_candidates": [{"title": "Win", "tags": ["a"]}, {"title": "Lose"}], "winning_index": 0},
+            error_message="",
+        )
+    )
     await gen._apply_marketing_ab_test(core, "fantasy", "default", "", None)
     assert core.title == "Win"
     assert core.marketing_assets.tags == ["a"]
@@ -491,11 +502,13 @@ async def test_apply_marketing_ab_test_existing_title():
     core.title = "Keep"
     core.marketing_assets = MagicMock()
     core.marketing_assets.tags = []
-    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(
-        success=True,
-        metadata={"ab_test_candidates": [{"title": "Win", "tags": ["a"]}],
-                  "winning_index": 0},
-        error_message=""))
+    gen.llm.generate_json = AsyncMock(
+        return_value=SimpleNamespace(
+            success=True,
+            metadata={"ab_test_candidates": [{"title": "Win", "tags": ["a"]}], "winning_index": 0},
+            error_message="",
+        )
+    )
     await gen._apply_marketing_ab_test(core, "fantasy", "default", "Keep", None)
     assert core.title == "Keep"
     assert core.marketing_assets.tags == ["a"]
@@ -506,8 +519,7 @@ async def test_apply_marketing_ab_test_failure():
     gen = make_gen()
     core = make_bible_core()
     core.title = "Base"
-    gen.llm.generate_json = AsyncMock(
-        return_value=SimpleNamespace(success=False, metadata=None, error_message=""))
+    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(success=False, metadata=None, error_message=""))
     await gen._apply_marketing_ab_test(core, "fantasy", "default", "Base", None)
     assert core.title == "Base"
 
@@ -534,8 +546,7 @@ async def test_generate_roadmap_arc_generation_failure():
     gen = make_gen()
     core = make_bible_core(with_arcs=False)
     core.synopsis = "あ" * 120
-    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(
-        success=False, metadata=None, error_message=""))
+    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(success=False, metadata=None, error_message=""))
     roadmap = await gen._generate_roadmap(core, 10, "fantasy", "default", None)
     # placeholder fallback for 10 eps
     assert len(roadmap) == 10
@@ -548,8 +559,7 @@ async def test_generate_roadmap_retry_then_placeholder():
     gen = make_gen()
     core = make_bible_core(with_arcs=False)
     core.synopsis = "あ" * 120
-    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(
-        success=False, metadata=None, error_message=""))
+    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(success=False, metadata=None, error_message=""))
     roadmap = await gen._generate_roadmap(core, 10, "fantasy", "default", None)
     assert len(roadmap) == 10
 
@@ -559,9 +569,10 @@ async def test_generate_roadmap_success_from_llm():
     gen = make_gen()
     core = make_bible_core()
     core.synopsis = "あ" * 120
-    gen.llm.generate_json = AsyncMock(return_value=SimpleNamespace(
-        success=True,
-        metadata={"full_story_roadmap": [{"ep_num": 1, "title": "第1話"}]},
-        error_message=""))
+    gen.llm.generate_json = AsyncMock(
+        return_value=SimpleNamespace(
+            success=True, metadata={"full_story_roadmap": [{"ep_num": 1, "title": "第1話"}]}, error_message=""
+        )
+    )
     roadmap = await gen._generate_roadmap(core, 10, "fantasy", "default", None)
     assert roadmap == [{"ep_num": 1, "title": "第1話"}]

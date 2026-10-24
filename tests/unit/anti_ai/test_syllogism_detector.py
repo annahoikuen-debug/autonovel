@@ -2,6 +2,7 @@
 Unit tests for EmotionSyllogismDetector.
 PLAN 03 - Step 2: 感情の三段論法検知器の単体テスト作成（TDD先行）
 """
+
 from __future__ import annotations
 
 from src.services.anti_ai.detectors import EmotionSyllogismDetector

@@ -17,9 +17,7 @@ async def test_bible_service_apply_manual_setting_change_not_found():
     service = WorldBibleGenerator(repo, llm, pm, debate, marketing, auditor)
     repo.bible.get_bible = AsyncMock(return_value=None)
 
-    result = await service.apply_manual_setting_change(
-        book_id=1, field_path="title", new_value="New Title"
-    )
+    result = await service.apply_manual_setting_change(book_id=1, field_path="title", new_value="New Title")
     assert result is False
 
 
@@ -31,9 +29,7 @@ async def test_bible_service_apply_manual_setting_change_unchanged():
     dummy_bible = {"title": "Same Title"}
     repo.bible.get_bible = AsyncMock(return_value=dummy_bible)
 
-    result = await service.apply_manual_setting_change(
-        book_id=1, field_path="title", new_value="Same Title"
-    )
+    result = await service.apply_manual_setting_change(book_id=1, field_path="title", new_value="Same Title")
     assert result is True
     repo.save_full_world_bible.assert_not_called()
 

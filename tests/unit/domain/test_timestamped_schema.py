@@ -48,9 +48,7 @@ def test_created_at_is_close_to_now():
     # datetime はマイクロ秒単位に丸められるため `before` より僅かに古くなることも
     # ある。1 ミリ秒の余裕を許す。
     created = schema.created_at.replace(tzinfo=timezone.utc).timestamp()
-    assert before - 0.001 <= created <= after + 0.001, (
-        "created_at がインスタンス生成時刻から大きくずれている"
-    )
+    assert before - 0.001 <= created <= after + 0.001, "created_at がインスタンス生成時刻から大きくずれている"
 
 
 def test_updated_at_also_defaults_per_instance():

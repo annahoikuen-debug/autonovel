@@ -1,8 +1,8 @@
-
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from src.core.llm.adapters.openai_unified_client import OpenAIUnifiedClient
 from src.core.llm.types import LLMRequest
+
 
 @pytest.fixture
 def mock_clients():
@@ -12,6 +12,7 @@ def mock_clients():
         MockAsync.return_value = async_instance
         MockSync.return_value = sync_instance
         yield async_instance, sync_instance
+
 
 def test_openai_unified_client_generate(mock_clients):
     async_client, sync_client = mock_clients
@@ -30,6 +31,7 @@ def test_openai_unified_client_generate(mock_clients):
 
     assert response.content == "hello"
     assert response.usage.total_tokens == 15
+
 
 async def test_openai_unified_client_agenerate(mock_clients):
     async_client, sync_client = mock_clients

@@ -41,9 +41,7 @@ def compute_diversity_score(text: str, vocabulary_bank: list[str]) -> float:
         return 0.0
 
     # シャノンエントロピーを計算
-    entropy = -sum(
-        (count / total) * math.log2(count / total) for count in counts.values() if count > 0
-    )
+    entropy = -sum((count / total) * math.log2(count / total) for count in counts.values() if count > 0)
     # 最大エントロピー（すべての語彙が同じ頻度で現れる場合）
     max_entropy = math.log2(len(counts)) if len(counts) > 1 else 1.0
     # 正規化（0.0〜1.0の範囲に収める）

@@ -1,4 +1,5 @@
 """Unit tests for BranchMemoryManager."""
+
 from src.agents.memory.branch_manager import BranchMemoryManager
 from src.agents.memory.core_memory import CoreMemory
 

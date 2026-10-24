@@ -98,9 +98,7 @@ class PluginRegistry:
             plugin_class = getattr(module, class_name)
             plugin = plugin_class()
             if not isinstance(plugin, PluginProtocol):
-                raise TypeError(
-                    f"{module_path}.{class_name} does not satisfy PluginProtocol"
-                )
+                raise TypeError(f"{module_path}.{class_name} does not satisfy PluginProtocol")
             if not plugin.initialize():
                 raise RuntimeError(f"Plugin '{name}' initialize() returned False")
             entry.plugin = plugin
@@ -117,11 +115,7 @@ class PluginRegistry:
 
     def load_all(self) -> dict[str, bool]:
         """有効な全プラグインをロードする。結果マップを返す。"""
-        return {
-            name: self.load(name)
-            for name, entry in self._entries.items()
-            if entry.enabled
-        }
+        return {name: self.load(name) for name, entry in self._entries.items() if entry.enabled}
 
     # -------------------------------------------------- 状態確認
 

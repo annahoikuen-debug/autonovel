@@ -1,4 +1,5 @@
 """Integration tests for SudachiPy tokenizer in full compression pipeline."""
+
 from __future__ import annotations
 
 import pytest
@@ -146,15 +147,21 @@ class TestFullPipelineWithSudachi:
 
         # First call - cache miss
         result1 = compressor.compress(
-            text, entities=entities, relations=relations,
-            scene_type="combat", bypass_cache=False,
+            text,
+            entities=entities,
+            relations=relations,
+            scene_type="combat",
+            bypass_cache=False,
         )
         assert result1.from_cache is False
 
         # Second call - cache hit
         result2 = compressor.compress(
-            text, entities=entities, relations=relations,
-            scene_type="combat", bypass_cache=False,
+            text,
+            entities=entities,
+            relations=relations,
+            scene_type="combat",
+            bypass_cache=False,
         )
         assert result2.from_cache is True
         assert result2.final_context_text == result1.final_context_text
@@ -191,7 +198,7 @@ class TestTokenizerFallback:
         import src.services.compression.japanese_tokenizer as jt_module
 
         # Simulate Sudachi unavailable
-        monkeypatch.setattr(jt_module, 'SUDACHI_AVAILABLE', False)
+        monkeypatch.setattr(jt_module, "SUDACHI_AVAILABLE", False)
 
         from src.services.compression.japanese_tokenizer import create_japanese_tokenizer
         from src.services.compression import FourLayerCompressor, CompressionConfig

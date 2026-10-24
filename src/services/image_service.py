@@ -49,6 +49,7 @@ class ImageService:
         resolved_key = api_key
         if not resolved_key or self._is_placeholder_key(resolved_key):
             from src.backend.config import settings
+
             candidate = settings.get_gemini_api_key()
             resolved_key = candidate if candidate and not self._is_placeholder_key(candidate) else None
         if not resolved_key:

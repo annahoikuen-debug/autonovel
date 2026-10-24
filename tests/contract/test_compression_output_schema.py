@@ -1,4 +1,5 @@
 """コントラクトテスト - 圧縮結果スキーマ検証"""
+
 from __future__ import annotations
 
 import pytest
@@ -141,17 +142,20 @@ class TestCompressionOutputSchema:
         assert result.elapsed_ms >= 0
         assert isinstance(result.elapsed_ms, float)
 
-    @pytest.mark.parametrize("scene_type", [
-        "general",
-        "combat",
-        "daily",
-        "psychological",
-        "political",
-        "romance",
-        "mystery",
-        "flashback",
-        "survival",
-    ])
+    @pytest.mark.parametrize(
+        "scene_type",
+        [
+            "general",
+            "combat",
+            "daily",
+            "psychological",
+            "political",
+            "romance",
+            "mystery",
+            "flashback",
+            "survival",
+        ],
+    )
     def test_scene_type_preserved_in_layer4(self, compressor, sample_text, scene_type):
         """各シーンタイプで layer4.scene_type が正しく設定されること"""
         result = compressor.compress(sample_text, scene_type=scene_type)

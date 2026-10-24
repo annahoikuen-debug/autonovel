@@ -47,9 +47,7 @@ def test_readme_documents_finalize_single_execution():
         "README にダイジェスト二重実行の回帰テストが参照されていない"
     )
     digest_section = readme.split("ダイジェスト cost", 1)[-1][:2000]
-    assert "2回" in digest_section, (
-        "二重実行の事実が README に記載されていない"
-    )
+    assert "2回" in digest_section, "二重実行の事実が README に記載されていない"
 
 
 def test_readme_llm_calls_matches_measured_value():
@@ -60,9 +58,7 @@ def test_readme_llm_calls_matches_measured_value():
     readme = _read("README.md")
     status = _read("docs/STATUS.md")
     m = re.search(r"\|\s*1話あたり LLM 呼出回数\s*\|\s*10\s*\|", status)
-    assert m is not None, (
-        "docs/STATUS.md §5.1 に 1話LLM回数の実測値（10）が無い"
-    )
+    assert m is not None, "docs/STATUS.md §5.1 に 1話LLM回数の実測値（10）が無い"
     assert "10 回" in readme, "README に 1話10回の実測値が記載されていない"
     # 目標未達であることが両方で明示されていること
     assert "未達" in status, "docs/STATUS.md に未達の記載が無い"

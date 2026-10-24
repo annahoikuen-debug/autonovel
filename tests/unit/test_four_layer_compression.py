@@ -1,4 +1,5 @@
 """Unit and Integration Tests for 4-Layer Context Compression (Step 34)."""
+
 from __future__ import annotations
 
 import pytest
@@ -52,9 +53,9 @@ def test_layer2_subgraph_and_pruning():
         {"id": "e4", "name": "名もなき通行人", "labels": ["Character"]},
     ]
     relations = [
-        {"source": "e1", "target": "e2", "type": "所持"},       # 重要リレーション
-        {"source": "e1", "target": "e3", "type": "敵対"},       # 重要リレーション
-        {"source": "e3", "target": "e4", "type": "雑談・目撃"}, # 低関連リレーション（枝刈り対象）
+        {"source": "e1", "target": "e2", "type": "所持"},  # 重要リレーション
+        {"source": "e1", "target": "e3", "type": "敵対"},  # 重要リレーション
+        {"source": "e3", "target": "e4", "type": "雑談・目撃"},  # 低関連リレーション（枝刈り対象）
     ]
 
     res = extractor.extract_from_memory(
@@ -98,6 +99,7 @@ def test_layer4_dynamic_scene_trimming():
     abstractor = Layer3ConceptAbstractor()
 
     from src.services.compression.models import SubgraphLayerOutput
+
     sub = SubgraphLayerOutput(
         nodes=[
             {"name": "アルカディア", "labels": ["Character"]},
@@ -208,6 +210,7 @@ def test_layer4_packs_smaller_facts_after_large_fact_exceeds_budget():
     """
     from src.services.compression.layer4_trimming import Layer4SceneTrimmer
     from src.services.compression.models import SubgraphLayerOutput
+
     trimmer = Layer4SceneTrimmer(max_tokens=80)
     abstractor = Layer3ConceptAbstractor()
 
@@ -437,9 +440,11 @@ def test_scene_type_accuracy_all_scenes():
     # 結果サマリ出力
     print("\n=== Scene Type Accuracy Summary ===")
     for scene_type, eval_result in results.items():
-        print(f"  {scene_type:15s}: cat={eval_result['category_preservation_rate']:.2f}, "
-              f"ent={eval_result['entity_retention_rate']:.2f}, "
-              f"passed={eval_result['overall_passed']}")
+        print(
+            f"  {scene_type:15s}: cat={eval_result['category_preservation_rate']:.2f}, "
+            f"ent={eval_result['entity_retention_rate']:.2f}, "
+            f"passed={eval_result['overall_passed']}"
+        )
 
 
 def test_scene_type_detection_keywords():
@@ -494,6 +499,7 @@ def test_weight_blending():
     # 単一シーン: 元の重みと同じ
     combat_weights = _blend_category_weights({"combat": 1.0})
     from src.services.compression.layer4_trimming import SCENE_CATEGORY_WEIGHTS
+
     for cat, weight in SCENE_CATEGORY_WEIGHTS["combat"].items():
         assert combat_weights[cat] == pytest.approx(weight, rel=1e-6)
 
@@ -552,4 +558,3 @@ __all__ = [
     "test_weight_blending",
     "test_trim_with_scene_weights",
 ]
-

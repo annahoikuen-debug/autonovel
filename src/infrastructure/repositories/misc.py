@@ -52,9 +52,7 @@ class MiscRepository(BaseRepository):
 
     # ---------- Style Fragments (RAG) ----------
     @retry_on_lock()
-    async def add_style_fragment(
-        self, tag: str, content: str, embedding: list[float], origin: str = "Master"
-    ) -> None:
+    async def add_style_fragment(self, tag: str, content: str, embedding: list[float], origin: str = "Master") -> None:
         frag = StyleFragment(
             tag=tag,
             content=content,
@@ -74,19 +72,14 @@ class MiscRepository(BaseRepository):
 
     async def search_style_fragments_by_tag(self, tag: str, limit: int = 5) -> list[StyleFragment]:
         result = await self.session.execute(
-            select(StyleFragment)
-            .where(StyleFragment.tag == tag)
-            .order_by(func.random())
-            .limit(limit)
+            select(StyleFragment).where(StyleFragment.tag == tag).order_by(func.random()).limit(limit)
         )
         rows = result.scalars().all()
         return [self._to_dict(r) for r in rows]
 
     # ---------- Custom Styles ----------
     @retry_on_lock()
-    async def save_custom_style(
-        self, name: str, instruction: str, score: int, analysis: str
-    ) -> None:
+    async def save_custom_style(self, name: str, instruction: str, score: int, analysis: str) -> None:
         result = await self.session.execute(select(CustomStyle).where(CustomStyle.name == name))
         style = result.scalar_one_or_none()
         if not style:
@@ -125,9 +118,7 @@ class MiscRepository(BaseRepository):
             insert = None
 
         if insert is not None:
-            stmt = insert(InternalState).values(
-                key=key, value=value_str, updated_at=now
-            )
+            stmt = insert(InternalState).values(key=key, value=value_str, updated_at=now)
             stmt = stmt.on_conflict_do_update(
                 index_elements=[InternalState.key],
                 set_={"value": value_str, "updated_at": now},
@@ -145,17 +136,13 @@ class MiscRepository(BaseRepository):
 
     async def get_internal_state(self, key: str) -> Any | None:
         """保存された内部状態を取得する"""
-        result = await self.session.execute(
-            select(InternalState.value).where(InternalState.key == key)
-        )
+        result = await self.session.execute(select(InternalState.value).where(InternalState.key == key))
         row_val = result.scalar_one_or_none()
         if row_val is not None:
             try:
                 return json.loads(row_val)
             except (json.JSONDecodeError, TypeError) as e:
-                logger.debug(
-                    f"Failed to parse internal_state JSON for key {key}, returning raw string: {e}"
-                )
+                logger.debug(f"Failed to parse internal_state JSON for key {key}, returning raw string: {e}")
                 return row_val
         return None
 
@@ -194,9 +181,7 @@ class MiscRepository(BaseRepository):
     async def update_patch_status(self, patch_id: int, status: str) -> None:
         """パッチのステータスを更新（approved / rejected）"""
         await self.session.execute(
-            update(PendingPatch)
-            .where(PendingPatch.id == patch_id)
-            .values(status=status, reviewed_at=datetime.now())
+            update(PendingPatch).where(PendingPatch.id == patch_id).values(status=status, reviewed_at=datetime.now())
         )
 
     async def get_rejected_patches(self, book_id: int, limit: int = 5) -> list[PendingPatch]:
@@ -240,16 +225,12 @@ class MiscRepository(BaseRepository):
         task.streaming_text = streaming_text
         task.logs = json.dumps(logs, ensure_ascii=False)
         task.error = error
-        task.result_data = (
-            json.dumps(result_data, ensure_ascii=False) if result_data is not None else None
-        )
+        task.result_data = json.dumps(result_data, ensure_ascii=False) if result_data is not None else None
         # updated_at will be set automatically on update or manually here if needed
 
     async def get_background_task(self, task_id: str) -> BackgroundTask | None:
         """バックグラウンドタスクの状態をDBから取得する"""
-        result = await self.session.execute(
-            select(BackgroundTask).where(BackgroundTask.id == task_id)
-        )
+        result = await self.session.execute(select(BackgroundTask).where(BackgroundTask.id == task_id))
         task = result.scalar_one_or_none()
         if task:
             return self._parse_row(self._to_dict(task), ["logs", "result_data"])
@@ -269,9 +250,7 @@ class MiscRepository(BaseRepository):
 
     async def get_patch_review(self, review_id: int) -> dict[str, Any] | None:
         """レビュー詳細を取得"""
-        result = await self.session.execute(
-            select(PatchReview).where(PatchReview.id == review_id)
-        )
+        result = await self.session.execute(select(PatchReview).where(PatchReview.id == review_id))
         review = result.scalar_one_or_none()
         return self._to_dict(review) if review else None
 

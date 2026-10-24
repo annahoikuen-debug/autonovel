@@ -4,14 +4,15 @@
 状態遷移: PLANTED → PROGRESSED → RESOLVED
                  └→ ABANDONED（回収放棄）
 """
+
 from enum import Enum
 
 
 class ForeshadowingStatus(str, Enum):
-    PLANTED = "planted"        # 伏線設置済み（未回収）
+    PLANTED = "planted"  # 伏線設置済み（未回収）
     PROGRESSED = "progressed"  # 進展・匂わせ中
-    RESOLVED = "resolved"      # 回収完了
-    ABANDONED = "abandoned"    # 回収放棄
+    RESOLVED = "resolved"  # 回収完了
+    ABANDONED = "abandoned"  # 回収放棄
 
     @classmethod
     def active_statuses(cls) -> list["ForeshadowingStatus"]:
@@ -34,9 +35,7 @@ class ForeshadowingStatus(str, Enum):
         }
 
     @classmethod
-    def can_transition(
-        cls, current: "ForeshadowingStatus | str", target: "ForeshadowingStatus | str"
-    ) -> bool:
+    def can_transition(cls, current: "ForeshadowingStatus | str", target: "ForeshadowingStatus | str") -> bool:
         """状態遷移が許可されるかを判定する"""
         try:
             cur = cls(current) if not isinstance(current, cls) else current
@@ -72,4 +71,4 @@ class ForeshadowingStatus(str, Enum):
 
 class ForeshadowingScope(str, Enum):
     SHORT_TERM = "short_term"  # 即時快感用（2〜3話以内の伏線）
-    LONG_TERM = "long_term"    # 1巻伏線（クライマックスで回収）
+    LONG_TERM = "long_term"  # 1巻伏線（クライマックスで回収）

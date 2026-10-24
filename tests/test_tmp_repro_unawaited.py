@@ -56,10 +56,13 @@ def test_repro_unawaited(caplog):
             return _FakeWorkflow()
 
         app.dependency_overrides[get_illustration_workflow] = _override_workflow
-        with patch(
-            "src.backend.routers.illustrations.verify_book_ownership",
-            new=AsyncMock(return_value=MagicMock()),
-        ), patch.object(it, "_deduct_batch_credits", return_value=(0, 0)):
+        with (
+            patch(
+                "src.backend.routers.illustrations.verify_book_ownership",
+                new=AsyncMock(return_value=MagicMock()),
+            ),
+            patch.object(it, "_deduct_batch_credits", return_value=(0, 0)),
+        ):
             with TestClient(app) as client:
                 resp = client.post(
                     "/api/illustrations/batch",
@@ -79,9 +82,7 @@ def test_repro_unawaited(caplog):
 
     gc.collect()
     leftovers = [
-        o
-        for o in gc.get_objects()
-        if type(o).__name__ == "coroutine" and getattr(o, "cr_code", None) is not None
+        o for o in gc.get_objects() if type(o).__name__ == "coroutine" and getattr(o, "cr_code", None) is not None
     ]
     print("live coroutines:", len(leftovers))
     for c in leftovers:

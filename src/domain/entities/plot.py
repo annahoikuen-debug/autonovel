@@ -41,6 +41,7 @@ _PLOT_STATUS_RANKS: Dict[str, int] = {
 
 class ChainPhase(Enum):
     """Story chain phase."""
+
     FRICITON = "Friction"
     TURN = "Turn"
     COUNTER_TURN = "CounterTurn"
@@ -52,6 +53,7 @@ class ChainPhase(Enum):
 @dataclass
 class Plot:
     """Plot/Story outline entity for a specific episode."""
+
     id: PlotId
     novel_id: NovelId
     branch_id: NovelId
@@ -279,6 +281,7 @@ class Plot:
 @dataclass(frozen=True, slots=True)
 class PlotPoint:
     """Individual plot point within a plot."""
+
     id: PlotId
     plot_id: PlotId
     order: int
@@ -296,6 +299,7 @@ class PlotPoint:
 @dataclass(frozen=True, slots=True)
 class Arc:
     """Story arc spanning multiple episodes."""
+
     id: PlotId
     novel_id: NovelId
     name: str

@@ -1,7 +1,9 @@
 """writing_use_cases の正常系単体テスト"""
+
 import pytest
 from unittest.mock import AsyncMock
 from src.application.use_cases.writing_use_cases import WriteEpisodeUseCase
+
 
 @pytest.mark.asyncio
 async def test_write_episode_use_case_initialization_and_types():

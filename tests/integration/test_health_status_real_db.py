@@ -72,9 +72,7 @@ def test_system_status_reports_the_database(client: TestClient):
     resp = client.get("/api/system/status")
     assert resp.status_code == 200, resp.text
     body = resp.json()
-    assert body.get("database") == "ok", (
-        f"/api/system/status が database を 'ok' と報告していない: {body}"
-    )
+    assert body.get("database") == "ok", f"/api/system/status が database を 'ok' と報告していない: {body}"
 
 
 def test_check_database_directly_in_plain_sync_context():
@@ -149,6 +147,4 @@ def test_this_file_uses_no_mock():
         "patch" + "(",
     )
     found = [p for p in usage_patterns if p in src]
-    assert not found, (
-        f"本ファイルは mock を使わない smoke のはずだが {found} を含む"
-    )
+    assert not found, f"本ファイルは mock を使わない smoke のはずだが {found} を含む"

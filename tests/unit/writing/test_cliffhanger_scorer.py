@@ -2,6 +2,7 @@
 Unit tests for Cliffhanger Scorer.
 PLAN 02 - Step 2: 話末クリフハンガー判定エンジンの単体テスト作成（TDD先行）
 """
+
 from __future__ import annotations
 
 from src.models.opening_booster import CliffhangerType
@@ -20,7 +21,9 @@ def test_score_cliffhanger_crisis():
 
 def test_score_cliffhanger_shocking_truth():
     """衝撃の事実・裏切りの判明の判定テスト"""
-    text = "震える手で受け取った羊皮紙に記されていたのは、信頼していた師匠の署名と、俺を暗殺せよという冷酷な密命だった。"
+    text = (
+        "震える手で受け取った羊皮紙に記されていたのは、信頼していた師匠の署名と、俺を暗殺せよという冷酷な密命だった。"
+    )
     result = score_cliffhanger(text)
     assert result.hook_type == CliffhangerType.SHOCKING_TRUTH
     assert result.score >= 80.0

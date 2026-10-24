@@ -16,18 +16,19 @@ Create Date: 2026-09-19 00:00:00.000000
     0030 は実質的なスキーマ変更を持たないため、downgrade でも他のリビジョンが
     定義したカラムを落とさない。
 """
+
 from alembic import op
 import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '0030_add_foreshadowing_scope'
-down_revision = '0029_foreshadowing_relations'
+revision = "0030_add_foreshadowing_scope"
+down_revision = "0029_foreshadowing_relations"
 branch_labels = None
 depends_on = None
 
-_TABLE = 'foreshadowings'
-_COLUMN = 'scope'
+_TABLE = "foreshadowings"
+_COLUMN = "scope"
 
 
 def _column_exists() -> bool:
@@ -35,7 +36,7 @@ def _column_exists() -> bool:
     inspector = sa.inspect(op.get_bind())
     if _TABLE not in inspector.get_table_names():
         return False
-    return any(col['name'] == _COLUMN for col in inspector.get_columns(_TABLE))
+    return any(col["name"] == _COLUMN for col in inspector.get_columns(_TABLE))
 
 
 def upgrade() -> None:
@@ -44,7 +45,7 @@ def upgrade() -> None:
         return
     op.add_column(
         _TABLE,
-        sa.Column(_COLUMN, sa.String(length=32), nullable=False, server_default='short_term'),
+        sa.Column(_COLUMN, sa.String(length=32), nullable=False, server_default="short_term"),
     )
 
 

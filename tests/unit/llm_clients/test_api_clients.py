@@ -118,9 +118,7 @@ class TestGeminiGenerateJson:
         mock_client.models.generate_content.return_value = self._mock_response('{"title": "T", "score": 3}')
         client = GeminiApiClient(mock_client, _make_cooldown())
 
-        metadata, story, _ = _run(
-            client.generate_json("gemini-pro", "prompt", response_schema=SampleSchema)
-        )
+        metadata, story, _ = _run(client.generate_json("gemini-pro", "prompt", response_schema=SampleSchema))
         assert metadata["title"] == "T"
 
     def test_stream_callback_mode(self, fast_executor):
@@ -132,9 +130,7 @@ class TestGeminiGenerateJson:
         client = GeminiApiClient(mock_client, _make_cooldown())
 
         collected = []
-        metadata, _, _ = _run(
-            client.generate_json("gemini-pro", "p", stream_callback=collected.append)
-        )
+        metadata, _, _ = _run(client.generate_json("gemini-pro", "p", stream_callback=collected.append))
         assert metadata["title"] == "S"
         assert metadata["score"] == 1
         assert collected == ['{"title": "S", "score": 1}']
@@ -148,9 +144,7 @@ class TestGeminiGenerateJson:
         ]
         client = GeminiApiClient(mock_client, _make_cooldown())
 
-        metadata, _, _ = _run(
-            client.generate_json("gemini-pro", "p", response_schema=SampleSchema)
-        )
+        metadata, _, _ = _run(client.generate_json("gemini-pro", "p", response_schema=SampleSchema))
         assert metadata["title"] == "OK"
         assert mock_client.models.generate_content.call_count == 2
 
@@ -247,10 +241,12 @@ class TestOpenAIGenerateJson:
 class TestOpenAIGenerateText:
     def test_generate_text_delegates_to_json(self):
         response = SimpleNamespace(
-            choices=[SimpleNamespace(
-                message=SimpleNamespace(content="plain story"),
-                usage=SimpleNamespace(prompt_tokens=1, completion_tokens=2),
-            )]
+            choices=[
+                SimpleNamespace(
+                    message=SimpleNamespace(content="plain story"),
+                    usage=SimpleNamespace(prompt_tokens=1, completion_tokens=2),
+                )
+            ]
         )
         mock_async = MagicMock()
         mock_async.chat.completions.create = AsyncMock(return_value=response)

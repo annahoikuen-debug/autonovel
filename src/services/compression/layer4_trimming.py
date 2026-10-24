@@ -1,4 +1,5 @@
 """Layer 4: Scene-Aware Dynamic Trimming (Step 30)."""
+
 from __future__ import annotations
 
 import logging
@@ -94,56 +95,231 @@ SCENE_CATEGORY_WEIGHTS: dict[SceneType, dict[str, float]] = {
 # キーワード重み付け辞書（シーンタイプ検出用）
 SCENE_KEYWORDS_WEIGHTED: dict[SceneType, dict[str, float]] = {
     "combat": {
-        "戦闘": 1.0, "決闘": 1.0, "討伐": 1.0, "撃破": 1.0, "襲撃": 1.0,
-        "激突": 0.9, "交戦": 0.9, "斬": 0.8, "剣": 0.7, "魔王": 0.9,
-        "抜刀": 0.8, "迅雷": 0.7, "武術": 0.6, "必殺": 0.8, "一撃": 0.7,
+        "戦闘": 1.0,
+        "決闘": 1.0,
+        "討伐": 1.0,
+        "撃破": 1.0,
+        "襲撃": 1.0,
+        "激突": 0.9,
+        "交戦": 0.9,
+        "斬": 0.8,
+        "剣": 0.7,
+        "魔王": 0.9,
+        "抜刀": 0.8,
+        "迅雷": 0.7,
+        "武術": 0.6,
+        "必殺": 0.8,
+        "一撃": 0.7,
     },
     "daily": {
-        "日常": 1.0, "宴": 0.9, "酒場": 0.9, "休息": 0.9, "街歩き": 0.8,
-        "料理": 0.7, "雑談": 0.8, "市場": 0.7, "買い物": 0.7, "会話": 0.6,
-        "食事": 0.7, "睡眠": 0.6, "朝": 0.5, "夜": 0.5, "穏やか": 0.6,
+        "日常": 1.0,
+        "宴": 0.9,
+        "酒場": 0.9,
+        "休息": 0.9,
+        "街歩き": 0.8,
+        "料理": 0.7,
+        "雑談": 0.8,
+        "市場": 0.7,
+        "買い物": 0.7,
+        "会話": 0.6,
+        "食事": 0.7,
+        "睡眠": 0.6,
+        "朝": 0.5,
+        "夜": 0.5,
+        "穏やか": 0.6,
     },
     "psychological": {
-        "心理": 1.0, "葛藤": 1.0, "苦悩": 0.9, "トラウマ": 0.9, "独白": 0.9,
-        "疑念": 0.8, "迷い": 0.8, "回想": 0.8, "記憶": 0.7, "内面": 0.8,
-        "不安": 0.7, "恐怖": 0.7, "後悔": 0.7, "決意": 0.6, "覚悟": 0.7,
+        "心理": 1.0,
+        "葛藤": 1.0,
+        "苦悩": 0.9,
+        "トラウマ": 0.9,
+        "独白": 0.9,
+        "疑念": 0.8,
+        "迷い": 0.8,
+        "回想": 0.8,
+        "記憶": 0.7,
+        "内面": 0.8,
+        "不安": 0.7,
+        "恐怖": 0.7,
+        "後悔": 0.7,
+        "決意": 0.6,
+        "覚悟": 0.7,
     },
     "political": {
-        "会議": 1.0, "議会": 1.0, "政略": 1.0, "関税": 0.9, "条約": 0.9,
-        "宣戦": 0.9, "同盟": 0.9, "陰謀": 0.9, "外交": 0.8, "交渉": 0.8,
-        "宰相": 0.8, "ギルド": 0.7, "領地": 0.7, "謀略": 0.9,
+        "会議": 1.0,
+        "議会": 1.0,
+        "政略": 1.0,
+        "関税": 0.9,
+        "条約": 0.9,
+        "宣戦": 0.9,
+        "同盟": 0.9,
+        "陰謀": 0.9,
+        "外交": 0.8,
+        "交渉": 0.8,
+        "宰相": 0.8,
+        "ギルド": 0.7,
+        "領地": 0.7,
+        "謀略": 0.9,
     },
     "romance": {
-        "告白": 1.0, "恋愛": 1.0, "照れ": 0.9, "デート": 0.9, "視線": 0.8,
-        "恋心": 0.9, "抱擁": 0.9, "キス": 0.9, "赤面": 0.8, "嫉妬": 0.8,
-        "想い": 0.7, "二人きり": 0.8, "鼓動": 0.8,
+        "告白": 1.0,
+        "恋愛": 1.0,
+        "照れ": 0.9,
+        "デート": 0.9,
+        "視線": 0.8,
+        "恋心": 0.9,
+        "抱擁": 0.9,
+        "キス": 0.9,
+        "赤面": 0.8,
+        "嫉妬": 0.8,
+        "想い": 0.7,
+        "二人きり": 0.8,
+        "鼓動": 0.8,
     },
     "mystery": {
-        "推理": 1.0, "証拠": 1.0, "密室": 1.0, "トリック": 1.0, "アリバイ": 1.0,
-        "犯人": 0.9, "謎": 0.9, "遺留品": 0.9, "動機": 0.9, "捜査": 0.8,
-        "痕跡": 0.8, "矛盾": 0.8,
+        "推理": 1.0,
+        "証拠": 1.0,
+        "密室": 1.0,
+        "トリック": 1.0,
+        "アリバイ": 1.0,
+        "犯人": 0.9,
+        "謎": 0.9,
+        "遺留品": 0.9,
+        "動機": 0.9,
+        "捜査": 0.8,
+        "痕跡": 0.8,
+        "矛盾": 0.8,
     },
     "flashback": {
-        "回想": 1.0, "過去": 1.0, "幼少": 1.0, "あの頃": 0.9, "記憶": 0.9,
-        "昔": 0.8, "面影": 0.8, "追憶": 0.9, "かつて": 0.8, "懐かしい": 0.7,
+        "回想": 1.0,
+        "過去": 1.0,
+        "幼少": 1.0,
+        "あの頃": 0.9,
+        "記憶": 0.9,
+        "昔": 0.8,
+        "面影": 0.8,
+        "追憶": 0.9,
+        "かつて": 0.8,
+        "懐かしい": 0.7,
     },
     "survival": {
-        "サバイバル": 1.0, "遭難": 1.0, "飢餓": 0.9, "野営": 0.9, "水分": 0.9,
-        "救難": 0.9, "脱出": 0.9, "極限": 0.8, "探索": 0.8, "拠点構築": 0.8,
+        "サバイバル": 1.0,
+        "遭難": 1.0,
+        "飢餓": 0.9,
+        "野営": 0.9,
+        "水分": 0.9,
+        "救難": 0.9,
+        "脱出": 0.9,
+        "極限": 0.8,
+        "探索": 0.8,
+        "拠点構築": 0.8,
     },
 }
 
 # 直前シーンから次シーンへの自然な遷移重み（マルコフ事前分布）
 SCENE_TRANSITION_MATRIX: dict[SceneType, dict[SceneType, float]] = {
-    "combat": {"daily": 1.4, "psychological": 1.3, "combat": 0.8, "political": 1.1, "romance": 0.9, "mystery": 1.0, "flashback": 1.2, "survival": 1.0, "general": 1.0},
-    "daily": {"combat": 1.3, "political": 1.2, "romance": 1.3, "daily": 1.0, "psychological": 1.0, "mystery": 1.2, "flashback": 0.8, "survival": 1.1, "general": 1.0},
-    "political": {"combat": 1.3, "psychological": 1.3, "political": 1.1, "mystery": 1.2, "daily": 0.9, "romance": 0.8, "flashback": 1.1, "survival": 0.9, "general": 1.0},
-    "psychological": {"combat": 1.2, "flashback": 1.4, "daily": 1.1, "political": 1.1, "romance": 1.1, "mystery": 1.2, "psychological": 0.9, "survival": 1.0, "general": 1.0},
-    "romance": {"daily": 1.3, "psychological": 1.3, "combat": 0.9, "political": 0.9, "romance": 1.0, "mystery": 0.8, "flashback": 1.1, "survival": 0.8, "general": 1.0},
-    "mystery": {"combat": 1.2, "political": 1.3, "psychological": 1.2, "mystery": 1.0, "daily": 0.9, "romance": 0.8, "flashback": 1.1, "survival": 1.0, "general": 1.0},
-    "flashback": {"psychological": 1.4, "combat": 1.2, "daily": 1.0, "political": 1.1, "flashback": 0.5, "romance": 0.9, "mystery": 1.0, "survival": 1.0, "general": 1.0},
-    "survival": {"combat": 1.4, "daily": 1.3, "survival": 1.0, "psychological": 1.2, "political": 0.7, "romance": 0.7, "mystery": 0.9, "flashback": 0.8, "general": 1.0},
-    "general": {k: 1.0 for k in ["general", "combat", "daily", "psychological", "political", "romance", "mystery", "flashback", "survival"]},
+    "combat": {
+        "daily": 1.4,
+        "psychological": 1.3,
+        "combat": 0.8,
+        "political": 1.1,
+        "romance": 0.9,
+        "mystery": 1.0,
+        "flashback": 1.2,
+        "survival": 1.0,
+        "general": 1.0,
+    },
+    "daily": {
+        "combat": 1.3,
+        "political": 1.2,
+        "romance": 1.3,
+        "daily": 1.0,
+        "psychological": 1.0,
+        "mystery": 1.2,
+        "flashback": 0.8,
+        "survival": 1.1,
+        "general": 1.0,
+    },
+    "political": {
+        "combat": 1.3,
+        "psychological": 1.3,
+        "political": 1.1,
+        "mystery": 1.2,
+        "daily": 0.9,
+        "romance": 0.8,
+        "flashback": 1.1,
+        "survival": 0.9,
+        "general": 1.0,
+    },
+    "psychological": {
+        "combat": 1.2,
+        "flashback": 1.4,
+        "daily": 1.1,
+        "political": 1.1,
+        "romance": 1.1,
+        "mystery": 1.2,
+        "psychological": 0.9,
+        "survival": 1.0,
+        "general": 1.0,
+    },
+    "romance": {
+        "daily": 1.3,
+        "psychological": 1.3,
+        "combat": 0.9,
+        "political": 0.9,
+        "romance": 1.0,
+        "mystery": 0.8,
+        "flashback": 1.1,
+        "survival": 0.8,
+        "general": 1.0,
+    },
+    "mystery": {
+        "combat": 1.2,
+        "political": 1.3,
+        "psychological": 1.2,
+        "mystery": 1.0,
+        "daily": 0.9,
+        "romance": 0.8,
+        "flashback": 1.1,
+        "survival": 1.0,
+        "general": 1.0,
+    },
+    "flashback": {
+        "psychological": 1.4,
+        "combat": 1.2,
+        "daily": 1.0,
+        "political": 1.1,
+        "flashback": 0.5,
+        "romance": 0.9,
+        "mystery": 1.0,
+        "survival": 1.0,
+        "general": 1.0,
+    },
+    "survival": {
+        "combat": 1.4,
+        "daily": 1.3,
+        "survival": 1.0,
+        "psychological": 1.2,
+        "political": 0.7,
+        "romance": 0.7,
+        "mystery": 0.9,
+        "flashback": 0.8,
+        "general": 1.0,
+    },
+    "general": {
+        k: 1.0
+        for k in [
+            "general",
+            "combat",
+            "daily",
+            "psychological",
+            "political",
+            "romance",
+            "mystery",
+            "flashback",
+            "survival",
+        ]
+    },
 }
 
 
@@ -182,9 +358,7 @@ class Layer4SceneTrimmer:
         self.max_tokens = max_tokens
         self.preserve_categories = preserve_categories or ["主要キャラ", "核心設定", "伏線"]
 
-    def detect_scene_type(
-        self, plot_summary: str, scenes: list[str] | None = None
-    ) -> SceneType:
+    def detect_scene_type(self, plot_summary: str, scenes: list[str] | None = None) -> SceneType:
         """Infer scene narrative type from plot summary and scenes (legacy single-label)."""
         multi = self.detect_scene_type_multi(plot_summary, scenes)
         return multi[0][0] if multi else "general"
@@ -320,22 +494,21 @@ class Layer4SceneTrimmer:
                 score = (cat_weight * kw_bonus) + (100.0 if is_pinned else 0.0)
                 is_mandatory = is_pinned or (cat in self.preserve_categories)
 
-                all_scored_facts.append({
-                    "category": cat,
-                    "content": content,
-                    "entity": entity,
-                    "score": round(score, 3),
-                    "mandatory": is_mandatory,
-                    "pinned": is_pinned,
-                    "pin_reason": pin_reason,
-                    "tokens": count_tokens(content),
-                })
+                all_scored_facts.append(
+                    {
+                        "category": cat,
+                        "content": content,
+                        "entity": entity,
+                        "score": round(score, 3),
+                        "mandatory": is_mandatory,
+                        "pinned": is_pinned,
+                        "pin_reason": pin_reason,
+                        "tokens": count_tokens(content),
+                    }
+                )
 
         # 優先度順にソート（ピン留め最優先、次に必須、次にスコア降順）
-        all_scored_facts.sort(
-            key=lambda x: (x.get("pinned", False), x["mandatory"], x["score"]),
-            reverse=True
-        )
+        all_scored_facts.sort(key=lambda x: (x.get("pinned", False), x["mandatory"], x["score"]), reverse=True)
 
         selected_facts = []
         retained_entities = set()
@@ -362,8 +535,7 @@ class Layer4SceneTrimmer:
         while final_tokens > budget and selected_facts:
             # Find the last non-pinned item
             non_pinned_idx = next(
-                (i for i in range(len(selected_facts) - 1, -1, -1) if not selected_facts[i].get("pinned")),
-                None
+                (i for i in range(len(selected_facts) - 1, -1, -1) if not selected_facts[i].get("pinned")), None
             )
             if non_pinned_idx is not None:
                 removed = selected_facts.pop(non_pinned_idx)

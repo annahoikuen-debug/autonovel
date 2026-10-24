@@ -5,6 +5,7 @@ from enum import Enum
 
 class Terminal(str, Enum):
     """Terminal symbols representing concrete episode beat occurrences."""
+
     SETUP = "SETUP"
     RISING = "RISING"
     MIDPOINT_DISASTER = "MIDPOINT_DISASTER"
@@ -26,6 +27,7 @@ class Terminal(str, Enum):
 
 class NonTerminal(str, Enum):
     """NonTerminal symbols representing abstract narrative structural units."""
+
     STORY = "STORY"
     QUARTER = "QUARTER"
     ACT1 = "ACT1"

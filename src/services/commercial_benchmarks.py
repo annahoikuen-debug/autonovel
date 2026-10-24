@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class CommercialQualityMetrics:
     """Comprehensive commercial viability and maturity metrics (Step 61)."""
+
     overall_score: float
     dimension_scores: dict[str, float]
     specialist_scores: dict[str, float]
@@ -75,14 +76,8 @@ class CommercialBenchmarkJudge:
         has_no_fatal_flaws = min_dim_score >= cls.FATAL_FLAW_THRESHOLD
 
         # Step 62: Standard checks
-        is_commercial = (
-            overall_score >= cls.COMMERCIAL_THRESHOLD
-            and min_dim_score >= cls.COMMERCIAL_DIM_MIN
-        )
-        is_web_hit = (
-            overall_score >= cls.WEB_HIT_THRESHOLD
-            and min_dim_score >= cls.WEB_HIT_DIM_MIN
-        )
+        is_commercial = overall_score >= cls.COMMERCIAL_THRESHOLD and min_dim_score >= cls.COMMERCIAL_DIM_MIN
+        is_web_hit = overall_score >= cls.WEB_HIT_THRESHOLD and min_dim_score >= cls.WEB_HIT_DIM_MIN
 
         # Grade ranking
         if is_commercial:
@@ -135,6 +130,7 @@ class CommercialBenchmarkJudge:
         # 1. Specialist Anchors
         try:
             from src.agents.specialists.anchors import ANCHOR_PRESETS
+
             checks["1_anchors_valid"] = len(ANCHOR_PRESETS) == 8
         except Exception:
             checks["1_anchors_valid"] = False
@@ -142,6 +138,7 @@ class CommercialBenchmarkJudge:
         # 2. Score Calibration Engine
         try:
             from src.services.score_calibrator import ScoreCalibrator
+
             cal = ScoreCalibrator()
             sc, _ = cal.calibrate_single("reader_hook", 80.0)
             checks["2_calibration_engine_valid"] = 10.0 <= sc <= 98.0
@@ -151,6 +148,7 @@ class CommercialBenchmarkJudge:
         # 3. Unified 5D Bridge
         try:
             from src.services.book_score_mapping import UnifiedBookScoreBridge
+
             bridge = UnifiedBookScoreBridge()
             u5d = bridge.map_to_5d({n: 70.0 for n in ANCHOR_PRESETS})
             checks["3_unified_5d_bridge_valid"] = u5d.overall_score == 70.0
@@ -161,6 +159,7 @@ class CommercialBenchmarkJudge:
         try:
             from src.agents.specialist_auditor_base import ActionableDiff
             from src.services.pdca_directive import PDCADirectiveGenerator
+
             diff = ActionableDiff(location="冒頭", original_quote="A", improved_suggestion="B", rationale="C")
             d = PDCADirectiveGenerator.diff_to_directive(diff, "structure", 45.0)
             checks["4_directives_actionable_valid"] = d.severity == "CRITICAL"
@@ -170,6 +169,7 @@ class CommercialBenchmarkJudge:
         # 5. Closed-Loop PDCA Runner
         try:
             from src.services.pdca_cycle import ClosedLoopPDCARunner
+
             checks["5_pdca_runner_valid"] = hasattr(ClosedLoopPDCARunner, "run_pdca_cycle")
         except Exception:
             checks["5_pdca_runner_valid"] = False
@@ -178,6 +178,7 @@ class CommercialBenchmarkJudge:
         try:
             from src.backend.tasks.dag_replanning import DAGReplanner
             from src.backend.tasks.dag_models import DAGGraph
+
             g = DAGGraph(dag_id="test")
             downstream = DAGReplanner.get_downstream_tasks(g, "none")
             checks["6_dag_replanner_valid"] = isinstance(downstream, list)

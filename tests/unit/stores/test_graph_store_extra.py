@@ -1,4 +1,5 @@
 """src/stores/graph_store.py の追加テスト（kuzu 未導入環境）。"""
+
 from __future__ import annotations
 
 import sys

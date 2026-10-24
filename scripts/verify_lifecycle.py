@@ -26,6 +26,7 @@ from src.services.exporters.base import get_exporter
 from src.agents.marketing import MarketingAgent
 from src.backend.database.repository import BookRepository
 
+
 def run_full_lifecycle():
     print("[1] データベースモデルと接続確認...")
     Base.metadata.create_all(bind=engine)
@@ -81,10 +82,7 @@ def run_full_lifecycle():
         "synopsis": book.synopsis or book.concept or "",
         "is_adult": False,
     }
-    chapters_dict = [
-        {"ep_num": c.ep_num, "title": c.title, "content": c.content or ""}
-        for c in chapters
-    ]
+    chapters_dict = [{"ep_num": c.ep_num, "title": c.title, "content": c.content or ""} for c in chapters]
     narou_text = narou_exporter.export(novel_dict, chapters_dict)
     assert len(narou_text) > 0, "なろう形式エクスポートが空です"
     print(f"     -> 正常出力完了 (バイト数: {len(narou_text.encode('utf-8'))} bytes)")
@@ -114,7 +112,9 @@ def run_full_lifecycle():
             print(f"        - {name} ({info.file_size} bytes)")
 
         # 必須ファイルの存在確認
-        assert any(n.endswith(".txt") or n.endswith(".md") for n in namelist), "ZIP内に本文または概要ファイルが存在しません"
+        assert any(n.endswith(".txt") or n.endswith(".md") for n in namelist), (
+            "ZIP内に本文または概要ファイルが存在しません"
+        )
         # 壊れていないかのCRCチェック
         bad_file = zf.testzip()
         assert bad_file is None, f"ZIP内に破損ファイルがあります: {bad_file}"
@@ -123,6 +123,7 @@ def run_full_lifecycle():
     print("\n========================================================")
     print(" [合格] 起動から小説作成、ダウンロードまでの全シナリオ完全パス！")
     print("========================================================")
+
 
 if __name__ == "__main__":
     run_full_lifecycle()

@@ -1,5 +1,6 @@
 # tests/conftest_phase3.py
 """Phase 3 共通テストフィクスチャ・モック基盤"""
+
 from __future__ import annotations
 
 import asyncio

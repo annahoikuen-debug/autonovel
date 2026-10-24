@@ -23,6 +23,7 @@ except ImportError:
 
 class Vector(TypeDecorator):
     """PostgreSQL pgvector と SQLite JSON の透過的なハイブリッド型デコレータ"""
+
     impl = JSON
     cache_ok = True
 
@@ -60,9 +61,7 @@ class ChapterChunk(Base):
     __tablename__ = "chapter_chunks"
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    chapter_id = Column(
-        Integer, ForeignKey("chapters.id", ondelete="CASCADE"), nullable=False, index=True
-    )
+    chapter_id = Column(Integer, ForeignKey("chapters.id", ondelete="CASCADE"), nullable=False, index=True)
     chunk_index = Column(Integer, nullable=False, default=0)
     content = Column(Text, nullable=False)
 
@@ -71,6 +70,4 @@ class ChapterChunk(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     def __repr__(self) -> str:
-        return (
-            f"<ChapterChunk(id={self.id}, chapter_id={self.chapter_id}, index={self.chunk_index})>"
-        )
+        return f"<ChapterChunk(id={self.id}, chapter_id={self.chapter_id}, index={self.chunk_index})>"

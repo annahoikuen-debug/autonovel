@@ -3,6 +3,7 @@
 常駐VOICEVOXコンテナ（メモリ数GB消費）を任意化・廃止し、
 オンデマンドの外部従量APIアダプタ（OpenAI TTS / ElevenLabs / Mock）へ一本化する。
 """
+
 from __future__ import annotations
 
 import os
@@ -19,6 +20,7 @@ from src.services.audio.voicevox_client import VoicevoxClient
 
 
 # ── v5.0 新TTS従量APIアダプタ ──
+
 
 class MockTtsAdapter(AudioTtsAdapter):
     """テスト・開発用モックTTSアダプタ（コスト0円・即時応答）。"""
@@ -70,7 +72,10 @@ def get_audio_client(provider_type: str | None = None) -> AudioSynthesisClient:
     """旧インターフェース (AudioSynthesisClient) 互換用ファクトリ。"""
     resolved_type = provider_type
     if not resolved_type:
-        if getattr(settings, "ENABLE_AUDIO_SYNTH", False) or os.getenv("ENABLE_AUDIO_SYNTH", "").lower() in ("true", "1"):
+        if getattr(settings, "ENABLE_AUDIO_SYNTH", False) or os.getenv("ENABLE_AUDIO_SYNTH", "").lower() in (
+            "true",
+            "1",
+        ):
             resolved_type = "voicevox"
         else:
             resolved_type = "mock"

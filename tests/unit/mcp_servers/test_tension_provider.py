@@ -1,4 +1,5 @@
 """Unit tests for TensionAnalyzer."""
+
 from __future__ import annotations
 
 from src.mcp_servers.providers.tension_provider import TensionAnalyzer

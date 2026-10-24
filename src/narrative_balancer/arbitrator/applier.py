@@ -16,9 +16,7 @@ class CorrectionApplier:
 
         # 1. Invariant: correct episode count
         if len(new_beats) != original_state.total_episodes:
-            raise ValueError(
-                f"Episode count mismatch: expected {original_state.total_episodes}, got {len(new_beats)}"
-            )
+            raise ValueError(f"Episode count mismatch: expected {original_state.total_episodes}, got {len(new_beats)}")
 
         # 2. Invariant: monotonic episodes & valid tension bounds
         for i, b in enumerate(new_beats):

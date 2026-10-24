@@ -94,7 +94,9 @@ class GeminiApiClient(BaseLLMClient):
 
             full_prompt = prompt
             if error_feedback:
-                full_prompt = f"【🚨出力形式エラー報告🚨】\n前回の出力に以下の不備がありました: {error_feedback}\n\n{prompt}"
+                full_prompt = (
+                    f"【🚨出力形式エラー報告🚨】\n前回の出力に以下の不備がありました: {error_feedback}\n\n{prompt}"
+                )
 
             if response_schema:
                 if mode == "prompt_fallback":
@@ -103,12 +105,8 @@ class GeminiApiClient(BaseLLMClient):
                     full_prompt += f"\n\n【出力スキーマ指示】\n以下のJSONスキーマ構造に完全に従って、JSONオブジェクトのみを出力してください。余計なマークダウンや説明は一切不要です。\n```json\n{schema_json}\n```"
                 elif hasattr(response_schema, "model_fields"):
                     fields = list(response_schema.model_fields.keys())
-                    full_prompt += (
-                        f"\n\n※重要: JSONには以下のキーを必ず含めてください: {', '.join(fields)}"
-                    )
-                full_prompt += (
-                    "\n\nCRITICAL: Output MUST be valid JSON ONLY. Start with '{' and end with '}'."
-                )
+                    full_prompt += f"\n\n※重要: JSONには以下のキーを必ず含めてください: {', '.join(fields)}"
+                full_prompt += "\n\nCRITICAL: Output MUST be valid JSON ONLY. Start with '{' and end with '}'."
 
             full_text = ""
             usage = None
@@ -128,9 +126,7 @@ class GeminiApiClient(BaseLLMClient):
                         # 404 NOT_FOUND 回避のため、モデル名に 'models/' プレフィックスが
                         # 付いていない場合は付与する
                         model_with_prefix = (
-                            current_model
-                            if current_model.startswith("models/")
-                            else f"models/{current_model}"
+                            current_model if current_model.startswith("models/") else f"models/{current_model}"
                         )
                         for chunk in self.client.models.generate_content_stream(
                             model=model_with_prefix,
@@ -159,9 +155,7 @@ class GeminiApiClient(BaseLLMClient):
                         # 404 NOT_FOUND 回避のため、モデル名に 'models/' プレフィックスが
                         # 付いていない場合は付与する
                         model_with_prefix = (
-                            current_model
-                            if current_model.startswith("models/")
-                            else f"models/{current_model}"
+                            current_model if current_model.startswith("models/") else f"models/{current_model}"
                         )
                         return self.client.models.generate_content(
                             model=model_with_prefix, contents=full_prompt, config=config
@@ -258,9 +252,7 @@ class GeminiApiClient(BaseLLMClient):
                     # 404 NOT_FOUND 回避のため、モデル名に 'models/' プレフィックスが
                     # 付いていない場合は付与する
                     model_with_prefix = (
-                        current_model
-                        if current_model.startswith("models/")
-                        else f"models/{current_model}"
+                        current_model if current_model.startswith("models/") else f"models/{current_model}"
                     )
                     for chunk in self.client.models.generate_content_stream(
                         model=model_with_prefix,
@@ -289,9 +281,7 @@ class GeminiApiClient(BaseLLMClient):
                     # 404 NOT_FOUND 回避のため、モデル名に 'models/' プレフィックスが
                     # 付いていない場合は付与する
                     model_with_prefix = (
-                        current_model
-                        if current_model.startswith("models/")
-                        else f"models/{current_model}"
+                        current_model if current_model.startswith("models/") else f"models/{current_model}"
                     )
                     return self.client.models.generate_content(
                         model=model_with_prefix,
@@ -307,9 +297,7 @@ class GeminiApiClient(BaseLLMClient):
             story = OutputSanitizer._clean_story(full_text)
 
             duration = time.time() - start_time
-            logger.info(
-                f"✅ Text API Success: model={current_model}, len={len(prompt)}, dur={duration:.2f}s"
-            )
+            logger.info(f"✅ Text API Success: model={current_model}, len={len(prompt)}, dur={duration:.2f}s")
             return story, usage
 
         except Exception:
@@ -322,15 +310,12 @@ class GeminiApiClient(BaseLLMClient):
 
     def build_config(
         self,
-
         system_instruction: str | None,
         temp: float,
         attempt: int,
         response_schema: Any = None,
     ) -> genai_types.GenerateContentConfig:
-        return self.build_config_for_mode(
-            system_instruction, temp, attempt, response_schema, "native"
-        )
+        return self.build_config_for_mode(system_instruction, temp, attempt, response_schema, "native")
 
     def build_config_for_mode(
         self,
@@ -369,9 +354,7 @@ class GeminiApiClient(BaseLLMClient):
 
         return config
 
-    async def _handle_error(
-        self, e: Exception, model_name: str, attempt: int, max_retries: int
-    ) -> bool:
+    async def _handle_error(self, e: Exception, model_name: str, attempt: int, max_retries: int) -> bool:
         err_msg = str(e).lower()
         if any(
             x in err_msg
@@ -393,9 +376,7 @@ class GeminiApiClient(BaseLLMClient):
                 base_wait = 2.0**attempt
 
             wait_time = min(base_wait, 60.0)
-            logger.warning(
-                f"Retrying (Attempt {attempt + 1}) after {wait_time:.1f}s due to API congestion."
-            )
+            logger.warning(f"Retrying (Attempt {attempt + 1}) after {wait_time:.1f}s due to API congestion.")
             self.cooldown.on_rate_limit()
             await asyncio.sleep(wait_time)
             return True

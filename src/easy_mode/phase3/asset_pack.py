@@ -173,18 +173,14 @@ class AssetPackGenerator:
         # 6. メタデータ保存
         metadata.updated_at = datetime.now().isoformat()
         metadata_path = subdirs["metadata"] / "pack_metadata.json"
-        metadata_path.write_text(
-            json.dumps(metadata.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        metadata_path.write_text(json.dumps(metadata.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
         metadata.manifest["pack_metadata.json"] = "パックメタデータ"
 
         # 7. チェックサム計算
         metadata.checksums = self._calculate_checksums(work_dir)
 
         # メタデータ更新保存
-        metadata_path.write_text(
-            json.dumps(metadata.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        metadata_path.write_text(json.dumps(metadata.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
 
         # 8. ZIP圧縮
         zip_path = output_dir / f"{pack_id}.zip"
@@ -239,9 +235,7 @@ class AssetPackGenerator:
         }
 
         series_path = output_dir / "series_complete.json"
-        series_path.write_text(
-            json.dumps(series_data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        series_path.write_text(json.dumps(series_data, ensure_ascii=False, indent=2), encoding="utf-8")
         files["series_complete.json"] = "シリーズ完全データ"
 
         # 各話別テキスト
@@ -253,16 +247,12 @@ class AssetPackGenerator:
 
         # プロットアウトライン
         plot_path = output_dir / "plot_outline.json"
-        plot_path.write_text(
-            json.dumps(series.plot_outline, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        plot_path.write_text(json.dumps(series.plot_outline, ensure_ascii=False, indent=2), encoding="utf-8")
         files["plot_outline.json"] = "プロットアウトライン"
 
         # Bible
         bible_path = output_dir / "bible.json"
-        bible_path.write_text(
-            json.dumps(series.bible, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        bible_path.write_text(json.dumps(series.bible, ensure_ascii=False, indent=2), encoding="utf-8")
         files["bible.json"] = "Bible（世界観設定）"
 
         return files
@@ -285,9 +275,7 @@ class AssetPackGenerator:
         }
 
         graph_path = output_dir / "if_route_graph.json"
-        graph_path.write_text(
-            json.dumps(graph_data, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        graph_path.write_text(json.dumps(graph_data, ensure_ascii=False, indent=2), encoding="utf-8")
         files["if_route_graph.json"] = "IFルートグラフ（全ノード）"
 
         # 可視化用DOT
@@ -322,9 +310,7 @@ class AssetPackGenerator:
             "settings": {"auto_save": True, "show_unavailable": False},
         }
         save_path = output_dir / "save_template.json"
-        save_path.write_text(
-            json.dumps(save_template, ensure_ascii=False, indent=2), encoding="utf-8"
-        )
+        save_path.write_text(json.dumps(save_template, ensure_ascii=False, indent=2), encoding="utf-8")
         files["save_template.json"] = "セーブデータテンプレート"
 
         return files
@@ -432,8 +418,7 @@ class AssetPackGenerator:
             "total_episodes": len(series.episodes),
             "media_formats": media_formats,
             "episodes": {
-                f"ep{ep.episode_num:03d}": {"title": ep.title, "scripts": list(media_formats)}
-                for ep in series.episodes
+                f"ep{ep.episode_num:03d}": {"title": ep.title, "scripts": list(media_formats)} for ep in series.episodes
             },
         }
 
@@ -465,17 +450,11 @@ class AssetPackGenerator:
             output_path = output_dir / f"{series.title}.{fmt}"
             try:
                 if fmt == "epub":
-                    _ = self.ebook_exporter.export_epub(
-                        series, output_path, cover_image_path=cover_path, **kwargs
-                    )
+                    _ = self.ebook_exporter.export_epub(series, output_path, cover_image_path=cover_path, **kwargs)
                 elif fmt == "pdf":
-                    _ = self.ebook_exporter.export_pdf(
-                        series, output_path, cover_image_path=cover_path, **kwargs
-                    )
+                    _ = self.ebook_exporter.export_pdf(series, output_path, cover_image_path=cover_path, **kwargs)
                 elif fmt == "mobi":
-                    _ = self.ebook_exporter.export_mobi(
-                        series, output_path, cover_image_path=cover_path, **kwargs
-                    )
+                    _ = self.ebook_exporter.export_mobi(series, output_path, cover_image_path=cover_path, **kwargs)
                 else:
                     logger.warning(f"Unknown ebook format: {fmt}")
                     continue
@@ -536,9 +515,7 @@ class AssetPackGenerator:
         lines.append(f"【{series.title}】")
         lines.append("")
         lines.append(f"ジャンル: {series.genre}")
-        lines.append(
-            f"全{series.total_episodes}話・約{sum(ep.word_count for ep in series.episodes):,}字"
-        )
+        lines.append(f"全{series.total_episodes}話・約{sum(ep.word_count for ep in series.episodes):,}字")
         lines.append("")
 
         if long:

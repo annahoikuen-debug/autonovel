@@ -1,4 +1,5 @@
 """SQLiteとPostgreSQLを透過的に吸収するJSON型デコレータ。"""
+
 from __future__ import annotations
 import json
 from typing import Any

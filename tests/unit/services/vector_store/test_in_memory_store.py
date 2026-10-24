@@ -1,4 +1,5 @@
 """Unit tests for src/services/vector_store/{base,in_memory}.py."""
+
 import pytest
 
 import src.services.vector_store.in_memory as im
@@ -143,7 +144,10 @@ class TestInMemoryFallbackStoreBasics:
     async def test_add_documents(self):
         s = InMemoryFallbackStore()
         await s.add_documents(
-            "c", ["a", "b"], ["doc a", "doc b"], [[1.0, 0.0], [0.0, 1.0]],
+            "c",
+            ["a", "b"],
+            ["doc a", "doc b"],
+            [[1.0, 0.0], [0.0, 1.0]],
             [{"k": 1}, {"k": 2}],
         )
         assert len(s._data["c"]) == 2
@@ -183,9 +187,7 @@ class TestInMemoryFallbackStoreBasics:
 
     async def test_search_with_where(self):
         s = InMemoryFallbackStore()
-        await s.add_documents(
-            "c", ["a", "b"], ["x", "y"], [[1.0], [1.0]], [{"g": 1}, {"g": 2}]
-        )
+        await s.add_documents("c", ["a", "b"], ["x", "y"], [[1.0], [1.0]], [{"g": 1}, {"g": 2}])
         res = await s.search("c", [1.0], where={"g": 2})
         assert [r["id"] for r in res] == ["b"]
 
@@ -296,9 +298,7 @@ class TestHybridSearch:
 
     async def test_where_filter(self):
         s = InMemoryFallbackStore()
-        await s.add_documents(
-            "c", ["a", "b"], ["heroes", "other"], [[1.0], [1.0]], [{"g": 1}, {"g": 2}]
-        )
+        await s.add_documents("c", ["a", "b"], ["heroes", "other"], [[1.0], [1.0]], [{"g": 1}, {"g": 2}])
         res = await s.hybrid_search("c", "heroes", [1.0], where={"g": 2})
         assert all(r["metadata"].get("g") == 2 for r in res)
 
@@ -323,17 +323,13 @@ class TestHybridSearch:
 
     async def test_zero_bm25_scores_skipped(self, monkeypatch):
         s = await self._seed()
-        monkeypatch.setattr(
-            s._bm25_indexes["c"]["bm25"], "get_scores", lambda t: [0.0, 0.0, 0.0]
-        )
+        monkeypatch.setattr(s._bm25_indexes["c"]["bm25"], "get_scores", lambda t: [0.0, 0.0, 0.0])
         res = await s.hybrid_search("c", "zzzz", [1.0, 0.0])
         assert all(r["bm25_score"] == 0.0 for r in res)
 
     async def test_normalization_range_fallback(self, monkeypatch):
         s = await self._seed()
-        monkeypatch.setattr(
-            s._bm25_indexes["c"]["bm25"], "get_scores", lambda t: [2.0, 2.0, 2.0]
-        )
+        monkeypatch.setattr(s._bm25_indexes["c"]["bm25"], "get_scores", lambda t: [2.0, 2.0, 2.0])
         res = await s.hybrid_search("c", "heroes", [1.0, 0.0])
         assert res
 
@@ -378,29 +374,26 @@ class TestGraph:
 
     async def test_non_list_entities_ignored(self):
         s = self._seed()
-        await s.add_documents(
-            "c", ["a"], ["doc"], [[1.0]], [{"entities": "notalist", "relations": "x"}]
-        )
+        await s.add_documents("c", ["a"], ["doc"], [[1.0]], [{"entities": "notalist", "relations": "x"}])
         assert len(s._graphs["c"].nodes) == 0
 
     async def test_malformed_relations_ignored(self):
         s = self._seed()
-        await s.add_documents(
-            "c", ["a"], ["doc"], [[1.0]], [{"relations": [{"src": "X"}, "bad"]}]
-        )
+        await s.add_documents("c", ["a"], ["doc"], [[1.0]], [{"relations": [{"src": "X"}, "bad"]}])
         assert len(s._graphs["c"].edges) == 0
 
     async def test_relation_default_type(self):
         s = self._seed()
-        await s.add_documents(
-            "c", ["a"], ["doc"], [[1.0]], [{"relations": [{"src": "X", "dst": "Y"}]}]
-        )
+        await s.add_documents("c", ["a"], ["doc"], [[1.0]], [{"relations": [{"src": "X", "dst": "Y"}]}])
         assert s._graphs["c"].edges["X", "Y", 0]["rel_type"] == "related"
 
     async def test_get_neighbors(self):
         s = self._seed()
         await s.add_documents(
-            "c", ["a"], ["doc"], [[1.0]],
+            "c",
+            ["a"],
+            ["doc"],
+            [[1.0]],
             [{"relations": [{"src": "A", "dst": "B", "type": "friend"}]}],
         )
         res = await s.get_neighbors("c", "A")
@@ -411,7 +404,10 @@ class TestGraph:
     async def test_get_neighbors_reverse(self):
         s = self._seed()
         await s.add_documents(
-            "c", ["a"], ["doc"], [[1.0]],
+            "c",
+            ["a"],
+            ["doc"],
+            [[1.0]],
             [{"relations": [{"src": "A", "dst": "B", "type": "friend"}]}],
         )
         res = await s.get_neighbors("c", "B")
@@ -421,7 +417,10 @@ class TestGraph:
     async def test_get_neighbors_rel_type_filter(self):
         s = self._seed()
         await s.add_documents(
-            "c", ["a"], ["doc"], [[1.0]],
+            "c",
+            ["a"],
+            ["doc"],
+            [[1.0]],
             [{"relations": [{"src": "A", "dst": "B", "type": "friend"}]}],
         )
         assert await s.get_neighbors("c", "A", rel_type="enemy") == []
@@ -430,11 +429,18 @@ class TestGraph:
     async def test_get_neighbors_depth_limit(self):
         s = self._seed()
         await s.add_documents(
-            "c", ["a"], ["doc"], [[1.0]],
-            [{"relations": [
-                {"src": "A", "dst": "B", "type": "x"},
-                {"src": "B", "dst": "C", "type": "x"},
-            ]}],
+            "c",
+            ["a"],
+            ["doc"],
+            [[1.0]],
+            [
+                {
+                    "relations": [
+                        {"src": "A", "dst": "B", "type": "x"},
+                        {"src": "B", "dst": "C", "type": "x"},
+                    ]
+                }
+            ],
         )
         d1 = await s.get_neighbors("c", "A", max_depth=1)
         assert {r["entity"] for r in d1} == {"B"}
@@ -444,7 +450,10 @@ class TestGraph:
     async def test_get_neighbors_limit(self):
         s = self._seed()
         await s.add_documents(
-            "c", ["a"], ["doc"], [[1.0]],
+            "c",
+            ["a"],
+            ["doc"],
+            [[1.0]],
             [{"relations": [{"src": "A", "dst": f"N{i}", "type": "x"} for i in range(5)]}],
         )
         assert len(await s.get_neighbors("c", "A", limit=2)) == 2
@@ -504,9 +513,7 @@ class TestCheckEntityValidity:
     )
     async def test_status_mapping(self, status, valid, forbidden, retired):
         s = InMemoryFallbackStore()
-        await s.add_documents(
-            "c", ["a"], ["d"], [[1.0]], [{"entities": ["X"], "status": status}]
-        )
+        await s.add_documents("c", ["a"], ["d"], [[1.0]], [{"entities": ["X"], "status": status}])
         res = await s.check_entity_validity("c", "X")
         assert res["valid"] is valid
         assert res["is_forbidden"] is forbidden

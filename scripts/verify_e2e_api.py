@@ -25,6 +25,7 @@ from src.backend.auth import _get_dev_mock_user
 
 from src.backend.security.jwt import create_access_token
 
+
 def run_e2e_api_checks():
     print("=" * 60)
     print(" [E2E] AutoNovel 起動〜小説作成〜ダウンロード総合検証")
@@ -112,20 +113,10 @@ def run_e2e_api_checks():
         "title": "神域のクラフトマン ～現代知識と空間魔法で無双する～",
         "genre": "異世界ファンタジー",
         "current_text": "第1話：目覚めと空間の鍵\n目を開けると、そこは見知らぬ石造りの遺跡だった。\n「ここは……どこだ？」",
-        "character": {
-            "name": "アレン",
-            "personality": "冷静沈着で好奇心旺盛",
-            "ability": "空間収納・分解再構築"
-        },
-        "plots": [
-            {"ep_num": 1, "title": "第1話：目覚めと空間の鍵", "one_line_summary": "異世界で空間魔法に覚醒する"}
-        ]
+        "character": {"name": "アレン", "personality": "冷静沈着で好奇心旺盛", "ability": "空間収納・分解再構築"},
+        "plots": [{"ep_num": 1, "title": "第1話：目覚めと空間の鍵", "one_line_summary": "異世界で空間魔法に覚醒する"}],
     }
-    resp = client.post(
-        f"/easy_mode/export-with-data?book_id={test_book_id}",
-        json=export_payload,
-        headers=auth_headers
-    )
+    resp = client.post(f"/easy_mode/export-with-data?book_id={test_book_id}", json=export_payload, headers=auth_headers)
     print(f"  POST /easy_mode/export-with-data -> status: {resp.status_code}")
     assert resp.status_code == 200, f"エクスポート失敗: {resp.text}"
     assert resp.headers.get("content-type") == "application/zip", "MIMEタイプが application/zip ではありません"
@@ -147,10 +138,7 @@ def run_e2e_api_checks():
     # 4. なろう・カクヨム整形テキスト出力検証 (/api/export/books/{book_id})
     print("\n[Step 4] 小説プラットフォーム向け整形出力検証 (GET /api/export/books/{book_id})")
     for platform in ["narou", "kakuyomu"]:
-        res_plat = client.get(
-            f"/api/export/books/{test_book_id}?platform={platform}",
-            headers=auth_headers
-        )
+        res_plat = client.get(f"/api/export/books/{test_book_id}?platform={platform}", headers=auth_headers)
         print(f"  GET /api/export/books/{test_book_id}?platform={platform} -> status: {res_plat.status_code}")
         assert res_plat.status_code == 200, f"{platform} 向け出力失敗: {res_plat.text}"
         data = res_plat.json()
@@ -160,10 +148,7 @@ def run_e2e_api_checks():
 
     # 5. プラットフォーム出版用 ZIP パッケージ出力検証 (/api/export/publish/{platform})
     print("\n[Step 5] プラットフォーム出版用一括ZIPダウンロード検証 (POST /api/export/publish/{platform})")
-    publish_req = {
-        "book_id": test_book_id,
-        "branch_id": None
-    }
+    publish_req = {"book_id": test_book_id, "branch_id": None}
     resp_pub = client.post("/api/export/publish/narou", json=publish_req, headers=auth_headers)
     print(f"  POST /api/export/publish/narou -> status: {resp_pub.status_code}")
     if resp_pub.status_code == 200:
@@ -179,6 +164,7 @@ def run_e2e_api_checks():
     print("\n" + "=" * 60)
     print(" [総合結果] 起動から小説作成・各種ダウンロードまで全機能の正常動作を確認！")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     run_e2e_api_checks()

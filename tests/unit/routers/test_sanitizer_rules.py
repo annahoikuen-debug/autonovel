@@ -1,11 +1,13 @@
 from src.backend.sanitizer import NormalizationFlow, OutputSanitizer, ContentValidator, TextFormatter
 
+
 def test_normalization_flow_unwrap():
     flow = NormalizationFlow()
     raw = {"metadata": {"title": "覇権小説", "genre": "fantasy"}}
     result = flow.unwrap_nested_metadata(raw)
     assert result["title"] == "覇権小説"
     assert result["genre"] == "fantasy"
+
 
 def test_normalization_flow_resolve_aliases():
     flow = NormalizationFlow()
@@ -14,12 +16,14 @@ def test_normalization_flow_resolve_aliases():
     assert "characters" in result
     assert result["characters"] == ["Alice", "Bob"]
 
+
 def test_output_sanitizer_fix_json():
     sanitizer = OutputSanitizer()
     broken_json = '```json\n{"title": "魔法剣士", "chapters": [1, 2, 3]}\n```'
     parsed = sanitizer.parse_llm_json(broken_json)
     assert parsed["title"] == "魔法剣士"
     assert len(parsed["chapters"]) == 3
+
 
 def test_content_validator_rhythm():
     validator = ContentValidator()
@@ -28,6 +32,7 @@ def test_content_validator_rhythm():
     is_valid, msg = validator.check_rhythm(repetitive_text)
     # 検証結果が返ることを確認
     assert isinstance(is_valid, bool)
+
 
 def test_text_formatter_remove_ai_isms():
     formatter = TextFormatter()

@@ -1,4 +1,5 @@
 """Unit tests for Reranker (Noop / Simple / CrossEncoder)."""
+
 from __future__ import annotations
 
 import pytest

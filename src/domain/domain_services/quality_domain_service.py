@@ -12,21 +12,24 @@ from src.domain.value_objects.ids import NovelId
 
 class QualityValidationError(Exception):
     """Raised when quality validation fails."""
+
     pass
 
 
 class QualityGrade(Enum):
     """Quality grade based on overall score."""
-    S = "S"      # 90-100
-    A = "A"      # 80-89
-    B = "B"      # 70-79
-    C = "C"      # 60-69
-    D = "D"      # 50-59
-    F = "F"      # 0-49
+
+    S = "S"  # 90-100
+    A = "A"  # 80-89
+    B = "B"  # 70-79
+    C = "C"  # 60-69
+    D = "D"  # 50-59
+    F = "F"  # 0-49
 
 
 class QualityThresholds:
     """Quality threshold constants."""
+
     PASSING_SCORE = 60
     EXCELLENT_SCORE = 80
     MASTERPIECE_SCORE = 90
@@ -144,7 +147,9 @@ class QualityCalculator:
         return cls.calculate_book_score(dimensions, weights or cls.PLOT_QUALITY_WEIGHTS)
 
     @classmethod
-    def calculate_chapter_quality_score(cls, chapter, weights: Optional[Dict[str, float]] = None) -> Optional[BookScore]:
+    def calculate_chapter_quality_score(
+        cls, chapter, weights: Optional[Dict[str, float]] = None
+    ) -> Optional[BookScore]:
         """Calculate quality score for a Chapter entity."""
         if chapter.score_story is None:
             return None
@@ -226,11 +231,13 @@ class QualityCalculator:
             distribution[bucket] = distribution.get(bucket, 0) + 1
 
             if catharsis >= 80:
-                catharsis_episodes.append({
-                    "episode": plot.episode_number,
-                    "catharsis": catharsis,
-                    "type": plot.catharsis_type,
-                })
+                catharsis_episodes.append(
+                    {
+                        "episode": plot.episode_number,
+                        "catharsis": catharsis,
+                        "type": plot.catharsis_type,
+                    }
+                )
 
         return {
             "total": len(plots),
@@ -346,7 +353,7 @@ class QualityAnalyzer:
         scores = list(book_score.dimensions.values())
         mean = sum(scores) / len(scores)
         variance = sum((s - mean) ** 2 for s in scores) / len(scores)
-        std_dev = variance ** 0.5
+        std_dev = variance**0.5
 
         # Lower std_dev = more balanced. Max std_dev when half 0, half 100 = 50
         balance = max(0, 100 - (std_dev / 50) * 100)
@@ -385,7 +392,9 @@ class QualityAnalyzer:
             recommendations.append(f"Focus on improving: {', '.join(weak_dims)}")
 
         if balance < 50:
-            recommendations.append("Quality dimensions are unbalanced - aim for more even development across all aspects")
+            recommendations.append(
+                "Quality dimensions are unbalanced - aim for more even development across all aspects"
+            )
 
         dimension_advice = {
             "story": "Strengthen plot structure and narrative coherence",
@@ -441,9 +450,7 @@ class QualityDomainService:
         """Calculate aggregate quality score for a novel."""
         plot_scores = [self.calculate_plot_quality(p) for p in plots]
         chapter_scores = [self.calculate_chapter_quality(c) for c in chapters]
-        return self._calculator.calculate_aggregate_quality(
-            plot_scores, chapter_scores, self._effective_weights()
-        )
+        return self._calculator.calculate_aggregate_quality(plot_scores, chapter_scores, self._effective_weights())
 
     def validate_plot_scores(self, plot) -> List[str]:
         """Validate all quality scores in a plot."""

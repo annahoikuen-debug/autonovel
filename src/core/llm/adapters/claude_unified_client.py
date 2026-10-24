@@ -109,6 +109,7 @@ class ClaudeUnifiedClient(IUnifiedLLMClient):
         params = self._create_params(req)
         if system:
             params["system"] = system
+
         # 注意: Anthropic の同期ストリーミングはサポートされていない可能性がある。
         # ここでは非同期ストリーミングを同期ラッパーで実装する。
         # しかし、シンプルにするために、非同期ストリーミングを同期コンテキストで実行する。

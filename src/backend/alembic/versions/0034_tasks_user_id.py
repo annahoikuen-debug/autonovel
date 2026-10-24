@@ -18,6 +18,7 @@ Create Date: 2026-10-02 00:00:00.000000
 * ``users`` が無い環境（0027 未適用）では FK を付けられないため、カラムだけを足す。
 * 全操作は存在ガード付き（冪等）。
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa
@@ -60,9 +61,7 @@ def _has_fk(table: str, column: str, referred: str) -> bool:
     if table not in insp.get_table_names():
         return False
     for fk in insp.get_foreign_keys(table):
-        if column in (fk.get("constrained_columns") or ()) and referred in (
-            fk.get("referred_table") or ""
-        ):
+        if column in (fk.get("constrained_columns") or ()) and referred in (fk.get("referred_table") or ""):
             return True
     return False
 
@@ -78,9 +77,7 @@ def upgrade() -> None:
         # tasks は users の子なので、親側のテーブル再構築はここでは行わない
         # （PRAGMA の扱いは 0033 の _sqlite_foreign_keys_off を参照）。
         with op.batch_alter_table("tasks") as batch:
-            batch.create_foreign_key(
-                _CONSTRAINT_NAME, "users", ["user_id"], ["id"], ondelete="CASCADE"
-            )
+            batch.create_foreign_key(_CONSTRAINT_NAME, "users", ["user_id"], ["id"], ondelete="CASCADE")
 
     if not _index_exists("tasks", _INDEX_NAME):
         op.create_index(_INDEX_NAME, "tasks", ["user_id"])

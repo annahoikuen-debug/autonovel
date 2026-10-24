@@ -50,9 +50,7 @@ def test_density_controller():
 
 def test_integrity_checker():
     checker = EroticIntegrityChecker(db_path=":memory:")
-    ok, issues, quality_report, continuity_report = checker.check_all(
-        "二人は唇が触れる距離で、彼が求めて彼女が応じる"
-    )
+    ok, issues, quality_report, continuity_report = checker.check_all("二人は唇が触れる距離で、彼が求めて彼女が応じる")
     assert ok is True
 
 
@@ -123,9 +121,7 @@ def test_consent_implicit_ok():
 def test_check_all_with_consent():
     checker = EroticIntegrityChecker(db_path=":memory:")
     text = "彼女は服を着ている"
-    ok, issues, quality_report, continuity_report = checker.check_all(
-        text, consent_state="explicit"
-    )
+    ok, issues, quality_report, continuity_report = checker.check_all(text, consent_state="explicit")
     assert ok is False
     assert any("明示的同意" in issue for issue in issues)
 

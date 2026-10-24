@@ -1,7 +1,8 @@
 # tests/integration/test_full_pdca_cycle.py
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -15,6 +16,7 @@ from datetime import datetime
 
 class FullCycleSkill(SkillAgent):
     """完全サイクルテスト用スキル"""
+
     def __init__(self, *args, score_dict=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.score_dict = score_dict or {
@@ -39,14 +41,11 @@ async def test_full_ab_pdca_cycle():
 
     # 1. Orchestrator と BookScoreCalculator セットアップ
     orch = Orchestrator(nodes={})
-    orch.register_discovered_skills('src.agents.skills.v1')
+    orch.register_discovered_skills("src.agents.skills.v1")
 
     # 2. A/Bテスト実行（v1のみ存在するため、v2はスキップされる想定）
     skill_name = "planning"
-    ctx_list = [
-        AgentContext(book_id=i, branch_id=1, ep_num=1, artifacts={})
-        for i in range(5)
-    ]
+    ctx_list = [AgentContext(book_id=i, branch_id=1, ep_num=1, artifacts={}) for i in range(5)]
 
     # 2. 存在しないスキル名でのA/Bテストでエラーになることを確認
     try:
@@ -85,16 +84,23 @@ async def test_full_ab_pdca_cycle():
 
     # 5. BookScoreCalculator で PDCA レポート生成テスト
     mock_repo = MagicMock()
-    mock_repo.get_all_for_book = AsyncMock(return_value=[
-        BookScoreModel(
-            book_id=1, chapter_number=i, overall_score=75.0 + i,
-            structure_score=80.0, coherency_score=75.0,
-            factual_grounding_score=75.0, visual_textual_synergy_score=80.0,
-            reader_experience_score=75.0, evaluated_at=datetime.utcnow(),
-            evaluator_version="1.0"
-        )
-        for i in range(1, 6)
-    ])
+    mock_repo.get_all_for_book = AsyncMock(
+        return_value=[
+            BookScoreModel(
+                book_id=1,
+                chapter_number=i,
+                overall_score=75.0 + i,
+                structure_score=80.0,
+                coherency_score=75.0,
+                factual_grounding_score=75.0,
+                visual_textual_synergy_score=80.0,
+                reader_experience_score=75.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
+            )
+            for i in range(1, 6)
+        ]
+    )
 
     calc = BookScoreCalculator(repository=mock_repo)
     pdca = await calc.generate_pdca_report(1)
@@ -134,9 +140,7 @@ async def test_full_ab_pdca_cycle():
         "avg_score": 65.0,
         "latest_score": 55.0,
         "trend_direction": "declining",
-        "changepoints": [
-            {"chapter_index": 2, "prev_score": 75.0, "curr_score": 55.0, "change": -20.0}
-        ],
+        "changepoints": [{"chapter_index": 2, "prev_score": 75.0, "curr_score": 55.0, "change": -20.0}],
     }
 
     # 急落アラートが生成されることを確認

@@ -25,6 +25,7 @@ def pipeline():
 # Pipeline Mode Switching Tests
 # ==============================================================================
 
+
 def test_pipeline_mode_off(pipeline):
     pipeline.set_mode("off")
     raw = "「私は悲しい」[BEAT:pause:short]"
@@ -80,6 +81,7 @@ def test_pipeline_custom_hook(pipeline):
 # ==============================================================================
 # FastAPI Subtext Router Tests
 # ==============================================================================
+
 
 def test_api_list_and_create_rule(client):
     # GET /subtext/rules

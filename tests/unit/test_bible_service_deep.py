@@ -1,4 +1,5 @@
 """src.services.bible_service の深層単体テスト (Step 11)。"""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
@@ -44,9 +45,7 @@ class TestWorldBibleGenerator:
     @pytest.mark.asyncio
     async def test_record_setting_delta_no_repo(self):
         gen = WorldBibleGenerator(None, None, None, None, None, None)
-        delta_id = await gen.record_setting_delta(
-            book_id=1, field_path="x", old_value=None, new_value=None
-        )
+        delta_id = await gen.record_setting_delta(book_id=1, field_path="x", old_value=None, new_value=None)
         assert delta_id == 0
 
     @pytest.mark.asyncio
@@ -68,8 +67,6 @@ class TestWorldBibleGenerator:
         mock_repo.bible.get_bible = AsyncMock(return_value=bible)
         mock_repo.session = AsyncMock()
 
-
-
         max_result = MagicMock()
         max_result.scalar.return_value = 3
         session = AsyncMock()
@@ -84,7 +81,6 @@ class TestWorldBibleGenerator:
         except Exception:
             # モデル作成がモック環境で失敗する場合は許容
             pass
-
 
 
 if __name__ == "__main__":

@@ -89,9 +89,7 @@ class SemanticEdgePreserver:
 
         return semantic_lost, string_lost
 
-    def _check_string_only(
-        self, after_content: str, edges: list[SharpEdgeSpec]
-    ) -> list[SharpEdgeSpec]:
+    def _check_string_only(self, after_content: str, edges: list[SharpEdgeSpec]) -> list[SharpEdgeSpec]:
         """文字列チェック（key_phrase もしくは description[:20]）のみを行う実装"""
         if not edges:
             return []
@@ -160,9 +158,7 @@ class SemanticEdgePreserver:
         return 0.0
 
 
-def check_edges_preserved(
-    before_content: str, after_content: str, edges: list[SharpEdgeSpec]
-) -> list[SharpEdgeSpec]:
+def check_edges_preserved(before_content: str, after_content: str, edges: list[SharpEdgeSpec]) -> list[SharpEdgeSpec]:
     """
     品質向上前後のコンテンツを比較し、削除された角を検出する（同期版・後方互換）。
 

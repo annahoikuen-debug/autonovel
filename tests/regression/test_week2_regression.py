@@ -2,6 +2,7 @@
 
 パイプライン統合・ネームスペース分離・因果パスの回帰検証。
 """
+
 from __future__ import annotations
 
 import tempfile
@@ -48,11 +49,18 @@ class MockExtractor(EmotionalResidueExtractor):
 
     def extract_and_persist(self, episode_id: str, script: str) -> EmotionalVector:
         vec = EmotionalVector(episode_id=episode_id)
-        vec.set_signal(EmotionalSignal(
-            source="A", target="B", emotion_type=EmotionType.JEALOUSY,
-            value=0.6, confidence=0.7, evidence_span=script[:20],
-            episode_id=episode_id, cause="pipeline_extraction",
-        ))
+        vec.set_signal(
+            EmotionalSignal(
+                source="A",
+                target="B",
+                emotion_type=EmotionType.JEALOUSY,
+                value=0.6,
+                confidence=0.7,
+                evidence_span=script[:20],
+                episode_id=episode_id,
+                cause="pipeline_extraction",
+            )
+        )
         self.vector_store.upsert(NAMESPACE_PIPELINE, f"{episode_id}:A->B", vec)
         return vec
 
@@ -131,9 +139,7 @@ class TestWeek2Regression:
 
         # Week 1 のデータ構造がそのまま使える
         vec = EmotionalVector(episode_id="ep01")
-        vec.set_signal(EmotionalSignal(
-            "A", "B", EmotionType.AFFECTION, 0.5, 0.8, "...", "ep01"
-        ))
+        vec.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.5, 0.8, "...", "ep01"))
         assert vec.get_value("A", "B", EmotionType.AFFECTION) == 0.5
 
         # ネームスペース "pipeline" キーは Week 1 と同じ形式
@@ -146,8 +152,10 @@ class TestWeek2Regression:
         rule_engine = create_rule_engine()
         # ルールエンジンで状態を変更
         rule_engine.process_episode(
-            14, __import__("src.rules.rule_loader", fromlist=["parse_episode_events"])
-            .parse_episode_events(DEFAULT_EVENTS_PATH)[14],
+            14,
+            __import__("src.rules.rule_loader", fromlist=["parse_episode_events"]).parse_episode_events(
+                DEFAULT_EVENTS_PATH
+            )[14],
         )
         # Week 1 の抽出器は独立して動作する
         store = MockVectorStore()

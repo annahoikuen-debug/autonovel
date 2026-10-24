@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.backend.workflows.writing_langgraph import WritingGraphManager
 
+
 @pytest.mark.asyncio
 async def test_writing_manager_saves_checkpoint():
     # Mock the manager (GenerationLoopManager)
@@ -21,7 +22,7 @@ async def test_writing_manager_saves_checkpoint():
         "ep_num": 5,
         "draft_content": "Once upon a time...",
         "audit_result": {"is_integrity_ok": True},
-        "ac_iter": 2
+        "ac_iter": 2,
     }
 
     # Call the internal method

@@ -13,7 +13,7 @@ def test_offsets_point_at_actual_text():
     out = ParagraphIndexer().index_paragraphs(text)
     assert len(out) == 3
     for item in out:
-        assert text[item["start"]:item["end"]] == item["text"], item
+        assert text[item["start"] : item["end"]] == item["text"], item
 
 
 def test_legacy_keys_still_present():
@@ -25,7 +25,7 @@ def test_legacy_keys_still_present():
 def test_leading_whitespace_does_not_shift_offsets():
     text = "\n\nあいうえお。\n\nかきくけこ。"
     out = ParagraphIndexer().index_paragraphs(text)
-    assert text[out[0]["start"]:out[0]["end"]] == "あいうえお。"
+    assert text[out[0]["start"] : out[0]["end"]] == "あいうえお。"
 
 
 def test_empty_text_returns_empty_list():

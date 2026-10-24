@@ -10,7 +10,7 @@ def test_foreshadowing_creation():
         hang_episode=3,
         hang_chapter=5,
         hang_type="implicit",
-        importance="★★★"
+        importance="★★★",
     )
 
     assert fs.id == "F-001"
@@ -35,7 +35,7 @@ def test_foreshadowing_with_resolution():
         hang_type="explicit",
         importance="★★",
         resolution_volume=5,
-        resolution_episode=3
+        resolution_episode=3,
     )
 
     assert fs.resolution_volume == 5
@@ -53,7 +53,7 @@ def test_foreshadowing_to_dict():
         hang_type="reader_task",
         importance="★",
         resolution_volume=4,
-        resolution_episode=2
+        resolution_episode=2,
     )
 
     expected = {
@@ -65,7 +65,7 @@ def test_foreshadowing_to_dict():
         "hang_type": "reader_task",
         "importance": "★",
         "resolution_volume": 4,
-        "resolution_episode": 2
+        "resolution_episode": 2,
     }
 
     assert fs.to_dict() == expected
@@ -82,7 +82,7 @@ def test_foreshadowing_from_dict():
         "hang_type": "explicit",
         "importance": "★★★",
         "resolution_volume": 3,
-        "resolution_episode": 4
+        "resolution_episode": 4,
     }
 
     fs = Foreshadowing.from_dict(data)
@@ -109,7 +109,7 @@ def test_foreshadowing_roundtrip():
         hang_type="implicit",
         importance="★★",
         resolution_volume=6,
-        resolution_episode=1
+        resolution_episode=1,
     )
 
     data = original.to_dict()

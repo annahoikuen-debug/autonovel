@@ -1,4 +1,5 @@
 """Emotional consistency checker comparing CoreMemory with baseline FusedVector."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List
@@ -31,25 +32,29 @@ def check_emotional_consistency(
 
         # 1. 符号反転（矛盾）
         if (core_val > 0.2 and base_val < -0.2) or (core_val < -0.2 and base_val > 0.2):
-            errors.append({
-                "pair": (src, tgt),
-                "emotion": emo_str,
-                "core_value": core_val,
-                "baseline_value": base_val,
-                "type": "SIGN_FLIP_CONFLICT",
-                "message": f"感情の極性が急反転しています: baseline={base_val} vs core={core_val}",
-            })
+            errors.append(
+                {
+                    "pair": (src, tgt),
+                    "emotion": emo_str,
+                    "core_value": core_val,
+                    "baseline_value": base_val,
+                    "type": "SIGN_FLIP_CONFLICT",
+                    "message": f"感情の極性が急反転しています: baseline={base_val} vs core={core_val}",
+                }
+            )
         # 2. 大きな乖離
         elif diff >= divergence_threshold:
-            warnings.append({
-                "pair": (src, tgt),
-                "emotion": emo_str,
-                "core_value": core_val,
-                "baseline_value": base_val,
-                "diff": round(diff, 4),
-                "type": "LARGE_DIVERGENCE",
-                "message": f"感情値の乖離が閾値({divergence_threshold})を超えています (差: {diff:.2f})",
-            })
+            warnings.append(
+                {
+                    "pair": (src, tgt),
+                    "emotion": emo_str,
+                    "core_value": core_val,
+                    "baseline_value": base_val,
+                    "diff": round(diff, 4),
+                    "type": "LARGE_DIVERGENCE",
+                    "message": f"感情値の乖離が閾値({divergence_threshold})を超えています (差: {diff:.2f})",
+                }
+            )
 
     return {
         "consistent": len(errors) == 0,

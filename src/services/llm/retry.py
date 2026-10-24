@@ -13,40 +13,44 @@ logger = logging.getLogger(__name__)
 
 # 恒久的なクライアントエラーとして明示的に送出すべき例外
 # （SDKをimportせずクラス名で判定する）
-_NON_RETRYABLE_ERROR_NAMES = frozenset({
-    "BadRequestError",
-    "UnprocessableEntityError",
-    "AuthenticationError",
-    "PermissionDeniedError",
-    "PermissionDenied",
-    "NotFoundError",
-    "ConflictError",
-    "UnprocessableEntity",
-})
+_NON_RETRYABLE_ERROR_NAMES = frozenset(
+    {
+        "BadRequestError",
+        "UnprocessableEntityError",
+        "AuthenticationError",
+        "PermissionDeniedError",
+        "PermissionDenied",
+        "NotFoundError",
+        "ConflictError",
+        "UnprocessableEntity",
+    }
+)
 
 # リトライ対象とする一時的なエラー
 _RETRYABLE_STATUS_CODES = frozenset({408, 409, 429, 500, 502, 503, 504, 529})
 
-_RETRYABLE_ERROR_NAMES = frozenset({
-    "APIConnectionError",
-    "APITimeoutError",
-    "APIConnectionTimeoutError",
-    "ConnectionError",
-    "ConnectTimeout",
-    "ConnectError",
-    "ReadTimeout",
-    "ReadError",
-    "RemoteProtocolError",
-    "TimeoutException",
-    "TimeoutError",
-    "TooManyRequests",
-    "RateLimitError",
-    "RateLimitException",
-    "InternalServerError",
-    "ServiceUnavailableError",
-    "OverloadedError",
-    "ResourceExhausted",
-})
+_RETRYABLE_ERROR_NAMES = frozenset(
+    {
+        "APIConnectionError",
+        "APITimeoutError",
+        "APIConnectionTimeoutError",
+        "ConnectionError",
+        "ConnectTimeout",
+        "ConnectError",
+        "ReadTimeout",
+        "ReadError",
+        "RemoteProtocolError",
+        "TimeoutException",
+        "TimeoutError",
+        "TooManyRequests",
+        "RateLimitError",
+        "RateLimitException",
+        "InternalServerError",
+        "ServiceUnavailableError",
+        "OverloadedError",
+        "ResourceExhausted",
+    }
+)
 
 _RETRY_AFTER_PATTERN = re.compile(r"retry[- ]?after[:=]\s*(\d+(?:\.\d+)?)", re.I)
 

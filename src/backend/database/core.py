@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """
 database/core.py - データベース接続および低レベルインフラ管理
 """
@@ -26,11 +27,11 @@ try:
 
     DATABASE_URL = settings.DATABASE_URL
 except ImportError:
-            try:
-                from config import BASE_DIR, DATABASE_URL
-            except ImportError:
-                BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-                DATABASE_URL = f"sqlite:///{BASE_DIR / 'storage' / 'autonovel.db'}"
+    try:
+        from config import BASE_DIR, DATABASE_URL
+    except ImportError:
+        BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+        DATABASE_URL = f"sqlite:///{BASE_DIR / 'storage' / 'autonovel.db'}"
 
 logger = logging.getLogger(__name__)
 
@@ -52,9 +53,7 @@ def retry_with_logging(retries: int = 15, base_delay: float = 0.1, max_delay: fl
                         )
                         raise
                     delay = min(base_delay * (1.5**i), max_delay)
-                    logger.warning(
-                        f"Retry {i + 1}/{retries} in {func.__name__} after {delay:.1f}s due to: {e}"
-                    )
+                    logger.warning(f"Retry {i + 1}/{retries} in {func.__name__} after {delay:.1f}s due to: {e}")
                     await asyncio.sleep(delay)
 
         return wrapper
@@ -139,6 +138,7 @@ class DatabaseManager:
 
         # Configure SQLite engine if applicable - centralized in one place
         if is_sqlite:
+
             @event.listens_for(self.engine.sync_engine, "connect")
             def set_sqlite_pragma(dbapi_connection, connection_record):
                 cursor = dbapi_connection.cursor()
@@ -166,9 +166,7 @@ class DatabaseManager:
                     # checkin 時の rollback 失敗は次回の接続で再試行されるためデバッグログのみ
                     logger.debug("reset_on_checkin rollback 失敗: %s", exc)
 
-        self.session_factory = async_sessionmaker(
-            bind=self.engine, class_=AsyncSession, expire_on_commit=False
-        )
+        self.session_factory = async_sessionmaker(bind=self.engine, class_=AsyncSession, expire_on_commit=False)
 
     def get_session(self) -> AsyncSession:
         """SQLAlchemyのAsyncSessionを取得する"""
@@ -194,6 +192,7 @@ class DatabaseManager:
         代わりに `connection()` または `begin()` コンテキストマネージャを使用してください。
         """
         import warnings
+
         warnings.warn(
             "DatabaseManager.get_conn() is deprecated. Use connection() or begin() context managers instead.",
             DeprecationWarning,
@@ -240,6 +239,7 @@ class DatabaseManager:
     async def get_read_conn(self):
         """非推奨: 読み取り専用接続（プールから再利用）"""
         import warnings
+
         warnings.warn(
             "DatabaseManager.get_read_conn() is deprecated. Use connection() instead.",
             DeprecationWarning,
@@ -250,12 +250,13 @@ class DatabaseManager:
     async def release_read_conn(self, conn) -> None:
         """非推奨: 読み取り専用接続をプールに返却"""
         import warnings
+
         warnings.warn(
             "DatabaseManager.release_read_conn() is deprecated. Use connection() context manager instead.",
             DeprecationWarning,
             stacklevel=2,
         )
-        if hasattr(conn, 'close'):
+        if hasattr(conn, "close"):
             await conn.close()
 
     async def enqueue_write(self, sql: str, params: tuple = ()) -> None:
@@ -270,8 +271,7 @@ class DatabaseManager:
         """SQLを実行する。sqlalchemy.text() でラップされたクエリのみ受け付ける。"""
         if isinstance(sql, str):
             raise TypeError(
-                "DatabaseManager.execute() no longer accepts raw strings. "
-                "Please use sqlalchemy.text() for SQL queries."
+                "DatabaseManager.execute() no longer accepts raw strings. Please use sqlalchemy.text() for SQL queries."
             )
 
         logger.debug("DatabaseManager.execute called: %s", sql)
@@ -425,8 +425,7 @@ def init_db(db_path: str = ""):
             ) from exc
 
         logger.warning(
-            "[init_db] Alembic upgrade に失敗したため開発用フォールバック "
-            "(create_all) を実行します: %s",
+            "[init_db] Alembic upgrade に失敗したため開発用フォールバック (create_all) を実行します: %s",
             exc,
         )
         import src.backend.database.models  # noqa: F401

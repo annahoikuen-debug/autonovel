@@ -14,6 +14,7 @@ MODEL_CONFIG_DEFAULTS = ConfigDict(populate_by_name=True, extra="allow", protect
 
 class CreateBranchDTO(BaseModel):
     """DTO for creating a new branch."""
+
     novel_id: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1)
     parent_branch_id: Optional[str] = None
@@ -24,6 +25,7 @@ class CreateBranchDTO(BaseModel):
 
 class UpdateBranchDTO(BaseModel):
     """DTO for updating a branch."""
+
     name: Optional[str] = Field(None, min_length=1)
     graph_data: Optional[Dict[str, Any]] = None
     # Note: novel_id, parent_branch_id, fork_episode are typically not updated after creation
@@ -33,6 +35,7 @@ class UpdateBranchDTO(BaseModel):
 
 class BranchResponseDTO(BaseModel):
     """DTO for branch response."""
+
     id: str
     novel_id: str
     name: str
@@ -61,6 +64,7 @@ class BranchResponseDTO(BaseModel):
 
 class BranchListItemDTO(BaseModel):
     """DTO for branch list item (lightweight)."""
+
     id: str
     novel_id: str
     name: str
@@ -83,6 +87,7 @@ class BranchListItemDTO(BaseModel):
 
 class CreateBranchPlaySessionDTO(BaseModel):
     """DTO for creating a branch play session."""
+
     novel_id: str = Field(..., min_length=1)
     branch_id: str = Field(..., min_length=1)
     initial_node_id: Optional[str] = None
@@ -92,6 +97,7 @@ class CreateBranchPlaySessionDTO(BaseModel):
 
 class BranchPlaySessionResponseDTO(BaseModel):
     """DTO for branch play session response."""
+
     id: str
     novel_id: str
     branch_id: str
@@ -119,5 +125,6 @@ class BranchPlaySessionResponseDTO(BaseModel):
 
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     pass

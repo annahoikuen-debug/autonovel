@@ -1,4 +1,5 @@
 """Stress and long-run test simulating 50 episodes of continuous writing."""
+
 from src.agents.writer_agent import WriterAgent
 from src.stores.vector_store import InMemoryVectorStore
 

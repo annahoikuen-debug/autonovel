@@ -9,6 +9,7 @@ NULL のままだと `ForeshadowingService.check_and_resolve` の
 `is_contracted` が常に True となり、回収判定のアンサンブルスコアが
 機能しなくなっていた（伏線の「契約」が実体化していない状態）。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -190,9 +191,7 @@ def plan_foreshadowing(
         target = min(planted_episode + 3, total)
     else:
         payoff, prev = located
-        is_long_term = any(
-            b["range"] == payoff["range"] for b in _payoff_slots(ForeshadowingScope.LONG_TERM)
-        )
+        is_long_term = any(b["range"] == payoff["range"] for b in _payoff_slots(ForeshadowingScope.LONG_TERM))
         scope = ForeshadowingScope.LONG_TERM if is_long_term else ForeshadowingScope.SHORT_TERM
         target = min(_spread_target(planted_episode, payoff, prev), total)
 

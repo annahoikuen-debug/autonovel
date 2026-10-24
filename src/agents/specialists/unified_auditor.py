@@ -37,6 +37,7 @@ def _resolve_audit_llm() -> Any:
         logger.error("監査用 LLM の解決に失敗しました: %r", e)
         return None
 
+
 class UnifiedAuditor:
     """二層ハイブリッド監査エンジン (v5.0 Hybrid-Lean)
     - 第1層: 静的ルール解析 (0ms, 0コスト)
@@ -70,8 +71,7 @@ class UnifiedAuditor:
                     return await fn(prompt)
 
         raise AttributeError(
-            f"{type(self.llm).__name__} は generate / generate_text のどちらを"
-            "持ってもいません。監査は実行できません。"
+            f"{type(self.llm).__name__} は generate / generate_text のどちらを持ってもいません。監査は実行できません。"
         )
 
     def audit_quantitative(self, text: str) -> tuple[float, dict[str, Any]]:
@@ -101,9 +101,7 @@ class UnifiedAuditor:
         plot_spec: str = "",
     ) -> QualitativeAudit:
         """LLMによる定性的評価を1回のみ実行（公開 API。署名は互換のため維持）"""
-        qual, _degraded = await self._audit_qualitative_with_status(
-            text, character_profiles, plot_spec
-        )
+        qual, _degraded = await self._audit_qualitative_with_status(text, character_profiles, plot_spec)
         return qual
 
     async def _audit_qualitative_with_status(
@@ -244,9 +242,7 @@ class UnifiedAuditor:
     ) -> UnifiedAuditReport:
         """二層ハイブリッド監査を実行し総合判定を下す"""
         q_score, meta = self.audit_quantitative(text)
-        qual, degraded = await self._audit_qualitative_with_status(
-            text, character_profiles, plot_spec
-        )
+        qual, degraded = await self._audit_qualitative_with_status(text, character_profiles, plot_spec)
 
         # 総合得点 = 定量40% + 定性60%
         final = (q_score * 0.4) + (qual.overall_score * 0.6)
@@ -257,8 +253,7 @@ class UnifiedAuditor:
 
         if degraded:
             logger.error(
-                "UnifiedAuditor: 定性評価が成立しなかったため不合格判定 "
-                "(q_score=%.1f final=%.1f): %s",
+                "UnifiedAuditor: 定性評価が成立しなかったため不合格判定 (q_score=%.1f final=%.1f): %s",
                 q_score,
                 final,
                 qual.critique,
@@ -269,9 +264,7 @@ class UnifiedAuditor:
                     severity="critical",
                     title="監査が未実施のため不合格",
                     description=(
-                        "AI編集者による定性評価が完了しませんでした"
-                        f"（{qual.critique}）。"
-                        "本章は未評価として扱われます。"
+                        f"AI編集者による定性評価が完了しませんでした（{qual.critique}）。本章は未評価として扱われます。"
                     ),
                     confidence=1.0,
                 )

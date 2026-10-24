@@ -50,9 +50,7 @@ class PromptVersionRepository(PromptVersionRepositoryInterface, BaseRepository):
             content=version.content,
             score_before=version.score_before,
             score_after=version.score_after,
-            ab_test_metrics=json.loads(version.ab_test_metrics)
-            if version.ab_test_metrics
-            else None,
+            ab_test_metrics=json.loads(version.ab_test_metrics) if version.ab_test_metrics else None,
             rollback_reason=version.rollback_reason,
             is_active=version.is_active,
             created_at=version.created_at.isoformat() if version.created_at else None,
@@ -60,9 +58,7 @@ class PromptVersionRepository(PromptVersionRepositoryInterface, BaseRepository):
 
     async def get_prompt_version(self, version_id: int) -> PromptVersionDbModel | None:
         """IDからプロンプトバージョンを取得"""
-        result = await self.session.execute(
-            select(PromptVersion).where(PromptVersion.id == version_id)
-        )
+        result = await self.session.execute(select(PromptVersion).where(PromptVersion.id == version_id))
         row = result.scalar_one_or_none()
         if row:
             return self._to_domain_model(row)
@@ -83,9 +79,7 @@ class PromptVersionRepository(PromptVersionRepositoryInterface, BaseRepository):
             return self._to_domain_model(row)
         return None
 
-    async def get_prompt_versions(
-        self, book_id: int, limit: int = 20
-    ) -> list[PromptVersionDbModel]:
+    async def get_prompt_versions(self, book_id: int, limit: int = 20) -> list[PromptVersionDbModel]:
         """本に紐づくプロンプトバージョン一覧を取得"""
         result = await self.session.execute(
             select(PromptVersion)
@@ -96,9 +90,7 @@ class PromptVersionRepository(PromptVersionRepositoryInterface, BaseRepository):
         rows = result.scalars().all()
         return [self._to_domain_model(r) for r in rows]
 
-    async def get_active_prompt_version(
-        self, book_id: int, prompt_key: str
-    ) -> PromptVersionDbModel | None:
+    async def get_active_prompt_version(self, book_id: int, prompt_key: str) -> PromptVersionDbModel | None:
         """現在アクティブなプロンプトバージョンを取得"""
         result = await self.session.execute(
             select(PromptVersion)
@@ -112,9 +104,7 @@ class PromptVersionRepository(PromptVersionRepositoryInterface, BaseRepository):
         return None
 
     @retry_on_lock()
-    async def set_active_prompt_version(
-        self, book_id: int, prompt_key: str, version_id: int
-    ) -> None:
+    async def set_active_prompt_version(self, book_id: int, prompt_key: str, version_id: int) -> None:
         """指定したバージョンをアクティブに設定し、他を非アクティブにする"""
         # すべて非アクティブ化
         await self.session.execute(
@@ -124,9 +114,7 @@ class PromptVersionRepository(PromptVersionRepositoryInterface, BaseRepository):
             .values(is_active=False)
         )
         # 指定したIDをアクティブ化
-        await self.session.execute(
-            update(PromptVersion).where(PromptVersion.id == version_id).values(is_active=True)
-        )
+        await self.session.execute(update(PromptVersion).where(PromptVersion.id == version_id).values(is_active=True))
 
     @retry_on_lock()
     async def update_score_after(self, version_id: int, score: float) -> None:
@@ -148,9 +136,7 @@ class PromptVersionRepository(PromptVersionRepositoryInterface, BaseRepository):
     async def record_rollback(self, version_id: int, reason: str) -> None:
         """ロールバック時の理由を記録し、非アクティブにする"""
         await self.session.execute(
-            update(PromptVersion)
-            .where(PromptVersion.id == version_id)
-            .values(is_active=False, rollback_reason=reason)
+            update(PromptVersion).where(PromptVersion.id == version_id).values(is_active=False, rollback_reason=reason)
         )
 
     def _to_domain_model(self, row: PromptVersion) -> PromptVersionDbModel:

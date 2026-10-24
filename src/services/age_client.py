@@ -15,8 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 warnings.warn(
-    "src.services.age_client is deprecated and replaced by Relational Memory. "
-    "Do not use this module in new code.",
+    "src.services.age_client is deprecated and replaced by Relational Memory. Do not use this module in new code.",
     DeprecationWarning,
     stacklevel=2,
 )
@@ -164,6 +163,7 @@ class AgeClient:
                 self.edge_count = 0
                 self.labels: list[Any] = []
                 self.relationship_types: list[Any] = []
+
         return DummyStats()
 
     def execute_cypher(self, *args: Any, **kwargs: Any) -> Any:
@@ -172,6 +172,7 @@ class AgeClient:
                 self.records: list[Any] = []
                 self.summary = "deprecated"
                 self.execution_time_ms = 0.0
+
         return DummyResult()
 
 

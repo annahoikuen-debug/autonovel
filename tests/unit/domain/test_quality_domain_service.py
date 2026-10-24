@@ -3,8 +3,13 @@
 import pytest
 
 from src.domain.domain_services.quality_domain_service import (
-    QualityDomainService, QualityValidator, QualityCalculator, QualityAnalyzer,
-    QualityValidationError, QualityGrade, QualityThresholds,
+    QualityDomainService,
+    QualityValidator,
+    QualityCalculator,
+    QualityAnalyzer,
+    QualityValidationError,
+    QualityGrade,
+    QualityThresholds,
 )
 from src.domain.value_objects.scores import BookScore, TensionScore, QolScore, CostScore
 from src.domain.value_objects.ids import NovelId
@@ -13,9 +18,20 @@ from src.domain.value_objects.ids import NovelId
 class FakePlot:
     """Plotエンティティの軽量スタブ（品質スコア集計用）."""
 
-    def __init__(self, episode_number, tension=50, catharsis=0, catharsis_type="",
-                 state_integrity=100, emotional_resonance=0, thematic_depth=0,
-                 literary_beauty=0, erotic_intensity=0, cost_score=0.0, qol_delta=0):
+    def __init__(
+        self,
+        episode_number,
+        tension=50,
+        catharsis=0,
+        catharsis_type="",
+        state_integrity=100,
+        emotional_resonance=0,
+        thematic_depth=0,
+        literary_beauty=0,
+        erotic_intensity=0,
+        cost_score=0.0,
+        qol_delta=0,
+    ):
         self.episode_number = episode_number
         self.tension_score = TensionScore(value=tension)
         self.catharsis = catharsis

@@ -31,6 +31,7 @@ except Exception:
 @dataclass
 class ContextFitResult:
     """Result of context fit check with detailed conflict information."""
+
     score: float  # 0.0 (forbidden) to 1.0 (fully consistent)
     is_forbidden: bool = False
     is_retired: bool = False
@@ -43,6 +44,7 @@ class ContextFitResult:
 @dataclass
 class ReflectiveDoc:
     """Single document with complete reflective metadata for citation/traceability."""
+
     search_result: SearchResult
     iteration_found: int
     cosine_score: float
@@ -56,25 +58,27 @@ class ReflectiveDoc:
         """Citation summary (JSON serializable)."""
         return {
             "id": self.search_result.id,
-            "content_preview": self.search_result.content[:200] + ("..." if len(self.search_result.content) > 200 else ""),
+            "content_preview": self.search_result.content[:200]
+            + ("..." if len(self.search_result.content) > 200 else ""),
             "source": self.search_result.source,
             "iteration": self.iteration_found,
             "scores": {
                 "cosine": round(self.cosine_score, 3),
                 "context_fit": round(self.context_fit_score, 3),
                 "combined": round(self.combined_score, 3),
-                "rerank": round(self.rerank_score, 3) if self.rerank_score is not None else None
+                "rerank": round(self.rerank_score, 3) if self.rerank_score is not None else None,
             },
             "conflicts": self.context_fit_details.conflict_types,
             "entity_valid": self.context_fit_details.entity_valid,
             "entity_name": self.context_fit_details.details.get("entity_name"),
-            "metadata": self.search_result.metadata
+            "metadata": self.search_result.metadata,
         }
 
 
 @dataclass
 class ConvergenceConfig:
     """Configuration for convergence detection in reflective retrieval."""
+
     min_score_improvement: float = 0.02
     score_variance_threshold: float = 0.01
     embedding_drift_threshold: float = 0.95
@@ -255,11 +259,13 @@ class ReflectiveRAGService:
         except Exception as e:
             logging.getLogger(__name__).warning(f"Failed to persist rag_reflection_history: {e}")
 
-    def _bm25_keyword_extract(self,
-                          pos_documents: list[SearchResult],
-                          neg_documents: list[SearchResult] | None = None,
-                          n: int = 5,
-                          lambda_neg: float = 0.5) -> list[str]:
+    def _bm25_keyword_extract(
+        self,
+        pos_documents: list[SearchResult],
+        neg_documents: list[SearchResult] | None = None,
+        n: int = 5,
+        lambda_neg: float = 0.5,
+    ) -> list[str]:
         """Extract top-n discriminative keywords using BM25 over the document set.
 
         Args:
@@ -313,6 +319,7 @@ class ReflectiveRAGService:
 
         # Fallback: simple frequency-based (positive only)
         import re
+
         all_text = " ".join(d.content for d in pos_documents)
         words = [w for w in re.findall(r"[一-龯ぁ-んァ-ンa-zA-Z]{2,}", all_text)]
         if not words:
@@ -328,6 +335,7 @@ class ReflectiveRAGService:
             if tokens:
                 return tokens
         import re
+
         return [w for w in re.findall(r"[一-龯ぁ-んァ-ンa-zA-Z]{2,}", text)]
 
     def _compute_variance(self, values: list[float]) -> float:
@@ -353,15 +361,13 @@ class ReflectiveRAGService:
 
     def _cosine_similarity(self, query: str, doc: SearchResult) -> float:
         """Cosine similarity between query and document (via embeddings)."""
-        if hasattr(doc, 'similarity') and doc.similarity is not None:
+        if hasattr(doc, "similarity") and doc.similarity is not None:
             return float(doc.similarity)
-        if hasattr(doc, 'score') and doc.score is not None:
+        if hasattr(doc, "score") and doc.score is not None:
             return float(doc.score)
         return 0.5
 
-    def _is_semantic_drift(
-        self, original_query: str, candidate_query: str, keywords: list[str]
-    ) -> bool:
+    def _is_semantic_drift(self, original_query: str, candidate_query: str, keywords: list[str]) -> bool:
         """Check if candidate reformulated query drifted too far from the original intent (Step 29)."""
         orig_tokens = set(self._tokenize(original_query))
         if not orig_tokens:
@@ -389,7 +395,7 @@ class ReflectiveRAGService:
                 is_forbidden=True,
                 conflict_types=["forbidden"],
                 entity_valid=False,
-                details={"source": "metadata", "reason": "explicitly_forbidden"}
+                details={"source": "metadata", "reason": "explicitly_forbidden"},
             )
         if meta.get("is_retired") or meta.get("status") in ("retired", "dead", "destroyed", "sealed"):
             return ContextFitResult(
@@ -397,7 +403,7 @@ class ReflectiveRAGService:
                 is_retired=True,
                 conflict_types=["retired", "state_inactive"],
                 entity_valid=False,
-                details={"source": "metadata", "reason": f"entity_state_{meta.get('status', 'retired')}"}
+                details={"source": "metadata", "reason": f"entity_state_{meta.get('status', 'retired')}"},
             )
 
         # GraphRAG (Apache AGE) 実検証 (Step 18 & 19)
@@ -405,7 +411,7 @@ class ReflectiveRAGService:
         if not entity_name and meta.get("entities") and isinstance(meta["entities"], list):
             entity_name = meta["entities"][0] if meta["entities"] else None
 
-        if entity_name and hasattr(self.rag_service, 'age_client') and self.rag_service.age_client:
+        if entity_name and hasattr(self.rag_service, "age_client") and self.rag_service.age_client:
             try:
                 age_client = self.rag_service.age_client
                 if hasattr(age_client, "check_entity_validity"):
@@ -441,23 +447,17 @@ class ReflectiveRAGService:
                         status=status,
                         conflict_types=conflict_types,
                         entity_valid=valid,
-                        details={
-                            "source": "graphrag",
-                            "entity_name": entity_name,
-                            "raw_result": v
-                        }
+                        details={"source": "graphrag", "entity_name": entity_name, "raw_result": v},
                     )
             except Exception as e:
                 import logging
+
                 logging.getLogger(__name__).debug(f"Entity fit check error: {e}")
                 return ContextFitResult(
-                    score=0.5,
-                    conflict_types=["check_failed"],
-                    details={"source": "graphrag", "error": str(e)}
+                    score=0.5, conflict_types=["check_failed"], details={"source": "graphrag", "error": str(e)}
                 )
 
         return ContextFitResult(score=1.0, details={"source": "default", "reason": "no_conflicts_found"})
-
 
     async def retrieve_with_reflection(
         self,
@@ -477,9 +477,7 @@ class ReflectiveRAGService:
         max_iter = max_iter or self.convergence_config.max_iterations
         min_iter = self.convergence_config.min_iterations
         relevance_threshold = relevance_threshold or self.relevance_threshold
-        effective_timeout = (
-            timeout_seconds if timeout_seconds is not None else self.timeout_seconds
-        )
+        effective_timeout = timeout_seconds if timeout_seconds is not None else self.timeout_seconds
 
         current_query = query
         refined_queries = [query]
@@ -500,6 +498,7 @@ class ReflectiveRAGService:
                 # タイムアウト検知 (Step 23)
                 if (time.perf_counter() - start_time) >= effective_timeout:
                     import logging
+
                     logging.getLogger(__name__).warning(
                         f"Reflective RAG timeout ({effective_timeout}s) reached at iteration {iteration + 1}"
                     )
@@ -529,12 +528,14 @@ class ReflectiveRAGService:
                             min_score=0.0,
                         )
                         import inspect
+
                         if inspect.isawaitable(candidates_raw):
                             candidates = await candidates_raw
                         else:
                             candidates = candidates_raw
                 except Exception as search_err:
                     import logging
+
                     logging.getLogger(__name__).warning(f"search_similar_chunks error: {search_err}")
                     candidates = initial_candidates
 
@@ -566,7 +567,7 @@ class ReflectiveRAGService:
 
                 # Embedding drift check
                 embedding_stable = True
-                if hasattr(self.rag_service, 'embedding_service'):
+                if hasattr(self.rag_service, "embedding_service"):
                     try:
                         curr_embedding = self.rag_service.embedding_service.get_embedding(current_query)
                         if prev_query_embedding is not None:
@@ -578,17 +579,19 @@ class ReflectiveRAGService:
                         pass
 
                 iter_elapsed = (time.perf_counter() - iter_start) * 1000
-                all_history.append({
-                    "iteration": iteration + 1,
-                    "query": current_query,
-                    "candidates": len(candidates),
-                    "filtered": len(filtered),
-                    "top_scores": top_scores,
-                    "score_variance": round(score_variance, 4),
-                    "score_improved": score_improved,
-                    "embedding_stable": embedding_stable,
-                    "elapsed_ms": round(iter_elapsed, 1),
-                })
+                all_history.append(
+                    {
+                        "iteration": iteration + 1,
+                        "query": current_query,
+                        "candidates": len(candidates),
+                        "filtered": len(filtered),
+                        "top_scores": top_scores,
+                        "score_variance": round(score_variance, 4),
+                        "score_improved": score_improved,
+                        "embedding_stable": embedding_stable,
+                        "elapsed_ms": round(iter_elapsed, 1),
+                    }
+                )
 
                 # Convergence checks
                 has_enough_docs = len(filtered) >= top_k
@@ -618,15 +621,18 @@ class ReflectiveRAGService:
                 neg_documents = [d for d, s, c, f, r in scored if s < relevance_threshold]
 
                 # Cross-encoder reranking for precision (Step: Priority 5)
-                if (self.convergence_config.enable_cross_encoder_rerank
+                if (
+                    self.convergence_config.enable_cross_encoder_rerank
                     and iteration % self.convergence_config.rerank_every_n_iterations == 0
-                    and hasattr(self.rag_service, 'rerank_with_cross_encoder')
-                    and len(scored) > top_k):
+                    and hasattr(self.rag_service, "rerank_with_cross_encoder")
+                    and len(scored) > top_k
+                ):
                     try:
                         # Prepare documents for reranking
-                        rerank_candidates = scored[:self.convergence_config.rerank_top_n]
+                        rerank_candidates = scored[: self.convergence_config.rerank_top_n]
                         doc_texts = [doc.content for doc, _, _, _, _ in rerank_candidates]
                         import inspect
+
                         rerank_raw = self.rag_service.rerank_with_cross_encoder(
                             current_query, doc_texts, top_k=min(top_k * 2, len(doc_texts))
                         )
@@ -645,7 +651,7 @@ class ReflectiveRAGService:
                             else:
                                 new_scored.append((doc, combined, cos_sim, ctx_fit, ctx_fit_result))
                         # Add remaining scored items
-                        new_scored.extend(scored[self.convergence_config.rerank_top_n:])
+                        new_scored.extend(scored[self.convergence_config.rerank_top_n :])
                         scored = new_scored
                         # Re-filter after reranking
                         filtered = [(d, s, c, f, r) for d, s, c, f, r in scored if s >= relevance_threshold]
@@ -655,6 +661,7 @@ class ReflectiveRAGService:
                         all_history[-1]["rerank_count"] = len(rerank_results)
                     except Exception as e:
                         import logging
+
                         logging.getLogger(__name__).debug(f"Cross-encoder rerank failed: {e}")
                         all_history[-1]["reranked"] = False
                         all_history[-1]["rerank_error"] = str(e)
@@ -663,10 +670,7 @@ class ReflectiveRAGService:
                 pos_ids = {d.id for d in pos_docs}
                 contrastive_neg = [d for d in neg_documents if d.id not in pos_ids] if neg_documents else None
                 keywords = self._bm25_keyword_extract(
-                    pos_docs,
-                    neg_documents=contrastive_neg,
-                    n=5,
-                    lambda_neg=self.convergence_config.lambda_neg
+                    pos_docs, neg_documents=contrastive_neg, n=5, lambda_neg=self.convergence_config.lambda_neg
                 )
 
                 if keywords:
@@ -677,7 +681,11 @@ class ReflectiveRAGService:
                         mode=reformulation_mode,
                     )
                     if self._is_semantic_drift(query, candidate_query, keywords):
-                        final_docs = [d for d, _, _, _, _ in filtered[:top_k]] if filtered else [d for d, _, _, _, _ in scored[:top_k]]
+                        final_docs = (
+                            [d for d, _, _, _, _ in filtered[:top_k]]
+                            if filtered
+                            else [d for d, _, _, _, _ in scored[:top_k]]
+                        )
                         converged = True
                         convergence_reason = "drift_prevented"
                         break
@@ -696,6 +704,7 @@ class ReflectiveRAGService:
         except Exception as e:
             # 予期せぬ例外時の安全フォールバック (Step 23)
             import logging
+
             logging.getLogger(__name__).warning(f"Unexpected error in retrieve_with_reflection: {e}")
             final_docs = initial_candidates[:top_k] if initial_candidates else []
             converged = False
@@ -708,8 +717,7 @@ class ReflectiveRAGService:
         for doc in final_docs:
             # Find matching scored entry for this document
             scored_entry = next(
-                ((d, comb, cos, ctx, ctx_res) for d, comb, cos, ctx, ctx_res in scored if d.id == doc.id),
-                None
+                ((d, comb, cos, ctx, ctx_res) for d, comb, cos, ctx, ctx_res in scored if d.id == doc.id), None
             )
             if scored_entry:
                 _, combined, cos_sim, ctx_fit, ctx_fit_result = scored_entry
@@ -729,16 +737,18 @@ class ReflectiveRAGService:
                 rerank_score = None
                 matched_kws = []
 
-            reflective_docs.append(ReflectiveDoc(
-                search_result=doc,
-                iteration_found=iteration + 1,
-                cosine_score=cos_sim,
-                context_fit_score=ctx_fit,
-                context_fit_details=ctx_fit_result,
-                combined_score=combined,
-                rerank_score=rerank_score,
-                bm25_keywords_matched=matched_kws
-            ))
+            reflective_docs.append(
+                ReflectiveDoc(
+                    search_result=doc,
+                    iteration_found=iteration + 1,
+                    cosine_score=cos_sim,
+                    context_fit_score=ctx_fit,
+                    context_fit_details=ctx_fit_result,
+                    combined_score=combined,
+                    rerank_score=rerank_score,
+                    bm25_keywords_matched=matched_kws,
+                )
+            )
 
         result = ReflectiveRetrievalResult(
             documents=reflective_docs,
@@ -785,9 +795,7 @@ class ReflectiveRAGService:
             timeout_seconds=timeout_seconds,
         )
 
-    def format_for_prompt(
-        self, result: ReflectiveRetrievalResult, max_chars: int = 3000
-    ) -> str:
+    def format_for_prompt(self, result: ReflectiveRetrievalResult, max_chars: int = 3000) -> str:
         """Format reflective retrieval results into a clean context prompt block (Step 35)."""
         if not result.documents:
             return "【参照世界観設定】：該当する設定記述はありませんでした。"
@@ -809,4 +817,10 @@ class ReflectiveRAGService:
         return "\n".join(lines)
 
 
-__all__ = ["ReflectiveRAGService", "ReflectiveRetrievalResult", "ConvergenceConfig", "ContextFitResult", "ReflectiveDoc"]
+__all__ = [
+    "ReflectiveRAGService",
+    "ReflectiveRetrievalResult",
+    "ConvergenceConfig",
+    "ContextFitResult",
+    "ReflectiveDoc",
+]

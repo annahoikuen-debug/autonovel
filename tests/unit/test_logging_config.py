@@ -1,4 +1,5 @@
 """ロギング設定のユニットテスト。"""
+
 from __future__ import annotations
 
 import logging
@@ -17,6 +18,7 @@ from src.backend.logging_config import (
 def test__extra_attributes():
     """アプリコンテキスト辞書を構築する。"""
     from src.backend.config import settings
+
     settings.APP_NAME = "TestApp"
     settings.APP_VERSION = "1.0.0"
     settings.APP_ENV = "local"
@@ -100,6 +102,7 @@ def test_configure_json_format(real_db_manager):
     # JSONフォーマッタが設定されていることを確認
     handler = root.handlers[0]
     from pythonjsonlogger import json as jsonlogger
+
     assert isinstance(handler.formatter, jsonlogger.JsonFormatter)
 
 

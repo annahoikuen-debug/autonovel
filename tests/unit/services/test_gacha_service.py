@@ -154,9 +154,7 @@ class TestGachaServicePersistence:
     """_save_gacha_plans_db と _save_review_session のテスト。"""
 
     @pytest.mark.asyncio
-    async def test_save_gacha_plans_db_success(
-        self, gacha_service: GachaService, mock_db: MagicMock
-    ):
+    async def test_save_gacha_plans_db_success(self, gacha_service: GachaService, mock_db: MagicMock):
         """正常に gacha plans が保存されること。"""
         request_id = "gacha_test123"
         plans_json = {"request": {}, "response": {}}
@@ -169,15 +167,14 @@ class TestGachaServicePersistence:
         session.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_save_gacha_plans_db_rollback_on_exception(
-        self, gacha_service: GachaService, mock_db: MagicMock
-    ):
+    async def test_save_gacha_plans_db_rollback_on_exception(self, gacha_service: GachaService, mock_db: MagicMock):
         """DB 例外時にロールバックされること。"""
         request_id = "gacha_test123"
         plans_json = {"request": {}, "response": {}}
 
         # repo.save_gacha_plans で例外を発生させる
         from src.backend.database.repositories import EasyModeDraftRepository
+
         with patch.object(EasyModeDraftRepository, "save_gacha_plans", AsyncMock(side_effect=Exception("DB error"))):
             with pytest.raises(Exception, match="DB error"):
                 await gacha_service._save_gacha_plans_db(request_id, plans_json)
@@ -193,9 +190,7 @@ class TestGachaServicePersistence:
         assert args[2] is not None  # exc_tb
 
     @pytest.mark.asyncio
-    async def test_save_review_session_success(
-        self, gacha_service: GachaService, mock_db: MagicMock
-    ):
+    async def test_save_review_session_success(self, gacha_service: GachaService, mock_db: MagicMock):
         """ReviewSession が正常に保存されること。"""
         review_session = ReviewSession(
             request_id="gacha_test123",
@@ -211,9 +206,7 @@ class TestGachaServicePersistence:
         session.commit.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_save_review_session_rollback_on_exception(
-        self, gacha_service: GachaService, mock_db: MagicMock
-    ):
+    async def test_save_review_session_rollback_on_exception(self, gacha_service: GachaService, mock_db: MagicMock):
         """ReviewSession 保存時の DB 例外でロールバックされること。"""
         review_session = ReviewSession(
             request_id="gacha_test123",
@@ -223,6 +216,7 @@ class TestGachaServicePersistence:
         )
 
         from src.backend.database.repositories import EasyModeDraftRepository
+
         with patch.object(EasyModeDraftRepository, "save_review_session", AsyncMock(side_effect=Exception("DB error"))):
             with pytest.raises(Exception, match="DB error"):
                 await gacha_service._save_review_session(review_session)
@@ -232,9 +226,7 @@ class TestGachaServicePersistence:
             assert session.__aexit__.called
 
     @pytest.mark.asyncio
-    async def test_save_gacha_plans_db_duplicate_key_handled(
-        self, gacha_service: GachaService, mock_db: MagicMock
-    ):
+    async def test_save_gacha_plans_db_duplicate_key_handled(self, gacha_service: GachaService, mock_db: MagicMock):
         """重複キー例外が適切に扱われること (リポジトリ側で処理される前提)。"""
         request_id = "gacha_test123"
         plans_json = {"request": {}, "response": {}}
@@ -263,24 +255,30 @@ class TestGeneratePlansSuccess:
         """正常な JSON 応答で 3 案生成→保存→ブラインドレビュー起動まで完了すること。"""
         # LLM が正常な JSON を返すように設定
         mock_llm_mocker.set_responses(
-            json.dumps({
-                "title": "王道の冒険譚",
-                "logline": "勇者が魔王を倒す王道ファンタジー",
-                "protagonist_summary": "正義感の強い少年剣士",
-                "charm_point": "熱血展開と仲間との絆",
-            }),
-            json.dumps({
-                "title": "魔王視点の逆転劇",
-                "logline": "魔王が主人公の異世界転生もの",
-                "protagonist_summary": "元勇者だった魔王",
-                "charm_point": "視点逆転の面白さ",
-            }),
-            json.dumps({
-                "title": "絶望のダークファンタジー",
-                "logline": "希望を失った世界で生き残る物語",
-                "protagonist_summary": "冷徹な傭兵",
-                "charm_point": "シリアスな世界観",
-            }),
+            json.dumps(
+                {
+                    "title": "王道の冒険譚",
+                    "logline": "勇者が魔王を倒す王道ファンタジー",
+                    "protagonist_summary": "正義感の強い少年剣士",
+                    "charm_point": "熱血展開と仲間との絆",
+                }
+            ),
+            json.dumps(
+                {
+                    "title": "魔王視点の逆転劇",
+                    "logline": "魔王が主人公の異世界転生もの",
+                    "protagonist_summary": "元勇者だった魔王",
+                    "charm_point": "視点逆転の面白さ",
+                }
+            ),
+            json.dumps(
+                {
+                    "title": "絶望のダークファンタジー",
+                    "logline": "希望を失った世界で生き残る物語",
+                    "protagonist_summary": "冷徹な傭兵",
+                    "charm_point": "シリアスな世界観",
+                }
+            ),
         )
 
         response = await gacha_service.generate_plans(sample_gacha_request)
@@ -326,15 +324,15 @@ class TestGeneratePlansSuccess:
     ):
         """ReviewSession が作成され、ラウンド0が実行されること。"""
         mock_llm_mocker.set_responses(
-            json.dumps({
-                "title": "王道", "logline": "あらすじ", "protagonist_summary": "主人公", "charm_point": "魅力"
-            }),
-            json.dumps({
-                "title": "変化球", "logline": "あらすじ", "protagonist_summary": "主人公", "charm_point": "魅力"
-            }),
-            json.dumps({
-                "title": "ダーク", "logline": "あらすじ", "protagonist_summary": "主人公", "charm_point": "魅力"
-            }),
+            json.dumps(
+                {"title": "王道", "logline": "あらすじ", "protagonist_summary": "主人公", "charm_point": "魅力"}
+            ),
+            json.dumps(
+                {"title": "変化球", "logline": "あらすじ", "protagonist_summary": "主人公", "charm_point": "魅力"}
+            ),
+            json.dumps(
+                {"title": "ダーク", "logline": "あらすじ", "protagonist_summary": "主人公", "charm_point": "魅力"}
+            ),
         )
 
         response = await gacha_service.generate_plans(sample_gacha_request)
@@ -401,10 +399,9 @@ class TestGeneratePlansFailure:
     ):
         """未知のキーが含まれていても無視されて正常生成されること。"""
         mock_llm_mocker.set_responses(
-            json.dumps({
-                "title": "A", "logline": "a", "protagonist_summary": "a", "charm_point": "a",
-                "unknown_key": "ignored"
-            }),
+            json.dumps(
+                {"title": "A", "logline": "a", "protagonist_summary": "a", "charm_point": "a", "unknown_key": "ignored"}
+            ),
             json.dumps({"title": "B", "logline": "b", "protagonist_summary": "b", "charm_point": "b"}),
             json.dumps({"title": "C", "logline": "c", "protagonist_summary": "c", "charm_point": "c"}),
         )
@@ -423,12 +420,14 @@ class TestGeneratePlansFailure:
     ):
         """型不整合 (数値が文字列に来る等) があってもフォールバックで生成されること。"""
         mock_llm_mocker.set_responses(
-            json.dumps({
-                "title": 123,  # 数値が来る
-                "logline": "a",
-                "protagonist_summary": "a",
-                "charm_point": "a"
-            }),
+            json.dumps(
+                {
+                    "title": 123,  # 数値が来る
+                    "logline": "a",
+                    "protagonist_summary": "a",
+                    "charm_point": "a",
+                }
+            ),
             json.dumps({"title": "B", "logline": "b", "protagonist_summary": "b", "charm_point": "b"}),
             json.dumps({"title": "C", "logline": "c", "protagonist_summary": "c", "charm_point": "c"}),
         )
@@ -449,12 +448,14 @@ class TestGeneratePlansFailure:
         """AST 危険検知 (os.system 等) が含まれる場合はフォールバックされること。"""
         # 危険なコードを含む応答
         mock_llm_mocker.set_responses(
-            json.dumps({
-                "title": "A",
-                "logline": "a",
-                "protagonist_summary": "a",
-                "charm_point": "__import__('os').system('rm -rf /')"
-            }),
+            json.dumps(
+                {
+                    "title": "A",
+                    "logline": "a",
+                    "protagonist_summary": "a",
+                    "charm_point": "__import__('os').system('rm -rf /')",
+                }
+            ),
             json.dumps({"title": "B", "logline": "b", "protagonist_summary": "b", "charm_point": "b"}),
             json.dumps({"title": "C", "logline": "c", "protagonist_summary": "c", "charm_point": "c"}),
         )
@@ -473,9 +474,17 @@ class TestGeneratePlansFailure:
     ):
         """3 案すべて LLM 失敗してもフォールバック案が返されること。"""
         # 全て例外を投げる
-        mock_llm_mocker.add_exception(Exception("LLM error"), Exception("LLM error"), Exception("LLM error"),
-                                      Exception("LLM error"), Exception("LLM error"), Exception("LLM error"),
-                                      Exception("LLM error"), Exception("LLM error"), Exception("LLM error"))
+        mock_llm_mocker.add_exception(
+            Exception("LLM error"),
+            Exception("LLM error"),
+            Exception("LLM error"),
+            Exception("LLM error"),
+            Exception("LLM error"),
+            Exception("LLM error"),
+            Exception("LLM error"),
+            Exception("LLM error"),
+            Exception("LLM error"),
+        )
 
         response = await gacha_service.generate_plans(sample_gacha_request)
 
@@ -520,9 +529,30 @@ class TestReviewGachaPlans:
     ):
         """正常な承認フロー (ラウンド実行・スコア付与・イベント発行)。"""
         plans = [
-            GachaPlan(plan_id="p1", plan_type=GachaPlanType.ROYAL, title="A", logline="a", protagonist_summary="a", charm_point="a"),
-            GachaPlan(plan_id="p2", plan_type=GachaPlanType.CURVEBALL, title="B", logline="b", protagonist_summary="b", charm_point="b"),
-            GachaPlan(plan_id="p3", plan_type=GachaPlanType.DARK, title="C", logline="c", protagonist_summary="c", charm_point="c"),
+            GachaPlan(
+                plan_id="p1",
+                plan_type=GachaPlanType.ROYAL,
+                title="A",
+                logline="a",
+                protagonist_summary="a",
+                charm_point="a",
+            ),
+            GachaPlan(
+                plan_id="p2",
+                plan_type=GachaPlanType.CURVEBALL,
+                title="B",
+                logline="b",
+                protagonist_summary="b",
+                charm_point="b",
+            ),
+            GachaPlan(
+                plan_id="p3",
+                plan_type=GachaPlanType.DARK,
+                title="C",
+                logline="c",
+                protagonist_summary="c",
+                charm_point="c",
+            ),
         ]
         review_session = ReviewSession(
             request_id="req1",
@@ -552,9 +582,30 @@ class TestReviewGachaPlans:
     ):
         """却下 (スコアが低い) 場合も正常にラウンドが完了すること。"""
         plans = [
-            GachaPlan(plan_id="p1", plan_type=GachaPlanType.ROYAL, title="A", logline="a", protagonist_summary="a", charm_point="a"),
-            GachaPlan(plan_id="p2", plan_type=GachaPlanType.CURVEBALL, title="B", logline="b", protagonist_summary="b", charm_point="b"),
-            GachaPlan(plan_id="p3", plan_type=GachaPlanType.DARK, title="C", logline="c", protagonist_summary="c", charm_point="c"),
+            GachaPlan(
+                plan_id="p1",
+                plan_type=GachaPlanType.ROYAL,
+                title="A",
+                logline="a",
+                protagonist_summary="a",
+                charm_point="a",
+            ),
+            GachaPlan(
+                plan_id="p2",
+                plan_type=GachaPlanType.CURVEBALL,
+                title="B",
+                logline="b",
+                protagonist_summary="b",
+                charm_point="b",
+            ),
+            GachaPlan(
+                plan_id="p3",
+                plan_type=GachaPlanType.DARK,
+                title="C",
+                logline="c",
+                protagonist_summary="c",
+                charm_point="c",
+            ),
         ]
         review_session = ReviewSession(
             request_id="req1",
@@ -635,9 +686,30 @@ class TestReviewGachaPlans:
     ):
         """競合時 (複数ラウンド同時実行) の挙動 - 独立したゲートインスタンスが作られること。"""
         plans = [
-            GachaPlan(plan_id="p1", plan_type=GachaPlanType.ROYAL, title="A", logline="a", protagonist_summary="a", charm_point="a"),
-            GachaPlan(plan_id="p2", plan_type=GachaPlanType.CURVEBALL, title="B", logline="b", protagonist_summary="b", charm_point="b"),
-            GachaPlan(plan_id="p3", plan_type=GachaPlanType.DARK, title="C", logline="c", protagonist_summary="c", charm_point="c"),
+            GachaPlan(
+                plan_id="p1",
+                plan_type=GachaPlanType.ROYAL,
+                title="A",
+                logline="a",
+                protagonist_summary="a",
+                charm_point="a",
+            ),
+            GachaPlan(
+                plan_id="p2",
+                plan_type=GachaPlanType.CURVEBALL,
+                title="B",
+                logline="b",
+                protagonist_summary="b",
+                charm_point="b",
+            ),
+            GachaPlan(
+                plan_id="p3",
+                plan_type=GachaPlanType.DARK,
+                title="C",
+                logline="c",
+                protagonist_summary="c",
+                charm_point="c",
+            ),
         ]
         review_session = ReviewSession(
             request_id="req1",
@@ -672,6 +744,7 @@ class TestGeneratePlansEdgeCases:
     ):
         """空の genre/keywords で Pydantic バリデーションエラーになること。"""
         from pydantic import ValidationError
+
         with pytest.raises(ValidationError):
             GachaRequest(genre="", keywords=[])
 
@@ -801,6 +874,7 @@ class TestGeneratePlansEdgeCases:
 
         # リポジトリでロードされるモック
         from src.backend.database.repositories import EasyModeDraftRepository
+
         with patch.object(EasyModeDraftRepository, "load_review_session", AsyncMock(return_value=existing_session)):
             mock_llm_mocker.set_responses(
                 json.dumps({"title": "A", "logline": "a", "protagonist_summary": "a", "charm_point": "a"}),
@@ -834,8 +908,22 @@ class TestBlindEvaluationInternals:
         mock_blind_gate: BlindReviewGate,
     ):
         """他案情報がマスクされること。"""
-        target = GachaPlan(plan_id="p1", plan_type=GachaPlanType.ROYAL, title="A", logline="a", protagonist_summary="a", charm_point="a")
-        other = GachaPlan(plan_id="p2", plan_type=GachaPlanType.CURVEBALL, title="B", logline="b", protagonist_summary="b", charm_point="b")
+        target = GachaPlan(
+            plan_id="p1",
+            plan_type=GachaPlanType.ROYAL,
+            title="A",
+            logline="a",
+            protagonist_summary="a",
+            charm_point="a",
+        )
+        other = GachaPlan(
+            plan_id="p2",
+            plan_type=GachaPlanType.CURVEBALL,
+            title="B",
+            logline="b",
+            protagonist_summary="b",
+            charm_point="b",
+        )
 
         payload = gacha_service._create_isolated_plan_payload(target, [target, other], mock_blind_gate)
 

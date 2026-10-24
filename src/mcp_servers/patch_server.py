@@ -1,4 +1,5 @@
 """Surgical Patch MCP Server Implementation (Proposal 3)."""
+
 from __future__ import annotations
 
 from typing import Any, Dict

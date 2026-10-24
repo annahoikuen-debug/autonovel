@@ -4,6 +4,7 @@
 「1話1枚生成（$0.034/話）」「オプション写植」「サイレントプロンプト」
 の仕様が将来にわたって維持されることを保証するリグレッション防止テスト群。
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -30,9 +31,7 @@ def test_regression_api_call_count_must_be_single_per_episode(tmp_path: Path):
     result = pipeline.run_episode(ep)
 
     # 1話につき1回のAPIコールであること（24回は厳禁）
-    assert result.api_calls_count == 1, (
-        f"API call count must be 1 per episode, but was {result.api_calls_count}."
-    )
+    assert result.api_calls_count == 1, f"API call count must be 1 per episode, but was {result.api_calls_count}."
 
 
 def test_regression_cost_budget_ceiling(tmp_path: Path):
@@ -56,9 +55,7 @@ def test_regression_cost_budget_ceiling(tmp_path: Path):
     )
     # 40話換算でも $2.00 以下
     projected_40_episodes_cost = result.estimated_cost_usd * 40
-    assert projected_40_episodes_cost <= 2.00, (
-        f"Projected 40 episodes cost ${projected_40_episodes_cost} exceeds $2.00"
-    )
+    assert projected_40_episodes_cost <= 2.00, f"Projected 40 episodes cost ${projected_40_episodes_cost} exceeds $2.00"
 
 
 def test_regression_optional_typesetting_can_be_disabled(tmp_path: Path):

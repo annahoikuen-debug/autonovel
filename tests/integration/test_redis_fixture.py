@@ -1,6 +1,6 @@
 """Test to check if redis fixture works."""
-from __future__ import annotations
 
+from __future__ import annotations
 
 
 def test_redis_fixture(redis_container):

@@ -40,22 +40,26 @@ class CommercialEpubBuilder:
         has_cover = bool(cover_image_bytes)
         if has_cover:
             packer.add_file("item/images/cover.jpg", cover_image_bytes)
-            manifest_items.append({
-                "id": "cover-image",
-                "href": "images/cover.jpg",
-                "media-type": "image/jpeg",
-                "properties": "cover-image",
-            })
+            manifest_items.append(
+                {
+                    "id": "cover-image",
+                    "href": "images/cover.jpg",
+                    "media-type": "image/jpeg",
+                    "properties": "cover-image",
+                }
+            )
             cover_xhtml = EpubManifestBuilder.build_cover_xhtml(
                 image_href="images/cover.jpg",
                 css_rel_path="style/vertical.css",
             )
             packer.add_text_file("item/xhtml/cover.xhtml", cover_xhtml)
-            manifest_items.append({
-                "id": "p-cover",
-                "href": "xhtml/cover.xhtml",
-                "media-type": "application/xhtml+xml",
-            })
+            manifest_items.append(
+                {
+                    "id": "p-cover",
+                    "href": "xhtml/cover.xhtml",
+                    "media-type": "application/xhtml+xml",
+                }
+            )
             spine_items.append("p-cover")
 
         # 3. 本文チャプター
@@ -75,11 +79,13 @@ class CommercialEpubBuilder:
             )
             packer.add_text_file(f"item/{chap_file}", xhtml_str)
 
-            manifest_items.append({
-                "id": chap_id,
-                "href": chap_file,
-                "media-type": "application/xhtml+xml",
-            })
+            manifest_items.append(
+                {
+                    "id": chap_id,
+                    "href": chap_file,
+                    "media-type": "application/xhtml+xml",
+                }
+            )
             spine_items.append(chap_id)
             chapter_manifest_meta.append({"title": chap_title, "href": chap_file})
 
@@ -92,8 +98,8 @@ class CommercialEpubBuilder:
                 if isinstance(img, EpubIllustrationItem):
                     item = img
                 elif isinstance(img, dict):
-                    raw_id = str(img.get("image_id") or f"ill-{i+1}")
-                    raw_filename = str(img.get("file_name") or f"illustration_{i+1}.jpg")
+                    raw_id = str(img.get("image_id") or f"ill-{i + 1}")
+                    raw_filename = str(img.get("file_name") or f"illustration_{i + 1}.jpg")
                     item = EpubIllustrationItem(
                         image_id=raw_id,
                         image_bytes=img.get("image_bytes") or b"",
@@ -162,11 +168,13 @@ class CommercialEpubBuilder:
             )
             ill_file = f"xhtml/ill-{ill.image_id}.xhtml"
             packer.add_text_file(f"item/{ill_file}", ill_xhtml)
-            manifest_items.append({
-                "id": f"p-ill-{ill.image_id}",
-                "href": ill_file,
-                "media-type": "application/xhtml+xml",
-            })
+            manifest_items.append(
+                {
+                    "id": f"p-ill-{ill.image_id}",
+                    "href": ill_file,
+                    "media-type": "application/xhtml+xml",
+                }
+            )
             # Note: illustrations are inserted into spine via OPF builder
 
         # 5. OPF パッケージ

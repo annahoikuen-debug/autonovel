@@ -15,6 +15,7 @@ import 先をそちらに向ける。**呼び出し側は変更していない�
 
 本ファイルは fallback 経路が実際に機能することを固定する。
 """
+
 from __future__ import annotations
 
 import pytest
@@ -134,8 +135,7 @@ class TestContextRetrieverFallback:
         from src.services.vector_store import in_memory
 
         assert not hasattr(in_memory, "InMemoryVectorStore"), (
-            "in_memory.py に InMemoryVectorStore が復活している。"
-            "どちらが正実装か曖昧になるため、どちらかに統一すること"
+            "in_memory.py に InMemoryVectorStore が復活している。どちらが正実装か曖昧になるため、どちらかに統一すること"
         )
         assert hasattr(in_memory, "InMemoryFallbackStore"), (
             "InMemoryFallbackStore が消えている（別テストが利用している）"

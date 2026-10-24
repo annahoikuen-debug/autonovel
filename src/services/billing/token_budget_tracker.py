@@ -1,8 +1,8 @@
 """リアルタイムトークンバジェットトラッカー。"""
+
 from __future__ import annotations
 from src.services.billing.cost_budget_guard import CostBudgetConfig
 from src.core.exceptions import CostBudgetExceededError
-
 
 
 class TokenBudgetTracker:

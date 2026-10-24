@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class DAGReplanningState:
     """State snapshot of a DAG dynamic replanning event (Step 49)."""
+
     trigger_node_id: str
     affected_downstream_ids: list[str] = field(default_factory=list)
     cancelled_node_ids: list[str] = field(default_factory=list)

@@ -12,7 +12,7 @@ def test_workflow_context_foreshadowings_default():
         archetype_key="チート主人公",
         target_eps=10,
         initial_limit=3,
-        word_count=2000
+        word_count=2000,
     )
 
     assert ctx.foreshadowings == []
@@ -28,7 +28,7 @@ def test_workflow_context_foreshadowings_can_be_set():
         hang_episode=2,
         hang_chapter=3,
         hang_type="implicit",
-        importance="★★"
+        importance="★★",
     )
 
     fs2 = Foreshadowing(
@@ -40,7 +40,7 @@ def test_workflow_context_foreshadowings_can_be_set():
         hang_type="explicit",
         importance="★★★",
         resolution_volume=3,
-        resolution_episode=1
+        resolution_episode=1,
     )
 
     ctx = WorkflowContext(
@@ -50,7 +50,7 @@ def test_workflow_context_foreshadowings_can_be_set():
         target_eps=10,
         initial_limit=3,
         word_count=2000,
-        foreshadowings=[fs1, fs2]
+        foreshadowings=[fs1, fs2],
     )
 
     assert len(ctx.foreshadowings) == 2
@@ -68,7 +68,7 @@ def test_workflow_context_foreshadowings_append():
         archetype_key="チート主人公",
         target_eps=10,
         initial_limit=3,
-        word_count=2000
+        word_count=2000,
     )
 
     # 初期状態では空
@@ -82,7 +82,7 @@ def test_workflow_context_foreshadowings_append():
         hang_episode=1,
         hang_chapter=5,
         hang_type="reader_task",
-        importance="★"
+        importance="★",
     )
 
     ctx.foreshadowings.append(fs)
@@ -101,7 +101,7 @@ def test_workflow_context_hook_fields_default():
         archetype_key="チート主人公",
         target_eps=10,
         initial_limit=3,
-        word_count=2000
+        word_count=2000,
     )
 
     # hooks フィールドが空リストで初期化されることを確認
@@ -121,23 +121,11 @@ def test_workflow_context_hook_fields_default():
 def test_workflow_context_hook_fields_can_be_set():
     """WorkflowContext のフック関連フィールドに値を設定できることを確認"""
     hook1 = Hook(
-        id="H-001",
-        type="mystery",
-        content="謎のフック",
-        target_position="episode_end",
-        volume=1,
-        episode=3,
-        chapter=5
+        id="H-001", type="mystery", content="謎のフック", target_position="episode_end", volume=1, episode=3, chapter=5
     )
 
     hook2 = Hook(
-        id="H-002",
-        type="threat",
-        content="脅威のフック",
-        target_position="volume_end",
-        volume=2,
-        episode=1,
-        chapter=1
+        id="H-002", type="threat", content="脅威のフック", target_position="volume_end", volume=2, episode=1, chapter=1
     )
 
     ctx = WorkflowContext(
@@ -150,7 +138,7 @@ def test_workflow_context_hook_fields_can_be_set():
         hooks=[hook1, hook2],
         hook_generation_index=5,
         current_volume=3,
-        current_episode=7
+        current_episode=7,
     )
 
     assert len(ctx.hooks) == 2
@@ -171,7 +159,7 @@ def test_workflow_context_hook_fields_append():
         archetype_key="チート主人公",
         target_eps=10,
         initial_limit=3,
-        word_count=2000
+        word_count=2000,
     )
 
     # 初期状態では空
@@ -188,7 +176,7 @@ def test_workflow_context_hook_fields_append():
         target_position="episode_end",
         volume=1,
         episode=5,
-        chapter=3
+        chapter=3,
     )
 
     ctx.hooks.append(hook)
@@ -217,7 +205,7 @@ def test_workflow_context_illustration_points_default():
         archetype_key="チート主人公",
         target_eps=10,
         initial_limit=3,
-        word_count=2000
+        word_count=2000,
     )
 
     assert ctx.illustration_points == []
@@ -233,7 +221,7 @@ def test_workflow_context_illustration_points_can_be_set():
         composition="主人公が左、ヒロインが右、二人の間に距離がある",
         props="主人公の剣とヒロインの杖を交差",
         expressions={"主人公": "決意した表情", "ヒロイン": "不安と信頼の混じった表情"},
-        background="夕焼けに染まる荒野、廃城の尖塔"
+        background="夕焼けに染まる荒野、廃城の尖塔",
     )
 
     ip2 = IllustrationPoint(
@@ -244,7 +232,7 @@ def test_workflow_context_illustration_points_can_be_set():
         props="主人公の刀に残像",
         expressions={"主人公": "余裕綽々だが目に死の気配"},
         background="暗い洞窟、壁に苔が生えている",
-        notes="このシーンは第1章のクライマックス"
+        notes="このシーンは第1章のクライマックス",
     )
 
     ctx = WorkflowContext(
@@ -254,7 +242,7 @@ def test_workflow_context_illustration_points_can_be_set():
         target_eps=10,
         initial_limit=3,
         word_count=2000,
-        illustration_points=[ip1, ip2]
+        illustration_points=[ip1, ip2],
     )
 
     assert len(ctx.illustration_points) == 2
@@ -272,7 +260,7 @@ def test_workflow_context_illustration_points_append():
         archetype_key="チート主人公",
         target_eps=10,
         initial_limit=3,
-        word_count=2000
+        word_count=2000,
     )
 
     # 初期状態では空
@@ -287,7 +275,7 @@ def test_workflow_context_illustration_points_append():
         props="なし",
         expressions={"ヒロイン": "幸せそうな笑顔"},
         background="桜並びの道、花びらが舞っている",
-        notes="エンディングを彷彿とさせるシーン"
+        notes="エンディングを彷彿とさせるシーン",
     )
 
     ctx.illustration_points.append(ip)
@@ -308,7 +296,7 @@ def test_workflow_context_all_fields_together():
         hang_episode=3,
         hang_chapter=5,
         hang_type="implicit",
-        importance="★★"
+        importance="★★",
     )
 
     # フック
@@ -319,7 +307,7 @@ def test_workflow_context_all_fields_together():
         target_position="episode_end",
         volume=1,
         episode=3,
-        chapter=5
+        chapter=5,
     )
 
     # 挿絵ポイント
@@ -330,7 +318,7 @@ def test_workflow_context_all_fields_together():
         composition="主人公が左、ヒロインが右、二人の間に距離がある",
         props="主人公の剣とヒロインの杖を交差",
         expressions={"主人公": "決意した表情", "ヒロイン": "不安と信頼の混じった表情"},
-        background="夕焼けに染まる荒野、廃城の尖塔"
+        background="夕焼けに染まる荒野、廃城の尖塔",
     )
 
     ctx = WorkflowContext(
@@ -344,7 +332,7 @@ def test_workflow_context_all_fields_together():
         hooks=[hook],
         illustration_points=[ip],
         current_volume=1,
-        current_episode=3
+        current_episode=3,
     )
 
     # すべてのフィールドが正しく設定されていることを確認

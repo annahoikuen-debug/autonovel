@@ -22,15 +22,15 @@ async def test_judge_with_llm_parses_actionable_diffs():
                 "location": "冒頭第2段落",
                 "original_quote": "彼は昔のことを思い出した。とても悲しかった。",
                 "improved_suggestion": "冷たい雨粒が頬を伝い、過去の苦い記憶が胸を締め付けた。",
-                "rationale": "説明的な感情語を避け、五感描写で感情を表現するため"
+                "rationale": "説明的な感情語を避け、五感描写で感情を表現するため",
             },
             {
                 "location": "章末結末",
                 "original_quote": "そして夜が終わった。",
                 "improved_suggestion": "闇の奥で、不気味な足音が一つ鳴り響いた……。",
-                "rationale": "次章へのクリフハンガーを強化するため"
-            }
-        ]
+                "rationale": "次章へのクリフハンガーを強化するため",
+            },
+        ],
     }
     # ainvoke は非同期コンテキストで await されるため AsyncMock を使用する
     from unittest.mock import AsyncMock
@@ -68,7 +68,7 @@ async def test_judge_with_llm_backward_compatible_without_diffs():
         "critique": "標準的な構成。",
         "suggestions": ["推敲を推奨"],
         "confidence": 0.8,
-        "reasoning": "特に問題なし"
+        "reasoning": "特に問題なし",
     }
     from unittest.mock import AsyncMock
 

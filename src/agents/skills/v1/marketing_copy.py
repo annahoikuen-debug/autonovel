@@ -1,5 +1,6 @@
 # src/agents/skills/marketing_copy.py
 """マーケティングコピー生成スキル（サンプル実装）"""
+
 from src.agents.skill_base import SkillAgent
 from src.agents.orchestrator import AgentContext, AgentResult
 
@@ -13,10 +14,13 @@ class MarketingCopySkill(SkillAgent):
 
     async def execute(self, ctx: AgentContext) -> AgentResult:
         """マーケティングコピーを生成"""
-        self.emit_event("marketing_copy.started", {
-            "book_id": ctx.book_id,
-            "title": ctx.artifacts.get("title", ""),
-        })
+        self.emit_event(
+            "marketing_copy.started",
+            {
+                "book_id": ctx.book_id,
+                "title": ctx.artifacts.get("title", ""),
+            },
+        )
 
         title = ctx.artifacts.get("title", "")
         synopsis = ctx.artifacts.get("synopsis", "")
@@ -24,10 +28,13 @@ class MarketingCopySkill(SkillAgent):
         concept = ctx.artifacts.get("concept", "")
 
         if not title:
-            self.emit_event("marketing_copy.error", {
-                "book_id": ctx.book_id,
-                "error": "title is required for marketing copy generation",
-            })
+            self.emit_event(
+                "marketing_copy.error",
+                {
+                    "book_id": ctx.book_id,
+                    "error": "title is required for marketing copy generation",
+                },
+            )
             return AgentResult(
                 next_agent=None,
                 artifacts={},
@@ -52,10 +59,13 @@ class MarketingCopySkill(SkillAgent):
         if "blurb" in self.copy_types:
             copies["blurb"] = self._generate_blurb(title, synopsis, genre)
 
-        self.emit_event("marketing_copy.completed", {
-            "book_id": ctx.book_id,
-            "copies_generated": list(copies.keys()),
-        })
+        self.emit_event(
+            "marketing_copy.completed",
+            {
+                "book_id": ctx.book_id,
+                "copies_generated": list(copies.keys()),
+            },
+        )
 
         return AgentResult(
             next_agent=None,

@@ -6,6 +6,7 @@ CLI 使用例::
 
     python -m src.rules.watcher recompute --from 14
 """
+
 from __future__ import annotations
 
 import argparse
@@ -80,7 +81,8 @@ def recompute_from_episode(
 
     for ep in target_eps:
         engine.process_episode(
-            ep, events_by_ep[ep],
+            ep,
+            events_by_ep[ep],
             previous_snapshot=snapshot,
             previous_episode=prev_ep,
         )
@@ -107,16 +109,13 @@ def main(argv: Optional[list[str]] = None) -> int:
     )
     sub = parser.add_subparsers(dest="command")
     recompute = sub.add_parser("recompute", help="指定エピソードから再計算")
-    recompute.add_argument("--from", dest="from_ep", type=int, default=1,
-                           help="再計算開始エピソード番号")
-    recompute.add_argument("--rules", dest="rules_path", default=DEFAULT_RULES_PATH,
-                           help="ルールセット YAML パス")
-    recompute.add_argument("--events", dest="events_path", default=DEFAULT_EVENTS_PATH,
-                           help="プロットイベント YAML パス")
-    recompute.add_argument("--log", dest="log_path", default=DEFAULT_LOG_PATH,
-                           help="イベントログ JSONL パス")
-    recompute.add_argument("--graph", dest="graph_db", default=None,
-                           help="Kuzu データベースパス (省略時はインメモリ)")
+    recompute.add_argument("--from", dest="from_ep", type=int, default=1, help="再計算開始エピソード番号")
+    recompute.add_argument("--rules", dest="rules_path", default=DEFAULT_RULES_PATH, help="ルールセット YAML パス")
+    recompute.add_argument(
+        "--events", dest="events_path", default=DEFAULT_EVENTS_PATH, help="プロットイベント YAML パス"
+    )
+    recompute.add_argument("--log", dest="log_path", default=DEFAULT_LOG_PATH, help="イベントログ JSONL パス")
+    recompute.add_argument("--graph", dest="graph_db", default=None, help="Kuzu データベースパス (省略時はインメモリ)")
 
     args = parser.parse_args(argv)
     if args.command != "recompute":

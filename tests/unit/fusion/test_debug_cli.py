@@ -1,4 +1,5 @@
 """Unit tests for fusion debug CLI."""
+
 from typer.testing import CliRunner
 from unittest.mock import patch
 

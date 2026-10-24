@@ -86,9 +86,7 @@ class ConflictReportService:
             field_path = self._infer_field_path(audit_type, feedback, bible_snapshot)
 
             # 現在値と推奨値を抽出
-            current_value, suggested_value = self._extract_values(
-                audit_type, feedback, bible_snapshot
-            )
+            current_value, suggested_value = self._extract_values(audit_type, feedback, bible_snapshot)
 
             conflict = ConflictItem(
                 category=audit_type,
@@ -123,9 +121,7 @@ class ConflictReportService:
             low_count=severity_counts.get("low", 0),
         )
 
-    def _infer_field_path(
-        self, audit_type: str, feedback: str, bible_snapshot: dict | None
-    ) -> str | None:
+    def _infer_field_path(self, audit_type: str, feedback: str, bible_snapshot: dict | None) -> str | None:
         """監査タイプとフィードバックから該当設定パスを推定"""
         # キーワードベースの簡易推定
         keywords_map = {

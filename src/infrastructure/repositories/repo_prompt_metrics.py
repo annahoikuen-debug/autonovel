@@ -71,9 +71,7 @@ class PromptMetricsRepository(BaseRepository):
         ]
 
     @retry_on_lock()
-    async def get_metrics_by_template(
-        self, template_name: str, limit: int = 50
-    ) -> list[dict[str, Any]]:
+    async def get_metrics_by_template(self, template_name: str, limit: int = 50) -> list[dict[str, Any]]:
         """
         特定のテンプレートのメトリクス履歴を取得
 

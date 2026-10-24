@@ -1,4 +1,5 @@
 """Lore/Bible MCP Server Implementation (JSON-RPC / Tool Provider)."""
+
 from __future__ import annotations
 
 import json

@@ -1,4 +1,5 @@
 """SceneTransitionValidator 汎用ルール（ユーザー定義設定）のテスト。"""
+
 from __future__ import annotations
 
 from src.mcp_servers.transition_schemas import SceneState
@@ -15,22 +16,17 @@ def _state(**kwargs) -> SceneState:
 # 1. ユーザー定義ルール（forbidden_instant_moves / allowed_transitions）
 # ---------------------------------------------------------------------------
 
+
 def test_custom_forbidden_instant_moves_detects_conflict():
-    validator = SceneTransitionValidator(
-        forbidden_instant_moves=[("Village", "Mountain Peak")]
-    )
-    res = validator.validate_transition(
-        _state(location="Village"), _state(location="Mountain Peak")
-    )
+    validator = SceneTransitionValidator(forbidden_instant_moves=[("Village", "Mountain Peak")])
+    res = validator.validate_transition(_state(location="Village"), _state(location="Mountain Peak"))
     assert res.is_valid is False
     assert any(c.conflict_type == "location" for c in res.conflicts)
     assert any("Village" in p for p in res.patch_suggestions)
 
 
 def test_custom_forbidden_pair_allows_travel_method():
-    validator = SceneTransitionValidator(
-        forbidden_instant_moves=[("Village", "Mountain Peak")]
-    )
+    validator = SceneTransitionValidator(forbidden_instant_moves=[("Village", "Mountain Peak")])
     res = validator.validate_transition(
         _state(location="Village"),
         _state(location="Mountain Peak", metadata={"travel_method": "horse"}),
@@ -42,18 +38,14 @@ def test_default_rules_still_apply():
     """デフォルトルール（Dungeon -> Royal Castle）が包括されていること。"""
     validator = SceneTransitionValidator()
     assert ("Dungeon", "Royal Castle") in validator.forbidden_instant_moves
-    res = validator.validate_transition(
-        _state(location="Dungeon"), _state(location="Royal Castle")
-    )
+    res = validator.validate_transition(_state(location="Dungeon"), _state(location="Royal Castle"))
     assert res.is_valid is False
 
 
 def test_default_rules_can_be_disabled():
     """空リスト指定でデフォルトルールを無効化できること。"""
     validator = SceneTransitionValidator(forbidden_instant_moves=[])
-    res = validator.validate_transition(
-        _state(location="Dungeon"), _state(location="Royal Castle")
-    )
+    res = validator.validate_transition(_state(location="Dungeon"), _state(location="Royal Castle"))
     assert res.is_valid is True
 
 
@@ -92,6 +84,7 @@ def test_allowed_transitions_accepts_teleport_tag():
 # 2. 汎用メタデータルール（distance_category == "remote"）
 # ---------------------------------------------------------------------------
 
+
 def test_remote_metadata_without_travel_method_warns():
     validator = SceneTransitionValidator(forbidden_instant_moves=[])
     res = validator.validate_transition(
@@ -99,9 +92,7 @@ def test_remote_metadata_without_travel_method_warns():
         _state(location="Far Away Land", metadata={"distance_category": "remote"}),
     )
     # warning は is_valid を落とさないがコンフリクトは検出される
-    assert any(
-        c.conflict_type == "location" and c.severity == "warning" for c in res.conflicts
-    )
+    assert any(c.conflict_type == "location" and c.severity == "warning" for c in res.conflicts)
 
 
 def test_remote_metadata_with_travel_method_is_clean():
@@ -118,9 +109,7 @@ def test_remote_metadata_with_travel_method_is_clean():
 
 
 def test_remote_rule_can_be_disabled():
-    validator = SceneTransitionValidator(
-        forbidden_instant_moves=[], enforce_remote_metadata_rule=False
-    )
+    validator = SceneTransitionValidator(forbidden_instant_moves=[], enforce_remote_metadata_rule=False)
     res = validator.validate_transition(
         _state(location="Town"),
         _state(location="Far Away Land", metadata={"distance_category": "remote"}),
@@ -131,6 +120,7 @@ def test_remote_rule_can_be_disabled():
 # ---------------------------------------------------------------------------
 # 3. インベントリ / ステータス整合性（汎用ルールとの組み合わせ）
 # ---------------------------------------------------------------------------
+
 
 def test_item_acquisition_metadata_resolves_inventory_conflict():
     validator = SceneTransitionValidator(forbidden_instant_moves=[])

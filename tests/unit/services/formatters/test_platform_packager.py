@@ -77,16 +77,12 @@ def test_format_episode_with_author_notes_variants():
     assert plain["full_text"] == "　本文"
     assert plain["title"] == "T"
 
-    both = PlatformFormatter.format_episode_with_author_notes(
-        "T", "本文", "narou", foreword="前", afterword="後"
-    )
+    both = PlatformFormatter.format_episode_with_author_notes("T", "本文", "narou", foreword="前", afterword="後")
     assert "【前書き】" in both["full_text"]
     assert "【後書き】" in both["full_text"]
     assert "―" * 20 in both["full_text"]
 
-    after_only = PlatformFormatter.format_episode_with_author_notes(
-        "T", "本文", "narou", afterword="後"
-    )
+    after_only = PlatformFormatter.format_episode_with_author_notes("T", "本文", "narou", afterword="後")
     assert "【前書き】" not in after_only["full_text"]
     assert "【後書き】" in after_only["full_text"]
 

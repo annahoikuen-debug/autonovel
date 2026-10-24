@@ -41,7 +41,7 @@ class WorkflowContext(BaseModel):
     title: str = ""
     easy_parameters: dict[str, Any] = Field(default_factory=dict)
     is_nsfw_enabled: bool = False
-    erotic_intensity: int = 0   # 1-5, 0は無効
+    erotic_intensity: int = 0  # 1-5, 0は無効
 
     # === EasyMode 由来設定 (SpiceGuard・監査リライト) ===
     enable_spice_guard: bool = True
@@ -88,8 +88,6 @@ class WorkflowContext(BaseModel):
 
 
 class WorkflowStep:
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         """Execute step. Returns True to continue, False to halt/break."""
         raise NotImplementedError()

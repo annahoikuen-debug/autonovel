@@ -1,4 +1,5 @@
 """Tests for Commercial Publishing Asynchronous Tasks and Scheduling (Phase 5 / Steps 49-60)."""
+
 import pytest
 from datetime import datetime, timezone, timedelta
 from unittest.mock import MagicMock, patch
@@ -122,9 +123,7 @@ async def test_commercial_router_cancel_schedule():
     mock_result_completed.scalar_one_or_none.return_value = mock_schedule_completed
     mock_session.execute.return_value = mock_result_completed
 
-    with patch(
-        "src.backend.routers.commercial.verify_book_ownership", new_callable=AsyncMock
-    ):
+    with patch("src.backend.routers.commercial.verify_book_ownership", new_callable=AsyncMock):
         with pytest.raises(HTTPException) as exc:
             await cancel_schedule(schedule_id=123, db=mock_session)
         assert exc.value.status_code == 400
@@ -175,15 +174,14 @@ async def test_commercial_router_create_schedule():
     # but since create_schedule instantiates PublicationScheduleDbModel,
     # we can't easily mock the constructor without patching.
     # Instead, we'll patch the model class and verify_book_ownership.
-    with patch("src.backend.routers.commercial.PublicationScheduleDbModel") as mock_model_cls, \
-         patch("src.backend.routers.commercial.verify_book_ownership", new_callable=AsyncMock):
+    with (
+        patch("src.backend.routers.commercial.PublicationScheduleDbModel") as mock_model_cls,
+        patch("src.backend.routers.commercial.verify_book_ownership", new_callable=AsyncMock),
+    ):
         mock_model_cls.return_value = mock_schedule
 
         req = PublicationScheduleCreate(
-            book_id=1,
-            platform="narou",
-            episode_range=(1, 5),
-            scheduled_at=datetime.now(timezone.utc)
+            book_id=1, platform="narou", episode_range=(1, 5), scheduled_at=datetime.now(timezone.utc)
         )
 
         res = await create_schedule(req=req, db=mock_session, current_user=None)
@@ -257,9 +255,10 @@ async def test_commercial_router_run_schedule_now():
     mock_result.scalar_one_or_none.return_value = mock_schedule
     mock_session.execute.return_value = mock_result
 
-    with patch(
-        "src.backend.routers.commercial.verify_book_ownership", new_callable=AsyncMock
-    ), patch("src.backend.tasks.commercial_tasks.execute_publication_task") as mock_task:
+    with (
+        patch("src.backend.routers.commercial.verify_book_ownership", new_callable=AsyncMock),
+        patch("src.backend.tasks.commercial_tasks.execute_publication_task") as mock_task,
+    ):
         res = await run_schedule_now(schedule_id=123, db=mock_session)
 
         assert res["success"] is True
@@ -269,6 +268,7 @@ async def test_commercial_router_run_schedule_now():
         # 既に実行中（= pending 以外）のスケジュールは再実行できない
         mock_schedule.status = "running"
         from fastapi import HTTPException
+
         with pytest.raises(HTTPException) as exc:
             await run_schedule_now(schedule_id=123, db=mock_session)
         assert exc.value.status_code == 400

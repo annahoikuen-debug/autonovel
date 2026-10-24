@@ -1,4 +1,5 @@
 """Unit tests for PassageCacheProvider."""
+
 from __future__ import annotations
 
 from src.mcp_servers.passage_cache_schemas import CachedPassage, PassageSearchRequest
@@ -19,13 +20,13 @@ def test_passage_cache_provider_search_and_stats():
         passage_id="p1",
         intent="Tavern entrance",
         body="The wooden door creaked open, smelling of warm ale and roasted meat.",
-        tags=["tavern"]
+        tags=["tavern"],
     )
     p2 = CachedPassage(
         passage_id="p2",
         intent="Forest battle",
         body="Shadows flickered among ancient trees as blades clashed.",
-        tags=["battle"]
+        tags=["battle"],
     )
     provider.register_passage(p1)
     provider.register_passage(p2)

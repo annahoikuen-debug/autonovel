@@ -98,7 +98,8 @@ class StyleAuditor(SpecialistAuditor):
         style_dna = ctx.get("style_dna") or self.style_profile or {}
         if not draft:
             return SpecialistAuditResult(
-                "style", 0.0,
+                "style",
+                0.0,
                 feedback={"error": "no draft_text"},
                 suggestions=["Provide draft_text in context"],
             )
@@ -203,7 +204,10 @@ class StyleAuditor(SpecialistAuditor):
                         )
                     )
                     break
-                elif not target_is_plain and (sent.endswith(("だ", "である", "た", "いた", "った")) and not sent.endswith(("です", "ます", "でした", "ました"))):
+                elif not target_is_plain and (
+                    sent.endswith(("だ", "である", "た", "いた", "った"))
+                    and not sent.endswith(("です", "ます", "でした", "ました"))
+                ):
                     diffs.append(
                         ActionableDiff(
                             location="文末語尾（敬体主体の文）",

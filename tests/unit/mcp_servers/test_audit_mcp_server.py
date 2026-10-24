@@ -1,4 +1,5 @@
 """Unit tests for Compliance & Audit MCP Server."""
+
 from __future__ import annotations
 
 from src.mcp_servers.providers.audit_provider import AuditProvider, AuditRule, AuditRequest
@@ -21,8 +22,6 @@ def test_audit_provider_rules():
     res2 = provider.audit(req2)
     assert res2.is_compliant is False
     assert len(res2.violations) == 2
-
-
 
 
 def test_audit_mcp_server_json_rpc():

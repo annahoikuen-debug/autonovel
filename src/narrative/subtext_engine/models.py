@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 
 class SubtextContext(BaseModel):
     """Context information supplied to subtext rules, templates, and token expanders."""
+
     scene_id: str = Field(default="", description="Scene identifier")
     turn_index: int = Field(default=0, description="Dialogue turn index in scene")
     speaker: str = Field(default="", description="Speaking character name")
@@ -21,12 +22,15 @@ class SubtextContext(BaseModel):
     genre: str = Field(default="general", description="Genre modifier (e.g. fantasy, horror, romance)")
     tone: str = Field(default="neutral", description="Tone modifier (e.g. dark, ironic, light)")
     history_summary: List[str] = Field(default_factory=list, description="Recent conversation turns or subtext history")
-    relationship_graph: Dict[str, Any] = Field(default_factory=dict, description="Inter-character relationship properties")
+    relationship_graph: Dict[str, Any] = Field(
+        default_factory=dict, description="Inter-character relationship properties"
+    )
     custom: Dict[str, Any] = Field(default_factory=dict, description="Arbitrary extension parameters")
 
 
 class DialogueBlock(BaseModel):
     """Represents a block of dialogue and stage directions from a speaker."""
+
     speaker: str = Field(default="", description="Speaker identifier or empty for narrative/stage beat")
     lines: List[str] = Field(default_factory=list, description="Lines of dialogue or stage directions")
     context: Dict[str, Any] = Field(default_factory=dict, description="Block-specific contextual tags")
@@ -42,12 +46,13 @@ class DialogueBlock(BaseModel):
             speaker=self.speaker,
             lines=list(self.lines),
             context=dict(self.context),
-            applied_rules=list(self.applied_rules)
+            applied_rules=list(self.applied_rules),
         )
 
 
 class RewriteRuleModel(BaseModel):
     """Serializable specification of a rewrite rule."""
+
     id: str = Field(..., description="Unique rule ID")
     name: str = Field(default="", description="Human-readable rule name")
     pattern: str = Field(..., description="Regular expression pattern")
@@ -62,6 +67,7 @@ class RewriteRuleModel(BaseModel):
 
 class RewriteResult(BaseModel):
     """Result of applying one or more rewrite rules."""
+
     success: bool = True
     modified: bool = False
     block: DialogueBlock

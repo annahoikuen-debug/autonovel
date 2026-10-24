@@ -18,9 +18,7 @@ class SystemPluginLoader:
 
     _config: dict[str, Any] | None = None
     _class_cache: dict[str, type] = {}
-    _config_path = os.path.join(
-        Path(__file__).parent.parent.parent, "config", "system_plugins.yaml"
-    )
+    _config_path = os.path.join(Path(__file__).parent.parent.parent, "config", "system_plugins.yaml")
 
     @classmethod
     def _load_config(cls) -> dict[str, Any]:
@@ -53,9 +51,7 @@ class SystemPluginLoader:
 
         config = cls._load_config()
         if plugin_name not in config:
-            logger.debug(
-                f"Plugin '{plugin_name}' is not defined in system_plugins.yaml. Using default."
-            )
+            logger.debug(f"Plugin '{plugin_name}' is not defined in system_plugins.yaml. Using default.")
             return default_class
 
         plugin_info = config[plugin_name]

@@ -7,6 +7,7 @@ from src.services.spine_resolver import resolve_spine
 
 # ルーターを事前に含める
 from src.backend.routers.plots import router
+
 app.include_router(router)
 
 
@@ -46,7 +47,7 @@ async def test_expand_commercial_beats_success():
 
         # LLMの応答をモック（有効なJSON）
         mock_response = MagicMock()
-        mock_response.story_content = '''[
+        mock_response.story_content = """[
             {"episode": 1, "title": "日常の崩壊", "outline": "主人公の平穏な日常が崩れる", "cliffhanger_type": "New Crisis", "sensory_focus": ["visual", "auditory"], "foreshadowing_notes": "不穏な予兆"},
             {"episode": 2, "title": "運命の告知", "outline": "使命が課せられる", "cliffhanger_type": "Shocking Truth", "sensory_focus": ["tactile", "metaphor"], "foreshadowing_notes": "古い予言"},
             {"episode": 3, "title": "覚悟の決意", "outline": "立ち向かうことを決意", "cliffhanger_type": "Quiet Foreshadowing", "sensory_focus": ["visual", "gustatory"], "foreshadowing_notes": "師匠の言葉"},
@@ -59,7 +60,7 @@ async def test_expand_commercial_beats_success():
             {"episode": 10, "title": "全てを失って", "outline": "奈落の底へ", "cliffhanger_type": "Quiet Foreshadowing", "sensory_focus": ["visual", "metaphor"], "foreshadowing_notes": "過去の伏線回収"},
             {"episode": 11, "title": "闇夜の決意", "outline": "真の強さに目覚める", "cliffhanger_type": "Shocking Truth", "sensory_focus": ["tactile", "gustatory"], "foreshadowing_notes": "真の敵"},
             {"episode": 12, "title": "決戦の夜明け", "outline": "クライマックスへ", "cliffhanger_type": "Quiet Foreshadowing", "sensory_focus": ["visual", "auditory", "metaphor"], "foreshadowing_notes": "エピローグへ"}
-        ]'''
+        ]"""
         mock_llm.generate_text.return_value = mock_response
 
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -220,7 +221,7 @@ async def test_expand_commercial_beats_edge_cases():
         mock_llm = AsyncMock()
         mock_llm_class.return_value = mock_llm
         mock_response = MagicMock()
-        mock_response.story_content = '[]'  # 空の配列
+        mock_response.story_content = "[]"  # 空の配列
         mock_llm.generate_text.return_value = mock_response
 
         async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -261,9 +262,9 @@ async def test_expand_commercial_beats_regression():
         mock_llm = AsyncMock()
         mock_llm_class.return_value = mock_llm
         mock_response = MagicMock()
-        mock_response.story_content = '''[
+        mock_response.story_content = """[
             {"episode": 1, "title": "Test", "outline": "Outline", "cliffhanger_type": "New Crisis", "sensory_focus": ["visual"], "foreshadowing_notes": "Note"}
-        ]'''
+        ]"""
         mock_llm.generate_text.return_value = mock_response
 
         async with AsyncClient(transport=transport, base_url="http://test") as client:

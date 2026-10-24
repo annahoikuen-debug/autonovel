@@ -1,4 +1,5 @@
 """Tension Analyzer Provider for Real-time Emotion, Tension Measurement, and Arc Control."""
+
 from __future__ import annotations
 
 import math
@@ -47,7 +48,9 @@ class TensionAnalyzer:
             short_sentence_bonus = max(0.0, (40.0 - avg_sentence_len) * 0.8)
         else:
             short_sentence_bonus = 0.0
-        base_score = float(high_tension_hits * 14.0 + exclamation_count * 4.0 + ellipsis_count * 2.0 + short_sentence_bonus)
+        base_score = float(
+            high_tension_hits * 14.0 + exclamation_count * 4.0 + ellipsis_count * 2.0 + short_sentence_bonus
+        )
 
         # カタルシス・緩和ワードによる緩和効果
         base_score = max(5.0, base_score - relief_hits * 6.0)
@@ -178,15 +181,21 @@ class TensionAnalyzer:
         # 具体的な改善ガイダンスの生成
         guidance: List[str] = []
         if flatness:
-            guidance.append("【起伏不足】全体を通してテンションの落差が少なく、中だるみしています。山場を一段引き上げるか、序盤のトーンを抑えて対比を作ってください。")
+            guidance.append(
+                "【起伏不足】全体を通してテンションの落差が少なく、中だるみしています。山場を一段引き上げるか、序盤のトーンを抑えて対比を作ってください。"
+            )
 
         for idx, (act, tgt) in enumerate(zip(actual_scores, target_points, strict=False)):
             diff = act - tgt
             seg_name = segment_results[idx].segment_label
             if diff < -20.0:
-                guidance.append(f"【{seg_name}の緊迫度不足】目標({tgt:.0f})に対して実測({act:.0f})が大幅に不足しています。短い文での切迫感や緊迫語・衝突アクションを補強してください。")
+                guidance.append(
+                    f"【{seg_name}の緊迫度不足】目標({tgt:.0f})に対して実測({act:.0f})が大幅に不足しています。短い文での切迫感や緊迫語・衝突アクションを補強してください。"
+                )
             elif diff > 25.0 and idx == len(actual_scores) - 1 and curve_type == "climax_catharsis":
-                guidance.append(f"【{seg_name}の余韻不足】結末のテンションが高すぎます。勝利の余韻や安堵、読後感のカタルシスを描いて緊張を緩和させてください。")
+                guidance.append(
+                    f"【{seg_name}の余韻不足】結末のテンションが高すぎます。勝利の余韻や安堵、読後感のカタルシスを描いて緊張を緩和させてください。"
+                )
 
         if not guidance:
             guidance.append("テンション曲線は目標アークと非常によく合致しています。素晴らしい抑揚と起伏です。")
@@ -218,7 +227,10 @@ class TensionAnalyzer:
         sentences = [s.strip() + "。" for s in text.replace("\r\n", "\n").split("。") if s.strip()]
         if len(sentences) < num_segments:
             chunk_size = max(1, len(text) // num_segments)
-            return [text[i * chunk_size : (i + 1) * chunk_size if i < num_segments - 1 else len(text)] for i in range(num_segments)]
+            return [
+                text[i * chunk_size : (i + 1) * chunk_size if i < num_segments - 1 else len(text)]
+                for i in range(num_segments)
+            ]
 
         total_sentences = len(sentences)
         k, m = divmod(total_sentences, num_segments)

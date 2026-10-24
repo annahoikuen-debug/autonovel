@@ -194,9 +194,7 @@ class TestAsyncClient:
         container.audit_logger.return_value = audit
         proxy = MagicMock()
         proxy.get_di_container.return_value = container
-        monkeypatch.setitem(
-            __import__("sys").modules, "src.infrastructure.proxy", proxy
-        )
+        monkeypatch.setitem(__import__("sys").modules, "src.infrastructure.proxy", proxy)
         await ac._async_request("POST", "http://x/books", json={"k": 1})
         assert audit.log.called
 

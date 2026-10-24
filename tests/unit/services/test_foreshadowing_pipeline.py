@@ -4,6 +4,7 @@ Step 7 (format_unresolved_foreshadowings), Step 8 (detect_foreshadowing_mentions
 Step 9 (ForeshadowingService.check_and_resolve), Step 10 (audit_foreshadowings)
 の統合テスト。
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -18,6 +19,7 @@ from src.services.auditors.foreshadowing_auditor import (
 
 # ── Step 7: format_unresolved_foreshadowings ──
 
+
 class TestFormatUnresolvedForeshadowings:
     def test_empty_list(self):
         result = ContextBuilderAgent.format_unresolved_foreshadowings([])
@@ -25,7 +27,13 @@ class TestFormatUnresolvedForeshadowings:
 
     def test_dict_format(self):
         foreshadowings = [
-            {"id": 7, "title": "謎の剣", "planted_episode": 3, "description": "主人公が見つけた剣", "target_episode": 10},
+            {
+                "id": 7,
+                "title": "謎の剣",
+                "planted_episode": 3,
+                "description": "主人公が見つけた剣",
+                "target_episode": 10,
+            },
         ]
         result = ContextBuilderAgent.format_unresolved_foreshadowings(foreshadowings)
         assert "謎の剣" in result
@@ -75,6 +83,7 @@ class TestFormatUnresolvedForeshadowings:
 
 # ── Step 8: detect_foreshadowing_mentions ──
 
+
 class TestDetectForeshadowingMentions:
     def test_detect_title_in_text(self):
         text = "太郎は謎の剣を手に取った。謎の剣は光を放った。"
@@ -104,6 +113,7 @@ class TestDetectForeshadowingMentions:
 
 
 # ── Step 9: ForeshadowingService.check_and_resolve ──
+
 
 class TestForeshadowingService:
     @pytest.mark.asyncio
@@ -205,6 +215,7 @@ class TestForeshadowingService:
 
 # ── Step 10: audit_foreshadowings ──
 
+
 class TestForeshadowingAuditor:
     def test_validate_order_correct(self):
         assert validate_foreshadowing_order(3, 10) is True
@@ -240,8 +251,13 @@ class TestForeshadowingAuditor:
 
     def test_audit_overdue(self):
         foreshadowings = [
-            {"title": "封印の鍵", "planted_episode": 3, "resolved_episode": None,
-             "status": "planted", "target_episode": 10},
+            {
+                "title": "封印の鍵",
+                "planted_episode": 3,
+                "resolved_episode": None,
+                "status": "planted",
+                "target_episode": 10,
+            },
         ]
         result = audit_foreshadowings(foreshadowings, current_episode=15)
         assert len(result.stale_warnings) >= 1

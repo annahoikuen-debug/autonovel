@@ -14,6 +14,7 @@ Apache AGE / NetworkX を完全に置換するv5.0の中核テーブル。
     - `decode_keywords` は **例外を投げない**。手動編集で壊れた行は
       「キーワードなし」に劣化し、呼び出し側で落ちない。
 """
+
 from __future__ import annotations
 
 import json
@@ -106,13 +107,11 @@ class ForeshadowingModel(Base):
     planted_episode = Column(Integer, nullable=False)
     target_episode = Column(Integer, nullable=True)
     resolved_episode = Column(Integer, nullable=True)
-    scope = Column(String(32), nullable=False, server_default='short_term')
+    scope = Column(String(32), nullable=False, server_default="short_term")
     status = Column(String(20), default="planted", nullable=False, index=True)
     keywords = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     # ── keywords ヘルパ（往復の検証点） ───────────────
 

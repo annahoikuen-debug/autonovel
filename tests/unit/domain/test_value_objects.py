@@ -4,20 +4,49 @@ import pytest
 from uuid import UUID
 
 from src.domain.value_objects.ids import (
-    NovelId, ChapterId, EpisodeId, CharacterId, BranchId, PlotId,
-    SettingId, LoreId, PlotPointId, ArcId, AuditId, UserId,
+    NovelId,
+    ChapterId,
+    EpisodeId,
+    CharacterId,
+    BranchId,
+    PlotId,
+    SettingId,
+    LoreId,
+    PlotPointId,
+    ArcId,
+    AuditId,
+    UserId,
 )
 from src.domain.value_objects.text import (
-    TextFormat, TextContent, PlainText, MarkdownText, HtmlText,
-    Title, Summary, Catchcopy, Genre,
+    TextFormat,
+    TextContent,
+    PlainText,
+    MarkdownText,
+    HtmlText,
+    Title,
+    Summary,
+    Catchcopy,
+    Genre,
 )
 from src.domain.value_objects.scores import (
-    QualityScore, TensionScore, BookScore, QolScore, CostScore,
+    QualityScore,
+    TensionScore,
+    BookScore,
+    QolScore,
+    CostScore,
 )
 from src.domain.value_objects.metadata import (
-    NovelStatus, NovelMode, SettingType, NovelMetadata,
-    PublishPlatform, PublishStatus, PublishMetadata,
-    ChapterMetadata, CharacterMetadata, BranchMetadata, AuditMetadata,
+    NovelStatus,
+    NovelMode,
+    SettingType,
+    NovelMetadata,
+    PublishPlatform,
+    PublishStatus,
+    PublishMetadata,
+    ChapterMetadata,
+    CharacterMetadata,
+    BranchMetadata,
+    AuditMetadata,
 )
 
 
@@ -282,36 +311,46 @@ class TestMetadataVO:
     def test_publish_metadata_range_end_before_start(self):
         with pytest.raises(ValueError):
             PublishMetadata(
-                novel_id=NovelId.generate(), platform=PublishPlatform.KINDLE,
-                episode_range_start=5, episode_range_end=1,
+                novel_id=NovelId.generate(),
+                platform=PublishPlatform.KINDLE,
+                episode_range_start=5,
+                episode_range_end=1,
             )
 
     def test_chapter_metadata(self):
         cm = ChapterMetadata(
-            chapter_id=NovelId.generate(), novel_id=NovelId.generate(),
-            episode_number=1, title=Title("第1話"),
+            chapter_id=NovelId.generate(),
+            novel_id=NovelId.generate(),
+            episode_number=1,
+            title=Title("第1話"),
         )
         assert cm.is_anchor is False
 
     def test_chapter_metadata_invalid(self):
         with pytest.raises(ValueError):
             ChapterMetadata(
-                chapter_id=NovelId.generate(), novel_id=NovelId.generate(),
-                episode_number=0, title=Title("x"),
+                chapter_id=NovelId.generate(),
+                novel_id=NovelId.generate(),
+                episode_number=0,
+                title=Title("x"),
             )
 
     def test_character_metadata(self):
         cm = CharacterMetadata(
-            character_id=NovelId.generate(), novel_id=NovelId.generate(),
-            name="勇者", role="protagonist",
+            character_id=NovelId.generate(),
+            novel_id=NovelId.generate(),
+            name="勇者",
+            role="protagonist",
         )
         assert cm.name == "勇者"
 
     def test_character_metadata_invalid_name(self):
         with pytest.raises(ValueError):
             CharacterMetadata(
-                character_id=NovelId.generate(), novel_id=NovelId.generate(),
-                name="  ", role="x",
+                character_id=NovelId.generate(),
+                novel_id=NovelId.generate(),
+                name="  ",
+                role="x",
             )
 
     def test_branch_metadata(self):
@@ -324,16 +363,22 @@ class TestMetadataVO:
 
     def test_audit_metadata(self):
         am = AuditMetadata(
-            audit_id=NovelId.generate(), novel_id=NovelId.generate(),
-            episode_number=3, category="logic", severity="high",
+            audit_id=NovelId.generate(),
+            novel_id=NovelId.generate(),
+            episode_number=3,
+            category="logic",
+            severity="high",
         )
         assert am.severity == "high"
 
     def test_audit_metadata_invalid(self):
         with pytest.raises(ValueError):
             AuditMetadata(
-                audit_id=NovelId.generate(), novel_id=NovelId.generate(),
-                episode_number=0, category="x", severity="y",
+                audit_id=NovelId.generate(),
+                novel_id=NovelId.generate(),
+                episode_number=0,
+                category="x",
+                severity="y",
             )
 
     def test_setting_type_enum(self):

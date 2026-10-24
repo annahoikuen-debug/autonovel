@@ -2,6 +2,7 @@
 
 ファクトリを使用してテストデータを生成する方法を示します。
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -29,12 +30,7 @@ def test_user_factory():
 
 def test_user_factory_with_overrides():
     """ユーザーファクトリのオーバーライド機能をテスト."""
-    custom_user = user_factory(
-        id=999,
-        username="custom_user",
-        email="custom@example.com",
-        is_active=False
-    )
+    custom_user = user_factory(id=999, username="custom_user", email="custom@example.com", is_active=False)
 
     assert custom_user["id"] == 999
     assert custom_user["username"] == "custom_user"
@@ -69,16 +65,10 @@ def test_relationship_factories():
     book = book_factory(title="テスト用書籍")
 
     # その書籍のキャラクターを作成
-    character = character_factory(
-        book_id=book["id"],
-        name="テストキャラクター"
-    )
+    character = character_factory(book_id=book["id"], name="テストキャラクター")
 
     # その書籍の章を作成
-    chapter = chapter_factory(
-        book_id=book["id"],
-        chapter_number=1
-    )
+    chapter = chapter_factory(book_id=book["id"], chapter_number=1)
 
     # 関連性を確認
     assert character["book_id"] == book["id"]

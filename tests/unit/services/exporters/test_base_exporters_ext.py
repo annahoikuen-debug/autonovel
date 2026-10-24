@@ -1,4 +1,5 @@
 """Extended tests for src/services/exporters/base.py exporters and filters."""
+
 import pytest
 
 from src.services.exporters.base import (
@@ -133,9 +134,7 @@ class TestProcessRubyMarkup:
         assert out == "|漢字《かんじ》|"
 
     def test_markdown_converts_to_html(self):
-        assert process_ruby_markup("|漢字《かんじ》|", "markdown") == (
-            "<ruby>漢字<rt>かんじ</rt></ruby>"
-        )
+        assert process_ruby_markup("|漢字《かんじ》|", "markdown") == ("<ruby>漢字<rt>かんじ</rt></ruby>")
 
     def test_txt_drops_markup(self):
         assert process_ruby_markup("|漢字《かんじ》|", "txt") == "漢字"
@@ -270,17 +269,13 @@ class TestBaseExporter:
 
     def test_apply_template_filters_substitutions(self):
         e = _Concrete()
-        out = e.apply_template_filters(
-            "{{title}} / {{synopsis}} / {{is_adult}}", "narou", NOVEL
-        )
+        out = e.apply_template_filters("{{title}} / {{synopsis}} / {{is_adult}}", "narou", NOVEL)
         assert out == "星降る夜 / 少女の物語 / false"
 
     def test_apply_template_filters_chapter_vars(self):
         e = _Concrete()
         ch = {"ep_num": 7, "title": "CT", "content": "CC"}
-        out = e.apply_template_filters(
-            "{{chapter.title}}|{{chapter.content}}|{{chapter.number}}", "narou", NOVEL, ch
-        )
+        out = e.apply_template_filters("{{chapter.title}}|{{chapter.content}}|{{chapter.number}}", "narou", NOVEL, ch)
         assert out == "CT|CC|7"
 
     def test_apply_template_filters_escape_md_filter(self):
@@ -541,8 +536,16 @@ class TestWarningInjection:
     実際の警告を発生させて各エクスポータの出力経路を検証する。"""
 
     @pytest.mark.parametrize(
-        "cls", [NarouExporter, KakuyomuExporter, NocturneExporter, PlainTextExporter,
-                MarkdownExporter, EpubExporter, PdfExporter]
+        "cls",
+        [
+            NarouExporter,
+            KakuyomuExporter,
+            NocturneExporter,
+            PlainTextExporter,
+            MarkdownExporter,
+            EpubExporter,
+            PdfExporter,
+        ],
     )
     def test_warning_comment_emitted_for_first_chapter_only(self, cls, monkeypatch):
         calls = {"n": 0}
@@ -551,16 +554,22 @@ class TestWarningInjection:
             calls["n"] += 1
             return (text, [f"W{calls['n']}"])
 
-        monkeypatch.setattr(
-            "src.services.exporters.base.process_content_for_platform", _fake
-        )
+        monkeypatch.setattr("src.services.exporters.base.process_content_for_platform", _fake)
         out = cls().export(NOVEL, CHAPTERS)
         assert out.count("<!-- WARNING: W1 -->") == 1
         assert "W2" not in out
 
     @pytest.mark.parametrize(
-        "cls", [NarouExporter, KakuyomuExporter, NocturneExporter, PlainTextExporter,
-                MarkdownExporter, EpubExporter, PdfExporter]
+        "cls",
+        [
+            NarouExporter,
+            KakuyomuExporter,
+            NocturneExporter,
+            PlainTextExporter,
+            MarkdownExporter,
+            EpubExporter,
+            PdfExporter,
+        ],
     )
     def test_no_warning_comment_without_warnings(self, cls, monkeypatch):
         monkeypatch.setattr(
@@ -611,4 +620,3 @@ class TestRegistry:
 
     def test_get_exporter_returns_new_instance(self):
         assert get_exporter("narou") is not get_exporter("narou")
-

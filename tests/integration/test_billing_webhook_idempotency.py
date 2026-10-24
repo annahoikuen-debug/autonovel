@@ -51,6 +51,7 @@ def allow_unsigned_webhooks(monkeypatch):
     Webhook シークレット未設定の環境では 400 になるのを防ぐ。
     """
     from src.backend.routers import billing_webhook
+
     monkeypatch.setattr(billing_webhook, "WEBHOOK_SECRET", "")
     monkeypatch.setattr(billing_webhook, "ALLOW_UNSIGNED_WEBHOOKS", True)
 
@@ -90,7 +91,7 @@ async def test_webhook_idempotency_prevents_duplicate_credit_grant():
                 "subscription": "sub_test123",
                 "metadata": {"user_id": str(user.id)},
             }
-        }
+        },
     }
 
     transport = ASGITransport(app=app)

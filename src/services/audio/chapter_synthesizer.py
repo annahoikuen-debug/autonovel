@@ -78,6 +78,7 @@ class ChapterAudioSynthesizer:
         character_details: dict[str, dict[str, str]],
     ) -> list:
         """セリフ行を並列で合成 (Step 43)"""
+
         async def synthesize_line(line):
             async with self.semaphore:
                 return await self._synthesize_single_line(line, character_details)
@@ -109,9 +110,7 @@ class ChapterAudioSynthesizer:
             char_info = character_details.get(line.speaker_name, {})
             gender = char_info.get("gender", "female")
             role = char_info.get("role", "heroine")
-            speaker_id, acoustics = resolve_speaker_and_style(
-                line.speaker_name, line.emotion, gender=gender, role=role
-            )
+            speaker_id, acoustics = resolve_speaker_and_style(line.speaker_name, line.emotion, gender=gender, role=role)
         else:
             speaker_id, acoustics = resolve_speaker_and_style(
                 "narration", line.emotion, gender="female", role="narrator"
@@ -136,7 +135,4 @@ class ChapterAudioSynthesizer:
 
         emotion_counts = Counter(line.emotion.value for line in lines)
         total = len(lines)
-        return {
-            emotion: round(count / total * 100, 1)
-            for emotion, count in emotion_counts.items()
-        }
+        return {emotion: round(count / total * 100, 1) for emotion, count in emotion_counts.items()}

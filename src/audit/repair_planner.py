@@ -27,10 +27,10 @@ from src.audit.triage import (
 )
 from src.services.audit.targeted_diagnostic import TargetedDiagnostic
 
-LEVEL_RULE = "rule"    # 決定的ルール置換
-LEVEL_SPAN = "span"    # 段落単位の局所LLMパッチ
+LEVEL_RULE = "rule"  # 決定的ルール置換
+LEVEL_SPAN = "span"  # 段落単位の局所LLMパッチ
 LEVEL_SCENE = "scene"  # シーン単位の再生成
-LEVEL_NONE = "none"    # 自動で触らない
+LEVEL_NONE = "none"  # 自動で触らない
 
 # 即時ルール置換で解決できる指摘のみ（この comboだけ rule へ上げる）
 _RULE_LEVEL_TYPES = frozenset({"line_start_forbidden_punct", "title_length_exceeded"})
@@ -80,9 +80,7 @@ def plan_repair(text: str, failed_outcomes: List[dict], static_issues: List[Issu
         return RepairPlan(LEVEL_NONE, (), "是正対象の失敗なし")
 
     # 4. それ以外は段落単位の局所パッチ
-    targets = tuple(
-        t.index for t in TargetedDiagnostic().identify_weak_paragraphs(outcomes, text=text)
-    )
+    targets = tuple(t.index for t in TargetedDiagnostic().identify_weak_paragraphs(outcomes, text=text))
     # 5. 対象段落が特定できなければ既存経路に委ねる
     if not targets:
         return RepairPlan(LEVEL_NONE, (), "対象段落を特定できなかったため既存経路へ委ねる")

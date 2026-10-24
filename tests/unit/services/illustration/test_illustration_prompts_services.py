@@ -1,4 +1,5 @@
 """Unit tests for illustration prompts, model_selector, and *Service classes."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -224,9 +225,7 @@ class TestModelSelector:
         assert resolve_request_model(req)
 
     def test_resolve_request_model_explicit(self):
-        req = IllustrationRequest(
-            book_id=1, illustration_type=IllustrationType.COVER, model=IllustrationModel.ULTRA
-        )
+        req = IllustrationRequest(book_id=1, illustration_type=IllustrationType.COVER, model=IllustrationModel.ULTRA)
         assert resolve_request_model(req) == "imagen-4.0-ultra-generate-001"
 
     def test_resolve_request_model_string_type(self):
@@ -257,11 +256,7 @@ class TestModelSelector:
 
 class TestSceneExtractor:
     def test_extract_scenes_heuristic(self):
-        text = (
-            "夕暮れの街で、少女は空を見上げた。\n\n"
-            "光る海が目の前に広がっていた。\n\n"
-            "短い。\n"
-        )
+        text = "夕暮れの街で、少女は空を見上げた。\n\n光る海が目の前に広がっていた。\n\n短い。\n"
         scenes = SceneExtractor().extract_scenes(text, max_scenes=2)
         assert 1 <= len(scenes) <= 2
         assert all(len(s) >= 15 for s in scenes)
@@ -278,9 +273,7 @@ class TestSceneExtractor:
 
     async def test_extract_scenes_with_llm_dict(self):
         llm = MagicMock()
-        llm.generate_json = AsyncMock(
-            return_value=MagicMock(metadata={"scenes": ["x", "y"]})
-        )
+        llm.generate_json = AsyncMock(return_value=MagicMock(metadata={"scenes": ["x", "y"]}))
         out = await SceneExtractor().extract_scenes_with_llm("body", llm)
         assert out == ["x", "y"]
 
@@ -379,9 +372,7 @@ class TestSceneIllustrationService:
     async def test_generate_without_llm(self):
         svc = _image_service()
         text = "夕暮れの街で少女は空を見上げた。光る海が目に広がった。雪が降っている。"
-        req = IllustrationRequest(
-            book_id=1, illustration_type=IllustrationType.EPISODE, scene_text=text
-        )
+        req = IllustrationRequest(book_id=1, illustration_type=IllustrationType.EPISODE, scene_text=text)
         out = await SceneIllustrationService(svc).generate(req)
         assert isinstance(out, list)
         assert len(out) >= 1
@@ -390,17 +381,13 @@ class TestSceneIllustrationService:
         svc = _image_service()
         llm = MagicMock()
         llm.generate_json = AsyncMock(return_value=["scene one", "scene two"])
-        req = IllustrationRequest(
-            book_id=1, illustration_type=IllustrationType.EPISODE, scene_text="本文"
-        )
+        req = IllustrationRequest(book_id=1, illustration_type=IllustrationType.EPISODE, scene_text="本文")
         out = await SceneIllustrationService(svc, llm=llm).generate(req)
         assert len(out) == 2
 
     async def test_generate_empty_scene_text(self):
         svc = _image_service()
-        req = IllustrationRequest(
-            book_id=1, illustration_type=IllustrationType.EPISODE, scene_text=None
-        )
+        req = IllustrationRequest(book_id=1, illustration_type=IllustrationType.EPISODE, scene_text=None)
         out = await SceneIllustrationService(svc).generate(req)
         assert out == []
 
@@ -408,9 +395,7 @@ class TestSceneIllustrationService:
 class TestYonkomaIllustrator:
     async def test_generate_with_summaries(self):
         svc = _image_service()
-        req = IllustrationRequest(
-            book_id=1, illustration_type=IllustrationType.YONKOMA, book_context={"title": "T"}
-        )
+        req = IllustrationRequest(book_id=1, illustration_type=IllustrationType.YONKOMA, book_context={"title": "T"})
         res = await YonkomaIllustrator(svc).generate("本文", req, summaries=["a", "b"])
         assert "Panel 1" in res.prompt
         assert res.image_url == "https://img/x.png"
@@ -418,9 +403,7 @@ class TestYonkomaIllustrator:
 
     async def test_generate_plans_when_summaries_none(self):
         svc = _image_service()
-        req = IllustrationRequest(
-            book_id=1, illustration_type=IllustrationType.YONKOMA, aspect_ratio="1:1"
-        )
+        req = IllustrationRequest(book_id=1, illustration_type=IllustrationType.YONKOMA, aspect_ratio="1:1")
         res = await YonkomaIllustrator(svc).generate(
             "夕暮れの街で、少女は空を見上げた。\n\n光る海が広がっていた。",
             req,
@@ -466,17 +449,13 @@ class TestCoverGenerator:
 
     async def test_generate_uses_variation_from_episode(self):
         svc = _image_service()
-        req = IllustrationRequest(
-            book_id=1, illustration_type=IllustrationType.COVER, episode_number=1
-        )
+        req = IllustrationRequest(book_id=1, illustration_type=IllustrationType.COVER, episode_number=1)
         res = await CoverGenerator(svc).generate(req)
         assert "wide cinematic shot" in res.prompt
 
     async def test_generate_variations(self):
         svc = _image_service()
-        req = IllustrationRequest(
-            book_id=1, illustration_type=IllustrationType.COVER, book_context={"title": "T"}
-        )
+        req = IllustrationRequest(book_id=1, illustration_type=IllustrationType.COVER, book_context={"title": "T"})
         out = await CoverGenerator(svc).generate_variations(req, count=3)
         assert len(out) == 3
         assert [r.request.episode_number for r in out] == [0, 1, 2]
@@ -497,9 +476,7 @@ class TestCharacterIllustrator:
 
     async def test_generate_with_prompt_override(self):
         svc = _image_service()
-        req = IllustrationRequest(
-            book_id=1, illustration_type=IllustrationType.CHARACTER, prompt_override="OVERRIDE"
-        )
+        req = IllustrationRequest(book_id=1, illustration_type=IllustrationType.CHARACTER, prompt_override="OVERRIDE")
         res = await CharacterIllustrator(svc).generate(req)
         assert res.prompt.startswith("OVERRIDE")
 

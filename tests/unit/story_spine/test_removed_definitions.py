@@ -14,9 +14,7 @@ def test_plot_structures_removed_from_archetypes_new():
 
 
 def test_plot_structures_not_reexported_from_config():
-    assert not hasattr(config, "PLOT_STRUCTURES"), (
-        "config/__init__.py の re-export が復活している"
-    )
+    assert not hasattr(config, "PLOT_STRUCTURES"), "config/__init__.py の re-export が復活している"
 
 
 def test_episode_beat_has_no_upper_bound():
@@ -28,8 +26,11 @@ def test_episode_beat_has_no_upper_bound():
 
 def test_episode_beat_accepts_300():
     b = EpisodeBeat(
-        ep_num=300, phase="終盤", mission="最終決戦",
-        tension_target=0.95, visual_scene_focus="黒幕との対決",
+        ep_num=300,
+        phase="終盤",
+        mission="最終決戦",
+        tension_target=0.95,
+        visual_scene_focus="黒幕との対決",
     )
     assert b.ep_num == 300
 
@@ -40,7 +41,11 @@ def test_episode_beat_still_rejects_zero():
 
     with pytest.raises(Exception):
         EpisodeBeat(
-            ep_num=0, phase="x", mission="y", tension_target=0.5, visual_scene_focus="z",
+            ep_num=0,
+            phase="x",
+            mission="y",
+            tension_target=0.5,
+            visual_scene_focus="z",
         )
 
 
@@ -48,8 +53,7 @@ def test_no_consumer_imports_plot_structures():
     from pathlib import Path
 
     offenders = [
-        str(p) for p in Path("src").rglob("*.py")
-        if "PLOT_STRUCTURES" in p.read_text(encoding="utf-8", errors="ignore")
+        str(p) for p in Path("src").rglob("*.py") if "PLOT_STRUCTURES" in p.read_text(encoding="utf-8", errors="ignore")
     ]
     assert not offenders, f"PLOT_STRUCTURES の参照が残存: {offenders}"
 

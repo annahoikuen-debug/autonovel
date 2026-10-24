@@ -1,4 +1,5 @@
 """Unit tests for FusionConfig and environment variable overrides."""
+
 from src.fusion.config import load_fusion_config, reset_fusion_config
 
 

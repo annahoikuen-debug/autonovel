@@ -4,9 +4,11 @@ import jwt
 
 from src.backend.config import settings
 
+
 def get_secret_key() -> str:
     """現在の環境に応じた安全なJWT秘密鍵を取得する。"""
     return settings.get_jwt_secret_key()
+
 
 def create_access_token(
     data: dict | int | str | None = None,
@@ -47,6 +49,7 @@ def create_refresh_token(
     expire = datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, get_secret_key(), algorithm=settings.JWT_ALGORITHM)
+
 
 def decode_token(token: str, expected_type: str | None = None) -> dict[str, Any] | None:
     try:

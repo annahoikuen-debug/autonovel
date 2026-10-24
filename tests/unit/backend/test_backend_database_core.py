@@ -1,4 +1,5 @@
 """Coverage tests for src/backend/database/core.py and src/backend/database/repository.py."""
+
 from __future__ import annotations
 
 import asyncio
@@ -38,6 +39,7 @@ async def async_db(tmp_path):
 # --------------------------------------------------------------------------
 # module-level fallbacks / constants
 # --------------------------------------------------------------------------
+
 
 def test_database_connection_wrapper_removed():
     """`DatabaseConnectionWrapper` が削除されていることを確認。
@@ -107,6 +109,7 @@ def test_retry_with_logging_handles_aiosqlite_error(monkeypatch):
 # WorkspaceManager
 # --------------------------------------------------------------------------
 
+
 def test_workspace_manager_paths_and_snapshot(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "BASE_DIR", tmp_path)
     assert WorkspaceManager.get_path("a.db") == str(tmp_path / "a.db")
@@ -122,6 +125,7 @@ def test_workspace_manager_paths_and_snapshot(tmp_path, monkeypatch):
 # --------------------------------------------------------------------------
 # DatabaseManager
 # --------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize(
     "url,expected",
@@ -250,6 +254,7 @@ async def test_save_internal_state_variants(async_db):
 # --------------------------------------------------------------------------
 # init_db / alembic helpers / globals
 # --------------------------------------------------------------------------
+
 
 def test_run_alembic_upgrade_missing_ini(tmp_path, monkeypatch):
     import src.backend.config as cfg_mod

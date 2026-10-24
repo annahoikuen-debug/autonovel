@@ -1,4 +1,5 @@
 """3層ローリング記憶およびエピソードダイジェストの単体テスト (v5.0 Step 13〜17)."""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -13,6 +14,7 @@ from src.services.context_compression.rolling_memory import RollingMemoryBuilder
 
 
 # ── Step 13: EpisodeDigestModel ──
+
 
 class TestEpisodeDigestModel:
     def test_model_instantiation(self):
@@ -30,6 +32,7 @@ class TestEpisodeDigestModel:
 
 # ── Step 14: generate_episode_digest & EpisodeDigestService ──
 
+
 class TestEpisodeDigestService:
     @pytest.mark.asyncio
     async def test_generate_episode_digest_with_mock_llm(self):
@@ -44,11 +47,7 @@ class TestEpisodeDigestService:
 
     @pytest.mark.asyncio
     async def test_generate_episode_digest_fallback_when_llm_none(self):
-        draft = (
-            "村を出発した。\n"
-            "森の中でオオカミに襲われたが撃退した。\n"
-            "夜になり安全な小屋に到着した。"
-        )
+        draft = "村を出発した。\n森の中でオオカミに襲われたが撃退した。\n夜になり安全な小屋に到着した。"
         digest = await generate_episode_digest(None, draft, ep_num=1)
         assert "第1話要約" in digest
         assert "小屋に到着した" in digest
@@ -92,6 +91,7 @@ class TestEpisodeDigestService:
 
 
 # ── Step 15 & 16: RollingMemoryBuilder ──
+
 
 class TestRollingMemoryBuilder:
     def test_build_context_structure(self):

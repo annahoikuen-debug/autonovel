@@ -1,4 +1,5 @@
 """Multimedia end-to-end テスト (実サービス / 実ファイル出力)。"""
+
 from __future__ import annotations
 
 import io
@@ -117,9 +118,7 @@ def test_asset_pack_e2e(mm_e2e_client):
 
 
 def test_media_mix_then_artifact_meta(mm_e2e_client):
-    res = mm_e2e_client.post(
-        "/multimedia/media-mix", json={"book_id": 2, "format": "manga"}
-    )
+    res = mm_e2e_client.post("/multimedia/media-mix", json={"book_id": 2, "format": "manga"})
     assert res.status_code == 200, res.text
     asset_id = res.json()["asset_id"]
     meta = mm_e2e_client.get(f"/multimedia/artifacts/{asset_id}")

@@ -99,6 +99,7 @@ async def test_limit_concurrency():
     sem = asyncio.Semaphore(2)
 
     with patch("src.core.async_utils.get_concurrency_semaphore", return_value=sem):
+
         async def work():
             await asyncio.sleep(0.01)
             return "done"

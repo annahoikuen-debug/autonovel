@@ -1,4 +1,5 @@
 """Script file watcher service for automatic annotation persistence."""
+
 from __future__ import annotations
 
 import hashlib
@@ -22,6 +23,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class WatchConfig:
     """監視設定"""
+
     script_root: Path
     pattern: str = "episode_*.md"
     poll_interval: float = 30.0  # seconds

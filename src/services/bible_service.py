@@ -379,10 +379,7 @@ class WorldBibleGenerator:
                     )
                     await fs_repo.commit()
         except Exception as e:
-            logger.warning(
-                f"伏線自動設置に失敗しました（Bible 生成は継続）: "
-                f"book_id={book_id} error={e}"
-            )
+            logger.warning(f"伏線自動設置に失敗しました（Bible 生成は継続）: book_id={book_id} error={e}")
 
     async def _create_ultra_fast_plan(self, config: PlanningConfig, reporter) -> tuple[int, WorldBible]:
         if reporter:
@@ -413,6 +410,7 @@ class WorldBibleGenerator:
         else:
             bible_core = safe_model_validate(WorldBibleCore, res.metadata)
             from src.models.bible import RoadmapItem
+
             roadmap = [
                 RoadmapItem(
                     ep_num=ep,

@@ -1,4 +1,5 @@
 """Tension and Emotion MCP Server Implementation (JSON-RPC 2.0)."""
+
 from __future__ import annotations
 
 import json

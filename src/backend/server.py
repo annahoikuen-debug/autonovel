@@ -92,6 +92,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Step 46: Huey タスクキュー接続確認
     try:
         from src.backend.tasks.huey import check_huey_health
+
         health = check_huey_health()
         logger.info("Huey task queue initialized: %s", health)
     except Exception as e:
@@ -141,7 +142,6 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title=f"{settings.APP_NAME} Backend", version=settings.APP_VERSION, lifespan=lifespan)
-
 
 
 from src.backend.middleware.auth_middleware import GlobalAuthMiddleware

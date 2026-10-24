@@ -32,7 +32,11 @@ REEXPORT_SENTINEL = "src/narrative_balancer"
 def _ruff_statistics() -> dict[str, int]:
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src", "tests", "--statistics"],
-        capture_output=True, text=True, cwd=ROOT, encoding="utf-8", errors="replace",
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        encoding="utf-8",
+        errors="replace",
     )
     counts: dict[str, int] = {}
     for line in result.stdout.splitlines():
@@ -46,10 +50,7 @@ def test_lint_error_count_within_budget():
     """lint 残存数が予算内であること（悪化すると落ちる）。"""
     counts = _ruff_statistics()
     total = sum(counts.values())
-    assert total <= LINT_ERROR_BUDGET, (
-        f"lint 残存 {total} 件が予算 {LINT_ERROR_BUDGET} 件を超過。\n"
-        f"内訳: {counts}"
-    )
+    assert total <= LINT_ERROR_BUDGET, f"lint 残存 {total} 件が予算 {LINT_ERROR_BUDGET} 件を超過。\n内訳: {counts}"
 
 
 def test_whitespace_rules_are_clean():
@@ -59,9 +60,7 @@ def test_whitespace_rules_are_clean():
     """
     counts = _ruff_statistics()
     for code in ("W291", "W292", "W293"):
-        assert counts.get(code, 0) == 0, (
-            f"{code} が {counts[code]} 件に再発（純整形なので自動修正可能）"
-        )
+        assert counts.get(code, 0) == 0, f"{code} が {counts[code]} 件に再発（純整形なので自動修正可能）"
 
 
 def test_reexport_modules_still_importable():

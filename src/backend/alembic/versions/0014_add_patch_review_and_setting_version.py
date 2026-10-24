@@ -30,9 +30,7 @@ def upgrade() -> None:
         op.create_table(
             "patch_reviews",
             sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
-            sa.Column(
-                "book_id", sa.Integer(), sa.ForeignKey("books.id", ondelete="CASCADE"), nullable=False
-            ),
+            sa.Column("book_id", sa.Integer(), sa.ForeignKey("books.id", ondelete="CASCADE"), nullable=False),
             sa.Column("ep_num", sa.Integer(), nullable=False),
             sa.Column("patch_type", sa.String(50), nullable=False),
             sa.Column("original_content", sa.Text(), nullable=False),
@@ -45,9 +43,7 @@ def upgrade() -> None:
             sa.Column("audit_issue_ids", sa.JSON(), nullable=False, server_default="[]"),
             sa.Column("learning_metadata", sa.JSON(), nullable=False, server_default="{}"),
             sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
-            sa.Column(
-                "updated_at", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now()
-            ),
+            sa.Column("updated_at", sa.DateTime(), server_default=sa.func.now(), onupdate=sa.func.now()),
         )
         op.create_index("idx_patch_reviews_book_ep", "patch_reviews", ["book_id", "ep_num"])
         op.create_index("idx_patch_reviews_status", "patch_reviews", ["status"])
@@ -57,9 +53,7 @@ def upgrade() -> None:
         op.create_table(
             "setting_deltas",
             sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
-            sa.Column(
-                "book_id", sa.Integer(), sa.ForeignKey("books.id", ondelete="CASCADE"), nullable=False
-            ),
+            sa.Column("book_id", sa.Integer(), sa.ForeignKey("books.id", ondelete="CASCADE"), nullable=False),
             sa.Column("field_path", sa.String(500), nullable=False),
             sa.Column("old_value", sa.Text(), nullable=True),
             sa.Column("new_value", sa.Text(), nullable=True),
@@ -67,9 +61,7 @@ def upgrade() -> None:
             sa.Column("source", sa.String(50), nullable=False),
             sa.Column("merged_to_graphrag", sa.Boolean(), nullable=False, server_default="0"),
             sa.Column("merged_at", sa.DateTime(), nullable=True),
-            sa.Column(
-                "patch_review_id", sa.Integer(), sa.ForeignKey("patch_reviews.id"), nullable=True
-            ),
+            sa.Column("patch_review_id", sa.Integer(), sa.ForeignKey("patch_reviews.id"), nullable=True),
             sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),
         )
         op.create_index("idx_setting_deltas_book_field", "setting_deltas", ["book_id", "field_path"])
@@ -80,14 +72,10 @@ def upgrade() -> None:
         op.create_table(
             "setting_versions",
             sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
-            sa.Column(
-                "book_id", sa.Integer(), sa.ForeignKey("books.id", ondelete="CASCADE"), nullable=False
-            ),
+            sa.Column("book_id", sa.Integer(), sa.ForeignKey("books.id", ondelete="CASCADE"), nullable=False),
             sa.Column("version_number", sa.Integer(), nullable=False),
             sa.Column("snapshot_json", sa.Text(), nullable=False),
-            sa.Column(
-                "base_version_id", sa.Integer(), sa.ForeignKey("setting_versions.id"), nullable=True
-            ),
+            sa.Column("base_version_id", sa.Integer(), sa.ForeignKey("setting_versions.id"), nullable=True),
             sa.Column("change_summary", sa.Text(), nullable=False, server_default=""),
             sa.Column("created_by", sa.String(100), nullable=True),
             sa.Column("created_at", sa.DateTime(), server_default=sa.func.now()),

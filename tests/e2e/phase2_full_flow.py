@@ -10,6 +10,7 @@ Tests the complete Phase 2 pipeline:
 
 import asyncio
 import sys
+
 sys.path.insert(0, "/home/herbmatsui/autonovel")
 
 # Minimal imports to avoid circular deps
@@ -63,10 +64,12 @@ async def test_phase2_full_pipeline():
                 v = payload[k]
                 assert "BLOCKED:" in str(v) or "HASH:" in str(v), f"Leaked: {k}"
         own = payload["own_proposal"]
-        audit_results.append({
-            "proposal": own["proposal_id"],
-            "score": {"A": 85, "B": 72, "C": 91}[own["proposal_id"]],
-        })
+        audit_results.append(
+            {
+                "proposal": own["proposal_id"],
+                "score": {"A": 85, "B": 72, "C": 91}[own["proposal_id"]],
+            }
+        )
 
     bus.subscribe("audit", audit_handler)
 
@@ -94,9 +97,14 @@ async def test_phase2_full_pipeline():
     # 3. Specialist Audit: 8 auditors run in parallel
     # Import specialists here to avoid early import issues
     from src.agents.specialists import (
-        ConsistencyAuditor, CreativityAuditor, ReaderHookAuditor,
-        EmotionCurveAuditor, StyleAuditor, FactualAuditor,
-        StructureAuditor, MultimodalAuditor,
+        ConsistencyAuditor,
+        CreativityAuditor,
+        ReaderHookAuditor,
+        EmotionCurveAuditor,
+        StyleAuditor,
+        FactualAuditor,
+        StructureAuditor,
+        MultimodalAuditor,
     )
 
     load_weights(genre="literary", phase="mid_writing")
@@ -146,8 +154,14 @@ async def test_phase2_full_pipeline():
 
     lowest = book_score.lowest_dimension()
     assert lowest in [
-        "consistency", "creativity", "reader_hook", "emotion_curve",
-        "style", "factual", "structure", "multimodal"
+        "consistency",
+        "creativity",
+        "reader_hook",
+        "emotion_curve",
+        "style",
+        "factual",
+        "structure",
+        "multimodal",
     ]
     print(f"✅ Specialist Audit: 8 auditors, overall={book_score.overall:.1f}, lowest={lowest}")
 
@@ -160,6 +174,7 @@ async def test_phase2_full_pipeline():
                 SearchResult(id="1", content="アリスは東京で剣を振った", metadata={}, source="vector", score=0.9),
                 SearchResult(id="2", content="ボブは大阪で杖を使った", metadata={}, source="vector", score=0.8),
             ]
+
         def search_similar_chunks(self, session, query, limit=5, min_score=0.0):
             return self.search_results
 
@@ -172,9 +187,7 @@ async def test_phase2_full_pipeline():
     )
     session = MagicMock()
 
-    result = await reflective.retrieve_with_reflection(
-        session, query="アリス 剣", book_id=1
-    )
+    result = await reflective.retrieve_with_reflection(session, query="アリス 剣", book_id=1)
 
     assert isinstance(result.iterations, int)
     assert result.iterations >= 1

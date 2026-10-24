@@ -6,6 +6,7 @@ v5.2 までは `DbForeshadowingRepository.get_balance` が完成しているの�
 本番から一度も呼ばれておらず、伏線に関する Prometheus メトリクスも 0 個だった。
 つまり「伏線がどれだけ回収されているか」を数値で追う手段が存在しなかった。
 """
+
 from __future__ import annotations
 
 import logging
@@ -94,9 +95,7 @@ class ForeshadowingKpiService:
 
             m.foreshadowing_active_gauge.labels(book_id=str(kpi.book_id)).set(kpi.active)
             m.foreshadowing_overdue_gauge.labels(book_id=str(kpi.book_id)).set(kpi.overdue)
-            m.foreshadowing_collection_rate.labels(book_id=str(kpi.book_id)).set(
-                kpi.collection_rate
-            )
+            m.foreshadowing_collection_rate.labels(book_id=str(kpi.book_id)).set(kpi.collection_rate)
         except Exception as e:  # pragma: no cover - メトリクス非対応環境
             logger.debug(f"Failed to publish foreshadowing metrics: {e}")
 
@@ -109,9 +108,7 @@ class ForeshadowingKpiService:
         except Exception as e:  # pragma: no cover
             logger.debug(f"Failed to report planted foreshadowing: {e}")
 
-    async def report_transition(
-        self, from_status: str, to_status: str, rejected_reason: Optional[str] = None
-    ) -> None:
+    async def report_transition(self, from_status: str, to_status: str, rejected_reason: Optional[str] = None) -> None:
         """ステートマシンの遷移（または遷移拒否）をメトリクスに記録する"""
         try:
             from src.backend.observability import metrics as m
@@ -119,9 +116,7 @@ class ForeshadowingKpiService:
             if rejected_reason:
                 m.foreshadowing_transitions_rejected_total.labels(reason=rejected_reason).inc()
                 return
-            m.foreshadowing_status_transitions_total.labels(
-                from_status=from_status, to_status=to_status
-            ).inc()
+            m.foreshadowing_status_transitions_total.labels(from_status=from_status, to_status=to_status).inc()
         except Exception as e:  # pragma: no cover
             logger.debug(f"Failed to report foreshadowing transition: {e}")
 

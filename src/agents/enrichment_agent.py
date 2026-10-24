@@ -1,5 +1,6 @@
 # src/agents/enrichment_agent.py
 """EnrichmentAgent - 執筆済みテキストを多角的にエンリッチメントするスキルエージェント"""
+
 from __future__ import annotations
 
 import logging
@@ -55,6 +56,7 @@ class EnrichmentAgent(SkillAgent):
     def _load_config(self) -> dict:
         """設定ファイル読み込み"""
         import yaml
+
         try:
             with open("config/enrichment.yaml", "r", encoding="utf-8") as f:
                 return yaml.safe_load(f).get("enrichment", {})
@@ -64,20 +66,26 @@ class EnrichmentAgent(SkillAgent):
 
     async def execute(self, ctx: AgentContext) -> AgentResult:
         """スキル実行エントリーポイント"""
-        self.emit_event(ENRICHMENT_STARTED, {
-            "book_id": ctx.book_id,
-            "ep_num": ctx.ep_num,
-        })
+        self.emit_event(
+            ENRICHMENT_STARTED,
+            {
+                "book_id": ctx.book_id,
+                "ep_num": ctx.ep_num,
+            },
+        )
 
         drafted_text = ctx.artifacts.get("drafted_text")
         writing_context = ctx.artifacts.get("writing_context", {})
 
         if not drafted_text:
-            self.emit_event(ENRICHMENT_ERROR, {
-                "book_id": ctx.book_id,
-                "ep_num": ctx.ep_num,
-                "error": "drafted_text is required in artifacts",
-            })
+            self.emit_event(
+                ENRICHMENT_ERROR,
+                {
+                    "book_id": ctx.book_id,
+                    "ep_num": ctx.ep_num,
+                    "error": "drafted_text is required in artifacts",
+                },
+            )
             return AgentResult(
                 next_agent=AgentName.AUDIT,
                 artifacts={},
@@ -95,11 +103,14 @@ class EnrichmentAgent(SkillAgent):
             # 機能フラグチェック
             if not self._config.get("enabled", False):
                 logger.info("Enrichment disabled via config, passing through original text")
-                self.emit_event(ENRICHMENT_COMPLETED, {
-                    "book_id": ctx.book_id,
-                    "ep_num": ctx.ep_num,
-                    "skipped": True,
-                })
+                self.emit_event(
+                    ENRICHMENT_COMPLETED,
+                    {
+                        "book_id": ctx.book_id,
+                        "ep_num": ctx.ep_num,
+                        "skipped": True,
+                    },
+                )
                 return AgentResult(
                     next_agent=AgentName.AUDIT,
                     artifacts={
@@ -117,12 +128,15 @@ class EnrichmentAgent(SkillAgent):
             if not blind_review_mode:
                 enriched_text, trivia_meta = await self._enrich_with_trivia(drafted_text, writing_context)
                 enrichment_metadata["trivia"] = trivia_meta
-                self.emit_event(ENRICHMENT_STEP_COMPLETED, {
-                    "book_id": ctx.book_id,
-                    "ep_num": ctx.ep_num,
-                    "step": "trivia_insertion",
-                    "insertions_count": len(trivia_meta),
-                })
+                self.emit_event(
+                    ENRICHMENT_STEP_COMPLETED,
+                    {
+                        "book_id": ctx.book_id,
+                        "ep_num": ctx.ep_num,
+                        "step": "trivia_insertion",
+                        "insertions_count": len(trivia_meta),
+                    },
+                )
             else:
                 enriched_text = drafted_text
                 enrichment_metadata["trivia"] = [{"skipped": True, "reason": "blind_review_mode"}]
@@ -131,48 +145,60 @@ class EnrichmentAgent(SkillAgent):
             if not blind_review_mode:
                 enriched_text, citation_meta = await self._attach_citations(enriched_text, writing_context, ctx.book_id)
                 enrichment_metadata["citations"] = citation_meta
-                self.emit_event(ENRICHMENT_STEP_COMPLETED, {
-                    "book_id": ctx.book_id,
-                    "ep_num": ctx.ep_num,
-                    "step": "citation_attachment",
-                    "citations_count": len(citation_meta),
-                })
+                self.emit_event(
+                    ENRICHMENT_STEP_COMPLETED,
+                    {
+                        "book_id": ctx.book_id,
+                        "ep_num": ctx.ep_num,
+                        "step": "citation_attachment",
+                        "citations_count": len(citation_meta),
+                    },
+                )
             else:
                 enrichment_metadata["citations"] = [{"skipped": True, "reason": "blind_review_mode"}]
 
             # 3. 感覚拡充
             enriched_text, sensory_meta = await self._expand_sensory_details(enriched_text, writing_context)
             enrichment_metadata["sensory"] = sensory_meta
-            self.emit_event(ENRICHMENT_STEP_COMPLETED, {
-                "book_id": ctx.book_id,
-                "ep_num": ctx.ep_num,
-                "step": "sensory_expansion",
-                "expansions_count": len(sensory_meta),
-            })
+            self.emit_event(
+                ENRICHMENT_STEP_COMPLETED,
+                {
+                    "book_id": ctx.book_id,
+                    "ep_num": ctx.ep_num,
+                    "step": "sensory_expansion",
+                    "expansions_count": len(sensory_meta),
+                },
+            )
 
             # 4. マルチメディアシナリオ生成
             multimedia_meta = await self._generate_multimedia_scenarios(enriched_text, writing_context)
             enrichment_metadata["multimedia"] = multimedia_meta
-            self.emit_event(ENRICHMENT_STEP_COMPLETED, {
-                "book_id": ctx.book_id,
-                "ep_num": ctx.ep_num,
-                "step": "multimedia_scenarios",
-                "formats_generated": list(multimedia_meta.keys()),
-            })
+            self.emit_event(
+                ENRICHMENT_STEP_COMPLETED,
+                {
+                    "book_id": ctx.book_id,
+                    "ep_num": ctx.ep_num,
+                    "step": "multimedia_scenarios",
+                    "formats_generated": list(multimedia_meta.keys()),
+                },
+            )
 
             # トークン予算チェック
             enriched_text = self._enforce_token_budget(drafted_text, enriched_text)
 
-            self.emit_event(ENRICHMENT_COMPLETED, {
-                "book_id": ctx.book_id,
-                "ep_num": ctx.ep_num,
-                "metadata_summary": {
-                    "trivia_count": len(enrichment_metadata["trivia"]),
-                    "citation_count": len(enrichment_metadata["citations"]),
-                    "sensory_count": len(enrichment_metadata["sensory"]),
-                    "multimedia_formats": list(enrichment_metadata["multimedia"].keys()),
+            self.emit_event(
+                ENRICHMENT_COMPLETED,
+                {
+                    "book_id": ctx.book_id,
+                    "ep_num": ctx.ep_num,
+                    "metadata_summary": {
+                        "trivia_count": len(enrichment_metadata["trivia"]),
+                        "citation_count": len(enrichment_metadata["citations"]),
+                        "sensory_count": len(enrichment_metadata["sensory"]),
+                        "multimedia_formats": list(enrichment_metadata["multimedia"].keys()),
+                    },
                 },
-            })
+            )
 
             res_artifacts = dict(ctx.artifacts)
             res_artifacts["enriched_text"] = enriched_text
@@ -185,11 +211,14 @@ class EnrichmentAgent(SkillAgent):
 
         except Exception as e:
             logger.exception(f"EnrichmentAgent error: {e}")
-            self.emit_event("enrichment.error", {
-                "book_id": ctx.book_id,
-                "ep_num": ctx.ep_num,
-                "error": str(e),
-            })
+            self.emit_event(
+                "enrichment.error",
+                {
+                    "book_id": ctx.book_id,
+                    "ep_num": ctx.ep_num,
+                    "error": str(e),
+                },
+            )
             # フォールバック: 元のテキストを無傷で渡す
             return AgentResult(
                 next_agent=AgentName.AUDIT,
@@ -200,7 +229,6 @@ class EnrichmentAgent(SkillAgent):
                 },
                 error=f"Enrichment failed, using original: {e}",
             )
-
 
     # --- トリビア挿入関連 ---
 
@@ -225,7 +253,6 @@ class EnrichmentAgent(SkillAgent):
                 )
             except Exception as e:
                 logger.warning(f"Trivia candidate query failed: {e}")
-
 
         if not trivia_candidates:
             return text, []
@@ -257,6 +284,7 @@ class EnrichmentAgent(SkillAgent):
         try:
             from src.services.compression.layer1_keywords import count_tokens
         except Exception:
+
             def count_tokens(s: str) -> int:
                 return max(1, len(s) // 2)
 
@@ -268,12 +296,10 @@ class EnrichmentAgent(SkillAgent):
 
         for i, (trivia, insert_pos) in enumerate(zip(scored_trivia, insertion_points)):
             adjusted_pos = insert_pos + offset
-            surrounding = enriched_text[max(0, adjusted_pos-200):adjusted_pos+200]
+            surrounding = enriched_text[max(0, adjusted_pos - 200) : adjusted_pos + 200]
             pov = writing_context.get("pov", "third_person")
 
-            rewritten = await self._rewrite_trivia_for_context(
-                trivia["fact"], surrounding, pov, trivia.get("entity")
-            )
+            rewritten = await self._rewrite_trivia_for_context(trivia["fact"], surrounding, pov, trivia.get("entity"))
 
             if rewritten:
                 insert_tokens = count_tokens(rewritten)
@@ -281,7 +307,9 @@ class EnrichmentAgent(SkillAgent):
                 if accumulated_trivia_tokens + insert_tokens > trivia_budget_tokens:
                     logger.info(
                         "Trivia token budget reached (%d / %d tokens). Pruning remaining %d trivia candidates.",
-                        accumulated_trivia_tokens, trivia_budget_tokens, len(scored_trivia) - i
+                        accumulated_trivia_tokens,
+                        trivia_budget_tokens,
+                        len(scored_trivia) - i,
                     )
                     break
 
@@ -294,15 +322,17 @@ class EnrichmentAgent(SkillAgent):
                 offset += inserted_len
                 accumulated_trivia_tokens += insert_tokens
 
-                insertions_metadata.append({
-                    "position": adjusted_pos,
-                    "original": trivia.get("fact", ""),
-                    "enriched": rewritten,
-                    "tokens": insert_tokens,
-                    "trivia_source": trivia.get("source_type", "unknown"),
-                    "entity": trivia.get("entity"),
-                    "relevance": trivia.get("relevance_score", 0),
-                })
+                insertions_metadata.append(
+                    {
+                        "position": adjusted_pos,
+                        "original": trivia.get("fact", ""),
+                        "enriched": rewritten,
+                        "tokens": insert_tokens,
+                        "trivia_source": trivia.get("source_type", "unknown"),
+                        "entity": trivia.get("entity"),
+                        "relevance": trivia.get("relevance_score", 0),
+                    }
+                )
 
         return enriched_text, insertions_metadata
 
@@ -345,13 +375,14 @@ class EnrichmentAgent(SkillAgent):
         # 日本語対応: キーワード抽出で類似度計算
         def extract_keywords(text: str) -> set:
             import re
+
             keywords = set()
             # 2文字以上の漢字・カタカナ・ひらがな連続
-            keywords.update(re.findall(r'[一-龯ァ-ヴーぁ-ん]{2,}', text))
+            keywords.update(re.findall(r"[一-龯ァ-ヴーぁ-ん]{2,}", text))
             # 1文字以上の漢字・カタカナも追加（部分一致用）
-            keywords.update(re.findall(r'[一-龯ァ-ヴーぁ-ん]', text))
+            keywords.update(re.findall(r"[一-龯ァ-ヴーぁ-ん]", text))
             # 英単語
-            keywords.update(re.findall(r'[a-zA-Z]{2,}', text.lower()))
+            keywords.update(re.findall(r"[a-zA-Z]{2,}", text.lower()))
             return keywords
 
         fact_keywords = extract_keywords(fact_text)
@@ -415,7 +446,7 @@ class EnrichmentAgent(SkillAgent):
             points.append(0)
 
         # 段落区切り（\n\n）を優先
-        for match in re.finditer(r'\n\n', text):
+        for match in re.finditer(r"\n\n", text):
             pos = match.end()
             pos = self._adjust_point_outside_dialogue(text, pos)
             if pos not in points:
@@ -438,7 +469,7 @@ class EnrichmentAgent(SkillAgent):
             segment_len = len(text) // (max_points + 1)
             for i in range(1, max_points + 1):
                 pos = i * segment_len
-                snap = text.rfind('。', max(0, pos-100), pos)
+                snap = text.rfind("。", max(0, pos - 100), pos)
                 if snap != -1:
                     pos = snap + 1
                 pos = self._adjust_point_outside_dialogue(text, pos)
@@ -448,7 +479,6 @@ class EnrichmentAgent(SkillAgent):
         # 最終フィルタリング: セリフ内部のポイントは確実に排除
         safe_points = [p for p in points if not self._is_inside_dialogue(text, p)]
         return sorted(list(dict.fromkeys(safe_points)))[:max_points]
-
 
     async def _rewrite_trivia_for_context(
         self, trivia_fact: str, surrounding_text: str, pov: str, entity: str | None
@@ -487,6 +517,7 @@ class EnrichmentAgent(SkillAgent):
                 )
             else:
                 from prompts.enrichment.trivia_insertion import TRIVIA_INLINE_REWRITE_PROMPT
+
                 prompt = TRIVIA_INLINE_REWRITE_PROMPT.format(
                     surrounding_text=surrounding_text[:400],
                     trivia_fact=trivia_fact,
@@ -506,6 +537,7 @@ class EnrichmentAgent(SkillAgent):
                 return None
 
             import asyncio
+
             timeout_sec = float(self._config.get("trivia_insertion", {}).get("timeout_seconds", 4.0))
             try:
                 raw_res = await asyncio.wait_for(_invoke_llm(), timeout=timeout_sec)
@@ -521,7 +553,7 @@ class EnrichmentAgent(SkillAgent):
             rewritten = re.sub(r"^```[a-zA-Z]*\n?", "", rewritten)
             rewritten = re.sub(r"\n?```$", "", rewritten)
             rewritten = re.sub(r"^(?:リライト(?:案|後)?|本文)[:：\s]*", "", rewritten)
-            rewritten = rewritten.strip('"\'「」 \n')
+            rewritten = rewritten.strip("\"'「」 \n")
 
             if rewritten and len(rewritten) >= 5:
                 return self._adjust_pov_tone(rewritten, pov)
@@ -536,13 +568,12 @@ class EnrichmentAgent(SkillAgent):
             return text
         if pov in ("first_person", "一人称"):
             # 三人称的な客観解説語尾を一人称的な認識語尾へ自然に軟化
-            text = re.sub(r'であった。$', 'だった。', text)
-            text = re.sub(r'である。$', 'だ。', text)
-            text = re.sub(r'とされている。$', 'と聞いたことがある。', text)
-            text = re.sub(r'と言われている。$', 'と耳にしたことがある。', text)
-            text = re.sub(r'のだ。$', 'んだ。', text)
+            text = re.sub(r"であった。$", "だった。", text)
+            text = re.sub(r"である。$", "だ。", text)
+            text = re.sub(r"とされている。$", "と聞いたことがある。", text)
+            text = re.sub(r"と言われている。$", "と耳にしたことがある。", text)
+            text = re.sub(r"のだ。$", "んだ。", text)
         return text
-
 
     # --- 引用付与関連 ---
 
@@ -560,7 +591,6 @@ class EnrichmentAgent(SkillAgent):
                 self._bible_index = await self.rag_service.index_bible_sources(session, book_id)
             except Exception as e:
                 logger.warning(f"Bible index build failed: {e}")
-
 
         if not self._bible_index:
             return text, []
@@ -588,7 +618,7 @@ class EnrichmentAgent(SkillAgent):
         claims = []
 
         # 文単位で分割してから各文をチェック（より確実）
-        sentences = re.split(r'(?<=[。！？])', text)
+        sentences = re.split(r"(?<=[。！？])", text)
         pos = 0
         for sent in sentences:
             sent = sent.strip()
@@ -600,30 +630,93 @@ class EnrichmentAgent(SkillAgent):
             # 1. 設定用語を含む
             # 2. 断定形（です/だ/である/という/過去形/丁寧語）で終わる
             # 3. 十分な長さ
-            setting_keywords = ['魔法', 'スキル', '能力', 'システム', 'ルール', '設定', '世界', '歴史',
-                               'MP', 'HP', 'レベル', 'ステータス', 'アイテム', '武器', '剣', '呪文',
-                               '術式', '防具', '聖剣', 'ダンジョン', '遺跡', '国家', '都市', '組織', '勢力']
+            setting_keywords = [
+                "魔法",
+                "スキル",
+                "能力",
+                "システム",
+                "ルール",
+                "設定",
+                "世界",
+                "歴史",
+                "MP",
+                "HP",
+                "レベル",
+                "ステータス",
+                "アイテム",
+                "武器",
+                "剣",
+                "呪文",
+                "術式",
+                "防具",
+                "聖剣",
+                "ダンジョン",
+                "遺跡",
+                "国家",
+                "都市",
+                "組織",
+                "勢力",
+            ]
 
             has_setting_kw = any(kw in sent for kw in setting_keywords)
             # 断定形: です/だ/である/という/ます + 過去形(た/だ/た。/だ。) + 丁寧語
             # 辞書形動詞(う動詞/る動詞)も断定として扱う
             declarative_endings = (
-                'です', 'だ', 'である', 'という',
-                'ます', 'ます。', 'です。', 'だ。', 'である。', 'という。',
-                'た', 'た。', 'だ。', 'た。',  # 過去形
-                'ました', 'ました。', 'ました',  # 丁寧過去
-                'る', 'る。', 'う', 'う。', 'す', 'す。', 'く', 'く。', 'ぐ', 'ぐ。', 'つ', 'つ。', 'ぬ', 'ぬ。', 'ぶ', 'ぶ。', 'む', 'む。', 'す', 'す。',  # 五段動詞基本形
-                'る', 'る。', 'える', 'える。', 'いる', 'いる。',  # 一段動詞基本形
+                "です",
+                "だ",
+                "である",
+                "という",
+                "ます",
+                "ます。",
+                "です。",
+                "だ。",
+                "である。",
+                "という。",
+                "た",
+                "た。",
+                "だ。",
+                "た。",  # 過去形
+                "ました",
+                "ました。",
+                "ました",  # 丁寧過去
+                "る",
+                "る。",
+                "う",
+                "う。",
+                "す",
+                "す。",
+                "く",
+                "く。",
+                "ぐ",
+                "ぐ。",
+                "つ",
+                "つ。",
+                "ぬ",
+                "ぬ。",
+                "ぶ",
+                "ぶ。",
+                "む",
+                "む。",
+                "す",
+                "す。",  # 五段動詞基本形
+                "る",
+                "る。",
+                "える",
+                "える。",
+                "いる",
+                "いる。",  # 一段動詞基本形
             )
             is_declarative = any(sent.endswith(e) for e in declarative_endings)
             is_long_enough = len(sent) >= 8
 
             if has_setting_kw and is_declarative and is_long_enough:
-                claims.append({
-                    "text": sent,
-                    "position": pos,
-                    "end_position": pos + len(sent),
-                })
+                claims.append(
+                    {
+                        "text": sent,
+                        "position": pos,
+                        "end_position": pos + len(sent),
+                    }
+                )
 
             pos += len(sent) + 1
 
@@ -633,7 +726,7 @@ class EnrichmentAgent(SkillAgent):
             if not any(abs(claim["position"] - c["position"]) < 20 for c in unique_claims):
                 unique_claims.append(claim)
 
-        return unique_claims[:self._config.get("citation_attachment", {}).get("max_citations_per_chapter", 10)]
+        return unique_claims[: self._config.get("citation_attachment", {}).get("max_citations_per_chapter", 10)]
 
     def _match_claims_to_sources(self, claims: list[dict]) -> list[dict]:
         """ソースマッチング（Step 21）"""
@@ -646,7 +739,8 @@ class EnrichmentAgent(SkillAgent):
 
             # キーワードベースマッチング
             import re
-            keywords = re.findall(r'[一-龯ァ-ヴー]{2,}|[a-zA-Z]{3,}', claim_text)
+
+            keywords = re.findall(r"[一-龯ァ-ヴー]{2,}|[a-zA-Z]{3,}", claim_text)
 
             for kw in keywords:
                 if kw in self._bible_index:
@@ -659,13 +753,15 @@ class EnrichmentAgent(SkillAgent):
                             best_match = source
 
             if best_match and best_score >= 0.5:
-                pairs.append({
-                    "claim": claim["text"],
-                    "position": claim["position"],
-                    "end_position": claim["end_position"],
-                    "source": best_match,
-                    "score": best_score,
-                })
+                pairs.append(
+                    {
+                        "claim": claim["text"],
+                        "position": claim["position"],
+                        "end_position": claim["end_position"],
+                        "source": best_match,
+                        "score": best_score,
+                    }
+                )
 
         return pairs
 
@@ -695,12 +791,14 @@ class EnrichmentAgent(SkillAgent):
             # マーカー挿入
             enriched_text = enriched_text[:insert_pos] + marker + enriched_text[insert_pos:]
 
-            citations_meta.append({
-                "marker": marker_num,
-                "claim": pair["claim"],
-                "source": pair["source"],
-                "score": pair["score"],
-            })
+            citations_meta.append(
+                {
+                    "marker": marker_num,
+                    "claim": pair["claim"],
+                    "source": pair["source"],
+                    "score": pair["score"],
+                }
+            )
 
         return enriched_text, citations_meta
 
@@ -781,12 +879,13 @@ class EnrichmentAgent(SkillAgent):
 
         logger.warning(
             "Enriched text growth (%d chars) exceeded token budget (%d chars). Enforcing fallback trimming.",
-            actual_growth, max_allowed_growth_chars
+            actual_growth,
+            max_allowed_growth_chars,
         )
         # 超過時は、安全に元のテキストに許容範囲内の増分を結合するか、文境界で切り詰める
         allowed_len = len(original) + max_allowed_growth_chars
         trimmed = enriched[:allowed_len]
         last_period = trimmed.rfind("。")
         if last_period > len(original):
-            return trimmed[:last_period + 1]
-        return original
+            return trimmed[: last_period + 1]
+        return original

@@ -1,5 +1,6 @@
 # tests/unit/test_keyphrase_extractors.py
 """キーフレーズ抽出器 単体テスト"""
+
 from __future__ import annotations
 
 import pytest

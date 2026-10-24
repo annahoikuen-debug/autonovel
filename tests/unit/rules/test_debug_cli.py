@@ -1,4 +1,5 @@
 """Step 20: 開発者向けデバッグCLIテスト。"""
+
 from __future__ import annotations
 
 import json
@@ -98,8 +99,7 @@ class TestShowLog:
 
     def test_show_log_cli(self, log_path, capsys):
         """CLI 経由の実行。"""
-        ret = main(["show-log", "--pair", "A", "B", "--from", "10", "--to", "15",
-                    "--log", log_path])
+        ret = main(["show-log", "--pair", "A", "B", "--from", "10", "--to", "15", "--log", log_path])
         assert ret == 0
         output = capsys.readouterr().out
         data = json.loads(output)

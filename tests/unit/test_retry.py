@@ -1,4 +1,5 @@
 """リトライヘルパーのユニットテスト。"""
+
 from __future__ import annotations
 
 import pytest
@@ -44,6 +45,7 @@ async def test_with_retry_ultimate_fail():
 
 async def test_with_retry_default_params():
     """デフォルトパラメータで動作する。"""
+
     async def always_fail():
         raise RuntimeError("fail")
 
@@ -59,6 +61,7 @@ async def test_with_retry_backoff_timing(monkeypatch):
     各試行の基准値 ``initial_delay * backoff_factor ** (attempt-1)`` に対する
     区間 ``[0.5 * base, 1.5 * base]`` に入ることを検証する。
     """
+
     async def failing_func():
         raise ValueError("fail")
 
@@ -166,6 +169,7 @@ async def test_with_retry_honours_server_retry_after(monkeypatch):
 
 async def test_with_retry_caps_server_retry_after(monkeypatch):
     """サーバ指定値が巨大でも max_retry_after_seconds で頭打ちになる。"""
+
     async def failing_func():
         err = ValueError("429")
         err.retry_after = 9999.0

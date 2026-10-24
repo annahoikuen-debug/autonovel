@@ -1,4 +1,5 @@
 """workflow_checkpoints SQLAlchemy ORMモデル。"""
+
 from __future__ import annotations
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, DateTime, JSON, Text

@@ -1,4 +1,5 @@
 """音声合成アダプタ（OpenAI TTS, ElevenLabs, Mock, Factory）の単体テスト (v5.0 Step 7〜10)."""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 

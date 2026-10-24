@@ -15,17 +15,11 @@ class StoryDNA(BaseModel):
     """
 
     core_concept: str = Field(default="", description="物語の究極の核、唯一無二の魅力")
-    mc_immutable_core: str = Field(
-        default="", description="主人公が絶対に失わない性質、執筆の絶対指針"
-    )
+    mc_immutable_core: str = Field(default="", description="主人公が絶対に失わない性質、執筆の絶対指針")
     world_laws: str = Field(default="", description="世界の絶対的なルール、覆らない因果律")
     climax_vision: str = Field(default="", description="目指すべき最高潮の光景")
-    marketing_hooks: list[str] = Field(
-        default_factory=list, description="読者を惹きつける商業的キーワード"
-    )
-    mutation_history: list[str] = Field(
-        default_factory=list, description="DNAの進化（リフレクション）履歴"
-    )
+    marketing_hooks: list[str] = Field(default_factory=list, description="読者を惹きつける商業的キーワード")
+    mutation_history: list[str] = Field(default_factory=list, description="DNAの進化（リフレクション）履歴")
     version: int = Field(default=1)
 
     model_config = MODEL_CONFIG_DEFAULTS
@@ -34,9 +28,7 @@ class StoryDNA(BaseModel):
 class MarketingAssets(BaseModel):
     catchcopies: list[str] = Field(default_factory=list)
     tags: list[str] = Field(default_factory=list)
-    ab_test_candidates: list[dict] = Field(
-        default_factory=list, description="タイトル・タグのABテスト案"
-    )
+    ab_test_candidates: list[dict] = Field(default_factory=list, description="タイトル・タグのABテスト案")
 
     model_config = MODEL_CONFIG_DEFAULTS
 
@@ -61,9 +53,7 @@ class WorldBibleCore(BaseModel):
     dynamic_pacing_graph: list[DynamicPacing] = Field(default_factory=list)
     villain_parallel_timeline: list[str] = Field(default_factory=list)
     story_direction: str = Field(default="")
-    engine_key: str = Field(
-        default="conflict", description="物語を駆動する4大アーキタイプエンジンキー"
-    )
+    engine_key: str = Field(default="conflict", description="物語を駆動する4大アーキタイプエンジンキー")
     absolute_dictionary: dict[str, str] = Field(
         default_factory=dict, description="固有名詞・キャラクター設定の絶対辞書（表記揺れ防止）"
     )
@@ -93,9 +83,7 @@ class WorldBible(BaseModel):
     villain_parallel_timeline: list[str] = Field(default_factory=list)
     story_direction: str = Field(default="")
     full_story_roadmap: list[RoadmapItem] = Field(default_factory=list)
-    engine_key: str = Field(
-        default="conflict", description="物語を駆動する4大アーキタイプエンジンキー"
-    )
+    engine_key: str = Field(default="conflict", description="物語を駆動する4大アーキタイプエンジンキー")
     absolute_dictionary: dict[str, str] = Field(
         default_factory=dict, description="固有名詞・キャラクター設定の絶対辞書（表記揺れ防止）"
     )

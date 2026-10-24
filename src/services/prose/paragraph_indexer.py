@@ -5,6 +5,7 @@ Paragraph indexer for splitting prose into indexed blocks.
 from typing import List, Dict
 import re
 
+
 class ParagraphIndexer:
     """
     Splits text into paragraphs and assigns each a stable index.
@@ -33,7 +34,7 @@ class ParagraphIndexer:
             return []
 
         # Split by blank lines (multiple newlines) and remove empty lines
-        raw_paragraphs = re.split(r'\n\s*\n', text.strip())
+        raw_paragraphs = re.split(r"\n\s*\n", text.strip())
         paragraphs = [p.strip() for p in raw_paragraphs if p.strip()]
 
         # Adjust paragraph boundaries to target size (optional, for now we keep as split)
@@ -50,10 +51,12 @@ class ParagraphIndexer:
             else:
                 end = start + len(para)
                 cursor = end
-            indexed.append({
-                'index': i,
-                'text': para,
-                'start': start,
-                'end': end,
-            })
+            indexed.append(
+                {
+                    "index": i,
+                    "text": para,
+                    "start": start,
+                    "end": end,
+                }
+            )
         return indexed

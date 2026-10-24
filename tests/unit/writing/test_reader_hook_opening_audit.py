@@ -2,6 +2,7 @@
 Unit tests for ReaderHookAuditor opening episodes cliffhanger enforcement.
 PLAN 02 - Step 11: 監査専門エージェント連携検証
 """
+
 from __future__ import annotations
 
 import json
@@ -36,10 +37,12 @@ async def test_reader_hook_auditor_rejects_peaceful_ending_for_ep01():
     )
 
     auditor = ReaderHookAuditor(llm=mock_llm)
-    result = await auditor.audit({
-        "draft_text": peaceful_draft,
-        "ep_num": 1,
-    })
+    result = await auditor.audit(
+        {
+            "draft_text": peaceful_draft,
+            "ep_num": 1,
+        }
+    )
 
     # スコアが45点以下に抑制されること
     assert result.score <= 45.0
@@ -72,10 +75,12 @@ async def test_reader_hook_auditor_passes_crisis_ending_for_ep01():
     )
 
     auditor = ReaderHookAuditor(llm=mock_llm)
-    result = await auditor.audit({
-        "draft_text": crisis_draft,
-        "ep_num": 1,
-    })
+    result = await auditor.audit(
+        {
+            "draft_text": crisis_draft,
+            "ep_num": 1,
+        }
+    )
 
     assert result.score >= 80.0
     assert not any("第1話 離脱防止" in s for s in result.suggestions)

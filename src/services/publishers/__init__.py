@@ -4,6 +4,7 @@ Publishers Package (v5.0 Deprecation Notice)
 高いメンテナンスコストのためv5.0で非推奨（Deprecated）となりました。
 今後は PlatformCopyFormatter によるワンクリック整形コピー機能を使用してください。
 """
+
 import warnings
 
 from src.services.publishers.base import (

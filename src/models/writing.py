@@ -15,9 +15,7 @@ class EpisodeDraft(BaseModel):
     entertainment_audit: str = Field(default="")
     audit_checklist: dict[str, bool] = Field(default_factory=dict)
     final_content: str = Field(default="")
-    candidates: list[EpisodeDraft] = Field(
-        default_factory=list, description="AIが提示した複数の本文候補案"
-    )
+    candidates: list[EpisodeDraft] = Field(default_factory=list, description="AIが提示した複数の本文候補案")
     self_critique: str = Field(default="")
     summary: str = Field(default="")
     tension_delta: int = Field(default=0)
@@ -53,9 +51,7 @@ class EpisodeMetadata(BaseModel):
     tension_delta: int = Field(default=0, description="この話での緊張・摩擦の変化量")
     qol_delta: int = Field(default=0, description="この話でのQOL（生活の質）変化量")
     love_delta: int = Field(default=0, description="この話でのヒロイン等の好感度変化量")
-    ai_insight: str = Field(
-        default="", description="確定した事実や設定の変更、伏線の回収状況に関するメモ"
-    )
+    ai_insight: str = Field(default="", description="確定した事実や設定の変更、伏線の回収状況に関するメモ")
     next_world_state: WorldState = Field(
         default_factory=WorldState, description="次のエピソード開始時の世界の状態メタデータ"
     )

@@ -17,19 +17,53 @@ from src.agents.specialist_auditor_base import (
 
 # Hook keywords for opening (used in fallback)
 OPENING_HOOK_PATTERNS = [
-    r"なぜ", r"どうして", r"誰", r"何", r"どこ", r"いつ",
-    r"謎", r"不思議", r"奇妙", r"違和感", r"おかしい",
-    r"危機", r"ピンチ", r"絶体絶命", r"追い詰め", r"逃げ",
-    r"突然", r"唐突", r"一瞬", r"瞬間", r"衝撃",
-    r"？", r"！", r"…", r"……",
+    r"なぜ",
+    r"どうして",
+    r"誰",
+    r"何",
+    r"どこ",
+    r"いつ",
+    r"謎",
+    r"不思議",
+    r"奇妙",
+    r"違和感",
+    r"おかしい",
+    r"危機",
+    r"ピンチ",
+    r"絶体絶命",
+    r"追い詰め",
+    r"逃げ",
+    r"突然",
+    r"唐突",
+    r"一瞬",
+    r"瞬間",
+    r"衝撃",
+    r"？",
+    r"！",
+    r"…",
+    r"……",
 ]
 
 # Hook keywords for ending (used in fallback)
 ENDING_HOOK_PATTERNS = [
-    r"…$", r"……$", r"？$", r"！$",
-    r"どうなる", r"どうしろ", r"どうする", r"続く", r"次回",
-    r"未解決", r"謎のまま", r"分からない", r"わからない",
-    r"見えた", r"現れた", r"現れ", r"扉が", r"音が",
+    r"…$",
+    r"……$",
+    r"？$",
+    r"！$",
+    r"どうなる",
+    r"どうしろ",
+    r"どうする",
+    r"続く",
+    r"次回",
+    r"未解決",
+    r"謎のまま",
+    r"分からない",
+    r"わからない",
+    r"見えた",
+    r"現れた",
+    r"現れ",
+    r"扉が",
+    r"音が",
 ]
 
 # Rhetorical patterns for opening (more sophisticated)
@@ -44,7 +78,10 @@ OPENING_RHETORICAL_PATTERNS = {
 
 # Rhetorical patterns for ending
 ENDING_RHETORICAL_PATTERNS = {
-    "unresolved_question": [r"[？?]$", r"(?:どうなる|どうしろ|どうする|なぜ|何が|誰が).*(?:だ|です|だろう|だろうか|かな|かね)$"],
+    "unresolved_question": [
+        r"[？?]$",
+        r"(?:どうなる|どうしろ|どうする|なぜ|何が|誰が).*(?:だ|です|だろう|だろうか|かな|かね)$",
+    ],
     "cliffhanger": [r"[！!]$", r"(?:見えた|現れた|現れ|扉が|音が|声が|影が).*(?:だ|です|た|だった)$"],
     "ellipsis": [r"[…]{2,}$", r"……。$", r"……、$"],
     "implication": [r"(?:続く|次回|未解決|謎のまま|分からない|わからない|知らされ|気づか).*(?:だ|です|た|だった)$"],
@@ -85,7 +122,8 @@ class ReaderHookAuditor(SpecialistAuditor):
         draft = ctx.get("draft_text", "") or ""
         if not draft:
             return SpecialistAuditResult(
-                "reader_hook", 0.0,
+                "reader_hook",
+                0.0,
                 feedback={"error": "no draft_text"},
                 suggestions=["Provide draft_text in context"],
             )
@@ -118,6 +156,7 @@ class ReaderHookAuditor(SpecialistAuditor):
         ep_num = ctx.get("ep_num")
         if ep_num is not None and ep_num <= 3:
             from src.services.auditors.cliffhanger_scorer import score_cliffhanger
+
             cliff_eval = score_cliffhanger(draft)
             feedback["opening_cliffhanger"] = cliff_eval.model_dump()
             if cliff_eval.requires_rewrite or cliff_eval.score < 80.0:
@@ -184,6 +223,7 @@ class ReaderHookAuditor(SpecialistAuditor):
         ep_num = ctx.get("ep_num")
         if ep_num is not None and ep_num <= 3:
             from src.services.auditors.cliffhanger_scorer import score_cliffhanger
+
             cliff_eval = score_cliffhanger(draft)
             feedback_data["opening_cliffhanger"] = cliff_eval.model_dump()
             if cliff_eval.requires_rewrite or cliff_eval.score < 80.0:

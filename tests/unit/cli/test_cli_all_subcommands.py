@@ -115,11 +115,7 @@ class TestSubcommandExecution:
     def test_parser_has_all_subcommands(self):
         """全サブコマンドがパーサーに登録されていること。"""
         parser = build_parser()
-        subcommands = [
-            action for action in parser._actions if isinstance(action, type(parser._subparsers))
-        ]
+        subcommands = [action for action in parser._actions if isinstance(action, type(parser._subparsers))]
         # subparsers の choices に登録確認
-        found = any(
-            "balance" in str(getattr(action, "choices", "")) for action in parser._actions
-        )
+        found = any("balance" in str(getattr(action, "choices", "")) for action in parser._actions)
         assert found or subcommands

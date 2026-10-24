@@ -2,7 +2,7 @@ import pytest
 from src.services.foreshadowing_id_generator import (
     generate_foreshadowing_id,
     generate_foreshadowing_id_with_sequence,
-    GENRE_CODES
+    GENRE_CODES,
 )
 
 

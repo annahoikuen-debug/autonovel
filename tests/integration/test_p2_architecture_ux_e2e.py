@@ -85,6 +85,7 @@ def test_websocket_live_progress_stream_e2e():
     hub = PipelineEventHub()
     # Temporarily monkeypatch global hub for isolated test
     import src.backend.routers.pipeline_stream as stream_mod
+
     original_hub = stream_mod.pipeline_event_hub
     stream_mod.pipeline_event_hub = hub
 

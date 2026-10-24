@@ -38,6 +38,7 @@ from src.backend.database.models_billing import (  # noqa: F401
 from src.backend.database.models_digest import EpisodeDigestModel  # noqa: F401
 from src.backend.database.models_foreshadowing import ForeshadowingModel  # noqa: F401
 from src.backend.database.models_relation import CharacterRelationModel  # noqa: F401
+
 # `tenants` もここで登録する。
 # 漏れていた結果、本ファイル内の `books.tenant_id = ForeignKey("tenants.id")` が
 # 解決できず、`Base.metadata.create_all()`（開発用フォールバック経路）が
@@ -70,9 +71,7 @@ def on_create(target, connection, **kw):
 
 class User(Base):
     __tablename__ = "users"
-    __table_args__ = (
-        CheckConstraint("credits >= 0", name="chk_user_credits_non_negative"),
-    )
+    __table_args__ = (CheckConstraint("credits >= 0", name="chk_user_credits_non_negative"),)
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
@@ -216,9 +215,7 @@ class Plot(Base):
     __tablename__ = "plots"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    target_tension = Column(
-        Float, nullable=True, comment="動的に計算された目標テンション値 (0.0-1.0)"
-    )
+    target_tension = Column(Float, nullable=True, comment="動的に計算された目標テンション値 (0.0-1.0)")
     book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
     # 複合一意制約 ``(book_id, branch_id, ep_num)`` の先頭列が ``book_id`` のため、
     # ``branch_id`` 単独の述語には使えない。branch_id のみによる絞り込み用に index を張る。
@@ -268,9 +265,7 @@ class Plot(Base):
     candidates = Column(Text, default="[]")
     created_at = Column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_plots_book_branch_ep"),
-    )
+    __table_args__ = (UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_plots_book_branch_ep"),)
 
 
 class Chapter(Base):
@@ -296,9 +291,7 @@ class Chapter(Base):
     cost_jpy = Column(Float, default=0.0)
     cache_hit_ratio = Column(Float, default=0.0)
 
-    __table_args__ = (
-        UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_chapters_book_branch_ep"),
-    )
+    __table_args__ = (UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_chapters_book_branch_ep"),)
 
 
 class Character(Base):
@@ -344,9 +337,7 @@ class Foreshadowing(Base):
     created_at = Column(CompatibleDateTime, server_default=func.now())
     updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("book_id", "branch_id", "ep_num", "type", name="uq_foreshadowing"),
-    )
+    __table_args__ = (UniqueConstraint("book_id", "branch_id", "ep_num", "type", name="uq_foreshadowing"),)
 
 
 # ==========================================
@@ -457,9 +448,7 @@ class AuditIssue(Base):
 
     # Review linkage fields
     patch_review_id = Column(Integer, ForeignKey("patch_reviews.id"), nullable=True)
-    user_resolution = Column(
-        String(50), nullable=True
-    )  # USER_ACCEPTED, USER_REJECTED, USER_MODIFIED
+    user_resolution = Column(String(50), nullable=True)  # USER_ACCEPTED, USER_REJECTED, USER_MODIFIED
     resolved_at = Column(CompatibleDateTime, nullable=True)
     resolved_by = Column(String(100), nullable=True)
 
@@ -993,6 +982,7 @@ class PublicationScheduleModel(Base):
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+
 PublicationScheduleDbModel = PublicationScheduleModel
 PlotDbModel = Plot
 PromptVersionDbModel = PromptVersion
@@ -1016,9 +1006,7 @@ class PDCAHistorySnapshot(Base):
     converged = Column(Boolean, nullable=False, default=False)
     created_at = Column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
-        Index("idx_pdca_history_book_chap", "book_id", "chapter_number"),
-    )
+    __table_args__ = (Index("idx_pdca_history_book_chap", "book_id", "chapter_number"),)
 
 
 PDCAHistorySnapshotDbModel = PDCAHistorySnapshot
@@ -1035,9 +1023,7 @@ class AudioAssetModel(Base):
     file_size_bytes = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        Index("idx_audio_assets_book_ep", "book_id", "episode_num"),
-    )
+    __table_args__ = (Index("idx_audio_assets_book_ep", "book_id", "episode_num"),)
 
 
 AudioAssetDbModel = AudioAssetModel

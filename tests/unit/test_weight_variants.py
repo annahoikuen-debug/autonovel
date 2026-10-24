@@ -19,70 +19,133 @@ from src.config.weight_variants import (
 def reset_weight_variants():
     """Reset WEIGHT_VARIANTS to built-in defaults."""
     from src.config.weight_variants import WEIGHT_VARIANTS as WV
+
     WV.clear()
-    WV.update({
-        "default_v1": DEFAULT_WEIGHTS.copy(),
-        "literary_v1": {
-            "consistency": 0.20, "creativity": 0.15, "reader_hook": 0.15,
-            "emotion_curve": 0.15, "style": 0.10, "factual": 0.10,
-            "structure": 0.10, "multimodal": 0.05,
-        },
-        "entertainment_v1": {
-            "consistency": 0.15, "creativity": 0.15, "reader_hook": 0.25,
-            "emotion_curve": 0.15, "style": 0.10, "factual": 0.10,
-            "structure": 0.05, "multimodal": 0.05,
-        },
-        "educational_v1": {
-            "consistency": 0.20, "creativity": 0.10, "reader_hook": 0.15,
-            "emotion_curve": 0.15, "style": 0.10, "factual": 0.20,
-            "structure": 0.10, "multimodal": 0.00,
-        },
-        "romance_v1": {
-            "consistency": 0.15, "creativity": 0.15, "reader_hook": 0.10,
-            "emotion_curve": 0.25, "style": 0.10, "factual": 0.10,
-            "structure": 0.10, "multimodal": 0.05,
-        },
-        "mystery_v1": {
-            "consistency": 0.25, "creativity": 0.10, "reader_hook": 0.10,
-            "emotion_curve": 0.10, "style": 0.05, "factual": 0.05,
-            "structure": 0.25, "multimodal": 0.10,
-        },
-        "planning_v1": {
-            "consistency": 0.15, "creativity": 0.25, "reader_hook": 0.05,
-            "emotion_curve": 0.15, "style": 0.05, "factual": 0.10,
-            "structure": 0.15, "multimodal": 0.10,
-        },
-        "mid_writing_v1": {
-            "consistency": 0.25, "creativity": 0.05, "reader_hook": 0.10,
-            "emotion_curve": 0.20, "style": 0.05, "factual": 0.20,
-            "structure": 0.10, "multimodal": 0.05,
-        },
-        "climax_v1": {
-            "consistency": 0.15, "creativity": 0.10, "reader_hook": 0.20,
-            "emotion_curve": 0.25, "style": 0.05, "factual": 0.15,
-            "structure": 0.05, "multimodal": 0.05,
-        },
-        "literary_v2_consistency_up": {
-            "consistency": 0.25, "creativity": 0.15, "reader_hook": 0.10,
-            "emotion_curve": 0.15, "style": 0.10, "factual": 0.10,
-            "structure": 0.10, "multimodal": 0.05,
-        },
-        "entertainment_v2_hook_up": {
-            "consistency": 0.10, "creativity": 0.15, "reader_hook": 0.30,
-            "emotion_curve": 0.15, "style": 0.10, "factual": 0.10,
-            "structure": 0.05, "multimodal": 0.05,
-        },
-        "mystery_v2_structure_up": {
-            "consistency": 0.20, "creativity": 0.10, "reader_hook": 0.10,
-            "emotion_curve": 0.10, "style": 0.05, "factual": 0.05,
-            "structure": 0.30, "multimodal": 0.10,
-        },
-        "balanced_v1": {
-            "consistency": 0.125, "creativity": 0.125, "reader_hook": 0.125,
-            "emotion_curve": 0.125, "style": 0.125, "factual": 0.125,
-            "structure": 0.125, "multimodal": 0.125,
-        },
-    })
+    WV.update(
+        {
+            "default_v1": DEFAULT_WEIGHTS.copy(),
+            "literary_v1": {
+                "consistency": 0.20,
+                "creativity": 0.15,
+                "reader_hook": 0.15,
+                "emotion_curve": 0.15,
+                "style": 0.10,
+                "factual": 0.10,
+                "structure": 0.10,
+                "multimodal": 0.05,
+            },
+            "entertainment_v1": {
+                "consistency": 0.15,
+                "creativity": 0.15,
+                "reader_hook": 0.25,
+                "emotion_curve": 0.15,
+                "style": 0.10,
+                "factual": 0.10,
+                "structure": 0.05,
+                "multimodal": 0.05,
+            },
+            "educational_v1": {
+                "consistency": 0.20,
+                "creativity": 0.10,
+                "reader_hook": 0.15,
+                "emotion_curve": 0.15,
+                "style": 0.10,
+                "factual": 0.20,
+                "structure": 0.10,
+                "multimodal": 0.00,
+            },
+            "romance_v1": {
+                "consistency": 0.15,
+                "creativity": 0.15,
+                "reader_hook": 0.10,
+                "emotion_curve": 0.25,
+                "style": 0.10,
+                "factual": 0.10,
+                "structure": 0.10,
+                "multimodal": 0.05,
+            },
+            "mystery_v1": {
+                "consistency": 0.25,
+                "creativity": 0.10,
+                "reader_hook": 0.10,
+                "emotion_curve": 0.10,
+                "style": 0.05,
+                "factual": 0.05,
+                "structure": 0.25,
+                "multimodal": 0.10,
+            },
+            "planning_v1": {
+                "consistency": 0.15,
+                "creativity": 0.25,
+                "reader_hook": 0.05,
+                "emotion_curve": 0.15,
+                "style": 0.05,
+                "factual": 0.10,
+                "structure": 0.15,
+                "multimodal": 0.10,
+            },
+            "mid_writing_v1": {
+                "consistency": 0.25,
+                "creativity": 0.05,
+                "reader_hook": 0.10,
+                "emotion_curve": 0.20,
+                "style": 0.05,
+                "factual": 0.20,
+                "structure": 0.10,
+                "multimodal": 0.05,
+            },
+            "climax_v1": {
+                "consistency": 0.15,
+                "creativity": 0.10,
+                "reader_hook": 0.20,
+                "emotion_curve": 0.25,
+                "style": 0.05,
+                "factual": 0.15,
+                "structure": 0.05,
+                "multimodal": 0.05,
+            },
+            "literary_v2_consistency_up": {
+                "consistency": 0.25,
+                "creativity": 0.15,
+                "reader_hook": 0.10,
+                "emotion_curve": 0.15,
+                "style": 0.10,
+                "factual": 0.10,
+                "structure": 0.10,
+                "multimodal": 0.05,
+            },
+            "entertainment_v2_hook_up": {
+                "consistency": 0.10,
+                "creativity": 0.15,
+                "reader_hook": 0.30,
+                "emotion_curve": 0.15,
+                "style": 0.10,
+                "factual": 0.10,
+                "structure": 0.05,
+                "multimodal": 0.05,
+            },
+            "mystery_v2_structure_up": {
+                "consistency": 0.20,
+                "creativity": 0.10,
+                "reader_hook": 0.10,
+                "emotion_curve": 0.10,
+                "style": 0.05,
+                "factual": 0.05,
+                "structure": 0.30,
+                "multimodal": 0.10,
+            },
+            "balanced_v1": {
+                "consistency": 0.125,
+                "creativity": 0.125,
+                "reader_hook": 0.125,
+                "emotion_curve": 0.125,
+                "style": 0.125,
+                "factual": 0.125,
+                "structure": 0.125,
+                "multimodal": 0.125,
+            },
+        }
+    )
 
 
 class TestValidateWeights:
@@ -116,9 +179,14 @@ class TestValidateWeights:
     def test_valid_custom_weights(self):
         """Custom valid weights should pass."""
         weights = {
-            "consistency": 0.25, "creativity": 0.15, "reader_hook": 0.20,
-            "emotion_curve": 0.15, "style": 0.05, "factual": 0.10,
-            "structure": 0.05, "multimodal": 0.05,
+            "consistency": 0.25,
+            "creativity": 0.15,
+            "reader_hook": 0.20,
+            "emotion_curve": 0.15,
+            "style": 0.05,
+            "factual": 0.10,
+            "structure": 0.05,
+            "multimodal": 0.05,
         }
         validate_weights(weights)
 
@@ -166,9 +234,14 @@ class TestRegisterVariant:
     def test_register_new_variant(self):
         """Can register new variant."""
         new_weights = {
-            "consistency": 0.30, "creativity": 0.10, "reader_hook": 0.10,
-            "emotion_curve": 0.10, "style": 0.10, "factual": 0.10,
-            "structure": 0.10, "multimodal": 0.10,
+            "consistency": 0.30,
+            "creativity": 0.10,
+            "reader_hook": 0.10,
+            "emotion_curve": 0.10,
+            "style": 0.10,
+            "factual": 0.10,
+            "structure": 0.10,
+            "multimodal": 0.10,
         }
         register_variant("test_custom", new_weights)
         assert "test_custom" in WEIGHT_VARIANTS
@@ -187,9 +260,14 @@ class TestRegisterVariant:
     def test_register_overwrite_true(self):
         """Can overwrite with overwrite=True."""
         new_weights = {
-            "consistency": 0.30, "creativity": 0.10, "reader_hook": 0.10,
-            "emotion_curve": 0.10, "style": 0.10, "factual": 0.10,
-            "structure": 0.10, "multimodal": 0.10,
+            "consistency": 0.30,
+            "creativity": 0.10,
+            "reader_hook": 0.10,
+            "emotion_curve": 0.10,
+            "style": 0.10,
+            "factual": 0.10,
+            "structure": 0.10,
+            "multimodal": 0.10,
         }
         register_variant("default_v1", new_weights, overwrite=True)
         assert get_variant("default_v1") == new_weights

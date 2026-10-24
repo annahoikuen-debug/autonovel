@@ -43,11 +43,14 @@ class TestCredentialStore:
 
     def test_load_from_env(self, store):
         """環境変数から読み込みテスト"""
-        with patch.dict(os.environ, {
-            "NAROU_EMAIL": "test@test.com",
-            "NAROU_PASSWORD": "password123",
-            "KAKUYOMU_API_TOKEN": "token456",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "NAROU_EMAIL": "test@test.com",
+                "NAROU_PASSWORD": "password123",
+                "KAKUYOMU_API_TOKEN": "token456",
+            },
+        ):
             narou_creds = store._load_from_env("narou")
             assert narou_creds["email"] == "test@test.com"
             assert narou_creds["password"] == "password123"
@@ -57,10 +60,13 @@ class TestCredentialStore:
 
     def test_get_credentials(self, store):
         """認証情報取得テスト"""
-        with patch.dict(os.environ, {
-            "NAROU_EMAIL": "env@test.com",
-            "NAROU_PASSWORD": "env_pass",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "NAROU_EMAIL": "env@test.com",
+                "NAROU_PASSWORD": "env_pass",
+            },
+        ):
             creds = store.get("narou")
             assert isinstance(creds, NarouCredentials)
             assert creds.email == "env@test.com"
@@ -79,16 +85,19 @@ class TestCredentialStore:
 
     def test_validate_success(self, store):
         """バリデーション成功テスト"""
-        with patch.dict(os.environ, {
-            "NAROU_EMAIL": "test@test.com",
-            "NAROU_PASSWORD": "password",
-            "KAKUYOMU_API_TOKEN": "token",
-            "KOBO_CLIENT_ID": "id",
-            "KOBO_CLIENT_SECRET": "secret",
-            "KINDLE_CLIENT_ID": "id",
-            "KINDLE_CLIENT_SECRET": "secret",
-            "KINDLE_REFRESH_TOKEN": "refresh",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "NAROU_EMAIL": "test@test.com",
+                "NAROU_PASSWORD": "password",
+                "KAKUYOMU_API_TOKEN": "token",
+                "KOBO_CLIENT_ID": "id",
+                "KOBO_CLIENT_SECRET": "secret",
+                "KINDLE_CLIENT_ID": "id",
+                "KINDLE_CLIENT_SECRET": "secret",
+                "KINDLE_REFRESH_TOKEN": "refresh",
+            },
+        ):
             assert store.validate("narou") is True
             assert store.validate("kakuyomu") is True
             assert store.validate("kobo") is True
@@ -123,11 +132,14 @@ class TestCredentialStore:
 
     def test_list_configured(self, store):
         """設定済みプラットフォーム一覧テスト"""
-        with patch.dict(os.environ, {
-            "NAROU_EMAIL": "test@test.com",
-            "NAROU_PASSWORD": "password",
-            "KAKUYOMU_API_TOKEN": "token",
-        }):
+        with patch.dict(
+            os.environ,
+            {
+                "NAROU_EMAIL": "test@test.com",
+                "NAROU_PASSWORD": "password",
+                "KAKUYOMU_API_TOKEN": "token",
+            },
+        ):
             configured = store.list_configured()
             assert "narou" in configured
             assert "kakuyomu" in configured

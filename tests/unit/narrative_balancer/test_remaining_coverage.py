@@ -219,44 +219,72 @@ class TestDspFactory:
 class TestDiagnostics:
     def test_no_conflicts(self):
         partial = PartialPlotState.from_beats([_beat(1, 5.0), _beat(2, 5.0)])
-        conflicts = explain_infeasibility(partial, type("C", (), {
-            "midpoint_episode": 20,
-            "midpoint_min_tension": 7,
-            "all_is_lost_episode": 30,
-            "all_is_lost_max_tension": 4,
-        })())
+        conflicts = explain_infeasibility(
+            partial,
+            type(
+                "C",
+                (),
+                {
+                    "midpoint_episode": 20,
+                    "midpoint_min_tension": 7,
+                    "all_is_lost_episode": 30,
+                    "all_is_lost_max_tension": 4,
+                },
+            )(),
+        )
         assert conflicts == []
 
     def test_midpoint_conflict(self):
         partial = PartialPlotState.from_beats([_beat(20, 3.0)])
-        conflicts = explain_infeasibility(partial, type("C", (), {
-            "midpoint_episode": 20,
-            "midpoint_min_tension": 7,
-            "all_is_lost_episode": 30,
-            "all_is_lost_max_tension": 4,
-        })())
+        conflicts = explain_infeasibility(
+            partial,
+            type(
+                "C",
+                (),
+                {
+                    "midpoint_episode": 20,
+                    "midpoint_min_tension": 7,
+                    "all_is_lost_episode": 30,
+                    "all_is_lost_max_tension": 4,
+                },
+            )(),
+        )
         assert len(conflicts) == 1
         assert conflicts[0].constraint_name == "MidpointDisasterTension"
 
     def test_all_is_lost_conflict(self):
         partial = PartialPlotState.from_beats([_beat(30, 8.0)])
-        conflicts = explain_infeasibility(partial, type("C", (), {
-            "midpoint_episode": 20,
-            "midpoint_min_tension": 7,
-            "all_is_lost_episode": 30,
-            "all_is_lost_max_tension": 4,
-        })())
+        conflicts = explain_infeasibility(
+            partial,
+            type(
+                "C",
+                (),
+                {
+                    "midpoint_episode": 20,
+                    "midpoint_min_tension": 7,
+                    "all_is_lost_episode": 30,
+                    "all_is_lost_max_tension": 4,
+                },
+            )(),
+        )
         assert len(conflicts) == 1
         assert conflicts[0].constraint_name == "AllIsLostTrough"
 
     def test_tension_jump_conflict(self):
         partial = PartialPlotState.from_beats([_beat(10, 2.0), _beat(11, 9.0)])
-        conflicts = explain_infeasibility(partial, type("C", (), {
-            "midpoint_episode": 20,
-            "midpoint_min_tension": 7,
-            "all_is_lost_episode": 30,
-            "all_is_lost_max_tension": 4,
-        })())
+        conflicts = explain_infeasibility(
+            partial,
+            type(
+                "C",
+                (),
+                {
+                    "midpoint_episode": 20,
+                    "midpoint_min_tension": 7,
+                    "all_is_lost_episode": 30,
+                    "all_is_lost_max_tension": 4,
+                },
+            )(),
+        )
         assert any(c.constraint_name == "TensionPhysicsDelta" for c in conflicts)
 
 

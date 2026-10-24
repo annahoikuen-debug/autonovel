@@ -7,6 +7,7 @@
 - 前方: proxy しているのに backend が一切持たないパス（死んだ設定）
 - 後方: backend が持つルートプレフィックスで proxy していないパス（dev で到達不能）
 """
+
 from __future__ import annotations
 
 import re
@@ -44,11 +45,7 @@ def _server_paths() -> set[str]:
                 paths.add(route.path)
         return paths
     except ImportError:
-        return {
-            r.path
-            for r in app.routes
-            if isinstance(getattr(r, "path", None), str) and r.path.startswith("/")
-        }
+        return {r.path for r in app.routes if isinstance(getattr(r, "path", None), str) and r.path.startswith("/")}
 
 
 def _root_prefixes(paths: set[str]) -> set[str]:
@@ -85,9 +82,7 @@ def test_every_backend_root_prefix_is_proxied():
     vite = _vite_prefixes()
     server = _root_prefixes(_server_paths())
     unproxied = sorted(p for p in server if p not in vite and p not in CONDITIONAL_MOUNTS)
-    assert not unproxied, (
-        f"backend が持つが vite proxy に無い prefix: {unproxied}（dev からは到達不能）"
-    )
+    assert not unproxied, f"backend が持つが vite proxy に無い prefix: {unproxied}（dev からは到達不能）"
 
 
 def test_vite_proxy_has_no_typo_in_changeorigin():

@@ -233,11 +233,7 @@ def get_patterns_for_intensity(intensity: int) -> List[VideoPattern]:
 
 def get_patterns_by_sensory_focus(sense: str, min_intensity: int = 0) -> List[VideoPattern]:
     """指定された感覚に関連するパターンを返す。"""
-    return [
-        p
-        for p in VIDEO_PATTERNS.values()
-        if sense in p.sensory_focus and p.recommended_intensity >= min_intensity
-    ]
+    return [p for p in VIDEO_PATTERNS.values() if sense in p.sensory_focus and p.recommended_intensity >= min_intensity]
 
 
 def get_literary_instructions_for_pattern(pattern_name: str, params: Optional[Dict] = None) -> str:

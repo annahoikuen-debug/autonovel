@@ -1,4 +1,5 @@
 """src.easy_mode.phase3.asset_pack の単体テスト。"""
+
 from __future__ import annotations
 
 import json

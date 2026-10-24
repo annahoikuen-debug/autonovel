@@ -37,23 +37,17 @@ class PromptVersionRepository(ABC):
         ...
 
     @abstractmethod
-    async def get_prompt_versions(
-        self, book_id: int, limit: int = 20
-    ) -> list[PromptVersionDbModel]:
+    async def get_prompt_versions(self, book_id: int, limit: int = 20) -> list[PromptVersionDbModel]:
         """Get prompt versions for a book, ordered by creation date (descending)."""
         ...
 
     @abstractmethod
-    async def get_active_prompt_version(
-        self, book_id: int, prompt_key: str
-    ) -> PromptVersionDbModel | None:
+    async def get_active_prompt_version(self, book_id: int, prompt_key: str) -> PromptVersionDbModel | None:
         """Get the currently active prompt version for a book and prompt key."""
         ...
 
     @abstractmethod
-    async def set_active_prompt_version(
-        self, book_id: int, prompt_key: str, version_id: int
-    ) -> None:
+    async def set_active_prompt_version(self, book_id: int, prompt_key: str, version_id: int) -> None:
         """Set a prompt version as active (deactivating others for the same book/prompt key)."""
         ...
 

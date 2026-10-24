@@ -1,4 +1,5 @@
 """二層ハイブリッド監査 (Two-Tier Hybrid Audit) E2E 結合テスト."""
+
 import time
 import pytest
 from fastapi.testclient import TestClient

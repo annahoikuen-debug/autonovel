@@ -1,4 +1,5 @@
 """Steps 9-10 補助: エピソード跨ぎ減衰とスナップショット復元の詳細テスト。"""
+
 from __future__ import annotations
 
 import pytest
@@ -30,7 +31,10 @@ class TestEpisodeTransitions:
         }.items():
             events = [PlotEvent(f"ep{ep}_{event_type}", ep, 1, event_type, roles=roles)]
             vectors[ep] = engine.process_episode(
-                ep, events, previous_snapshot=snapshot, previous_episode=prev_ep,
+                ep,
+                events,
+                previous_snapshot=snapshot,
+                previous_episode=prev_ep,
             )
             snapshot = engine.last_snapshot
             prev_ep = ep
@@ -84,15 +88,25 @@ class TestEpisodeTransitions:
             condition=lambda ctx: ctx.relationship_level >= 0.5,
         )
         engine = RuleEngine(rules=[rule], state_machine=EmotionalStateMachine())
-        event = PlotEvent("e1", 1, 1, "secret_shared",
-                          roles={Role.SHARER: "A", Role.RECEIVER: "B"},
-                          metadata={"relationship_level": 0.7})
+        event = PlotEvent(
+            "e1",
+            1,
+            1,
+            "secret_shared",
+            roles={Role.SHARER: "A", Role.RECEIVER: "B"},
+            metadata={"relationship_level": 0.7},
+        )
         signals = engine.process_event(event, PlotContext(episode=1))
         assert len(signals) == 1
 
         # metadata が低い場合はスキップ
-        event_low = PlotEvent("e2", 1, 2, "secret_shared",
-                              roles={Role.SHARER: "A", Role.RECEIVER: "B"},
-                              metadata={"relationship_level": 0.2})
+        event_low = PlotEvent(
+            "e2",
+            1,
+            2,
+            "secret_shared",
+            roles={Role.SHARER: "A", Role.RECEIVER: "B"},
+            metadata={"relationship_level": 0.2},
+        )
         signals_low = engine.process_event(event_low, PlotContext(episode=1))
         assert signals_low == []

@@ -1,5 +1,6 @@
 # src/agents/skills/historical_accuracy.py
 """時代考証チェックスキル（サンプル実装）"""
+
 from src.agents.skill_base import SkillAgent
 from src.agents.orchestrator import AgentContext, AgentResult
 
@@ -14,17 +15,17 @@ class HistoricalAccuracyChecker(SkillAgent):
 
     async def execute(self, ctx: AgentContext) -> AgentResult:
         """原稿の時代考証をチェック"""
-        self.emit_event("historical_accuracy.started", {
-            "book_id": ctx.book_id,
-            "ep_num": ctx.ep_num,
-            "period": self.period,
-        })
+        self.emit_event(
+            "historical_accuracy.started",
+            {
+                "book_id": ctx.book_id,
+                "ep_num": ctx.ep_num,
+                "period": self.period,
+            },
+        )
 
         drafted_text = (
-            ctx.artifacts.get("drafted_text")
-            or ctx.artifacts.get("content")
-            or ctx.artifacts.get("chapter_text")
-            or ""
+            ctx.artifacts.get("drafted_text") or ctx.artifacts.get("content") or ctx.artifacts.get("chapter_text") or ""
         )
         writing_context = ctx.artifacts.get("writing_context", {})
         world_settings = writing_context.get("world_settings", {})
@@ -38,28 +39,35 @@ class HistoricalAccuracyChecker(SkillAgent):
         # アナクロニズム検出
         for term in anachronisms:
             if term.lower() in drafted_text.lower():
-                issues.append({
-                    "type": "anachronism",
-                    "term": term,
-                    "expected_period": tech_level,
-                    "message": f"時代設定「{tech_level}」に不適切な用語: {term}",
-                    "severity": "high",
-                })
+                issues.append(
+                    {
+                        "type": "anachronism",
+                        "term": term,
+                        "expected_period": tech_level,
+                        "message": f"時代設定「{tech_level}」に不適切な用語: {term}",
+                        "severity": "high",
+                    }
+                )
 
         # 歴史的事実との整合性（簡易版）
         if self.period == "edo" and "拳銃" in drafted_text:
-            issues.append({
-                "type": "historical_inaccuracy",
-                "message": "江戸時代設定で拳銃が使用されています（江戸時代末期以降の限定的導入を除く）",
-                "severity": "high",
-            })
+            issues.append(
+                {
+                    "type": "historical_inaccuracy",
+                    "message": "江戸時代設定で拳銃が使用されています（江戸時代末期以降の限定的導入を除く）",
+                    "severity": "high",
+                }
+            )
 
         if issues:
-            self.emit_event("historical_accuracy.failed", {
-                "book_id": ctx.book_id,
-                "ep_num": ctx.ep_num,
-                "issues_count": len(issues),
-            })
+            self.emit_event(
+                "historical_accuracy.failed",
+                {
+                    "book_id": ctx.book_id,
+                    "ep_num": ctx.ep_num,
+                    "issues_count": len(issues),
+                },
+            )
             return AgentResult(
                 next_agent=None,
                 artifacts={
@@ -68,11 +76,14 @@ class HistoricalAccuracyChecker(SkillAgent):
                 },
             )
 
-        self.emit_event("historical_accuracy.completed", {
-            "book_id": ctx.book_id,
-            "ep_num": ctx.ep_num,
-            "result": "passed",
-        })
+        self.emit_event(
+            "historical_accuracy.completed",
+            {
+                "book_id": ctx.book_id,
+                "ep_num": ctx.ep_num,
+                "result": "passed",
+            },
+        )
 
         return AgentResult(
             next_agent=None,

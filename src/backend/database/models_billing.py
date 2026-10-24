@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from src.infrastructure.database.models.base_orm import Base
 from sqlalchemy.sql import func
 
+
 class CreditTransaction(Base):
     __tablename__ = "credit_transactions"
 
@@ -13,6 +14,7 @@ class CreditTransaction(Base):
     task_id = Column(String(100), nullable=True, index=True)
     description = Column(String(255), nullable=False)
     created_at = Column(DateTime, server_default=func.now())
+
 
 class Subscription(Base):
     __tablename__ = "subscriptions"

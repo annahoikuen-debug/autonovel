@@ -8,6 +8,7 @@ Agent イベントを Redis Streams から購読し、ログ出力 / メトリ�
 Usage:
     USE_REDIS_EVENTS=true python scripts/consume_events.py
 """
+
 from __future__ import annotations
 
 import asyncio

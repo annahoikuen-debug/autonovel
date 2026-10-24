@@ -11,6 +11,7 @@
     5. 長期有効な access JWT をクエリパラメータに載せられ、
        nginx アクセスログやブラウザ履歴に認証情報が平文で残っていた
 """
+
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
@@ -35,6 +36,7 @@ from src.backend.security.stream_token import (
 # ---------------------------------------------------------------- #
 # 1. 公開パスの境界
 # ---------------------------------------------------------------- #
+
 
 def test_api_stream_is_not_in_public_prefixes():
     """/api/stream は公開プレフィックスに含まれないこと。"""
@@ -133,9 +135,7 @@ def test_token_minting_path_stays_authenticated(monkeypatch):
 
     # access JWT なら通る
     access = create_access_token(data={"sub": "1"})
-    ok = client.get(
-        "/api/stream/token/42", headers={"Authorization": f"Bearer {access}"}
-    )
+    ok = client.get("/api/stream/token/42", headers={"Authorization": f"Bearer {access}"})
     assert ok.status_code == 200
 
 
@@ -165,6 +165,7 @@ def test_dead_api_prefixed_paths_are_not_in_public_exact_paths():
 # ---------------------------------------------------------------- #
 # 2. ストリームトークン
 # ---------------------------------------------------------------- #
+
 
 def test_stream_token_roundtrip_is_book_scoped():
     token = create_stream_token(user_id=123, book_id=42)
@@ -228,6 +229,7 @@ def test_stream_token_carries_distinct_type_claim():
 # ---------------------------------------------------------------- #
 # 3. ストリーム認証の解決ロジック
 # ---------------------------------------------------------------- #
+
 
 def test_api_key_matching_uses_constant_time_and_rejects_plain_membership(monkeypatch):
     """API キー検証が平文 `in` 比較ではなく定数時間比較であることを確認する。"""

@@ -1,5 +1,6 @@
 # tests/integration/test_blind_gacha_flow.py
 """Integration tests for Blind Peer Review in GachaService."""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 

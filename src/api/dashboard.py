@@ -1,4 +1,5 @@
 """Dashboard data API for emotional timeline, conflicts summary and source contribution."""
+
 from __future__ import annotations
 
 from typing import Dict, List, Optional
@@ -15,6 +16,7 @@ def get_dashboard_engine() -> FusionEngine:
     global _engine_instance
     if _engine_instance is None:
         from src.stores.vector_store import RedisVectorStore
+
         store = RedisVectorStore(skip_connection_check=True)
         _engine_instance = FusionEngine(store)
     return _engine_instance
@@ -63,20 +65,24 @@ def get_timeline(
         for ns in source_points.keys():
             source_points[ns].append(ep_src_map.get(ns))
 
-    datasets.append({
-        "label": f"Fused ({pair})",
-        "data": fused_points,
-        "borderColor": "#4F46E5",
-        "tension": 0.3,
-    })
+    datasets.append(
+        {
+            "label": f"Fused ({pair})",
+            "data": fused_points,
+            "borderColor": "#4F46E5",
+            "tension": 0.3,
+        }
+    )
     colors = {"annotation": "#10B981", "rule_engine": "#F59E0B", "pipeline": "#6B7280"}
     for ns, data in source_points.items():
-        datasets.append({
-            "label": f"{ns} ({pair})",
-            "data": data,
-            "borderColor": colors.get(ns, "#000000"),
-            "borderDash": [5, 5],
-        })
+        datasets.append(
+            {
+                "label": f"{ns} ({pair})",
+                "data": data,
+                "borderColor": colors.get(ns, "#000000"),
+                "borderDash": [5, 5],
+            }
+        )
 
     return {
         "labels": labels,

@@ -176,7 +176,6 @@ class EmbeddingService:
                 self._client = None
         return self._client
 
-
     def _rate_limit_wait(self) -> None:
         time.sleep(self._RATE_LIMIT_SLEEP)
 

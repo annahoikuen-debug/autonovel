@@ -141,9 +141,7 @@ class TestSemanticCacheManagerSearch:
     async def test_search_distance_above_threshold_skipped(self):
         self.manager._get_embedding = AsyncMock(return_value=[0.1, 0.2])
         # threshold=0.95 → max_distance=0.05。distance=0.5 は skip される
-        self.store.search = AsyncMock(
-            return_value=[{"distance": 0.5, "metadata": {"cached_response": "resp"}}]
-        )
+        self.store.search = AsyncMock(return_value=[{"distance": 0.5, "metadata": {"cached_response": "resp"}}])
         result = await self.manager.search("prompt", "writing", threshold=0.95)
         assert result is None
 

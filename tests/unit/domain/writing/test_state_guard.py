@@ -28,8 +28,10 @@ class TestStateGuard:
 
     def test_validate_project_context_missing_fields(self, state_guard):
         """Test validate_project_context with missing required fields."""
+
         class EmptyContext:
             pass
+
         ctx = EmptyContext()
         result = state_guard.validate_project_context(ctx)
         assert result.is_valid is False

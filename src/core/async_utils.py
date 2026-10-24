@@ -9,9 +9,7 @@ logger = logging.getLogger(__name__)
 T = TypeVar("T")
 
 
-async def run_parallel(
-    coroutines: Iterable[Coroutine[Any, Any, T]], return_exceptions: bool = False
-) -> Sequence[T]:
+async def run_parallel(coroutines: Iterable[Coroutine[Any, Any, T]], return_exceptions: bool = False) -> Sequence[T]:
     """
     asyncio.TaskGroup を使用してコルーチンのリストを並行して実行し、結果を返します。
 

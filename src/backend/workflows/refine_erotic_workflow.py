@@ -65,9 +65,7 @@ class RefineEroticWorkflow(BaseWorkflow):
             curve = EroticCurve.create_default(intensity)
             peak_beat = curve.get_peak_beat()
             consent_state = peak_beat.consent_state if peak_beat else "implicit"
-            is_ok, issues, _, _ = self._integrity_checker.check_all(
-                refined_content, consent_state=consent_state
-            )
+            is_ok, issues, _, _ = self._integrity_checker.check_all(refined_content, consent_state=consent_state)
             if not is_ok:
                 logger.warning("官能整合性チェックで問題検出: %s", issues)
         except Exception as exc:

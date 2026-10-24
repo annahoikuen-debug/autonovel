@@ -2,6 +2,7 @@
 
 1話1枚（24コマ漫画シート一括生成）およびオプション写植に対応したデータモデル定義。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -20,6 +21,7 @@ class AspectRatio(str, Enum):
 @dataclass
 class CharacterReference:
     """キャラクター参照アセット定義。"""
+
     name: str
     master_image_path: Path
     description: str = ""
@@ -28,6 +30,7 @@ class CharacterReference:
 @dataclass
 class SpeechBubble:
     """写植用フキダシ定義（オプション）。"""
+
     panel_index: int  # 0 to 23
     text: str
     speaker: str = ""
@@ -40,6 +43,7 @@ class SpeechBubble:
 @dataclass
 class MangaEpisodeInput:
     """1話分の入力定義。"""
+
     episode_number: int
     title: str
     synopsis: str
@@ -52,6 +56,7 @@ class MangaEpisodeInput:
 @dataclass
 class QualityCheckResult:
     """品質ゲート判定結果。"""
+
     is_valid: bool
     grid_score: float
     line_sharpness_score: float
@@ -62,6 +67,7 @@ class QualityCheckResult:
 @dataclass
 class MangaPipelineResult:
     """1話分のパイプライン実行結果。"""
+
     episode_number: int
     raw_sheet_path: Optional[Path] = None
     upscaled_sheet_path: Optional[Path] = None

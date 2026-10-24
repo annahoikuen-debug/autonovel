@@ -25,9 +25,7 @@ class TestAuditService:
 
     @pytest.mark.asyncio
     async def test_audit_ability_delegates(self):
-        self.service.ability_checker.audit_ability_consistency = AsyncMock(
-            return_value=(True, "OK", "note")
-        )
+        self.service.ability_checker.audit_ability_consistency = AsyncMock(return_value=(True, "OK", "note"))
         passed, msg, note = await self.service.audit_ability("bp", "{}", "[]")
         assert passed is True
         assert note == "note"

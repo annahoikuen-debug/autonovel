@@ -23,9 +23,7 @@ class SubversionEngine(BaseEngine):
     applied_patterns: list[SubversionPattern] = Field(default_factory=list)
     interval: int = Field(default=3, description="裏切り間隔（話数）")
     enabled: bool = Field(default=True)
-    pattern_weights: dict[str, float] = Field(
-        default_factory=lambda: {"A": 0.4, "B": 0.3, "C": 0.3}
-    )
+    pattern_weights: dict[str, float] = Field(default_factory=lambda: {"A": 0.4, "B": 0.3, "C": 0.3})
     seed: str = Field(default="", description="再現性用シード")
 
     @classmethod
@@ -38,7 +36,7 @@ class SubversionEngine(BaseEngine):
         if abs(total - 1.0) > 0.001 or total == 0:
             self.pattern_weights = {"A": 0.4, "B": 0.3, "C": 0.3}
         else:
-            self.pattern_weights = {k: v/total for k, v in self.pattern_weights.items()}
+            self.pattern_weights = {k: v / total for k, v in self.pattern_weights.items()}
         return self
 
     def plan_schedule(self, total_eps: int, start_ep: int = 1) -> list[SubversionPattern]:
@@ -62,7 +60,7 @@ class SubversionEngine(BaseEngine):
                 description=self._generate_description(selected, ep),
                 cost=self._generate_cost(selected, ep),
                 payoff_hint=self._generate_payoff_hint(selected, ep),
-                setup_ep=max(1, ep - 2)
+                setup_ep=max(1, ep - 2),
             )
             schedule.append(pattern)
         self.schedule = schedule
@@ -119,8 +117,8 @@ class SubversionEngine(BaseEngine):
         if len(eps) != len(set(eps)):
             errors.append("重複発火話数あり")
         for i in range(1, len(eps)):
-            if eps[i] - eps[i-1] < self.interval:
-                errors.append(f"間隔不足: {eps[i-1]}話→{eps[i]}話")
+            if eps[i] - eps[i - 1] < self.interval:
+                errors.append(f"間隔不足: {eps[i - 1]}話→{eps[i]}話")
         for pat in self.schedule:
             if pat.payoff_hint and pat.trigger_ep > total_eps - 5:
                 errors.append(f"第{pat.trigger_ep}話の回収ヒントが終盤すぎる（残り{total_eps - pat.trigger_ep}話）")

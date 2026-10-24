@@ -7,6 +7,7 @@ from dataclasses import dataclass
 @dataclass
 class Foreshadowing:
     """伏線データクラス"""
+
     id: str
     content: str
     hang_volume: int

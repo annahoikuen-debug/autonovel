@@ -82,7 +82,9 @@ async def test_unauthenticated_requests_are_rejected():
 async def test_cross_tenant_isolation_on_plots_and_trace():
     """Aliceの作品に対してBobがアクセスを試行した際に403 Forbiddenで遮断されることを検証"""
     async with TestingSessionLocal() as session:
-        alice = User(email="alice@example.com", hashed_password="pw", display_name="Alice", role="user", status="active")
+        alice = User(
+            email="alice@example.com", hashed_password="pw", display_name="Alice", role="user", status="active"
+        )
         bob = User(email="bob@example.com", hashed_password="pw", display_name="Bob", role="user", status="active")
         session.add_all([alice, bob])
         await session.commit()

@@ -1,4 +1,5 @@
 """Comprehensive regression tests for Week 4 Fusion Layer."""
+
 import pytest
 from src.fusion.alerts import ConflictAlerter
 from src.fusion.arbitrator import Arbitrator
@@ -129,9 +130,7 @@ def test_manual_resolution_persists(tmp_path):
 
 def test_fused_prompt_format():
     store = InMemoryVectorStore()
-    config = FusionConfig(
-        source_confidence={"annotation": 1.0, "rule_engine": 0.6, "pipeline": 0.3}
-    )
+    config = FusionConfig(source_confidence={"annotation": 1.0, "rule_engine": 0.6, "pipeline": 0.3})
     v1 = EmotionalVector(episode_id="ep1")
     v1.set_signal(EmotionalSignal("A", "B", EmotionType.FEAR, 0.8, 1.0, "...", "ep1"))
     store.upsert("annotation", "ep1:A->B", v1)

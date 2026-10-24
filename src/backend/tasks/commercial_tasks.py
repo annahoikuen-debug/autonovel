@@ -3,6 +3,7 @@
 Decouples synchronous browser automation and external HTTP publishing from FastAPI event loop,
 and provides scheduling (delay=seconds) for automated reservation publishing.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -48,7 +49,10 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
                 return {"status": "error", "error": f"Schedule {schedule_id} not found"}
 
             if schedule.status != "pending":
-                return {"status": "error", "error": f"Schedule {schedule_id} is not pending (status: {schedule.status})"}
+                return {
+                    "status": "error",
+                    "error": f"Schedule {schedule_id} is not pending (status: {schedule.status})",
+                }
 
             schedule.status = "running"
             await uow.session.commit()
@@ -62,6 +66,7 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
                 # エピソード範囲からIDリストを抽出
                 # 実際には Chapter モデルから ep_num の範囲で取得する
                 from src.backend.database.models import Chapter
+
                 ch_result = await uow.session.execute(
                     select(Chapter.id)
                     .where(Chapter.book_id == book_id)
@@ -125,6 +130,7 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
     except Exception as exc:
         logger.exception("Execute publication task wrapper failed for schedule_id=%d: %s", schedule_id, exc)
         return {"status": "error", "error": str(exc)}
+
 
 @huey.task(retries=2, retry_delay=15)
 def publish_to_platforms_task(
@@ -243,9 +249,7 @@ def schedule_commercial_publish(
         )
         status = "scheduled"
     else:
-        task_result = publish_to_platforms_task(
-            book_id, platforms, credentials, episode_ids
-        )
+        task_result = publish_to_platforms_task(book_id, platforms, credentials, episode_ids)
         status = "queued"
 
     task_id = str(task_result.id) if task_result else "mock-task-id"

@@ -1,4 +1,5 @@
 """NextBeatsService の単体テスト."""
+
 from unittest.mock import AsyncMock, MagicMock
 import pytest
 
@@ -55,9 +56,7 @@ async def test_generate_three_beats_partial_failure():
     succ_result = MagicMock()
     succ_result.story_content = '{"title": "成功カード", "summary": "概要", "content": "本文", "hook_text": "引き"}'
 
-    mock_llm.generate_text = AsyncMock(
-        side_effect=[succ_result, RuntimeError("LLM API Timeout"), succ_result]
-    )
+    mock_llm.generate_text = AsyncMock(side_effect=[succ_result, RuntimeError("LLM API Timeout"), succ_result])
 
     service = NextBeatsService(llm_gateway=mock_llm)
     req = NextBeatsRequest(

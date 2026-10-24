@@ -118,11 +118,13 @@ async def test_blind_review_e2e_isolation_and_purification():
 
     # 5. Route payload through BlindReviewGate for structured isolation
     gate = BlindReviewGate(forbidden_agents=["proposal_beta", "proposal_gamma"])
-    routed_payload = gate.scrub_payload({
-        "target": "proposal_alpha",
-        "proposal_alpha": {"evaluation": alpha_purified.purified_text},
-        "proposal_beta": {"secret_note": "internal metric"},
-    })
+    routed_payload = gate.scrub_payload(
+        {
+            "target": "proposal_alpha",
+            "proposal_alpha": {"evaluation": alpha_purified.purified_text},
+            "proposal_beta": {"secret_note": "internal metric"},
+        }
+    )
     assert "proposal_beta" not in routed_payload or "<BLOCKED" in str(routed_payload["proposal_beta"])
 
     # 6. Verify full dataset integrity via verify_no_cross_proposal_contamination

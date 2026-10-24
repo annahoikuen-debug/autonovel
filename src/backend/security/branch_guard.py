@@ -4,6 +4,7 @@
 ``episodes.py`` の ``_verify_branch_belongs_to_book`` が持っていたロジックを
 本モジュールへ移し、``branches.py`` からも利用する。
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -14,9 +15,7 @@ from sqlalchemy import select
 from src.backend.database.models import Book, Branch
 
 
-async def verify_branch_belongs_to_book(
-    uow: Any, book_id: int, branch_id: int
-) -> None:
+async def verify_branch_belongs_to_book(uow: Any, book_id: int, branch_id: int) -> None:
     """``branch_id`` が検証済み ``book_id`` に属するかを確認する。
 
     乖離があれば 403。``branch_id == 1``（全作品の既定ブランチ）の場合は
@@ -33,9 +32,7 @@ async def verify_branch_belongs_to_book(
         return
 
     session = getattr(uow, "session", uow)
-    owner = await session.scalar(
-        select(Book.id).where(Branch.book_id == book_id).where(Branch.id == branch_id)
-    )
+    owner = await session.scalar(select(Book.id).where(Branch.book_id == book_id).where(Branch.id == branch_id))
     if owner is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

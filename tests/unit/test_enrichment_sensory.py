@@ -1,5 +1,6 @@
 # tests/unit/test_enrichment_sensory.py
 """EnrichmentAgent 感覚拡充の単体テスト"""
+
 import pytest
 
 from src.agents.enrichment.sensory import (
@@ -93,9 +94,7 @@ class TestSensoryGeneration:
     @pytest.mark.asyncio
     async def test_generate_sensory_details(self):
         """感覚詳細生成 (generate_sensory_details は async メソッド)"""
-        span = EmotionSpan(
-            start=0, end=5, emotion="sadness", intensity=0.8, abstract_phrase="悲しかった"
-        )
+        span = EmotionSpan(start=0, end=5, emotion="sadness", intensity=0.8, abstract_phrase="悲しかった")
         details = await generate_sensory_details(span, "雨の夜、独り佇んでいた", "third_person")
         assert len(details) >= 2
         assert len(details) <= 3
@@ -138,9 +137,7 @@ class TestReplacement:
     async def test_expand_sensory_details_pipeline(self):
         """パイプライン統合テスト (expand_sensory_details_pipeline は async メソッド)"""
         text = "彼は悲しかった。戦いの後だった。"
-        enriched, meta = await expand_sensory_details_pipeline(
-            text, scene_context="雨の戦場", pov="third_person"
-        )
+        enriched, meta = await expand_sensory_details_pipeline(text, scene_context="雨の戦場", pov="third_person")
         assert len(enriched) > len(text)  # 展開で長くなる
         assert len(meta) >= 1
         for m in meta:

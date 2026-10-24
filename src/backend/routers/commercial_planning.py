@@ -1,6 +1,7 @@
 """
 40話ビートシート取得・編集APIエンドポイント
 """
+
 import logging
 from typing import List, Optional
 
@@ -130,7 +131,9 @@ async def generate_beat_sheet(
         from src.services.spine_resolver import resolve_spine
 
         spine = resolve_spine(
-            request.pattern_key, request.length_key, request.market_key,
+            request.pattern_key,
+            request.length_key,
+            request.market_key,
             request.target_episodes,
         )
         items: List[BeatSheetItem] = []
@@ -145,11 +148,7 @@ async def generate_beat_sheet(
 
             title = f"{request.title} 第{ep}話"
             mission = beat.duty if beat else "物語を着実に進行させる。"
-            visual_focus = (
-                f"第{ep}話 {phase}の象徴的シーン演出"
-                if beat
-                else f"第{ep}話 象徴的シーン演出"
-            )
+            visual_focus = f"第{ep}話 {phase}の象徴的シーン演出" if beat else f"第{ep}話 象徴的シーン演出"
 
             plot_record = Plot(
                 book_id=book_id,
@@ -187,4 +186,4 @@ async def generate_beat_sheet(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate beat sheet",
-        )
+        )

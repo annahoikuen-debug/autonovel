@@ -1,4 +1,5 @@
 """Comprehensive unit tests for src/agents/audit.py covering DeAIAuditor, InternalLogicValidator, LogicalAuditor, and PlotIntegrityMonitor helper methods."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -25,6 +26,7 @@ from src.models.sharp_edge import SharpEdgeSpec
 # ==============================================================================
 # DeAIAuditor Tests
 # ==============================================================================
+
 
 @pytest.mark.asyncio
 async def test_deai_auditor_with_edge_preserver_semantic():
@@ -86,9 +88,7 @@ async def test_deai_auditor_lost_edge_semantic():
 async def test_deai_auditor_with_llm_generate_json():
     """DeAIAuditor uses llm.generate_json when prompt_manager present."""
     mock_llm = AsyncMock()
-    mock_llm.generate_json.return_value = {
-        "metadata": {"is_valid": False, "feedback": "LLM feedback"}
-    }
+    mock_llm.generate_json.return_value = {"metadata": {"is_valid": False, "feedback": "LLM feedback"}}
     mock_pm = MagicMock()
     mock_pm.build_critic_feedback_prompt.return_value = "prompt"
     auditor = DeAIAuditor(llm=mock_llm, prompt_manager=mock_pm)
@@ -106,9 +106,7 @@ async def test_deai_auditor_with_llm_generate_json():
 async def test_deai_auditor_with_llm_callable():
     """DeAIAuditor uses llm as callable when no generate_json."""
     mock_llm = AsyncMock()
-    mock_llm.return_value = {
-        "metadata": {"is_valid": True, "feedback": "Callable OK"}
-    }
+    mock_llm.return_value = {"metadata": {"is_valid": True, "feedback": "Callable OK"}}
     mock_pm = MagicMock()
     mock_pm.build_critic_feedback_prompt.return_value = "prompt"
     auditor = DeAIAuditor(llm=mock_llm, prompt_manager=mock_pm)
@@ -132,6 +130,7 @@ async def test_deai_auditor_no_llm_no_pm():
 # InternalLogicValidator Tests
 # ==============================================================================
 
+
 @pytest.mark.asyncio
 async def test_internal_logic_validator_stubs():
     """InternalLogicValidator stub methods return expected values."""
@@ -150,14 +149,13 @@ async def test_internal_logic_validator_stubs():
 # LogicalAuditor Tests
 # ==============================================================================
 
+
 @pytest.mark.asyncio
 async def test_logical_auditor_no_pm():
     """LogicalAuditor without prompt manager returns default guidance."""
     with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
         auditor = LogicalAuditor(pm=None)
-    fb = await auditor.generate_critic_feedback(
-        LogicalAuditIssueList(issues=[]), "draft", "blueprint"
-    )
+    fb = await auditor.generate_critic_feedback(LogicalAuditIssueList(issues=[]), "draft", "blueprint")
     assert "Prompt manager not configured" in fb.rewrite_guidance
 
 
@@ -180,9 +178,7 @@ async def test_logical_auditor_with_pm_and_generate_json():
     with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
         auditor = LogicalAuditor(pm=mock_pm, llm=mock_llm)
 
-    fb = await auditor.generate_critic_feedback(
-        LogicalAuditIssueList(issues=[]), "draft", "blueprint"
-    )
+    fb = await auditor.generate_critic_feedback(LogicalAuditIssueList(issues=[]), "draft", "blueprint")
     assert fb.rewrite_guidance == "Add detail"
     assert fb.pov_stability == 0.8
     assert fb.empathy_gap == 0.2
@@ -201,17 +197,13 @@ async def test_logical_auditor_with_pm_and_generate_json():
 async def test_logical_auditor_with_pm_and_callable_llm():
     """LogicalAuditor with prompt manager and callable llm."""
     mock_llm = AsyncMock()
-    mock_llm.return_value = {
-        "metadata": {"rewrite_guidance": "Callable guidance"}
-    }
+    mock_llm.return_value = {"metadata": {"rewrite_guidance": "Callable guidance"}}
     mock_pm = MagicMock()
     mock_pm.build_critic_feedback_prompt = AsyncMock(return_value="prompt")
     with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
         auditor = LogicalAuditor(pm=mock_pm, llm=mock_llm)
 
-    fb = await auditor.generate_critic_feedback(
-        LogicalAuditIssueList(issues=[]), "draft", "blueprint"
-    )
+    fb = await auditor.generate_critic_feedback(LogicalAuditIssueList(issues=[]), "draft", "blueprint")
     assert fb.rewrite_guidance == "Callable guidance"
     mock_llm.assert_awaited_once_with(purpose="critic", prompt="prompt")
 
@@ -237,6 +229,7 @@ async def test_logical_auditor_analyze_tension_wave_no_repo():
     pattern = await auditor.analyze_tension_wave(book_id=1, ep_range=(1, 5))
     # Should return a NarrativeWavePattern instance
     from src.models.audit import NarrativeWavePattern
+
     assert isinstance(pattern, NarrativeWavePattern)
 
 
@@ -245,9 +238,7 @@ async def test_logical_auditor_score_narrative_metrics_empty_content():
     """score_narrative_metrics returns default scores for empty content."""
     with pytest.warns(DeprecationWarning, match="LogicalAuditor is deprecated"):
         auditor = LogicalAuditor()
-    scores = await auditor.score_narrative_metrics(
-        book_id=1, branch_id=1, ep_num=1, scene_num=1, scene_content=""
-    )
+    scores = await auditor.score_narrative_metrics(book_id=1, branch_id=1, ep_num=1, scene_num=1, scene_content="")
     assert len(scores) == 6
     metric_names = {s["metric_name"] for s in scores}
     assert metric_names == {
@@ -303,6 +294,7 @@ async def test_logical_auditor_score_narrative_metrics_with_llm():
 # PlotIntegrityMonitor Helper Method Tests
 # ==============================================================================
 
+
 @pytest.mark.asyncio
 async def test_plot_integrity_monitor_extract_keywords_mock():
     """extract_keywords calls extraction_service and returns entity names."""
@@ -345,9 +337,7 @@ async def test_plot_integrity_monitor_check_integrity_error_handling():
     monitor = PlotIntegrityMonitor()
     # Make extract_keywords raise
     with patch.object(monitor, "extract_keywords", AsyncMock(side_effect=Exception("fail"))):
-        is_ok, score, result = await monitor.check_integrity(
-            [], "blueprint", "content", book_id=1, ep_num=1
-        )
+        is_ok, score, result = await monitor.check_integrity([], "blueprint", "content", book_id=1, ep_num=1)
         # Should return safe values
         assert is_ok is True
         assert score == 1.0
@@ -428,7 +418,10 @@ async def test_plot_integrity_monitor_diff_graphs_basic():
     bp_entities = [Entity(name="A", type="Character", description="", properties={})]
     bp_rels = [Relationship(source="A", target="B", type="POSSESSES", detail="")]
     bp_result = GraphExtractionResult(entities=bp_entities, relationships=bp_rels, plot_summary="")
-    ct_entities = [Entity(name="A", type="Character", description="", properties={}), Entity(name="C", type="Character", description="", properties={})]
+    ct_entities = [
+        Entity(name="A", type="Character", description="", properties={}),
+        Entity(name="C", type="Character", description="", properties={}),
+    ]
     ct_rels = [Relationship(source="A", target="C", type="POSSESSES", detail="")]
     ct_result = GraphExtractionResult(entities=ct_entities, relationships=ct_rels, plot_summary="")
     mock_extract = AsyncMock()
@@ -461,9 +454,7 @@ async def test_plot_integrity_monitor_verify_causality_chains_edge_cases():
     # hero is initial (旅立ち) so should NOT be broken
     assert broken2 == []
     # Non-terminal, non-initial with only input -> broken
-    link_mid = CausalityLink(
-        cause_entity="A", cause_event="a", effect_entity="B", effect_event="b", source="blueprint"
-    )
+    link_mid = CausalityLink(cause_entity="A", cause_event="a", effect_entity="B", effect_event="b", source="blueprint")
     broken3 = monitor._verify_causality_chains([link_mid])
     # B has input but no output, not terminal -> broken
     assert len(broken3) == 1
@@ -576,14 +567,19 @@ async def test_plot_integrity_monitor_submit_patches():
         async def __aexit__(self, *exc):
             return False
 
-    with patch("src.backend.database.uow.UnitOfWork", return_value=_FakeUOW()), \
-         patch("src.backend.database.models.PendingPatch", return_value=mock_pending), \
-         patch("src.core.container.AppContainer") as mock_container:
+    with (
+        patch("src.backend.database.uow.UnitOfWork", return_value=_FakeUOW()),
+        patch("src.backend.database.models.PendingPatch", return_value=mock_pending),
+        patch("src.core.container.AppContainer") as mock_container,
+    ):
         mock_container.db.return_value = MagicMock()
-        patch_ids = await monitor._submit_patches(book_id=99, patches=[
-            PromptPatch(target_prompt="t1", patch_content="c1", reasoning="r1"),
-            PromptPatch(target_prompt="t2", patch_content="c2", reasoning="r2"),
-        ])
+        patch_ids = await monitor._submit_patches(
+            book_id=99,
+            patches=[
+                PromptPatch(target_prompt="t1", patch_content="c1", reasoning="r1"),
+                PromptPatch(target_prompt="t2", patch_content="c2", reasoning="r2"),
+            ],
+        )
         assert patch_ids == [42, 42]  # same mock returned twice
         assert mock_session.add.call_count == 2
         assert mock_session.flush.await_count == 2
@@ -595,14 +591,23 @@ def test_plot_integrity_monitor_calculate_score_edge_cases():
     # No links, no issues -> 1.0
     assert monitor._calculate_score([], [], [], []) == 1.0
     # Broken chains only
-    links = [CausalityLink(cause_entity="A", cause_event="a", effect_entity="B", effect_event="b", source="blueprint") for _ in range(4)]
+    links = [
+        CausalityLink(cause_entity="A", cause_event="a", effect_entity="B", effect_event="b", source="blueprint")
+        for _ in range(4)
+    ]
     broken = links[:2]  # 50% broken
     score = monitor._calculate_score(broken, [], [], links)
     # broken_ratio = 0.5, penalty = 0.5 * 0.4 = 0.2 -> score 0.8
     assert score == pytest.approx(0.8, rel=0.01)
     # Foreshadowing Critical and Major
-    fs_critical = [ForeshadowingItem(entity_name="X", setup_chapter=1, setup_context="c", expected_payoff="p", importance="Critical")]
-    fs_major = [ForeshadowingItem(entity_name="Y", setup_chapter=1, setup_context="c", expected_payoff="p", importance="Major")]
+    fs_critical = [
+        ForeshadowingItem(
+            entity_name="X", setup_chapter=1, setup_context="c", expected_payoff="p", importance="Critical"
+        )
+    ]
+    fs_major = [
+        ForeshadowingItem(entity_name="Y", setup_chapter=1, setup_context="c", expected_payoff="p", importance="Major")
+    ]
     score2 = monitor._calculate_score([], fs_critical + fs_major, [], [])
     # Critical: 0.15, Major: 0.08 -> total 0.23 penalty -> 0.77
     assert score2 == pytest.approx(0.77, rel=0.01)
@@ -625,8 +630,12 @@ async def test_plot_integrity_monitor_audit_setting_causality():
         is_consistent=False,
         score=0.6,
         causality_links=[],
-        broken_chains=[CausalityLink(cause_entity="A", cause_event="a", effect_entity="B", effect_event="b", source="content")],
-        unresolved_foreshadowing=[ForeshadowingItem(entity_name="アイテム", setup_chapter=2, setup_context="ctx", expected_payoff="payoff")],
+        broken_chains=[
+            CausalityLink(cause_entity="A", cause_event="a", effect_entity="B", effect_event="b", source="content")
+        ],
+        unresolved_foreshadowing=[
+            ForeshadowingItem(entity_name="アイテム", setup_chapter=2, setup_context="ctx", expected_payoff="payoff")
+        ],
         contradictions=["矛盾テキスト"],
     )
     with patch.object(monitor, "check_integrity", AsyncMock(return_value=(False, 0.6, mock_result))):

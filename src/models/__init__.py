@@ -187,12 +187,16 @@ from src.models.editor import (
     NextBeatsRequest,
     NextBeatsResponse,
 )
+
+
 # 後方互換用遅延インポート (ORM循環インポート/起動ブロッキング回避)
 def __getattr__(name: str):
     if name in ("Bible", "Book", "Chapter", "Character", "Plot"):
         import src.backend.database.models as _backend_models
+
         return getattr(_backend_models, name)
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+
 
 __all__ = [
     "ChapterChunk",

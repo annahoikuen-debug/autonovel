@@ -3,6 +3,7 @@
 プロットイベント定義 → 感情変化ルール適用 → ベースラインベクトル自動生成 →
 Vector/Graph/Log への永続化を担う。
 """
+
 from src.rules.plot_events import PlotEvent, PlotEventType, Role
 from src.rules.emotional_rules import EmotionalRule, PlotContext
 from src.rules.conditions import condition_registry

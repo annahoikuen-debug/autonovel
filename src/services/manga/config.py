@@ -1,4 +1,5 @@
 """Configuration for NanoBanana 2 Lite (Gemini 3.1 Flash-Lite Image) Manga Pipeline."""
+
 from __future__ import annotations
 
 import os
@@ -9,6 +10,7 @@ from pathlib import Path
 @dataclass
 class MangaPipelineConfig:
     """マンガ生成パイプライン設定。"""
+
     # モデル設定
     model_id: str = "gemini-3.1-flash-lite-image"
     api_key: str = ""

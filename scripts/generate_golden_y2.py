@@ -26,7 +26,7 @@ emotions = [
 test_cases = []
 for i in range(50):
     emotion, exp_cat, rel, power = emotions[i % len(emotions)]
-    cid = f"golden_template_{i+1:02d}"
+    cid = f"golden_template_{i + 1:02d}"
     tc = {
         "id": cid,
         "context": {

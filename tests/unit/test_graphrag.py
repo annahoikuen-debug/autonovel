@@ -1,4 +1,5 @@
 """GraphRAG (pgvector + Apache AGE) 関連ユニットテスト."""
+
 from __future__ import annotations
 
 import asyncio
@@ -36,9 +37,7 @@ def _graph_router_auth(monkeypatch):
 
     user = User(id=1, email="graphrag@example.com", role="admin", status="active")
     app.dependency_overrides[get_current_user] = lambda: user
-    monkeypatch.setattr(
-        graph_router, "verify_book_ownership", AsyncMock(return_value=object())
-    )
+    monkeypatch.setattr(graph_router, "verify_book_ownership", AsyncMock(return_value=object()))
     yield
     app.dependency_overrides.pop(get_current_user, None)
 
@@ -180,9 +179,7 @@ async def test_rag_service_search_chunks_with_data(db_session):
     except Exception:
         db_session.rollback()
 
-    chapter = ChapterModel(
-        book_id=book.id, branch_id=1, ep_num=1, title="テスト", content="本文"
-    )
+    chapter = ChapterModel(book_id=book.id, branch_id=1, ep_num=1, title="テスト", content="本文")
     try:
         db_session.add(chapter)
         db_session.commit()
@@ -289,9 +286,7 @@ async def test_graph_pipeline_service(db_session):
     except Exception:
         db_session.rollback()
 
-    chapter = ChapterModel(
-        book_id=book.id, branch_id=1, ep_num=1, title="テスト", content="本文"
-    )
+    chapter = ChapterModel(book_id=book.id, branch_id=1, ep_num=1, title="テスト", content="本文")
     try:
         db_session.add(chapter)
         db_session.commit()
@@ -367,8 +362,7 @@ def test_age_client_init_graph_sqlstate_42p04(db_session):
     err = IntegrityError("stmt", {}, fake_orig)
 
     client = AgeClient(default_graph_name="dup_test")
-    with patch.object(db_session, "execute", side_effect=err), \
-         patch.object(db_session, "rollback"):
+    with patch.object(db_session, "execute", side_effect=err), patch.object(db_session, "rollback"):
         result = client.init_graph(db_session)
     assert result is True
 

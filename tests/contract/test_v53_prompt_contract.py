@@ -94,18 +94,16 @@ class TestMetadataInstruction:
         from src.services.prose.novel_output_splitter import NovelOutputSplitter
 
         tmpl = _env().get_template("writing_metadata_instruction.j2")
-        rendered = tmpl.render(
-            episode_number=12, contract_foreshadowings=CONTRACT_FORESHADOWINGS
-        )
+        rendered = tmpl.render(episode_number=12, contract_foreshadowings=CONTRACT_FORESHADOWINGS)
         json_block = _brace_delimited_json(rendered)
         # LLM が少し値を変えたケース（action を progressed に、rationale を実際に）
         json_block["foreshadowings"][0]["action"] = "progressed"
         json_block["foreshadowings"][0]["rationale"] = "封印にヒビが入った"
         json_block["word_count_estimate"] = 2310
 
-        raw = "本文のサンプル。\n\n[METADATA_JSON]\n" + json.dumps(
-            json_block, ensure_ascii=False
-        ) + "\n[/METADATA_JSON]"
+        raw = (
+            "本文のサンプル。\n\n[METADATA_JSON]\n" + json.dumps(json_block, ensure_ascii=False) + "\n[/METADATA_JSON]"
+        )
         prose, metadata = NovelOutputSplitter.split_novel_output(raw)
 
         assert metadata is not None, "echo しただけではパースできない"

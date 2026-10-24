@@ -84,8 +84,10 @@ def test_parse_audit_response_json_markdown_block():
 @pytest.mark.asyncio
 async def test_specialist_auditor_anchor_injection():
     """Test that anchor presets are automatically injected into LLM judge prompts."""
+
     class DummySpecialist(SpecialistAuditor):
         specialist_name = "reader_hook"
+
         async def audit(self, ctx):
             return SpecialistAuditResult("reader_hook", 80.0)
 
@@ -115,7 +117,10 @@ async def test_structure_auditor_fallback_actionable_diffs():
     assert result.degraded is True
     assert len(result.actionable_diffs) > 0
     # 起承転結のいずれかのフェーズが指摘されていること
-    assert any("起" in d.location or "承" in d.location or "転" in d.location or "結" in d.location for d in result.actionable_diffs)
+    assert any(
+        "起" in d.location or "承" in d.location or "転" in d.location or "結" in d.location
+        for d in result.actionable_diffs
+    )
 
 
 @pytest.mark.asyncio
@@ -123,7 +128,10 @@ async def test_emotion_curve_auditor_fallback_actionable_diffs():
     """Test EmotionCurveAuditor generates catharsis/amplitude ActionableDiff in fallback."""
     auditor = EmotionCurveAuditor(llm=None)
     # 起伏もカタルシス語もない平坦な文章
-    flat_draft = "彼は朝起きてパンを食べた。外は曇りだった。机に向かって本を開いた。時計の針が進んでいた。夜になりベッドに入った。" * 3
+    flat_draft = (
+        "彼は朝起きてパンを食べた。外は曇りだった。机に向かって本を開いた。時計の針が進んでいた。夜になりベッドに入った。"
+        * 3
+    )
     ctx = {"draft_text": flat_draft}
     result = await auditor.safe_audit(ctx)
     assert result.degraded is True
@@ -150,10 +158,12 @@ async def test_style_and_consistency_auditors_actionable_diffs():
             {"name": "ルーク", "status": "死亡（第1章で戦死）"},
         ]
     }
-    res_consistency = await consistency_auditor.safe_audit({
-        "draft_text": inconsistent_draft,
-        "world_bible_snapshot": bible,
-    })
+    res_consistency = await consistency_auditor.safe_audit(
+        {
+            "draft_text": inconsistent_draft,
+            "world_bible_snapshot": bible,
+        }
+    )
     assert res_consistency.degraded is True
     assert len(res_consistency.actionable_diffs) > 0
     assert any("ルーク" in d.location or "ルーク" in d.original_quote for d in res_consistency.actionable_diffs)

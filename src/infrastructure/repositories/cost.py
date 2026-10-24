@@ -55,8 +55,7 @@ class CostRepository:
         """予算を内部状態へ保存する（簡易実装）。"""
         await self.session.execute(
             __import__("sqlalchemy").text(
-                "INSERT INTO internal_state(key, value) VALUES (:k, :v) "
-                "ON CONFLICT(key) DO UPDATE SET value=:v"
+                "INSERT INTO internal_state(key, value) VALUES (:k, :v) ON CONFLICT(key) DO UPDATE SET value=:v"
             ),
             {"k": f"budget_usd:{book_id}", "v": str(budget_usd)},
         )
@@ -65,9 +64,7 @@ class CostRepository:
     async def get_budget(self, book_id: int) -> float:
         """内部状態から予算を取得する（簡易実装）。"""
         result = await self.session.execute(
-            __import__("sqlalchemy").text(
-                "SELECT value FROM internal_state WHERE key = :k"
-            ),
+            __import__("sqlalchemy").text("SELECT value FROM internal_state WHERE key = :k"),
             {"k": f"budget_usd:{book_id}"},
         )
         row = result.fetchone()

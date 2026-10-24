@@ -2,6 +2,7 @@
 Unit tests for OpeningBoosterAgent.
 PLAN 02 - Step 5: 序盤特化エージェント単体テスト
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock

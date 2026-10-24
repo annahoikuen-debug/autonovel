@@ -19,6 +19,7 @@ def test_networkx_graph_store_regression():
 @pytest.mark.asyncio
 async def test_cost_budget_guard_regression():
     from src.services.cost_analytics import CostCalculator
+
     calc = CostCalculator()
     guard = CostBudgetGuard(calculator=calc, budget_limit=10.0)
     status = await guard.check_budget_status_async(db_session=None, book_id=1, total_cost_usd=1.0)

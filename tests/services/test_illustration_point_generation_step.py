@@ -6,6 +6,7 @@ from src.models.illustration_point import IllustrationPoint
 
 class MockStatusReporter:
     """モックの StatusReporter"""
+
     def __init__(self):
         self.reports = []
         self._should_stop = False
@@ -21,17 +22,20 @@ class MockStatusReporter:
         class State:
             def should_stop(self):
                 return self._should_stop
+
         return State()
 
 
 class MockEngine:
     """モックの UltimateHegemonyEngine"""
+
     def __init__(self):
         self.repo = MockRepo()
 
 
 class MockRepo:
     """モックのリポジトリ"""
+
     def __init__(self):
         self.bible = MockBibleRepo()
         self.plot = MockPlotRepo()
@@ -39,14 +43,15 @@ class MockRepo:
 
 
 class MockBibleRepo:
-    """モックの Bible リポジトリ greco
-    """
+    """モックの Bible リポジトリ greco"""
+
     async def get_by_book_id(self, book_id):
         return MockBible()
 
 
 class MockPlotRepo:
     """モックの Plot リポジトリ"""
+
     # books をまたいだ参照を防ぐため `get_all_plots` は
     # (branch_id, book_id) を受ける。Step は (1, book_id=ctx.book_id) で呼ぶ。
     async def get_all_plots(self, branch_id, book_id=None):
@@ -58,6 +63,7 @@ class MockPlotRepo:
 
 class MockEpisodeRepo:
     """モックの Episode リポジトリ"""
+
     async def get_all_by_book_id(self, book_id):
         return [MockEpisode() for _ in range(3)]
 
@@ -67,26 +73,27 @@ class MockEpisodeRepo:
 
 class MockBible:
     """モックの Bible"""
+
     def __init__(self):
-        self.characters = [
-            MockCharacter("主人公"),
-            MockCharacter("ヒロイン")
-        ]
+        self.characters = [MockCharacter("主人公"), MockCharacter("ヒロイン")]
 
 
 class MockCharacter:
     """モックのキャラクター"""
+
     def __init__(self, name):
         self.name = name
 
 
 class MockPlot:
     """モックのプロット"""
+
     pass
 
 
 class MockEpisode:
     """モックのエピソード"""
+
     pass
 
 
@@ -113,7 +120,7 @@ async def test_illustration_point_generation_step_execute():
         word_count=2000,
         enable_illustration=True,
         illustration_settings={"enableIllustration": True},
-        book_id=1
+        book_id=1,
     )
     engine = MockEngine()
     reporter = MockStatusReporter()
@@ -130,9 +137,9 @@ async def test_illustration_point_generation_step_execute():
     # 生成されたポイントが IllustrationPoint のインスタンスであることを確認
     for point in ctx.illustration_points:
         assert isinstance(point, IllustrationPoint)
-        assert hasattr(point, 'id')
-        assert hasattr(point, 'page')
-        assert hasattr(point, 'scene_description')
+        assert hasattr(point, "id")
+        assert hasattr(point, "page")
+        assert hasattr(point, "scene_description")
 
 
 @pytest.mark.asyncio
@@ -148,7 +155,7 @@ async def test_illustration_point_generation_step_skip_when_disabled():
         initial_limit=3,
         word_count=2000,
         enable_illustration=False,  # 無効に設定
-        book_id=1
+        book_id=1,
     )
     engine = MockEngine()
     reporter = MockStatusReporter()
@@ -159,7 +166,9 @@ async def test_illustration_point_generation_step_skip_when_disabled():
     assert result is True
 
     # スキップメッセージが報告されていることを確認
-    skip_reports = [r for r in reporter.reports if "illustration_point:" in r[0] and "enable_illustration=False" in r[0]]
+    skip_reports = [
+        r for r in reporter.reports if "illustration_point:" in r[0] and "enable_illustration=False" in r[0]
+    ]
     assert len(skip_reports) > 0
 
 
@@ -177,7 +186,7 @@ async def test_illustration_point_generation_step_skip_when_no_book_id():
         word_count=2000,
         enable_illustration=True,
         illustration_settings={"enableIllustration": True},
-        book_id=None  # None に設定
+        book_id=None,  # None に設定
     )
     engine = MockEngine()
     reporter = MockStatusReporter()
@@ -225,7 +234,7 @@ async def test_illustration_point_generation_step_with_empty_characters():
         word_count=2000,
         enable_illustration=True,
         illustration_settings={"enableIllustration": True},
-        book_id=1
+        book_id=1,
     )
     engine = MockEngineNoChars()
     reporter = MockStatusReporter()

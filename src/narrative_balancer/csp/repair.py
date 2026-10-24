@@ -22,9 +22,7 @@ def repair_midpoint_sag(
     solver, status = solve_csp(model, config)
 
     if status in (cp_model.OPTIMAL, cp_model.FEASIBLE):
-        solved_beats = csp_solution_to_beats(
-            solver, vars, existing_beats=list(current_state.confirmed_beats.values())
-        )
+        solved_beats = csp_solution_to_beats(solver, vars, existing_beats=list(current_state.confirmed_beats.values()))
         return current_state.merge_solution(solved_beats)
 
     # Attempt 2: If infeasible, relax confirmed episodes that are stagnant/daily in middle quarter

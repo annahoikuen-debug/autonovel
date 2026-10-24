@@ -250,18 +250,21 @@ class TestAntiAIAsyncOffload:
                 class Result:
                     total_score = 50.0
                     category_scores = {}
-                    violations = [type('V', (), {'to_dict': lambda self: {}})()]
+                    violations = [type("V", (), {"to_dict": lambda self: {}})()]
+
                 return Result()
 
         class MockLoopController:
             def run_sync(self, text, max_loops, score_threshold):
                 seen_threads.add(threading.current_thread())
+
                 class Result:
                     text = "corrected"
                     final_score = 95.0
                     iterations = 1
                     converged = True
                     history = []
+
                 return Result()
 
         with patch("src.backend.routers.anti_ai._loop_controller", MockLoopController()):
@@ -319,10 +322,12 @@ class TestExportAsyncOffload:
         class MockMultimediaService:
             def export_ebook(self, book_id, formats):
                 seen_threads.add("called")
+
                 class Result:
                     asset_id = 1
                     files = ["test.epub"]
                     metadata = {"formats": formats}
+
                 return Result()
 
         mock_service = MockMultimediaService()

@@ -4,6 +4,7 @@
 3層ローリング記憶の中核として、コンテキスト窓の肥大化を防ぎつつ
 長期のストーリー整合性を維持する。
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -39,9 +40,7 @@ class EpisodeDigestModel(Base):
     episode_num = Column(Integer, nullable=False, index=True)
     digest_text = Column(Text, nullable=False)
     created_at = Column(CompatibleDateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        CompatibleDateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(CompatibleDateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     def __repr__(self) -> str:
         return (

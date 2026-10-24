@@ -1,4 +1,5 @@
 """Passage Cache Provider for Semantic Prompt Caching and Similar Scene Search."""
+
 from __future__ import annotations
 
 from typing import Dict, List
@@ -48,7 +49,9 @@ class PassageCacheProvider:
 
         summary_parts = [f"Found {len(matched_passages)} similar passages for query: '{request.query}'"]
         for p in matched_passages:
-            summary_parts.append(f"- [{p.passage_id}] Intent: {p.intent} (Hits: {p.hit_count})\n  Body: {p.body[:100]}...")
+            summary_parts.append(
+                f"- [{p.passage_id}] Intent: {p.intent} (Hits: {p.hit_count})\n  Body: {p.body[:100]}..."
+            )
 
         return PassageSearchResponse(
             passages=matched_passages,

@@ -232,12 +232,14 @@ class MangaScriptGenerator:
         """キャラクター情報をリスト形式で構築"""
         char_list = []
         for archetype_name, archetype_data in self.characters.items():
-            char_list.append({
-                "name": archetype_data.get("name_pattern", "").split("（")[0],
-                "personality": archetype_data.get("personality", ""),
-                "first_person": archetype_data.get("speech_patterns", {}).get("first_person", ""),
-                "speech_pattern": archetype_data.get("speech_patterns", {}).get("tone", ""),
-            })
+            char_list.append(
+                {
+                    "name": archetype_data.get("name_pattern", "").split("（")[0],
+                    "personality": archetype_data.get("personality", ""),
+                    "first_person": archetype_data.get("speech_patterns", {}).get("first_person", ""),
+                    "speech_pattern": archetype_data.get("speech_patterns", {}).get("tone", ""),
+                }
+            )
         return char_list
 
     def _convert_to_panels(self, manga_outputs: list[Any]) -> list[Panel]:
@@ -317,9 +319,7 @@ class MangaScriptGenerator:
         _ = text.lower()
 
         # 会話重視
-        dialogue_ratio = len(re.findall(r'「[^」]*」|『[^』]*』|"[^"]*"', text)) / max(
-            1, len(text) / 100
-        )
+        dialogue_ratio = len(re.findall(r'「[^」]*」|『[^』]*』|"[^"]*"', text)) / max(1, len(text) / 100)
         if dialogue_ratio > 0.3:
             return "dialogue"
 
@@ -357,9 +357,7 @@ class MangaScriptGenerator:
 
         return list(set(characters))
 
-    def _scene_to_panels(
-        self, scene: dict[str, Any], start_num: int, episode: EpisodeResult
-    ) -> list[Panel]:
+    def _scene_to_panels(self, scene: dict[str, Any], start_num: int, episode: EpisodeResult) -> list[Panel]:
         """シーンをコマに変換"""
         panels = []
         text = scene["text"]
@@ -601,12 +599,14 @@ class AudioDramaScriptGenerator:
         """キャラクター情報をリスト形式で構築"""
         char_list = []
         for archetype_name, archetype_data in self.characters.items():
-            char_list.append({
-                "name": archetype_data.get("name_pattern", "").split("（")[0],
-                "personality": archetype_data.get("personality", ""),
-                "first_person": archetype_data.get("speech_patterns", {}).get("first_person", ""),
-                "speech_pattern": archetype_data.get("speech_patterns", {}).get("tone", ""),
-            })
+            char_list.append(
+                {
+                    "name": archetype_data.get("name_pattern", "").split("（")[0],
+                    "personality": archetype_data.get("personality", ""),
+                    "first_person": archetype_data.get("speech_patterns", {}).get("first_person", ""),
+                    "speech_pattern": archetype_data.get("speech_patterns", {}).get("tone", ""),
+                }
+            )
         return char_list
 
     def _convert_to_voice_lines(self, audio_output: Any) -> list[VoiceLine]:
@@ -807,25 +807,17 @@ class AudioDramaScriptGenerator:
         """セリフ前の音声キュー"""
         cues = []
         if "…" in dialogue:
-            cues.append(
-                AudioCue(type="sfx", name="pause", description="間・ためらい", duration=0.5)
-            )
+            cues.append(AudioCue(type="sfx", name="pause", description="間・ためらい", duration=0.5))
         return cues
 
     def _get_post_audio_cues(self, dialogue: str) -> list[AudioCue]:
         """セリフ後の音声キュー"""
         cues = []
         if "！" in dialogue or "ッ" in dialogue:
-            cues.append(
-                AudioCue(
-                    type="sfx", name="impact", description="セリフの余韻・インパクト", duration=0.3
-                )
-            )
+            cues.append(AudioCue(type="sfx", name="impact", description="セリフの余韻・インパクト", duration=0.3))
         return cues
 
-    def _generate_bgm_plan(
-        self, episode: EpisodeResult, series: SeriesResult
-    ) -> list[dict[str, Any]]:
+    def _generate_bgm_plan(self, episode: EpisodeResult, series: SeriesResult) -> list[dict[str, Any]]:
         """BGMプラン生成"""
         return [
             {"scene": "opening", "track": "main_theme", "mood": "epic"},
@@ -910,9 +902,7 @@ class VideoScriptGenerator:
 
         return shots
 
-    def _scene_to_shots(
-        self, scene: str, start_num: int, episode: EpisodeResult
-    ) -> list[VideoShot]:
+    def _scene_to_shots(self, scene: str, start_num: int, episode: EpisodeResult) -> list[VideoShot]:
         """シーンをショットに分解"""
         shots = []
 
@@ -988,9 +978,7 @@ class VideoScriptGenerator:
         return desc.strip()
 
     def _extract_dialogue_for_shot(self, text: str) -> list[str]:
-        return [
-            m[0] or m[1] or m[2] for m in re.findall(r'「([^」]*)」|『([^』]*)』|"([^"]*)"', text)
-        ]
+        return [m[0] or m[1] or m[2] for m in re.findall(r'「([^」]*)」|『([^』]*)』|"([^"]*)"', text)]
 
     def _extract_narration_for_shot(self, text: str) -> str:
         narration = re.sub(r'「[^」]*」|『[^』]*』|"[^"]*"', "", text)
@@ -1095,9 +1083,7 @@ class MediaMixExporter:
 
         return results
 
-    def save_all(
-        self, scripts: dict[MediaFormat, MediaScript], output_dir: Path
-    ) -> dict[MediaFormat, Path]:
+    def save_all(self, scripts: dict[MediaFormat, MediaScript], output_dir: Path) -> dict[MediaFormat, Path]:
         """全台本保存"""
         output_dir.mkdir(parents=True, exist_ok=True)
         saved = {}
@@ -1122,7 +1108,7 @@ class MediaMixExporter:
             sfx=[],
             characters=[],
             background="",
-            mood="neutral"
+            mood="neutral",
         )
 
         return MediaScript(
@@ -1131,10 +1117,7 @@ class MediaMixExporter:
             episode_num=1,
             source_content=text,
             panels=[panel],
-            metadata={
-                "generated_by": "convert_to_manga",
-                "panel_count": 1
-            }
+            metadata={"generated_by": "convert_to_manga", "panel_count": 1},
         )
 
     def convert_to_audio_drama(self, text: str) -> MediaScript:
@@ -1146,24 +1129,16 @@ class MediaMixExporter:
         voice_lines = []
 
         # 「キャラクター「セリフ」」パターンを検索
-        pattern = r'([^「」]+)「([^」]+)」'
+        pattern = r"([^「」]+)「([^」]+)」"
         matches = re.findall(pattern, text)
 
         if matches:
             for character, dialogue in matches:
-                voice_line = VoiceLine(
-                    character=character.strip(),
-                    text=dialogue.strip(),
-                    emotion="neutral"
-                )
+                voice_line = VoiceLine(character=character.strip(), text=dialogue.strip(), emotion="neutral")
                 voice_lines.append(voice_line)
         else:
             # パターンが見つからない場合は、全体をナレーションとして扱う
-            voice_line = VoiceLine(
-                character="ナレーター",
-                text=text.strip(),
-                emotion="neutral"
-            )
+            voice_line = VoiceLine(character="ナレーター", text=text.strip(), emotion="neutral")
             voice_lines.append(voice_line)
 
         return MediaScript(
@@ -1172,10 +1147,7 @@ class MediaMixExporter:
             episode_num=1,
             source_content=text,
             voice_lines=voice_lines,
-            metadata={
-                "generated_by": "convert_to_audio_drama",
-                "voice_line_count": len(voice_lines)
-            }
+            metadata={"generated_by": "convert_to_audio_drama", "voice_line_count": len(voice_lines)},
         )
 
 

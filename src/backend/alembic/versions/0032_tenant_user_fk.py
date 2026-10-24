@@ -5,6 +5,7 @@
 batch_alter_table が使えないため本マイグレーションは**新規 DB にのみ**適用される前提。
 既存 DB の防衛はアプリ層の ``verify_book_ownership`` が担う (owner_guard.py:48)。
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa

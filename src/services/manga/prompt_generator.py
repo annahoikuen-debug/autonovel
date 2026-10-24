@@ -1,4 +1,5 @@
 """Prompt generator for 24-panel manga sheet (NanoBanana 2 Lite / Gemini 3.1 Flash-Lite Image)."""
+
 from __future__ import annotations
 
 from typing import List, Optional
@@ -16,9 +17,7 @@ class MangaPromptGenerator:
 
     def __init__(self, default_negative_prompt: Optional[str] = None):
         self.negative_prompt = (
-            default_negative_prompt
-            if default_negative_prompt is not None
-            else self.DEFAULT_NEGATIVE_PROMPT
+            default_negative_prompt if default_negative_prompt is not None else self.DEFAULT_NEGATIVE_PROMPT
         )
 
     def build_prompt(
@@ -43,7 +42,7 @@ class MangaPromptGenerator:
             f"{setting_clause}starring {char_names}",
             f"narrative progression: {episode.synopsis}",
             f"{ref_notes}japanese manga art style, sharp lineart, screentone shading, high contrast black and white",
-            "--no text, no speech bubbles, no captions, no numbers, no words"
+            "--no text, no speech bubbles, no captions, no numbers, no words",
         ]
 
         return ", ".join(prompt_parts)

@@ -1,8 +1,8 @@
-
 import pytest
 from unittest.mock import MagicMock, patch
 from src.core.llm.adapters.gemini_unified_client import GeminiUnifiedClient
 from src.core.llm.types import LLMRequest
+
 
 @pytest.fixture
 def mock_genai():
@@ -10,6 +10,7 @@ def mock_genai():
         client_instance = MagicMock()
         MockClient.return_value = client_instance
         yield client_instance
+
 
 def test_gemini_unified_client_generate(mock_genai):
     client = GeminiUnifiedClient(api_key="test-key")

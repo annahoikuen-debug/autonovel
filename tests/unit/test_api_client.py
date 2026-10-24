@@ -75,6 +75,7 @@ class TestSyncClient:
 
     def setup_method(self):
         import src.infrastructure.api.api_client as api_client
+
         api_client._resilient_client = None
 
     def test_get_client_creates_new(self):
@@ -91,6 +92,7 @@ class TestSyncClient:
     def test_get_client_uses_mock(self):
         """Test get_client uses mocked client."""
         import src.infrastructure.api.api_client as api_client
+
         mock_client = MagicMock()
         api_client._resilient_client = mock_client
 
@@ -108,6 +110,7 @@ class TestRequestRouting:
         mock_client.request.return_value = mock_response
 
         import src.infrastructure.api.api_client as api_client
+
         api_client._resilient_client = mock_client
 
         with patch("src.infrastructure.api.api_client._resolve_if_coroutine", return_value=mock_response):
@@ -125,6 +128,7 @@ class TestRequestRouting:
         mock_client.request.return_value = mock_response
 
         import src.infrastructure.api.api_client as api_client
+
         api_client._resilient_client = mock_client
 
         with patch("src.infrastructure.api.api_client._resolve_if_coroutine", return_value=mock_response):
@@ -142,6 +146,7 @@ class TestRequestRouting:
         mock_client.request.return_value = mock_response
 
         import src.infrastructure.api.api_client as api_client
+
         api_client._resilient_client = mock_client
 
         with patch("src.infrastructure.api.api_client._resolve_if_coroutine", return_value=mock_response):
@@ -158,6 +163,7 @@ class TestRequestRouting:
         mock_client.request.return_value = mock_response
 
         import src.infrastructure.api.api_client as api_client
+
         api_client._resilient_client = mock_client
 
         with patch("src.infrastructure.api.api_client._resolve_if_coroutine", return_value=mock_response):
@@ -173,6 +179,7 @@ class TestAsyncClient:
 
     def setup_method(self):
         import src.infrastructure.api.api_client as api_client
+
         api_client._async_client = None
 
     @pytest.mark.asyncio
@@ -195,6 +202,7 @@ class TestAsyncClient:
         await close_async_client()
 
         import src.infrastructure.api.api_client as api_client
+
         assert api_client._async_client is None
 
 
@@ -213,6 +221,7 @@ class TestAsyncRequest:
         mock_client.is_closed = False
 
         import src.infrastructure.api.api_client as api_client
+
         api_client._async_client = mock_client
 
         response = await _async_request("GET", "http://test/api/test")
@@ -228,6 +237,7 @@ class TestAsyncRequest:
         mock_client.is_closed = False
 
         import src.infrastructure.api.api_client as api_client
+
         api_client._async_client = mock_client
 
         with pytest.raises(Exception) as exc_info:
@@ -243,6 +253,7 @@ class TestAsyncRequest:
         mock_client.is_closed = False
 
         import src.infrastructure.api.api_client as api_client
+
         api_client._async_client = mock_client
 
         with pytest.raises(Exception) as exc_info:
@@ -264,6 +275,7 @@ class TestAsyncRequest:
         mock_client.is_closed = False
 
         import src.infrastructure.api.api_client as api_client
+
         api_client._async_client = mock_client
 
         with pytest.raises(Exception) as exc_info:
@@ -277,6 +289,7 @@ class TestAPIMethods:
 
     def setup_method(self):
         import src.infrastructure.api.api_client as api_client
+
         api_client._async_client = None
 
     @pytest.mark.asyncio
@@ -405,9 +418,16 @@ class TestAPIMethods:
         with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await generate_easy(
-                api_key="key", config={}, genre="fantasy", keywords="test",
-                archetype_key="hero", target_eps=10, initial_limit=5,
-                word_count=2000, concept="test", tone_vibe=0.5
+                api_key="key",
+                config={},
+                genre="fantasy",
+                keywords="test",
+                archetype_key="hero",
+                target_eps=10,
+                initial_limit=5,
+                word_count=2000,
+                concept="test",
+                tone_vibe=0.5,
             )
 
         assert result == "task-123"
@@ -421,9 +441,16 @@ class TestAPIMethods:
         with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await generate_episodes(
-                api_key="key", config={}, book_id=1, write_from=1, write_to=5,
-                passion=0.8, word_count=2000, do_refine=True,
-                env_state={}, pipeline_mode=False
+                api_key="key",
+                config={},
+                book_id=1,
+                write_from=1,
+                write_to=5,
+                passion=0.8,
+                word_count=2000,
+                do_refine=True,
+                env_state={},
+                pipeline_mode=False,
             )
 
         assert result == "task-123"
@@ -448,9 +475,7 @@ class TestAPIMethods:
 
         with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
-            result = await retry_failed_episodes(
-                api_key="key", config={}, book_id=1, passion=0.8, word_count=2000
-            )
+            result = await retry_failed_episodes(api_key="key", config={}, book_id=1, passion=0.8, word_count=2000)
 
         assert result == "task-123"
 
@@ -462,9 +487,7 @@ class TestAPIMethods:
 
         with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
-            result = await expand_plots(
-                api_key="key", config={}, book_id=1, gen_from=1, gen_to=10
-            )
+            result = await expand_plots(api_key="key", config={}, book_id=1, gen_from=1, gen_to=10)
 
         assert result == "task-123"
 
@@ -500,9 +523,7 @@ class TestAPIMethods:
 
         with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
-            result = await import_chapter(
-                api_key="key", book_id=1, ep_num=1, import_text="text", do_refine=True
-            )
+            result = await import_chapter(api_key="key", book_id=1, ep_num=1, import_text="text", do_refine=True)
 
         assert result == "task-123"
 
@@ -538,9 +559,16 @@ class TestAPIMethods:
         with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await create_chapter(
-                book_id=1, ep_num=1, title="Ch1", content="content",
-                summary="sum", killer_phrase="kp", ai_insight="ai",
-                world_state={}, trinity_review_log={}, created_at="2024-01-01"
+                book_id=1,
+                ep_num=1,
+                title="Ch1",
+                content="content",
+                summary="sum",
+                killer_phrase="kp",
+                ai_insight="ai",
+                world_state={},
+                trinity_review_log={},
+                created_at="2024-01-01",
             )
 
         assert result is True
@@ -659,8 +687,12 @@ class TestAPIMethods:
         with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await audit_producer_plan(
-                api_key="key", genre="fantasy", keywords="test",
-                trend_memo="memo", sanctuary="sanc", originality_score=50
+                api_key="key",
+                genre="fantasy",
+                keywords="test",
+                trend_memo="memo",
+                sanctuary="sanc",
+                originality_score=50,
             )
 
         assert result == {"score": 80}
@@ -683,6 +715,7 @@ class TestCloseClient:
     def test_close_client(self):
         """Test close_client closes both clients."""
         import src.infrastructure.api.api_client as api_client
+
         api_client._resilient_client = MagicMock()
         api_client._async_client = AsyncMock()
         api_client._async_client.is_closed = False

@@ -81,9 +81,7 @@ def test_no_route_double_authenticates_the_same_header(module):
         names = _all_dep_names(route)
         if "require_api_key" in names and any(n in names for n in _JWT_DEP_NAMES):
             offenders.append(path)
-    assert not offenders, (
-        f"{module.__name__}: JWT と API キーを同時に要求するルートが残っています: {offenders}"
-    )
+    assert not offenders, f"{module.__name__}: JWT と API キーを同時に要求するルートが残っています: {offenders}"
 
 
 def test_write_endpoints_do_not_accept_api_key():
@@ -102,9 +100,7 @@ def test_write_endpoints_do_not_accept_api_key():
 
 def test_easy_mode_generate_requires_task_owner_dependency():
     """``POST /easy_mode/generate`` は所有者を特定できる JWT 依存を持つ。"""
-    route = next(
-        r for p, r in _iter_routes(easy_mode) if p == "/generate" and "POST" in r.methods
-    )
+    route = next(r for p, r in _iter_routes(easy_mode) if p == "/generate" and "POST" in r.methods)
     names = _all_dep_names(route)
     assert "get_easy_mode_user" in names
     assert "require_api_key" not in names
@@ -143,9 +139,7 @@ async def test_service_key_denied_by_default(monkeypatch):
     monkeypatch.setattr(auth_mod, "validate_api_key_sync", lambda k: k)
 
     with pytest.raises(HTTPException) as exc:
-        await get_current_user_or_service_key(
-            token=None, authorization="k1", db=_db_returning(None)
-        )
+        await get_current_user_or_service_key(token=None, authorization="k1", db=_db_returning(None))
     assert exc.value.status_code == 401
 
 
@@ -157,9 +151,7 @@ async def test_service_key_resolves_service_account_when_opted_in(monkeypatch):
     monkeypatch.setattr(auth_mod, "validate_api_key_sync", lambda k: k)
 
     svc = _user()
-    user = await get_current_user_or_service_key(
-        token=None, authorization="k1", db=_db_returning(svc)
-    )
+    user = await get_current_user_or_service_key(token=None, authorization="k1", db=_db_returning(svc))
     assert user.email == "svc@example.com"
     assert user.id == 7
 
@@ -172,9 +164,7 @@ async def test_service_key_rejects_when_service_account_missing(monkeypatch):
     monkeypatch.setattr(auth_mod, "validate_api_key_sync", lambda k: k)
 
     with pytest.raises(HTTPException) as exc:
-        await get_current_user_or_service_key(
-            token=None, authorization="k1", db=_db_returning(None)
-        )
+        await get_current_user_or_service_key(token=None, authorization="k1", db=_db_returning(None))
     assert exc.value.status_code == 403
 
 
@@ -184,9 +174,7 @@ async def test_service_key_prefers_jwt(monkeypatch):
     jwt_user = _user(id_=3, email="jwt@example.com")
     monkeypatch.setattr(auth_mod, "get_current_user", AsyncMock(return_value=jwt_user))
 
-    user = await get_current_user_or_service_key(
-        token="jwt-token", authorization="", db=_db_returning(None)
-    )
+    user = await get_current_user_or_service_key(token="jwt-token", authorization="", db=_db_returning(None))
     assert user.email == "jwt@example.com"
 
 

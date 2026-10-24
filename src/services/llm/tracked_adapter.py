@@ -185,17 +185,13 @@ def build_tracked_adapters(
     audit_adapter = audit_adapter if audit_adapter is not None else llm_adapter
 
     return {
-        "llm": TrackedLLMAdapter(
-            llm_adapter, tracker, TASK_TYPE_FOR_PURPOSE["writing"], models.get("writing")
-        ),
+        "llm": TrackedLLMAdapter(llm_adapter, tracker, TASK_TYPE_FOR_PURPOSE["writing"], models.get("writing")),
         "planning_llm": TrackedLLMAdapter(
             planning_adapter,
             tracker,
             TASK_TYPE_FOR_PURPOSE["planning"],
             models.get("planning"),
         ),
-        "audit_llm": TrackedLLMAdapter(
-            audit_adapter, tracker, TASK_TYPE_FOR_PURPOSE["audit"], models.get("audit")
-        ),
+        "audit_llm": TrackedLLMAdapter(audit_adapter, tracker, TASK_TYPE_FOR_PURPOSE["audit"], models.get("audit")),
         "token_tracker": tracker,
     }

@@ -1,4 +1,5 @@
 """Anomaly detection and alerting for emotional vector fusion."""
+
 from __future__ import annotations
 
 import logging
@@ -37,21 +38,25 @@ class AnomalyDetector:
         if prev_fused is not None:
             prev_conflicts = len(prev_fused.conflicts)
             if prev_conflicts > 0 and (curr_conflicts / prev_conflicts) >= thresh.conflict_spike:
-                anomalies.append({
-                    "type": "CONFLICT_SPIKE",
-                    "message": f"Conflict count spiked from {prev_conflicts} to {curr_conflicts} (ratio: {curr_conflicts / prev_conflicts:.2f})",
-                    "severity": "HIGH",
-                    "curr_conflicts": curr_conflicts,
-                    "prev_conflicts": prev_conflicts,
-                })
+                anomalies.append(
+                    {
+                        "type": "CONFLICT_SPIKE",
+                        "message": f"Conflict count spiked from {prev_conflicts} to {curr_conflicts} (ratio: {curr_conflicts / prev_conflicts:.2f})",
+                        "severity": "HIGH",
+                        "curr_conflicts": curr_conflicts,
+                        "prev_conflicts": prev_conflicts,
+                    }
+                )
         elif curr_conflicts >= 5:
             # 初回または前話なしで矛盾が多数ある場合
-            anomalies.append({
-                "type": "CONFLICT_SPIKE",
-                "message": f"Initial high conflict count detected: {curr_conflicts}",
-                "severity": "MEDIUM",
-                "curr_conflicts": curr_conflicts,
-            })
+            anomalies.append(
+                {
+                    "type": "CONFLICT_SPIKE",
+                    "message": f"Initial high conflict count detected: {curr_conflicts}",
+                    "severity": "MEDIUM",
+                    "curr_conflicts": curr_conflicts,
+                }
+            )
 
         # 2. 特定ソース (annotation) が3話連続未更新
         if recent_contributing_sources is not None:
@@ -61,24 +66,28 @@ class AnomalyDetector:
                 recent_window = recent_contributing_sources[-stale_limit:]
                 has_annotation = any("annotation" in srcs for srcs in recent_window)
                 if not has_annotation:
-                    anomalies.append({
-                        "type": "ANNOTATION_STALE",
-                        "message": f"Annotation source has not been updated for {stale_limit} consecutive episodes.",
-                        "severity": "MEDIUM",
-                        "stale_episodes": stale_limit,
-                    })
+                    anomalies.append(
+                        {
+                            "type": "ANNOTATION_STALE",
+                            "message": f"Annotation source has not been updated for {stale_limit} consecutive episodes.",
+                            "severity": "MEDIUM",
+                            "stale_episodes": stale_limit,
+                        }
+                    )
 
         # 3. 融合信頼度平均が閾値 (0.6) 未満
         if current_fused.values:
             avg_conf = sum(v.confidence for v in current_fused.values.values()) / len(current_fused.values)
             if avg_conf < thresh.min_avg_confidence:
-                anomalies.append({
-                    "type": "LOW_AVG_CONFIDENCE",
-                    "message": f"Average fusion confidence ({avg_conf:.2f}) dropped below threshold ({thresh.min_avg_confidence}).",
-                    "severity": "HIGH",
-                    "avg_confidence": round(avg_conf, 4),
-                    "threshold": thresh.min_avg_confidence,
-                })
+                anomalies.append(
+                    {
+                        "type": "LOW_AVG_CONFIDENCE",
+                        "message": f"Average fusion confidence ({avg_conf:.2f}) dropped below threshold ({thresh.min_avg_confidence}).",
+                        "severity": "HIGH",
+                        "avg_confidence": round(avg_conf, 4),
+                        "threshold": thresh.min_avg_confidence,
+                    }
+                )
 
         for anomaly in anomalies:
             logger.warning(f"[AnomalyDetected] {anomaly['type']}: {anomaly['message']}")

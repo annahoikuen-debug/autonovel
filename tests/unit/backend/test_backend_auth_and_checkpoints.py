@@ -1,4 +1,5 @@
 """Coverage tests for src/backend/auth.py, checkpoint_saver.py and small engine helper modules."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
@@ -26,6 +27,7 @@ def _user(role: str = "user", status: str = "active") -> User:
 # --------------------------------------------------------------------------
 # auth
 # --------------------------------------------------------------------------
+
 
 async def test_get_current_user_auth_disabled(monkeypatch):
     from src.backend.config import settings
@@ -217,6 +219,7 @@ def test_get_prompt_manager_success_and_failure(monkeypatch):
 # checkpoint_saver
 # --------------------------------------------------------------------------
 
+
 async def test_in_memory_saver_roundtrip(monkeypatch):
     monkeypatch.setattr("src.backend.checkpoint_saver.HAS_LANGGRAPH", False)
     monkeypatch.setattr("src.backend.checkpoint_saver.SqliteSaver", None)
@@ -346,6 +349,7 @@ def test_checkpoint_manager_record_and_load(monkeypatch):
 # --------------------------------------------------------------------------
 # small engine modules
 # --------------------------------------------------------------------------
+
 
 async def test_critique_service_delegates():
     from src.backend.critique_service import CritiqueService

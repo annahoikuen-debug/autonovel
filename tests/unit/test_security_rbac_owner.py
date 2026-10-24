@@ -5,10 +5,12 @@ from src.backend.database.models import Book, User
 from src.backend.security.roles import RoleChecker, UserRole
 from src.backend.security.owner_guard import verify_book_ownership
 
+
 def test_role_checker_admin_allows_admin():
     checker = RoleChecker([UserRole.ADMIN])
     admin_user = User(id=1, email="admin@test.com", role="admin")
     assert checker(admin_user) == admin_user
+
 
 def test_role_checker_admin_blocks_normal_user():
     checker = RoleChecker([UserRole.ADMIN])
@@ -16,6 +18,7 @@ def test_role_checker_admin_blocks_normal_user():
     with pytest.raises(HTTPException) as exc:
         checker(normal_user)
     assert exc.value.status_code == 403
+
 
 @pytest.mark.asyncio
 async def test_verify_book_ownership_success_owner():
@@ -27,6 +30,7 @@ async def test_verify_book_ownership_success_owner():
     res = await verify_book_ownership(100, user, mock_uow)
     assert res.id == 100
 
+
 @pytest.mark.asyncio
 async def test_verify_book_ownership_forbidden_other_user():
     user = User(id=10, role="user")
@@ -37,6 +41,7 @@ async def test_verify_book_ownership_forbidden_other_user():
     with pytest.raises(HTTPException) as exc:
         await verify_book_ownership(200, user, mock_uow)
     assert exc.value.status_code == 403
+
 
 @pytest.mark.asyncio
 async def test_verify_book_ownership_allowed_for_admin():

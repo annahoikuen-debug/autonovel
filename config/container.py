@@ -3,6 +3,7 @@ config/container.py - 後方互換ラッパー。
 
 新規コードでは src.core.container.AppContainer を使用すること。
 """
+
 import warnings
 
 from dependency_injector import containers
@@ -30,4 +31,3 @@ def get_container():
     if _container_singleton is None:
         _container_singleton = Container()
     return _container_singleton
-

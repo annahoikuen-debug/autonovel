@@ -10,7 +10,7 @@ def test_hook_creation():
         target_position="episode_end",
         volume=1,
         episode=3,
-        chapter=5
+        chapter=5,
     )
 
     assert hook.id == "H-001"
@@ -26,25 +26,13 @@ def test_hook_all_types():
     """すべてのフックタイプのテスト"""
     # mystery
     hook_mystery = Hook(
-        id="H-002",
-        type="mystery",
-        content="謎のフック",
-        target_position="episode_end",
-        volume=1,
-        episode=1,
-        chapter=1
+        id="H-002", type="mystery", content="謎のフック", target_position="episode_end", volume=1, episode=1, chapter=1
     )
     assert hook_mystery.type == "mystery"
 
     # threat
     hook_threat = Hook(
-        id="H-003",
-        type="threat",
-        content="脅威のフック",
-        target_position="episode_end",
-        volume=1,
-        episode=1,
-        chapter=1
+        id="H-003", type="threat", content="脅威のフック", target_position="episode_end", volume=1, episode=1, chapter=1
     )
     assert hook_threat.type == "threat"
 
@@ -56,7 +44,7 @@ def test_hook_all_types():
         target_position="episode_end",
         volume=1,
         episode=1,
-        chapter=1
+        chapter=1,
     )
     assert hook_emotion.type == "emotion"
 
@@ -71,7 +59,7 @@ def test_hook_all_target_positions():
         target_position="episode_end",
         volume=1,
         episode=1,
-        chapter=1
+        chapter=1,
     )
     assert hook_ep.target_position == "episode_end"
 
@@ -83,7 +71,7 @@ def test_hook_all_target_positions():
         target_position="volume_end",
         volume=1,
         episode=1,
-        chapter=1
+        chapter=1,
     )
     assert hook_vol.target_position == "volume_end"
 
@@ -95,7 +83,7 @@ def test_hook_all_target_positions():
         target_position="series_end",
         volume=1,
         episode=1,
-        chapter=1
+        chapter=1,
     )
     assert hook_ser.target_position == "series_end"
 
@@ -103,13 +91,7 @@ def test_hook_all_target_positions():
 def test_hook_to_dict():
     """to_dict メソッドのテスト"""
     hook = Hook(
-        id="H-008",
-        type="threat",
-        content="暗闇に潜む影",
-        target_position="volume_end",
-        volume=2,
-        episode=5,
-        chapter=12
+        id="H-008", type="threat", content="暗闇に潜む影", target_position="volume_end", volume=2, episode=5, chapter=12
     )
 
     expected = {
@@ -119,7 +101,7 @@ def test_hook_to_dict():
         "target_position": "volume_end",
         "volume": 2,
         "episode": 5,
-        "chapter": 12
+        "chapter": 12,
     }
 
     assert hook.to_dict() == expected
@@ -134,7 +116,7 @@ def test_hook_from_dict():
         "target_position": "episode_end",
         "volume": 3,
         "episode": 2,
-        "chapter": 7
+        "chapter": 7,
     }
 
     hook = Hook.from_dict(data)
@@ -157,7 +139,7 @@ def test_hook_roundtrip():
         target_position="volume_end",
         volume=10,
         episode=1,
-        chapter=1
+        chapter=1,
     )
 
     data = original.to_dict()

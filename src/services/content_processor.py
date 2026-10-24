@@ -15,7 +15,9 @@ class ContentProcessor:
 
         # 1. 危険なスクリプトタグや不正なHTMLタグの除去
         text = re.sub(r"<\s*script[^>]*>.*?<\s*/\s*script\s*>", "", content, flags=re.DOTALL | re.IGNORECASE)
-        text = re.sub(r"<\s*(style|iframe|object|embed)[^>]*>.*?<\s*/\s*\1\s*>", "", text, flags=re.DOTALL | re.IGNORECASE)
+        text = re.sub(
+            r"<\s*(style|iframe|object|embed)[^>]*>.*?<\s*/\s*\1\s*>", "", text, flags=re.DOTALL | re.IGNORECASE
+        )
 
         # 2. 全角英数字・半角カナの Unicode NFKC 正規化（ただしルビや記号は保護）
         text = unicodedata.normalize("NFKC", text)
@@ -35,4 +37,3 @@ class ContentProcessor:
             return content
         # 基本サニタイズを経由して返却
         return self.sanitize(content)
-

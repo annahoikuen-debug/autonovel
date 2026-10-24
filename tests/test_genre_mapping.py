@@ -1,4 +1,5 @@
 """UI ジャンル文字列 → preset key マッピングの単体テスト."""
+
 from src.backend.routers.easy_mode import resolve_genre_to_preset
 
 

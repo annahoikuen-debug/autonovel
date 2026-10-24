@@ -75,7 +75,6 @@ async def system_status() -> dict[str, Any]:
     return resilience.get_system_status()
 
 
-
 @router.get("/api/system/huey/health")
 async def get_huey_health_status() -> dict[str, Any]:
     """Huey 分散タスクキューの健全性・接続状態を返す (Step 47)"""
@@ -228,9 +227,7 @@ async def recalc_all_book_scores() -> dict[str, Any]:
                     errors.append(f"book_id={book_id} ep_num={chapter_number}: {exc}")
                     return 0
 
-    results = await asyncio.gather(
-        *(recalc_chapter(book_id, ch_num) for book_id, ch_num in targets)
-    )
+    results = await asyncio.gather(*(recalc_chapter(book_id, ch_num) for book_id, ch_num in targets))
     # recalc_chapter は成功時 1 / 失敗時 0 を返すため、型判定ではなく値を合算する
     recalculated = sum(results)
     failed_count = len(results) - recalculated
@@ -257,7 +254,6 @@ class ImprovementPriorityItem(BaseModel):
 async def get_improvement_priorities(book_id: int) -> dict[str, Any]:
     """書籍の改善優先順位を取得する（管理者用）"""
     try:
-
         from src.backend.database.core import get_db_manager
         from src.backend.database.repositories.book_score import BookScoreRepository
         from src.services.book_score_service import BookScoreCalculator
@@ -278,15 +274,9 @@ async def get_improvement_priorities(book_id: int) -> dict[str, Any]:
         dims = {
             "structure": sum(score.structure_score for score in all_scores) / len(all_scores),
             "coherency": sum(score.coherency_score for score in all_scores) / len(all_scores),
-            "factual_grounding": sum(
-                score.factual_grounding_score for score in all_scores
-            ) / len(all_scores),
-            "visual_textual_synergy": sum(
-                score.visual_textual_synergy_score for score in all_scores
-            ) / len(all_scores),
-            "reader_experience": sum(
-                score.reader_experience_score for score in all_scores
-            ) / len(all_scores),
+            "factual_grounding": sum(score.factual_grounding_score for score in all_scores) / len(all_scores),
+            "visual_textual_synergy": sum(score.visual_textual_synergy_score for score in all_scores) / len(all_scores),
+            "reader_experience": sum(score.reader_experience_score for score in all_scores) / len(all_scores),
         }
 
         sorted_dims = sorted(dims.items(), key=lambda item: item[1])
@@ -321,10 +311,7 @@ async def get_improvement_priorities(book_id: int) -> dict[str, Any]:
                     dimension=dimension,
                     current_score=round(score, 2),
                     suggested_action=f"{agent}: {action}",
-                    expected_gain=(
-                        f"現在 {score:.1f} → 目標 70+ "
-                        f"(改善見込み {min(20, 70 - score):.0f}pt)"
-                    ),
+                    expected_gain=(f"現在 {score:.1f} → 目標 70+ (改善見込み {min(20, 70 - score):.0f}pt)"),
                     target_agent=agent,
                 )
             )
@@ -367,10 +354,7 @@ async def run_ab_test(req: ABTestRequest) -> dict[str, Any]:
 
         orch = Orchestrator(nodes={})
         orch.register_discovered_skills("src.agents.skills.v1")
-        contexts = [
-            AgentContext(book_id=index, branch_id=1, ep_num=1, artifacts={})
-            for index in range(req.samples)
-        ]
+        contexts = [AgentContext(book_id=index, branch_id=1, ep_num=1, artifacts={}) for index in range(req.samples)]
         result = await orch.run_ab_test(
             skill_name=req.skill_name,
             version_a=req.version_a,
@@ -392,10 +376,7 @@ async def get_ab_test_history(skill_name: str | None = None) -> dict[str, Any]:
     """
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail=(
-            "A/B test history is not persisted yet. "
-            "A dedicated history table/repository is required."
-        ),
+        detail=("A/B test history is not persisted yet. A dedicated history table/repository is required."),
     )
 
 
@@ -465,7 +446,11 @@ async def get_audit_model_routing() -> dict[str, Any]:
         routing = {}
         for auditor in auditors:
             provider = router.get_provider_for_auditor(auditor)
-            model_name = router._resolve_primary_provider_for_auditor(auditor) if hasattr(router, "_resolve_primary_provider_for_auditor") else "unknown"
+            model_name = (
+                router._resolve_primary_provider_for_auditor(auditor)
+                if hasattr(router, "_resolve_primary_provider_for_auditor")
+                else "unknown"
+            )
             routing[auditor] = {
                 "provider": provider,
                 "model_name": model_name,
@@ -485,10 +470,7 @@ async def update_audit_model_routing(req: AuditModelRoutingRequest) -> dict[str,
     """
     raise HTTPException(
         status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail=(
-            "Auditor model routing is read-only; "
-            "AuditorModelRouter has no persistence API yet."
-        ),
+        detail=("Auditor model routing is read-only; AuditorModelRouter has no persistence API yet."),
     )
 
 
@@ -505,10 +487,7 @@ async def auto_promote_ab_winner(req: ABTestAutoPromoteRequest) -> dict[str, Any
 
         orch = Orchestrator(nodes={})
         orch.register_discovered_skills("src.agents.skills.v1")
-        contexts = [
-            AgentContext(book_id=index, branch_id=1, ep_num=1, artifacts={})
-            for index in range(10)
-        ]
+        contexts = [AgentContext(book_id=index, branch_id=1, ep_num=1, artifacts={}) for index in range(10)]
         result = await orch.run_ab_test(
             skill_name=req.skill_name,
             version_a="v1",

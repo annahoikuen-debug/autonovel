@@ -62,12 +62,8 @@ class SceneBeat(BaseModel):
 
     beat_num: int = Field(..., description="ビート番号")
     physical_action: str = Field(..., description="肉体的な動作描写")
-    sensory_tags: list[str] = Field(
-        default_factory=list, description="五感タグ: smell, sound, touch, taste, sight"
-    )
-    emotion_phase: str = Field(
-        default="neutral", description="感情フェーズ: buildup/explosion/aftermath"
-    )
+    sensory_tags: list[str] = Field(default_factory=list, description="五感タグ: smell, sound, touch, taste, sight")
+    emotion_phase: str = Field(default="neutral", description="感情フェーズ: buildup/explosion/aftermath")
     word_budget: int = Field(default=200, description="このビートに配分する目標文字数")
 
     model_config = MODEL_CONFIG_DEFAULTS
@@ -199,9 +195,7 @@ BeatType = Annotated[
 class SceneBeatBlock(BaseModel):
     """シーンを構成する最小単位の行動（ビート）。文字列からの自動変換に対応。"""
 
-    beat_type: BeatType = Field(
-        default="導入", description="ビートの役割"
-    )  # デフォルト値でバリデーション失敗を防ぐ
+    beat_type: BeatType = Field(default="導入", description="ビートの役割")  # デフォルト値でバリデーション失敗を防ぐ
 
     @model_validator(mode="before")
     @classmethod
@@ -213,12 +207,8 @@ class SceneBeatBlock(BaseModel):
     action_description: str = Field(
         default="描写なし", description="具体的な行動描写。キャラが何をし、何が起きるか"
     )  # 必須→デフォルト値付き
-    sensory_keywords: list[str] = Field(
-        default_factory=list, description="描写必須の五感。例：焦げた匂い、冷たい風"
-    )
-    psychology_keywords: list[str] = Field(
-        default_factory=list, description="描写必須の心理キーワード（2つ以上）"
-    )
+    sensory_keywords: list[str] = Field(default_factory=list, description="描写必須の五感。例：焦げた匂い、冷たい風")
+    psychology_keywords: list[str] = Field(default_factory=list, description="描写必須の心理キーワード（2つ以上）")
     target_words: int = Field(default=150, description="このビートの最低目標文字数")
 
     model_config = MODEL_CONFIG_DEFAULTS
@@ -231,9 +221,7 @@ class MasterSceneBlock(BaseModel):
         validation_alias=AliasChoices("scene_number", "scene_id", "no", "id"),
     )
     action: str = Field(default="", description="このシーンで起きる主要な出来事")
-    dialogue_point: str = Field(
-        default="", description="このシーンで必ず交わされるべき重要な会話の要点"
-    )
+    dialogue_point: str = Field(default="", description="このシーンで必ず交わされるべき重要な会話の要点")
     dramatic_function: str = Field(default="")
     emotional_payoff: str = Field(default="")
     beats: list[SceneBeatBlock] = Field(
@@ -265,10 +253,7 @@ class MasterSceneBlock(BaseModel):
             return [{"action_description": v.strip() or "描写なし", "beat_type": "状況"}]
         if isinstance(v, list):
             # リストの要素が文字列の場合、dictに変換して救済（軽量モデル対策）
-            return [
-                {"action_description": item, "beat_type": "展開"} if isinstance(item, str) else item
-                for item in v
-            ]
+            return [{"action_description": item, "beat_type": "展開"} if isinstance(item, str) else item for item in v]
         return v
 
 
@@ -287,9 +272,7 @@ class PlotBlueprintPhase1(BaseModel):
         default_factory=CliffhangerDef
     )
     misunderstanding_gap: str = Field(default="")
-    current_chain_phase: Annotated[ChainPhase, BeforeValidator(normalize_chain_phase)] = Field(
-        default="Friction"
-    )
+    current_chain_phase: Annotated[ChainPhase, BeforeValidator(normalize_chain_phase)] = Field(default="Friction")
     emotional_payoff: str = Field(default="")
     resolution_style: str = Field(default="Cheat")
     burned_cost_or_loot: Annotated[str, BeforeValidator(ensure_str)] = Field(default="なし")
@@ -379,9 +362,7 @@ class PlotCoreInfo(BaseModel):
     )
     thought_process: str = Field(default="", description="プロット作成前の思考")
     title: str = Field(default="", description="この話のサブタイトル")
-    one_line_summary: str = Field(
-        default="", max_length=150, description="この話の核心を突く一行あらすじ"
-    )
+    one_line_summary: str = Field(default="", max_length=150, description="この話の核心を突く一行あらすじ")
     detailed_blueprint: str = Field(default="", max_length=3000, description="物語の設計図")
 
 
@@ -399,20 +380,14 @@ class PlotAnalytics(BaseEngine):
         description="カタルシスの量",
         validation_alias=AliasChoices("catharsis", "catharsis_delta"),
     )
-    is_catharsis: bool = Field(
-        default=False, validation_alias=AliasChoices("is_catharsis", "catharsis_flag")
-    )
+    is_catharsis: bool = Field(default=False, validation_alias=AliasChoices("is_catharsis", "catharsis_flag"))
     love_meter: Annotated[int, BeforeValidator(extract_int)] = Field(
         default=0,
         description="好感度の変化量",
         validation_alias=AliasChoices("love_meter", "love", "affinity"),
     )
-    catharsis_type: str = Field(
-        default="なし", validation_alias=AliasChoices("catharsis_type", "catharsis_style")
-    )
-    emotional_payoff: str = Field(
-        default="", validation_alias=AliasChoices("emotional_payoff", "payoff")
-    )
+    catharsis_type: str = Field(default="なし", validation_alias=AliasChoices("catharsis_type", "catharsis_style"))
+    emotional_payoff: str = Field(default="", validation_alias=AliasChoices("emotional_payoff", "payoff"))
     resolution_style: str = Field(
         default="Cheat", validation_alias=AliasChoices("resolution_style", "style", "resolution")
     )
@@ -421,9 +396,7 @@ class PlotAnalytics(BaseEngine):
         validation_alias=AliasChoices("antagonist_status", "enemy_status", "villain_status"),
     )
     state_integrity_score: int = Field(default=100)
-    emotional_hook: EmotionalHookSpec | None = Field(
-        default=None, description="この話の感情設計仕様"
-    )
+    emotional_hook: EmotionalHookSpec | None = Field(default=None, description="この話の感情設計仕様")
     sharp_edges: list[SharpEdgeSpec] = Field(default_factory=list, description="削ってはいけない角")
     quality_polish_status: Literal["pending", "passed", "rejected_edge_loss"] = Field(
         default="pending", description="品質磨き上げステータス"
@@ -525,22 +498,14 @@ class EnigmaAnalytics(PlotForeshadowing):
 
 
 class ComfortAnalytics(BaseEngine):
-    qol_delta: Annotated[int, BeforeValidator(extract_int)] = Field(
-        default=0, description="この話によるQOL向上値"
-    )
+    qol_delta: Annotated[int, BeforeValidator(extract_int)] = Field(default=0, description="この話によるQOL向上値")
     veneration_gain: Annotated[float, BeforeValidator(extract_float)] = Field(
         default=0.0, description="この話による崇拝度の上昇"
     )
-    fulfillment_delta: dict[str, float] = Field(
-        default_factory=dict, description="各次元の充足向上"
-    )
+    fulfillment_delta: dict[str, float] = Field(default_factory=dict, description="各次元の充足向上")
     is_miracle_occurrence: bool = Field(default=False, description="日常が奇跡として誤認されたか")
-    discovery_item: str | None = Field(
-        default=None, description="この話で新しく発見/発明されたもの"
-    )
-    sanctuary_event: str | None = Field(
-        default=None, description="聖域の強化または対比イベントの記述"
-    )
+    discovery_item: str | None = Field(default=None, description="この話で新しく発見/発明されたもの")
+    sanctuary_event: str | None = Field(default=None, description="聖域の強化または対比イベントの記述")
 
     model_config = MODEL_CONFIG_DEFAULTS
 
@@ -560,12 +525,14 @@ class ComfortMixin(CoreEngineMixin):
 
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from src.models.subversion import SubversionEngine
 
 
 class SubversionMixin(BaseModel):
     """テンプレ逆張りエンジンを保持する Mixin"""
+
     subversion: "SubversionEngine" = Field(default_factory=SubversionEngine)
     model_config = MODEL_CONFIG_DEFAULTS
 
@@ -601,9 +568,7 @@ class PlotEpisodeBase(FlatModelMixin, CoreEngineMixin, Generic[T]):
                 names.append(k)
             else:
                 try:
-                    if isinstance(ann, type) and (
-                        issubclass(ann, BaseEngine) or issubclass(ann, PlotCoreInfo)
-                    ):
+                    if isinstance(ann, type) and (issubclass(ann, BaseEngine) or issubclass(ann, PlotCoreInfo)):
                         names.append(k)
                 except TypeError:
                     pass
@@ -681,9 +646,7 @@ class PlotEpisodeBase(FlatModelMixin, CoreEngineMixin, Generic[T]):
     def antagonist_status(self, value: str):
         self.analytics.antagonist_status = value
 
-    extra_engines: dict[str, Any] = Field(
-        default_factory=dict, description="未知・追加エンジンのデータスロット"
-    )
+    extra_engines: dict[str, Any] = Field(default_factory=dict, description="未知・追加エンジンのデータスロット")
 
     @property
     def detailed_blueprint(self) -> str:
@@ -744,15 +707,11 @@ class PlotEpisodeBase(FlatModelMixin, CoreEngineMixin, Generic[T]):
         default_factory=CliffhangerDef,
         validation_alias=AliasChoices("next_hook", "cliffhanger", "hook"),
     )
-    misunderstanding_gap: str = Field(
-        default="", validation_alias=AliasChoices("misunderstanding_gap", "gap", "irony")
-    )
+    misunderstanding_gap: str = Field(default="", validation_alias=AliasChoices("misunderstanding_gap", "gap", "irony"))
     scenes: list[MasterSceneBlock] = Field(default_factory=list)
     script_content: str = Field(
         default="",
-        validation_alias=AliasChoices(
-            "script_content", "script", "manuscript", "content", "final_content"
-        ),
+        validation_alias=AliasChoices("script_content", "script", "manuscript", "content", "final_content"),
     )
     current_chain_phase: Annotated[ChainPhase, BeforeValidator(normalize_chain_phase)] = Field(
         default="Friction",
@@ -761,9 +720,7 @@ class PlotEpisodeBase(FlatModelMixin, CoreEngineMixin, Generic[T]):
     burned_cost_or_loot: Annotated[str, BeforeValidator(ensure_str)] = Field(
         default="なし", validation_alias=AliasChoices("burned_cost_or_loot", "cost", "loot")
     )
-    thematic_milestone: str = Field(
-        default="なし", validation_alias=AliasChoices("thematic_milestone", "milestone")
-    )
+    thematic_milestone: str = Field(default="なし", validation_alias=AliasChoices("thematic_milestone", "milestone"))
     healed_fields: list[str] = Field(default_factory=list)
     is_micro_catharsis: bool = Field(default=False, description="摩擦期間中の小規模な解放フラグ")
     information_asymmetry_level: Annotated[float, BeforeValidator(extract_float)] = Field(
@@ -771,16 +728,12 @@ class PlotEpisodeBase(FlatModelMixin, CoreEngineMixin, Generic[T]):
     )
     lite_model_director_notes: str = Field(
         default="",
-        validation_alias=AliasChoices(
-            "lite_model_director_notes", "self_critique", "director_notes", "notes"
-        ),
+        validation_alias=AliasChoices("lite_model_director_notes", "self_critique", "director_notes", "notes"),
     )
     emotional_resonance_score: Annotated[int, BeforeValidator(extract_int)] = Field(
         default=0,
         description="感情共鳴スコア (1-100)",
-        validation_alias=AliasChoices(
-            "emotional_resonance_score", "resonance", "emotional_resonance"
-        ),
+        validation_alias=AliasChoices("emotional_resonance_score", "resonance", "emotional_resonance"),
     )
     thematic_depth_score: Annotated[int, BeforeValidator(extract_int)] = Field(
         default=0,
@@ -814,9 +767,7 @@ class PlotEpisodeBase(FlatModelMixin, CoreEngineMixin, Generic[T]):
             }
             sub_models_names = cls._get_sub_model_names()
             for sub_name in sub_models_names:
-                model_cls = (
-                    static_routing_map.get(sub_name) or cls.model_fields[sub_name].annotation
-                )
+                model_cls = static_routing_map.get(sub_name) or cls.model_fields[sub_name].annotation
                 if isinstance(model_cls, str) or not isinstance(model_cls, type):
                     continue
                 # すでにネストされた構造でデータがある場合はそのまま利用
@@ -863,9 +814,7 @@ class PlotEpisodeBase(FlatModelMixin, CoreEngineMixin, Generic[T]):
             remaining_keys = [
                 k
                 for k in data.keys()
-                if k not in all_routed_keys
-                and k not in generic_fields
-                and k not in sub_models_names
+                if k not in all_routed_keys and k not in generic_fields and k not in sub_models_names
             ]
             if remaining_keys:
                 extra = {}
@@ -955,9 +904,7 @@ class PlotEpisode(PlotEpisodeBase[CoreEngineMixin], EnigmaMixin, ComfortMixin, S
     将来的にジャンル別特化モデルへ移行する。
     """
 
-    candidates: list[PlotEpisodeBase] = Field(
-        default_factory=list, description="AIが提示した複数の候補案"
-    )
+    candidates: list[PlotEpisodeBase] = Field(default_factory=list, description="AIが提示した複数の候補案")
 
     @model_validator(mode="before")
     def unwrap_plot_metadata(cls, data: Any) -> Any:  # type: ignore[misc]
@@ -1099,9 +1046,7 @@ class RoadmapList(BaseModel):
 
 
 class ArcBlueprint(BaseModel):
-    arc_num: int = Field(
-        ..., validation_alias=AliasChoices("arc_num", "arc_number", "number", "no")
-    )
+    arc_num: int = Field(..., validation_alias=AliasChoices("arc_num", "arc_number", "number", "no"))
     start_ep: int = Field(..., validation_alias=AliasChoices("start_ep", "start_episode", "start"))
     end_ep: int = Field(..., validation_alias=AliasChoices("end_ep", "end_episode", "end"))
     title: str = Field(default="無題")
@@ -1130,9 +1075,7 @@ class ArcBlueprint(BaseModel):
                         try:
                             if target in ["arc_num", "start_ep", "end_ep"]:
                                 data[target] = int(
-                                    extract_int(data[alias])
-                                    if hasattr(extract_int, "__call__")
-                                    else data[alias]
+                                    extract_int(data[alias]) if hasattr(extract_int, "__call__") else data[alias]
                                 )
                             else:
                                 data[target] = data[alias]
@@ -1209,13 +1152,9 @@ class CatharsisPattern(BaseModel):
     """ストレス蓄積とカタルシス解放の波パターンを定義するモデル"""
 
     cumulative_stress: int = Field(default=0, description="現在の累積ストレス値")
-    catharsis_points: list[int] = Field(
-        default_factory=list, description="カタルシス発生話数のリスト"
-    )
+    catharsis_points: list[int] = Field(default_factory=list, description="カタルシス発生話数のリスト")
     tension_wave: list[int] = Field(default_factory=list, description="各話のtension値の履歴")
-    pattern_type: str = Field(
-        default="wave", description="波パターン種類: gradual/spike/wave/explosion"
-    )
+    pattern_type: str = Field(default="wave", description="波パターン種類: gradual/spike/wave/explosion")
     small_catharsis_ratio: float = Field(default=0.7, description="小カタルシスの比率")
     medium_catharsis_ratio: float = Field(default=0.15, description="中カタルシスの比率")
     large_catharsis_ratio: float = Field(default=0.15, description="大カタルシスの比率")
@@ -1235,9 +1174,7 @@ class CatharsisPattern(BaseModel):
 def merge_macro_and_micro(macro: EpisodeMacroSkeleton, micro: PlotMicroBlueprint) -> PlotEpisode:
     """大局骨子(Macro)と微視的演出(Micro)を結合して完全な PlotEpisode を構築する。"""
     if macro.ep_num != micro.ep_num:
-        raise ValueError(
-            f"エピソード話数が一致しません: macro={macro.ep_num}, micro={micro.ep_num}"
-        )
+        raise ValueError(f"エピソード話数が一致しません: macro={macro.ep_num}, micro={micro.ep_num}")
 
     # PlotEpisode のインスタンスを組み立て
     return PlotEpisode(

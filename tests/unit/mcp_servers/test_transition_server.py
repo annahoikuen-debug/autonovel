@@ -1,4 +1,5 @@
 """Unit tests for TransitionMCPServer."""
+
 from __future__ import annotations
 
 from src.mcp_servers.providers.transition_provider import SceneTransitionValidator

@@ -141,9 +141,7 @@ class PublisherAdapter(ABC):
         ...
 
     @abstractmethod
-    async def get_post_status(
-        self, post_id: str, credentials: PublisherCredentials
-    ) -> dict[str, Any]:
+    async def get_post_status(self, post_id: str, credentials: PublisherCredentials) -> dict[str, Any]:
         """
         投稿ステータスを取得する。
 
@@ -160,9 +158,7 @@ class PublisherAdapter(ABC):
         """レート制限を考慮した待機（サブクラスで実装推奨）"""
         await asyncio.sleep(60 / self.rate_limit_per_minute)
 
-    def _build_novel_payload(
-        self, novel: dict[str, Any], chapter: dict[str, Any]
-    ) -> dict[str, Any]:
+    def _build_novel_payload(self, novel: dict[str, Any], chapter: dict[str, Any]) -> dict[str, Any]:
         """小説・チャプターデータから投稿用ペイロードを構築（共通ロジック）"""
         return {
             "title": novel.get("title", "無題"),

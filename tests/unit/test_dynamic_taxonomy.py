@@ -33,6 +33,7 @@ def test_rule_based_morphological_mapper():
 
 def test_semantic_anchor_taxonomy():
     """Test embedding-based semantic anchor concept mapping (Step 39)."""
+
     # Mock embedding function that returns distinct vector signatures
     def mock_embedding(text: str) -> list[float]:
         if any(w in text for w in ["剣", "武術", "斬", "術", "スキル"]):

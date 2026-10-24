@@ -1,4 +1,5 @@
 """CoreMemory implementation for in-memory resident agent memory with token budget and disk persistence."""
+
 from __future__ import annotations
 
 import json

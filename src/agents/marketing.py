@@ -21,6 +21,7 @@ except ImportError:
     def score_catchphrase_ctr(catchphrase: str) -> int:
         return 50  # Neutral score
 
+
 try:
     from src.domain.schemas.marketing import CatchphraseItem
 except ImportError:
@@ -32,6 +33,7 @@ except ImportError:
         score: float = 50.0
         char_count: int = 0
         type: str = "unknown"
+
 
 logger = logging.getLogger(__name__)
 
@@ -51,9 +53,7 @@ class MarketingAgent(BaseAgent):
                 prompt_manager = None
         self.prompt_manager = prompt_manager
 
-    async def generate_pack(
-        self, book_title: str, synopsis: str, latest_ep: int, **kwargs
-    ) -> dict[str, Any]:
+    async def generate_pack(self, book_title: str, synopsis: str, latest_ep: int, **kwargs) -> dict[str, Any]:
         if self.prompt_manager is None:
             logger.warning("PromptManager unavailable — returning empty metadata fallback")
             return {"title": book_title, "tags": [], "synopsis": synopsis, "latest_ep": latest_ep}
@@ -73,9 +73,7 @@ class MarketingAgent(BaseAgent):
             }
         return metadata
 
-    async def generate_viral_title_pack(
-        self, request: ViralTitleRequest
-    ) -> ViralTitleResponse:
+    async def generate_viral_title_pack(self, request: ViralTitleRequest) -> ViralTitleResponse:
         """カクヨムCTR最大化タイトル候補30〜50案を生成・採点し、上位推薦案とあらすじを返す。"""
         if self.prompt_manager is None:
             raise RuntimeError("PromptManager is unavailable")
@@ -93,11 +91,7 @@ class MarketingAgent(BaseAgent):
         if isinstance(raw_candidates, list):
             candidates_list = raw_candidates
         elif isinstance(raw_candidates, dict):
-            candidates_list = (
-                raw_candidates.get("candidates")
-                or raw_candidates.get("titles")
-                or [raw_candidates]
-            )
+            candidates_list = raw_candidates.get("candidates") or raw_candidates.get("titles") or [raw_candidates]
 
         from src.services.marketing.ctr_scorer import score_title_ctr
 
@@ -132,9 +126,9 @@ class MarketingAgent(BaseAgent):
                 )
             )
 
-        top_recs = scored_candidates[:min(5, len(scored_candidates))]
+        top_recs = scored_candidates[: min(5, len(scored_candidates))]
 
-# 最上位タイトルに基づきあらすじを生成
+        # 最上位タイトルに基づきあらすじを生成
         best_title = top_recs[0].title
         synopsis_prompt = await self.prompt_manager.build_viral_synopsis_prompt(
             selected_title=best_title,
@@ -152,9 +146,7 @@ class MarketingAgent(BaseAgent):
             selected_synopsis=synopsis_text,
         )
 
-    async def generate_viral_catchphrases(
-        self, project_settings: str, candidate_count: int = 20
-    ) -> list:
+    async def generate_viral_catchphrases(self, project_settings: str, candidate_count: int = 20) -> list:
         """カクヨムCTR最大化キャッチコピー候補を生成・採点し、上位候補を返す。"""
         if self.prompt_manager is None:
             raise RuntimeError("PromptManager is unavailable")
@@ -168,11 +160,7 @@ class MarketingAgent(BaseAgent):
         if isinstance(raw_candidates, list):
             candidates_list = raw_candidates
         elif isinstance(raw_candidates, dict):
-            candidates_list = (
-                raw_candidates.get("catchphrases")
-                or raw_candidates.get("candidates")
-                or [raw_candidates]
-            )
+            candidates_list = raw_candidates.get("catchphrases") or raw_candidates.get("candidates") or [raw_candidates]
 
         scored_candidates: list = []
         for item in candidates_list:
@@ -193,7 +181,7 @@ class MarketingAgent(BaseAgent):
         scored_candidates.sort(key=lambda c: c.score, reverse=True)
 
         # 上位候補を返す
-        return scored_candidates[:min(candidate_count, len(scored_candidates))]
+        return scored_candidates[: min(candidate_count, len(scored_candidates))]
 
     async def run(self, *args, **kwargs):
         logger.info("MarketingAgent run invoked")
@@ -248,9 +236,9 @@ class MarketingAgent(BaseAgent):
         bible = None
         plots = []
         if book_data is None and self.repo is not None:
-            chapters = await self._maybe_await(self.repo.get_all_non_anchor_chapters(
-                book_id, branch_id=branch_id, order_by="ep_num"
-            ))
+            chapters = await self._maybe_await(
+                self.repo.get_all_non_anchor_chapters(book_id, branch_id=branch_id, order_by="ep_num")
+            )
             chars = await self._maybe_await(self.repo.get_all_characters(book_id))
             bible = await self._maybe_await(self.repo.get_latest_bible(book_id))
             get_plots = getattr(self.repo, "get_all_plots", None)
@@ -264,13 +252,9 @@ class MarketingAgent(BaseAgent):
 
                 params = list(inspect.signature(get_plots).parameters)
                 if params and params[0] == "book_id":
-                    plots = await self._maybe_await(
-                        get_plots(book_id, branch_id=branch_id)
-                    )
+                    plots = await self._maybe_await(get_plots(book_id, branch_id=branch_id))
                 else:
-                    plots = await self._maybe_await(
-                        get_plots(branch_id, book_id=book_id)
-                    )
+                    plots = await self._maybe_await(get_plots(branch_id, book_id=book_id))
 
         # book_data 提供時は repo アクセスを省略しオーバーライド値を使用
         if book_data is not None:
@@ -345,7 +329,9 @@ class MarketingAgent(BaseAgent):
             if book_data is not None and override_plots is not None:
                 for p in override_plots:
                     if isinstance(p, dict):
-                        plot_text += f"第{p.get('ep_num', '')}話: {p.get('title', '')}\n{p.get('one_line_summary', '')}\n\n"
+                        plot_text += (
+                            f"第{p.get('ep_num', '')}話: {p.get('title', '')}\n{p.get('one_line_summary', '')}\n\n"
+                        )
                     else:
                         plot_text += f"第{getattr(p, 'ep_num', '')}話: {getattr(p, 'title', '')}\n\n"
             else:
@@ -358,10 +344,7 @@ class MarketingAgent(BaseAgent):
                 "book_id": book.id if book else book_id,
                 "title": override_title if override_title else (book.title if book else ""),
                 "genre": override_genre if override_genre else (book.genre if book else ""),
-                "chapters": [
-                    {"ep_num": c.ep_num, "title": c.title, "content": c.content}
-                    for c in chapters
-                ]
+                "chapters": [{"ep_num": c.ep_num, "title": c.title, "content": c.content} for c in chapters]
                 if not (book_data is not None and override_chapters is not None)
                 else [
                     {"ep_num": c.get("ep_num"), "title": c.get("title"), "content": c.get("content")}
@@ -375,10 +358,7 @@ class MarketingAgent(BaseAgent):
                     else {"name": getattr(c, "name", ""), "role": getattr(c, "role", "")}
                     for c in override_characters
                 ],
-                "plots": [
-                    {"ep_num": p.ep_num, "title": p.title, "one_line_summary": p.one_line_summary}
-                    for p in plots
-                ]
+                "plots": [{"ep_num": p.ep_num, "title": p.title, "one_line_summary": p.one_line_summary} for p in plots]
                 if not (book_data is not None and override_plots is not None)
                 else [
                     {

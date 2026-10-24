@@ -53,13 +53,11 @@ class DummySession:
 
 
 class DummyTask:
-
     def __init__(self, id):
         self.id = id
 
 
 class DummyRepo:
-
     def __init__(self, session):
         self.session = session
         self.task_id = 42
@@ -69,11 +67,13 @@ class DummyRepo:
     @property
     def is_async(self) -> bool:
         return False
-# 本物の BookRepository.create_task と同じシグネチャにする。
+
+    # 本物の BookRepository.create_task と同じシグネチャにする。
     # `user_id` はタスク所有者の記録に使う（渡さないと
     # `/easy_mode/status/{task_id}` が自分のタスクを拒否する）。
-    def create_task(self, task_id: str | None = None, status: str = "pending",
-                    result: str | None = None, user_id: int | None = None):
+    def create_task(
+        self, task_id: str | None = None, status: str = "pending", result: str | None = None, user_id: int | None = None
+    ):
         return DummyTask(task_id or self.task_id)
 
     def update_task_status(self, task_id: str, status: str):
@@ -117,12 +117,12 @@ def patch_dependencies(monkeypatch):
             self.id = "test-huey-id"
 
     import src.backend.tasks.generation_tasks as gen_tasks_mod
+
     monkeypatch.setattr(gen_tasks_mod, "generate_chapter_task", lambda *args, **kwargs: DummyTaskResult())
 
     called = []
 
     class DummyMetrics:
-
         @staticmethod
         def increment(name):
             called.append(name)
@@ -134,6 +134,7 @@ def patch_dependencies(monkeypatch):
 @pytest.mark.asyncio
 async def test_execute_generation(monkeypatch):
     from src.services.llm.mock_adapter import MockLLMAdapter
+
     monkeypatch.setattr(easy_mode, "get_llm_adapter", lambda **kwargs: MockLLMAdapter())
     payload = {
         "current_chapter": "テスト冒頭",
@@ -167,13 +168,12 @@ async def test_generate_content_success(monkeypatch, dummy_session, dummy_reques
         character_params={"name": "hero"},
         content_length_limit=1000,
     )
-    response = await easy_mode.generate_content(
-        valid_input, request=dummy_request, session=dummy_session
-    )
+    response = await easy_mode.generate_content(valid_input, request=dummy_request, session=dummy_session)
     assert isinstance(response, easy_mode.GenerationResponse)
     # huey_task_id should be in suggestions (now using huey enqueue)
     assert "test-huey-id" in response.suggestions[0]
     assert "tasks_enqueued" in called_metrics
+
 
 @pytest.mark.asyncio
 async def test_generate_content_stream(monkeypatch, dummy_session, dummy_request):
@@ -197,11 +197,8 @@ async def test_generate_content_stream(monkeypatch, dummy_session, dummy_request
 
 
 @pytest.mark.asyncio
-async def test_generate_content_validation_error_path(
-    monkeypatch, dummy_session, dummy_request
-):
+async def test_generate_content_validation_error_path(monkeypatch, dummy_session, dummy_request):
     class DummyValidationError(Exception):
-
         def errors(self):
             return [{"loc": "field", "msg": "msg", "type": "type"}]
 
@@ -220,15 +217,11 @@ async def test_generate_content_validation_error_path(
     from src.backend.exceptions import ValidationException
 
     with pytest.raises(ValidationException):
-        await easy_mode.generate_content(
-            valid_input, request=dummy_request, session=dummy_session
-        )
+        await easy_mode.generate_content(valid_input, request=dummy_request, session=dummy_session)
 
 
 @pytest.mark.asyncio
-async def test_generate_content_service_exception(
-    monkeypatch, dummy_session, dummy_request
-):
+async def test_generate_content_service_exception(monkeypatch, dummy_session, dummy_request):
     def raise_runtime(x):
         raise RuntimeError("boom")
 
@@ -242,13 +235,10 @@ async def test_generate_content_service_exception(
     from src.backend.exceptions import ServiceException
 
     with pytest.raises(ServiceException):
-        await easy_mode.generate_content(
-            valid_input, request=dummy_request, session=dummy_session
-        )
+        await easy_mode.generate_content(valid_input, request=dummy_request, session=dummy_session)
 
 
 class DummyMarketingAgent:
-
     def __init__(self, repo):
         self.repo = repo
 
@@ -261,7 +251,6 @@ def test_export_easy_mode_package(monkeypatch, dummy_session):
     called = []
 
     class DummyMetrics:
-
         @staticmethod
         def increment(name):
             called.append(name)
@@ -269,8 +258,7 @@ def test_export_easy_mode_package(monkeypatch, dummy_session):
     monkeypatch.setattr(easy_mode, "metrics", DummyMetrics)
     patch_book_ownership(monkeypatch, 1)
     response = asyncio.run(
-        easy_mode.export_easy_mode_package(book_id=1, session=dummy_session,
-                                           current_user=make_admin_user())
+        easy_mode.export_easy_mode_package(book_id=1, session=dummy_session, current_user=make_admin_user())
     )
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "application/zip"
@@ -289,9 +277,7 @@ def test_get_task_status_pending(monkeypatch):
 
 def test_get_task_status_completed(monkeypatch):
     monkeypatch.setattr(huey_mod, "result", lambda task_id: {"output": "done"})
-    result = asyncio.run(
-        easy_mode.get_task_status("xyz789", current_user=make_admin_user())
-    )
+    result = asyncio.run(easy_mode.get_task_status("xyz789", current_user=make_admin_user()))
     assert result["status"] == "completed"
     assert result["result"] == {"output": "done"}
     assert result["task_id"] == "xyz789"
@@ -299,12 +285,11 @@ def test_get_task_status_completed(monkeypatch):
 
 def test_get_task_status_failed(monkeypatch):
     monkeypatch.setattr(huey_mod, "result", lambda task_id: {"error": "LLM generation timeout", "text": "", "time": 0})
-    result = asyncio.run(
-        easy_mode.get_task_status("err456", current_user=make_admin_user())
-    )
+    result = asyncio.run(easy_mode.get_task_status("err456", current_user=make_admin_user()))
     assert result["status"] == "failed"
     assert result["error"] == "LLM generation timeout"
     assert result["task_id"] == "err456"
+
 
 @pytest.mark.asyncio
 async def test_gacha_endpoint(monkeypatch, dummy_request):
@@ -366,6 +351,7 @@ async def test_gacha_endpoint(monkeypatch, dummy_request):
     assert response.request_id == "req-123"
     assert len(response.plans) == 3
 
+
 @pytest.mark.asyncio
 async def test_digest_endpoint(monkeypatch, dummy_request):
     # 遅延 import される src.backend.database.core.get_db_manager をパッチ
@@ -404,6 +390,7 @@ async def test_digest_endpoint(monkeypatch, dummy_request):
     assert response.book_id == "book-123"
     assert response.status == "completed"
 
+
 @pytest.mark.asyncio
 async def test_promote_endpoint(monkeypatch, dummy_request):
     # 遅延 import される src.backend.database.core.get_db_manager をパッチ
@@ -439,6 +426,7 @@ async def test_promote_endpoint(monkeypatch, dummy_request):
     assert response.success is True
     assert response.state_token == "token-123"
 
+
 @pytest.mark.asyncio
 async def test_reverse_generate_endpoint(monkeypatch, dummy_request):
     # 遅延 import される src.backend.workflows.reverse_plot_workflow をパッチ
@@ -460,6 +448,7 @@ async def test_reverse_generate_endpoint(monkeypatch, dummy_request):
     assert response["status"] == "success"
     assert "Generated Plot" in response["plot"]
 
+
 @pytest.mark.asyncio
 async def test_export_with_data_endpoint(monkeypatch, dummy_session):
     class DummyMarketingAgent:
@@ -480,11 +469,10 @@ async def test_export_with_data_endpoint(monkeypatch, dummy_session):
     )
 
     # pytest-asyncio のイベントループ内で直接 await する
-    response = await easy_mode.export_with_data_endpoint(
-        payload=payload, book_id=1, session=dummy_session
-    )
+    response = await easy_mode.export_with_data_endpoint(payload=payload, book_id=1, session=dummy_session)
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "application/zip"
+
 
 @pytest.mark.asyncio
 async def test_cancel_task(monkeypatch):
@@ -535,6 +523,7 @@ async def test_cancel_task_rejects_task_without_owner(monkeypatch):
         await easy_mode.cancel_task("task-123", current_user=MagicMock(id=2, role="user"))
     assert exc.value.status_code == 403
 
+
 @pytest.mark.asyncio
 async def test_generate_content_validation_error(monkeypatch, dummy_session, dummy_request):
     """EasyModeInput の Pydantic バリデーションが不正な入力を拒否することを確認する。
@@ -556,4 +545,3 @@ async def test_generate_content_validation_error(monkeypatch, dummy_session, dum
     errors = exc_info.value.errors()
     assert any(e["loc"] == ("chapter_history",) for e in errors)
     assert any(e["type"] == "list_type" for e in errors)
-

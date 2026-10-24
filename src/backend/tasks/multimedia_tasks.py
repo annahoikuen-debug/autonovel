@@ -1,4 +1,5 @@
 """src/backend/tasks/multimedia_tasks.py - Huey tasks for Audio & Multimedia generation (Step 18)."""
+
 from __future__ import annotations
 
 import logging
@@ -40,7 +41,7 @@ def generate_asset_pack_task(
             "asset_id": result.asset_id,
             "files": result.files,
             "metadata": result.metadata,
-            "file_count": len(result.files)
+            "file_count": len(result.files),
         }
     except Exception as exc:
         logger.warning(f"generate_asset_pack_task failed for book {book_id}: {exc}")
@@ -99,10 +100,7 @@ def synthesize_chapter_audio_task(
         if audio_chunks:
             final_bytes = audio_chunks[0]
             if len(audio_chunks) > 1:
-                body = b"".join(
-                    c[44:] if c.startswith(b"RIFF") and len(c) > 44 else c
-                    for c in audio_chunks
-                )
+                body = b"".join(c[44:] if c.startswith(b"RIFF") and len(c) > 44 else c for c in audio_chunks)
                 header = (
                     b"RIFF"
                     + struct.pack("<I", len(body) + 36)

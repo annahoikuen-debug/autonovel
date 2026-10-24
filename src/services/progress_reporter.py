@@ -23,9 +23,7 @@ class ProgressReporterAdapter:
         self._reporter = reporter
         self._is_easy_mode = is_easy_mode
 
-    def update_progress(
-        self, current: int, total: int, message: str = "", sub_message: str = ""
-    ) -> None:
+    def update_progress(self, current: int, total: int, message: str = "", sub_message: str = "") -> None:
         """FullAuto 風 API"""
         if hasattr(self._reporter, "update_progress"):
             self._reporter.update_progress(current, total, message, sub_message)

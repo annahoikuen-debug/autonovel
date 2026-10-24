@@ -1,4 +1,5 @@
 """audit.py から分離されたプロット・能力スクリーニングクラス群"""
+
 from __future__ import annotations
 
 import logging
@@ -35,9 +36,7 @@ class AbilityConsistencyChecker:
     ) -> tuple[bool, str, str]:
         if self.prompt_manager is None:
             return True, "OK", ""
-        prompt = self.prompt_manager.build_ability_audit_prompt(
-            blueprint, settings_json, characters_json
-        )
+        prompt = self.prompt_manager.build_ability_audit_prompt(blueprint, settings_json, characters_json)
         result = await self.llm.generate_json(purpose="audit", prompt=prompt)
         metadata = result.get("metadata", {})
         return (

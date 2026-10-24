@@ -3,6 +3,7 @@ from src.services.marketing import MarketingService as MarketingAgent
 import pytest
 from unittest.mock import MagicMock
 
+
 @pytest.mark.asyncio
 async def test_create_export_package_fallback():
     """Test with no repo and no book_data -> uses fallback."""
@@ -16,12 +17,14 @@ async def test_create_export_package_fallback():
     # Basic check: ZIP contains expected files
     import zipfile
     import io
-    with zipfile.ZipFile(io.BytesIO(zip_bytes), 'r') as z:
+
+    with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as z:
         namelist = z.namelist()
         assert "01_本文.txt" in namelist
         assert "02_キャラクター・世界観設定集.txt" in namelist
         assert "03_プロット概要.txt" in namelist
         assert "04_データダンプ.json" in namelist
+
 
 @pytest.mark.asyncio
 async def test_create_export_package_with_repo_returns_none():
@@ -39,6 +42,7 @@ async def test_create_export_package_with_repo_returns_none():
     assert isinstance(zip_bytes, bytes)
     assert len(zip_bytes) > 0
     assert filename == "export_1.zip"
+
 
 @pytest.mark.asyncio
 async def test_create_export_package_with_repo_data():
@@ -89,7 +93,8 @@ async def test_create_export_package_with_repo_data():
     import zipfile
     import io
     import json
-    with zipfile.ZipFile(io.BytesIO(zip_bytes), 'r') as z:
+
+    with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as z:
         # Check the JSON dump
         with z.open("04_データダンプ.json") as f:
             data = json.load(f)
@@ -102,6 +107,7 @@ async def test_create_export_package_with_repo_data():
             assert data["bible_settings"] == {"world": "fantasy"}
             assert len(data["plots"]) == 1
             assert data["plots"][0]["title"] == "Test Plot"
+
 
 @pytest.mark.asyncio
 async def test_create_export_package_with_book_data_override():
@@ -124,7 +130,7 @@ async def test_create_export_package_with_book_data_override():
         "chapters": [{"ep_num": 1, "title": "Book Data Chapter", "content": "Book Data Content"}],
         "characters": [{"name": "Book Data Char", "role": "Role", "personality": "Pers", "ability": "Ability"}],
         "plots": [{"ep_num": 1, "title": "Book Data Plot", "one_line_summary": "Book Data Summary"}],
-        "bible_settings": {"key": "value"}
+        "bible_settings": {"key": "value"},
     }
 
     zip_bytes, filename = await agent.create_export_package(book_id=1, book_data=book_data)
@@ -137,7 +143,8 @@ async def test_create_export_package_with_book_data_override():
     import zipfile
     import io
     import json
-    with zipfile.ZipFile(io.BytesIO(zip_bytes), 'r') as z:
+
+    with zipfile.ZipFile(io.BytesIO(zip_bytes), "r") as z:
         with z.open("04_データダンプ.json") as f:
             data = json.load(f)
             assert data["title"] == "Book Data Title"

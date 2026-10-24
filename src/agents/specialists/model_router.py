@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 class AuditorModelRouter:
     """モデルルーター - 8専門オーディター用の適切なLLMクライアント/プロバイダを解決する。"""
 
-    def __init__(self, config_path: str = "config/audit_models.yaml", fallback_chains: Dict[str, List[str]] | None = None) -> None:
+    def __init__(
+        self, config_path: str = "config/audit_models.yaml", fallback_chains: Dict[str, List[str]] | None = None
+    ) -> None:
         """初期化。
 
         Args:
@@ -46,6 +48,7 @@ class AuditorModelRouter:
                 return auditor_models
         except Exception as e:
             import logging
+
             logger = logging.getLogger(__name__)
             logger.warning(f"Failed to load auditor model config from {config_path}: {e}")
         # フォールバック: 設計時のデフォルトマッピング
@@ -149,9 +152,7 @@ class AuditorModelRouter:
             # ({provider: [provider_fallback, ...]} の形式)
             explicit = config.get("fallback_chains") or config.get("provider_chains")
             if explicit:
-                self.fallback_chains = {
-                    str(p): [str(c) for c in v] for p, v in explicit.items()
-                }
+                self.fallback_chains = {str(p): [str(c) for c in v] for p, v in explicit.items()}
                 self._rebuild_provider_auditors()
                 return
 
@@ -185,9 +186,7 @@ class AuditorModelRouter:
 
             primary = provider_order[0]
             self.fallback_chains = {p: [c for c in provider_order if c != p] for p in provider_order}
-            logger.info(
-                "refresh_from_config: provider order=%s (primary=%s)", provider_order, primary
-            )
+            logger.info("refresh_from_config: provider order=%s (primary=%s)", provider_order, primary)
             self._rebuild_provider_auditors()
         except Exception as e:
             logger.warning(f"Failed to refresh from config: {e}")
@@ -219,4 +218,3 @@ class AuditorModelRouter:
             model_name,
         )
         return ""
-

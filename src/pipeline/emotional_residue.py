@@ -1,4 +1,5 @@
 """Emotional residue data structures for cross-episode emotional continuity."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -8,30 +9,32 @@ from typing import Optional
 
 class EmotionType(str, Enum):
     """感情タイプの列挙"""
-    AFFECTION = "affection"       # 好感度・愛着
-    TENSION = "tension"           # 緊張度・警戒心
-    FEAR = "fear"                 # 恐怖・戦慄
-    TRUST = "trust"               # 信頼・安心感
-    INTIMACY = "intimacy"         # 親密度・共有秘密
-    JEALOUSY = "jealousy"         # 嫉妬・独占欲
-    ANGER = "anger"               # 怒り・敵意
-    SADNESS = "sadness"           # 悲しみ・喪失感
-    SURPRISE = "surprise"         # 驚き・衝撃
-    DISGUST = "disgust"           # 嫌悪・軽蔑
+
+    AFFECTION = "affection"  # 好感度・愛着
+    TENSION = "tension"  # 緊張度・警戒心
+    FEAR = "fear"  # 恐怖・戦慄
+    TRUST = "trust"  # 信頼・安心感
+    INTIMACY = "intimacy"  # 親密度・共有秘密
+    JEALOUSY = "jealousy"  # 嫉妬・独占欲
+    ANGER = "anger"  # 怒り・敵意
+    SADNESS = "sadness"  # 悲しみ・喪失感
+    SURPRISE = "surprise"  # 驚き・衝撃
+    DISGUST = "disgust"  # 嫌悪・軽蔑
 
 
 @dataclass
 class EmotionalSignal:
     """単一の感情シグナル（抽出された生データ）"""
-    source: str                    # 感情の主体（誰が感じているか）
-    target: str                    # 感情の対象（誰に対してか）
-    emotion_type: EmotionType      # 感情の種類
-    value: float                   # 感情値 (-1.0 ~ 1.0)
-    confidence: float              # 信頼度 (0.0 ~ 1.0)
-    evidence_span: str             # 根拠となった脚本スパン
-    episode_id: str                # エピソードID
-    cause: Optional[str] = None    # 原因イベント（任意）
-    hidden: bool = False           # 表向き/内心の区別
+
+    source: str  # 感情の主体（誰が感じているか）
+    target: str  # 感情の対象（誰に対してか）
+    emotion_type: EmotionType  # 感情の種類
+    value: float  # 感情値 (-1.0 ~ 1.0)
+    confidence: float  # 信頼度 (0.0 ~ 1.0)
+    evidence_span: str  # 根拠となった脚本スパン
+    episode_id: str  # エピソードID
+    cause: Optional[str] = None  # 原因イベント（任意）
+    hidden: bool = False  # 表向き/内心の区別
 
     def __post_init__(self):
         # 値のクランプ
@@ -50,6 +53,7 @@ class EmotionalSignal:
 @dataclass
 class EmotionalVector:
     """エピソード単位の感情ベクトル（集約済み）"""
+
     episode_id: str
     signals: dict[tuple[str, str, EmotionType], float] = field(default_factory=dict)
     confidences: dict[tuple[str, str, EmotionType], float] = field(default_factory=dict)
@@ -65,9 +69,7 @@ class EmotionalVector:
         # 信頼度加重平均でマージ
         total_conf = existing_conf + signal.confidence
         if total_conf > 0:
-            self.signals[key] = (
-                existing_value * existing_conf + signal.value * signal.confidence
-            ) / total_conf
+            self.signals[key] = (existing_value * existing_conf + signal.value * signal.confidence) / total_conf
             self.confidences[key] = min(1.0, total_conf)
         else:
             self.signals[key] = signal.value
@@ -91,10 +93,7 @@ class EmotionalVector:
 
     def get_pair_emotions(self, source: str, target: str) -> dict[EmotionType, float]:
         """特定ペアの全感情を取得"""
-        return {
-            emo: val for (s, t, emo), val in self.signals.items()
-            if s == source and t == target
-        }
+        return {emo: val for (s, t, emo), val in self.signals.items() if s == source and t == target}
 
     def get_top_pairs(self, limit: int = 5) -> list[tuple[tuple[str, str], dict[EmotionType, float]]]:
         """主要ペアを強度順で取得"""
@@ -106,27 +105,15 @@ class EmotionalVector:
             pair_scores[key] += abs(val)
 
         sorted_pairs = sorted(pair_scores.items(), key=lambda x: x[1], reverse=True)
-        return [
-            (pair, self.get_pair_emotions(pair[0], pair[1]))
-            for pair, _ in sorted_pairs[:limit]
-        ]
+        return [(pair, self.get_pair_emotions(pair[0], pair[1])) for pair, _ in sorted_pairs[:limit]]
 
     def to_dict(self) -> dict:
         """シリアライズ用辞書変換"""
         return {
             "episode_id": self.episode_id,
-            "signals": {
-                f"{s}->{t}:{emo.value}": val
-                for (s, t, emo), val in self.signals.items()
-            },
-            "confidences": {
-                f"{s}->{t}:{emo.value}": conf
-                for (s, t, emo), conf in self.confidences.items()
-            },
-            "causes": {
-                f"{s}->{t}:{emo.value}": cause
-                for (s, t, emo), cause in self.causes.items()
-            },
+            "signals": {f"{s}->{t}:{emo.value}": val for (s, t, emo), val in self.signals.items()},
+            "confidences": {f"{s}->{t}:{emo.value}": conf for (s, t, emo), conf in self.confidences.items()},
+            "causes": {f"{s}->{t}:{emo.value}": cause for (s, t, emo), cause in self.causes.items()},
             "metadata": self.metadata,
         }
 
@@ -179,6 +166,7 @@ class EmotionalResidueExtractor:
     def nlp(self):
         if self._nlp is None:
             from src.pipeline.nlp_init import get_nlp
+
             self._nlp = get_nlp(self._nlp_model)
         return self._nlp
 
@@ -186,6 +174,7 @@ class EmotionalResidueExtractor:
     def char_extractor(self):
         if self._char_extractor is None:
             from src.pipeline.character_extractor import CharacterExtractor
+
             self._char_extractor = CharacterExtractor(self.character_dict)
         return self._char_extractor
 
@@ -194,6 +183,7 @@ class EmotionalResidueExtractor:
         if self._signal_extractor is None:
             from src.pipeline.signal_extractor import SignalExtractor
             from src.pipeline.emotion_config import load_emotion_lexicon
+
             self._lexicon = load_emotion_lexicon()
             self._signal_extractor = SignalExtractor(self._lexicon)
         return self._signal_extractor
@@ -219,6 +209,7 @@ class EmotionalResidueExtractor:
 
         # 集約
         from src.pipeline.aggregator import aggregate_signals
+
         vector = aggregate_signals(signals)
         vector.episode_id = episode_id
 

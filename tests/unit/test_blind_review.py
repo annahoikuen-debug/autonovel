@@ -59,6 +59,7 @@ class TestBlindReviewGate:
 
     def test_json_roundtrip(self):
         import json
+
         gate = BlindReviewGate(forbidden_agents=["a"])
         payload = {"a_x": {"a_y": [1, 2, 3]}}
         roundtrip = json.loads(json.dumps(gate.scrub_payload(payload), ensure_ascii=False))
@@ -76,6 +77,7 @@ class TestBlindReviewGate:
 
     def test_performance(self):
         import time
+
         gate = BlindReviewGate(forbidden_agents=["big"])
         big = {"data": [{"big_field": "x" * 100, "ok": "y"} for _ in range(100)]}
         t0 = time.perf_counter()
@@ -134,13 +136,15 @@ class TestBlindReviewGate:
             }
         }
         o1 = gate.scrub_payload(payload)
-        o2 = gate.scrub_payload({
-            "data_payload": {
-                "nested": {"a": 2, "z": 1},  # dict key order independent
-                "items": [{"b": 1}, {"a": 2}],  # same list order
-                "tags": {"a", "b", "c"},  # set order independent
+        o2 = gate.scrub_payload(
+            {
+                "data_payload": {
+                    "nested": {"a": 2, "z": 1},  # dict key order independent
+                    "items": [{"b": 1}, {"a": 2}],  # same list order
+                    "tags": {"a", "b", "c"},  # set order independent
+                }
             }
-        })
+        )
         assert o1 == o2
 
     def test_deterministic_mode_rejected_for_scrub(self):
@@ -288,12 +292,14 @@ class TestBlindReviewGate:
 
     def test_isolation_schema_fluent_api(self):
         """IsolationSchema fluent API works."""
-        schema = (IsolationSchema()
-                  .add_exact_key("exact")
-                  .add_prefix("pre_")
-                  .add_suffix("_suf")
-                  .add_nested_path("path.to.block")
-                  .add_regex(r"regex_\d+"))
+        schema = (
+            IsolationSchema()
+            .add_exact_key("exact")
+            .add_prefix("pre_")
+            .add_suffix("_suf")
+            .add_nested_path("path.to.block")
+            .add_regex(r"regex_\d+")
+        )
         assert "exact" in schema.exact_keys
         assert "pre_" in schema.prefix_rules
         assert "_suf" in schema.suffix_rules

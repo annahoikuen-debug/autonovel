@@ -240,9 +240,7 @@ class PlotIntegrityMonitor:
             return (
                 True,
                 1.0,
-                CausalityAuditResult(
-                    is_consistent=True, score=1.0, contradictions=[f"監査エラー: {str(e)}"]
-                ),
+                CausalityAuditResult(is_consistent=True, score=1.0, contradictions=[f"監査エラー: {str(e)}"]),
             )
 
     async def _extract_causality_links(self, text: str, source: str) -> list[CausalityLink]:
@@ -262,9 +260,7 @@ class PlotIntegrityMonitor:
             gen_attr = getattr(self.llm, "generate_json", None)
             gen_rv = getattr(gen_attr, "return_value", None)
             gen_configured = (
-                gen_attr is not None
-                and gen_rv is not None
-                and not isinstance(gen_rv, (AsyncMock, MagicMock))
+                gen_attr is not None and gen_rv is not None and not isinstance(gen_rv, (AsyncMock, MagicMock))
             )
             if self.llm and callable(self.llm) and not gen_configured:
                 raw = await self.llm(purpose="causality_extraction", prompt=prompt)
@@ -378,17 +374,13 @@ class PlotIntegrityMonitor:
             if inputs and not outputs:
                 # 終端イベント（死亡、最終決戦等）なら許容
                 if not self._is_terminal_entity(entity, inputs):
-                    broken.extend(
-                        link for link in inputs if not self._link_is_acceptable(link)
-                    )
+                    broken.extend(link for link in inputs if not self._link_is_acceptable(link))
 
             # 出力があるのに入力がない（因果の終わりでない限り）
             # → このエンティティが原因となって結果を出しているが、その原因がない
             if outputs and not inputs:
                 if not self._is_initial_entity(entity, outputs):
-                    broken.extend(
-                        link for link in outputs if not self._link_is_acceptable(link)
-                    )
+                    broken.extend(link for link in outputs if not self._link_is_acceptable(link))
 
         # 重複除去
         seen = set()
@@ -403,9 +395,8 @@ class PlotIntegrityMonitor:
 
     def _link_is_acceptable(self, link: CausalityLink) -> bool:
         """単一リンクが終端/始端のいずれかとして許容できるか判定"""
-        return (
-            any(kw in link.effect_event for kw in self.TERMINAL_KEYWORDS)
-            or any(kw in link.cause_event for kw in self.INITIAL_KEYWORDS)
+        return any(kw in link.effect_event for kw in self.TERMINAL_KEYWORDS) or any(
+            kw in link.cause_event for kw in self.INITIAL_KEYWORDS
         )
 
     def _is_terminal_entity(self, entity: str, inputs: list[CausalityLink]) -> bool:
@@ -443,9 +434,7 @@ class PlotIntegrityMonitor:
         # 2. 矛盾: Blueprintにある重要関係がContentにない
         for source, target, rel_type in graph_diff.missing_relations:
             if rel_type in ("POSSESSES", "LOCATED_IN", "KNOWS", "ALLY_OF", "ENEMY_OF"):
-                contradictions.append(
-                    f"関係欠落: {source} --{rel_type}--> {target} (BlueprintにありContentにない)"
-                )
+                contradictions.append(f"関係欠落: {source} --{rel_type}--> {target} (BlueprintにありContentにない)")
 
         # 3. 伏線検出: Blueprintにのみ存在する重要アイテム/イベント
         bp_result = await self._extraction_service.extract_graph_from_text(blueprint)
@@ -472,9 +461,7 @@ class PlotIntegrityMonitor:
                 else:
                     importance = "Major"
             elif entity.type == "Character":
-                if entity.properties.get("is_protagonist") or entity.properties.get(
-                    "is_antagonist"
-                ):
+                if entity.properties.get("is_protagonist") or entity.properties.get("is_antagonist"):
                     importance = "Major"
 
             if importance in ("Critical", "Major"):
@@ -482,9 +469,7 @@ class PlotIntegrityMonitor:
                     ForeshadowingItem(
                         entity_name=entity_name,
                         setup_chapter=current_ep,
-                        setup_context=entity.description[:200]
-                        if entity.description
-                        else f"{entity_name} が言及される",
+                        setup_context=entity.description[:200] if entity.description else f"{entity_name} が言及される",
                         expected_payoff=f"{entity_name} の活用・回収・解決",
                         importance=importance,  # type: ignore
                     )
@@ -548,9 +533,7 @@ class PlotIntegrityMonitor:
         if contradictions:
             detail = "\n".join(f"  - {c}" for c in contradictions[:15])
 
-            patch_content = self.CONTRADICTION_FIX_PROMPT_TEMPLATE.format(
-                contradictions_detail=detail
-            )
+            patch_content = self.CONTRADICTION_FIX_PROMPT_TEMPLATE.format(contradictions_detail=detail)
             patches.append(
                 PromptPatch(
                     target_prompt="bible_update",
@@ -638,12 +621,8 @@ class PlotIntegrityMonitor:
         """
         try:
             # world_settings を blueprint に含めてチェック
-            combined_blueprint = (
-                blueprint + "\n\n【世界設定】\n" + world_settings if world_settings else blueprint
-            )
-            is_ok, score, result = await self.check_integrity(
-                [], combined_blueprint, content, threshold=0.7
-            )
+            combined_blueprint = blueprint + "\n\n【世界設定】\n" + world_settings if world_settings else blueprint
+            is_ok, score, result = await self.check_integrity([], combined_blueprint, content, threshold=0.7)
 
             # 結果を旧形式に変換
             failures = []
@@ -692,11 +671,7 @@ class PlotIntegrityMonitor:
         try:
             failures = []
             for i, constraint in enumerate(active_constraints):
-                constraint_text = (
-                    constraint.get("constraint", "")
-                    if isinstance(constraint, dict)
-                    else str(constraint)
-                )
+                constraint_text = constraint.get("constraint", "") if isinstance(constraint, dict) else str(constraint)
                 if constraint_text and constraint_text not in content:
                     failures.append(
                         {
@@ -828,9 +803,7 @@ class InternalLogicValidator:
      kwargs 経由で注入できる（LogicalAuditor と同様の設計）。
     """
 
-    def __init__(
-        self, repo: Any = None, llm: Any = None, ctx_mgr: Any = None, pm: Any = None, **kwargs
-    ):
+    def __init__(self, repo: Any = None, llm: Any = None, ctx_mgr: Any = None, pm: Any = None, **kwargs):
         self.repo = repo
         self.ctx_mgr = ctx_mgr
         self.prompt_manager = pm
@@ -846,15 +819,11 @@ class InternalLogicValidator:
 
         self.wave_analyzer = None
 
-    async def validate_alibi_and_timeline(
-        self, blueprint: str, script: str
-    ) -> tuple[bool, list[str]]:
+    async def validate_alibi_and_timeline(self, blueprint: str, script: str) -> tuple[bool, list[str]]:
         """アリバイとタイムラインの整合性を検証する（スタブ）。"""
         return True, []
 
-    async def check_information_asymmetry(
-        self, past_info: str, current_info: str
-    ) -> tuple[bool, list[str]]:
+    async def check_information_asymmetry(self, past_info: str, current_info: str) -> tuple[bool, list[str]]:
         """情報の非対称性を検証する（スタブ）。"""
         return True, []
 
@@ -866,10 +835,9 @@ class LogicalAuditor:
     または `src.agents.audit_agent.AuditAgent` を使用してください。(Phase 6: Step 65)
     """
 
-    def __init__(
-        self, repo: Any = None, llm: Any = None, ctx_mgr: Any = None, pm: Any = None, **kwargs
-    ):
+    def __init__(self, repo: Any = None, llm: Any = None, ctx_mgr: Any = None, pm: Any = None, **kwargs):
         import warnings
+
         warnings.warn(
             "LogicalAuditor is deprecated, use AuditAggregator or AuditAgent instead",
             DeprecationWarning,
@@ -943,15 +911,9 @@ class LogicalAuditor:
         if isinstance(data, dict):
             return CriticFeedback.model_validate(data)
 
-        return (
-            result
-            if isinstance(result, CriticFeedback)
-            else CriticFeedback(rewrite_guidance=str(result))
-        )
+        return result if isinstance(result, CriticFeedback) else CriticFeedback(rewrite_guidance=str(result))
 
-    async def validate_alibi_and_timeline(
-        self, blueprint: str, script: str
-    ) -> tuple[bool, list[str]]:
+    async def validate_alibi_and_timeline(self, blueprint: str, script: str) -> tuple[bool, list[str]]:
         """
         アリバイとタイムラインの整合性を検証する（スタブ）
         """
@@ -979,9 +941,7 @@ class LogicalAuditor:
 
         return True, "OK", 1.0
 
-    async def _check_base_config(
-        self, book_id: int, ep_num: int, branch_id: int | None = None
-    ) -> tuple[bool, str]:
+    async def _check_base_config(self, book_id: int, ep_num: int, branch_id: int | None = None) -> tuple[bool, str]:
         """基本設定の一貫性"""
         if self.repo is None:
             return True, "OK"
@@ -990,27 +950,21 @@ class LogicalAuditor:
         if branch_id is None:
             settings = await self.repo.bible.get_plot(book_id, ep_num)
         else:
-            settings = await self.repo.bible.get_plot(
-                branch_id, ep_num, branch_id=branch_id, book_id=book_id
-            )
+            settings = await self.repo.bible.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
         if not settings:
             return False, "設定未設定"
         if not settings.get("scene_integrity", "false"):
             return False, "scene integrity violation"
         return True, "OK"
 
-    async def _check_plot_integrity(
-        self, book_id: int, ep_num: int, branch_id: int | None = None
-    ) -> tuple[bool, str]:
+    async def _check_plot_integrity(self, book_id: int, ep_num: int, branch_id: int | None = None) -> tuple[bool, str]:
         """プロット全体の一貫性"""
         if self.repo is None:
             return True, "OK"
         if branch_id is None:
             plot = await self.repo.plot.get_plot(book_id, ep_num)
         else:
-            plot = await self.repo.plot.get_plot(
-                branch_id, ep_num, branch_id=branch_id, book_id=book_id
-            )
+            plot = await self.repo.plot.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
         if not plot:
             return False, "plot not found"
         if not await self._check_pacing(plot):
@@ -1021,9 +975,7 @@ class LogicalAuditor:
         """テンションの一貫性チェック"""
         return True
 
-    async def check_information_asymmetry(
-        self, past_info: str, current_info: str
-    ) -> tuple[bool, list[str]]:
+    async def check_information_asymmetry(self, past_info: str, current_info: str) -> tuple[bool, list[str]]:
         """
         情報の非対称性を検証する（スタブ）
         """
@@ -1140,9 +1092,7 @@ class LogicalAuditor:
                 },
             ]
             if reporter:
-                reporter.report(
-                    f"ℹ️ Ep.{ep_num} Scene.{scene_num}: 没入スコア {total_score:.1f}", "info"
-                )
+                reporter.report(f"ℹ️ Ep.{ep_num} Scene.{scene_num}: 没入スコア {total_score:.1f}", "info")
             return scores
         except Exception as e:
             if reporter:
@@ -1151,4 +1101,3 @@ class LogicalAuditor:
 
 
 # Step 65/66: 後方互換性エイリアス
-

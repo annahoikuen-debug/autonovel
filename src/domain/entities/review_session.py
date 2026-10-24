@@ -13,6 +13,7 @@ import json
 @dataclass
 class ReviewRound:
     """単一レビューラウンドの結果。"""
+
     round_number: int
     timestamp: datetime
     plan_scores: dict[str, float]  # plan_id -> score
@@ -25,15 +26,13 @@ class ReviewRound:
         """前回ラウンドからのスコア変化量を返す。"""
         if previous is None:
             return {pid: score for pid, score in self.plan_scores.items()}
-        return {
-            pid: self.plan_scores[pid] - previous.plan_scores.get(pid, 0.0)
-            for pid in self.plan_scores
-        }
+        return {pid: self.plan_scores[pid] - previous.plan_scores.get(pid, 0.0) for pid in self.plan_scores}
 
 
 @dataclass
 class ReviewSession:
     """複数ラウンドにわたるブラインドレビューのセッション全体。"""
+
     session_id: str = field(default_factory=lambda: f"review_{uuid4().hex[:12]}")
     request_id: str = ""  # GachaRequest.request_id と対応
     rounds: list[ReviewRound] = field(default_factory=list)
@@ -96,11 +95,13 @@ class ReviewSession:
             prev = self.rounds[i - 1]
             for pid in curr.plan_scores:
                 traj = report["plan_trajectories"].setdefault(pid, [])
-                traj.append({
-                    "round": curr.round_number,
-                    "score": curr.plan_scores[pid],
-                    "delta": curr.plan_scores[pid] - prev.plan_scores.get(pid, 0.0),
-                })
+                traj.append(
+                    {
+                        "round": curr.round_number,
+                        "score": curr.plan_scores[pid],
+                        "delta": curr.plan_scores[pid] - prev.plan_scores.get(pid, 0.0),
+                    }
+                )
         return report
 
     @staticmethod

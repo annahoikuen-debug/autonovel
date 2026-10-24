@@ -76,9 +76,7 @@ def make_book(book_id: int = 1, user_id: int = 1):
 
 def patch_book_ownership(book_id: int = 1):
     """``verify_book_ownership`` を Book を返すスタブに差し替える."""
-    return patch(
-        _BOOK_GUARD, new_callable=AsyncMock, return_value=make_book(book_id)
-    )
+    return patch(_BOOK_GUARD, new_callable=AsyncMock, return_value=make_book(book_id))
 
 
 def patch_branch_ownership():
@@ -89,6 +87,7 @@ def patch_branch_ownership():
 # ==============================================================================
 # Helper Functions (already tested in test_router_branches.py, but we keep for completeness)
 # ==============================================================================
+
 
 def test_validate_uuid():
     valid = str(uuid.uuid4())
@@ -119,6 +118,7 @@ def test_to_response():
 # Branch Endpoints Tests
 # ==============================================================================
 
+
 @pytest.mark.asyncio
 async def test_create_branch_endpoint():
     payload = BranchDbModelCreate(
@@ -130,8 +130,7 @@ async def test_create_branch_endpoint():
     )
     mock_session = AsyncMock()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.create_branch = AsyncMock(return_value=1)
         repo_inst.save_branch_graph = AsyncMock()
@@ -145,9 +144,7 @@ async def test_create_branch_endpoint():
         mock_branch.created_at = datetime.now()
         repo_inst.get_branch = AsyncMock(return_value=mock_branch)
 
-        res = await create_branch(
-            payload=payload, session=mock_session, current_user=make_current_user()
-        )
+        res = await create_branch(payload=payload, session=mock_session, current_user=make_current_user())
         assert res.id == 1
         assert res.name == "New Branch"
         repo_inst.create_branch.assert_awaited_once()
@@ -164,16 +161,13 @@ async def test_create_branch_failed():
     )
     mock_session = AsyncMock()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.create_branch = AsyncMock(return_value=2)
         repo_inst.get_branch = AsyncMock(return_value=None)
 
         with pytest.raises(HTTPException) as exc_info:
-            await create_branch(
-                payload=payload, session=mock_session, current_user=make_current_user()
-            )
+            await create_branch(payload=payload, session=mock_session, current_user=make_current_user())
         assert exc_info.value.status_code == 500
 
 
@@ -198,11 +192,12 @@ async def test_list_and_get_branch_tree():
     mock_b2.fork_ep_num = 3
     mock_b2.created_at = datetime.now()
 
-    with patch("src.backend.routers.branches.UnitOfWork") as MockUoW, \
-         patch("src.backend.routers.branches.verify_book_ownership", new_callable=AsyncMock), \
-         patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch("src.backend.routers.branches.AppContainer.db"):
-
+    with (
+        patch("src.backend.routers.branches.UnitOfWork") as MockUoW,
+        patch("src.backend.routers.branches.verify_book_ownership", new_callable=AsyncMock),
+        patch("src.backend.routers.branches.BranchRepository") as MockRepo,
+        patch("src.backend.routers.branches.AppContainer.db"),
+    ):
         uow_inst = MagicMock()
         uow_inst.__aenter__ = AsyncMock(return_value=uow_inst)
         uow_inst.__aexit__ = AsyncMock(return_value=None)
@@ -239,22 +234,17 @@ async def test_get_branch_diff():
     mock_branch_b = MagicMock()
     mock_branch_b.name = "Branch B"
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockBranchRepo, \
-         patch("src.backend.routers.branches.ChapterRepository") as MockChapterRepo:
-
+    with (
+        patch("src.backend.routers.branches.BranchRepository") as MockBranchRepo,
+        patch("src.backend.routers.branches.ChapterRepository") as MockChapterRepo,
+    ):
         branch_repo_inst = MockBranchRepo.return_value
         chapter_repo_inst = MockChapterRepo.return_value
 
         branch_repo_inst.get_branch = AsyncMock(side_effect=[mock_branch_a, mock_branch_b])
         chapter_repo_inst.get_chapter = AsyncMock(side_effect=[mock_chapter_a, mock_chapter_b])
 
-        res = await get_branch_diff(
-            book_id=1,
-            branchA=1,
-            branchB=2,
-            chapter=1,
-            session=mock_session
-        )
+        res = await get_branch_diff(book_id=1, branchA=1, branchB=2, chapter=1, session=mock_session)
 
         assert res["chapter_number"] == 1
         assert res["branch_a_name"] == "Branch A"
@@ -273,11 +263,7 @@ async def test_get_branch_graph():
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
 
-        res = await get_branch_graph(
-            book_id=1,
-            branch_id=1,
-            session=mock_session
-        )
+        res = await get_branch_graph(book_id=1, branch_id=1, session=mock_session)
 
         assert res.branch_id == 1
         assert res.graph == mock_graph
@@ -292,11 +278,7 @@ async def test_get_branch_graph_not_found():
         repo_inst.load_branch_graph = AsyncMock(return_value=None)
 
         with pytest.raises(HTTPException) as exc_info:
-            await get_branch_graph(
-                book_id=1,
-                branch_id=1,
-                session=mock_session
-            )
+            await get_branch_graph(book_id=1, branch_id=1, session=mock_session)
         assert exc_info.value.status_code == 404
 
 
@@ -322,11 +304,7 @@ async def test_fork_branch():
         mock_branch.created_at = datetime.now()
         repo_inst.get_branch = AsyncMock(return_value=mock_branch)
 
-        res = await fork_branch(
-            book_id=1,
-            payload=payload,
-            session=mock_session
-        )
+        res = await fork_branch(book_id=1, payload=payload, session=mock_session)
 
         assert res.id == 2
         assert res.name == "Forked Branch"
@@ -356,11 +334,7 @@ async def test_merge_branches():
         mock_branch.created_at = datetime.now()
         repo_inst.get_branch = AsyncMock(return_value=mock_branch)
 
-        res = await merge_branches(
-            book_id=1,
-            payload=payload,
-            session=mock_session
-        )
+        res = await merge_branches(book_id=1, payload=payload, session=mock_session)
 
         assert res.id == 10
         assert res.name == "Target Branch"
@@ -388,20 +362,17 @@ async def test_preview_merge_no_conflict():
     mock_target_chapter = MagicMock()
     mock_target_chapter.content = "Same content"
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockBranchRepo, \
-         patch("src.backend.routers.branches.ChapterRepository") as MockChapterRepo:
-
+    with (
+        patch("src.backend.routers.branches.BranchRepository") as MockBranchRepo,
+        patch("src.backend.routers.branches.ChapterRepository") as MockChapterRepo,
+    ):
         branch_repo_inst = MockBranchRepo.return_value
         chapter_repo_inst = MockChapterRepo.return_value
 
         branch_repo_inst.get_branch = AsyncMock(side_effect=[mock_source_branch, mock_target_branch])
         chapter_repo_inst.get_chapter = AsyncMock(side_effect=[mock_source_chapter, mock_target_chapter])
 
-        res = await preview_merge(
-            book_id=1,
-            payload=payload,
-            session=mock_session
-        )
+        res = await preview_merge(book_id=1, payload=payload, session=mock_session)
 
         assert res["can_merge"] is True
         assert res["has_conflict"] is False
@@ -428,20 +399,17 @@ async def test_preview_merge_with_conflict():
     mock_target_chapter = MagicMock()
     mock_target_chapter.content = "Target content"
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockBranchRepo, \
-         patch("src.backend.routers.branches.ChapterRepository") as MockChapterRepo:
-
+    with (
+        patch("src.backend.routers.branches.BranchRepository") as MockBranchRepo,
+        patch("src.backend.routers.branches.ChapterRepository") as MockChapterRepo,
+    ):
         branch_repo_inst = MockBranchRepo.return_value
         chapter_repo_inst = MockChapterRepo.return_value
 
         branch_repo_inst.get_branch = AsyncMock(side_effect=[mock_source_branch, mock_target_branch])
         chapter_repo_inst.get_chapter = AsyncMock(side_effect=[mock_source_chapter, mock_target_chapter])
 
-        res = await preview_merge(
-            book_id=1,
-            payload=payload,
-            session=mock_session
-        )
+        res = await preview_merge(book_id=1, payload=payload, session=mock_session)
 
         assert res["can_merge"] is False
         assert res["has_conflict"] is True
@@ -463,12 +431,7 @@ async def test_save_branch_graph():
         mock_branch.book_id = 1
         repo_inst.get_branch = AsyncMock(return_value=mock_branch)
 
-        res = await save_branch_graph(
-            book_id=1,
-            branch_id=1,
-            graph=graph_data,
-            session=mock_session
-        )
+        res = await save_branch_graph(book_id=1, branch_id=1, graph=graph_data, session=mock_session)
 
         assert res.branch_id == 1
         assert res.graph == graph_data
@@ -485,12 +448,7 @@ async def test_save_branch_graph_not_found():
         repo_inst.get_branch = AsyncMock(return_value=None)
 
         with pytest.raises(HTTPException) as exc_info:
-            await save_branch_graph(
-                book_id=1,
-                branch_id=1,
-                graph=graph_data,
-                session=mock_session
-            )
+            await save_branch_graph(book_id=1, branch_id=1, graph=graph_data, session=mock_session)
         assert exc_info.value.status_code == 404
 
 
@@ -506,8 +464,7 @@ async def test_start_play_session():
     mock_branch.book_id = 1
     mock_graph = {"entry_node_id": "node1"}
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_branch = AsyncMock(return_value=mock_branch)
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
@@ -540,8 +497,7 @@ async def test_get_play_state():
     mock_sess.updated_at = datetime.now()
     mock_graph = {"nodes": {"node1": {"choices": []}}}
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
@@ -565,10 +521,7 @@ async def test_get_play_state_invalid_uuid():
     mock_session = AsyncMock()
 
     with pytest.raises(HTTPException) as exc_info:
-        await get_play_state(
-            session_id="invalid-uuid",
-            session=mock_session
-        )
+        await get_play_state(session_id="invalid-uuid", session=mock_session)
     assert exc_info.value.status_code == 400
 
 
@@ -589,15 +542,7 @@ async def test_play_choose():
     mock_sess.context_json = {}
     mock_sess.save_points_json = []
     mock_sess.status = "active"
-    mock_graph = {
-        "nodes": {
-            "node1": {
-                "choices": [
-                    {"id": "choice-a", "target_node_id": "node2", "effects": {}}
-                ]
-            }
-        }
-    }
+    mock_graph = {"nodes": {"node1": {"choices": [{"id": "choice-a", "target_node_id": "node2", "effects": {}}]}}}
     mock_updated_sess = MagicMock()
     mock_updated_sess.id = session_id
     mock_updated_sess.book_id = 1
@@ -608,8 +553,7 @@ async def test_play_choose():
     mock_updated_sess.status = "active"
     mock_updated_sess.updated_at = datetime.now()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
@@ -643,18 +587,9 @@ async def test_play_choose_invalid_choice():
     mock_sess.context_json = {}
     mock_sess.save_points_json = []
     mock_sess.status = "active"
-    mock_graph = {
-        "nodes": {
-            "node1": {
-                "choices": [
-                    {"id": "choice-a", "target_node_id": "node2", "effects": {}}
-                ]
-            }
-        }
-    }
+    mock_graph = {"nodes": {"node1": {"choices": [{"id": "choice-a", "target_node_id": "node2", "effects": {}}]}}}
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
@@ -687,12 +622,13 @@ async def test_play_save():
     mock_updated_sess.branch_id = 10
     mock_updated_sess.current_node_id = "node1"
     mock_updated_sess.context_json = {"key": "value"}
-    mock_updated_sess.save_points_json = [{"node_id": "node1", "context": {"key": "value"}, "saved_at": datetime.now().isoformat()}]
+    mock_updated_sess.save_points_json = [
+        {"node_id": "node1", "context": {"key": "value"}, "saved_at": datetime.now().isoformat()}
+    ]
     mock_updated_sess.status = "active"
     mock_updated_sess.updated_at = datetime.now()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
         repo_inst.update_play_session_state = AsyncMock()
@@ -707,7 +643,7 @@ async def test_play_save():
                 available_choices=[],
                 save_points_count=1,
                 status="active",
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             )
 
             res = await play_save(
@@ -731,7 +667,7 @@ async def test_play_load():
     mock_sess.context_json = {"key": "value"}
     mock_sess.save_points_json = [
         {"node_id": "node1", "context": {"key": "value"}, "saved_at": datetime.now().isoformat()},
-        {"node_id": "node2", "context": {"other": "data"}, "saved_at": datetime.now().isoformat()}
+        {"node_id": "node2", "context": {"other": "data"}, "saved_at": datetime.now().isoformat()},
     ]
     mock_updated_sess = MagicMock()
     mock_updated_sess.id = session_id
@@ -741,13 +677,12 @@ async def test_play_load():
     mock_updated_sess.context_json = {"other": "data"}
     mock_updated_sess.save_points_json = [
         {"node_id": "node1", "context": {"key": "value"}, "saved_at": datetime.now().isoformat()},
-        {"node_id": "node2", "context": {"other": "data"}, "saved_at": datetime.now().isoformat()}
+        {"node_id": "node2", "context": {"other": "data"}, "saved_at": datetime.now().isoformat()},
     ]
     mock_updated_sess.status = "active"
     mock_updated_sess.updated_at = datetime.now()
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
         repo_inst.update_play_session_state = AsyncMock()
@@ -762,7 +697,7 @@ async def test_play_load():
                 available_choices=[],
                 save_points_count=2,
                 status="active",
-                updated_at=datetime.now()
+                updated_at=datetime.now(),
             )
 
             res = await play_load(
@@ -786,11 +721,12 @@ async def test_play_load_invalid_index():
     mock_sess.branch_id = 10
     mock_sess.current_node_id = "node1"
     mock_sess.context_json = {"key": "value"}
-    mock_sess.save_points_json = [{"node_id": "node1", "context": {"key": "value"}, "saved_at": datetime.now().isoformat()}]
+    mock_sess.save_points_json = [
+        {"node_id": "node1", "context": {"key": "value"}, "saved_at": datetime.now().isoformat()}
+    ]
     mock_sess.status = "active"
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
 
@@ -816,8 +752,7 @@ async def test_play_end():
     mock_sess.current_node_id = "node1"
     mock_sess.status = "active"
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.end_play_session = AsyncMock()
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
@@ -845,11 +780,10 @@ async def test_get_playthrough():
         "history": [{"from": "node1", "choice_id": "choice-a", "to": "node2"}],
         "flags": {"flag1": True},
         "variables": {"var1": "value"},
-        "ending": "good_ending"
+        "ending": "good_ending",
     }
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_book_ownership(1):
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_book_ownership(1):
         repo_inst = MockRepo.return_value
         repo_inst.get_play_session = AsyncMock(return_value=mock_sess)
 
@@ -871,24 +805,13 @@ async def test_get_playthrough():
 @pytest.mark.asyncio
 async def test_list_branch_nodes():
     mock_session = AsyncMock()
-    mock_graph = {
-        "entry_node_id": "node1",
-        "nodes": {
-            "node1": {"id": "node1"},
-            "node2": {"id": "node2"}
-        }
-    }
+    mock_graph = {"entry_node_id": "node1", "nodes": {"node1": {"id": "node1"}, "node2": {"id": "node2"}}}
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_branch_ownership():
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_branch_ownership():
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
 
-        res = await list_branch_nodes(
-            book_id=1,
-            branch_id=1,
-            session=mock_session
-        )
+        res = await list_branch_nodes(book_id=1, branch_id=1, session=mock_session)
 
         assert res["branch_id"] == 1
         assert res["entry_node_id"] == "node1"
@@ -901,34 +824,18 @@ async def test_list_branch_nodes():
 async def test_create_branch_node():
     mock_session = AsyncMock()
     node_data = {"id": "node3", "content": "New node"}
-    mock_graph = {
-        "nodes": {
-            "node1": {"id": "node1"},
-            "node2": {"id": "node2"}
-        },
-        "entry_node_id": "node1"
-    }
+    mock_graph = {"nodes": {"node1": {"id": "node1"}, "node2": {"id": "node2"}}, "entry_node_id": "node1"}
     mock_updated_graph = {
-        "nodes": {
-            "node1": {"id": "node1"},
-            "node2": {"id": "node2"},
-            "node3": {"id": "node3", "content": "New node"}
-        },
-        "entry_node_id": "node1"
+        "nodes": {"node1": {"id": "node1"}, "node2": {"id": "node2"}, "node3": {"id": "node3", "content": "New node"}},
+        "entry_node_id": "node1",
     }
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_branch_ownership():
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_branch_ownership():
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
         repo_inst.save_branch_graph = AsyncMock()
 
-        res = await create_branch_node(
-            book_id=1,
-            branch_id=1,
-            node=node_data,
-            session=mock_session
-        )
+        res = await create_branch_node(book_id=1, branch_id=1, node=node_data, session=mock_session)
 
         assert res["branch_id"] == 1
         assert res["node"] == node_data
@@ -940,31 +847,17 @@ async def test_delete_branch_node():
     mock_session = AsyncMock()
     node_id = "node2"
     mock_graph = {
-        "nodes": {
-            "node1": {"id": "node1", "choices": []},
-            "node2": {"id": "node2", "choices": []}
-        },
-        "entry_node_id": "node1"
+        "nodes": {"node1": {"id": "node1", "choices": []}, "node2": {"id": "node2", "choices": []}},
+        "entry_node_id": "node1",
     }
-    mock_updated_graph = {
-        "nodes": {
-            "node1": {"id": "node1", "choices": []}
-        },
-        "entry_node_id": "node1"
-    }
+    mock_updated_graph = {"nodes": {"node1": {"id": "node1", "choices": []}}, "entry_node_id": "node1"}
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_branch_ownership():
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_branch_ownership():
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
         repo_inst.save_branch_graph = AsyncMock()
 
-        res = await delete_branch_node(
-            book_id=1,
-            branch_id=1,
-            node_id=node_id,
-            session=mock_session
-        )
+        res = await delete_branch_node(book_id=1, branch_id=1, node_id=node_id, session=mock_session)
 
         assert res["branch_id"] == 1
         assert res["deleted"] == node_id
@@ -978,23 +871,17 @@ async def test_delete_branch_node_referenced():
     mock_graph = {
         "nodes": {
             "node1": {"id": "node1", "choices": [{"target_node_id": "node2"}]},
-            "node2": {"id": "node2", "choices": []}
+            "node2": {"id": "node2", "choices": []},
         },
-        "entry_node_id": "node1"
+        "entry_node_id": "node1",
     }
 
-    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, \
-         patch_branch_ownership():
+    with patch("src.backend.routers.branches.BranchRepository") as MockRepo, patch_branch_ownership():
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
 
         with pytest.raises(HTTPException) as exc_info:
-            await delete_branch_node(
-                book_id=1,
-                branch_id=1,
-                node_id=node_id,
-                session=mock_session
-            )
+            await delete_branch_node(book_id=1, branch_id=1, node_id=node_id, session=mock_session)
         assert exc_info.value.status_code == 422
         assert "referenced by" in exc_info.value.detail
 
@@ -1006,19 +893,15 @@ async def test_validate_branch_graph():
         "entry_node_id": "node1",
         "nodes": {
             "node1": {"id": "node1", "choices": [{"target_node_id": "node2"}]},
-            "node2": {"id": "node2", "choices": []}
-        }
+            "node2": {"id": "node2", "choices": []},
+        },
     }
 
     with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
 
-        res = await validate_branch_graph(
-            book_id=1,
-            branch_id=1,
-            session=mock_session
-        )
+        res = await validate_branch_graph(book_id=1, branch_id=1, session=mock_session)
 
         assert res["branch_id"] == 1
         assert res["valid"] is True
@@ -1030,20 +913,14 @@ async def test_validate_branch_graph_invalid_entry():
     mock_session = AsyncMock()
     mock_graph = {
         "entry_node_id": "",  # empty entry node
-        "nodes": {
-            "node1": {"id": "node1", "choices": []}
-        }
+        "nodes": {"node1": {"id": "node1", "choices": []}},
     }
 
     with patch("src.backend.routers.branches.BranchRepository") as MockRepo:
         repo_inst = MockRepo.return_value
         repo_inst.load_branch_graph = AsyncMock(return_value=mock_graph)
 
-        res = await validate_branch_graph(
-            book_id=1,
-            branch_id=1,
-            session=mock_session
-        )
+        res = await validate_branch_graph(book_id=1, branch_id=1, session=mock_session)
 
         assert res["branch_id"] == 1
         assert res["valid"] is False

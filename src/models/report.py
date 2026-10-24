@@ -27,15 +27,11 @@ class QualityMetricsReport(BaseModel):
     """品質メトリクスレポート"""
 
     coherence_score: float = Field(default=0.0, ge=0.0, le=1.0, description="物語整合性スコア")
-    character_consistency: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="キャラクター一貫性"
-    )
+    character_consistency: float = Field(default=0.0, ge=0.0, le=1.0, description="キャラクター一貫性")
     pacing_score: float = Field(default=0.0, ge=0.0, le=1.0, description="ペーシングスコア")
     hook_retention: float = Field(default=0.0, ge=0.0, le=1.0, description="フック保持率")
     emotional_resonance: float = Field(default=0.0, ge=0.0, le=1.0, description="感情共鳴度")
-    commercial_viability: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="商業的ポテンシャル"
-    )
+    commercial_viability: float = Field(default=0.0, ge=0.0, le=1.0, description="商業的ポテンシャル")
 
 
 class EpisodeSummary(BaseModel):
@@ -56,9 +52,7 @@ class ProductionReport(BaseModel):
     target_word_count: int = Field(default=3000, description="目標文字数/話")
     token_usage: TokenUsageReport | None = Field(default=None, description="トークン使用量")
     quality_metrics: QualityMetricsReport | None = Field(default=None, description="品質メトリクス")
-    episode_summaries: list[EpisodeSummary] = Field(
-        default_factory=list, description="エピソード一覧"
-    )
+    episode_summaries: list[EpisodeSummary] = Field(default_factory=list, description="エピソード一覧")
     total_generation_time: float = Field(default=0.0, description="総生成時間（秒）")
     created_at: datetime = Field(default_factory=datetime.now, description="作成日時")
 

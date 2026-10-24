@@ -172,7 +172,7 @@ class LongFormContextRetriever:
                     entities.append(entity)
 
         # 回収目標が近い順でソート
-        entities.sort(key=lambda e: e.target_resolution_ep or float('inf'))
+        entities.sort(key=lambda e: e.target_resolution_ep or float("inf"))
         return entities
 
     def search_relevant_context(
@@ -193,11 +193,13 @@ class LongFormContextRetriever:
         relevant = []
         for i, metadata in enumerate(results.get("metadatas", [[]])[0]):
             distance = results.get("distances", [[]])[0][i] if results.get("distances") else 0
-            relevant.append({
-                "entity": ForeshadowingEntity.from_dict(metadata),
-                "similarity": 1.0 - distance,
-                "metadata": metadata,
-            })
+            relevant.append(
+                {
+                    "entity": ForeshadowingEntity.from_dict(metadata),
+                    "similarity": 1.0 - distance,
+                    "metadata": metadata,
+                }
+            )
 
         return relevant
 

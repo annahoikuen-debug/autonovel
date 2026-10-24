@@ -14,10 +14,23 @@ def build_sample_novel_dag() -> DAGGraph:
     g = DAGGraph(dag_id="novel_workflow")
 
     g.add_node(DAGTaskNode(task_id="plot_gen", func_name="generate_plot", status="completed"))
-    g.add_node(DAGTaskNode(task_id="draft_gen", func_name="generate_draft", dependencies=["plot_gen"], status="completed"))
+    g.add_node(
+        DAGTaskNode(task_id="draft_gen", func_name="generate_draft", dependencies=["plot_gen"], status="completed")
+    )
     g.add_node(DAGTaskNode(task_id="audit_eval", func_name="run_audit", dependencies=["draft_gen"], status="completed"))
-    g.add_node(DAGTaskNode(task_id="illustration_gen", func_name="generate_image", dependencies=["draft_gen"], status="running"))
-    g.add_node(DAGTaskNode(task_id="epub_export", func_name="export_epub", dependencies=["audit_eval", "illustration_gen"], status="pending"))
+    g.add_node(
+        DAGTaskNode(
+            task_id="illustration_gen", func_name="generate_image", dependencies=["draft_gen"], status="running"
+        )
+    )
+    g.add_node(
+        DAGTaskNode(
+            task_id="epub_export",
+            func_name="export_epub",
+            dependencies=["audit_eval", "illustration_gen"],
+            status="pending",
+        )
+    )
 
     return g
 

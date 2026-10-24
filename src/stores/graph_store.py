@@ -3,6 +3,7 @@
 キャラクター間の感情エッジをグラフデータベース (Kuzu) に永続化する。
 Kuzu が利用不可能な環境向けにインメモリ実装も提供する。
 """
+
 from __future__ import annotations
 
 import abc
@@ -87,17 +88,19 @@ class InMemoryGraphStore(GraphStore):
                 if t in visited:
                     continue
                 latest = dict(history[-1])
-                new_path = path + [{
-                    "from": s,
-                    "to": t,
-                    "cause": latest.get("cause", ""),
-                    "episode": latest.get("episode"),
-                    "emotions": {
-                        k: latest.get(k)
-                        for k in ("affection", "tension", "fear", "trust", "intimacy")
-                        if k in latest
-                    },
-                }]
+                new_path = path + [
+                    {
+                        "from": s,
+                        "to": t,
+                        "cause": latest.get("cause", ""),
+                        "episode": latest.get("episode"),
+                        "emotions": {
+                            k: latest.get(k)
+                            for k in ("affection", "tension", "fear", "trust", "intimacy")
+                            if k in latest
+                        },
+                    }
+                ]
                 if t == target:
                     return new_path
                 visited.add(t)
@@ -235,12 +238,14 @@ class KuzuGraphStore(GraphStore):
         prev = str(source)
         for i, cause in enumerate(causes or []):
             node = str(target) if i == len(causes) - 1 else ""
-            path.append({
-                "from": prev,
-                "to": node,
-                "cause": cause,
-                "episode": episodes[i] if i < len(episodes) else None,
-            })
+            path.append(
+                {
+                    "from": prev,
+                    "to": node,
+                    "cause": cause,
+                    "episode": episodes[i] if i < len(episodes) else None,
+                }
+            )
         return path
 
     def delete_edge(self, source: str, target: str, beat_id: str = None) -> bool:

@@ -1,4 +1,5 @@
 """Unit tests for sensory expansion grammar preservation and syntax safety (Part 3, Step 34)."""
+
 import pytest
 from src.agents.enrichment.sensory import (
     extract_sentence_span,
@@ -58,11 +59,7 @@ def test_detect_trailing_conjunction_patterns(conjunction, sample_text):
 
 def test_dialogue_protection_comprehensive():
     """かぎ括弧（「」および『』）内の感情表現が確実に保護されること"""
-    text = (
-        "「俺は悔しいんだ！」と叫んだ。\n"
-        "『悲しい運命』という本を読んでいた。\n"
-        "しかし彼の心には本当の怒りがあった。"
-    )
+    text = "「俺は悔しいんだ！」と叫んだ。\n『悲しい運命』という本を読んでいた。\nしかし彼の心には本当の怒りがあった。"
     # 地の文の「怒り」だけが検出され、セリフやタイトル内の「悔しい」「悲しい」はスキップ
     spans = detect_abstract_emotions(text, skip_dialogue=True)
     assert len(spans) == 1

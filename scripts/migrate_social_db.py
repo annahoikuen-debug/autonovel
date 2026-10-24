@@ -1,4 +1,5 @@
 """Database Migration and Verification Script for Social Dynamics and DAG State (Steps 61-62)."""
+
 from __future__ import annotations
 
 import argparse

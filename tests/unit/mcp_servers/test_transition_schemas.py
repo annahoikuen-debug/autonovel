@@ -1,4 +1,5 @@
 """Unit tests for scene transition schemas."""
+
 from __future__ import annotations
 
 from src.mcp_servers.transition_schemas import (
@@ -9,12 +10,7 @@ from src.mcp_servers.transition_schemas import (
 
 
 def test_transition_schemas_instantiation():
-    state = SceneState(
-        character_name="Alice",
-        location="Forest",
-        inventory=["Sword"],
-        status="normal"
-    )
+    state = SceneState(character_name="Alice", location="Forest", inventory=["Sword"], status="normal")
     assert state.character_name == "Alice"
     assert "Sword" in state.inventory
 

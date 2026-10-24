@@ -135,11 +135,7 @@ class SkillAgent(BaseAgent):
                 module = importlib.import_module(module_name)
                 for attr_name in dir(module):
                     attr = getattr(module, attr_name)
-                    if (
-                        isinstance(attr, type)
-                        and issubclass(attr, SkillAgent)
-                        and attr is not SkillAgent
-                    ):
+                    if isinstance(attr, type) and issubclass(attr, SkillAgent) and attr is not SkillAgent:
                         skills.append(attr)
         cls._skill_cache[package_path] = skills
         return skills
@@ -148,6 +144,7 @@ class SkillAgent(BaseAgent):
     def load_manifest(manifest_path: str) -> List[dict]:
         """マニフェストYAMLファイルを読み込んでパースし、辞書リストを返す（互換性用）"""
         import yaml
+
         try:
             with open(manifest_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
@@ -160,6 +157,7 @@ class SkillAgent(BaseAgent):
 
 class SkillManifestItem(BaseModel):
     """マニフェスト内の個別スキル定義モデル"""
+
     name: str
     skill_class: str = Field(alias="class")
     depends_on: List[str] = Field(default_factory=list)
@@ -175,12 +173,14 @@ class SkillManifestItem(BaseModel):
 
 class SkillManifest(BaseModel):
     """スキルマニフェスト全体モデル"""
+
     skills: List[SkillManifestItem]
 
 
 def validate_manifest(data: dict | str) -> SkillManifest:
     """YAMLファイルパスまたは辞書からマニフェストをバリデーションする"""
     import yaml
+
     if isinstance(data, str):
         with open(data, "r", encoding="utf-8") as f:
             raw_data = yaml.safe_load(f)
@@ -241,11 +241,14 @@ def load_skill_from_spec(spec: SkillManifestItem | dict, **dependencies: Any) ->
             try:
                 import os
                 from src.services.image_service import ImageService
+
                 api_key = os.getenv("GOOGLE_GENAI_API_KEY") or os.getenv("GEMINI_API_KEY") or "dummy-key"
                 img_svc = ImageService(api_key=api_key)
             except Exception:
+
                 class _DummyImageService:
                     pass
+
                 img_svc = _DummyImageService()
         kwargs["image_service"] = img_svc
 
@@ -261,4 +264,4 @@ def load_skill_from_spec(spec: SkillManifestItem | dict, **dependencies: Any) ->
     instance._manifest_config = item.config
     instance._skill_name = item.name
     instance.enabled = item.config.get("enabled", True)
-    return instance
+    return instance

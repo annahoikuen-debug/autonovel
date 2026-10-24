@@ -98,6 +98,7 @@ async def test_pillar1_full_pipeline_e2e(long_novel_draft):
     ]
 
     from src.config.audit_weights import load_weights
+
     weights = load_weights()
     aggregator = AuditAggregator(specialists=specialists, weights=weights)
     audit_input = {
@@ -160,12 +161,12 @@ async def test_pillar1_full_pipeline_e2e(long_novel_draft):
         "target_word_count": 3000,
     }
 
-    final_writing_prompt = await composer.compose_writing_prompt(
-        book_id=1, ep_num=1, context=writing_context
-    )
+    final_writing_prompt = await composer.compose_writing_prompt(book_id=1, ep_num=1, context=writing_context)
 
     # --- Quality Assertion 3: Directive prepended (PLAN 03 により raw_emotion_instruction が
     # さらに前置されるため「先頭」ではなく「含まれる」ことを検証する) ---
     assert "【最優先・再生成修正ディレクティブ】" in final_writing_prompt
-    assert final_writing_prompt.index("【最優先・再生成修正ディレクティブ】") < final_writing_prompt.index("[ベース執筆プロンプト]")
+    assert final_writing_prompt.index("【最優先・再生成修正ディレクティブ】") < final_writing_prompt.index(
+        "[ベース執筆プロンプト]"
+    )
     assert "[ベース執筆プロンプト]" in final_writing_prompt

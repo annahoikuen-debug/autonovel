@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 from src.backend.engine_context import ContextManager
 from src.agents.context_builder_agent import ContextBuilderAgent
 
+
 def test_context_manager_deprecation():
     """Step 69: ContextManagerが非推奨警告を出すか検証"""
     with warnings.catch_warnings(record=True) as w:
@@ -14,6 +15,7 @@ def test_context_manager_deprecation():
         assert len(w) > 0
         assert any(issubclass(warning.category, DeprecationWarning) for warning in w)
         assert "ContextManager is deprecated" in str(w[-1].message)
+
 
 def test_context_manager_delegation():
     """Step 69: ContextManagerがContextBuilderAgentに委譲するか検証"""

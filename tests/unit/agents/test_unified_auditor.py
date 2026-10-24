@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock
 from src.agents.specialists.unified_auditor import UnifiedAuditor
 
+
 @pytest.mark.asyncio
 async def test_unified_auditor_fallback():
     auditor = UnifiedAuditor(llm_gateway=None)
@@ -9,6 +10,7 @@ async def test_unified_auditor_fallback():
     assert report.final_score > 0.0
     assert isinstance(report.is_acceptable, bool)
     assert report.qualitative.critique != ""
+
 
 @pytest.mark.asyncio
 async def test_unified_auditor_with_mock_llm():
@@ -22,6 +24,7 @@ async def test_unified_auditor_with_mock_llm():
     assert report.qualitative.hook_score == 85.0
     assert report.qualitative.character_consistency == 90.0
     assert report.is_acceptable is True
+
 
 @pytest.mark.asyncio
 async def test_unified_auditor_character_plot_context():
@@ -43,6 +46,7 @@ async def test_unified_auditor_character_plot_context():
     assert "おしとやかな令嬢" in called_prompt
     assert "Shocking Truth" in called_prompt
 
+
 @pytest.mark.asyncio
 async def test_unified_auditor_conflicts_generation():
     auditor = UnifiedAuditor(llm_gateway=None)
@@ -53,6 +57,7 @@ async def test_unified_auditor_conflicts_generation():
     # dialogue_ratio が低いため dialogue カテゴリの指摘が含まれるか確認
     dialogue_conflicts = [c for c in report.conflicts if c.category == "dialogue"]
     assert len(dialogue_conflicts) > 0
+
 
 @pytest.mark.asyncio
 async def test_unified_auditor_actionable_patch_conflict():
@@ -68,4 +73,3 @@ async def test_unified_auditor_actionable_patch_conflict():
     patch_conflicts = [c for c in report.conflicts if c.suggested_value == "「待て！」背後から鋭い叫び声が響いた。"]
     assert len(patch_conflicts) == 1
     assert patch_conflicts[0].category == "hook"
-

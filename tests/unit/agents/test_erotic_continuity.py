@@ -1,5 +1,6 @@
 from src.agents.erotic.continuity import EroticContinuityTracker
 
+
 def test_continuity_state_transition():
     tracker = EroticContinuityTracker()
     tracker.update_character_state("ヒロイン", {"clothing": "水着", "pose": "仰向け"})

@@ -118,7 +118,7 @@ def test_normalization_flow_normalize_metadata_full():
 
 
 def test_output_sanitizer_parse_llm_json():
-    raw_with_garbage = "思考過程: 以下の通り出力します。\n{\"result\": true, \"count\": 10}\n以上です。"
+    raw_with_garbage = '思考過程: 以下の通り出力します。\n{"result": true, "count": 10}\n以上です。'
     parsed = OutputSanitizer.parse_llm_json(raw_with_garbage)
     assert parsed.get("result") is True
     assert parsed.get("count") == 10
@@ -129,7 +129,7 @@ def test_output_sanitizer_parse_llm_json():
 
 
 def test_output_sanitizer_extract_content_and_metadata():
-    text = f"{CONTENT_SEPARATOR}\n本文第一段落\n\n本文第二段落\n{CONTENT_SEPARATOR}\n{{\"title\": \"エピソード1\"}}"
+    text = f'{CONTENT_SEPARATOR}\n本文第一段落\n\n本文第二段落\n{CONTENT_SEPARATOR}\n{{"title": "エピソード1"}}'
     metadata, content = OutputSanitizer.extract_content_and_metadata(text)
     assert "本文第一段落" in content
     assert metadata.get("title") == "エピソード1"

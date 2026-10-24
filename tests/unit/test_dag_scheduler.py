@@ -1,4 +1,5 @@
 """Unit and Integration Tests for DAG Scheduler (Step 44)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -54,17 +55,21 @@ async def test_scheduler_affinity_binding():
     scheduler.register_task("dummy", dummy_task)
 
     g = DAGGraph(dag_id="affinity_test")
-    g.add_node(DAGTaskNode(
-        task_id="ep1_write",
-        func_name="dummy",
-        kwargs={"book_id": 1, "ep_num": 1},
-    ))
-    g.add_node(DAGTaskNode(
-        task_id="ep1_audit",
-        func_name="dummy",
-        kwargs={"book_id": 1, "ep_num": 1},
-        dependencies=["ep1_write"],
-    ))
+    g.add_node(
+        DAGTaskNode(
+            task_id="ep1_write",
+            func_name="dummy",
+            kwargs={"book_id": 1, "ep_num": 1},
+        )
+    )
+    g.add_node(
+        DAGTaskNode(
+            task_id="ep1_audit",
+            func_name="dummy",
+            kwargs={"book_id": 1, "ep_num": 1},
+            dependencies=["ep1_write"],
+        )
+    )
 
     await scheduler.run_dag(g)
 
@@ -90,11 +95,13 @@ async def test_scheduler_retry_mechanism():
     scheduler.register_task("flaky", flaky_task)
 
     g = DAGGraph(dag_id="retry_test")
-    g.add_node(DAGTaskNode(
-        task_id="flaky_task",
-        func_name="flaky",
-        retry_limit=3,
-    ))
+    g.add_node(
+        DAGTaskNode(
+            task_id="flaky_task",
+            func_name="flaky",
+            retry_limit=3,
+        )
+    )
 
     await scheduler.run_dag(g)
 
@@ -139,6 +146,7 @@ async def test_build_novel_generation_dag_pipeline():
     def make_handler(name: str):
         def handler(**kwargs):
             return f"{name}_done"
+
         return handler
 
     for fname in [

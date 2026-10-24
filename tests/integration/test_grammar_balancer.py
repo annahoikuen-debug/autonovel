@@ -22,9 +22,7 @@ def test_incremental_parser():
 def test_grammar_balancer_end_to_end():
     balancer = GrammarNarrativeBalancer()
     # Stagnant 20-episode story with sagging mid-arc
-    beats = [
-        Beat(episode=i, tension=3.0, beat_type=BeatType.DAILY) for i in range(1, 21)
-    ]
+    beats = [Beat(episode=i, tension=3.0, beat_type=BeatType.DAILY) for i in range(1, 21)]
     # Set final climax
     beats[19] = Beat(episode=20, tension=9.0, beat_type=BeatType.CLIMAX)
 

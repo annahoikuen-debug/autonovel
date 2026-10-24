@@ -15,9 +15,7 @@ async def test_unit_of_work_commit():
     # テーブル初期化
     async with db.get_session() as session:
         async with session.begin():
-            await session.execute(
-                text("CREATE TABLE IF NOT EXISTS uow_test (id INTEGER PRIMARY KEY, val TEXT)")
-            )
+            await session.execute(text("CREATE TABLE IF NOT EXISTS uow_test (id INTEGER PRIMARY KEY, val TEXT)"))
             await session.execute(text("DELETE FROM uow_test"))
             await session.execute(
                 text("""
@@ -66,9 +64,7 @@ async def test_unit_of_work_rollback():
 
     async with db.get_session() as session:
         async with session.begin():
-            await session.execute(
-                text("CREATE TABLE IF NOT EXISTS uow_test (id INTEGER PRIMARY KEY, val TEXT)")
-            )
+            await session.execute(text("CREATE TABLE IF NOT EXISTS uow_test (id INTEGER PRIMARY KEY, val TEXT)"))
             await session.execute(text("DELETE FROM uow_test"))
             await session.execute(text("DELETE FROM outbox"))
 
@@ -76,9 +72,7 @@ async def test_unit_of_work_rollback():
     try:
         async with UnitOfWork(db) as uow:
             conn = await uow.session.connection()
-            await conn.exec_driver_sql(
-                "INSERT INTO uow_test (id, val) VALUES (?, ?)", (2, "failed")
-            )
+            await conn.exec_driver_sql("INSERT INTO uow_test (id, val) VALUES (?, ?)", (2, "failed"))
             uow.stage_chroma_add("test_col", "doc_failed", "failed content", [0.1])
             raise ValueError("Forced error to trigger rollback")
     except ValueError:

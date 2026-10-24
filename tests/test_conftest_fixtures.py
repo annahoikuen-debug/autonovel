@@ -3,10 +3,10 @@ tests/conftest.py の共有フィクスチャ整合性検証テスト (Step 3)
 """
 
 
-
 def test_conftest_environment_setup():
     """conftestによってテスト環境変数が正しく初期化されていること"""
     import os
+
     assert os.environ.get("APP_ENV") == "testing"
     assert os.environ.get("AUTONOVEL_RAG_MODE") == "memory"
     assert os.environ.get("AUTH_DISABLED") == "true"
@@ -18,5 +18,6 @@ def test_conftest_mock_llm_adapter_fixture(mock_llm_adapter, llm_mocker):
     assert llm_mocker is not None
     # get_llm_adapter がモックを返すこと
     from src.services.llm.factory import get_llm_adapter
+
     adapter = get_llm_adapter("test-model")
     assert adapter is mock_llm_adapter

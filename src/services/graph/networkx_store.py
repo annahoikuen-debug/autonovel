@@ -105,12 +105,14 @@ class NetworkXGraphStore(GraphKnowledgeStore):
         nodes = []
         for node_id in subgraph.nodes():
             data = self._graph.nodes[node_id]
-            nodes.append(GraphNode(
-                id=node_id,
-                label=data.get("label", "Entity"),
-                name=data.get("name", node_id),
-                properties={k: v for k, v in data.items() if k not in ("label", "name")},
-            ))
+            nodes.append(
+                GraphNode(
+                    id=node_id,
+                    label=data.get("label", "Entity"),
+                    name=data.get("name", node_id),
+                    properties={k: v for k, v in data.items() if k not in ("label", "name")},
+                )
+            )
 
         edges = []
         for u, v, k, data in subgraph.edges(keys=True, data=True):
@@ -118,12 +120,14 @@ class NetworkXGraphStore(GraphKnowledgeStore):
                 continue
             if len(edges) >= limit:
                 break
-            edges.append(GraphEdge(
-                source=u,
-                target=v,
-                relation_type=data.get("relation_type", "RELATED_TO"),
-                properties={k: v for k, v in data.items() if k != "relation_type"},
-            ))
+            edges.append(
+                GraphEdge(
+                    source=u,
+                    target=v,
+                    relation_type=data.get("relation_type", "RELATED_TO"),
+                    properties={k: v for k, v in data.items() if k != "relation_type"},
+                )
+            )
 
         return NeighborResult(
             nodes=nodes[:limit],
@@ -204,12 +208,14 @@ class NetworkXGraphStore(GraphKnowledgeStore):
         for node_id, data in self._graph.nodes(data=True):
             if labels and data.get("label") not in labels:
                 continue
-            nodes.append(GraphNode(
-                id=node_id,
-                label=data.get("label", "Entity"),
-                name=data.get("name", node_id),
-                properties={k: v for k, v in data.items() if k not in ("label", "name")},
-            ))
+            nodes.append(
+                GraphNode(
+                    id=node_id,
+                    label=data.get("label", "Entity"),
+                    name=data.get("name", node_id),
+                    properties={k: v for k, v in data.items() if k not in ("label", "name")},
+                )
+            )
             if len(nodes) >= limit:
                 break
         return nodes
@@ -221,12 +227,14 @@ class NetworkXGraphStore(GraphKnowledgeStore):
         """全エッジを取得する."""
         edges = []
         for u, v, data in self._graph.edges(data=True):
-            edges.append(GraphEdge(
-                source=u,
-                target=v,
-                relation_type=data.get("relation_type", "RELATED_TO"),
-                properties={k: v for k, v in data.items() if k != "relation_type"},
-            ))
+            edges.append(
+                GraphEdge(
+                    source=u,
+                    target=v,
+                    relation_type=data.get("relation_type", "RELATED_TO"),
+                    properties={k: v for k, v in data.items() if k != "relation_type"},
+                )
+            )
             if len(edges) >= limit:
                 break
         return edges
@@ -333,7 +341,12 @@ class NetworkXGraphStore(GraphKnowledgeStore):
                 props = {k: v for k, v in data.items() if k not in ("label", "name")}
                 cursor.execute(
                     "INSERT INTO graph_nodes (id, label, name, properties) VALUES (?, ?, ?, ?)",
-                    (node_id, data.get("label", "Entity"), data.get("name", node_id), json.dumps(props, ensure_ascii=False)),
+                    (
+                        node_id,
+                        data.get("label", "Entity"),
+                        data.get("name", node_id),
+                        json.dumps(props, ensure_ascii=False),
+                    ),
                 )
 
             edge_id = 0

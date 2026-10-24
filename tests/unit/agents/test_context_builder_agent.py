@@ -1,4 +1,5 @@
 """Tests for src/agents/context_builder_agent.py."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -15,6 +16,7 @@ from src.agents.orchestrator import AgentContext, AgentName
 # ---------------------------------------------------------------------------
 # Helper fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def mock_repo():
@@ -117,6 +119,7 @@ def sample_agent_context():
 # Unit tests for resolve_character_flaw (helper function)
 # ---------------------------------------------------------------------------
 
+
 def test_resolve_character_flaw_existing_flaw_dict():
     """resolve_character_flaw uses existing flaw dict if provided."""
     char_data = {
@@ -142,6 +145,7 @@ def test_resolve_character_flaw_existing_flaw_dict():
 def test_resolve_character_flaw_existing_flaw_object():
     """resolve_character_flaw uses existing SecretMotif object."""
     from src.models.character_flaw import SecretMotive
+
     existing_flaw = SecretMotive(
         motive_type="プライド",
         inner_monologue_sample="プライドが高い。",
@@ -171,6 +175,7 @@ def test_resolve_character_flaw_preset_vengeful():
     assert result.character_name == "復讐者"
     assert result.surface_persona == "暗い"
     from src.config.flaw_and_fetish import FLAW_PRESETS
+
     preset = FLAW_PRESETS["vengeful_grudge"]
     assert result.secret_flaw.motive_type == preset["motive_type"]
     assert result.secret_flaw.inner_monologue_sample == preset["inner_monologue_sample"]
@@ -189,6 +194,7 @@ def test_resolve_character_flaw_preset_inferiority():
     assert result.character_name == "劣等感の塊"
     assert result.surface_persona == "内向的"
     from src.config.flaw_and_fetish import FLAW_PRESETS
+
     preset = FLAW_PRESETS["twisted_inferiority"]
     assert result.secret_flaw.motive_type == preset["motive_type"]
     assert result.secret_flaw.inner_monologue_sample == preset["inner_monologue_sample"]
@@ -207,6 +213,7 @@ def test_resolve_character_flaw_default_preset():
     assert result.character_name == "普通のキャラ"
     assert result.surface_persona == "普通"
     from src.config.flaw_and_fetish import FLAW_PRESETS
+
     preset = FLAW_PRESETS["calculating_merchant"]
     assert result.secret_flaw.motive_type == preset["motive_type"]
     assert result.secret_flaw.inner_monologue_sample == preset["inner_monologue_sample"]
@@ -217,6 +224,7 @@ def test_resolve_character_flaw_default_preset():
 # ---------------------------------------------------------------------------
 # Tests for ContextBuilderAgent methods
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_execute_missing_repo(context_builder_agent):
@@ -284,6 +292,7 @@ def test_allocate_token_budgets_scene_types(context_builder_agent):
 # ---------------------------------------------------------------------------
 # Tests for build_context method
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_build_context_basic(context_builder_agent):

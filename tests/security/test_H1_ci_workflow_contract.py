@@ -4,6 +4,7 @@
 ruff/mypy の警告が「数」としてしか残らない状態だった。
 本テストは「ratchet が hard gate として入っていること」を保証する。
 """
+
 from __future__ import annotations
 
 import os
@@ -34,8 +35,7 @@ def test_lint_ratchet_is_a_hard_gate():
 def test_lint_ratchet_baseline_is_tracked():
     import subprocess
 
-    out = subprocess.run(["git", "ls-files", "config/ci_lint_baseline.json"],
-                         capture_output=True, text=True)
+    out = subprocess.run(["git", "ls-files", "config/ci_lint_baseline.json"], capture_output=True, text=True)
     assert "config/ci_lint_baseline.json" in out.stdout, "ベースラインが追跡されていない"
 
 
@@ -95,9 +95,4 @@ def test_makefile_verify_matches_ci_gates():
     assert "verify:" in mk, "Makefile に verify ターゲットが無い"
     body = mk.split("verify:", 1)[1].split("\n\n")[0]
     for target in ("lint", "typecheck", "test"):
-        assert target in body, (
-            f"verify が {target} を呼んでいない"
-        )
-
-
-
+        assert target in body, f"verify が {target} を呼んでいない"

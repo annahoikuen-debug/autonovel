@@ -1,5 +1,6 @@
 from src.backend.background import BackgroundTaskManager
 
+
 def test_background_task_lifecycle():
     manager = BackgroundTaskManager()
     task_id = manager.create_task("generate_novel")

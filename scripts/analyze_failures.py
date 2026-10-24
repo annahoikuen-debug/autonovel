@@ -1,4 +1,5 @@
 """一時検証スクリプト: 失敗テストの集計。"""
+
 import re
 
 text = open("output/coverage-round2.log", encoding="utf-8", errors="replace").read()

@@ -6,9 +6,7 @@ from src.shared.utils import StatusReporter
 logger = logging.getLogger(__name__)
 
 
-async def enqueue_shadow_audit(
-    book_id: int, write_from: int, write_to: int, reporter: StatusReporter
-) -> None:
+async def enqueue_shadow_audit(book_id: int, write_from: int, write_to: int, reporter: StatusReporter) -> None:
     """非同期の論理監査タスク (Shadow Mode) をエンキューする"""
     try:
         from src.backend.tasks import enqueue_audit_after_write
@@ -19,9 +17,7 @@ async def enqueue_shadow_audit(
         logger.error(f"Failed to enqueue shadow audit: {e}")
 
 
-async def trigger_prefetch(
-    engine, book_id: int, last_episode: int, reporter: StatusReporter
-) -> None:
+async def trigger_prefetch(engine, book_id: int, last_episode: int, reporter: StatusReporter) -> None:
     """執筆完了後に Semantic Cache のプリフェッチ機能を起動する"""
     try:
         from src.services.semantic_cache import SemanticCacheManager
@@ -48,9 +44,7 @@ async def trigger_prefetch(
                 task_types=prefetch_task_types,
             )
         )
-        reporter.report(
-            f"🚀 Prefetch triggered for ep{next_ep}-ep{next_ep + 2} (background)", "debug"
-        )
+        reporter.report(f"🚀 Prefetch triggered for ep{next_ep}-ep{next_ep + 2} (background)", "debug")
         logger.info(f"[PREFETCH] Triggered for book_id={book_id}, ep{next_ep}-ep{next_ep + 2}")
     except Exception as e:
         logger.warning(f"[PREFETCH] Prefetch trigger failed: {e}")

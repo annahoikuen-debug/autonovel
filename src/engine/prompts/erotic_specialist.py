@@ -69,7 +69,13 @@ class EroticSpecialist:
         preset_name = yaml_preset.get("platform") if yaml_preset else context.get("platform_preset", "kakuyomu_romance")
         preset = get_preset(preset_name) if not yaml_preset else None
         # Use YAML preset values with fallback to preset file values
-        allowed_vocabulary_tier = yaml_preset.get("allowed_vocabulary_tier") if yaml_preset and yaml_preset.get("allowed_vocabulary_tier") else preset.get("allowed_vocabulary_tier", "mild") if preset else "mild"
+        allowed_vocabulary_tier = (
+            yaml_preset.get("allowed_vocabulary_tier")
+            if yaml_preset and yaml_preset.get("allowed_vocabulary_tier")
+            else preset.get("allowed_vocabulary_tier", "mild")
+            if preset
+            else "mild"
+        )
         vocab = get_vocabulary_for_tier(allowed_vocabulary_tier)
 
         intensity = getattr(curve, "target_intensity", 2)
@@ -114,14 +120,20 @@ class EroticSpecialist:
 
         # 提案4: MCP による情動強度連動サンプリング（トークン削減 & マンネリ防止）
         import os
+
         use_mcp_vocab = context.get("use_mcp_vocab_sampling") or (os.getenv("ENABLE_MCP_VOCAB_SAMPLING") == "1")
         if use_mcp_vocab:
             try:
                 from src.mcp_servers.agent_mcp_bridge import get_default_bridge
+
                 bridge = get_default_bridge()
                 norm_intensity = min(1.0, max(0.1, intensity / 5.0))
-                m_res = bridge.sample_vocab_by_intensity(category="metaphor", intensity=norm_intensity, count=min(5, metaphor_sample_size))
-                p_res = bridge.sample_vocab_by_intensity(category="psychological", intensity=norm_intensity, count=min(5, psychology_sample_size))
+                m_res = bridge.sample_vocab_by_intensity(
+                    category="metaphor", intensity=norm_intensity, count=min(5, metaphor_sample_size)
+                )
+                p_res = bridge.sample_vocab_by_intensity(
+                    category="psychological", intensity=norm_intensity, count=min(5, psychology_sample_size)
+                )
                 o_res = bridge.sample_vocab_by_intensity(category="onomatopoeia", intensity=norm_intensity, count=4)
 
                 sampled_m = [item["word"] for item in m_res.get("items", [])]
@@ -173,9 +185,7 @@ class EroticSpecialist:
 
         return "\n".join(parts)
 
-    def _get_metaphor_sample_size(
-        self, intensity: int, params: Optional["EroticParameters"] = None
-    ) -> int:
+    def _get_metaphor_sample_size(self, intensity: int, params: Optional["EroticParameters"] = None) -> int:
         """metaphor_densityパラメータに応じたサンプルサイズを返す"""
         if params and hasattr(params, "get_metaphor_sample_size"):
             return params.get_metaphor_sample_size()
@@ -184,9 +194,7 @@ class EroticSpecialist:
             base = int(base * (params.metaphor_density / 50))
         return min(base, 25)
 
-    def _get_psychology_sample_size(
-        self, intensity: int, params: Optional["EroticParameters"] = None
-    ) -> int:
+    def _get_psychology_sample_size(self, intensity: int, params: Optional["EroticParameters"] = None) -> int:
         """psychology_depthパラメータに応じたサンプルサイズを返す"""
         if params and hasattr(params, "get_psychology_sample_size"):
             return params.get_psychology_sample_size()
@@ -202,19 +210,13 @@ class EroticSpecialist:
         if params.video_pattern_preference:
             enabled_patterns = params.video_pattern_preference
         else:
-            enabled_patterns = [
-                name for name, p in VIDEO_PATTERNS.items() if p.recommended_intensity <= intensity
-            ]
+            enabled_patterns = [name for name, p in VIDEO_PATTERNS.items() if p.recommended_intensity <= intensity]
 
-        sections.append(
-            get_all_pattern_instructions(enabled_patterns, {"include_hints": intensity >= 3})
-        )
+        sections.append(get_all_pattern_instructions(enabled_patterns, {"include_hints": intensity >= 3}))
 
         return "\n".join(sections)
 
-    def _build_multi_layer_prompt(
-        self, intensity: int, params: Optional["EroticParameters"] = None
-    ) -> str:
+    def _build_multi_layer_prompt(self, intensity: int, params: Optional["EroticParameters"] = None) -> str:
         """多層的心理・感覚描写のための補足プロンプト"""
         lines = [
             "",
@@ -272,9 +274,7 @@ class EroticSpecialist:
 
         return "\n".join(lines) if lines else ""
 
-    def _build_layered_psychology_prompt(
-        self, intensity: int, params: Optional["EroticParameters"] = None
-    ) -> str:
+    def _build_layered_psychology_prompt(self, intensity: int, params: Optional["EroticParameters"] = None) -> str:
         """心理描写の深度を確保する補足"""
         if intensity <= 2:
             return "\n".join(
@@ -329,18 +329,14 @@ class EroticSpecialist:
         if len(build_beats) > 1:
             lines.append(f"  - 溜め（build）は{len(build_beats)}段階で段階的に構築すること")
         if len(peak_beats) > 1:
-            lines.append(
-                f"  - ピーク（peak）は{len(peak_beats)}回繰り返され、各レベルで極限を描写すること"
-            )
+            lines.append(f"  - ピーク（peak）は{len(peak_beats)}回繰り返され、各レベルで極限を描写すること")
 
         lines.append("  - 各フェーズ間の移行は自然かつ必然性があること")
         lines.append("  - 余韻（afterglow）は感情の沈降と次話への伏線を含むこと")
 
         return "\n".join(lines)
 
-    def _build_intense_special_instructions(
-        self, params: Optional["EroticParameters"] = None
-    ) -> str:
+    def _build_intense_special_instructions(self, params: Optional["EroticParameters"] = None) -> str:
         """強度5専用の追加指示"""
         density_addition = ""
         if params and params.metaphor_density:
@@ -409,9 +405,7 @@ class EroticSpecialist:
             parts.append(f"- 次話のヒント: {context['next_episode_hint']}")
         return "\n".join(parts)
 
-    def metaphor_filter(
-        self, raw_scene: str, intensity: int, vocab: dict[str, Any] | None = None
-    ) -> str:
+    def metaphor_filter(self, raw_scene: str, intensity: int, vocab: dict[str, Any] | None = None) -> str:
         """過剰な直接表現を比喩表現に置換する。
 
         Args:

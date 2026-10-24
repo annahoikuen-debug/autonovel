@@ -31,14 +31,10 @@ class ExecutorManager:
     def _create_pools(self) -> None:
         """（再）生成する。シャットダウン済みでも呼び出せる。"""
         # I/Oバウンド処理用: 待機時間が長いため、多めのスレッドを確保
-        self.io_executor = ThreadPoolExecutor(
-            max_workers=self.IO_WORKERS, thread_name_prefix="LLM_IO_Pool"
-        )
+        self.io_executor = ThreadPoolExecutor(max_workers=self.IO_WORKERS, thread_name_prefix="LLM_IO_Pool")
         # CPUバウンド処理用: 計算負荷が高いため、コア数に近い数に制限してコンテキストスイッチを抑制
         # (Embedding計算などの重い処理用)
-        self.cpu_executor = ThreadPoolExecutor(
-            max_workers=self.CPU_WORKERS, thread_name_prefix="LLM_CPU_Pool"
-        )
+        self.cpu_executor = ThreadPoolExecutor(max_workers=self.CPU_WORKERS, thread_name_prefix="LLM_CPU_Pool")
 
     def _ensure_pools(self) -> None:
         """シャットダウン済みなら再生成する。

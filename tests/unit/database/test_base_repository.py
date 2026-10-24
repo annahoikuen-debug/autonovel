@@ -3,10 +3,12 @@ from unittest.mock import AsyncMock, MagicMock
 from src.backend.database.repositories.base import BaseRepository
 from src.backend.database.models import Book
 
+
 class DummyBookRepository(BaseRepository):
     @property
     def model_class(self) -> type[Book]:
         return Book
+
 
 @pytest.mark.asyncio
 async def test_base_repository_get():
@@ -21,6 +23,7 @@ async def test_base_repository_get():
     assert result is not None
     mock_session.execute.assert_awaited_once()
 
+
 @pytest.mark.asyncio
 async def test_base_repository_get_all():
     mock_session = AsyncMock()
@@ -34,6 +37,7 @@ async def test_base_repository_get_all():
     assert len(results) == 2
     mock_session.execute.assert_awaited_once()
 
+
 @pytest.mark.asyncio
 async def test_base_repository_add():
     mock_session = AsyncMock()
@@ -44,6 +48,7 @@ async def test_base_repository_add():
     repo.add(entity)
 
     mock_session.add.assert_called_once_with(entity)
+
 
 @pytest.mark.asyncio
 async def test_base_repository_delete():
@@ -56,6 +61,7 @@ async def test_base_repository_delete():
 
     mock_session.delete.assert_awaited_once_with(entity)
 
+
 @pytest.mark.asyncio
 async def test_base_repository_delete_by_id():
     mock_session = AsyncMock()
@@ -66,13 +72,14 @@ async def test_base_repository_delete_by_id():
 
     mock_session.execute.assert_awaited_once()
 
+
 def test_base_repository_to_dict_and_parse_row():
     mock_session = AsyncMock()
     repo = DummyBookRepository(mock_session)
 
     assert repo._to_dict(None) == {}
 
-    row = {"data": "{\"key\": \"val\"}", "raw": 123}
+    row = {"data": '{"key": "val"}', "raw": 123}
     parsed = repo._parse_row(row, ["data", "non_existent"])
     assert parsed["data"] == {"key": "val"}
     assert parsed["raw"] == 123

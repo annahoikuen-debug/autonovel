@@ -30,8 +30,8 @@ def test_pipeline_llm_needed():
 
     # 静的ルールでは問題がないが、LLMオーディターでは問題があるテキスト
     # 実際のテストではモックを使う
-    with patch.object(pipeline.static_auditor, 'audit') as mock_static_audit:
-        with patch.object(pipeline.llm_auditor, 'audit') as mock_llm_audit:
+    with patch.object(pipeline.static_auditor, "audit") as mock_static_audit:
+        with patch.object(pipeline.llm_auditor, "audit") as mock_llm_audit:
             # 静的ルールオーディターは空のリストを返す（問題なし）
             mock_static_audit.return_value = []
             # LLMオーディターは問題を検出する
@@ -59,8 +59,8 @@ def test_pipeline_both_needed():
     pipeline = AuditPipeline()
 
     # 静的ルールオーディターとLLMオーディターの両方が問題を検出するケース
-    with patch.object(pipeline.static_auditor, 'audit') as mock_static_audit:
-        with patch.object(pipeline.llm_auditor, 'audit') as mock_llm_audit:
+    with patch.object(pipeline.static_auditor, "audit") as mock_static_audit:
+        with patch.object(pipeline.llm_auditor, "audit") as mock_llm_audit:
             # 静的ルールオーディターは段落数不足を検出
             mock_static_audit.return_value = [
                 StaticIssue(type="paragraph_count_insufficient", message="段落数が不足しています", location=None)

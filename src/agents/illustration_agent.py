@@ -61,12 +61,13 @@ class IllustrationAgent(SkillAgent):
         request = ctx.artifacts.get("request")
         if request is None:
             # 契約違反ではなく「挿絵なし」の正常系として扱う
-            logger.info(
-                "IllustrationAgent: request が無いため挿絵をスキップ（no-op）"
+            logger.info("IllustrationAgent: request が無いため挿絵をスキップ（no-op）")
+            self.emit_event(
+                "illustration.skipped",
+                {
+                    "reason": "no request in artifacts",
+                },
             )
-            self.emit_event("illustration.skipped", {
-                "reason": "no request in artifacts",
-            })
             return AgentResult(
                 next_agent=None,
                 artifacts={"illustration_result": None, "illustration_skipped": True},
@@ -85,10 +86,13 @@ class IllustrationAgent(SkillAgent):
 
         result_dict = await self.generate_prompt_only(request=request)
 
-        self.emit_event("illustration.completed", {
-            "illustration_type": getattr(request, "illustration_type", None),
-            "book_id": getattr(request, "book_id", None),
-        })
+        self.emit_event(
+            "illustration.completed",
+            {
+                "illustration_type": getattr(request, "illustration_type", None),
+                "book_id": getattr(request, "book_id", None),
+            },
+        )
 
         return AgentResult(
             next_agent=None,
@@ -133,9 +137,7 @@ class IllustrationAgent(SkillAgent):
                 "image_generated": True,
             }
         except Exception as e:  # noqa: BLE001
-            logger.warning(
-                "IllustrationAgent: 画像生成に失敗したため prompt のみ返します: %s", e
-            )
+            logger.warning("IllustrationAgent: 画像生成に失敗したため prompt のみ返します: %s", e)
             return await self.generate_prompt_only(request=request)
 
     async def generate_prompt_only(self, **kwargs) -> dict[str, Any]:
@@ -214,9 +216,7 @@ class IllustrationAgent(SkillAgent):
             parts.append(f"Genre: {genre}.")
         if concept:
             parts.append(f"Atmosphere: {concept}.")
-        parts.append(
-            "Detailed background, cinematic lighting, rich detail, no text or letters in image."
-        )
+        parts.append("Detailed background, cinematic lighting, rich detail, no text or letters in image.")
         prompt = " ".join(parts)
         if is_r15(request.safety_level):
             prompt += " Tasteful R15 artistic representation, intimate but not explicit."
@@ -274,9 +274,7 @@ class IllustrationAgent(SkillAgent):
         ]
         if character_desc:
             parts.append(f"Description: {character_desc}")
-        parts.append(
-            "Detailed character design, anime/manga style, clean lines, no text or letters in image"
-        )
+        parts.append("Detailed character design, anime/manga style, clean lines, no text or letters in image")
 
         if is_r15(request.safety_level):
             parts.append("Tasteful R15 artistic representation, intimate but not explicit")
@@ -318,9 +316,9 @@ class IllustrationAgent(SkillAgent):
             parts.append(f"Action: {action}")
 
         # 基本的な画像品質指示
-        parts.extend([
-            "Detailed background, cinematic lighting, rich detail, manga/anime style, no text or letters in image"
-        ])
+        parts.extend(
+            ["Detailed background, cinematic lighting, rich detail, manga/anime style, no text or letters in image"]
+        )
 
         if is_r15(request.safety_level):
             parts.append("Tasteful R15 artistic representation, intimate but not explicit")
@@ -461,9 +459,7 @@ class IllustrationAgent(SkillAgent):
             summaries=summaries,
         )
 
-    async def generate_episode_scenes(
-        self, request: IllustrationRequest
-    ) -> list[IllustrationResult]:
+    async def generate_episode_scenes(self, request: IllustrationRequest) -> list[IllustrationResult]:
         """本文から複数シーンを抽出し、各シーンの挿絵を生成して返す（シーン抽出機能）。"""
         results = await self.scene_service.generate(request)
         for r in results:
@@ -514,15 +510,16 @@ class IllustrationAgent(SkillAgent):
             scene_text = getattr(request, "scene_text", "") or ctx.get("scene_text", "")
             if scene_text:
                 import re
-                text_entities = list(set(re.findall(r'[一-龯ァ-ヴー]{2,}', scene_text)))[:20]
+
+                text_entities = list(set(re.findall(r"[一-龯ァ-ヴー]{2,}", scene_text)))[:20]
 
         # 感情トーン抽出
         emotional_tone = "neutral"
         if params.get("match_emotional_tone"):
             scene_text = getattr(request, "scene_text", "") or ctx.get("scene_text", "")
             if scene_text:
-                positive = sum(scene_text.count(w) for w in ['喜', '笑', '幸', '楽', '愛', '希望', '輝', '明'])
-                negative = sum(scene_text.count(w) for w in ['悲', '泣', '苦', '痛', '憎', '絶望', '暗', '闇', '恐'])
+                positive = sum(scene_text.count(w) for w in ["喜", "笑", "幸", "楽", "愛", "希望", "輝", "明"])
+                negative = sum(scene_text.count(w) for w in ["悲", "泣", "苦", "痛", "憎", "絶望", "暗", "闇", "恐"])
                 if positive > negative:
                     emotional_tone = "positive"
                 elif negative > positive:

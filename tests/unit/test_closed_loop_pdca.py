@@ -41,10 +41,7 @@ async def test_pdca_cycle_convergence_and_improvement():
     # Initial audit: 60.0 (all specialists)
     # Cycle 1 rewrite: 70.0
     # Cycle 2 rewrite: 78.0 (exceeds target_score 75.0 -> converges)
-    specialists = [
-        create_mock_specialist(n, [60.0, 70.0, 78.0])
-        for n in SPECIALIST_NAMES
-    ]
+    specialists = [create_mock_specialist(n, [60.0, 70.0, 78.0]) for n in SPECIALIST_NAMES]
     agg = AuditAggregator(specialists=specialists, weights=eq_w)
 
     async def mock_writer(ctx):
@@ -80,10 +77,7 @@ async def test_pdca_cycle_early_stopping_on_plateau():
     """Verify PDCA runner stops early when improvements plateau below min_improvement_delta."""
     eq_w = {n: 0.125 for n in SPECIALIST_NAMES}
     # Score sequence: 60.0 -> 61.0 -> 61.2 (delta < min_improvement_delta 1.5)
-    specialists = [
-        create_mock_specialist(n, [60.0, 61.0, 61.2, 61.3])
-        for n in SPECIALIST_NAMES
-    ]
+    specialists = [create_mock_specialist(n, [60.0, 61.0, 61.2, 61.3]) for n in SPECIALIST_NAMES]
     agg = AuditAggregator(specialists=specialists, weights=eq_w)
 
     async def mock_writer(ctx):

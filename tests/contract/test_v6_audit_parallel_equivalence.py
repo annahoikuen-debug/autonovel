@@ -65,15 +65,11 @@ class _FakePromptManager:
         return f"[fast_plot_screen]\n{blueprint}"
 
     @staticmethod
-    def build_critic_feedback_prompt(
-        issue_list: Any = None, draft_content: str = "", blueprint: str = ""
-    ) -> str:
+    def build_critic_feedback_prompt(issue_list: Any = None, draft_content: str = "", blueprint: str = "") -> str:
         return f"[critic]\n{draft_content}\n{blueprint}"
 
     @staticmethod
-    def build_ability_audit_prompt(
-        blueprint: str, settings_json: str, characters_json: str
-    ) -> str:
+    def build_ability_audit_prompt(blueprint: str, settings_json: str, characters_json: str) -> str:
         return f"[ability_audit]\n{blueprint}\n{settings_json}\n{characters_json}"
 
 
@@ -125,9 +121,7 @@ def _writing_context() -> dict[str, Any]:
 
 
 async def _run(agent: AuditAgent, parallel: bool) -> tuple[list[dict[str, Any]], float]:
-    return await agent.run_audit_phase(
-        _writing_context(), DRAFTED, book_id=1, ep_num=1, parallel=parallel
-    )
+    return await agent.run_audit_phase(_writing_context(), DRAFTED, book_id=1, ep_num=1, parallel=parallel)
 
 
 def _comparable(outcomes: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -165,14 +159,10 @@ def test_parallel_and_serial_audit_results_identical() -> None:
 
     serial, parallel = asyncio.run(_scenario())
 
-    assert [s["audit_id"] for s in serial] == [c.audit_id for c in CORE_AUDIT_CRITERIA] + [
-        "unified_qualitative"
-    ], "監査IDの並びが CORE_AUDIT_CRITERIA と一致していない"
-    assert serial == parallel, (
-        "並列化で判定結果が変わった:\n"
-        f"serial  ={serial}\n"
-        f"parallel={parallel}"
+    assert [s["audit_id"] for s in serial] == [c.audit_id for c in CORE_AUDIT_CRITERIA] + ["unified_qualitative"], (
+        "監査IDの並びが CORE_AUDIT_CRITERIA と一致していない"
     )
+    assert serial == parallel, f"並列化で判定結果が変わった:\nserial  ={serial}\nparallel={parallel}"
 
 
 # ---------------------------------------------------------------------------
@@ -224,18 +214,14 @@ def test_one_auditor_exception_does_not_block_others() -> None:
 
     exploding = by_id["fast_screen"]
     assert exploding["passed"] is False, "例外した監査が合格扱いになっている"
-    assert exploding["error"] == "auditor_exception:RuntimeError", (
-        f"例外理由が記録されていない: {exploding['error']}"
-    )
+    assert exploding["error"] == "auditor_exception:RuntimeError", f"例外理由が記録されていない: {exploding['error']}"
     assert exploding["effective_severity"] == "critical", "例外が critical として扱われていない"
 
     for criterion in CORE_AUDIT_CRITERIA:
         if criterion.audit_id == "fast_screen":
             continue
         assert criterion.audit_id in by_id, f"{criterion.audit_id} の結果が無い"
-        assert by_id[criterion.audit_id]["passed"] is True, (
-            f"{criterion.audit_id} まで巻き込まれた"
-        )
+        assert by_id[criterion.audit_id]["passed"] is True, f"{criterion.audit_id} まで巻き込まれた"
 
     # 1件例外でもゲートは他監査の結果で評価できる
     gate = agent.evaluate_gate(outcomes)
@@ -263,6 +249,4 @@ def test_audit_latency_is_reduced() -> None:
     serial = asyncio.run(_measure(False))
     parallel = asyncio.run(_measure(True))
     print(f"\n[実測] 監査フェーズ 直列={serial:.4f}s 並列={parallel:.4f}s")
-    assert parallel < serial, (
-        f"並列化してもレイテンシが短縮されていない（直列 {serial:.4f}s / 並列 {parallel:.4f}s）"
-    )
+    assert parallel < serial, f"並列化してもレイテンシが短縮されていない（直列 {serial:.4f}s / 並列 {parallel:.4f}s）"

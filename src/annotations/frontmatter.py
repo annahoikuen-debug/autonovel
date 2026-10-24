@@ -1,4 +1,5 @@
 """YAML frontmatter parser for emotional beat annotations."""
+
 from __future__ import annotations
 
 import logging
@@ -49,7 +50,7 @@ def parse_frontmatter(
         return text, []
 
     # 2つ目のデリミタを探す
-    lines = text.split('\n')
+    lines = text.split("\n")
     end_idx = -1
     for i, line in enumerate(lines[1:], 1):
         if line.strip() == FRONTMATTER_DELIMITER:
@@ -61,7 +62,7 @@ def parse_frontmatter(
         return text, []
 
     # フロントマター部分をパース
-    frontmatter_yaml = '\n'.join(lines[1:end_idx])
+    frontmatter_yaml = "\n".join(lines[1:end_idx])
     try:
         fm_data = yaml.safe_load(frontmatter_yaml)
     except yaml.YAMLError:
@@ -71,7 +72,7 @@ def parse_frontmatter(
         return text, []
 
     # 残りのテキスト（フロントマター以降）
-    clean_text = '\n'.join(lines[end_idx + 1:]).lstrip('\n')
+    clean_text = "\n".join(lines[end_idx + 1 :]).lstrip("\n")
 
     # ビートリスト構築
     for idx, beat_data in enumerate(fm_data["beats"]):
@@ -94,9 +95,7 @@ def parse_frontmatter(
             # 不正なビートはスキップ（寛容な方針は維持）するが、
             # フロントマター自体は除去されるため、欠落が呼び出し元に
             # 伝わらないよう警告を残す
-            logger.warning(
-                "Skipped malformed beat at index %d: %s: %s", idx, type(e).__name__, e
-            )
+            logger.warning("Skipped malformed beat at index %d: %s: %s", idx, type(e).__name__, e)
             continue
 
     if len(beats) != len(fm_data["beats"]):

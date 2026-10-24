@@ -12,6 +12,7 @@
 
 本テストは M3 で追加。以降も追記のみ。
 """
+
 from __future__ import annotations
 
 import ast
@@ -71,9 +72,7 @@ def test_detector_flags_a_synthetic_import_time_thread():
             return t
         """
     )
-    assert not _detect("src/synthetic_good.py", good_source), (
-        "関数内でのスレッド起動まで禁止している（誤検出）"
-    )
+    assert not _detect("src/synthetic_good.py", good_source), "関数内でのスレッド起動まで禁止している（誤検出）"
 
 
 def _detect(rel: str, source: str) -> list[str]:
@@ -140,13 +139,9 @@ def test_app_container_providers_are_process_singletons():
     )
     p = subprocess.run([sys.executable, "-c", probe], capture_output=True, text=True)
     assert p.returncode == 0, p.stderr[-2000:]
-    kv = dict(
-        ln.split(" ", 1) for ln in p.stdout.splitlines() if ln.startswith(("SAME ", "KIND "))
-    )
+    kv = dict(ln.split(" ", 1) for ln in p.stdout.splitlines() if ln.startswith(("SAME ", "KIND ")))
     assert kv.get("SAME") == "True", "AppContainer.db() が呼び出しごとに別インスタンスを返す"
-    assert kv.get("KIND") == "Singleton", (
-        f"AppContainer.db が Singleton プロバイダでない: {kv.get('KIND')}"
-    )
+    assert kv.get("KIND") == "Singleton", f"AppContainer.db が Singleton プロバイダでない: {kv.get('KIND')}"
 
 
 def test_app_container_is_not_instantiated_per_call():
@@ -163,6 +158,4 @@ def test_app_container_is_not_instantiated_per_call():
                 continue
             if ast.unparse(node.func).endswith("AppContainer"):
                 offenders.append(f"{rel}:{node.lineno}")
-    assert len(offenders) <= 9, (
-        f"AppContainer() の直接生成が 9 箇所を超えた: {sorted(offenders)}"
-    )
+    assert len(offenders) <= 9, f"AppContainer() の直接生成が 9 箇所を超えた: {sorted(offenders)}"

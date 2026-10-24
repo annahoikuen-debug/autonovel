@@ -62,8 +62,7 @@ def _clear_warned_models():
 
 def test_known_model_cost_is_computed():
     cost = TokenTracker.estimate_cost_usd(1_000_000, 1_000_000, "claude-3-5-haiku")
-    expected = MODEL_PRICING["claude-3-5-haiku"]["input"] + \
-        MODEL_PRICING["claude-3-5-haiku"]["output"]
+    expected = MODEL_PRICING["claude-3-5-haiku"]["input"] + MODEL_PRICING["claude-3-5-haiku"]["output"]
     assert cost == pytest.approx(expected)
 
 
@@ -74,10 +73,7 @@ def test_unknown_model_is_reported_by_tracker(caplog):
 
     assert cost == 0.0
     hits = [r for r in caplog.records if UNKNOWN in r.getMessage()]
-    assert hits, (
-        "未知モデルのコストが 0 のまま警告も出ない。"
-        "ルーティングの効果が無言で計測不能になる"
-    )
+    assert hits, "未知モデルのコストが 0 のまま警告も出ない。ルーティングの効果が無言で計測不能になる"
 
 
 def test_unknown_model_warning_is_not_spammed(caplog):

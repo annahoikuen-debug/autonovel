@@ -1,4 +1,5 @@
 """Tests for vector store."""
+
 from __future__ import annotations
 
 import pytest
@@ -15,6 +16,7 @@ class TestVectorStore:
         # fakeredisを使用してモック
         try:
             import fakeredis
+
             redis_client = fakeredis.FakeRedis(decode_responses=True)
         except ImportError:
             pytest.skip("fakeredis not installed")
@@ -23,10 +25,17 @@ class TestVectorStore:
         store.client = redis_client
 
         vec = EmotionalVector(episode_id="ep01")
-        vec.set_signal(EmotionalSignal(
-            source="A", target="B", emotion_type=EmotionType.AFFECTION,
-            value=0.5, confidence=0.8, evidence_span="...", episode_id="ep01"
-        ))
+        vec.set_signal(
+            EmotionalSignal(
+                source="A",
+                target="B",
+                emotion_type=EmotionType.AFFECTION,
+                value=0.5,
+                confidence=0.8,
+                evidence_span="...",
+                episode_id="ep01",
+            )
+        )
 
         store.upsert("pipeline", "ep01:A->B", vec)
 
@@ -40,6 +49,7 @@ class TestVectorStore:
         """全件取得テスト"""
         try:
             import fakeredis
+
             redis_client = fakeredis.FakeRedis(decode_responses=True)
         except ImportError:
             pytest.skip("fakeredis not installed")
@@ -63,6 +73,7 @@ class TestVectorStore:
         """削除テスト"""
         try:
             import fakeredis
+
             redis_client = fakeredis.FakeRedis(decode_responses=True)
         except ImportError:
             pytest.skip("fakeredis not installed")
@@ -84,6 +95,7 @@ class TestVectorStore:
         """ネームスペース分離テスト"""
         try:
             import fakeredis
+
             redis_client = fakeredis.FakeRedis(decode_responses=True)
         except ImportError:
             pytest.skip("fakeredis not installed")
@@ -110,6 +122,7 @@ class TestVectorStore:
         """キー一覧取得テスト"""
         try:
             import fakeredis
+
             redis_client = fakeredis.FakeRedis(decode_responses=True)
         except ImportError:
             pytest.skip("fakeredis not installed")
@@ -132,6 +145,7 @@ class TestVectorStore:
         """TTL経過でキーが消失すること（モック時間で確認）"""
         try:
             import fakeredis
+
             redis_client = fakeredis.FakeRedis(decode_responses=True)
         except ImportError:
             pytest.skip("fakeredis not installed")

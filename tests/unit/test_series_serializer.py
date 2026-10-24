@@ -1,4 +1,5 @@
 """`series_serializer` の単体テスト。"""
+
 from __future__ import annotations
 
 

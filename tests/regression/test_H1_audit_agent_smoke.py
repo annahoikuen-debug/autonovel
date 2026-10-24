@@ -7,6 +7,7 @@
 
 という级别的回帰は検出できるようにする。
 """
+
 from __future__ import annotations
 
 import ast
@@ -127,6 +128,4 @@ def test_audit_agent_has_no_network_call_at_import():
     for node in tree.body:
         if isinstance(node, ast.Expr) and isinstance(node.value, ast.Call):
             rendered = ast.unparse(node.value.func)
-            assert "get" not in rendered and "post" not in rendered, (
-                f"import 時に HTTP 呼び出ししている: {rendered}"
-            )
+            assert "get" not in rendered and "post" not in rendered, f"import 時に HTTP 呼び出ししている: {rendered}"

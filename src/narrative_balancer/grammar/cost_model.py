@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class GrammarCostModel(BaseModel):
     """Cost weights for DP completion and rewrite scoring."""
+
     model_config = ConfigDict(extra="ignore")
 
     rule_expansion_default: float = 1.0
@@ -15,13 +16,15 @@ class GrammarCostModel(BaseModel):
     terminal_deletion_default: float = 3.0
     terminal_substitution_default: float = 2.5
 
-    penalties: Dict[str, float] = Field(default_factory=lambda: {
-        "stagnation": 15.0,
-        "missing_disaster": 25.0,
-        "character_neglect": 8.0,
-        "payoff_decay": 10.0,
-        "tension_monotony": 12.0,
-    })
+    penalties: Dict[str, float] = Field(
+        default_factory=lambda: {
+            "stagnation": 15.0,
+            "missing_disaster": 25.0,
+            "character_neglect": 8.0,
+            "payoff_decay": 10.0,
+            "tension_monotony": 12.0,
+        }
+    )
 
     def get_penalty(self, key: str) -> float:
         return self.penalties.get(key, 0.0)

@@ -33,7 +33,6 @@ class BookRepository(BaseRepository):
     呼び出し側の契約（`WritingAgent(repo=...)`）は変更しない。
     """
 
-
     @retry_on_lock()
     async def create_book(
         self,
@@ -75,9 +74,7 @@ class BookRepository(BaseRepository):
 
         return BookDbModel(**d)
 
-    async def get_all_books(
-        self, user_id: int | None = None, limit: int = 100, offset: int = 0
-    ) -> list[BookDbModel]:
+    async def get_all_books(self, user_id: int | None = None, limit: int = 100, offset: int = 0) -> list[BookDbModel]:
         """作品一覧。1 行ごとに style_dna / marketing_data を JSON 解析するため、
         全件を返すと件数に比例してコストが増えるため既定 limit を設ける。
         """
@@ -92,10 +89,7 @@ class BookRepository(BaseRepository):
         books = result.scalars().all()
         from src.models import BookDbModel
 
-        return [
-            BookDbModel(**self._parse_row(self._to_dict(b), ["style_dna", "marketing_data"]))
-            for b in books
-        ]
+        return [BookDbModel(**self._parse_row(self._to_dict(b), ["style_dna", "marketing_data"])) for b in books]
 
     @retry_on_lock()
     async def update_book_cumulative_tension(
@@ -163,16 +157,16 @@ class BookRepository(BaseRepository):
         """作品名とマーケティングデータを更新する。既存のデータがある場合はマージを試みる。"""
         import traceback
 
-        result = await self.session.execute(select(Book.marketing_data).where(Book.id == book_id, Book.user_id == user_id))
+        result = await self.session.execute(
+            select(Book.marketing_data).where(Book.id == book_id, Book.user_id == user_id)
+        )
         row_val = result.scalar_one_or_none()
         current_data = {}
         if row_val:
             try:
                 current_data = json.loads(row_val) if isinstance(row_val, str) else row_val
             except Exception as e:
-                logger.warning(
-                    f"Failed to parse marketing_data JSON: {e}\n{traceback.format_exc()}"
-                )
+                logger.warning(f"Failed to parse marketing_data JSON: {e}\n{traceback.format_exc()}")
 
         merged = {**current_data, **marketing_data}
         await self.session.execute(
@@ -192,7 +186,9 @@ class BookRepository(BaseRepository):
     async def recalculate_book_tension(self, book_id: int, user_id: int, branch_id: int = 1) -> int:
         """指定ブランチの全チャプターの tension_delta を合計して累積テンションを再計算し、DBを更新する"""
         result = await self.session.execute(
-            select(Chapter.tension_delta).where(Chapter.book_id == book_id, Chapter.user_id == user_id, Chapter.branch_id == branch_id)
+            select(Chapter.tension_delta).where(
+                Chapter.book_id == book_id, Chapter.user_id == user_id, Chapter.branch_id == branch_id
+            )
         )
         rows = result.scalars().all()
         total_tension = sum(t or 0 for t in rows)
@@ -205,7 +201,9 @@ class BookRepository(BaseRepository):
     async def recalculate_book_comfort(self, book_id: int, user_id: int, branch_id: int = 1) -> tuple[int, int]:
         """指定ブランチの全チャプターの qol_delta を合計して累積QOLを再計算し、DBを更新する"""
         result = await self.session.execute(
-            select(Chapter.qol_delta).where(Chapter.book_id == book_id, Chapter.user_id == user_id, Chapter.branch_id == branch_id)
+            select(Chapter.qol_delta).where(
+                Chapter.book_id == book_id, Chapter.user_id == user_id, Chapter.branch_id == branch_id
+            )
         )
         rows = result.scalars().all()
         total_qol = sum(q or 0 for q in rows)
@@ -317,17 +315,13 @@ class BookRepository(BaseRepository):
             branch_id=branch_id,
         )
 
-    async def get_chapter(
-        self, branch_id: int, ep_num: int, book_id: int | None = None
-    ) -> Any:
+    async def get_chapter(self, branch_id: int, ep_num: int, book_id: int | None = None) -> Any:
         """指定話数の章を取得する（無ければ None）。
 
         ``branch_id`` は作品間で共有される（既定 1）ため、呼び出し側は ``book_id`` を
         渡すこと（``ChapterRepository.get_chapter`` と同じ理由）。
         """
-        return await self._chapter_repo().get_chapter(
-            branch_id=branch_id, ep_num=ep_num, book_id=book_id
-        )
+        return await self._chapter_repo().get_chapter(branch_id=branch_id, ep_num=ep_num, book_id=book_id)
 
     async def update_chapter_content(
         self, branch_id: int, ep_num: int, content: str, book_id: int | None = None

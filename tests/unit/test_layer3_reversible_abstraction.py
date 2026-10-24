@@ -1,6 +1,7 @@
 from src.services.compression.layer3_abstraction import Layer3ConceptAbstractor
 from src.services.compression.models import SubgraphLayerOutput
 
+
 def test_layer3_preserves_proper_nouns_with_dual_format():
     abstractor = Layer3ConceptAbstractor()
     subgraph = SubgraphLayerOutput(
@@ -10,7 +11,7 @@ def test_layer3_preserves_proper_nouns_with_dual_format():
         ],
         edges=[
             {"source": "抜刀・迅雷", "target": "魔剣バルムンク", "type": "併用奥義"},
-        ]
+        ],
     )
     res = abstractor.abstract(subgraph)
 

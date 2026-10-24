@@ -71,9 +71,14 @@ class TestBookScoreCalculatorSpecialists:
     def test_calculate_from_specialists(self, tmp_path):
         calc = BookScoreCalculator(config_path=str(tmp_path / "none.yaml"))
         scores = {
-            "plot_structure": 80, "coherence": 70, "worldbuilding": 60,
-            "character": 75, "prose": 65, "dialogue": 55,
-            "tension": 85, "emotion": 90,
+            "plot_structure": 80,
+            "coherence": 70,
+            "worldbuilding": 60,
+            "character": 75,
+            "prose": 65,
+            "dialogue": 55,
+            "tension": 85,
+            "emotion": 90,
         }
         try:
             score = calc.calculate_from_specialists(scores)

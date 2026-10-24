@@ -67,10 +67,7 @@ class PromptLoader:
         """
         for label, value in (("template_name", template_name), ("version", version)):
             if not _SAFE_SEGMENT.match(value) or value in {".", ".."}:
-                raise ValueError(
-                    f"Unsafe {label}: {value!r} "
-                    "(allowed: letters, digits, dot, underscore, hyphen)"
-                )
+                raise ValueError(f"Unsafe {label}: {value!r} (allowed: letters, digits, dot, underscore, hyphen)")
 
     def _get_template_path(self, template_name: str, version: str) -> Path:
         """テンプレートファイルのフルパスを取得（ベース外への脱出を拒否）"""
@@ -79,9 +76,7 @@ class PromptLoader:
         try:
             candidate.relative_to(self._resolved_base)
         except ValueError as exc:
-            raise ValueError(
-                f"Resolved template path escapes base_path: {candidate}"
-            ) from exc
+            raise ValueError(f"Resolved template path escapes base_path: {candidate}") from exc
         return candidate
 
     def _is_cache_fresh(self, cache_key: tuple, template_path: Path) -> bool:
@@ -96,9 +91,7 @@ class PromptLoader:
         except OSError:
             return False
 
-    def load(
-        self, template_name: str, version: str = "latest", *, strict: bool = True
-    ) -> str:
+    def load(self, template_name: str, version: str = "latest", *, strict: bool = True) -> str:
         """
         テンプレートをロードし、生の文字列を返す（変数は置換しない）。
 
@@ -124,16 +117,13 @@ class PromptLoader:
             template_path = self._get_template_path(template_name, version)
             if not template_path.exists():
                 raise FileNotFoundError(
-                    f"テンプレートが見つかりません: {template_name}.yaml "
-                    f"(バージョン: {version}, パス: {template_path})"
+                    f"テンプレートが見つかりません: {template_name}.yaml (バージョン: {version}, パス: {template_path})"
                 )
             return self._read_cached(template_name, version, template_path)
 
         # 明示的に lenient を指定された場合のみレガシーチェーンを使う。
         # ここでは必ず警告を出して、どの版に退避したかを残す。
-        fallback_versions = [version, "base"] + [
-            v for v in self._available_versions if v not in [version, "base"]
-        ]
+        fallback_versions = [version, "base"] + [v for v in self._available_versions if v not in [version, "base"]]
         for ver in fallback_versions:
             template_path = self._get_template_path(template_name, ver)
             if not template_path.exists():
@@ -171,9 +161,7 @@ class PromptLoader:
             self._cache[cache_key] = (content, mtime)
         return content
 
-    def render(
-        self, template_name: str, version: str = "latest", *, strict: bool = True, **variables
-    ) -> str:
+    def render(self, template_name: str, version: str = "latest", *, strict: bool = True, **variables) -> str:
         """
         テンプレートをロードして変数を置換して返す。
         置換は 1 パスで一括して行い、値の入れ子を再解釈しない。
@@ -194,12 +182,8 @@ class PromptLoader:
         # 1 パス置換: str.replace を変数ごとに順番に呼ぶと、
         # ある変数の「値」の中に {別のキー} が含まれると次のループで
         # さらに置換されて「入れ子置換」が起きていた。
-        pattern = re.compile(
-            "|".join(re.escape("{" + key + "}") for key in variables)
-        )
-        return pattern.sub(
-            lambda m: str(variables[m.group(0)[1:-1]]), template
-        )
+        pattern = re.compile("|".join(re.escape("{" + key + "}") for key in variables))
+        return pattern.sub(lambda m: str(variables[m.group(0)[1:-1]]), template)
 
     def invalidate_cache(self) -> None:
         """テンプレート編集後にキャッシュを破棄する。"""
@@ -229,7 +213,7 @@ if __name__ == "__main__":
         max_chars=5000,
         genre="ファンタジー",
         keywords=["ドラゴン", "魔法"],
-        tone="壮大"
+        tone="壮大",
     )
     print("\n--- レンダリング結果 ---")
     print(rendered)

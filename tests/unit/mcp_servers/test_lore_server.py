@@ -1,4 +1,5 @@
 """Unit tests for Lore/Bible MCP Server."""
+
 from __future__ import annotations
 
 from src.mcp_servers.schemas import CharacterProfile, WorldBibleSection, LoreQueryRequest
@@ -111,4 +112,3 @@ def test_mcp_server_json_rpc():
     }
     resp5 = server.handle_request(bible_req)
     assert resp5["result"]["status"] == "success"
-

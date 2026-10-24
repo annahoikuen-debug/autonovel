@@ -3,6 +3,7 @@
 Flux.1 schnell (約$0.003/枚 ≒ 約0.45円) や SDXL (約$0.005/枚 ≒ 約0.75円) を利用し、
 自前GPUサーバー不要で超高速・高品位な挿絵生成を実現する。
 """
+
 from __future__ import annotations
 
 from typing import Optional
@@ -48,9 +49,7 @@ class FalAiAdapter(ImageGenerationAdapter):
         payload = {
             "prompt": request.prompt,
             "image_size": image_size,
-            "num_inference_steps": (
-                min(request.steps, 10) if "schnell" in self.model_endpoint else request.steps
-            ),
+            "num_inference_steps": (min(request.steps, 10) if "schnell" in self.model_endpoint else request.steps),
             "seed": request.seed,
             "enable_safety_checker": True,
         }

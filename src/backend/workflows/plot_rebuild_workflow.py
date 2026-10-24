@@ -73,14 +73,10 @@ class PlotRebuildWorkflow(BaseWorkflow):
             active_reporter.report("🔧 プロット再構築パイプラインを開始します...", "info")
 
             context = await self._build_rebuild_context(params, active_reporter)
-            active_reporter.report(
-                f"📋 再構築対象: 第{context['start_ep']}話〜第{context['new_total']}話", "info"
-            )
+            active_reporter.report(f"📋 再構築対象: 第{context['start_ep']}話〜第{context['new_total']}話", "info")
             new_arcs = await self._step1_generate_new_arcs(context, params, active_reporter)
             self._step2_audit_arcs(new_arcs, active_reporter)
-            expanded = await self._step3_expand_affected_eps(
-                context, new_arcs, params, active_reporter
-            )
+            expanded = await self._step3_expand_affected_eps(context, new_arcs, params, active_reporter)
             self._step4_audit_expanded(new_arcs, expanded, context, params, active_reporter)
             active_reporter.report("🎉 プロット再構築パイプライン完了", "success")
             return self._step5_assemble_result(new_arcs, expanded, context, params)
@@ -92,9 +88,7 @@ class PlotRebuildWorkflow(BaseWorkflow):
     # ------------------------------------------------------------------
     # コンテキスト構築
     # ------------------------------------------------------------------
-    async def _build_rebuild_context(
-        self, params: dict[str, Any], reporter: IReporter
-    ) -> dict[str, Any]:
+    async def _build_rebuild_context(self, params: dict[str, Any], reporter: IReporter) -> dict[str, Any]:
         """作品情報・Bible・過去プロットを聚合したコンテキストを構築する."""
         book_id = int(params["book_id"])
         start_ep = int(params["start_ep"])
@@ -128,9 +122,7 @@ class PlotRebuildWorkflow(BaseWorkflow):
     ) -> ArcList:
         try:
             reporter.report(f"📐 第{context['start_ep']}話以降の新規アークを生成中...", "info")
-            synopsis = (
-                f"{params.get('trend_memo', '')}\nキーワード: {params.get('new_keywords', '')}"
-            )
+            synopsis = f"{params.get('trend_memo', '')}\nキーワード: {params.get('new_keywords', '')}"
             planner = cast(Any, self.planner)
             result = await planner.generate_arcs(
                 title=context["book_title"],
@@ -177,9 +169,7 @@ class PlotRebuildWorkflow(BaseWorkflow):
         arcs: list[ArcBlueprint] = new_arcs.arcs
         plot_agent = cast(Any, self.plot_agent)
         try:
-            reporter.report(
-                f"✍️ 第{context['start_ep']}話〜第{context['new_total']}話を展開中...", "info"
-            )
+            reporter.report(f"✍️ 第{context['start_ep']}話〜第{context['new_total']}話を展開中...", "info")
             expanded = await plot_agent.expand_plots(
                 book_id=context["book_id"],
                 target_ep_list=ep_nums,

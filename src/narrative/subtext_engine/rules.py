@@ -243,8 +243,7 @@ class ExplanatoryCompressRule(RuleBase):
             return RewriteResult(success=True, modified=False, block=block)
 
         dialogue_line_indices = [
-            i for i, line in enumerate(block.lines)
-            if line.strip().startswith("「") and line.strip().endswith("」")
+            i for i, line in enumerate(block.lines) if line.strip().startswith("「") and line.strip().endswith("」")
         ]
 
         # Check for sequences of 3 or more consecutive dialogue lines
@@ -310,7 +309,7 @@ def _continues_word(match: "re.Match", text: str) -> bool:
     """
     if match.group(1):
         return False
-    nxt = text[match.end():match.end() + 1]
+    nxt = text[match.end() : match.end() + 1]
     if not nxt or not _is_hiragana(nxt):
         return False
     return nxt not in _SUFFIX_STARTERS
@@ -382,7 +381,7 @@ class EmotionToActionRule(RuleBase):
                     continue
                 # 否定判定もマッチしたスパンに限定する
                 # (行全体への「悲しくない」判定で書き換えを丸ごと飛ばさない)
-                tail = line[m.end():]
+                tail = line[m.end() :]
                 if tail.startswith("くない") or tail.startswith("くはない"):
                     continue
                 matched_key = key
@@ -393,6 +392,7 @@ class EmotionToActionRule(RuleBase):
                 # If line is enclosed dialogue 「...」, insert stage direction before or after
                 if line.startswith("「") and line.endswith("」"):
                     inner = line[1:-1]
+
                     # Sub out the emotion word or soften it
                     # (他の語の一部に重ならないよう、同じ境界ルールを適用する)
                     def _soften(match: "re.Match") -> str:
@@ -674,9 +674,7 @@ class ComplianceSubvertRule(RuleBase):
             tags=["compliance", "subversion"],
             description="Subverts agreement into irony or silent refusal.",
         )
-        self.regex = re.compile(
-            r"^「?(はい|わかりました|承知|従う|言う通り)(?:いたし|し)?(?:です|ました)?[。!]?」?$"
-        )
+        self.regex = re.compile(r"^「?(はい|わかりました|承知|従う|言う通り)(?:いたし|し)?(?:です|ました)?[。!]?」?$")
 
     def apply(
         self,
@@ -782,6 +780,7 @@ class AddressDistanceRule(RuleBase):
 # ==============================================================================
 # Extension Rules (Step 14: Rules 8 - 15)
 # ==============================================================================
+
 
 class ExtensionRule(RuleBase):
     """Generic template for extension rules (Rules 8-15)."""

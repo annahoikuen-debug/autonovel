@@ -3,6 +3,7 @@
 常駐VOICEVOXコンテナ不要で、1,000文字あたり約$0.015（約2.2円）の従量課金で
 高品位な朗読音声を生成する。
 """
+
 from __future__ import annotations
 
 from typing import Optional

@@ -1,4 +1,5 @@
 """Unit tests for TimelineResourceProvider."""
+
 from __future__ import annotations
 
 from src.mcp_servers.timeline_schemas import TimelineEvent, EpisodeDigest

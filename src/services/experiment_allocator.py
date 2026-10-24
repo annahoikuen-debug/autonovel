@@ -68,10 +68,7 @@ class ExperimentAllocator:
         """Select experimental variant for genre from bucket."""
         # Get all variants for this genre (excluding base v1)
         genre_base = f"{genre}_v1"
-        experimental = [
-            name for name in WEIGHT_VARIANTS.keys()
-            if name.startswith(f"{genre}_") and name != genre_base
-        ]
+        experimental = [name for name in WEIGHT_VARIANTS.keys() if name.startswith(f"{genre}_") and name != genre_base]
 
         if not experimental:
             # No experimental variants for this genre, fall back to base
@@ -133,10 +130,7 @@ class MultiExperimentAllocator:
         Returns:
             Dict mapping experiment_name -> variant_name
         """
-        return {
-            name: exp.allocate(book_id, genre)
-            for name, exp in self.experiments.items()
-        }
+        return {name: exp.allocate(book_id, genre) for name, exp in self.experiments.items()}
 
     def get_default_allocator(self) -> ExperimentAllocator:
         """Get the default experiment allocator (first added)."""

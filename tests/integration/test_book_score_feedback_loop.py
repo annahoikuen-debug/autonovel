@@ -1,7 +1,8 @@
 # tests/integration/test_book_score_feedback_loop.py
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -29,17 +30,20 @@ def mock_writer():
 @pytest.fixture
 def mock_book_score_calculator():
     calc = MagicMock(spec=BookScoreCalculator)
-    calc._get_weights = MagicMock(return_value={
-        "structure": 25, "coherency": 25, "factual_grounding": 20,
-        "visual_textual_synergy": 15, "reader_experience": 15,
-    })
+    calc._get_weights = MagicMock(
+        return_value={
+            "structure": 25,
+            "coherency": 25,
+            "factual_grounding": 20,
+            "visual_textual_synergy": 15,
+            "reader_experience": 15,
+        }
+    )
     return calc
 
 
 @pytest.mark.asyncio
-async def test_writing_service_regeneration_loop_success(
-    mock_repo, mock_writer, mock_book_score_calculator
-):
+async def test_writing_service_regeneration_loop_success(mock_repo, mock_writer, mock_book_score_calculator):
     """BookScore 閾値未満 → 再生成 → 閾値達成で停止"""
     # 1回目: 低スコア、2回目: 高スコア、3回目: 最終確認
     call_count = 0
@@ -87,10 +91,15 @@ async def test_writing_service_regeneration_loop_success(
 
     # 執筆実行
     word_count = await service.generate_episodes(
-        book_id=1, start_ep=1, end_ep=1,
-        passion=0.8, target_word_count=3000,
-        is_easy_mode=False, reporter=MagicMock(),
-        auto_regenerate=True, max_retries=3,
+        book_id=1,
+        start_ep=1,
+        end_ep=1,
+        passion=0.8,
+        target_word_count=3000,
+        is_easy_mode=False,
+        reporter=MagicMock(),
+        auto_regenerate=True,
+        max_retries=3,
     )
 
     assert word_count == 3000
@@ -99,19 +108,19 @@ async def test_writing_service_regeneration_loop_success(
 
 
 @pytest.mark.asyncio
-async def test_writing_service_regeneration_max_retries(
-    mock_repo, mock_writer, mock_book_score_calculator
-):
+async def test_writing_service_regeneration_max_retries(mock_repo, mock_writer, mock_book_score_calculator):
     """最大リトライ回数到達で停止"""
     # 常に低スコアを返す
-    mock_book_score_calculator.calculate = AsyncMock(return_value=MagicMock(
-        overall_score=50.0,
-        structure_score=40.0,
-        coherency_score=50.0,
-        factual_grounding_score=60.0,
-        visual_textual_synergy_score=45.0,
-        reader_experience_score=50.0,
-    ))
+    mock_book_score_calculator.calculate = AsyncMock(
+        return_value=MagicMock(
+            overall_score=50.0,
+            structure_score=40.0,
+            coherency_score=50.0,
+            factual_grounding_score=60.0,
+            visual_textual_synergy_score=45.0,
+            reader_experience_score=50.0,
+        )
+    )
 
     # Allow full text regeneration (default max_regenerations=0 disables it)
     pdca_controller = PDCAController(max_regenerations=3)
@@ -130,10 +139,15 @@ async def test_writing_service_regeneration_max_retries(
 
     reporter = MagicMock()
     await service.generate_episodes(
-        book_id=1, start_ep=1, end_ep=1,
-        passion=0.8, target_word_count=3000,
-        is_easy_mode=False, reporter=reporter,
-        auto_regenerate=True, max_retries=3,
+        book_id=1,
+        start_ep=1,
+        end_ep=1,
+        passion=0.8,
+        target_word_count=3000,
+        is_easy_mode=False,
+        reporter=reporter,
+        auto_regenerate=True,
+        max_retries=3,
     )
 
     # 初回 + 3回リトライ = 4回呼ばれる
@@ -144,18 +158,18 @@ async def test_writing_service_regeneration_max_retries(
 
 
 @pytest.mark.asyncio
-async def test_writing_service_no_regeneration_when_disabled(
-    mock_repo, mock_writer, mock_book_score_calculator
-):
+async def test_writing_service_no_regeneration_when_disabled(mock_repo, mock_writer, mock_book_score_calculator):
     """auto_regenerate=False の場合は再生成しない"""
-    mock_book_score_calculator.calculate = AsyncMock(return_value=MagicMock(
-        overall_score=50.0,  # 閾値未満
-        structure_score=40.0,
-        coherency_score=50.0,
-        factual_grounding_score=60.0,
-        visual_textual_synergy_score=45.0,
-        reader_experience_score=50.0,
-    ))
+    mock_book_score_calculator.calculate = AsyncMock(
+        return_value=MagicMock(
+            overall_score=50.0,  # 閾値未満
+            structure_score=40.0,
+            coherency_score=50.0,
+            factual_grounding_score=60.0,
+            visual_textual_synergy_score=45.0,
+            reader_experience_score=50.0,
+        )
+    )
 
     service = WritingService(
         writer=mock_writer,
@@ -169,9 +183,13 @@ async def test_writing_service_no_regeneration_when_disabled(
     )
 
     await service.generate_episodes(
-        book_id=1, start_ep=1, end_ep=1,
-        passion=0.8, target_word_count=3000,
-        is_easy_mode=False, reporter=MagicMock(),
+        book_id=1,
+        start_ep=1,
+        end_ep=1,
+        passion=0.8,
+        target_word_count=3000,
+        is_easy_mode=False,
+        reporter=MagicMock(),
         auto_regenerate=False,  # 無効
         max_retries=3,
     )
@@ -181,18 +199,18 @@ async def test_writing_service_no_regeneration_when_disabled(
 
 
 @pytest.mark.asyncio
-async def test_writing_service_regeneration_actions_generated(
-    mock_repo, mock_writer, mock_book_score_calculator
-):
+async def test_writing_service_regeneration_actions_generated(mock_repo, mock_writer, mock_book_score_calculator):
     """再生成アクションが正しく生成される"""
-    mock_book_score_calculator.calculate = AsyncMock(return_value=MagicMock(
-        overall_score=60.0,
-        structure_score=50.0,   # 低
-        coherency_score=55.0,   # 低
-        factual_grounding_score=70.0,
-        visual_textual_synergy_score=80.0,
-        reader_experience_score=85.0,
-    ))
+    mock_book_score_calculator.calculate = AsyncMock(
+        return_value=MagicMock(
+            overall_score=60.0,
+            structure_score=50.0,  # 低
+            coherency_score=55.0,  # 低
+            factual_grounding_score=70.0,
+            visual_textual_synergy_score=80.0,
+            reader_experience_score=85.0,
+        )
+    )
 
     service = WritingService(
         writer=mock_writer,

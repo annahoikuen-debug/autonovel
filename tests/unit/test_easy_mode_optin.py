@@ -123,4 +123,3 @@ async def test_streaming_generator_with_optin_config():
     assert "data: " in events[0]
     assert '"type": "start"' in events[0]
     assert any('"type": "done"' in e for e in events)
-

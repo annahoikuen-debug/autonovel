@@ -6,6 +6,7 @@ config/erotic_vocabulary_ext.py
 
 from config.erotic_vocabulary import get_vocabulary_for_tier
 
+
 def get_vocabulary_for_tier_ext(tier: str) -> dict:
     """拡張ティアの語彙を返す。intense 以外は erotic_vocabulary に委譲する。
 

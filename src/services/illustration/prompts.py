@@ -104,9 +104,7 @@ def build_character_prompt(character_data: dict[str, str]) -> str:
     return " ".join(parts)
 
 
-def apply_safety_modifier(
-    prompt: str, safety_level: SafetyLevel, illo_type: IllustrationType
-) -> str:
+def apply_safety_modifier(prompt: str, safety_level: SafetyLevel, illo_type: IllustrationType) -> str:
     """R15等の安全レベルに応じたプロンプト修飾を付与する。
 
     safety_level は src / autonovel.src いずれの経路で作られた enum でも
@@ -120,14 +118,8 @@ def apply_safety_modifier(
         return prompt
 
     if illo_type == IllustrationType.CHARACTER:
-        return (
-            prompt + " Tasteful R15 artistic representation, romantic atmosphere, "
-            "elegant and non-explicit."
-        )
-    return (
-        prompt
-        + " Tasteful R15 artistic representation, intimate but not explicit, artistic lighting."
-    )
+        return prompt + " Tasteful R15 artistic representation, romantic atmosphere, elegant and non-explicit."
+    return prompt + " Tasteful R15 artistic representation, intimate but not explicit, artistic lighting."
 
 
 # ---- 4コマ風/6コマ要約漫画用のプロンプト -----------------------------
@@ -216,6 +208,5 @@ def apply_yonkoma_safety_modifier(prompt: str, safety_level: SafetyLevel) -> str
     if not is_r15:
         return prompt
     return (
-        prompt + " Tasteful R15 artistic representation, romantic atmosphere, "
-        "elegant and non-explicit in all panels."
+        prompt + " Tasteful R15 artistic representation, romantic atmosphere, elegant and non-explicit in all panels."
     )

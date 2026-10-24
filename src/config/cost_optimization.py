@@ -1,4 +1,3 @@
-
 import os
 from typing import Any
 
@@ -18,9 +17,9 @@ MODEL_PRICING = {
 }
 
 ROUTING_TIERS = {
-    "tier1_light": "gemini-2.0-flash",      # 構成・ブレスト・要約・監査
-    "tier2_standard": "claude-3-5-haiku",   # 日常シーン・展開回の執筆
-    "tier3_premium": "claude-3-5-sonnet",   # クライマックス・第1話・重要伏線回収
+    "tier1_light": "gemini-2.0-flash",  # 構成・ブレスト・要約・監査
+    "tier2_standard": "claude-3-5-haiku",  # 日常シーン・展開回の執筆
+    "tier3_premium": "claude-3-5-sonnet",  # クライマックス・第1話・重要伏線回収
 }
 
 
@@ -36,8 +35,7 @@ class UnknownModelPricingError(KeyError):
     def __init__(self, model_name: str) -> None:
         self.model_name = model_name
         super().__init__(
-            f"モデル {model_name!r} の価格が MODEL_PRICING に登録されていません。"
-            f" 登録済み: {sorted(MODEL_PRICING)}"
+            f"モデル {model_name!r} の価格が MODEL_PRICING に登録されていません。 登録済み: {sorted(MODEL_PRICING)}"
         )
 
 
@@ -54,10 +52,9 @@ def resolve_pricing(model_name: str) -> dict[str, float]:
         raise UnknownModelPricingError(model_name)
     return pricing
 
+
 #: モデルID → tier 名の逆引き（token_tracker の tier バケット用）
-TIER_BY_MODEL: dict[str, str] = {
-    model: tier for tier, model in ROUTING_TIERS.items()
-}
+TIER_BY_MODEL: dict[str, str] = {model: tier for tier, model in ROUTING_TIERS.items()}
 
 #: 機能フラグ: tier ルーティングの既定値（段階導入のため OFF）。
 #: 環境変数 ``ENABLE_MODEL_ROUTING`` で上書きできる。
@@ -123,9 +120,7 @@ def is_climax_episode(
             if _truthy(source.get(key)):
                 return True
 
-    plan = str(
-        writing_context.get("user_plan") or payload.get("user_plan") or payload.get("plan") or "free"
-    ).lower()
+    plan = str(writing_context.get("user_plan") or payload.get("user_plan") or payload.get("plan") or "free").lower()
     return plan in ("pro", "enterprise")
 
 

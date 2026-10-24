@@ -1,4 +1,5 @@
 """Unit tests for pure pydantic domain models: chapter & character."""
+
 from __future__ import annotations
 
 import pytest

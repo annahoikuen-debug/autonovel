@@ -1,4 +1,5 @@
 """Timeline and Episode Digest Schemas and URI Parser."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -9,6 +10,7 @@ import re
 @dataclass
 class TimelineEvent:
     """タイムラインイベント定義"""
+
     timestamp: str
     location: str
     description: str
@@ -19,6 +21,7 @@ class TimelineEvent:
 @dataclass
 class EpisodeDigest:
     """エピソード要約定義"""
+
     episode_num: int
     summary: str
     footholds_or_foreshadowings: List[str] = field(default_factory=list)

@@ -43,7 +43,9 @@ async def test_writing_coordinator_pdca_skips_full_regeneration_and_applies_sing
     ]
 
     mock_polisher = MagicMock()
-    mock_polisher.polish.return_value = "昔々ある所に、波乱万丈なお爺さんとお婆さんが住んでいました。毎日事件の連続でした。"
+    mock_polisher.polish.return_value = (
+        "昔々ある所に、波乱万丈なお爺さんとお婆さんが住んでいました。毎日事件の連続でした。"
+    )
 
     # PDCA with max_regenerations=0 (default) and max_local_patches=1
     pdca = PDCAController(max_regenerations=0, max_local_patches=1)

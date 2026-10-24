@@ -80,14 +80,16 @@ class DSPTensionBalancer(TensionAnalyzer, Corrector):
             for offset in range(min(len(impulse), len(current_curve) - target_0idx)):
                 ep_1based = target_0idx + offset + 1
                 corrected_eps.add(ep_1based)
-                applied_actions.append(CorrectionAction(
-                    episode=ep_1based,
-                    action_type="IMPULSE_TENSION_BOOST",
-                    target_field="tension",
-                    original_value=round(float(original_curve[ep_1based - 1]), 2),
-                    new_value=round(float(current_curve[ep_1based - 1]), 2),
-                    reason=f"Sag detected between Ep {sag.start_episode}-{sag.end_episode}: {sag.reason}",
-                ))
+                applied_actions.append(
+                    CorrectionAction(
+                        episode=ep_1based,
+                        action_type="IMPULSE_TENSION_BOOST",
+                        target_field="tension",
+                        original_value=round(float(original_curve[ep_1based - 1]), 2),
+                        new_value=round(float(current_curve[ep_1based - 1]), 2),
+                        reason=f"Sag detected between Ep {sag.start_episode}-{sag.end_episode}: {sag.reason}",
+                    )
+                )
 
         corrected_beats = writeback_corrected_beats(beats, current_curve, corrected_eps)
         elapsed_ms = (time.perf_counter() - start_time) * 1000.0

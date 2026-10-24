@@ -1,5 +1,6 @@
 # src/agents/skills/v1/easy_mode_context_builder.py
 """easy_mode 専用 ContextBuilderSkill - 簡易コンテキスト構築"""
+
 from __future__ import annotations
 
 import logging
@@ -36,6 +37,7 @@ class EasyModeContextBuilderSkill(SkillAgent):
 
             # ContextBuilderAgent を使用
             from src.agents.context_builder_agent import ContextBuilderAgent
+
             context_builder = ContextBuilderAgent(
                 repo=self.repo,
                 llm=self.llm,

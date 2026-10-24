@@ -9,6 +9,7 @@
   - ``expect(1).toBe(1)`` / ``expect(1 + 1).toBe(2)``
   - ``as never``
 """
+
 from __future__ import annotations
 
 import glob
@@ -40,10 +41,7 @@ ALLOWLIST: dict[str, str] = {
 
 
 def _test_files() -> list[str]:
-    return [
-        p for p in glob.glob("tests/**/*.py", recursive=True)
-        if os.path.basename(p).startswith("test_")
-    ]
+    return [p for p in glob.glob("tests/**/*.py", recursive=True) if os.path.basename(p).startswith("test_")]
 
 
 def test_no_tautological_assert_in_test_suite():
@@ -56,9 +54,7 @@ def test_no_tautological_assert_in_test_suite():
             for pattern, label in FORBIDDEN:
                 if re.search(pattern, line):
                     offenders.append(f"{rel}:{lineno} {label} :: {line.strip()[:80]}")
-    assert not offenders, (
-        f"恒真 assert が {len(offenders)} 件ある:\n  " + "\n  ".join(offenders)
-    )
+    assert not offenders, f"恒真 assert が {len(offenders)} 件ある:\n  " + "\n  ".join(offenders)
 
 
 def test_allowlist_entries_have_reasons():

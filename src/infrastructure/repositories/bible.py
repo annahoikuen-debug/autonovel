@@ -24,14 +24,10 @@ from src.backend.database.repositories.base import BaseRepository
 class BibleRepository(BaseRepository):
     """Bibleテーブルに関するDB操作をまとめたMixin"""
 
-    async def create_bible(
-        self, book_id: int, settings: Any, version: int, last_updated: str
-    ) -> None:
+    async def create_bible(self, book_id: int, settings: Any, version: int, last_updated: str) -> None:
         bible = Bible(
             book_id=book_id,
-            settings=json.dumps(settings, ensure_ascii=False)
-            if not isinstance(settings, str)
-            else settings,
+            settings=json.dumps(settings, ensure_ascii=False) if not isinstance(settings, str) else settings,
             version=version,
             last_updated=last_updated,
         )
@@ -76,9 +72,7 @@ class BibleRepository(BaseRepository):
                     "catchcopies": current_mkt.get("catchcopies")
                     if current_mkt.get("catchcopies")
                     else new_mkt.get("catchcopies"),
-                    "tags": current_mkt.get("tags")
-                    if current_mkt.get("tags")
-                    else new_mkt.get("tags"),
+                    "tags": current_mkt.get("tags") if current_mkt.get("tags") else new_mkt.get("tags"),
                     "ab_test_candidates": new_mkt.get("ab_test_candidates"),
                 }
                 mkt_data = json.dumps(merged_mkt, ensure_ascii=False)
@@ -237,9 +231,7 @@ async def get_pending_settings(self, book_id: int) -> list[BiblePendingSetting]:
 
 async def resolve_pending_setting(self, setting_id: int, status: str) -> None:
     """仮設定を承認(approved)または拒絶(rejected)する"""
-    result = await self.session.execute(
-        select(BiblePendingSetting).where(BiblePendingSetting.id == setting_id)
-    )
+    result = await self.session.execute(select(BiblePendingSetting).where(BiblePendingSetting.id == setting_id))
     setting = result.scalar_one_or_none()
     if setting:
         setting.status = status

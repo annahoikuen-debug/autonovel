@@ -17,6 +17,7 @@ class TestAntiAIDetector:
     def test_returns_score_in_range(self) -> None:
         """スコアは0-100の範囲"""
         import asyncio
+
         auditor = AntiAIDetector()
         result = asyncio.run(auditor.audit({"draft_text": AI_TEXT}))
         assert 0 <= result.score <= 100
@@ -24,6 +25,7 @@ class TestAntiAIDetector:
     def test_empty_text_returns_zero(self) -> None:
         """空テキストはスコア0"""
         import asyncio
+
         auditor = AntiAIDetector()
         result = asyncio.run(auditor.audit({"draft_text": ""}))
         assert result.score == 0.0
@@ -31,6 +33,7 @@ class TestAntiAIDetector:
     def test_missing_draft_text_returns_zero(self) -> None:
         """draft_text がなければスコア0"""
         import asyncio
+
         auditor = AntiAIDetector()
         result = asyncio.run(auditor.audit({}))
         assert result.score == 0.0
@@ -38,6 +41,7 @@ class TestAntiAIDetector:
     def test_includes_category_scores_in_feedback(self) -> None:
         """フィードバックにカテゴリ別スコアを含む"""
         import asyncio
+
         auditor = AntiAIDetector()
         result = asyncio.run(auditor.audit({"draft_text": AI_TEXT}))
         assert "category_scores" in result.feedback
@@ -59,6 +63,7 @@ class TestAntiAIDetector:
     def test_clean_text_high_score(self) -> None:
         """クリーンなテキストは高いスコア"""
         import asyncio
+
         auditor = AntiAIDetector()
         result = asyncio.run(auditor.audit({"draft_text": CLEAN_TEXT}))
         assert result.score >= 95.0
@@ -66,6 +71,7 @@ class TestAntiAIDetector:
     def test_suggestions_for_low_scores(self) -> None:
         """低スコア時に提案が含まれる"""
         import asyncio
+
         auditor = AntiAIDetector()
         result = asyncio.run(auditor.audit({"draft_text": AI_TEXT}))
         if result.score < 70:
@@ -74,6 +80,7 @@ class TestAntiAIDetector:
     def test_ai_text_triggers_violations(self) -> None:
         """AIテキストは違反を検出"""
         import asyncio
+
         auditor = AntiAIDetector()
         result = asyncio.run(auditor.audit({"draft_text": AI_TEXT}))
         assert result.feedback["total_violations"] > 0
@@ -81,6 +88,7 @@ class TestAntiAIDetector:
     def test_to_dict_includes_all_fields(self) -> None:
         """to_dict() が全フィールドを含む"""
         import asyncio
+
         auditor = AntiAIDetector()
         result = asyncio.run(auditor.audit({"draft_text": AI_TEXT}))
         d = result.to_dict()

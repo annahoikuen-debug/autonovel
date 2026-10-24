@@ -32,13 +32,9 @@ class EroticCurve:
         # 位置の範囲チェック
         for point in self.points:
             if not 0.0 <= point.position <= 1.0:
-                raise ValueError(
-                    f"Point position must be between 0.0 and 1.0, got {point.position}"
-                )
+                raise ValueError(f"Point position must be between 0.0 and 1.0, got {point.position}")
             if not 0.0 <= point.intensity <= 100.0:
-                raise ValueError(
-                    f"Point intensity must be between 0.0 and 100.0, got {point.intensity}"
-                )
+                raise ValueError(f"Point intensity must be between 0.0 and 100.0, got {point.intensity}")
 
     @classmethod
     def create_from_parameters(cls, params: EroticParameters) -> EroticCurve:

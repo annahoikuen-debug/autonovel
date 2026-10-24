@@ -110,8 +110,12 @@ async def test_active_char_filtering_and_bounds_and_fault_tolerance(async_db):
         repo = SocialRepository(session)
 
         # 2ペア関係性を挿入
-        m1 = RelationshipMetrics(char_a="Hero", char_b="Rival", trust_score=80.0, tension_score=20.0, affinity_score=85.0)
-        m2 = RelationshipMetrics(char_a="MobA", char_b="MobB", trust_score=50.0, tension_score=50.0, affinity_score=50.0)
+        m1 = RelationshipMetrics(
+            char_a="Hero", char_b="Rival", trust_score=80.0, tension_score=20.0, affinity_score=85.0
+        )
+        m2 = RelationshipMetrics(
+            char_a="MobA", char_b="MobB", trust_score=50.0, tension_score=50.0, affinity_score=50.0
+        )
         await repo.upsert_relationship(book_id=1, char_a="Hero", char_b="Rival", metrics=m1)
         await repo.upsert_relationship(book_id=1, char_a="MobA", char_b="MobB", metrics=m2)
         await session.commit()
@@ -162,6 +166,7 @@ async def test_active_char_filtering_and_bounds_and_fault_tolerance(async_db):
 def test_novel_router_social_endpoints():
     """Step 35の検証: novel.py のソーシャルエンドポイント定義"""
     from src.backend.routers import novel
+
     routes = [r.path for r in novel.router.routes]
     assert any("social/relationships" in p for p in routes)
     assert any("social/journals" in p for p in routes)

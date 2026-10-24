@@ -15,7 +15,10 @@ def _run(*args: str, env: dict | None = None) -> tuple[int, str, str]:
         run_env.update(env)
     result = subprocess.run(
         [sys.executable, SCRIPT, *args],
-        capture_output=True, text=True, cwd=Path.cwd(), timeout=120,
+        capture_output=True,
+        text=True,
+        cwd=Path.cwd(),
+        timeout=120,
         env=run_env,
     )
     return result.returncode, result.stdout, result.stderr

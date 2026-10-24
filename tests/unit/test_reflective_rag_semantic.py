@@ -21,9 +21,11 @@ def test_context_fit_check_world_bible_statuses():
 
     # Active normal entity
     doc_active = SearchResult(
-        id="1", content="大賢者は王都の塔に滞在している。",
+        id="1",
+        content="大賢者は王都の塔に滞在している。",
         metadata={"name": "大賢者", "status": "active"},
-        source="world", score=0.9,
+        source="world",
+        score=0.9,
     )
     res_active = service._context_fit_check(mock_session, doc_active)
     assert res_active.score == 1.0
@@ -31,9 +33,11 @@ def test_context_fit_check_world_bible_statuses():
 
     # Dead / destroyed entity
     doc_dead = SearchResult(
-        id="2", content="かつて存在した先代勇者の活躍。",
+        id="2",
+        content="かつて存在した先代勇者の活躍。",
         metadata={"name": "先代勇者", "status": "dead"},
-        source="world", score=0.9,
+        source="world",
+        score=0.9,
     )
     res_dead = service._context_fit_check(mock_session, doc_dead)
     assert res_dead.score == 0.0
@@ -42,9 +46,11 @@ def test_context_fit_check_world_bible_statuses():
 
     # Forbidden / banned entity
     doc_forbidden = SearchResult(
-        id="3", content="禁忌とされた暗黒魔法の書。",
+        id="3",
+        content="禁忌とされた暗黒魔法の書。",
         metadata={"name": "暗黒魔法", "status": "forbidden"},
-        source="world", score=0.9,
+        source="world",
+        score=0.9,
     )
     res_forbidden = service._context_fit_check(mock_session, doc_forbidden)
     assert res_forbidden.score == 0.0
@@ -56,7 +62,9 @@ async def test_retrieve_reflective_async_api():
     """Test asynchronous reflective retrieval API entry point (Step 34)."""
     mock_rag = MagicMock()
     mock_rag.search_similar_chunks.return_value = [
-        SearchResult(id="10", content="精霊の森の守護者に関する伝承", metadata={"title": "精霊伝承"}, source="world", score=0.8),
+        SearchResult(
+            id="10", content="精霊の森の守護者に関する伝承", metadata={"title": "精霊伝承"}, source="world", score=0.8
+        ),
     ]
 
     service = ReflectiveRAGService(rag_service=mock_rag, max_iter=1)

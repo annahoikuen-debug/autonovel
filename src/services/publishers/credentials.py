@@ -87,9 +87,7 @@ class CredentialStore:
             self._keyring = keyring
             logger.debug("キーリング初期化完了")
         except ImportError:
-            logger.warning(
-                "keyringライブラリが見つかりません。pip install keyring でインストール可能です。"
-            )
+            logger.warning("keyringライブラリが見つかりません。pip install keyring でインストール可能です。")
             self.config.use_keyring = False
 
     def _init_encryption(self):
@@ -139,9 +137,7 @@ class CredentialStore:
         creds = {}
         for field in mapping.keys():
             try:
-                value = self._keyring.get_password(
-                    "autonovel", self._get_keyring_key(platform, field)
-                )
+                value = self._keyring.get_password("autonovel", self._get_keyring_key(platform, field))
                 if value:
                     creds[field] = value
             except Exception as e:
@@ -176,9 +172,7 @@ class CredentialStore:
         for field, value in creds.items():
             if value:
                 try:
-                    self._keyring.set_password(
-                        "autonovel", self._get_keyring_key(platform, field), value
-                    )
+                    self._keyring.set_password("autonovel", self._get_keyring_key(platform, field), value)
                 except Exception as e:
                     logger.warning(f"キーリング保存エラー ({platform}.{field}): {e}")
 
@@ -249,9 +243,7 @@ class CredentialStore:
         """
         # dataclassをdictに変換（platform, extraは除外）
         creds_dict = {
-            k: v
-            for k, v in asdict(credentials).items()
-            if k not in ("platform", "extra") and v is not None and v != ""
+            k: v for k, v in asdict(credentials).items() if k not in ("platform", "extra") and v is not None and v != ""
         }
 
         self._save_to_keyring(platform, creds_dict)
@@ -293,9 +285,7 @@ class CredentialStore:
             mapping = self.ENV_MAPPING.get(platform, {})
             for field in mapping.keys():
                 try:
-                    self._keyring.delete_password(
-                        "autonovel", self._get_keyring_key(platform, field)
-                    )
+                    self._keyring.delete_password("autonovel", self._get_keyring_key(platform, field))
                 except Exception:
                     pass
 

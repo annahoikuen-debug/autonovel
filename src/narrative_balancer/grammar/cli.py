@@ -45,6 +45,7 @@ def main(argv: List[str] = None) -> int:
     # 1. DOT export
     if args.dot:
         from src.narrative_balancer.grammar.beat_mapping import beat_to_terminal
+
         forest = balancer.dp_engine.parser.parse_prefix([beat_to_terminal(b) for b in beats])
         dot_str = parse_forest_to_dot(forest)
         dot_path = Path(args.dot)

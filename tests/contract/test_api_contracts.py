@@ -38,16 +38,12 @@ def _bypass_auth(monkeypatch):
     app.dependency_overrides[get_current_user] = lambda: User(
         id=1, email="contract@example.com", role="admin", status="active"
     )
-    monkeypatch.setattr(
-        graph_router, "verify_book_ownership", AsyncMock(return_value=object())
-    )
+    monkeypatch.setattr(graph_router, "verify_book_ownership", AsyncMock(return_value=object()))
     # `/pipeline/process` と `/pipeline/batch` は `_assert_chapter_ownership` 経由で
     # 章 → 作品 の所有者を辿るため、まず章テーブルの SELECT を行う。
     # 契約テストが契約化しているのはレスポンス形状であって事前データ整備では
     # ないので、この解決のみスタブする（パイプライン本体の処理はそのまま走る）。
-    monkeypatch.setattr(
-        graph_router, "_assert_chapter_ownership", AsyncMock(return_value=None)
-    )
+    monkeypatch.setattr(graph_router, "_assert_chapter_ownership", AsyncMock(return_value=None))
     yield
     app.dependency_overrides.pop(get_current_user, None)
 
@@ -120,13 +116,9 @@ def test_rag_context_endpoint_response_shape():
     """POST /api/graph/rag/context レスポンス形状"""
     resp = client.post(
         "/api/graph/rag/context",
-        json={
-            "current_prompt": "テストプロンプト",
-            "character_name": "主人公",
-            "additional_entities": ["聖剣"]
-        }
+        json={"current_prompt": "テストプロンプト", "character_name": "主人公", "additional_entities": ["聖剣"]},
     )
-# GraphRAG 無劫環境でも 200 返却
+    # GraphRAG 無劫環境でも 200 返却
     assert resp.status_code == 200
     data = resp.json()
 
@@ -150,8 +142,8 @@ def test_rag_hybrid_search_endpoint():
             "top_k": 5,
             "alpha": 0.5,
             "beta": 0.3,
-            "gamma": 0.2
-        }
+            "gamma": 0.2,
+        },
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -175,12 +167,7 @@ def test_rag_hybrid_search_endpoint():
 def test_rag_episode_endpoint():
     """POST /api/graph/rag/episode レスポンス形状"""
     resp = client.post(
-        "/api/graph/rag/episode",
-        params={
-            "character_name": "主人公",
-            "additional_entities": ["聖剣"],
-            "top_k": 3
-        }
+        "/api/graph/rag/episode", params={"character_name": "主人公", "additional_entities": ["聖剣"], "top_k": 3}
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -215,14 +202,7 @@ def test_graph_stats_endpoint():
 
 def test_graph_neighbors_endpoint():
     """POST /api/graph/search/neighbors レスポンス形状"""
-    resp = client.post(
-        "/api/graph/search/neighbors",
-        json={
-            "node_name": "主人公",
-            "max_depth": 2,
-            "limit": 10
-        }
-    )
+    resp = client.post("/api/graph/search/neighbors", json={"node_name": "主人公", "max_depth": 2, "limit": 10})
     assert resp.status_code == 200
     data = resp.json()
 
@@ -237,11 +217,7 @@ def test_pipeline_process_endpoint():
     """POST /api/graph/pipeline/process レスポンス形状"""
     resp = client.post(
         "/api/graph/pipeline/process",
-        json={
-            "chapter_id": 1,
-            "chapter_text": "テスト本文",
-            "idempotency_key": "test_key_1"
-        }
+        json={"chapter_id": 1, "chapter_text": "テスト本文", "idempotency_key": "test_key_1"},
     )
     assert resp.status_code == 200
     data = resp.json()
@@ -258,15 +234,22 @@ def test_pipeline_batch_endpoint():
         json={
             "chapters": [
                 {"chapter_id": 1, "chapter_text": "第1話", "idempotency_key": "k1"},
-                {"chapter_id": 2, "chapter_text": "第2話", "idempotency_key": "k2"}
+                {"chapter_id": 2, "chapter_text": "第2話", "idempotency_key": "k2"},
             ],
-            "continue_on_error": True
-        }
+            "continue_on_error": True,
+        },
     )
     assert resp.status_code == 200
     data = resp.json()
 
-    required = ["chapters_processed", "chunks_created", "entities_created", "relationships_created", "errors", "elapsed_ms"]
+    required = [
+        "chapters_processed",
+        "chunks_created",
+        "entities_created",
+        "relationships_created",
+        "errors",
+        "elapsed_ms",
+    ]
     for field in required:
         assert field in data
 

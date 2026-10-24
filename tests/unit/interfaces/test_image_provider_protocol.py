@@ -43,9 +43,7 @@ class TestImageProviderProtocol:
 
     def test_generate_image_with_options(self):
         provider = FakeProvider()
-        result = asyncio.run(
-            provider.generate_image("castle", width=512, height=512, style="watercolor")
-        )
+        result = asyncio.run(provider.generate_image("castle", width=512, height=512, style="watercolor"))
         assert "castle" in result
 
     def test_base_provider_is_unavailable(self):

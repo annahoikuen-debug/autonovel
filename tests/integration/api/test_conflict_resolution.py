@@ -1,4 +1,5 @@
 """Integration tests for conflict review and resolution API."""
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 

@@ -2,6 +2,7 @@
 Rewrite directive generator for Emotion Syllogism violations.
 PLAN 03: AI優等生病の外科的切除（生々しいエゴ・下品な打算・身体言語への置換指示）
 """
+
 from __future__ import annotations
 
 from src.services.anti_ai.models import AICategory, ViolationSpan
@@ -12,9 +13,7 @@ def generate_syllogism_rewrite_directive(violations: list[ViolationSpan]) -> str
     三段論法（説明的感情処理、優等生的自己説得）の違反リストから、
     PDCAリライト用の具体的・強制的な修正ディレクティブを生成する。
     """
-    syllogism_violations = [
-        v for v in violations if v.category == AICategory.EMOTION_SYLLOGISM
-    ]
+    syllogism_violations = [v for v in violations if v.category == AICategory.EMOTION_SYLLOGISM]
     if not syllogism_violations:
         return ""
 

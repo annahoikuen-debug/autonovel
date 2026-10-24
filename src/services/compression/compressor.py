@@ -1,4 +1,5 @@
 """Four-Layer Context Compressor (Step 31)."""
+
 from __future__ import annotations
 
 import hashlib

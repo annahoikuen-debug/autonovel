@@ -1,4 +1,5 @@
 """Agent memory inspection, dump and compaction API endpoints."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional

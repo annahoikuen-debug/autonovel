@@ -8,6 +8,7 @@ from src.services.book_score_service import BookScoreService
 def test_phase1_ux_components():
     # 1. 商用投稿スケジュールスキーマの検証
     from datetime import datetime
+
     req = PublicationScheduleCreate(
         book_id=1,
         platform="narou",

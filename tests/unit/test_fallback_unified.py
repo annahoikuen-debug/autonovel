@@ -47,16 +47,19 @@ SAMPLE_STYLE_DNA = {
 }
 
 
-@pytest.mark.parametrize("auditor_class", [
-    ConsistencyAuditor,
-    CreativityAuditor,
-    ReaderHookAuditor,
-    EmotionCurveAuditor,
-    StyleAuditor,
-    FactualAuditor,
-    StructureAuditor,
-    MultimodalAuditor,
-])
+@pytest.mark.parametrize(
+    "auditor_class",
+    [
+        ConsistencyAuditor,
+        CreativityAuditor,
+        ReaderHookAuditor,
+        EmotionCurveAuditor,
+        StyleAuditor,
+        FactualAuditor,
+        StructureAuditor,
+        MultimodalAuditor,
+    ],
+)
 class TestFallbackUnified:
     """Test all auditors in fallback mode produce reasonable scores."""
 
@@ -75,15 +78,17 @@ class TestFallbackUnified:
         # Basic assertions
         assert result.degraded is True, f"{auditor_class.__name__} should be degraded in fallback"
         assert 0.0 <= result.score <= 100.0, f"{auditor_class.__name__} score out of bounds: {result.score}"
-        assert result.error is not None and "llm_unavailable" in result.error, \
+        assert result.error is not None and "llm_unavailable" in result.error, (
             f"{auditor_class.__name__} should have llm_unavailable error"
+        )
 
         # Score should not be extreme (not 0 unless empty input, not 100 without reason)
         if ctx.get("draft_text"):
             # StyleAuditor caps at 95, others at 95 or 100
             max_expected = 95.0 if auditor_class.__name__ == "StyleAuditor" else 100.0
-            assert 20.0 <= result.score <= max_expected, \
+            assert 20.0 <= result.score <= max_expected, (
                 f"{auditor_class.__name__} fallback score {result.score} outside reasonable range"
+            )
 
     @pytest.mark.asyncio
     async def test_fallback_has_suggestions(self, auditor, auditor_class):
@@ -102,8 +107,9 @@ class TestFallbackUnified:
         result = await auditor._safe_audit(ctx)
 
         assert result.feedback, f"{auditor_class.__name__} should have feedback"
-        assert "fallback" in str(result.feedback).lower(), \
+        assert "fallback" in str(result.feedback).lower(), (
             f"{auditor_class.__name__} feedback should indicate fallback mode"
+        )
 
     def _build_context(self, auditor_name: str) -> dict:
         """Build appropriate context for each auditor type."""
@@ -241,8 +247,9 @@ class TestFallbackScoreDistribution:
         result_strong = await auditor._safe_audit({"draft_text": strong})
         result_weak = await auditor._safe_audit({"draft_text": weak})
 
-        assert result_strong.score > result_weak.score, \
+        assert result_strong.score > result_weak.score, (
             f"Strong hooks ({result_strong.score}) should score higher than weak ({result_weak.score})"
+        )
 
     @pytest.mark.asyncio
     async def test_multimodal_triple_layer_matching(self):
@@ -254,17 +261,22 @@ class TestFallbackScoreDistribution:
         illust_match = "アリスが剣を持って笑っている。ドラマチックな光。"
         illust_mismatch = "チャーリーが杖を持って泣いている。穏やかな光。"
 
-        result_match = await auditor._safe_audit({
-            "draft_text": draft,
-            "illustration_prompts": illust_match,
-        })
-        result_mismatch = await auditor._safe_audit({
-            "draft_text": draft,
-            "illustration_prompts": illust_mismatch,
-        })
+        result_match = await auditor._safe_audit(
+            {
+                "draft_text": draft,
+                "illustration_prompts": illust_match,
+            }
+        )
+        result_mismatch = await auditor._safe_audit(
+            {
+                "draft_text": draft,
+                "illustration_prompts": illust_mismatch,
+            }
+        )
 
-        assert result_match.score > result_mismatch.score, \
+        assert result_match.score > result_mismatch.score, (
             f"Match ({result_match.score}) should score higher than mismatch ({result_mismatch.score})"
+        )
         # Check that triple-layer matching was used (not bigram fallback)
         assert "char_jaccard" in result_match.feedback
         # The triple extraction may not perfectly capture characters from short prompts,

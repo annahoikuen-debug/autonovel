@@ -7,6 +7,7 @@ from src.narrative_balancer.models import Beat, CorrectionAction, ValidationResu
 
 class PlotState(BaseModel):
     """Encapsulates current narrative state across all episodes."""
+
     model_config = ConfigDict(extra="ignore")
 
     total_episodes: int = Field(default=40, ge=1)
@@ -28,6 +29,7 @@ class PlotState(BaseModel):
 
 class BalancerResult(BaseModel):
     """Output from an individual narrative balancer."""
+
     model_config = ConfigDict(extra="ignore")
 
     balancer_name: str
@@ -42,6 +44,7 @@ class BalancerResult(BaseModel):
 
 class ConflictRecord(BaseModel):
     """Records a resolved conflict between multiple balancers at an episode."""
+
     model_config = ConfigDict(extra="ignore")
 
     episode: int
@@ -54,6 +57,7 @@ class ConflictRecord(BaseModel):
 
 class IntegratedResult(BaseModel):
     """Final unified output from the GlobalNarrativeBalancer."""
+
     model_config = ConfigDict(extra="ignore")
 
     balanced_beats: List[Beat] = Field(default_factory=list)

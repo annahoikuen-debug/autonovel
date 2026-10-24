@@ -6,6 +6,7 @@
 - GET /api/stream/writing/{book_id}/{ep_num} (SSE執筆ストリーム)
 - 正常系E2E、エラーケース、パフォーマンス、データ整合性
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -28,7 +29,7 @@ app = FastAPI()
 app.include_router(plots_router)
 app.include_router(stream_router)
 
-MOCK_LLM_BEATS = '''[
+MOCK_LLM_BEATS = """[
     {"episode": 1, "title": "日常の崩壊", "outline": "主人公の平穏な日常が崩れる", "cliffhanger_type": "New Crisis", "sensory_focus": ["visual", "auditory"], "foreshadowing_notes": "不穏な予兆"},
     {"episode": 2, "title": "運命の告知", "outline": "使命が課せられる", "cliffhanger_type": "Shocking Truth", "sensory_focus": ["tactile", "metaphor"], "foreshadowing_notes": "古い予言"},
     {"episode": 3, "title": "覚悟の決意", "outline": "立ち向かうことを決意", "cliffhanger_type": "Quiet Foreshadowing", "sensory_focus": ["visual", "gustatory"], "foreshadowing_notes": "師匠の言葉"},
@@ -41,7 +42,7 @@ MOCK_LLM_BEATS = '''[
     {"episode": 10, "title": "全てを失って", "outline": "奈落の底へ", "cliffhanger_type": "Quiet Foreshadowing", "sensory_focus": ["visual", "metaphor"], "foreshadowing_notes": "過去の伏線回収"},
     {"episode": 11, "title": "闇夜の決意", "outline": "真の強さに目覚める", "cliffhanger_type": "Shocking Truth", "sensory_focus": ["tactile", "gustatory"], "foreshadowing_notes": "真の敵"},
     {"episode": 12, "title": "決戦の夜明け", "outline": "クライマックスへ", "cliffhanger_type": "Quiet Foreshadowing", "sensory_focus": ["visual", "auditory", "metaphor"], "foreshadowing_notes": "エピローグへ"}
-]'''
+]"""
 
 
 def _parse_sse_events(text: str) -> list[dict]:
@@ -50,7 +51,7 @@ def _parse_sse_events(text: str) -> list[dict]:
         if not line.startswith("data:"):
             continue
         try:
-            events.append(json.loads(line[len("data:"):].strip()))
+            events.append(json.loads(line[len("data:") :].strip()))
         except json.JSONDecodeError:
             continue
     return events
@@ -86,9 +87,7 @@ def client(tmp_path_factory) -> TestClient:
         from src.backend.database import models as models_module  # noqa: F401
 
         async with temp_manager.engine.begin() as conn:
-            await conn.run_sync(
-                lambda sync_conn: Base.metadata.create_all(sync_conn, checkfirst=True)
-            )
+            await conn.run_sync(lambda sync_conn: Base.metadata.create_all(sync_conn, checkfirst=True))
 
         # AUTH_DISABLED 時のモックユーザー (id=1) を作成
         from sqlalchemy import insert

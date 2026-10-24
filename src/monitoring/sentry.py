@@ -2,6 +2,7 @@ import os
 import sentry_sdk
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
+
 def init_sentry(app=None):
     """
     Initialize Sentry error tracking.

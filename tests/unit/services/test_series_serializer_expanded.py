@@ -1,4 +1,5 @@
 """Additional tests for src/services/series_serializer.py."""
+
 from __future__ import annotations
 
 from src.easy_mode import EpisodeResult, SeriesResult
@@ -169,6 +170,7 @@ def test_series_to_dict_empty_bible_metadata_plot():
 def test_series_to_dict_with_dates():
     """series_to_dict formats created_at as ISO string."""
     import datetime
+
     dt = datetime.datetime(2023, 1, 1, 12, 0, 0)
     s = SeriesResult(
         genre="ジャンル",
@@ -242,4 +244,5 @@ def test_series_to_dict_nested_episode_summary():
 
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__, "-v"])

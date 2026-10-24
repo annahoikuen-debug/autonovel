@@ -16,6 +16,7 @@
 
 これで「ゲートがゲートを再帰起動する」という構造 자체がnails をCoordination 消える。
 """
+
 from __future__ import annotations
 
 import importlib.util
@@ -87,9 +88,7 @@ class TestFailingFileParsing:
             ("Interrupted: 1 error during collection", False),
         ],
     )
-    def test_summary_line_detects_incomplete_run(
-        self, ratchet, stdout: str, expected: bool
-    ) -> None:
+    def test_summary_line_detects_incomplete_run(self, ratchet, stdout: str, expected: bool) -> None:
         """実行の中断と「失敗ゼロ」を区別できること。
 
         実行が中断されると pytest はサマリ行を出さないため、
@@ -150,6 +149,5 @@ class TestTierDefinition:
         F821、静的ゲート）が捕捉されなくなる。ratchet が自己申告に見える状態を避ける。
         """
         assert "tests/regression" in ratchet.TIER1_PATHS, (
-            "Tier1 から tests/regression が漏れていると、"
-            "回帰ゲート自身の失敗が捕捉されなくなる"
+            "Tier1 から tests/regression が漏れていると、回帰ゲート自身の失敗が捕捉されなくなる"
         )

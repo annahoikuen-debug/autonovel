@@ -5,6 +5,7 @@ Step 40-46:
 - ValueError → HTTP 400 (router 層は別テスト)
 - generate_suggestions が LLM を呼ぶ
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock

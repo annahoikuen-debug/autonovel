@@ -3,6 +3,7 @@
 CI/CDパイプラインおよびローカル開発環境で、APIコスト0円・遅延0msで
 画像生成フロー全体（表紙、挿絵）を検証可能にする。
 """
+
 from __future__ import annotations
 
 from src.services.illustration.adapters.base import (

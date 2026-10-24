@@ -1,4 +1,5 @@
 """Episode 6 S71: WebSocket E2E テスト."""
+
 from __future__ import annotations
 
 import asyncio
@@ -21,6 +22,7 @@ def client():
     # (復元しないと他テストで core.get_db_manager がスタブのまま残り、
     #  シングルトンの検証テストが別インスタンスを返して壊れる)
     import src.backend.database.core as _core_backup
+
     _saved_get_db_manager = _core_backup.get_db_manager
     _saved_database_url = _core_backup.DATABASE_URL
 
@@ -33,14 +35,17 @@ def client():
     test_session_factory = async_sessionmaker(test_engine, expire_on_commit=False, class_=AsyncSession)
 
     import src.backend.database.core as core_mod
+
     core_mod.DATABASE_URL = db_url
 
     class TestMgr:
         def __init__(self):
             self.session_factory = test_session_factory
             self.engine = test_engine
+
         def get_session(self):
             return self.session_factory()
+
     core_mod.get_db_manager = lambda: TestMgr()
 
     async def _setup():
@@ -68,10 +73,12 @@ def client():
 
     from src.backend.auth import get_current_user, validate_api_key_or_raise
     from src.backend.routers import branches as bmod
+
     # `branches.py` は `get_db_manager` を名前で import している
     # (`from ... import get_db_manager`) ため、`core_mod` 側の属性を差し替えるだけでは
     # 既に束縛済みの名前は更新されない。ルータモジュール側を直接パッチする。
     bmod.get_db_manager = core_mod.get_db_manager
+
     # `enforce_book_ownership` デコレータ (branches.py:70) はセッション引数なしで
     # `verify_book_ownership` を呼ぶため自身で UnitOfWork を開き、一時 DB を見られない。
     # ここを Book を返すスタブに差し替えてセッション境界を越えないようにする。
@@ -109,8 +116,13 @@ def test_ws_flow(client):
     graph = {
         "entry_node_id": "n1",
         "nodes": {
-            "n1": {"id": "n1", "episode_num": 1, "content": "start", "branch_type": "choice",
-                   "choices": [{"id": "c1", "text": "go", "target_node_id": "n2"}]},
+            "n1": {
+                "id": "n1",
+                "episode_num": 1,
+                "content": "start",
+                "branch_type": "choice",
+                "choices": [{"id": "c1", "text": "go", "target_node_id": "n2"}],
+            },
             "n2": {"id": "n2", "episode_num": 2, "content": "end", "branch_type": "merge", "merge_target": "n2"},
         },
     }
@@ -118,9 +130,7 @@ def test_ws_flow(client):
 
     sid = client.post("/api/branches/play", json={"book_id": 1, "branch_id": bid}).json()["session_id"]
 
-    with client.websocket_connect(
-        f"/api/branches/play/{sid}/ws", headers=ws_headers
-    ) as ws:
+    with client.websocket_connect(f"/api/branches/play/{sid}/ws", headers=ws_headers) as ws:
         # initial state
         msg = ws.receive_json()
         assert msg["type"] == "state"

@@ -13,6 +13,7 @@ class DummyLLM:
         class Resp:
             def __init__(self, content):
                 self.content = content
+
         return Resp(self.response_text)
 
 

@@ -2,6 +2,7 @@
 
 config/plot_events.yaml (ep14-16) のサンプルで 3話分のベースライン生成を検証する。
 """
+
 from __future__ import annotations
 
 import tempfile
@@ -60,12 +61,16 @@ class TestRuleEngineE2E:
         for ep in (14, 15, 16):
             events = events_by_ep[ep]
             engine.process_episode(
-                ep, events,
+                ep,
+                events,
                 previous_snapshot=snapshot,
                 previous_episode=prev_ep,
             )
             engine.persist_results(
-                stores["vector"], stores["graph"], stores["log"], episode=ep,
+                stores["vector"],
+                stores["graph"],
+                stores["log"],
+                episode=ep,
             )
             snapshot = engine.last_snapshot
             prev_ep = ep
@@ -98,7 +103,8 @@ class TestRuleEngineE2E:
         prev_ep = None
         for ep in (14, 15, 16):
             engine.process_episode(
-                ep, events_by_ep[ep],
+                ep,
+                events_by_ep[ep],
                 previous_snapshot=snapshot,
                 previous_episode=prev_ep,
             )
@@ -136,7 +142,8 @@ class TestRuleEngineE2E:
 
         # ep15 (減衰あり)
         engine.process_episode(
-            15, events_by_ep[15],
+            15,
+            events_by_ep[15],
             previous_snapshot=engine.last_snapshot,
             previous_episode=14,
         )

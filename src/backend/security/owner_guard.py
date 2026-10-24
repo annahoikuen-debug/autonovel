@@ -3,6 +3,7 @@
 本モジュールが `verify_book_ownership` の唯一の実装である。
 `src.backend.middleware.tenant_guard` は後方互換のため本モジュールへ委譲する。
 """
+
 from __future__ import annotations
 from typing import Any
 from fastapi import HTTPException, status
@@ -20,9 +21,9 @@ def _is_admin(current_user: Any) -> bool:
 
 
 async def verify_book_ownership(
-     book_id: int,
-     current_user: User,
-     uow: UnitOfWork | Any = None,
+    book_id: int,
+    current_user: User,
+    uow: UnitOfWork | Any = None,
 ) -> Book:
     """指定された book_id が current_user に帰属しているか検証する。
 
@@ -33,6 +34,7 @@ async def verify_book_ownership(
     許可しており、`init_db` が種として投入する `Book(id=1)` などが
     誰でも読み書きできる状態になっていた）。
     """
+
     async def _check(session: Any) -> Book:
         stmt = select(Book).where(Book.id == book_id)
         result = await session.execute(stmt)
@@ -80,9 +82,7 @@ def verify_book_ownership_sync(book_id: int, current_user: User, db: Any) -> Boo
     """
     book = db.execute(select(Book).where(Book.id == book_id)).scalar_one_or_none()
     if not book:
-        raise NotFoundError(
-            f"作品が見つかりません: {book_id}", resource_type="Book", resource_id=str(book_id)
-        )
+        raise NotFoundError(f"作品が見つかりません: {book_id}", resource_type="Book", resource_id=str(book_id))
 
     if _is_admin(current_user):
         return book

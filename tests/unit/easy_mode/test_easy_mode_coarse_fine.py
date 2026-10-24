@@ -9,7 +9,13 @@ from src.services.auto_workflow_pipeline import (
 from src.services.pipeline_base import WorkflowContext
 from src.services.pipeline_steps import PlanStep, WriteStep
 from src.backend.background import StatusReporter
-from src.models.plot import EpisodeMacroSkeleton, PlotMicroBlueprint, MasterSceneBlock, SceneBeatBlock, merge_macro_and_micro
+from src.models.plot import (
+    EpisodeMacroSkeleton,
+    PlotMicroBlueprint,
+    MasterSceneBlock,
+    SceneBeatBlock,
+    merge_macro_and_micro,
+)
 
 
 def create_test_context(**kwargs):
@@ -85,9 +91,7 @@ async def test_easy_mode_execution_with_coarse_fine():
     assert result.status == "success"
     assert result.chars_count == 4000
     mock_engine.plot_expander.expand_macro_skeletons.assert_awaited_once()
-    mock_engine.plot_expander.ensure_detailed_plot.assert_awaited_once_with(
-        book_id=1, ep_num=1, reporter=ANY
-    )
+    mock_engine.plot_expander.ensure_detailed_plot.assert_awaited_once_with(book_id=1, ep_num=1, reporter=ANY)
 
 
 def test_spice_guard_cooperation_with_jit_plot():

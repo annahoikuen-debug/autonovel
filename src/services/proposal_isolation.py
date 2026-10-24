@@ -4,6 +4,7 @@ Guarantees strict physical isolation for 3-proposal gacha ideation:
 - Each proposal runs in its own sandbox with an isolated session ID and history.
 - Cross-proposal prompt contamination is prevented by construction.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ProposalSandboxContext:
     """Isolated execution context for a single proposal candidate (Step 7)."""
+
     proposal_id: str
     session_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     isolated_history: list[dict[str, str]] = field(default_factory=list)
@@ -76,9 +78,7 @@ class ProposalIsolationRunner:
         if count is not None:
             target_ids = [f"proposal_{chr(ord('a') + i)}" for i in range(count)]
 
-        contexts = custom_contexts or {
-            pid: ProposalSandboxContext(proposal_id=pid) for pid in target_ids
-        }
+        contexts = custom_contexts or {pid: ProposalSandboxContext(proposal_id=pid) for pid in target_ids}
 
         tasks = []
         for pid in target_ids:

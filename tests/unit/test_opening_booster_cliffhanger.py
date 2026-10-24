@@ -1,6 +1,7 @@
 """
 test_opening_booster_cliffhanger.py - 序盤1〜3話のクリフハンガー評価およびリライト指令生成テスト
 """
+
 from __future__ import annotations
 
 

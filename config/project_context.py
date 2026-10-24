@@ -44,9 +44,7 @@ def get_config() -> GlobalConfigModel:
             _global_config = ConfigManager.get_config()
         except Exception as e:
             logger.critical(f"設定ファイルのバリデーションに失敗しました: {str(e)}")
-            raise SystemExit(
-                "設定ファイルのバリデーションに失敗しました。アプリケーションを終了します。"
-            )
+            raise SystemExit("設定ファイルのバリデーションに失敗しました。アプリケーションを終了します。")
     return _global_config
 
 

@@ -28,7 +28,7 @@ class TestConsistencyAuditor:
                 "characters": [{"name": "アリス"}, {"name": "ボブ"}],
                 "locations": [{"name": "東京"}],
                 "items": [{"name": "剣"}],
-            }
+            },
         }
         result = await auditor._safe_audit(ctx)
         assert 70 <= result.score <= 100
@@ -43,7 +43,7 @@ class TestConsistencyAuditor:
                 "characters": [{"name": "アリス"}, {"name": "ボブ"}],
                 "locations": [{"name": "東京"}],
                 "items": [{"name": "剣"}],
-            }
+            },
         }
         result = await auditor._safe_audit(ctx)
         assert result.score < 85
@@ -54,7 +54,7 @@ class TestConsistencyAuditor:
     async def test_contradiction_penalty(self, auditor):
         ctx = {
             "draft_text": "アリスは死んだ。だがアリスは生きている。",
-            "world_bible_snapshot": {"characters": [{"name": "アリス"}]}
+            "world_bible_snapshot": {"characters": [{"name": "アリス"}]},
         }
         result = await auditor._safe_audit(ctx)
         # In fallback mode, check rule_coverage instead
@@ -147,13 +147,15 @@ class TestEmotionCurveAuditor:
 class TestStyleAuditor:
     @pytest.fixture
     def auditor(self):
-        return StyleAuditor(style_profile={"sample_text": "私は歩く。あなたは走る。", "first_person": 0.5, "polite": 0.0})
+        return StyleAuditor(
+            style_profile={"sample_text": "私は歩く。あなたは走る。", "first_person": 0.5, "polite": 0.0}
+        )
 
     @pytest.mark.asyncio
     async def test_matching_style(self, auditor):
         ctx = {
             "draft_text": "私は歩いた。あなたは走った。",
-            "style_dna": {"sample_text": "私は歩く。あなたは走る。", "first_person": 0.5, "polite": 0.0}
+            "style_dna": {"sample_text": "私は歩く。あなたは走る。", "first_person": 0.5, "polite": 0.0},
         }
         result = await auditor._safe_audit(ctx)
         assert result.score > 10
@@ -162,7 +164,7 @@ class TestStyleAuditor:
     async def test_mismatched_politeness(self, auditor):
         ctx = {
             "draft_text": "私は歩きます。あなたは走ります。",
-            "style_dna": {"sample_text": "私は歩く。あなたは走る。", "first_person": 0.5, "polite": 0.0}
+            "style_dna": {"sample_text": "私は歩く。あなたは走る。", "first_person": 0.5, "polite": 0.0},
         }
         result = await auditor._safe_audit(ctx)
         # Fallback returns polite_ratio and first_person_ratio
@@ -190,7 +192,7 @@ class TestFactualAuditor:
                 "characters": [{"name": "アリス"}],
                 "locations": [{"name": "東京"}],
                 "items": [{"name": "剣"}],
-            }
+            },
         }
         result = await auditor._safe_audit(ctx)
         assert result.score == 100.0
@@ -204,7 +206,7 @@ class TestFactualAuditor:
                 "characters": [{"name": "アリス"}],
                 "locations": [{"name": "東京"}],
                 "items": [{"name": "剣"}],
-            }
+            },
         }
         result = await auditor._safe_audit(ctx)
         assert 30 <= result.score < 100
@@ -226,7 +228,7 @@ class TestStructureAuditor:
     async def test_good_coverage(self, auditor):
         ctx = {
             "draft_text": "アリスは東京で剣を振って敵を倒した。その後、王都へ向かった。",
-            "plot_tree": "アリス、東京、剣、敵、倒す、王都、向かう"
+            "plot_tree": "アリス、東京、剣、敵、倒す、王都、向かう",
         }
         result = await auditor._safe_audit(ctx)
         assert result.degraded is True
@@ -253,7 +255,7 @@ class TestMultimodalAuditor:
     async def test_some_overlap(self, auditor):
         ctx = {
             "draft_text": "アリスは青い空の下で剣を構えた。風が髪を揺らす。",
-            "illustration_prompts": "アリス、青い空、剣、風、髪"
+            "illustration_prompts": "アリス、青い空、剣、風、髪",
         }
         result = await auditor._safe_audit(ctx)
         assert result.degraded is True
@@ -261,10 +263,7 @@ class TestMultimodalAuditor:
 
     @pytest.mark.asyncio
     async def test_no_overlap(self, auditor):
-        ctx = {
-            "draft_text": "アリスは青い空の下で剣を構えた。",
-            "illustration_prompts": "ボブ、赤い空、杖、雨"
-        }
+        ctx = {"draft_text": "アリスは青い空の下で剣を構えた。", "illustration_prompts": "ボブ、赤い空、杖、雨"}
         result = await auditor._safe_audit(ctx)
         assert result.score < 20
 
@@ -279,10 +278,7 @@ class TestLLMFallback:
     @pytest.mark.asyncio
     async def test_factual_llm_unavailable(self):
         auditor = FactualAuditor(llm=None)
-        ctx = {
-            "draft_text": "アリスは東京で剣を振った。",
-            "world_bible_snapshot": {"characters": [{"name": "アリス"}]}
-        }
+        ctx = {"draft_text": "アリスは東京で剣を振った。", "world_bible_snapshot": {"characters": [{"name": "アリス"}]}}
         with pytest.raises(LLMUnavailableError):
             await auditor.audit(ctx)
         result = await auditor._safe_audit(ctx)

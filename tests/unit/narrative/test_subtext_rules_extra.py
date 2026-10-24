@@ -1,4 +1,5 @@
 """src/narrative/subtext_engine/rules.py の単体テスト。"""
+
 from __future__ import annotations
 
 import re
@@ -23,9 +24,7 @@ from src.narrative.subtext_engine.rules import (
 
 
 def block(*lines, speaker="A", applied=None):
-    return DialogueBlock(
-        speaker=speaker, lines=list(lines), applied_rules=list(applied or [])
-    )
+    return DialogueBlock(speaker=speaker, lines=list(lines), applied_rules=list(applied or []))
 
 
 class TestRegexRule:
@@ -322,7 +321,9 @@ class TestComplianceSubvertRule:
 class TestAddressDistanceRule:
     def test_enemy_uses_cold(self):
         r = AddressDistanceRule()
-        out = r.apply(block("君 Conciliation".replace(" Conciliation", "、行くぞ")), SubtextContext(relationship="enemy"))
+        out = r.apply(
+            block("君 Conciliation".replace(" Conciliation", "、行くぞ")), SubtextContext(relationship="enemy")
+        )
         assert "貴方" in out.block.lines[0]
 
     def test_former_ally_uses_cold(self):
@@ -379,16 +380,19 @@ class TestExtensionRule:
         assert ids[-1] == "rule_15_unspoken_tension"
         assert all(isinstance(r, ExtensionRule) for r in rules)
 
-    @pytest.mark.parametrize("line", [
-        "「ごめんなさい」",
-        "「あっ、あっ」",
-        "「ここだけの話だけど」",
-        "「どうしてそんなことを聞くの？」",
-        "「ご親切にどうも」",
-        "「見ないでよ！」",
-        "「独り言よ」",
-        "「言いたいことはそれだけか？」",
-    ])
+    @pytest.mark.parametrize(
+        "line",
+        [
+            "「ごめんなさい」",
+            "「あっ、あっ」",
+            "「ここだけの話だけど」",
+            "「どうしてそんなことを聞くの？」",
+            "「ご親切にどうも」",
+            "「見ないでよ！」",
+            "「独り言よ」",
+            "「言いたいことはそれだけか？」",
+        ],
+    )
     def test_each_extension_matches(self, line):
         rules = create_extension_rules()
         matched = [r for r in rules if r.apply(block(line)).modified]

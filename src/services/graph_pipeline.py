@@ -127,9 +127,7 @@ class GraphPipelineService:
 
         # 冪等性チェック（同期 Session の execute なのでループ外へ逃がす）
         if idempotency_key:
-            existing = await asyncio.to_thread(
-                self._check_idempotency, session, idempotency_key
-            )
+            existing = await asyncio.to_thread(self._check_idempotency, session, idempotency_key)
             if existing:
                 logger.info(
                     "Skipping chapter_id=%s (idempotency_key=%s already processed)",
@@ -154,9 +152,7 @@ class GraphPipelineService:
             # グラフ更新は chunk 保存が成功していれば、失敗してもパイプライン全体を
             # 失敗にしない（chunk 保存が主要機能のため）
             try:
-                graph_stats = await self._update_knowledge_graph_atomic(
-                    session, chapter_id, chapter_text
-                )
+                graph_stats = await self._update_knowledge_graph_atomic(session, chapter_id, chapter_text)
             except Exception as graph_err:
                 logger.warning(
                     "Graph update failed for chapter_id=%s (chunk saving succeeded): %s",
@@ -167,14 +163,11 @@ class GraphPipelineService:
 
             # 冪等性キー記録
             if idempotency_key:
-                await asyncio.to_thread(
-                    self._record_idempotency, session, idempotency_key, chapter_id
-                )
+                await asyncio.to_thread(self._record_idempotency, session, idempotency_key, chapter_id)
 
             elapsed_ms = (time.perf_counter() - start_time) * 1000
             logger.info(
-                "GraphRAG pipeline completed for chapter_id=%s in %.2fms: "
-                "chunks=%d, entities=%d, relationships=%d",
+                "GraphRAG pipeline completed for chapter_id=%s in %.2fms: chunks=%d, entities=%d, relationships=%d",
                 chapter_id,
                 elapsed_ms,
                 chunks_count,
@@ -192,9 +185,7 @@ class GraphPipelineService:
             )
 
         except Exception as e:
-            logger.error(
-                "GraphRAG pipeline failed for chapter_id=%s: %s", chapter_id, e, exc_info=True
-            )
+            logger.error("GraphRAG pipeline failed for chapter_id=%s: %s", chapter_id, e, exc_info=True)
             return ChapterProcessResult(
                 chapter_id=chapter_id,
                 success=False,
@@ -261,9 +252,7 @@ class GraphPipelineService:
         (:meth:`_save_chapter_chunks_sync`) は ``asyncio.to_thread`` で
         ワーカースレッドへ逃がす。イベントループを止めないための必須の境界。
         """
-        return await asyncio.to_thread(
-            self._save_chapter_chunks_sync, session, chapter_id, chapter_text
-        )
+        return await asyncio.to_thread(self._save_chapter_chunks_sync, session, chapter_id, chapter_text)
 
     def _save_chapter_chunks_sync(
         self,
@@ -307,9 +296,7 @@ class GraphPipelineService:
                     )
 
             except Exception as e:
-                logger.warning(
-                    "Failed to prepare chunk %d for chapter_id=%s: %s", idx, chapter_id, e
-                )
+                logger.warning("Failed to prepare chunk %d for chapter_id=%s: %s", idx, chapter_id, e)
 
         # チャンク保存をコミット（トランザクション確定）
         try:

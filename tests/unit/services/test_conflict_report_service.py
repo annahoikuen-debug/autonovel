@@ -1,8 +1,9 @@
 """src/services/conflict_report_service.py の単体テスト."""
 
-
 from src.services.conflict_report_service import (
-    ConflictReportService, ConflictItem, ConflictReport,
+    ConflictReportService,
+    ConflictItem,
+    ConflictReport,
 )
 
 
@@ -92,9 +93,7 @@ class TestConflictReportService:
         assert path is None
 
     def test_extract_values_pattern1(self):
-        current, suggested = self.service._extract_values(
-            "x", "現在は10だが、20であるべき", None
-        )
+        current, suggested = self.service._extract_values("x", "現在は10だが、20であるべき", None)
         assert current == "10"
         assert suggested == "20"
 

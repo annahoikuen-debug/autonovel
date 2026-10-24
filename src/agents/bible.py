@@ -36,10 +36,13 @@ class BibleAgent(SkillAgent):
 
     async def execute(self, ctx: AgentContext) -> AgentResult:
         """スキル実行エントリーポイント。"""
-        self.emit_event("bible.started", {
-            "book_id": ctx.book_id,
-            "title": ctx.artifacts.get("title"),
-        })
+        self.emit_event(
+            "bible.started",
+            {
+                "book_id": ctx.book_id,
+                "title": ctx.artifacts.get("title"),
+            },
+        )
 
         title = ctx.artifacts.get("title")
         synopsis = ctx.artifacts.get("synopsis", "")
@@ -49,10 +52,13 @@ class BibleAgent(SkillAgent):
         keywords = ctx.artifacts.get("keywords", "")
 
         if not title:
-            self.emit_event("bible.error", {
-                "book_id": ctx.book_id,
-                "error": "title is required in artifacts",
-            })
+            self.emit_event(
+                "bible.error",
+                {
+                    "book_id": ctx.book_id,
+                    "error": "title is required in artifacts",
+                },
+            )
             return AgentResult(
                 next_agent=None,
                 artifacts={},
@@ -68,10 +74,13 @@ class BibleAgent(SkillAgent):
             keywords=keywords,
         )
 
-        self.emit_event("bible.completed", {
-            "book_id": ctx.book_id,
-            "title": title,
-        })
+        self.emit_event(
+            "bible.completed",
+            {
+                "book_id": ctx.book_id,
+                "title": title,
+            },
+        )
 
         return AgentResult(
             next_agent=AgentName.CONTEXT_BUILDER,

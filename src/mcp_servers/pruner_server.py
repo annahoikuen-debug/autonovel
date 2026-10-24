@@ -1,4 +1,5 @@
 """Context Pruning MCP Server Implementation (JSON-RPC 2.0 / Tool Provider)."""
+
 from __future__ import annotations
 
 import json

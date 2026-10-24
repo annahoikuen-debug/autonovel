@@ -1,4 +1,5 @@
 """Compound Sentence Merger for reducing repetitive sentence endings."""
+
 from __future__ import annotations
 
 import re
@@ -90,10 +91,7 @@ class CompoundSentenceMerger:
         return merged
 
     def reduce_consecutive_endings(
-        self,
-        sentences: List[str],
-        max_consecutive: int = 3,
-        max_chars: int = 60
+        self, sentences: List[str], max_consecutive: int = 3, max_chars: int = 60
     ) -> Tuple[List[str], int]:
         """Scan sentence list and merge when consecutive 'ta' endings exceed threshold."""
         if len(sentences) < 2:

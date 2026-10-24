@@ -1,4 +1,5 @@
 """Lore Provider for managing characters and world bible data."""
+
 from __future__ import annotations
 
 from typing import Dict, List, Optional
@@ -44,13 +45,19 @@ class LoreProvider:
         for name, profile in self.characters.items():
             if profile.name in seen_chars:
                 continue
-            if name in request.character_names or any(c_name in request.query for c_name in [profile.name] + profile.aliases):
+            if name in request.character_names or any(
+                c_name in request.query for c_name in [profile.name] + profile.aliases
+            ):
                 matched_chars.append(profile)
                 seen_chars.add(profile.name)
 
         matched_sections: List[WorldBibleSection] = []
         for sec_id, section in self.bible_sections.items():
-            if sec_id in request.tags or any(tag in request.query for tag in section.tags) or section.title in request.query:
+            if (
+                sec_id in request.tags
+                or any(tag in request.query for tag in section.tags)
+                or section.title in request.query
+            ):
                 matched_sections.append(section)
 
         # 要約の構築（トークン圧縮用）

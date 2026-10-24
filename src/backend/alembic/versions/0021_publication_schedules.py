@@ -6,6 +6,7 @@ Revises: 0020_rag_reflection_history
 Phase 1: Commercial Publication Scheduling.
 Stores scheduled publication dates, platforms, and episode ranges for books.
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa

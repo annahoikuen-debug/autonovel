@@ -1,13 +1,27 @@
 """3系統の genre→preset 表が1つに統合されたことの確認。"""
+
 from config.story_spine.genre_registry import GENRE_REGISTRY, resolve_preset_key
 from src.services.preset_loader import load_preset_for_pipeline
 from src.services import spice_guard_adapter
 
 
 MERGED_VALUES = [
-    "ファンタジー", "恋愛", "SF", "歴史", "現代", "官能/ロマンス",
-    "異世界", "追放ざまぁ", "悪役令嬢", "チート転生", "スローライフ",
-    "ダンジョン運営", "現代チート", "TS転生", "VRMMO", "ループ",
+    "ファンタジー",
+    "恋愛",
+    "SF",
+    "歴史",
+    "現代",
+    "官能/ロマンス",
+    "異世界",
+    "追放ざまぁ",
+    "悪役令嬢",
+    "チート転生",
+    "スローライフ",
+    "ダンジョン運営",
+    "現代チート",
+    "TS転生",
+    "VRMMO",
+    "ループ",
 ]
 
 

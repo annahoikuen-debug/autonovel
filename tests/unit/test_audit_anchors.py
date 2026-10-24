@@ -1,6 +1,5 @@
 """Unit tests for Audit Anchor Examples and Presets (Pillar 4 / Checkpoint 1: Steps 1-6)."""
 
-
 from src.agents.specialists.anchors import (
     get_anchor_preset,
 )

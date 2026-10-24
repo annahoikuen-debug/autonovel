@@ -1,4 +1,5 @@
 """Novel Formatter & Multi-Platform Linting MCP Server Implementation (Proposal 9)."""
+
 from __future__ import annotations
 
 from typing import Any, Dict

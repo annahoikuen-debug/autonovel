@@ -8,15 +8,27 @@ from typing import ClassVar
 @dataclass(frozen=True, slots=True)
 class QualityScore:
     """Individual quality dimension score (0-100)."""
+
     value: int
     dimension: str
 
     # Valid dimensions
     VALID_DIMENSIONS: ClassVar[set[str]] = {
-        "story", "character", "worldbuilding", "prose", "pacing",
-        "dialogue", "tension", "emotion", "originality", "coherence",
-        "literary_beauty", "thematic_depth", "erotic_intensity",
-        "state_integrity", "emotional_resonance"
+        "story",
+        "character",
+        "worldbuilding",
+        "prose",
+        "pacing",
+        "dialogue",
+        "tension",
+        "emotion",
+        "originality",
+        "coherence",
+        "literary_beauty",
+        "thematic_depth",
+        "erotic_intensity",
+        "state_integrity",
+        "emotional_resonance",
     }
 
     def __post_init__(self) -> None:
@@ -37,6 +49,7 @@ class QualityScore:
 @dataclass(frozen=True, slots=True)
 class TensionScore:
     """Tension curve score."""
+
     value: int  # 0-100
     delta: int = 0  # Change from previous episode
 
@@ -57,6 +70,7 @@ class TensionScore:
 @dataclass(frozen=True, slots=True)
 class BookScore:
     """Aggregate book quality score with dimension breakdown."""
+
     overall: int
     dimensions: dict[str, int] = field(default_factory=dict)
 
@@ -127,6 +141,7 @@ class BookScore:
 @dataclass(frozen=True, slots=True)
 class QolScore:
     """Quality of Life score for reader experience."""
+
     value: int  # 0-100
     factors: dict[str, int] = field(default_factory=dict)
 
@@ -138,6 +153,7 @@ class QolScore:
 @dataclass(frozen=True, slots=True)
 class CostScore:
     """Cost efficiency score."""
+
     value: float  # USD cost
     tokens_used: int = 0
 

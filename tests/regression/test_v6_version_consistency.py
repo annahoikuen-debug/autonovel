@@ -31,12 +31,8 @@ def test_readme_badge_matches_pyproject():
     """README のバージョンバッジが SSOT と一致すること。"""
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
     version = _pyproject_version()
-    assert f"version-{version}" in readme, (
-        f"README の version バッジが {version} になっていない"
-    )
-    assert f"releases/tag/v{version}" in readme, (
-        f"README のリリースリンクが v{version} になっていない"
-    )
+    assert f"version-{version}" in readme, f"README の version バッジが {version} になっていない"
+    assert f"releases/tag/v{version}" in readme, f"README のリリースリンクが v{version} になっていない"
 
 
 def test_changelog_top_entry_matches_pyproject():
@@ -46,8 +42,7 @@ def test_changelog_top_entry_matches_pyproject():
     assert top is not None, "CHANGELOG に版数のエントリが無い"
     version = _pyproject_version()
     assert top.group(1) == version, (
-        f"CHANGELOG 先頭は {top.group(1)} だが pyproject は {version}。"
-        "PR を作る前に両者を揃えること"
+        f"CHANGELOG 先頭は {top.group(1)} だが pyproject は {version}。PR を作る前に両者を揃えること"
     )
 
 

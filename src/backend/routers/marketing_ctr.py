@@ -2,6 +2,7 @@
 マーケティングCTR APIルーター
 PLAN 01: タイトル＆あらすじCTR爆発エンジン
 """
+
 from __future__ import annotations
 
 import logging

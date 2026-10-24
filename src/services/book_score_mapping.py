@@ -149,6 +149,7 @@ PHASE_DIMENSION_SHIFTS: dict[str, dict[str, float]] = {
 @dataclass
 class Unified5DScore:
     """Represents the 5-dimensional unified BookScore with detailed contributions."""
+
     overall_score: float
     structure_score: float
     coherency_score: float
@@ -171,8 +172,7 @@ class Unified5DScore:
             "reader_experience_score": round(self.reader_experience_score, 2),
             "dimension_weights": {k: round(v, 4) for k, v in self.dimension_weights.items()},
             "contributions": {
-                dim: {k: round(v, 2) for k, v in specs.items()}
-                for dim, specs in self.contributions.items()
+                dim: {k: round(v, 2) for k, v in specs.items()} for dim, specs in self.contributions.items()
             },
             "missing_specialists": list(self.missing_specialists),
             "genre": self.genre,
@@ -238,9 +238,7 @@ class UnifiedBookScoreBridge:
 
         for dim, spec_weights in matrix.items():
             # Filter present specialists for this dimension
-            present_specs = {
-                s: w for s, w in spec_weights.items() if s in specialist_scores
-            }
+            present_specs = {s: w for s, w in spec_weights.items() if s in specialist_scores}
             missing = [s for s in spec_weights if s not in specialist_scores]
             missing_specs.update(missing)
 

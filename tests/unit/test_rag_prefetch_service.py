@@ -1,4 +1,3 @@
-
 import pytest
 
 from src.services.rag_prefetch_service import RagPrefetchService

@@ -1,4 +1,5 @@
 """System Resource Monitoring and Dynamic Worker Pool Sizing (Step 37)."""
+
 from __future__ import annotations
 
 import logging
@@ -113,7 +114,10 @@ class ResourceManager:
         if (active_allocations.ram_mb + task_req.ram_mb) > available.ram_mb:
             return False
         if task_req.gpu_mem_mb > 0:
-            if available.gpu_mem_mb == 0 or (active_allocations.gpu_mem_mb + task_req.gpu_mem_mb) > available.gpu_mem_mb:
+            if (
+                available.gpu_mem_mb == 0
+                or (active_allocations.gpu_mem_mb + task_req.gpu_mem_mb) > available.gpu_mem_mb
+            ):
                 return False
         return True
 

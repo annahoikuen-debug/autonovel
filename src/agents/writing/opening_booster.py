@@ -2,6 +2,7 @@
 Opening Episode Booster Agent.
 PLAN 02: 序盤3話特化型 ドーパミン注入・クリフハンガー強制エンジン
 """
+
 from __future__ import annotations
 
 import logging
@@ -57,7 +58,9 @@ class OpeningBoosterAgent(BaseAgent):
             try:
                 template = self.jinja_env.get_template(generic_template_name)
             except jinja2.TemplateNotFound:
-                logger.warning("Opening template %s/%s not found, falling back to ep01", genre_template_name, generic_template_name)
+                logger.warning(
+                    "Opening template %s/%s not found, falling back to ep01", genre_template_name, generic_template_name
+                )
                 template = self.jinja_env.get_template("narrative/opening_ep01.j2")
 
         target_instruction = GENRE_OPENING_TARGETS.get(genre, {}).get(config.ep_num, "")

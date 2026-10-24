@@ -3,6 +3,7 @@
 Step 6: api_key 必須化の検証。
 Step 32: R15 セーフティ閾値の検証。
 """
+
 from __future__ import annotations
 
 from unittest.mock import patch

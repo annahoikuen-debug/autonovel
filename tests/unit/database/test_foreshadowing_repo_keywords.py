@@ -5,6 +5,7 @@ A-T2: `keywords` 未指定（None）の `add()` は既存挙動を壊さない
 A-T3: `add()` の既存の位置引数4つ呼び出しがそのまま動く
 A-T8: `add_many()` が `add()` と同じ `_report_planted` を呼ぶ
 """
+
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -60,9 +61,7 @@ async def create_test_db():
                         marketing_data="",
                     )
                 )
-    session_factory = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     try:
         yield session_factory
     finally:
@@ -75,7 +74,7 @@ TRICKY_KEYWORDS = [
     ["謎の剣"],
     ["a,b", "c"],
     ["改行\n入り", "タブ\t入り"],
-    ["引用符\"付き", "角括弧[付き]"],
+    ['引用符"付き', "角括弧[付き]"],
     ["先頭空白 途中空白", " 両端  "],
     ["カンマ,カンマ", "単独,", ",先頭", "末尾,"],
     [" 戦闘 ", " "],
@@ -136,9 +135,7 @@ async def test_add_without_keywords_stays_null():
     async with create_test_db() as session_factory:
         async with session_factory() as session:
             repo = DbForeshadowingRepository(session)
-            record = await repo.add(
-                book_id=1, title="伏線B", description="説明", planted_episode=2
-            )
+            record = await repo.add(book_id=1, title="伏線B", description="説明", planted_episode=2)
             await repo.commit()
 
             assert record.keywords is None
@@ -268,9 +265,7 @@ async def test_add_many_rejects_bad_rows():
         async with session_factory() as session:
             repo = DbForeshadowingRepository(session)
             with pytest.raises(ValueError, match="book_id"):
-                await repo.add_many(
-                    [{"title": "T", "description": "d", "planted_episode": 1}]
-                )
+                await repo.add_many([{"title": "T", "description": "d", "planted_episode": 1}])
             with pytest.raises(ValueError, match="unexpected keys"):
                 await repo.add_many(
                     [
@@ -290,9 +285,7 @@ async def test_set_keywords_helper_roundtrip():
     async with create_test_db() as session_factory:
         async with session_factory() as session:
             repo = DbForeshadowingRepository(session)
-            record = await repo.add(
-                book_id=1, title="helper", description="d", planted_episode=1
-            )
+            record = await repo.add(book_id=1, title="helper", description="d", planted_episode=1)
             record.set_keywords(["x,y", "z"])
             await repo.commit()
             assert record.keyword_list == ["x,y", "z"]
@@ -306,9 +299,7 @@ async def test_keywords_column_is_text_and_nullable_in_db():
     async with create_test_db() as session_factory:
         async with session_factory() as session:
             await session.execute(text("SELECT keywords FROM foreshadowings"))
-            result = await session.execute(
-                text("PRAGMA table_info(foreshadowings)")
-            )
+            result = await session.execute(text("PRAGMA table_info(foreshadowings)"))
             # PRAGMA table_info の列: (cid, name, type, notnull, dflt_value, pk)
             columns = {row[1]: (row[2], row[3]) for row in result.fetchall()}
             assert "keywords" in columns
@@ -391,12 +382,9 @@ def legacy_db(tmp_path):
     with engine.begin() as conn:
         conn.exec_driver_sql(_BOOKS_DDL)
         conn.exec_driver_sql(_LEGACY_DDL)
+        conn.exec_driver_sql("INSERT INTO books (id, title) VALUES (1, '既存作品')")
         conn.exec_driver_sql(
-            "INSERT INTO books (id, title) VALUES (1, '既存作品')"
-        )
-        conn.exec_driver_sql(
-            "INSERT INTO foreshadowings "
-            "(book_id, title, description, planted_episode) VALUES (1, '既存', '既存', 1)"
+            "INSERT INTO foreshadowings (book_id, title, description, planted_episode) VALUES (1, '既存', '既存', 1)"
         )
     try:
         yield engine
@@ -435,9 +423,7 @@ def test_upgrade_preserves_existing_rows(legacy_db):
     with legacy_db.begin() as conn:
         with Operations.context(MigrationContext.configure(conn)):
             mod.upgrade()
-        rows = conn.exec_driver_sql(
-            "SELECT title, planted_episode, keywords FROM foreshadowings"
-        ).fetchall()
+        rows = conn.exec_driver_sql("SELECT title, planted_episode, keywords FROM foreshadowings").fetchall()
     assert rows == [("既存", 1, None)]
 
 
@@ -528,6 +514,5 @@ def test_metadata_matches_migrated_schema(legacy_db):
 
     metadata_columns = set(ForeshadowingModel.__table__.columns.keys())
     assert metadata_columns == migrated_columns, (
-        "ORM とマイグレーションの列が不一致。"
-        f" 差分: {sorted(metadata_columns ^ migrated_columns)}"
+        f"ORM とマイグレーションの列が不一致。 差分: {sorted(metadata_columns ^ migrated_columns)}"
     )

@@ -66,10 +66,12 @@ def test_hybrid_retriever_fusion_and_deduplication():
         {"id": "doc_c", "content": "Sparse result C", "metadata": {"tag": "c"}},
     ]
     # Simulate search result
-    sparse_retriever.search = MagicMock(return_value=[
-        SearchResult(id="doc_b", content="Dense result B", metadata={"tag": "b"}, source="bm25", score=5.0),
-        SearchResult(id="doc_c", content="Sparse result C", metadata={"tag": "c"}, source="bm25", score=3.0),
-    ])
+    sparse_retriever.search = MagicMock(
+        return_value=[
+            SearchResult(id="doc_b", content="Dense result B", metadata={"tag": "b"}, source="bm25", score=5.0),
+            SearchResult(id="doc_c", content="Sparse result C", metadata={"tag": "c"}, source="bm25", score=3.0),
+        ]
+    )
 
     hybrid = HybridRetriever(dense_retriever=mock_dense, sparse_retriever=sparse_retriever)
     fused_results = hybrid.search("any query", top_k=3)

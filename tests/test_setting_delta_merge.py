@@ -14,9 +14,7 @@ def _make_session(max_ver: int = 0):
     """bible_service が `await session.execute(...)` + `result.scalar()` を使うため、
     scalar を MagicMock にした結果オブジェクトを返す AsyncMock を構築する。"""
     session = AsyncMock()
-    session.execute = AsyncMock(
-        return_value=SimpleNamespace(scalar=MagicMock(return_value=max_ver))
-    )
+    session.execute = AsyncMock(return_value=SimpleNamespace(scalar=MagicMock(return_value=max_ver)))
     return session
 
 
@@ -141,15 +139,17 @@ async def test_graphrag_sync_service_merge_delta():
     mock_collection = MagicMock()
     mock_chroma.get_collection.return_value = mock_collection
 
-    mock_repo.misc.get_setting_delta = AsyncMock(return_value={
-        "id": 1,
-        "book_id": 1,
-        "field_path": "world_rules.magic_system.mana_cost",
-        "new_value": "15",
-        "source": "user",
-        "delta_type": "MANUAL",
-        "merged_to_graphrag": False,
-    })
+    mock_repo.misc.get_setting_delta = AsyncMock(
+        return_value={
+            "id": 1,
+            "book_id": 1,
+            "field_path": "world_rules.magic_system.mana_cost",
+            "new_value": "15",
+            "source": "user",
+            "delta_type": "MANUAL",
+            "merged_to_graphrag": False,
+        }
+    )
     mock_repo.misc.mark_delta_merged = AsyncMock()
 
     service = GraphRAGSyncService(repo=mock_repo, chroma_client=mock_chroma)
@@ -166,10 +166,12 @@ async def test_graphrag_sync_service_merge_delta():
 async def test_graphrag_sync_service_already_merged():
     """既にマージ済みの差分はスキップされることを確認"""
     mock_repo = MagicMock()
-    mock_repo.misc.get_setting_delta = AsyncMock(return_value={
-        "id": 1,
-        "merged_to_graphrag": True,
-    })
+    mock_repo.misc.get_setting_delta = AsyncMock(
+        return_value={
+            "id": 1,
+            "merged_to_graphrag": True,
+        }
+    )
 
     service = GraphRAGSyncService(repo=mock_repo)
 

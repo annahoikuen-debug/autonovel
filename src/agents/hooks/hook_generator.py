@@ -1,4 +1,5 @@
 """Automatic emotional hook generator based on CoreMemory unresolved emotions."""
+
 from __future__ import annotations
 
 from typing import List

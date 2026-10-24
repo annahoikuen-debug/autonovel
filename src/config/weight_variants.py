@@ -31,7 +31,6 @@ WEIGHT_TOLERANCE = 1e-6
 WEIGHT_VARIANTS: dict[str, dict[str, float]] = {
     # Base variants
     "default_v1": DEFAULT_WEIGHTS.copy(),
-
     # Genre-specific variants (v1 = current production)
     "literary_v1": {
         "consistency": 0.20,
@@ -83,7 +82,6 @@ WEIGHT_VARIANTS: dict[str, dict[str, float]] = {
         "structure": 0.25,
         "multimodal": 0.10,
     },
-
     # Phase-specific variants
     "planning_v1": {
         "consistency": 0.15,
@@ -115,7 +113,6 @@ WEIGHT_VARIANTS: dict[str, dict[str, float]] = {
         "structure": 0.05,
         "multimodal": 0.05,
     },
-
     # Experimental variants (for A/B testing)
     "literary_v2_consistency_up": {
         "consistency": 0.25,
@@ -172,10 +169,7 @@ def validate_weights(weights: dict[str, float]) -> None:
 
     total = sum(weights[n] for n in SPECIALIST_NAMES)
     if abs(total - 1.0) > WEIGHT_TOLERANCE:
-        raise ValueError(
-            f"Weights must sum to 1.0 (got {total:.6f}); "
-            f"adjust values to sum to 1.0"
-        )
+        raise ValueError(f"Weights must sum to 1.0 (got {total:.6f}); adjust values to sum to 1.0")
 
 
 def get_variant(name: str) -> dict[str, float]:

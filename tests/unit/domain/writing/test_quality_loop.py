@@ -14,11 +14,7 @@ class TestQualityLoop:
     @pytest.fixture
     def mock_writing_agent(self):
         agent = AsyncMock()
-        result = AgentResult(
-            next_agent=None,
-            artifacts={},
-            error=None
-        )
+        result = AgentResult(next_agent=None, artifacts={}, error=None)
         result.draft_text = "Test draft"
         agent.execute = AsyncMock(return_value=result)
         return agent
@@ -39,11 +35,7 @@ class TestQualityLoop:
     @pytest.fixture
     def mock_context_builder_agent(self):
         agent = AsyncMock()
-        result = AgentResult(
-            next_agent=None,
-            artifacts={"writing_context": {}},
-            error=None
-        )
+        result = AgentResult(next_agent=None, artifacts={"writing_context": {}}, error=None)
         agent.execute = AsyncMock(return_value=result)
         return agent
 
@@ -52,8 +44,9 @@ class TestQualityLoop:
         return AsyncMock()
 
     @pytest.fixture
-    def quality_loop(self, mock_writing_agent, mock_book_score_calculator,
-                     mock_context_builder_agent, mock_illustration_agent):
+    def quality_loop(
+        self, mock_writing_agent, mock_book_score_calculator, mock_context_builder_agent, mock_illustration_agent
+    ):
         return QualityLoop(
             writing_agent=mock_writing_agent,
             book_score_calculator=mock_book_score_calculator,
@@ -75,8 +68,9 @@ class TestQualityLoop:
         assert quality_loop._enable_anti_ai_loop is False
 
     @pytest.mark.asyncio
-    async def test_evaluate_and_regenerate_returns_on_success(self, quality_loop, mock_writing_agent,
-                                                              mock_book_score_calculator):
+    async def test_evaluate_and_regenerate_returns_on_success(
+        self, quality_loop, mock_writing_agent, mock_book_score_calculator
+    ):
         """Test evaluate_and_regenerate returns when score meets threshold."""
         ctx = AgentContext(book_id=1, branch_id=1, ep_num=1, artifacts={})
         reporter = MagicMock()

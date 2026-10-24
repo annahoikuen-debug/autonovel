@@ -17,6 +17,7 @@
 （実測済み）。本テストはファイルベースの SQLite で接続を分離し、
 その前提を固定する。
 """
+
 from __future__ import annotations
 
 import ast
@@ -99,9 +100,7 @@ async def db_env(tmp_path):
     await engine.dispose()
 
     repo = DataRepositoryFacade(db)
-    generator = WorldBibleGenerator(
-        repo, llm=None, pm=None, debate=None, marketing=None, auditor=None
-    )
+    generator = WorldBibleGenerator(repo, llm=None, pm=None, debate=None, marketing=None, auditor=None)
     try:
         yield db, repo, generator
     finally:
@@ -111,9 +110,7 @@ async def db_env(tmp_path):
 async def _count_foreshadowings(db: DatabaseManager, book_id: int) -> int:
     """**別セッション**から件数を数える（コミット済みの行だけ見える）。"""
     async with db.get_session() as session:
-        result = await session.execute(
-            select(ForeshadowingModel).where(ForeshadowingModel.book_id == book_id)
-        )
+        result = await session.execute(select(ForeshadowingModel).where(ForeshadowingModel.book_id == book_id))
         return len(result.scalars().all())
 
 
@@ -175,9 +172,7 @@ async def test_hook_flag_on_plants_inside_uow_transaction(db_env, monkeypatch):
             total_episodes=10,
         )
         # 同一トランザクション内なので flush 済み行は自分のセッションから見える
-        in_tx = await uow.session.execute(
-            select(ForeshadowingModel).where(ForeshadowingModel.book_id == 2)
-        )
+        in_tx = await uow.session.execute(select(ForeshadowingModel).where(ForeshadowingModel.book_id == 2))
         assert len(in_tx.scalars().all()) == 2
         # 別セッション（別接続）からは未コミットなので見えない
         assert await _count_foreshadowings(db, book_id=2) == 0
@@ -303,11 +298,7 @@ def _function_names_calling(tree: ast.Module, target_attr: str) -> set[str]:
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
         for sub in ast.walk(node):
-            if (
-                isinstance(sub, ast.Call)
-                and isinstance(sub.func, ast.Attribute)
-                and sub.func.attr == target_attr
-            ):
+            if isinstance(sub, ast.Call) and isinstance(sub.func, ast.Attribute) and sub.func.attr == target_attr:
                 callers.add(node.name)
     return callers
 
@@ -321,12 +312,8 @@ def test_plan_methods_call_planting_hook():
     tree = ast.parse(BIBLE_SERVICE_PATH.read_text(encoding="utf-8"))
     callers = _function_names_calling(tree, "_plant_foreshadowings_from_roadmap")
 
-    assert "_create_ultra_fast_plan" in callers, (
-        "_create_ultra_fast_plan が伏線設置フックを呼んでいない"
-    )
-    assert "_create_standard_plan" in callers, (
-        "_create_standard_plan が伏線設置フックを呼んでいない"
-    )
+    assert "_create_ultra_fast_plan" in callers, "_create_ultra_fast_plan が伏線設置フックを呼んでいない"
+    assert "_create_standard_plan" in callers, "_create_standard_plan が伏線設置フックを呼んでいない"
 
 
 def test_hook_uses_current_uow_session_not_separate_session():
@@ -339,17 +326,10 @@ def test_hook_uses_current_uow_session_not_separate_session():
 
     hook_def = None
     for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.AsyncFunctionDef)
-            and node.name == "_plant_foreshadowings_from_roadmap"
-        ):
+        if isinstance(node, ast.AsyncFunctionDef) and node.name == "_plant_foreshadowings_from_roadmap":
             hook_def = node
             break
     assert hook_def is not None, "_plant_foreshadowings_from_roadmap が存在しない"
 
-    source_segment = ast.get_source_segment(
-        BIBLE_SERVICE_PATH.read_text(encoding="utf-8"), hook_def
-    )
-    assert "current_uow" in source_segment, (
-        "フックが current_uow 経由のセッションを使っていない"
-    )
+    source_segment = ast.get_source_segment(BIBLE_SERVICE_PATH.read_text(encoding="utf-8"), hook_def)
+    assert "current_uow" in source_segment, "フックが current_uow 経由のセッションを使っていない"

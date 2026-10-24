@@ -164,14 +164,18 @@ async def test_full_creation_to_zip_delivery_flow(api_client, real_db_manager):
         state_token="state_token_v5_e2e_valid",
     )
 
-    with patch.object(
-        PromotionResponse,
-        "__init__",
-        return_value=None,
-    ) if False else patch(
-        "src.services.promotion_service.PromotionService.promote_book",
-        new_callable=AsyncMock,
-    ) as mock_promote:
+    with (
+        patch.object(
+            PromotionResponse,
+            "__init__",
+            return_value=None,
+        )
+        if False
+        else patch(
+            "src.services.promotion_service.PromotionService.promote_book",
+            new_callable=AsyncMock,
+        ) as mock_promote
+    ):
         mock_promote.return_value = mock_promote_resp
         promote_req = {"book_id": "101"}
         res_promote = api_client.post("/api/wizard/promote", json=promote_req, headers=headers)

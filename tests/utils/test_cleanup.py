@@ -2,6 +2,7 @@
 
 クリーンアップユーティリティが正しく動作することを確認します。
 """
+
 from __future__ import annotations
 
 from unittest.mock import Mock
@@ -24,6 +25,7 @@ def test_cleanup_redis_client():
     # flushall メソッドがないオブジェクトを渡しても例外が発生しないことを確認
     class NoFlushallClient:
         pass
+
     cleanup_redis_client(NoFlushallClient())  # 例外が発生しないはず
 
 

@@ -3,16 +3,20 @@ from typing import Optional, List
 from pydantic import Field
 from src.domain.schemas.base import TimestampedSchema, AutoNovelBaseSchema
 
+
 class CharacterRelationSchema(AutoNovelBaseSchema):
     """キャラクター間の関係性（v4より完全継承）"""
+
     target_character_name: str
     relationship_type: str = Field(default="関係者", description="ライバル, 師弟, 依存, 秘密の恋人, 恩人, 宿敵")
     description: str = Field(default="", description="関係性の具体的な内容や背景")
     intensity: int = Field(default=3, ge=1, le=5, description="関係性の強度（1:希薄〜5:運命的）")
     secret_aspect: Optional[str] = Field(default=None, description="関係性の秘密の側面・裏の顔")
 
+
 class CharacterSchema(TimestampedSchema):
     """心理学的・創作論的キャラクタープロファイル（v4より完全継承）"""
+
     id: int
     book_id: int
     name: str = Field(..., max_length=100)
@@ -34,7 +38,9 @@ class CharacterSchema(TimestampedSchema):
     first_person: str = Field(default="私", description="一人称")
     second_person: str = Field(default="貴方", description="二人称")
     suffix_style: str = Field(default="", description="特徴的な語尾（例: 〜ですわ）")
-    suffix_patterns: List[str] = Field(default_factory=list, description="静的監査用正規表現（例: ['ですわ$', 'ますわ$']）")
+    suffix_patterns: List[str] = Field(
+        default_factory=list, description="静的監査用正規表現（例: ['ですわ$', 'ますわ$']）"
+    )
     dialogue_samples: List[str] = Field(default_factory=list, description="セリフサンプル")
 
     # Truth Ledger（事実認識の境界線: ハルシネーション・先回り防止）
@@ -43,6 +49,7 @@ class CharacterSchema(TimestampedSchema):
 
     # 人間関係
     relations: List[CharacterRelationSchema] = Field(default_factory=list)
+
 
 class CharacterCreateRequest(AutoNovelBaseSchema):
     book_id: int

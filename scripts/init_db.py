@@ -36,10 +36,7 @@ def _has_user_tables(db_path: Path) -> bool:
     try:
         conn = sqlite3.connect(str(db_path))
         try:
-            cursor = conn.execute(
-                "SELECT count(*) FROM sqlite_master "
-                "WHERE type='table' AND name != 'alembic_version'"
-            )
+            cursor = conn.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name != 'alembic_version'")
             (count,) = cursor.fetchone()
         finally:
             conn.close()

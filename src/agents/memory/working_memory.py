@@ -1,4 +1,5 @@
 """WorkingMemory implementation managing scene-level frames with archival eviction."""
+
 from __future__ import annotations
 
 from typing import List, Optional
@@ -46,10 +47,7 @@ class WorkingMemory(BaseWorkingMemory):
     def _evict_to_archival(self, frame: WorkingFrame) -> None:
         """退避されたフレームを ArchivalMemory に保存"""
         if self.archival_memory is not None:
-            summary = (
-                f"Scene {frame.scene_id} summary: {frame.context_summary} "
-                f"Plot: {', '.join(frame.plot_points)}"
-            )
+            summary = f"Scene {frame.scene_id} summary: {frame.context_summary} Plot: {', '.join(frame.plot_points)}"
             entry = MemoryEntry(
                 id=f"scene_{frame.scene_id}_evicted",
                 content=summary,

@@ -88,9 +88,7 @@ async def test_session_type_mismatch_is_actually_logged(caplog):
     assert contract == []
     messages = [r.getMessage() for r in caplog.records]
     assert any("Session type mismatch" in m for m in messages), (
-        "セッション型不一致の警告がログに出ていない"
-        "（hasattr(self,'logger') デッドガードの再発）: "
-        f"{messages}"
+        f"セッション型不一致の警告がログに出ていない（hasattr(self,'logger') デッドガードの再発）: {messages}"
     )
 
 
@@ -111,9 +109,7 @@ async def test_digest_failure_is_actually_logged(caplog, monkeypatch):
         await writer.run(_ctx(session=None))
 
     messages = [r.getMessage() for r in caplog.records]
-    assert any("ダイジェスト" in m for m in messages), (
-        f"ダイジェスト失敗が無言化された: {messages}"
-    )
+    assert any("ダイジェスト" in m for m in messages), f"ダイジェスト失敗が無言化された: {messages}"
 
 
 # ── (3) 伏線自動回収の失敗が握り潰されない ──────────────────────
@@ -150,9 +146,7 @@ async def test_foreshadowing_failure_is_actually_logged(caplog, monkeypatch):
         )
 
     messages = [r.getMessage() for r in caplog.records]
-    assert any("伏線自動回収" in m for m in messages), (
-        f"伏線自動回収の失敗が無言化された: {messages}"
-    )
+    assert any("伏線自動回収" in m for m in messages), f"伏線自動回収の失敗が無言化された: {messages}"
 
 
 # ── メタデータ不在でも握り潰さない ──────────────────────────────

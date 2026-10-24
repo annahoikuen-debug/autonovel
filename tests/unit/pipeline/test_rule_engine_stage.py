@@ -1,4 +1,5 @@
 """Step 15: パイプラインへのルールエンジンステージ追加テスト。"""
+
 from __future__ import annotations
 
 import tempfile

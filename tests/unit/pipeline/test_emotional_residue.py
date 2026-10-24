@@ -1,4 +1,5 @@
 """Tests for emotional residue data structures."""
+
 from __future__ import annotations
 
 
@@ -24,7 +25,7 @@ class TestEmotionalVectorCreation:
             confidence=0.8,
             evidence_span="AはBを信頼していた",
             episode_id="ep01",
-            cause="ep01_rescue"
+            cause="ep01_rescue",
         )
         vec.set_signal(signal)
 
@@ -38,16 +39,26 @@ class TestEmotionalVectorCreation:
 
         # 最初のシグナル
         sig1 = EmotionalSignal(
-            source="A", target="B", emotion_type=EmotionType.AFFECTION,
-            value=0.8, confidence=0.6, evidence_span="...", episode_id="ep01"
+            source="A",
+            target="B",
+            emotion_type=EmotionType.AFFECTION,
+            value=0.8,
+            confidence=0.6,
+            evidence_span="...",
+            episode_id="ep01",
         )
         vec.set_signal(sig1)
         assert vec.get_value("A", "B", EmotionType.AFFECTION) == 0.8
 
         # 2つ目のシグナル（異なる値・信頼度）
         sig2 = EmotionalSignal(
-            source="A", target="B", emotion_type=EmotionType.AFFECTION,
-            value=0.2, confidence=0.9, evidence_span="...", episode_id="ep01"
+            source="A",
+            target="B",
+            emotion_type=EmotionType.AFFECTION,
+            value=0.2,
+            confidence=0.9,
+            evidence_span="...",
+            episode_id="ep01",
         )
         vec.set_signal(sig2)
 
@@ -115,8 +126,16 @@ class TestEmotionType:
 
     def test_all_emotions_exist(self):
         expected = {
-            "affection", "tension", "fear", "trust", "intimacy",
-            "jealousy", "anger", "sadness", "surprise", "disgust"
+            "affection",
+            "tension",
+            "fear",
+            "trust",
+            "intimacy",
+            "jealousy",
+            "anger",
+            "sadness",
+            "surprise",
+            "disgust",
         }
         actual = {e.value for e in EmotionType}
         assert actual == expected

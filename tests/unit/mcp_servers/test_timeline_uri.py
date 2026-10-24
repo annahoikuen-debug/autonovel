@@ -1,4 +1,5 @@
 """Unit tests for Timeline URI parser and schemas."""
+
 from __future__ import annotations
 
 from src.mcp_servers.timeline_schemas import (

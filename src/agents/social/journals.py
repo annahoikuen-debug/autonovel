@@ -1,4 +1,5 @@
 """Multi-Perspective Character Journals Generator (Step 48)."""
+
 from __future__ import annotations
 
 import logging
@@ -9,9 +10,6 @@ from datetime import datetime, timezone
 from src.agents.social.models import JournalEntry
 
 logger = logging.getLogger(__name__)
-
-
-
 
 
 import asyncio
@@ -179,6 +177,7 @@ def generate_multi_perspective_journals(
 
     if loop and loop.is_running():
         import concurrent.futures
+
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(
                 asyncio.run,
@@ -216,4 +215,3 @@ __all__ = [
     "generate_scene_journals",
     "generate_scene_journals_async",
 ]
-

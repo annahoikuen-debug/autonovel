@@ -1,4 +1,5 @@
 """課金プラン設定。"""
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ STRIPE_PRICE_TO_PLAN = {
     "price_enterprise": {"tier": "enterprise", "monthly_credits": 5000},
 }
 
+
 def get_credits_for_price_id(price_id: str) -> int:
     """Stripe Price IDから付与すべき月次クレジット数を取得する。"""
     if price_id in STRIPE_PRICE_TO_PLAN:
@@ -26,6 +28,7 @@ def get_credits_for_price_id(price_id: str) -> int:
     if price_id in PLAN_CONFIG:
         return PLAN_CONFIG[price_id]["monthly_credits"]
     return 0
+
 
 def get_tier_for_price_id(price_id: str) -> str:
     """Stripe Price IDからPlan Tier (free, starter, pro, enterprise) を取得する。"""
@@ -43,12 +46,13 @@ def get_tier_for_price_id(price_id: str) -> str:
     )
     return "free"
 
+
 # 1クレジット ≒ 約 2.5〜3 円相当
 TASK_CREDIT_COSTS = {
-    "plot_expansion": 2,       # プロット構成・ブレスト (Gemini Flash)
-    "writing_standard": 10,    # 1エピソード本文執筆 (約3,000字 / Haiku or mini)
+    "plot_expansion": 2,  # プロット構成・ブレスト (Gemini Flash)
+    "writing_standard": 10,  # 1エピソード本文執筆 (約3,000字 / Haiku or mini)
     "writing_climax_pro": 25,  # クライマックス最高品質執筆 (Claude 3.5 Sonnet)
-    "audit_full": 5,           # 8オーディター並列監査
-    "illustration_generate": 8,# 挿絵1枚生成 (SDXL / Imagen)
-    "voice_synthesize": 6,     # VOICEVOX章音声合成
+    "audit_full": 5,  # 8オーディター並列監査
+    "illustration_generate": 8,  # 挿絵1枚生成 (SDXL / Imagen)
+    "voice_synthesize": 6,  # VOICEVOX章音声合成
 }

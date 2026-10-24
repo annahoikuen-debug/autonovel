@@ -8,6 +8,7 @@ from src.backend.database.models import Book, Bible, Chapter
 from src.easy_mode import EpisodeResult, SeriesResult
 from src.backend.exceptions import NoChaptersFoundError
 
+
 @dataclass
 class SeriesDataLoaderConfig:
     book_id: int
@@ -21,6 +22,7 @@ def _row_to_episode_result(row) -> EpisodeResult:
     Convert a chapter row (SQLAlchemy model or dict) to EpisodeResult.
     Expected row attributes: ep_num, title, content, score_story, etc.
     """
+
     def _get_val(key, default=None):
         if hasattr(row, key):
             val = getattr(row, key, default)
@@ -30,15 +32,15 @@ def _row_to_episode_result(row) -> EpisodeResult:
         return default
 
     # Extract basic fields
-    episode_num = _get_val('ep_num')
-    title = _get_val('title', '')
-    content = _get_val('content', '')
+    episode_num = _get_val("ep_num")
+    title = _get_val("title", "")
+    content = _get_val("content", "")
 
     # Compute word count (simple split by whitespace)
     word_count = len(content.split()) if content else 0
 
     # Audit score: use score_story if available, else default 80.0
-    audit_score = _get_val('score_story')
+    audit_score = _get_val("score_story")
     if audit_score is None:
         audit_score = 80.0
     else:
@@ -51,15 +53,15 @@ def _row_to_episode_result(row) -> EpisodeResult:
 
     # Build metadata from other fields
     metadata = {
-        "killer_phrase": _get_val('killer_phrase'),
-        "summary": _get_val('summary'),
-        "world_state": _get_val('world_state'),
-        "trinity_review_log": _get_val('trinity_review_log'),
-        "ai_insight": _get_val('ai_insight'),
-        "tension_delta": _get_val('tension_delta'),
-        "qol_delta": _get_val('qol_delta'),
-        "is_anchor": _get_val('is_anchor'),
-        "created_at": _get_val('created_at'),
+        "killer_phrase": _get_val("killer_phrase"),
+        "summary": _get_val("summary"),
+        "world_state": _get_val("world_state"),
+        "trinity_review_log": _get_val("trinity_review_log"),
+        "ai_insight": _get_val("ai_insight"),
+        "tension_delta": _get_val("tension_delta"),
+        "qol_delta": _get_val("qol_delta"),
+        "is_anchor": _get_val("is_anchor"),
+        "created_at": _get_val("created_at"),
     }
     # Remove None values from metadata
     metadata = {k: v for k, v in metadata.items() if v is not None}
@@ -153,27 +155,26 @@ class SeriesDataLoader:
         normalized = []
         for ep in episodes:
             if ep.episode_num != expected_num:
-                logger.warning(
-                    f"Missing chapter number: expected {expected_num}, got {ep.episode_num}. "
-                    f"Re-numbering."
-                )
+                logger.warning(f"Missing chapter number: expected {expected_num}, got {ep.episode_num}. Re-numbering.")
             # If content is empty, we still keep it but warn?
             if not ep.content or len(ep.content.strip()) == 0:
                 logger.warning(f"Chapter {ep.episode_num} has empty content.")
 
             # Create a new EpisodeResult with corrected episode_num
-            normalized.append(EpisodeResult(
-                episode_num=expected_num,
-                title=ep.title,
-                content=ep.content,
-                word_count=ep.word_count,
-                audit_score=ep.audit_score,
-                audit_passed=ep.audit_passed,
-                rewrite_count=ep.rewrite_count,
-                spice_elements=ep.spice_elements,
-                metadata=ep.metadata,
-                needs_human_review=ep.needs_human_review,
-            ))
+            normalized.append(
+                EpisodeResult(
+                    episode_num=expected_num,
+                    title=ep.title,
+                    content=ep.content,
+                    word_count=ep.word_count,
+                    audit_score=ep.audit_score,
+                    audit_passed=ep.audit_passed,
+                    rewrite_count=ep.rewrite_count,
+                    spice_elements=ep.spice_elements,
+                    metadata=ep.metadata,
+                    needs_human_review=ep.needs_human_review,
+                )
+            )
             expected_num += 1
 
         return normalized
@@ -205,13 +206,13 @@ class SeriesDataLoader:
 
             # Construct SeriesResult
             return SeriesResult(
-                genre=metadata.get('genre', ''),
-                title=metadata.get('title', ''),
-                concept=metadata.get('concept', ''),
+                genre=metadata.get("genre", ""),
+                title=metadata.get("title", ""),
+                concept=metadata.get("concept", ""),
                 total_episodes=len(episodes),
                 episodes=episodes,
-                bible=metadata.get('bible', {}),
-                plot_outline=metadata.get('synopsis', ''),  # using synopsis as plot outline
+                bible=metadata.get("bible", {}),
+                plot_outline=metadata.get("synopsis", ""),  # using synopsis as plot outline
                 metadata=metadata,
                 created_at=None,  # could be set from book's created_at
                 status="completed",

@@ -84,4 +84,3 @@ class EroticEnhancer:
             return result
 
         return result
-

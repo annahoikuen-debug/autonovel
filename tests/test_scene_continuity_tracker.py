@@ -44,9 +44,7 @@ class TestSceneContinuityTracker:
         snap1 = SceneStateSnapshot(
             character_name="Alice", episode_num=1, scene_type="conversation", attitude="friendly"
         )
-        snap2 = SceneStateSnapshot(
-            character_name="Alice", episode_num=2, scene_type="conversation", attitude="neutral"
-        )
+        snap2 = SceneStateSnapshot(character_name="Alice", episode_num=2, scene_type="conversation", attitude="neutral")
 
         tracker.save_snapshot(snap1)
         tracker.save_snapshot(snap2)
@@ -59,9 +57,7 @@ class TestSceneContinuityTracker:
     def test_injury_continuity(self, temp_db):
         tracker = SceneContinuityTracker(db_path=temp_db)
         # Ep 1: Severe injury
-        snap1 = SceneStateSnapshot(
-            character_name="Bob", episode_num=1, scene_type="combat", injury_level="severe"
-        )
+        snap1 = SceneStateSnapshot(character_name="Bob", episode_num=1, scene_type="combat", injury_level="severe")
         tracker.save_snapshot(snap1)
 
         # Ep 2: Suddenly "none" without recovery
@@ -101,9 +97,7 @@ class TestSceneContinuityTracker:
     def test_travel_continuity(self, temp_db):
         tracker = SceneContinuityTracker(db_path=temp_db)
         # Ep 1: Departing
-        snap1 = SceneStateSnapshot(
-            character_name="Eve", episode_num=1, scene_type="travel", travel_state="departing"
-        )
+        snap1 = SceneStateSnapshot(character_name="Eve", episode_num=1, scene_type="travel", travel_state="departing")
         tracker.save_snapshot(snap1)
 
         # Ep 2: No mention of arrival but state is now "stable"
@@ -114,9 +108,7 @@ class TestSceneContinuityTracker:
     def test_recovery_continuity(self, temp_db):
         tracker = SceneContinuityTracker(db_path=temp_db)
         # Ep 1: Exhausted
-        snap1 = SceneStateSnapshot(
-            character_name="Frank", episode_num=1, scene_type="rest", recovery_state="exhausted"
-        )
+        snap1 = SceneStateSnapshot(character_name="Frank", episode_num=1, scene_type="rest", recovery_state="exhausted")
         tracker.save_snapshot(snap1)
 
         # Ep 2: Suddenly fighting intensely without recovery
@@ -143,9 +135,7 @@ class TestSceneContinuityTracker:
     def test_time_continuity(self, temp_db):
         tracker = SceneContinuityTracker(db_path=temp_db)
         # Ep 1: Night
-        snap1 = SceneStateSnapshot(
-            character_name="Heidi", episode_num=1, scene_type="time", time_of_day="night"
-        )
+        snap1 = SceneStateSnapshot(character_name="Heidi", episode_num=1, scene_type="time", time_of_day="night")
         tracker.save_snapshot(snap1)
 
         # Ep 2: Day (without transition keywords)
@@ -156,9 +146,7 @@ class TestSceneContinuityTracker:
     def test_item_continuity(self, temp_db):
         tracker = SceneContinuityTracker(db_path=temp_db)
         # Ep 1: Holding "聖剣"
-        snap1 = SceneStateSnapshot(
-            character_name="Ivan", episode_num=1, scene_type="item", items_held=["聖剣"]
-        )
+        snap1 = SceneStateSnapshot(character_name="Ivan", episode_num=1, scene_type="item", items_held=["聖剣"])
         tracker.save_snapshot(snap1)
 
         # Ep 2: No mention of "聖剣" and no loss keywords

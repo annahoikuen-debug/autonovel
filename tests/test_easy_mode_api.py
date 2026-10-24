@@ -1,7 +1,3 @@
-
-
-
-
 def test_gacha_api_validation_error(client):
     """キーワードが空の場合に422バリデーションエラーを返すことを検証"""
     response = client.post("/easy_mode/gacha", json={"genre": "", "keywords": []})
@@ -253,4 +249,3 @@ def test_full_journey_digest_to_promote(client):
     promote_data = promote_res.json()
     assert promote_data["success"] is True
     assert "state_token" in promote_data
-

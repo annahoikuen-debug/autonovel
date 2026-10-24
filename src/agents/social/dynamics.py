@@ -1,4 +1,5 @@
 """Dynamic Relationship Transition and Timeline Computation (Step 50)."""
+
 from __future__ import annotations
 
 import logging
@@ -117,7 +118,8 @@ class RelationshipDynamicsCalculator:
     def infer_relationship_trend(self, char_a: str, char_b: str) -> str:
         """Infer narrative relationship trend (e.g. deepening trust, growing hostility) from history."""
         pair_records = [
-            r for r in self.history
+            r
+            for r in self.history
             if (r.char_a == char_a and r.char_b == char_b) or (r.char_a == char_b and r.char_b == char_a)
         ]
         if len(pair_records) < 2:

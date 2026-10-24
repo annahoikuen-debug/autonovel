@@ -3,6 +3,7 @@ from sqlalchemy import select
 from src.backend.database.repositories.base import BaseRepository
 from src.backend.database.models import PDCAHistorySnapshot
 
+
 class PDCAHistoryRepository(BaseRepository[PDCAHistorySnapshot]):
     @property
     def model_class(self) -> type[PDCAHistorySnapshot]:
@@ -12,10 +13,7 @@ class PDCAHistoryRepository(BaseRepository[PDCAHistorySnapshot]):
         """特定の章のPDCA履歴をすべて取得する"""
         query = (
             select(PDCAHistorySnapshot)
-            .where(
-                PDCAHistorySnapshot.book_id == book_id,
-                PDCAHistorySnapshot.chapter_number == chapter_number
-            )
+            .where(PDCAHistorySnapshot.book_id == book_id, PDCAHistorySnapshot.chapter_number == chapter_number)
             .order_by(PDCAHistorySnapshot.cycle_number)
         )
         result = await self.session.execute(query)
@@ -25,10 +23,7 @@ class PDCAHistoryRepository(BaseRepository[PDCAHistorySnapshot]):
         """特定の章の最新のPDCAスナップショットを取得する"""
         query = (
             select(PDCAHistorySnapshot)
-            .where(
-                PDCAHistorySnapshot.book_id == book_id,
-                PDCAHistorySnapshot.chapter_number == chapter_number
-            )
+            .where(PDCAHistorySnapshot.book_id == book_id, PDCAHistorySnapshot.chapter_number == chapter_number)
             .order_by(PDCAHistorySnapshot.cycle_number.desc())
             .limit(1)
         )

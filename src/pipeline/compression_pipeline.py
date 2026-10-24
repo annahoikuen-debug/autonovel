@@ -4,6 +4,7 @@ Week 1 の自動抽出ベクトル (pipeline ネームスペース) と Week 2 �
 ルールエンジンベースラインベクトル (rule_engine ネームスペース) を併存させる。
 融合は読み取り側 (Week 4) で実施する。
 """
+
 from __future__ import annotations
 
 import logging
@@ -17,9 +18,9 @@ from src.rules.state_machine import EmotionalStateMachine
 logger = logging.getLogger(__name__)
 
 # ネームスペース定義 (Week 1-3 で分離)
-NAMESPACE_PIPELINE = "pipeline"        # Week 1 の自動抽出
+NAMESPACE_PIPELINE = "pipeline"  # Week 1 の自動抽出
 NAMESPACE_RULE_ENGINE = RULE_ENGINE_NAMESPACE  # Week 2 のベースライン ("rule_engine")
-NAMESPACE_ANNOTATION = "annotation"    # Week 3 の人間上書き
+NAMESPACE_ANNOTATION = "annotation"  # Week 3 の人間上書き
 
 
 class CompressionPipeline:
@@ -123,7 +124,10 @@ class CompressionPipeline:
         # 永続化 (ストアが利用可能な場合)
         if any(s is not None for s in (self.vector_store, self.graph_store, self.log_store)):
             self.rule_engine.persist_results(
-                self.vector_store, self.graph_store, self.log_store, episode=ep,
+                self.vector_store,
+                self.graph_store,
+                self.log_store,
+                episode=ep,
             )
         return vector
 
@@ -174,7 +178,7 @@ class CompressionPipeline:
 
 
 def _extract_episode(episode_id: str) -> Optional[int]:
-    """"ep14" 形式の ID からエピソード番号を推定。"""
+    """ "ep14" 形式の ID からエピソード番号を推定。"""
     text = str(episode_id).strip().lower()
     if text.startswith("ep"):
         try:

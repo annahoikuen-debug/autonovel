@@ -8,6 +8,7 @@ v5.3 Step 18/19: 遷移判定を WHERE 句に埋め込んだ CAS（単一 UPDATE
 検証できない。そこで遷移系は **実 async SQLite（aiosqlite）** で検証する。
 読み取り専用の検索・集計系は従来どおりモックで外形を固定する。
 """
+
 from contextlib import asynccontextmanager
 
 import pytest
@@ -65,9 +66,7 @@ async def create_test_db(url: str = "sqlite+aiosqlite:///:memory:"):
                         marketing_data="",
                     )
                 )
-    session_factory = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     try:
         yield session_factory
     finally:

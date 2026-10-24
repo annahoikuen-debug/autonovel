@@ -206,26 +206,16 @@ class TestLlmCallsPerEpisode:
         # 実測値はトラッカーの実カウンタそのものである
         measured = sum(b["calls"] for b in result["breakdown"].values())
         assert measured > 0, "1話あたりのLLM回数が計測できていない"
-        assert result["total_calls"] == measured, (
-            f"集計値 {result['total_calls']} と内訳合計 {measured} が不一致"
-        )
+        assert result["total_calls"] == measured, f"集計値 {result['total_calls']} と内訳合計 {measured} が不一致"
         # 独立計測（新しいトラッカー）でも同じ値になること
-        assert measure_calls_per_episode() == measured, (
-            "独立計測値が一致しない（計測が確定的でない）"
-        )
-        print(
-            f"\n[実測] 1話あたりLLM呼び出し回数: {measured}"
-            f"（構成内訳は参考値: {STRUCTURAL_SKILL_LLM_CALLS}）"
-        )
+        assert measure_calls_per_episode() == measured, "独立計測値が一致しない（計測が確定的でない）"
+        print(f"\n[実測] 1話あたりLLM呼び出し回数: {measured}（構成内訳は参考値: {STRUCTURAL_SKILL_LLM_CALLS}）")
 
     def test_measured_calls_match_target_verdict(self) -> None:
         """実測値を目標（4-5回）と比較し、判定を返すこと（T6 Step 13/15 用）。"""
         measured = measure_calls_per_episode()
         verdict = judge_against_target(measured, target_min=4, target_max=5)
-        print(
-            f"\n[実測] 1話 {measured} 回 / 目標 4-5 回 → "
-            f"{'達成' if verdict['meets_target'] else '未達'}"
-        )
+        print(f"\n[実測] 1話 {measured} 回 / 目標 4-5 回 → {'達成' if verdict['meets_target'] else '未達'}")
         assert verdict["measured"] == measured
         assert verdict["meets_target"] in (True, False)
         assert 0 < measured <= BASELINE_MAX_LLM_CALLS_PER_EPISODE
@@ -241,10 +231,7 @@ class TestLlmCallsPerEpisode:
         効果測定表には下限値として記載すること。
         """
         measured = measure_real_audit_calls()
-        print(
-            f"\n[実測] 監査フェーズのLLM呼び出し回数: {measured}"
-            "（決定的なスタブ LLM による下限値）"
-        )
+        print(f"\n[実測] 監査フェーズのLLM呼び出し回数: {measured}（決定的なスタブ LLM による下限値）")
         assert measured > 0, "監査フェーズの実測が 0"
         assert 0 < measured <= 10, f"監査回数が想定外: {measured}"
 
@@ -259,10 +246,7 @@ class TestLlmCallsPerEpisode:
         assert isinstance(structural, int) and structural > 0
         assert isinstance(measured, int) and measured > 0
         # 差分があれば「構造推計では上过长期」になる。記録として残す。
-        print(
-            f"\n[参考] 構成推計 {structural} 回 / 実測 {measured} 回 "
-            f"（差 {measured - structural:+d}）"
-        )
+        print(f"\n[参考] 構成推計 {structural} 回 / 実測 {measured} 回 （差 {measured - structural:+d}）")
 
     def test_calls_are_aggregated_by_task_type(self) -> None:
         """用途別に集計されること（K3 / B-1 の判断材料）。"""
@@ -289,9 +273,7 @@ class TestLlmCallsPerEpisode:
         breakdown = result["breakdown"]
         total = result["total_calls"]
         audit_ratio = breakdown["audit"]["calls"] / total
-        assert audit_ratio > 0.4, (
-            f"監査占比が想定より低い: {audit_ratio:.1%}（WS-A の前提が崩れる）"
-        )
+        assert audit_ratio > 0.4, f"監査占比が想定より低い: {audit_ratio:.1%}（WS-A の前提が崩れる）"
         print(f"\n[実測] 監査が全体の {audit_ratio:.1%} を占める")
 
     def test_cost_per_episode_is_reported(self) -> None:
@@ -299,10 +281,7 @@ class TestLlmCallsPerEpisode:
         tracker = TokenTracker()
         result = _simulate_one_episode(tracker)
         assert result["cost_usd"] > 0, "コストが 0 として算出されている"
-        print(
-            f"\n[実測] 1話あたり推定コスト: ${result['cost_usd']:.8f}"
-            f"（トークン {result['total_tokens']}）"
-        )
+        print(f"\n[実測] 1話あたり推定コスト: ${result['cost_usd']:.8f}（トークン {result['total_tokens']}）")
 
     def test_cost_breakdown_by_task(self) -> None:
         """タスク別のコスト内訳が出ること（tier ルーティングの効果測定用）。"""
@@ -339,9 +318,7 @@ class TestBudgetGuard:
                 f"{TARGET_MAX_LLM_CALLS_PER_EPISODE} 回。"
                 "WS-A（監査集約）＋WS-B（軽量監査モード）で削減予定"
             )
-        assert meets_target is False, (
-            "目標に到達した場合、WS-A/WS-B の完了に合わせてこの判定を反転させること"
-        )
+        assert meets_target is False, "目標に到達した場合、WS-A/WS-B の完了に合わせてこの判定を反転させること"
 
     def test_parallelization_does_not_reduce_call_count(self) -> None:
         """監査並列化（WS-A-1）はレイテンシを縮めるが回数は変えない。
@@ -352,6 +329,5 @@ class TestBudgetGuard:
         tracker = TokenTracker()
         result = _simulate_one_episode(tracker)
         assert result["breakdown"]["audit"]["calls"] == STRUCTURAL_SKILL_LLM_CALLS["AuditSkill"], (
-            "並列化で監査の呼び出し回数が変わるようなら、回数を削減する"
-            "最適化が別途必要（WS-A-3 のゲート集約）"
+            "並列化で監査の呼び出し回数が変わるようなら、回数を削減する最適化が別途必要（WS-A-3 のゲート集約）"
         )

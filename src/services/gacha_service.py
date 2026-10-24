@@ -35,9 +35,7 @@ class GachaService:
         event_bus: Any | None = None,
     ):
         if db is None:
-            raise ValueError(
-                "GachaService requires db=DatabaseManager (in-memory cache removed in v2)."
-            )
+            raise ValueError("GachaService requires db=DatabaseManager (in-memory cache removed in v2).")
         self.llm_service = llm_service or LLMService()
         self._db = db
         self.blind_gate = blind_gate or BlindReviewGate(
@@ -166,9 +164,7 @@ class GachaService:
 
         evaluated_plans: list[GachaPlan] = []
         for p in plans:
-            score, critique, reason = await self._evaluate_single_plan_blind(
-                p, plans, genre, round_gate
-            )
+            score, critique, reason = await self._evaluate_single_plan_blind(p, plans, genre, round_gate)
             p.audit_score = score
             p.critique = critique
             p.recommendation_reason = reason
@@ -203,9 +199,7 @@ class GachaService:
 
         return round_obj
 
-    def _build_review_round(
-        self, plans: list[GachaPlan], round_number: int, gate: BlindReviewGate
-    ) -> ReviewRound:
+    def _build_review_round(self, plans: list[GachaPlan], round_number: int, gate: BlindReviewGate) -> ReviewRound:
         """評価済みプランから ReviewRound を構築。"""
         plan_scores = {p.plan_id: p.audit_score or 0.0 for p in plans}
         plan_critiques = {p.plan_id: p.critique or {} for p in plans}
@@ -228,6 +222,7 @@ class GachaService:
         # ReviewSession の初期化（再開時は既存をロード）
         if request.review_session_id and self._db is not None:
             from src.backend.database.repositories import EasyModeDraftRepository
+
             async with self._db.get_session() as session:
                 repo = EasyModeDraftRepository(session)
                 review_session = await repo.load_review_session(request.review_session_id)
@@ -315,9 +310,7 @@ JSONキー:
         try:
             tasks = [_generate_single_plan(pt, direction) for pt, direction in types]
             # return_exceptions=True: 1案の失敗で他案の生成結果まで破棄されないようにする。
-            plans_raw = await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True), timeout=30.0
-            )
+            plans_raw = await asyncio.wait_for(asyncio.gather(*tasks, return_exceptions=True), timeout=30.0)
             failures = [r for r in plans_raw if isinstance(r, BaseException)]
             if failures:
                 logger.error(
@@ -329,10 +322,7 @@ JSONキー:
             succeeded = [r for r in plans_raw if not isinstance(r, BaseException)]
             if not succeeded:
                 first_error = str(failures[0]) if failures else ""
-                raise RuntimeError(
-                    f"企画の生成がすべて失敗しました "
-                    f"({len(failures)} 件): {first_error}"
-                )
+                raise RuntimeError(f"企画の生成がすべて失敗しました ({len(failures)} 件): {first_error}")
             plans = list(succeeded)
         except TimeoutError:
             logger.error("[gacha-pitch] Gacha generation timed out (30s)")
@@ -381,9 +371,7 @@ JSONキー:
                 round_id=review_session.session_id + "_r0",
             )
             try:
-                await self.event_bus.publish_blind(
-                    event, self.blind_gate, round_id=review_session.session_id + "_r0"
-                )
+                await self.event_bus.publish_blind(event, self.blind_gate, round_id=review_session.session_id + "_r0")
             except BaseException as e:
                 logger.debug(f"Failed to publish blind gacha event: {e}")
 

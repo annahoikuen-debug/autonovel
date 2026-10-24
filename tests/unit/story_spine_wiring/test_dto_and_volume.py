@@ -1,14 +1,17 @@
 """DTO の結線と volume カウンタの確認。"""
 
 
-
 def _ctx():
     """WorkflowContext の必須引数をすべて満たす（既存テストと同じ最小構成）。"""
     from src.services.pipeline_base import WorkflowContext
 
     return WorkflowContext(
-        genre="g", keywords="", archetype_key="exile_rise",
-        target_eps=8, initial_limit=3, word_count=2500,
+        genre="g",
+        keywords="",
+        archetype_key="exile_rise",
+        target_eps=8,
+        initial_limit=3,
+        word_count=2500,
     )
 
 
@@ -16,8 +19,11 @@ def test_generate_plot_dto_accepts_spine_keys():
     from src.application.dtos.plot_dto import GeneratePlotDTO
 
     dto = GeneratePlotDTO(
-        novel_id="n", branch_id="b",
-        pattern_key="exile_rise", length_key="web_volume", market_key="web",
+        novel_id="n",
+        branch_id="b",
+        pattern_key="exile_rise",
+        length_key="web_volume",
+        market_key="web",
     )
     assert dto.pattern_key == "exile_rise"
     assert dto.length_key == "web_volume"

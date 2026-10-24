@@ -6,10 +6,11 @@ writing_service.py - 後方互換性のためのシム。
 """
 
 import warnings
+
 warnings.warn(
     "src.backend.writing_service は非推奨です。src.domain.writing を使用してください。",
     DeprecationWarning,
-    stacklevel=2
+    stacklevel=2,
 )
 
 from src.domain.writing import (

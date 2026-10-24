@@ -2,6 +2,7 @@
 Unit tests for SocialReactionGenerator.
 PLAN 02: エンタメ演出強化・マルチジャンル＆配信・掲示板演出
 """
+
 import pytest
 from unittest.mock import AsyncMock
 from src.services.prose.social_reaction_generator import SocialReactionGenerator
@@ -13,12 +14,12 @@ async def test_generate_stream_comments_success():
     """正常な配信コメント生成をテスト"""
     # モックのセットアップ
     mock_llm = AsyncMock()
-    mock_llm.generate_text.return_value = '''{
+    mock_llm.generate_text.return_value = """{
         "comments": [
             {"user": "ユーザー1", "text": "すげえわこれｗｗｗ", "timestamp": "2026-09-19T00:00:00"},
             {"user": "ユーザー2", "text": "同接50人突破wwww", "timestamp": "2026-09-19T00:00:01"}
         ]
-    }'''
+    }"""
 
     generator = SocialReactionGenerator(llm=mock_llm)
     comments = await generator.generate_stream_comments("主人公がドラゴンを倒した", 2)
@@ -54,12 +55,12 @@ async def test_generate_forum_thread_success():
     """正常な掲示板スレッド生成をテスト"""
     # モックのセットアップ
     mock_llm = AsyncMock()
-    mock_llm.generate_text.return_value = '''{
+    mock_llm.generate_text.return_value = """{
         "posts": [
             {"name": "イッチ", "body": "ドラゴンをソロで倒したんだけど..."},
             {"name": "名無しさん", "body": "草"}
         ]
-    }'''
+    }"""
 
     generator = SocialReactionGenerator(llm=mock_llm)
     posts = await generator.generate_forum_thread("主人公がドラゴンを倒した", 2)

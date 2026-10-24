@@ -1,4 +1,5 @@
 """DAG-Based Hybrid Batch Scheduler (Steps 38-42)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 
 from enum import Enum
+
 
 class DAGTaskState(str, Enum):
     PENDING = "pending"
@@ -78,6 +80,7 @@ class DAGScheduler:
         if replanner is None:
             try:
                 from src.backend.tasks.dag_replanning import DAGReplanner
+
                 self.replanner = DAGReplanner()
             except Exception:
                 self.replanner = None
@@ -132,7 +135,9 @@ class DAGScheduler:
         if self._semaphores is None:
             limits = self.resource_manager.calculate_worker_pool_limits()
             max_parallel = limits["max_parallel_tasks"]
-            ram_slots = max(1, int(self.resource_manager.get_available_ram_mb() * self.resource_manager.max_ram_ratio // 512))
+            ram_slots = max(
+                1, int(self.resource_manager.get_available_ram_mb() * self.resource_manager.max_ram_ratio // 512)
+            )
             gpu_slots = limits["image_workers"]
             self._semaphores = _ResourceSemaphores(
                 cpu=asyncio.Semaphore(max_parallel),
@@ -213,7 +218,9 @@ class DAGScheduler:
                         task = tg.create_task(coro)
                         self.active_async_tasks[task_node.task_id] = task
                         self._running_tasks[task_node.task_id] = task
-                        task.add_done_callback(self._make_task_done_callback(task_node.task_id, allocated_resources, graph))
+                        task.add_done_callback(
+                            self._make_task_done_callback(task_node.task_id, allocated_resources, graph)
+                        )
 
                         launched += 1
 
@@ -236,12 +243,15 @@ class DAGScheduler:
                     # Reset poll interval when we launched something
                     current_poll = poll_interval
 
-            await self._publish_event("dag.completed", {
-                "dag_id": graph.dag_id,
-                "is_all_completed": graph.is_all_completed(),
-                "is_finished": graph.is_finished(),
-                "has_failures": graph.has_failures(),
-            })
+            await self._publish_event(
+                "dag.completed",
+                {
+                    "dag_id": graph.dag_id,
+                    "is_all_completed": graph.is_all_completed(),
+                    "is_finished": graph.is_finished(),
+                    "has_failures": graph.has_failures(),
+                },
+            )
 
         except* Exception as eg:
             for exc in eg.exceptions:
@@ -269,6 +279,7 @@ class DAGScheduler:
 
         if self.replanner is None:
             from src.backend.tasks.dag_replanning import DAGReplanner
+
             self.replanner = DAGReplanner()
 
         # Step 57: Fail-safe limit check
@@ -343,7 +354,7 @@ class DAGScheduler:
         self.worker_affinity_map[chapter_key] = worker_id
 
         # NUMA アフィニティ適用 (Linuxのみ, Step 5)
-        if hasattr(os, 'sched_setaffinity') and self.resource_manager.numa_topology.numa_nodes:
+        if hasattr(os, "sched_setaffinity") and self.resource_manager.numa_topology.numa_nodes:
             try:
                 worker_idx = int(worker_id.split("_")[-1])
             except ValueError:
@@ -361,12 +372,15 @@ class DAGScheduler:
         # Metrics: record task start
         start_time = time.monotonic()
         self.metrics.record_task_start(task_node.task_id, graph.dag_id, worker_id)
-        await self._publish_event("dag.task_started", {
-            "dag_id": graph.dag_id,
-            "task_id": task_node.task_id,
-            "func_name": task_node.func_name,
-            "worker_id": worker_id,
-        })
+        await self._publish_event(
+            "dag.task_started",
+            {
+                "dag_id": graph.dag_id,
+                "task_id": task_node.task_id,
+                "func_name": task_node.func_name,
+                "worker_id": worker_id,
+            },
+        )
 
         try:
             should_use_huey = (
@@ -376,6 +390,7 @@ class DAGScheduler:
             async def _run_actual():
                 if should_use_huey:
                     from src.backend.tasks.huey import execute_agent_node_task, async_wait_huey_result
+
                     clean_kwargs = {k: v for k, v in task_node.kwargs.items() if not k.startswith("_")}
                     huey_task = execute_agent_node_task(
                         func_name=task_node.func_name,
@@ -403,11 +418,14 @@ class DAGScheduler:
 
             graph.mark_completed(task_node.task_id, result=res)
             logger.info(f"Task '{task_node.task_id}' completed on {worker_id}")
-            await self._publish_event("dag.task_completed", {
-                "dag_id": graph.dag_id,
-                "task_id": task_node.task_id,
-                "worker_id": worker_id,
-            })
+            await self._publish_event(
+                "dag.task_completed",
+                {
+                    "dag_id": graph.dag_id,
+                    "task_id": task_node.task_id,
+                    "worker_id": worker_id,
+                },
+            )
 
             # Log task completion to WAL (Step 51)
             if self.worker_recovery:
@@ -418,38 +436,49 @@ class DAGScheduler:
 
             # Metrics: record task end (success)
             duration = time.monotonic() - start_time
-            self.metrics.record_task_end(TaskMetrics(
-                task_id=task_node.task_id,
-                dag_id=graph.dag_id,
-                duration_seconds=duration,
-                status="completed",
-                retry_count=task_node.retry_count,
-                worker_id=worker_id,
-                resource_usage={
-                    "cpu": task_node.resources.cpu_cores,
-                    "ram": task_node.resources.ram_mb,
-                    "gpu": task_node.resources.gpu_mem_mb,
-                }
-            ))
+            self.metrics.record_task_end(
+                TaskMetrics(
+                    task_id=task_node.task_id,
+                    dag_id=graph.dag_id,
+                    duration_seconds=duration,
+                    status="completed",
+                    retry_count=task_node.retry_count,
+                    worker_id=worker_id,
+                    resource_usage={
+                        "cpu": task_node.resources.cpu_cores,
+                        "ram": task_node.resources.ram_mb,
+                        "gpu": task_node.resources.gpu_mem_mb,
+                    },
+                )
+            )
         except (Exception, asyncio.TimeoutError) as exc:
             logger.warning(f"Task '{task_node.task_id}' failed: {exc}")
             # リトライ制御 (Step 42 & Step 52)
             task_node.retry_count += 1
             if task_node.retry_count <= task_node.retry_limit:
-                logger.info(f"Retrying task '{task_node.task_id}' (attempt {task_node.retry_count}/{task_node.retry_limit})")
+                logger.info(
+                    f"Retrying task '{task_node.task_id}' (attempt {task_node.retry_count}/{task_node.retry_limit})"
+                )
                 task_node.status = "ready"
                 # Metrics: record retry
                 self.metrics.record_retry(task_node.task_id, task_node.retry_count)
             else:
-                err_msg = f"Timeout after {task_node.timeout_seconds}s" if isinstance(exc, asyncio.TimeoutError) else str(exc)
+                err_msg = (
+                    f"Timeout after {task_node.timeout_seconds}s" if isinstance(exc, asyncio.TimeoutError) else str(exc)
+                )
                 graph.mark_failed(task_node.task_id, err_msg)
-                await self._publish_event("dag.task_failed", {
-                    "dag_id": graph.dag_id,
-                    "task_id": task_node.task_id,
-                    "error": err_msg,
-                })
+                await self._publish_event(
+                    "dag.task_failed",
+                    {
+                        "dag_id": graph.dag_id,
+                        "task_id": task_node.task_id,
+                        "error": err_msg,
+                    },
+                )
                 # Step 51: 下流タスクのカスケードキャンセル
-                cancelled = graph.cascade_cancel_downstream(task_node.task_id, reason=f"Dependency {task_node.task_id} failed")
+                cancelled = graph.cascade_cancel_downstream(
+                    task_node.task_id, reason=f"Dependency {task_node.task_id} failed"
+                )
                 if cancelled:
                     logger.info(f"Cascade cancelled downstream tasks of '{task_node.task_id}': {cancelled}")
 
@@ -462,15 +491,17 @@ class DAGScheduler:
 
                 # Metrics: record task end (failure)
                 duration = time.monotonic() - start_time
-                self.metrics.record_task_end(TaskMetrics(
-                    task_id=task_node.task_id,
-                    dag_id=graph.dag_id,
-                    duration_seconds=duration,
-                    status="failed",
-                    retry_count=task_node.retry_count,
-                    worker_id=worker_id,
-                    resource_usage={}
-                ))
+                self.metrics.record_task_end(
+                    TaskMetrics(
+                        task_id=task_node.task_id,
+                        dag_id=graph.dag_id,
+                        duration_seconds=duration,
+                        status="failed",
+                        retry_count=task_node.retry_count,
+                        worker_id=worker_id,
+                        resource_usage={},
+                    )
+                )
 
     def retry_failed_subgraph(self, graph: DAGGraph, failed_task_id: str) -> list[str]:
         """Step 42: Fine-grained recovery. Resets only the failed task and its downstream dependencies.
@@ -594,6 +625,7 @@ class DAGScheduler:
 
     def _make_task_done_callback(self, task_id: str, allocated_map: dict, graph: DAGGraph):
         """Create a done callback that releases resources and saves checkpoint."""
+
         def _done_callback(t: asyncio.Task) -> None:
             self.active_async_tasks.pop(task_id, None)
             self._release_resources(task_id, allocated_map)
@@ -601,6 +633,7 @@ class DAGScheduler:
             if self._tasks_since_checkpoint >= self.checkpoint_interval:
                 self._save_checkpoint(graph)
                 self._tasks_since_checkpoint = 0
+
         return _done_callback
 
     def _save_checkpoint(self, graph: DAGGraph) -> None:

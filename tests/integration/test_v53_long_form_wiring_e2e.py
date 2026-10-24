@@ -48,12 +48,8 @@ def _tables_with_fk_closure(*tables) -> list:
 async def _real_db(tmp_path):
     """伏線・ダイジェスト・作品行を持つ実 SQLite セッション工場を返す。"""
     db_path = tmp_path / "v53_wiring_b.db"
-    engine = create_async_engine(
-        f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False, connect_args={"timeout": 10}
-    )
-    tables = _tables_with_fk_closure(
-        ForeshadowingModel.__table__, EpisodeDigestModel.__table__
-    )
+    engine = create_async_engine(f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False, connect_args={"timeout": 10})
+    tables = _tables_with_fk_closure(ForeshadowingModel.__table__, EpisodeDigestModel.__table__)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all, tables=tables)
         for table in tables:
@@ -73,9 +69,7 @@ async def _real_db(tmp_path):
                         target_eps=30,
                     )
                 )
-    session_factory = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     try:
         yield session_factory
     finally:
@@ -211,9 +205,7 @@ class TestGeneratorContextKeys:
 
             async def run(self, ctx: AgentContext) -> AgentResult:
                 captured["writing_context"] = dict(ctx.artifacts.get("writing_context") or {})
-                return AgentResult(
-                    next_agent=None, artifacts={"written_text": "テスト本文"}, error=None
-                )
+                return AgentResult(next_agent=None, artifacts={"written_text": "テスト本文"}, error=None)
 
         original = generator_mod.EpisodeWriter
         generator_mod.EpisodeWriter = _StubWriter
@@ -222,9 +214,7 @@ class TestGeneratorContextKeys:
                 repo=SimpleNamespace(save_chapter=AsyncMock(return_value=None)),
                 llm=MagicMock(),
             )
-            await gen._write_single_episode_core(
-                book_id=BOOK_ID, ep_num=5, target_word_count=3333, passion=1.75
-            )
+            await gen._write_single_episode_core(book_id=BOOK_ID, ep_num=5, target_word_count=3333, passion=1.75)
         finally:
             generator_mod.EpisodeWriter = original
 
@@ -273,8 +263,7 @@ async def test_b_t1_contract_anchor_appears_in_prompt(tmp_path):
 
         prompt = writer.prompt_manager.prompts[-1]
         assert f"[伏線ID: {foreshadowing_id}]" in prompt, (
-            "契約伏線 ID が最終プロンプトに描画されていない。"
-            "LLM は [METADATA_JSON] で回収を報告できない。"
+            "契約伏線 ID が最終プロンプトに描画されていない。LLM は [METADATA_JSON] で回収を報告できない。"
         )
         assert "聖剣の封印" in prompt
         # メタデータの型見本にも ID が現れること（回収報告の手段）
@@ -293,9 +282,7 @@ async def test_b_t2_empty_contract_renders_no_anchor(tmp_path):
     async with _real_db(tmp_path) as sf:
         async with sf() as session:
             # 未回収伏線自体が無い状態（= 契約も背景も空）
-            rows = (
-                (await session.execute(select(ForeshadowingModel))).scalars().all()
-            )
+            rows = (await session.execute(select(ForeshadowingModel))).scalars().all()
             assert rows == []
 
             repo = _fake_repo(session)
@@ -313,8 +300,7 @@ async def test_b_t2_empty_contract_renders_no_anchor(tmp_path):
 
     prompt = writer.prompt_manager.prompts[-1]
     assert "[伏線ID:" not in prompt, (
-        "契約伏線が空なのに [伏線ID: ...] が描画されている。"
-        "LLM が空 ID を回収として報告する。"
+        "契約伏線が空なのに [伏線ID: ...] が描画されている。LLM が空 ID を回収として報告する。"
     )
     assert "【本話の絶対回収ミッション（契約伏線）】" not in prompt
 
@@ -343,9 +329,7 @@ async def test_b_t4_merge_preserves_caller_context(tmp_path):
                     "contract_foreshadowings": [],
                 },
             )
-            merged = await writer._merge_full_context(
-                ctx, ctx.artifacts["writing_context"]
-            )
+            merged = await writer._merge_full_context(ctx, ctx.artifacts["writing_context"])
 
     assert merged["target_word_count"] == 3333, (
         "context_builder のデフォルト (3000 等) が target_word_count を上書きした"
@@ -386,13 +370,9 @@ async def test_b_t4_merge_keeps_contract_ids_from_context_builder(tmp_path):
                     "contract_foreshadowings": [],
                 },
             )
-            merged = await writer._merge_full_context(
-                ctx, ctx.artifacts["writing_context"]
-            )
+            merged = await writer._merge_full_context(ctx, ctx.artifacts["writing_context"])
 
-    assert [f["id"] for f in merged["contract_foreshadowings"]], (
-        "context_builder が返した契約伏線が空の器で潰された"
-    )
+    assert [f["id"] for f in merged["contract_foreshadowings"]], "context_builder が返した契約伏線が空の器で潰された"
     assert merged["target_word_count"] == 2000
 
 

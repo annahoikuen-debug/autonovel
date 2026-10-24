@@ -228,16 +228,20 @@ class TestReproducibility:
         """Test output preview is truncated."""
         long_preview = "x" * 1000
         record = build_run_record(
-            book_id=1, task_type="test", prompt_version="v1", model_name="m",
-            params={}, payload={}, output_preview=long_preview
+            book_id=1,
+            task_type="test",
+            prompt_version="v1",
+            model_name="m",
+            params={},
+            payload={},
+            output_preview=long_preview,
         )
         assert len(record["output_preview"]) == 500
 
     def test_build_run_record_no_chapter(self):
         """Test build_run_record without chapter_ep."""
         record = build_run_record(
-            book_id=1, task_type="test", prompt_version="v1", model_name="m",
-            params={}, payload={}
+            book_id=1, task_type="test", prompt_version="v1", model_name="m", params={}, payload={}
         )
         assert record["chapter_ep"] is None
 
@@ -282,8 +286,13 @@ class TestIntegration:
         manager = StateManager(uow=mock_uow)
 
         record = build_run_record(
-            book_id=1, task_type="generation", prompt_version="v1",
-            model_name="gemini", params={}, payload={}, trace_id="trace-1"
+            book_id=1,
+            task_type="generation",
+            prompt_version="v1",
+            model_name="gemini",
+            params={},
+            payload={},
+            trace_id="trace-1",
         )
 
         await manager.save_state("run_record_1", record)

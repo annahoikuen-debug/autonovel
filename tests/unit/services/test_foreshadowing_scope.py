@@ -2,6 +2,7 @@
 Test file for foreshadowing scope
 PLAN 01: 伏線スコープのテスト
 """
+
 from src.models.foreshadowing_status import ForeshadowingScope
 
 

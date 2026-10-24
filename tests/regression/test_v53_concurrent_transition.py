@@ -7,6 +7,7 @@
 本テストはモックではなく **実 async SQLite（aiosqlite）** を使い、
 2セッションが競合する状況を再現して巻き戻しがゼロであることを証明する。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -47,9 +48,7 @@ async def _shared_file_db(tmp_path):
     `timeout=10` でロック待ちを持ち、"database is locked" によるフレークを防ぐ。
     """
     db_path = tmp_path / "concurrent_foreshadowing.db"
-    engine = create_async_engine(
-        f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False, connect_args={"timeout": 10}
-    )
+    engine = create_async_engine(f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False, connect_args={"timeout": 10})
     async with engine.begin() as conn:
         await conn.run_sync(
             Base.metadata.create_all,
@@ -71,9 +70,7 @@ async def _shared_file_db(tmp_path):
                         marketing_data="",
                     )
                 )
-    session_factory = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     try:
         yield session_factory
     finally:

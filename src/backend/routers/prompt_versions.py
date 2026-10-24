@@ -56,16 +56,12 @@ async def rollback_prompt_version(
         previous_candidates = [
             v
             for v in versions
-            if v.prompt_key == "optimized_prompt_patch"
-            and v.id != req.version_id
-            and not v.rollback_reason
+            if v.prompt_key == "optimized_prompt_patch" and v.id != req.version_id and not v.rollback_reason
         ]
 
         if previous_candidates:
             fallback_ver = previous_candidates[0]
-            await uow.prompt_versions.set_active_prompt_version(
-                book_id, "optimized_prompt_patch", fallback_ver.id
-            )
+            await uow.prompt_versions.set_active_prompt_version(book_id, "optimized_prompt_patch", fallback_ver.id)
             GlobalConfig().set("optimized_prompt_patch", fallback_ver.content)
             msg = f"Rollback successful. Reverted to version {fallback_ver.version_tag}"
         else:

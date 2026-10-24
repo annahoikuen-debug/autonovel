@@ -12,18 +12,9 @@ logger = logging.getLogger(__name__)
 
 class PanelScript(BaseModel):
     panel_number: int
-    camera_angle: str = Field(
-        ...,
-        description="close_up | medium | wide | bird_eye | low_angle"
-    )
-    visual_description: str = Field(
-        ...,
-        description="コマ内の情景・人物の表情やポーズ"
-    )
-    dialogues: list[dict[str, str]] = Field(
-        default_factory=list,
-        description="[{'speaker': '...', 'text': '...'}]"
-    )
+    camera_angle: str = Field(..., description="close_up | medium | wide | bird_eye | low_angle")
+    visual_description: str = Field(..., description="コマ内の情景・人物の表情やポーズ")
+    dialogues: list[dict[str, str]] = Field(default_factory=list, description="[{'speaker': '...', 'text': '...'}]")
     sfx: list[str] = Field(default_factory=list, description="オノマトペ・効果音")
     narration: str = ""
 
@@ -129,15 +120,11 @@ class MediaScriptAgent:
                     visual_description=chunk[:100] if chunk else "場面展開",
                     dialogues=[],
                     sfx=[],
-                    narration=chunk
+                    narration=chunk,
                 )
                 panels.append(panel)
                 panel_num += 1
-            results.append(MangaScriptOutput(
-                page_number=page_num,
-                panels=panels,
-                scene_mood="neutral"
-            ))
+            results.append(MangaScriptOutput(page_number=page_num, panels=panels, scene_mood="neutral"))
             page_num += 1
         return results
 
@@ -156,12 +143,14 @@ class MediaScriptAgent:
                     continue
                 if part.startswith(("「", "『", '"')):
                     if current_narration.strip():
-                        lines.append(AudioDramaLine(
-                            character="ナレーション",
-                            text=current_narration.strip(),
-                            emotion="neutral",
-                            direction="[落ち着いた語り口で]"
-                        ))
+                        lines.append(
+                            AudioDramaLine(
+                                character="ナレーション",
+                                text=current_narration.strip(),
+                                emotion="neutral",
+                                direction="[落ち着いた語り口で]",
+                            )
+                        )
                         current_narration = ""
                     dialogue = part[1:-1]
                     speaker = "キャラクター"
@@ -171,41 +160,32 @@ class MediaScriptAgent:
                     elif "？" in dialogue:
                         emotion = "questioning"
                     direction = "[自然体]"
-                    lines.append(AudioDramaLine(
-                        character=speaker,
-                        text=dialogue,
-                        emotion=emotion,
-                        direction=direction
-                    ))
+                    lines.append(AudioDramaLine(character=speaker, text=dialogue, emotion=emotion, direction=direction))
                 else:
                     current_narration += part
             if current_narration.strip():
-                lines.append(AudioDramaLine(
-                    character="ナレーション",
-                    text=current_narration.strip(),
-                    emotion="neutral",
-                    direction="[落ち着いた語り口で]"
-                ))
+                lines.append(
+                    AudioDramaLine(
+                        character="ナレーション",
+                        text=current_narration.strip(),
+                        emotion="neutral",
+                        direction="[落ち着いた語り口で]",
+                    )
+                )
         return AudioDramaScriptOutput(
-            episode_title="エピソード",
-            lines=lines,
-            bgm_plan=[],
-            sfx_plan=[],
-            cast_requirements={}
+            episode_title="エピソード", lines=lines, bgm_plan=[], sfx_plan=[], cast_requirements={}
         )
 
     def generate_manga_script(self, chapter_text: str, characters: list[dict]) -> list[MangaScriptOutput]:
         try:
             from src.agents.prompts.media_script_prompts import MANGA_ADAPTATION_PROMPT
+
             character_context = self._build_character_context(characters)
             scenes = self._split_into_scenes(chapter_text)
             all_outputs = []
             page_num = 1
             for scene in scenes:
-                prompt = MANGA_ADAPTATION_PROMPT.format(
-                    character_context=character_context,
-                    chapter_text=scene
-                )
+                prompt = MANGA_ADAPTATION_PROMPT.format(character_context=character_context, chapter_text=scene)
                 response = self._call_llm(prompt)
                 data = self._clean_json_markdown(response)
                 data["page_number"] = page_num
@@ -220,10 +200,10 @@ class MediaScriptAgent:
     def generate_audio_script(self, chapter_text: str, characters: list[dict]) -> AudioDramaScriptOutput:
         try:
             from src.agents.prompts.media_script_prompts import AUDIO_DRAMA_ADAPTATION_PROMPT
+
             character_context = self._build_character_context(characters)
             prompt = AUDIO_DRAMA_ADAPTATION_PROMPT.format(
-                character_context=character_context,
-                chapter_text=chapter_text
+                character_context=character_context, chapter_text=chapter_text
             )
             response = self._call_llm(prompt)
             data = self._clean_json_markdown(response)

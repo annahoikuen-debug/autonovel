@@ -44,9 +44,7 @@ class LLMCircuitBreaker:
             raise ValueError("half_open_max_calls must be at least 1")
         self.failure_threshold = failure_threshold
         self.timeout_seconds = float(timeout_seconds)
-        self.cooldown_seconds = (
-            float(timeout_seconds) if cooldown_seconds is None else float(cooldown_seconds)
-        )
+        self.cooldown_seconds = float(timeout_seconds) if cooldown_seconds is None else float(cooldown_seconds)
         self.half_open_max_calls = half_open_max_calls
         self._states: dict[str, ProviderHealthState] = {}
         self._lock = RLock()
@@ -59,16 +57,14 @@ class LLMCircuitBreaker:
 
     def can_execute(self, provider_name: str) -> bool:
         from datetime import timezone
+
         now = datetime.now(timezone.utc)
         with self._lock:
             state = self.get_state(provider_name)
             if state.state is CircuitState.CLOSED:
                 return True
             if state.state is CircuitState.OPEN:
-                if (
-                    state.opened_at is not None
-                    and now - state.opened_at >= timedelta(seconds=self.cooldown_seconds)
-                ):
+                if state.opened_at is not None and now - state.opened_at >= timedelta(seconds=self.cooldown_seconds):
                     state.state = CircuitState.HALF_OPEN
                     state.probe_in_flight = 0
                 else:
@@ -83,11 +79,7 @@ class LLMCircuitBreaker:
                 # 「cooldown 経過ごとに 1 本だけ新しい probe を許可しつつ、
                 #  同一ウィンドウ内の同時 probe は half_open_max_calls で制限する」
                 # という通常の回路遮断 semantics を保つ。
-                if (
-                    state.opened_at is not None
-                    and now - state.opened_at
-                    >= timedelta(seconds=self.cooldown_seconds)
-                ):
+                if state.opened_at is not None and now - state.opened_at >= timedelta(seconds=self.cooldown_seconds):
                     state.opened_at = now
                     state.probe_in_flight = 0
                 if state.probe_in_flight >= self.half_open_max_calls:
@@ -116,6 +108,7 @@ class LLMCircuitBreaker:
 
     def record_failure(self, provider_name: str, error: Any = None) -> None:
         from datetime import timezone
+
         now = datetime.now(timezone.utc)
         with self._lock:
             state = self.get_state(provider_name)
@@ -147,10 +140,7 @@ class LLMCircuitBreaker:
 
     def snapshot(self) -> dict[str, dict[str, Any]]:
         with self._lock:
-            return {
-                name: self._serialize_state(state)
-                for name, state in self._states.items()
-            }
+            return {name: self._serialize_state(state) for name, state in self._states.items()}
 
     @staticmethod
     def _reset_state(state: ProviderHealthState) -> None:
@@ -167,11 +157,7 @@ class LLMCircuitBreaker:
             "provider_name": state.provider_name,
             "state": state.state.value,
             "failure_count": state.failure_count,
-            "last_failure_time": (
-                state.last_failure_time.isoformat()
-                if state.last_failure_time is not None
-                else None
-            ),
+            "last_failure_time": (state.last_failure_time.isoformat() if state.last_failure_time is not None else None),
             "opened_at": state.opened_at.isoformat() if state.opened_at is not None else None,
             "success_count": state.success_count,
             "probe_in_flight": state.probe_in_flight,

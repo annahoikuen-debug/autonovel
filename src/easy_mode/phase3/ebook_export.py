@@ -103,9 +103,7 @@ class EbookContentProcessor:
         for episode in series.episodes:
             title = episode.title
             content = self._format_content(episode.content)
-            chapters.append(
-                Chapter(title=title, content=content, episode_num=episode.episode_num, level=1)
-            )
+            chapters.append(Chapter(title=title, content=content, episode_num=episode.episode_num, level=1))
 
         # エピローグ
         if series.metadata.get("epilogue"):
@@ -245,9 +243,7 @@ class EpubGenerator:
         self.processor = processor
 
         if not EPUB_AVAILABLE:
-            raise RuntimeError(
-                "ebooklib is required for EPUB generation. Install with: pip install ebooklib"
-            )
+            raise RuntimeError("ebooklib is required for EPUB generation. Install with: pip install ebooklib")
 
     def generate(self, series: SeriesResult, output_path: Path) -> Path:
         """EPUB生成"""
@@ -294,9 +290,7 @@ class EpubGenerator:
             # HTML生成
             html_content = self._create_chapter_html(chapter, i)
 
-            epub_chapter = epub.EpubHtml(
-                title=chapter.title, file_name=f"chap_{i + 1:03d}.xhtml", lang="ja"
-            )
+            epub_chapter = epub.EpubHtml(title=chapter.title, file_name=f"chap_{i + 1:03d}.xhtml", lang="ja")
             epub_chapter.content = html_content.encode("utf-8")
             epub_chapter.add_item(nav_css)
 
@@ -357,9 +351,7 @@ class PdfGenerator:
         self.processor = processor
 
         if not PDF_AVAILABLE:
-            raise RuntimeError(
-                "reportlab is required for PDF generation. Install with: pip install reportlab"
-            )
+            raise RuntimeError("reportlab is required for PDF generation. Install with: pip install reportlab")
 
     def generate(self, series: SeriesResult, output_path: Path) -> Path:
         """PDF生成"""
@@ -444,11 +436,7 @@ class PdfGenerator:
             result = subprocess.run(["fc-list", ":lang=ja"], capture_output=True, text=True)
             if result.returncode == 0:
                 for line in result.stdout.split("\n"):
-                    if (
-                        "noto" in line.lower()
-                        or "hiragino" in line.lower()
-                        or "ipafont" in line.lower()
-                    ):
+                    if "noto" in line.lower() or "hiragino" in line.lower() or "ipafont" in line.lower():
                         font_path = line.split(":")[0].strip()
                         if font_path and Path(font_path).exists():
                             pdfmetrics.registerFont(TTFont("Japanese", font_path))
@@ -599,9 +587,7 @@ class PdfGenerator:
         # TOCエントリ手動追加
         for ch in chapters:
             if ch.toc_entry:
-                story.append(
-                    Paragraph(f'<a href="#chap_{ch.episode_num}">{ch.title}</a>', styles["JapaneseBody"])
-                )
+                story.append(Paragraph(f'<a href="#chap_{ch.episode_num}">{ch.title}</a>', styles["JapaneseBody"]))
 
         return story
 
@@ -701,9 +687,7 @@ class MobiGenerator:
                 return output_path
 
         elif ebook_convert:
-            result = subprocess.run(
-                [ebook_convert, str(epub_path), str(output_path)], capture_output=True, text=True
-            )
+            result = subprocess.run([ebook_convert, str(epub_path), str(output_path)], capture_output=True, text=True)
             if result.returncode == 0:
                 logger.info(f"MOBI generated via calibre: {output_path}")
                 return output_path

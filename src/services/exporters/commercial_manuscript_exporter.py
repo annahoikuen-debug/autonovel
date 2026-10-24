@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import List, Dict
 from src.services.exporters.exporter_base import ExporterBase
 
+
 class CommercialManuscriptExporter(ExporterBase):
     """出版社持ち込み・電書用「1巻まとめ（10万字）」テキスト結合エクスポーター"""
 
@@ -27,7 +28,7 @@ class CommercialManuscriptExporter(ExporterBase):
         for i, ep in enumerate(episodes, start=1):
             lines.append(f"第{i}話 {ep.get('title', '')}")
             lines.append("")
-            lines.append(ep.get('content', ""))
+            lines.append(ep.get("content", ""))
             lines.append("")
             lines.append("----------")
             lines.append("")

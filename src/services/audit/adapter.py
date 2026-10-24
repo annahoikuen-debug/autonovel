@@ -90,9 +90,7 @@ class AuditAdapter:
                 and hasattr(self.engine.planner, "plan_auditor")
                 and self.engine.planner.plan_auditor
             ):
-                return await self.engine.planner.plan_auditor.audit_bible_completeness(
-                    bible, reporter=reporter
-                )
+                return await self.engine.planner.plan_auditor.audit_bible_completeness(bible, reporter=reporter)
         except Exception as e:
             logger.warning(f"Bible audit failed: {e}")
 
@@ -101,9 +99,7 @@ class AuditAdapter:
             reporter.report("⚠️ Bible監査をスキップしました (監査機能未対応)", "warning")
         return True
 
-    async def audit_plot(
-        self, plots: list[dict[str, Any]], context: dict[str, Any]
-    ) -> dict[str, Any]:
+    async def audit_plot(self, plots: list[dict[str, Any]], context: dict[str, Any]) -> dict[str, Any]:
         """
         プロット構造監査 (将来拡張用)
         """

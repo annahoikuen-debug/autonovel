@@ -43,6 +43,7 @@ async def _verify_book_access(uow: UnitOfWork, book_id: int, current_user: User)
     book = await uow.books.get_book(book_id)
     if not book:
         from src.core.exceptions import NotFoundError
+
         raise NotFoundError("Book not found", resource_type="Book", resource_id=str(book_id))
 
     if current_user.role == "admin":
@@ -87,10 +88,7 @@ async def list_members(
     async with UnitOfWork(AppContainer.db()) as uow:
         await _verify_book_access(uow, book_id, current_user)
         members = await uow.collab.list_members(book_id)
-    return [
-        {"id": m.id, "user_name": m.user_name, "role": m.role, "invited_at": str(m.invited_at)}
-        for m in members
-    ]
+    return [{"id": m.id, "user_name": m.user_name, "role": m.role, "invited_at": str(m.invited_at)} for m in members]
 
 
 @router.delete("/books/{book_id}/members/{member_id}")
@@ -105,9 +103,7 @@ async def remove_member(
     if n == 0:
         from src.core.exceptions import NotFoundError
 
-        raise NotFoundError(
-            "Member not found", resource_type="ProjectMember", resource_id=str(member_id)
-        )
+        raise NotFoundError("Member not found", resource_type="ProjectMember", resource_id=str(member_id))
     return {"status": "success", "id": member_id}
 
 
@@ -175,9 +171,7 @@ async def resolve_comment(
         if not comment:
             from src.core.exceptions import NotFoundError
 
-            raise NotFoundError(
-                "Comment not found", resource_type="Comment", resource_id=str(comment_id)
-            )
+            raise NotFoundError("Comment not found", resource_type="Comment", resource_id=str(comment_id))
         book_id = int(comment.book_id)
         await _verify_book_access(uow, book_id, current_user)
         # book_id を渡して DB 層でも絞る（呼び出し側の検証漏れに対する多層防御）
@@ -185,9 +179,7 @@ async def resolve_comment(
     if n == 0:
         from src.core.exceptions import NotFoundError
 
-        raise NotFoundError(
-            "Comment not found", resource_type="Comment", resource_id=str(comment_id)
-        )
+        raise NotFoundError("Comment not found", resource_type="Comment", resource_id=str(comment_id))
     return {"status": "success", "id": comment_id, "resolved": resolved}
 
 
@@ -202,16 +194,12 @@ async def delete_comment(
         if not comment:
             from src.core.exceptions import NotFoundError
 
-            raise NotFoundError(
-                "Comment not found", resource_type="Comment", resource_id=str(comment_id)
-            )
+            raise NotFoundError("Comment not found", resource_type="Comment", resource_id=str(comment_id))
         book_id = int(comment.book_id)
         await _verify_book_access(uow, book_id, current_user)
         n = await uow.collab.delete_comment(comment_id, book_id=book_id)
     if n == 0:
         from src.core.exceptions import NotFoundError
 
-        raise NotFoundError(
-            "Comment not found", resource_type="Comment", resource_id=str(comment_id)
-        )
+        raise NotFoundError("Comment not found", resource_type="Comment", resource_id=str(comment_id))
     return {"status": "success", "id": comment_id}

@@ -1,4 +1,5 @@
 """Tests for Proposal 1: Dynamic Context Pruning MCP Server (ContextPrunerServer / PruningProvider)."""
+
 from __future__ import annotations
 
 import pytest

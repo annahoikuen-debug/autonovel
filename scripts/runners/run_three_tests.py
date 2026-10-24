@@ -2,6 +2,7 @@ import importlib.util
 import sys
 import os
 
+
 # Function to load a module from a file path
 def load_module(file_path):
     module_name = os.path.splitext(os.path.basename(file_path))[0]
@@ -11,6 +12,7 @@ def load_module(file_path):
     spec.loader.exec_module(module)
     return module
 
+
 # Load the three test modules
 test_hook = load_module("E:/hhh/tests/unit/services/test_hook_diagnoser.py")
 test_ep = load_module("E:/hhh/tests/unit/services/test_episode_context.py")
@@ -18,11 +20,13 @@ test_audit = load_module("E:/hhh/tests/unit/services/test_audit_service.py")
 
 # Collect all test functions (those starting with 'test_')
 import inspect
+
 test_functions = []
 for module in [test_hook, test_ep, test_audit]:
     for name, obj in inspect.getmembers(module):
-        if inspect.isfunction(obj) and name.startswith('test_'):
+        if inspect.isfunction(obj) and name.startswith("test_"):
             test_functions.append(obj)
+
 
 # Run each test function
 def run_all():
@@ -41,6 +45,7 @@ def run_all():
             failed += 1
     print(f"\nTotal: {passed} passed, {failed} failed")
     return failed == 0
+
 
 if __name__ == "__main__":
     success = run_all()

@@ -7,6 +7,7 @@ from src.narrative_balancer.models import Beat
 
 class PartialPlotState(BaseModel):
     """Encapsulates confirmed episodes and undetermined episodes."""
+
     model_config = ConfigDict(extra="ignore")
 
     total_episodes: int = Field(default=40, ge=1)

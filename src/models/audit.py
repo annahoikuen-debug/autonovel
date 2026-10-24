@@ -11,9 +11,7 @@ from src.models.base import MODEL_CONFIG_DEFAULTS, extract_int
 class PromptPatch(BaseModel):
     """プロンプトへの具体的修正パッチ"""
 
-    target_prompt: str = Field(
-        ..., description="修正対象のプロンプト名 (e.g. 'writing_director', 'plot_expansion')"
-    )
+    target_prompt: str = Field(..., description="修正対象のプロンプト名 (e.g. 'writing_director', 'plot_expansion')")
     patch_content: str = Field(..., description="追加・修正すべき具体的なプロンプトテキスト")
     reasoning: str = Field(..., description="このパッチが必要な理由・分析結果")
 
@@ -38,9 +36,7 @@ class GapAnalysisReport(BaseModel):
     )
     scores: dict[str, int] = Field(default_factory=dict, description="各種スコア")
     style_radar: dict[str, Any] = Field(default_factory=dict, description="文体レーダー解析データ")
-    persona_reviews: list[dict[str, Any]] = Field(
-        default_factory=list, description="ペルソナ監査結果"
-    )
+    persona_reviews: list[dict[str, Any]] = Field(default_factory=list, description="ペルソナ監査結果")
 
     @model_validator(mode="before")
     @classmethod
@@ -64,9 +60,7 @@ class GapAnalysisReport(BaseModel):
 class DogfeedingReport(BaseModel):
     """エンジンの自己解析・自己進化レポート"""
 
-    critique_report: str = Field(
-        default="", description="AIの執筆上の手癖や指示無視、企画との乖離の分析"
-    )
+    critique_report: str = Field(default="", description="AIの執筆上の手癖や指示無視、企画との乖離の分析")
     habits: str = Field(default="", description="AIのサボり癖パターンの具体的分析")
     bias_direction: str = Field(
         default="",
@@ -79,17 +73,13 @@ class DogfeedingReport(BaseModel):
     prompt_patches: list[PromptPatch] = Field(
         default_factory=list, description="プロンプトへの具体的修正パッチのリスト"
     )
-    prompt_patch: str = Field(
-        default="", description="[Legacy] 次回の執筆プロンプトに追加すべき修正指示"
-    )
+    prompt_patch: str = Field(default="", description="[Legacy] 次回の執筆プロンプトに追加すべき修正指示")
     coding_ai_instruction: str = Field(
         default="",
         description="[Legacy] コーディングAIへのエンジン改造指示",
         validation_alias=AliasChoices("coding_ai_instruction", "refactor_instruction"),
     )
-    engine_code_patch: str = Field(
-        default="", description="コアエンジンのロジック修正案（状態管理、整合性チェック等）"
-    )
+    engine_code_patch: str = Field(default="", description="コアエンジンのロジック修正案（状態管理、整合性チェック等）")
     narrative_config_patch: str = Field(
         default="",
         description="作品ドメイン固有の修正案（世界観設定、プロンプト定義、因果応報ロジック等）",
@@ -98,19 +88,11 @@ class DogfeedingReport(BaseModel):
     genre_profile_scores: dict[str, float] = Field(
         default_factory=dict, description="ジャンル別・多次元スコアリング（0.0-1.0）"
     )
-    taboo_list: list[str] = Field(
-        default_factory=list, description="今後禁止すべき表現・設定のリスト"
-    )
+    taboo_list: list[str] = Field(default_factory=list, description="今後禁止すべき表現・設定のリスト")
     style_radar: dict[str, Any] = Field(default_factory=dict, description="文体レーダー解析データ")
-    persona_reviews: list[dict[str, Any]] = Field(
-        default_factory=list, description="ペルソナ監査結果"
-    )
-    patch_validation: dict[str, Any] = Field(
-        default_factory=dict, description="パッチの検証結果（ABテスト結果含む）"
-    )
-    improvement_milestones: list[str] = Field(
-        default_factory=list, description="中長期的なエンジン進化のロードマップ"
-    )
+    persona_reviews: list[dict[str, Any]] = Field(default_factory=list, description="ペルソナ監査結果")
+    patch_validation: dict[str, Any] = Field(default_factory=dict, description="パッチの検証結果（ABテスト結果含む）")
+    improvement_milestones: list[str] = Field(default_factory=list, description="中長期的なエンジン進化のロードマップ")
 
     @model_validator(mode="before")
     @classmethod
@@ -139,9 +121,7 @@ class ProducerPlanCandidate(BaseModel):
     refined_mc_suggestion: str = Field(default="", description="読者に刺さる主人公像の提案")
     refined_villain_suggestion: str = Field(default="", description="ヘイトを高める敵対者像の提案")
     recommended_tropes: list[str] = Field(default_factory=list, description="推奨トロープのリスト")
-    anti_tropes: list[str] = Field(
-        default_factory=list, description="アンチトロープ・逆張りの要素リスト"
-    )
+    anti_tropes: list[str] = Field(default_factory=list, description="アンチトロープ・逆張りの要素リスト")
     hybrid_idea: str = Field(default="", description="異ジャンルハイブリッドのアイデア")
 
     model_config = MODEL_CONFIG_DEFAULTS
@@ -151,21 +131,11 @@ class HegemonyAuditResult(BaseModel):
     is_consistent: bool = Field(default=True, description="整合性チェック結果")
     conflict_report: str = Field(default="", description="矛盾点の指摘内容")
     refined_keywords: str = Field(default="", description="[Legacy] 提案された覇権キーワード")
-    refined_concept: str = Field(
-        default="", description="[Legacy] ブラッシュアップされたコンセプト"
-    )
-    refined_mc_suggestion: str = Field(
-        default="", description="[Legacy] 読者に刺さる主人公像の提案"
-    )
-    refined_villain_suggestion: str = Field(
-        default="", description="[Legacy] ヘイトを高める敵対者像の提案"
-    )
-    recommended_tropes: list[str] = Field(
-        default_factory=list, description="[Legacy] 推奨トロープのリスト"
-    )
-    candidates: list[ProducerPlanCandidate] = Field(
-        default_factory=list, description="A/B/Cの3パターンの提案"
-    )
+    refined_concept: str = Field(default="", description="[Legacy] ブラッシュアップされたコンセプト")
+    refined_mc_suggestion: str = Field(default="", description="[Legacy] 読者に刺さる主人公像の提案")
+    refined_villain_suggestion: str = Field(default="", description="[Legacy] ヘイトを高める敵対者像の提案")
+    recommended_tropes: list[str] = Field(default_factory=list, description="[Legacy] 推奨トロープのリスト")
+    candidates: list[ProducerPlanCandidate] = Field(default_factory=list, description="A/B/Cの3パターンの提案")
 
     @model_validator(mode="before")
     @classmethod
@@ -208,9 +178,7 @@ class LogicalAuditResult(BaseModel):
                 a in data for a in ["consistent", "isConsistent", "consistency"]
             ):
                 data["is_consistent"] = True
-            if "audit_type" not in data and not any(
-                a in data for a in ["auditType", "audit_mode", "mode", "type"]
-            ):
+            if "audit_type" not in data and not any(a in data for a in ["auditType", "audit_mode", "mode", "type"]):
                 data["audit_type"] = "Full"
         return data
 
@@ -231,9 +199,7 @@ class HegemonyOracleResult(BaseModel):
     """未来予測オーラ診断の結果モデル"""
 
     hegemony_score: int = Field(default=0, description="覇権スコア (0-100)")
-    metrics: dict[str, int] = Field(
-        default_factory=dict, description="詳細メトリクス (retention, catharsis, viral)"
-    )
+    metrics: dict[str, int] = Field(default_factory=dict, description="詳細メトリクス (retention, catharsis, viral)")
     aura_color: str = Field(default="#38bdf8", description="この作品が放つオーラの色 (Hex形式)")
     aura_type: str = Field(default="通常", description="オーラの属性タイプ")
     recommended_spice: str = Field(default="", description="推奨スパイス")
@@ -265,9 +231,7 @@ class GlobalLogicRepairResult(BaseModel):
     """企画段階の矛盾を一括修正するためのモデル"""
 
     synopsis: str = Field(..., description="修正されたあらすじ")
-    world_rules: dict[str, Any] | None = Field(
-        default=None, description="修正された世界設定（変更がある場合のみ）"
-    )
+    world_rules: dict[str, Any] | None = Field(default=None, description="修正された世界設定（変更がある場合のみ）")
     mc_profile: dict[str, Any] | None = Field(
         default=None, description="修正された主人公プロフィール（変更がある場合のみ）"
     )
@@ -279,9 +243,7 @@ class GlobalLogicRepairResult(BaseModel):
 class EasyModeInferenceResult(BaseModel):
     """かんたんモードのワンショットプロンプトから推論された設定結果"""
 
-    engine_key: Literal["comfort", "conflict", "enigma"] = Field(
-        ..., description="最適な感情エンジン"
-    )
+    engine_key: Literal["comfort", "conflict", "enigma"] = Field(..., description="最適な感情エンジン")
     genre_key: str = Field(
         ...,
         description="最適な世界観ジャンル（例：追放ざまぁファンタジー, 現代ダンジョン配信, 悪役令嬢知略戦, 異世界スローライフ 等、ユーザーの入力に最も近いもの）",
@@ -307,18 +269,10 @@ class ImmersionScore(BaseModel):
     """感情没入スコア - 読者がどれだけ物語に没入できているかを定量化"""
 
     pov_stability: float = Field(default=0.0, ge=0.0, le=1.0, description="視点安定性 (0.0-1.0)")
-    empathy_gap: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="共感ギャップ (0.0-1.0, 低い方が良い)"
-    )
-    curiosity_hook_rate: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="次への期待感・フック率 (0.0-1.0)"
-    )
-    sensory_density: float = Field(
-        default=0.0, ge=0.0, le=1.0, description="五感描写の密度 (0.0-1.0)"
-    )
-    total_immersion_score: float = Field(
-        default=0.0, ge=0.0, le=100.0, description="総合没入スコア (0.0-100.0)"
-    )
+    empathy_gap: float = Field(default=0.0, ge=0.0, le=1.0, description="共感ギャップ (0.0-1.0, 低い方が良い)")
+    curiosity_hook_rate: float = Field(default=0.0, ge=0.0, le=1.0, description="次への期待感・フック率 (0.0-1.0)")
+    sensory_density: float = Field(default=0.0, ge=0.0, le=1.0, description="五感描写の密度 (0.0-1.0)")
+    total_immersion_score: float = Field(default=0.0, ge=0.0, le=100.0, description="総合没入スコア (0.0-100.0)")
     is_immersive: bool = Field(default=False, description="没入閾値(50.0)を超えているか")
 
     model_config = MODEL_CONFIG_DEFAULTS
@@ -352,15 +306,9 @@ class NarrativeWavePattern(BaseModel):
     """物語のストレス/カタルシスの波パターンを表すモデル"""
 
     stress_levels: list[int] = Field(default_factory=list, description="各話のストレス値履歴")
-    catharsis_indices: list[int] = Field(
-        default_factory=list, description="カタルシス発生話数のインデックス"
-    )
-    emotional_peaks: list[int] = Field(
-        default_factory=list, description="感情的高揚点の話数インデックス"
-    )
-    trough_markers: list[int] = Field(
-        default_factory=list, description="感情の谷間（緊張解放後）の話数インデックス"
-    )
+    catharsis_indices: list[int] = Field(default_factory=list, description="カタルシス発生話数のインデックス")
+    emotional_peaks: list[int] = Field(default_factory=list, description="感情的高揚点の話数インデックス")
+    trough_markers: list[int] = Field(default_factory=list, description="感情の谷間（緊張解放後）の話数インデックス")
     wave_score: float = Field(default=0.0, description="波の成熟度スコア (0.0-100.0)")
     is_healthy: bool = Field(default=True, description="健康的な波パターンかどうか")
     issues: list[str] = Field(default_factory=list, description="検出された問題点")
@@ -379,13 +327,9 @@ class AuditIssue(BaseModel):
     「文章の修正」ではなく「純粋なファクトのバグの指摘」に限定する。
     """
 
-    category: Literal["生死", "所持品", "時系列", "能力", "場所"] = Field(
-        ..., description="矛盾のカテゴリ"
-    )
+    category: Literal["生死", "所持品", "時系列", "能力", "場所"] = Field(..., description="矛盾のカテゴリ")
     severity: Literal["Critical", "Major", "Minor"] = Field(default="Minor", description="深刻度")
-    description: str = Field(
-        ..., description="矛盾の具体的な説明（どの話で何が起き、今話の何と矛盾するか）"
-    )
+    description: str = Field(..., description="矛盾の具体的な説明（どの話で何が起き、今話の何と矛盾するか）")
     evidence_past: str = Field(default="", description="過去の事実の根拠となるテキスト")
     evidence_current: str = Field(default="", description="今話で矛盾している箇所のテキスト")
     constraint_for_next_ep: str = Field(
@@ -489,9 +433,7 @@ class CausalityLink(BaseModel):
     effect_entity: str = Field(..., description="結果側のエンティティ名")
     effect_event: str = Field(..., description="結果イベントの記述")
     confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="信頼度 0.0-1.0")
-    source: Literal["blueprint", "content"] = Field(
-        ..., description="由来: blueprint(計画) または content(本文)"
-    )
+    source: Literal["blueprint", "content"] = Field(..., description="由来: blueprint(計画) または content(本文)")
 
     model_config = MODEL_CONFIG_DEFAULTS
 
@@ -513,12 +455,8 @@ class ForeshadowingItem(BaseModel):
 class GraphDiffResult(BaseModel):
     """Blueprint と Content のグラフ差分結果"""
 
-    missing_entities: set[str] = Field(
-        default_factory=set, description="BlueprintにあってContentにないエンティティ"
-    )
-    extra_entities: set[str] = Field(
-        default_factory=set, description="Contentにだけあるエンティティ"
-    )
+    missing_entities: set[str] = Field(default_factory=set, description="BlueprintにあってContentにないエンティティ")
+    extra_entities: set[str] = Field(default_factory=set, description="Contentにだけあるエンティティ")
     missing_relations: set[tuple[str, str, str]] = Field(
         default_factory=set, description="BlueprintにあってContentにない関係 (source, target, type)"
     )
@@ -537,13 +475,9 @@ class CausalityAuditResult(BaseModel):
     """因果律監査の総合結果"""
 
     is_consistent: bool = Field(default=True, description="因果律的に整合しているか")
-    causality_links: list[CausalityLink] = Field(
-        default_factory=list, description="抽出された全因果リンク"
-    )
+    causality_links: list[CausalityLink] = Field(default_factory=list, description="抽出された全因果リンク")
     broken_chains: list[CausalityLink] = Field(default_factory=list, description="切れている因果鎖")
-    unresolved_foreshadowing: list[ForeshadowingItem] = Field(
-        default_factory=list, description="未回収伏線リスト"
-    )
+    unresolved_foreshadowing: list[ForeshadowingItem] = Field(default_factory=list, description="未回収伏線リスト")
     contradictions: list[str] = Field(default_factory=list, description="検出された矛盾記述")
     patches: list[PromptPatch] = Field(default_factory=list, description="生成された修正パッチ")
     score: float = Field(default=1.0, ge=0.0, le=1.0, description="整合性スコア (0.0-1.0)")

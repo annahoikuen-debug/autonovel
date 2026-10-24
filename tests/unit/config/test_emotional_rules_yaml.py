@@ -1,4 +1,5 @@
 """Step 3: ルールセット YAML 定義ファイルテスト。"""
+
 from __future__ import annotations
 
 import pytest
@@ -54,6 +55,7 @@ class TestEmotionalRulesYaml:
         assert len(conditioned) >= 1
         # 条件付きルールが評価可能
         from src.rules.emotional_rules import PlotContext
+
         for rule in conditioned:
             result = rule.evaluate(PlotContext(episode=1, previous_tension=0.9))
             assert isinstance(result, bool)

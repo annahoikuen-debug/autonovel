@@ -1,4 +1,5 @@
 """Interfaces and data structures for 3-tier hierarchical agent memory."""
+
 from __future__ import annotations
 
 import abc
@@ -10,6 +11,7 @@ from typing import Any, Dict, List, Optional
 @dataclass
 class MemoryEntry:
     """Archival Memory に格納される長期記憶エントリ"""
+
     id: str
     content: str
     embedding: Optional[List[float]] = None
@@ -40,6 +42,7 @@ class MemoryEntry:
 @dataclass
 class WorkingFrame:
     """Working Memory 内のシーン単位揮発フレーム"""
+
     scene_id: int
     emotional_beats: List[Dict[str, Any]] = field(default_factory=list)
     plot_points: List[str] = field(default_factory=list)
@@ -86,48 +89,39 @@ class BaseCoreMemory(abc.ABC):
     """常駐CoreMemoryのインターフェース"""
 
     @abc.abstractmethod
-    def get(self, key: str, default: Any = None) -> Any:
-        ...
+    def get(self, key: str, default: Any = None) -> Any: ...
 
     @abc.abstractmethod
-    def set(self, key: str, value: Any) -> None:
-        ...
+    def set(self, key: str, value: Any) -> None: ...
 
     @abc.abstractmethod
-    def dump(self) -> Dict[str, Any]:
-        ...
+    def dump(self) -> Dict[str, Any]: ...
 
 
 class BaseArchivalMemory(abc.ABC):
     """外部ArchivalMemoryのインターフェース"""
 
     @abc.abstractmethod
-    def search(self, query: str, k: int = 5) -> List[MemoryEntry]:
-        ...
+    def search(self, query: str, k: int = 5) -> List[MemoryEntry]: ...
 
     @abc.abstractmethod
-    def insert(self, entry: MemoryEntry) -> None:
-        ...
+    def insert(self, entry: MemoryEntry) -> None: ...
 
     @abc.abstractmethod
-    def delete(self, entry_id: str) -> bool:
-        ...
+    def delete(self, entry_id: str) -> bool: ...
 
 
 class BaseWorkingMemory(abc.ABC):
     """シーン単位WorkingMemoryのインターフェース"""
 
     @abc.abstractmethod
-    def push(self, frame: WorkingFrame) -> None:
-        ...
+    def push(self, frame: WorkingFrame) -> None: ...
 
     @abc.abstractmethod
-    def pop(self) -> Optional[WorkingFrame]:
-        ...
+    def pop(self) -> Optional[WorkingFrame]: ...
 
     @abc.abstractmethod
-    def peek(self) -> Optional[WorkingFrame]:
-        ...
+    def peek(self) -> Optional[WorkingFrame]: ...
 
 
 __all__ = [

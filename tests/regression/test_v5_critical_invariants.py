@@ -61,7 +61,10 @@ async def test_billing_webhook_idempotency_prevents_duplicate_grant(monkeypatch)
     mock_session.add = MagicMock()
     mock_session.commit = AsyncMock()
 
-    with patch("stripe.Webhook.construct_event", return_value={"id": "evt_duplicate_test", "type": "checkout.session.completed"}):
+    with patch(
+        "stripe.Webhook.construct_event",
+        return_value={"id": "evt_duplicate_test", "type": "checkout.session.completed"},
+    ):
         result = await handle_stripe_webhook(mock_request, db=mock_session)
 
     # 重複スキップされること

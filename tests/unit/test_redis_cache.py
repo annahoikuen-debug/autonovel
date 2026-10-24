@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import json
 
 # Mock redis.asyncio before importing the module
-with patch.dict('sys.modules', {'redis.asyncio': MagicMock()}):
+with patch.dict("sys.modules", {"redis.asyncio": MagicMock()}):
     from src.services.redis_cache import RedisCacheService, PromptCacheService
 
 
@@ -14,13 +14,14 @@ class TestRedisCacheService:
 
     def setup_method(self):
         # Mock REDIS_AVAILABLE to True
-        self.redis_patcher = patch('src.services.redis_cache.REDIS_AVAILABLE', True)
+        self.redis_patcher = patch("src.services.redis_cache.REDIS_AVAILABLE", True)
         self.mock_redis_module = self.redis_patcher.start()
 
         # Mock redis.asyncio
         self.mock_redis_asyncio = MagicMock()
         import sys
-        sys.modules['redis.asyncio'] = self.mock_redis_asyncio
+
+        sys.modules["redis.asyncio"] = self.mock_redis_asyncio
 
         self.cache = RedisCacheService(
             redis_url="redis://localhost:6379/0",
@@ -154,10 +155,12 @@ class TestRedisCacheService:
         """Test pattern-based invalidation."""
         self.cache._client = AsyncMock()
         mock_keys = ["test:cache:key1", "test:cache:key2"]
+
         # Create async iterator for scan_iter
         async def mock_scan_iter(match, count):
             for key in mock_keys:
                 yield key
+
         self.cache._client.scan_iter = mock_scan_iter
         self.cache._client.delete = AsyncMock(return_value=1)
 
@@ -252,8 +255,8 @@ class TestPromptCacheService:
         self.mock_l1[l1_key] = "cached_response"
 
         # Need to mock the key generation
-        with patch.object(self.cache, '_generate_cache_key', return_value="prompt:test:model:1.0:hash"):
-            with patch.object(self.cache, 'compute_prompt_hash', return_value="hash"):
+        with patch.object(self.cache, "_generate_cache_key", return_value="prompt:test:model:1.0:hash"):
+            with patch.object(self.cache, "compute_prompt_hash", return_value="hash"):
                 result = await self.cache.get(
                     template_name="test",
                     prompt="test prompt",
@@ -267,8 +270,8 @@ class TestPromptCacheService:
         """Test L2 (Redis) cache hit."""
         self.mock_redis.get = AsyncMock(return_value="redis_response")
 
-        with patch.object(self.cache, '_generate_cache_key', return_value="prompt:test:model:1.0:hash"):
-            with patch.object(self.cache, 'compute_prompt_hash', return_value="hash"):
+        with patch.object(self.cache, "_generate_cache_key", return_value="prompt:test:model:1.0:hash"):
+            with patch.object(self.cache, "compute_prompt_hash", return_value="hash"):
                 result = await self.cache.get(
                     template_name="test",
                     prompt="test prompt",
@@ -283,8 +286,8 @@ class TestPromptCacheService:
         self.mock_redis.get = AsyncMock(return_value=None)
         self.mock_semantic.search = AsyncMock(return_value="semantic_response")
 
-        with patch.object(self.cache, '_generate_cache_key', return_value="prompt:test:model:1.0:hash"):
-            with patch.object(self.cache, 'compute_prompt_hash', return_value="hash"):
+        with patch.object(self.cache, "_generate_cache_key", return_value="prompt:test:model:1.0:hash"):
+            with patch.object(self.cache, "compute_prompt_hash", return_value="hash"):
                 result = await self.cache.get(
                     template_name="test",
                     prompt="test prompt",
@@ -299,8 +302,8 @@ class TestPromptCacheService:
         self.mock_redis.get = AsyncMock(return_value=None)
         self.mock_semantic.search = AsyncMock(return_value=None)
 
-        with patch.object(self.cache, '_generate_cache_key', return_value="prompt:test:model:1.0:hash"):
-            with patch.object(self.cache, 'compute_prompt_hash', return_value="hash"):
+        with patch.object(self.cache, "_generate_cache_key", return_value="prompt:test:model:1.0:hash"):
+            with patch.object(self.cache, "compute_prompt_hash", return_value="hash"):
                 result = await self.cache.get(
                     template_name="test",
                     prompt="test prompt",
@@ -315,8 +318,8 @@ class TestPromptCacheService:
         self.mock_redis.set = AsyncMock()
         self.mock_semantic.add = AsyncMock()
 
-        with patch.object(self.cache, '_generate_cache_key', return_value="prompt:test:model:1.0:hash"):
-            with patch.object(PromptCacheService, 'compute_prompt_hash', return_value="hash"):
+        with patch.object(self.cache, "_generate_cache_key", return_value="prompt:test:model:1.0:hash"):
+            with patch.object(PromptCacheService, "compute_prompt_hash", return_value="hash"):
                 await self.cache.set(
                     template_name="test",
                     prompt="test prompt",
@@ -371,8 +374,8 @@ class TestPromptCacheService:
             {"template_name": "test", "prompt": "p2", "response": "r2", "model_id": "m1"},
         ]
 
-        with patch.object(self.cache, '_generate_cache_key', return_value="prompt:test:model:1.0:hash"):
-            with patch.object(self.cache, 'compute_prompt_hash', return_value="hash"):
+        with patch.object(self.cache, "_generate_cache_key", return_value="prompt:test:model:1.0:hash"):
+            with patch.object(self.cache, "compute_prompt_hash", return_value="hash"):
                 result = await self.cache.warm_cache(entries, task_type="generation")
         assert result == 2
 

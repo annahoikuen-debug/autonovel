@@ -1,4 +1,5 @@
 """Novel router coverage: produce/status/episodes/report/score/promotion/pdca/alerts."""
+
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -21,14 +22,18 @@ from src.backend.routers.novel import (
 )
 
 
-def make_score(chapter=1, overall=85.0, structure=90.0, coherency=88.0,
-               factual=85.0, visual=86.0, reader=87.0):
-    s = SimpleNamespace(book_id=1, chapter_number=chapter, overall_score=overall,
-                        structure_score=structure, coherency_score=coherency,
-                        factual_grounding_score=factual,
-                        visual_textual_synergy_score=visual,
-                        reader_experience_score=reader,
-                        evaluated_at=SimpleNamespace(isoformat=lambda: "2026-01-01T00:00:00"))
+def make_score(chapter=1, overall=85.0, structure=90.0, coherency=88.0, factual=85.0, visual=86.0, reader=87.0):
+    s = SimpleNamespace(
+        book_id=1,
+        chapter_number=chapter,
+        overall_score=overall,
+        structure_score=structure,
+        coherency_score=coherency,
+        factual_grounding_score=factual,
+        visual_textual_synergy_score=visual,
+        reader_experience_score=reader,
+        evaluated_at=SimpleNamespace(isoformat=lambda: "2026-01-01T00:00:00"),
+    )
     return s
 
 
@@ -46,8 +51,7 @@ def patch_book_ownership(monkeypatch, book_id=1):
     """
     book = SimpleNamespace(id=book_id, user_id=1)
     m = monkeypatch
-    m.setattr(novel_module, "verify_book_ownership",
-              AsyncMock(return_value=book))
+    m.setattr(novel_module, "verify_book_ownership", AsyncMock(return_value=book))
     return m
 
 
@@ -58,9 +62,16 @@ def patch_book_ownership(monkeypatch, book_id=1):
 
 @pytest.mark.asyncio
 async def test_produce_novel_success(monkeypatch):
-    req = SimpleNamespace(title="T", genre="g", synopsis="s", keywords="k",
-                          target_episodes=3, target_word_count=2000,
-                          style_key="web", engine_key="default")
+    req = SimpleNamespace(
+        title="T",
+        genre="g",
+        synopsis="s",
+        keywords="k",
+        target_episodes=3,
+        target_word_count=2000,
+        style_key="web",
+        engine_key="default",
+    )
 
     with pytest.MonkeyPatch.context() as m:
         created = []
@@ -69,8 +80,7 @@ async def test_produce_novel_success(monkeypatch):
             created.append(project)
 
         m.setattr(novel_module.producer, "create_project", fake_create)
-        m.setattr(novel_module.producer, "generate_all_episodes",
-                  AsyncMock(return_value=None))
+        m.setattr(novel_module.producer, "generate_all_episodes", AsyncMock(return_value=None))
         result = await produce_novel(req)
     assert result.project_id == 1
     assert result.status == "completed"
@@ -79,13 +89,19 @@ async def test_produce_novel_success(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_produce_novel_generation_error(monkeypatch):
-    req = SimpleNamespace(title="T", genre="g", synopsis="s", keywords="k",
-                          target_episodes=3, target_word_count=2000,
-                          style_key="web", engine_key="default")
+    req = SimpleNamespace(
+        title="T",
+        genre="g",
+        synopsis="s",
+        keywords="k",
+        target_episodes=3,
+        target_word_count=2000,
+        style_key="web",
+        engine_key="default",
+    )
     with pytest.MonkeyPatch.context() as m:
         m.setattr(novel_module.producer, "create_project", MagicMock())
-        m.setattr(novel_module.producer, "generate_all_episodes",
-                  AsyncMock(side_effect=RuntimeError("gen fail")))
+        m.setattr(novel_module.producer, "generate_all_episodes", AsyncMock(side_effect=RuntimeError("gen fail")))
         with pytest.raises(HTTPException) as exc:
             await produce_novel(req)
     assert exc.value.status_code == 500
@@ -98,8 +114,9 @@ async def test_produce_novel_generation_error(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_get_novel_status_found_and_missing(monkeypatch):
-    progress = SimpleNamespace(status="running", current_episode=2, total_episodes=5,
-                               progress_percent=40.0, message="msg", completed_eps=[1])
+    progress = SimpleNamespace(
+        status="running", current_episode=2, total_episodes=5, progress_percent=40.0, message="msg", completed_eps=[1]
+    )
     with pytest.MonkeyPatch.context() as m:
         m.setattr(novel_module.producer, "get_progress", lambda: progress)
         result = await get_novel_status(1)
@@ -115,8 +132,7 @@ async def test_get_novel_status_found_and_missing(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_list_episodes(monkeypatch):
-    episodes = [SimpleNamespace(ep_num=1, title="第1話", word_count=100,
-                                quality_score=90.0)]
+    episodes = [SimpleNamespace(ep_num=1, title="第1話", word_count=100, quality_score=90.0)]
     with pytest.MonkeyPatch.context() as m:
         m.setattr(novel_module.producer, "get_episodes", lambda: episodes)
         result = await list_episodes(1)
@@ -134,8 +150,7 @@ async def test_get_report_success_and_error(monkeypatch):
     assert result.report == {"chapters": 5}
 
     with pytest.MonkeyPatch.context() as m:
-        m.setattr(novel_module.producer, "generate_report",
-                  MagicMock(side_effect=RuntimeError("report fail")))
+        m.setattr(novel_module.producer, "generate_report", MagicMock(side_effect=RuntimeError("report fail")))
         with pytest.raises(HTTPException) as exc:
             await get_report(1)
     assert exc.value.status_code == 500
@@ -149,9 +164,11 @@ async def test_get_report_success_and_error(monkeypatch):
 @pytest.mark.asyncio
 async def test_get_chapter_book_score_found_with_trend():
     score = make_score(chapter=5, overall=85.0)
-    all_scores = [make_score(chapter=3, overall=80.0),
-                  make_score(chapter=4, overall=82.0),
-                  make_score(chapter=5, overall=85.0)]
+    all_scores = [
+        make_score(chapter=3, overall=80.0),
+        make_score(chapter=4, overall=82.0),
+        make_score(chapter=5, overall=85.0),
+    ]
 
     calculator = MagicMock()
     calculator.get_latest_score = AsyncMock(return_value=score)
@@ -162,10 +179,10 @@ async def test_get_chapter_book_score_found_with_trend():
         # 関数内で UnitOfWork が再 import されるためソース側もパッチ
         m.setattr(novel_module, "UnitOfWork", lambda db=None: uow)
         import src.backend.database.uow as uow_source
+
         m.setattr(uow_source, "UnitOfWork", lambda db=None: uow)
         m.setattr(novel_module.AppContainer, "db", lambda: None)
-        m.setattr("src.services.book_score_service.BookScoreCalculator",
-                  lambda repository=None: calculator)
+        m.setattr("src.services.book_score_service.BookScoreCalculator", lambda repository=None: calculator)
         patch_book_ownership(m, 1)
         result = await get_chapter_book_score(1, 5, current_user=make_current_user())
     assert result.book_id == 1
@@ -184,8 +201,7 @@ async def test_get_chapter_book_score_not_found():
     with pytest.MonkeyPatch.context() as m:
         m.setattr(novel_module, "UnitOfWork", lambda db=None: uow)
         m.setattr(novel_module.AppContainer, "db", lambda: None)
-        m.setattr("src.services.book_score_service.BookScoreCalculator",
-                  lambda repository=None: calculator)
+        m.setattr("src.services.book_score_service.BookScoreCalculator", lambda repository=None: calculator)
         patch_book_ownership(m, 1)
         with pytest.raises(HTTPException) as exc:
             await get_chapter_book_score(1, 1, current_user=make_current_user())
@@ -198,6 +214,7 @@ async def test_get_chapter_book_score_error_wrapped():
         uow = make_failing_uow()
         m.setattr(novel_module, "UnitOfWork", lambda db=None: uow)
         import src.backend.database.uow as uow_source
+
         m.setattr(uow_source, "UnitOfWork", lambda db=None: uow)
         m.setattr(novel_module.AppContainer, "db", lambda: None)
         with pytest.raises(HTTPException) as exc:
@@ -216,8 +233,7 @@ async def test_get_chapter_book_score_no_trend_single_score():
     with pytest.MonkeyPatch.context() as m:
         m.setattr(novel_module, "UnitOfWork", lambda db=None: uow)
         m.setattr(novel_module.AppContainer, "db", lambda: None)
-        m.setattr("src.services.book_score_service.BookScoreCalculator",
-                  lambda repository=None: calculator)
+        m.setattr("src.services.book_score_service.BookScoreCalculator", lambda repository=None: calculator)
         patch_book_ownership(m, 1)
         result = await get_chapter_book_score(1, 1, current_user=make_current_user())
     assert result.trend_3ch is None
@@ -238,23 +254,47 @@ def make_async_uow(scores):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("scores,expected_eligible,reason_hint", [
-    ([], False, "3章以上の評価が必要です"),
-    ([make_score(chapter=1, overall=80.0), make_score(chapter=2, overall=82.0)],
-     False, "3章以上の評価が必要です"),
-    ([make_score(chapter=1, overall=85.0), make_score(chapter=2, overall=86.0),
-      make_score(chapter=3, overall=87.0)], True, None),
-    ([make_score(chapter=1, overall=70.0), make_score(chapter=2, overall=71.0),
-      make_score(chapter=3, overall=72.0)], False, "80.0 未満"),
-    ([make_score(chapter=1, overall=90.0), make_score(chapter=2, overall=85.0),
-      make_score(chapter=3, overall=80.0)], False, "上昇していません"),
-])
+@pytest.mark.parametrize(
+    "scores,expected_eligible,reason_hint",
+    [
+        ([], False, "3章以上の評価が必要です"),
+        ([make_score(chapter=1, overall=80.0), make_score(chapter=2, overall=82.0)], False, "3章以上の評価が必要です"),
+        (
+            [
+                make_score(chapter=1, overall=85.0),
+                make_score(chapter=2, overall=86.0),
+                make_score(chapter=3, overall=87.0),
+            ],
+            True,
+            None,
+        ),
+        (
+            [
+                make_score(chapter=1, overall=70.0),
+                make_score(chapter=2, overall=71.0),
+                make_score(chapter=3, overall=72.0),
+            ],
+            False,
+            "80.0 未満",
+        ),
+        (
+            [
+                make_score(chapter=1, overall=90.0),
+                make_score(chapter=2, overall=85.0),
+                make_score(chapter=3, overall=80.0),
+            ],
+            False,
+            "上昇していません",
+        ),
+    ],
+)
 async def test_check_promotion_eligibility(scores, expected_eligible, reason_hint):
     uow = make_async_uow(scores)
 
     with pytest.MonkeyPatch.context() as m:
         m.setattr(novel_module, "UnitOfWork", lambda db=None: uow)
         import src.backend.database.uow as uow_source
+
         m.setattr(uow_source, "UnitOfWork", lambda db=None: uow)
         m.setattr(novel_module.AppContainer, "db", lambda: None)
         patch_book_ownership(m, 1)
@@ -283,6 +323,7 @@ async def test_check_promotion_eligibility_error():
         uow = make_failing_uow()
         m.setattr(novel_module, "UnitOfWork", lambda db=None: uow)
         import src.backend.database.uow as uow_source
+
         m.setattr(uow_source, "UnitOfWork", lambda db=None: uow)
         m.setattr(novel_module.AppContainer, "db", lambda: None)
         with pytest.raises(HTTPException) as exc:
@@ -308,9 +349,9 @@ async def test_get_pdca_report_success():
         m.setattr("src.backend.database.core.get_db_manager", lambda: db_manager)
         calculator = MagicMock()
         calculator.generate_pdca_report = AsyncMock(return_value=report)
-        m.setattr("src.services.book_score_service.BookScoreCalculator",
-                  lambda repository=None: calculator)
+        m.setattr("src.services.book_score_service.BookScoreCalculator", lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
+
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
         patch_book_ownership(m, 1)
         result = await get_pdca_report(1, current_user=make_current_user())
@@ -328,9 +369,9 @@ async def test_get_pdca_report_not_found_and_error():
         m.setattr("src.backend.database.core.get_db_manager", lambda: db_manager)
         calculator = MagicMock()
         calculator.generate_pdca_report = AsyncMock(return_value={"error": "not found"})
-        m.setattr("src.services.book_score_service.BookScoreCalculator",
-                  lambda repository=None: calculator)
+        m.setattr("src.services.book_score_service.BookScoreCalculator", lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
+
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
         patch_book_ownership(m, 1)
         with pytest.raises(HTTPException) as exc:
@@ -338,8 +379,7 @@ async def test_get_pdca_report_not_found_and_error():
     assert exc.value.status_code == 404
 
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.backend.database.core.get_db_manager",
-                  MagicMock(side_effect=RuntimeError("db")))
+        m.setattr("src.backend.database.core.get_db_manager", MagicMock(side_effect=RuntimeError("db")))
         patch_book_ownership(m, 1)
         with pytest.raises(HTTPException) as exc:
             await get_pdca_report(1, current_user=make_current_user())
@@ -348,9 +388,13 @@ async def test_get_pdca_report_not_found_and_error():
 
 @pytest.mark.asyncio
 async def test_get_book_alerts_all_types():
-    trend = {"changepoints": [{"chapter_index": 4, "change": -20.0}],
-             "slope": -0.1, "avg_score": 60.0, "latest_score": 40.0,
-             "chapters_evaluated": 6}
+    trend = {
+        "changepoints": [{"chapter_index": 4, "change": -20.0}],
+        "slope": -0.1,
+        "avg_score": 60.0,
+        "latest_score": 40.0,
+        "chapters_evaluated": 6,
+    }
     with pytest.MonkeyPatch.context() as m:
         session = MagicMock()
         session.__aenter__ = AsyncMock(return_value=session)
@@ -360,9 +404,9 @@ async def test_get_book_alerts_all_types():
         m.setattr("src.backend.database.core.get_db_manager", lambda: db_manager)
         calculator = MagicMock()
         calculator.analyze_trend = AsyncMock(return_value=trend)
-        m.setattr("src.services.book_score_service.BookScoreCalculator",
-                  lambda repository=None: calculator)
+        m.setattr("src.services.book_score_service.BookScoreCalculator", lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
+
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
         patch_book_ownership(m, 1)
         result = await get_book_alerts(1, current_user=make_current_user())
@@ -384,9 +428,9 @@ async def test_get_book_alerts_no_trend():
         m.setattr("src.backend.database.core.get_db_manager", lambda: db_manager)
         calculator = MagicMock()
         calculator.analyze_trend = AsyncMock(return_value={"error": "no data"})
-        m.setattr("src.services.book_score_service.BookScoreCalculator",
-                  lambda repository=None: calculator)
+        m.setattr("src.services.book_score_service.BookScoreCalculator", lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
+
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
         patch_book_ownership(m, 1)
         result = await get_book_alerts(1, current_user=make_current_user())
@@ -395,8 +439,7 @@ async def test_get_book_alerts_no_trend():
 
 @pytest.mark.asyncio
 async def test_get_book_alerts_healthy():
-    trend = {"changepoints": [], "slope": 2.0, "avg_score": 85.0,
-             "latest_score": 90.0, "chapters_evaluated": 5}
+    trend = {"changepoints": [], "slope": 2.0, "avg_score": 85.0, "latest_score": 90.0, "chapters_evaluated": 5}
     with pytest.MonkeyPatch.context() as m:
         session = MagicMock()
         session.__aenter__ = AsyncMock(return_value=session)
@@ -406,9 +449,9 @@ async def test_get_book_alerts_healthy():
         m.setattr("src.backend.database.core.get_db_manager", lambda: db_manager)
         calculator = MagicMock()
         calculator.analyze_trend = AsyncMock(return_value=trend)
-        m.setattr("src.services.book_score_service.BookScoreCalculator",
-                  lambda repository=None: calculator)
+        m.setattr("src.services.book_score_service.BookScoreCalculator", lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
+
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
         patch_book_ownership(m, 1)
         result = await get_book_alerts(1, current_user=make_current_user())
@@ -422,17 +465,16 @@ async def test_get_book_alerts_healthy():
 
 @pytest.mark.asyncio
 async def test_get_novel_social_relationships(monkeypatch):
-    rel = SimpleNamespace(trust_score=80, tension_score=30, affinity_score=60,
-                          last_interaction_ep=3, dynamics_state="warm")
+    rel = SimpleNamespace(
+        trust_score=80, tension_score=30, affinity_score=60, last_interaction_ep=3, dynamics_state="warm"
+    )
     db = MagicMock()
     repo = MagicMock()
-    repo.get_all_relationships = AsyncMock(
-        return_value={("A", "B"): rel, ("C", "A"): rel})  # C>A filtered out
+    repo.get_all_relationships = AsyncMock(return_value={("A", "B"): rel, ("C", "A"): rel})  # C>A filtered out
 
     with pytest.MonkeyPatch.context() as m:
         m.setattr("src.backend.database.core.DatabaseManager", lambda url: db)
-        m.setattr("src.backend.database.social_repository.SocialRepository",
-                  lambda d: repo)
+        m.setattr("src.backend.database.social_repository.SocialRepository", lambda d: repo)
         patch_book_ownership(m, 1)
         result = await get_novel_social_relationships(1, current_user=make_current_user())
 
@@ -448,15 +490,13 @@ async def test_get_novel_social_journals(monkeypatch):
     repo.get_journals = AsyncMock(return_value=[{"id": 1}])
     with pytest.MonkeyPatch.context() as m:
         m.setattr("src.backend.database.core.DatabaseManager", lambda url: db)
-        m.setattr("src.backend.database.social_repository.SocialRepository",
-                  lambda d: repo)
+        m.setattr("src.backend.database.social_repository.SocialRepository", lambda d: repo)
         patch_book_ownership(m, 1)
-        result = await get_novel_social_journals(1, ep_num=2, character_name="A",
-                                                 limit=10,
-                                                 current_user=make_current_user())
+        result = await get_novel_social_journals(
+            1, ep_num=2, character_name="A", limit=10, current_user=make_current_user()
+        )
     assert result["journals"] == [{"id": 1}]
-    repo.get_journals.assert_awaited_once_with(book_id=1, episode_num=2,
-                                               character_name="A", limit=10)
+    repo.get_journals.assert_awaited_once_with(book_id=1, episode_num=2, character_name="A", limit=10)
 
 
 @pytest.mark.asyncio
@@ -466,8 +506,7 @@ async def test_get_novel_social_trends(monkeypatch):
     repo.get_relationship_trends_summary = AsyncMock(return_value="trend text")
     with pytest.MonkeyPatch.context() as m:
         m.setattr("src.backend.database.core.DatabaseManager", lambda url: db)
-        m.setattr("src.backend.database.social_repository.SocialRepository",
-                  lambda d: repo)
+        m.setattr("src.backend.database.social_repository.SocialRepository", lambda d: repo)
         patch_book_ownership(m, 1)
         result = await get_novel_social_trends(1, current_user=make_current_user())
     assert result["trends_summary"] == "trend text"

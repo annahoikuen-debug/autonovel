@@ -31,7 +31,9 @@ class CreateSettingDTO(BaseModel):
 
     bible_id: str = Field(..., min_length=1)
     name: str = Field(..., min_length=1, max_length=200)
-    category: str = Field(..., min_length=1)  # "geography", "culture", "magic_system", "technology", "organization", "history"
+    category: str = Field(
+        ..., min_length=1
+    )  # "geography", "culture", "magic_system", "technology", "organization", "history"
     description: str = Field(default="")
     details: dict = Field(default_factory=dict)
     related_entities: list[str] = Field(default_factory=list)

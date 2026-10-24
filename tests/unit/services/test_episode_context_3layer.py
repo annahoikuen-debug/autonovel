@@ -3,6 +3,7 @@
 EpisodeContextBuilder の Layer 1/2/3 が正しく構築され、
 トークン数が想定内に収まっているかを検証する。
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -26,11 +27,14 @@ class TestEpisodeContext3Layer:
     def mock_characters(self):
         """モックキャラクターデータ"""
         chars = []
-        for i, (name, role, personality, ability) in enumerate([
-            ("アルス", "主人公", "勇敢で正義感が強い", "古代魔導剣術"),
-            ("セリア", "ヒロイン", "聡明で優しい", "精霊魔法"),
-            ("ガルド", "宿敵", "冷酷で野心家", "闇魔法"),
-        ], 1):
+        for i, (name, role, personality, ability) in enumerate(
+            [
+                ("アルス", "主人公", "勇敢で正義感が強い", "古代魔導剣術"),
+                ("セリア", "ヒロイン", "聡明で優しい", "精霊魔法"),
+                ("ガルド", "宿敵", "冷酷で野心家", "闇魔法"),
+            ],
+            1,
+        ):
             char = MagicMock(spec=CharacterModel)
             char.id = i
             char.name = name
@@ -59,11 +63,14 @@ class TestEpisodeContext3Layer:
     def mock_foreshadowings(self):
         """モック伏線データ"""
         fors = []
-        for i, (title, planted_ep, target_ep, status) in enumerate([
-            ("謎の剣の正体", 1, 10, "planted"),
-            ("セリアの秘密", 3, 8, "progressed"),
-            ("ガルドの真の目的", 2, None, "planted"),
-        ], 1):
+        for i, (title, planted_ep, target_ep, status) in enumerate(
+            [
+                ("謎の剣の正体", 1, 10, "planted"),
+                ("セリアの秘密", 3, 8, "progressed"),
+                ("ガルドの真の目的", 2, None, "planted"),
+            ],
+            1,
+        ):
             f = MagicMock(spec=ForeshadowingModel)
             f.id = i
             f.title = title
@@ -76,6 +83,7 @@ class TestEpisodeContext3Layer:
     @pytest.mark.asyncio
     async def test_build_context_first_episode(self, mock_db, mock_characters):
         """第1話では Layer 1 のみ、Layer 2/3 は空になることを検証"""
+
         async def mock_execute(query):
             result = MagicMock()
             if "CharacterModel" in str(query) or "characters" in str(query).lower():
@@ -119,10 +127,9 @@ class TestEpisodeContext3Layer:
         assert context["previous_episode"] == {}
 
     @pytest.mark.asyncio
-    async def test_build_context_middle_episode(
-        self, mock_db, mock_characters, mock_chapters, mock_foreshadowings
-    ):
+    async def test_build_context_middle_episode(self, mock_db, mock_characters, mock_chapters, mock_foreshadowings):
         """中間話（例: 第4話）で3層すべてが構築されることを検証"""
+
         async def mock_execute(query):
             result = MagicMock()
             if "CharacterModel" in str(query) or "characters" in str(query).lower():
@@ -141,11 +148,7 @@ class TestEpisodeContext3Layer:
         previous_text = "アルスとセリアは古代遺跡の奥深くへと進んでいた。空気は重く、不気味な静寂に包まれている。"
 
         builder = EpisodeContextBuilder(mock_db)
-        context = await builder.build_context(
-            book_id=1,
-            ep_num=4,
-            previous_episode_text=previous_text
-        )
+        context = await builder.build_context(book_id=1, ep_num=4, previous_episode_text=previous_text)
 
         # 基本構造
         assert context["ep_num"] == 4
@@ -176,6 +179,7 @@ class TestEpisodeContext3Layer:
     @pytest.mark.asyncio
     async def test_token_estimate_layer1(self, mock_db, mock_characters):
         """Layer 1 のトークン見積もりが妥当な範囲内であることを検証"""
+
         async def mock_execute(query):
             result = MagicMock()
             if "characters" in str(query).lower() or "CharacterModel" in str(query):
@@ -195,10 +199,9 @@ class TestEpisodeContext3Layer:
         assert 50 < token_est < 2000  # 妥当な範囲
 
     @pytest.mark.asyncio
-    async def test_token_estimate_layer2(
-        self, mock_db, mock_characters, mock_chapters, mock_foreshadowings
-    ):
+    async def test_token_estimate_layer2(self, mock_db, mock_characters, mock_chapters, mock_foreshadowings):
         """Layer 2 のトークン見積もりが累積しても数千トークン以内であることを検証"""
+
         async def mock_execute(query):
             result = MagicMock()
             if "characters" in str(query).lower() or "CharacterModel" in str(query):
@@ -223,6 +226,7 @@ class TestEpisodeContext3Layer:
     @pytest.mark.asyncio
     async def test_layer3_raw_text_injection(self, mock_db, mock_characters):
         """Layer 3 に任意の生テキストを注入できることを検証"""
+
         async def mock_execute(query):
             result = MagicMock()
             if "characters" in str(query).lower() or "CharacterModel" in str(query):
@@ -236,11 +240,7 @@ class TestEpisodeContext3Layer:
         builder = EpisodeContextBuilder(mock_db)
         long_text = "あ" * 5000  # 5000文字の長文
 
-        context = await builder.build_context(
-            book_id=1,
-            ep_num=5,
-            previous_episode_text=long_text
-        )
+        context = await builder.build_context(book_id=1, ep_num=5, previous_episode_text=long_text)
 
         assert context["layer3_raw"] == long_text
         # 後方互換用 ending は最後の500文字のみ
@@ -249,6 +249,7 @@ class TestEpisodeContext3Layer:
     @pytest.mark.asyncio
     async def test_no_characters_empty_bible(self, mock_db):
         """キャラクターがいない場合、Layer 1 が空メッセージになることを検証"""
+
         async def mock_execute(query):
             result = MagicMock()
             result.scalars.return_value.all.return_value = []
@@ -329,6 +330,7 @@ class TestEpisodeContextRegression:
     def test_build_context_method_signature(self):
         """build_context メソッドのシグネチャが非同期であることを確認"""
         import inspect
+
         sig = inspect.signature(EpisodeContextBuilder.build_context)
         assert "book_id" in sig.parameters
         assert "ep_num" in sig.parameters

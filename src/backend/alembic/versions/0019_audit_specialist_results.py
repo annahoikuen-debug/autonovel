@@ -9,6 +9,7 @@ style, factual, structure, multimodal) produce a 0-100 score, JSON feedback
 and suggestions per chapter. Used by AuditAggregator to compute the
 overall BookScore with weighted aggregation.
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa

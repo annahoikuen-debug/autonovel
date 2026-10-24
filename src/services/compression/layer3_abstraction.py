@@ -50,6 +50,7 @@ CONCEPT_TAXONOMY = {
     "魔剣バルムンク": "伝説級",
 }
 
+
 class Layer3ConceptAbstractor:
     """Abstracts specific facts into higher-level conceptual categories with dynamic taxonomy."""
 
@@ -59,9 +60,7 @@ class Layer3ConceptAbstractor:
         taxonomy_engine: DynamicTaxonomyEngine | None = None,
     ) -> None:
         self.categories = categories or list(DEFAULT_CATEGORIES)
-        self.taxonomy_engine = taxonomy_engine or DynamicTaxonomyEngine(
-            static_overrides=CONCEPT_TAXONOMY
-        )
+        self.taxonomy_engine = taxonomy_engine or DynamicTaxonomyEngine(static_overrides=CONCEPT_TAXONOMY)
 
     def abstract(
         self,
@@ -98,13 +97,15 @@ class Layer3ConceptAbstractor:
             dual_name = f"{name} [{generalized}]" if (generalized and generalized != name) else name
             fact_text = f"{dual_name}（{desc}）" if desc else dual_name
 
-            categorized_facts[target_cat].append({
-                "entity": name,
-                "concept": generalized or name,
-                "dual_name": dual_name,
-                "fact": fact_text,
-                "category": target_cat,
-            })
+            categorized_facts[target_cat].append(
+                {
+                    "entity": name,
+                    "concept": generalized or name,
+                    "dual_name": dual_name,
+                    "fact": fact_text,
+                    "category": target_cat,
+                }
+            )
 
         # 2. エッジ（関係性）からの事実・階層的関係一般化 (Step 45)
         for edge in subgraph.edges:
@@ -126,13 +127,15 @@ class Layer3ConceptAbstractor:
             dual_rel = f"{rel} [{generalized_rel}]" if (generalized_rel and generalized_rel != rel) else rel
             edge_fact = f"{src} と {tgt} は「{dual_rel}」の関係"
 
-            categorized_facts[target_cat].append({
-                "entity": f"{src}-{tgt}",
-                "concept": generalized_rel,
-                "dual_name": dual_rel,
-                "fact": edge_fact,
-                "category": target_cat,
-            })
+            categorized_facts[target_cat].append(
+                {
+                    "entity": f"{src}-{tgt}",
+                    "concept": generalized_rel,
+                    "dual_name": dual_rel,
+                    "fact": edge_fact,
+                    "category": target_cat,
+                }
+            )
 
         # 3. 生テキストからの特定キーワード概念マッピング (動的エンジン併用)
         for kw, abstract_term in self.taxonomy_engine.static_overrides.items():
@@ -142,14 +145,8 @@ class Layer3ConceptAbstractor:
         # 空のカテゴリと、設定カテゴリ（self.categories）に無いカテゴリを除去
         # defaultdict により未知カテゴリの append は例外にならないが、
         # それは「自動生成」として残さず捨てる（Layer4 の重み付け対象を壊さないため）。
-        cleaned_facts = {
-            cat: facts
-            for cat, facts in categorized_facts.items()
-            if facts and cat in self.categories
-        }
-        category_mappings = {
-            cat: mappings for cat, mappings in category_mappings.items() if cat in self.categories
-        }
+        cleaned_facts = {cat: facts for cat, facts in categorized_facts.items() if facts and cat in self.categories}
+        category_mappings = {cat: mappings for cat, mappings in category_mappings.items() if cat in self.categories}
 
         total_mappings = sum(len(m) for m in category_mappings.values())
 
@@ -165,9 +162,7 @@ class Layer3ConceptAbstractor:
             },
         )
 
-    def _detect_category_for_node(
-        self, labels: list[str], generalized: str | None, name: str
-    ) -> str:
+    def _detect_category_for_node(self, labels: list[str], generalized: str | None, name: str) -> str:
         """Dynamically detect category using labels and taxonomy concept (Step 44)."""
         # Explicit labels check
         if any(label in ["Location", "Place", "City", "Country", "地理", "国家"] for label in labels):

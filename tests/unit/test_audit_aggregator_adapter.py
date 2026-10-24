@@ -1,5 +1,6 @@
 # tests/unit/test_audit_aggregator_adapter.py
 """Unit tests for AuditAggregatorNode pipeline adapter."""
+
 import pytest
 
 from src.agents.orchestrator import AgentContext, AgentName, AgentResult

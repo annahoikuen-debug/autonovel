@@ -87,8 +87,7 @@ def test_billing_webhook_dependencies_are_declared() -> None:
         m
         for m in module_roots
         # 標準ライブラリと自前パッケージを除く
-        if m not in {"asyncio", "inspect", "logging", "datetime", "json", "os", "typing"}
-        and not m.startswith("src")
+        if m not in {"asyncio", "inspect", "logging", "datetime", "json", "os", "typing"} and not m.startswith("src")
     }
 
     declared = _requirements_names()

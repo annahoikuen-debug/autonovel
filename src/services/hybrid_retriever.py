@@ -1,4 +1,5 @@
 """下位互換性維持のためのシム。実体は src.services.rag.hybrid_retriever に移動しました。"""
+
 import warnings
 
 warnings.warn(

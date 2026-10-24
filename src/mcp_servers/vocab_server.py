@@ -1,4 +1,5 @@
 """Sensory Vocabulary MCP Server Implementation (JSON-RPC)."""
+
 from __future__ import annotations
 
 from typing import Any, Dict
@@ -65,10 +66,12 @@ class VocabMCPServer:
             elif method == "resources/list":
                 resources = []
                 for genre in self.provider.vocab_sets.keys():
-                    resources.append({
-                        "uri": f"novel://vocab/sensory/{genre}",
-                        "name": f"Sensory Vocabulary for {genre.capitalize()}",
-                    })
+                    resources.append(
+                        {
+                            "uri": f"novel://vocab/sensory/{genre}",
+                            "name": f"Sensory Vocabulary for {genre.capitalize()}",
+                        }
+                    )
                 return {"jsonrpc": "2.0", "result": {"resources": resources}, "id": req_id}
 
             elif method == "resources/read":
@@ -76,9 +79,7 @@ class VocabMCPServer:
                 content = self.provider.read_resource(uri)
                 return {
                     "jsonrpc": "2.0",
-                    "result": {
-                        "contents": [{"uri": uri, "mimeType": "text/plain", "text": content}]
-                    },
+                    "result": {"contents": [{"uri": uri, "mimeType": "text/plain", "text": content}]},
                     "id": req_id,
                 }
             else:

@@ -1,4 +1,5 @@
 """Pipeline steps coverage: skip paths, main flows, error recovery of every step."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -75,8 +76,7 @@ def test_emit_skip_swallows_reporter_and_metrics_errors():
     reporter = MagicMock()
     reporter.report = MagicMock(side_effect=RuntimeError("ui down"))
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.services.pipeline_steps.metrics.increment",
-                  MagicMock(side_effect=RuntimeError("metrics down")))
+        m.setattr("src.services.pipeline_steps.metrics.increment", MagicMock(side_effect=RuntimeError("metrics down")))
         _emit_skip(reporter, ctx, "step", "reason")
     assert ctx.warnings == ["step: reason"]
 
@@ -89,8 +89,15 @@ def test_emit_skip_swallows_reporter_and_metrics_errors():
 def make_wave_pattern(**overrides):
     """NarrativeWavePattern 相当のモック (model_dump 付き)。"""
     pattern = MagicMock()
-    dump = {"stress_levels": [80, 30], "catharsis_indices": [], "emotional_peaks": [],
-            "trough_markers": [], "wave_score": 47.1, "is_healthy": True, "issues": []}
+    dump = {
+        "stress_levels": [80, 30],
+        "catharsis_indices": [],
+        "emotional_peaks": [],
+        "trough_markers": [],
+        "wave_score": 47.1,
+        "is_healthy": True,
+        "issues": [],
+    }
     dump.update(overrides)
     pattern.model_dump = MagicMock(return_value=dump)
     pattern.catharsis_points = []  # pipeline_steps.py が参照する旧属性名
@@ -107,9 +114,7 @@ async def test_plan_step_success_with_catharsis():
     bible = MagicMock(title="T", model_dump=MagicMock(return_value={}))
     engine.planner.create_hegemony_plan = AsyncMock(return_value=(7, bible))
     engine.planner.plan_auditor.audit_bible_completeness = AsyncMock(return_value=True)
-    engine.repo.plot.get_all_plots = AsyncMock(
-        return_value=[MagicMock(tension=80), MagicMock(tension=30)]
-    )
+    engine.repo.plot.get_all_plots = AsyncMock(return_value=[MagicMock(tension=80), MagicMock(tension=30)])
     pattern = make_wave_pattern()
     reporter = make_reporter()
 
@@ -149,9 +154,7 @@ async def test_plan_step_catharsis_failure_is_non_fatal():
 async def test_plan_step_audit_failure_halts():
     ctx = make_ctx()
     engine = make_engine()
-    engine.planner.create_hegemony_plan = AsyncMock(
-        return_value=(1, MagicMock(title="T"))
-    )
+    engine.planner.create_hegemony_plan = AsyncMock(return_value=(1, MagicMock(title="T")))
     engine.planner.plan_auditor.audit_bible_completeness = AsyncMock(return_value=False)
     reporter = make_reporter()
     assert await PlanStep().execute(ctx, engine, reporter) is False
@@ -161,9 +164,7 @@ async def test_plan_step_audit_failure_halts():
 async def test_plan_step_stop_signal_halts():
     ctx = make_ctx()
     engine = make_engine()
-    engine.planner.create_hegemony_plan = AsyncMock(
-        return_value=(1, MagicMock(title="T"))
-    )
+    engine.planner.create_hegemony_plan = AsyncMock(return_value=(1, MagicMock(title="T")))
     engine.planner.plan_auditor.audit_bible_completeness = AsyncMock(return_value=True)
     reporter = make_reporter(should_stop=True)
     assert await PlanStep().execute(ctx, engine, reporter) is False
@@ -183,9 +184,7 @@ async def test_plan_step_planner_exception_raises():
 async def test_plan_step_easy_parameters_optional_paths():
     ctx = make_ctx(easy_parameters={}, enable_catharsis_analysis=False)
     engine = make_engine()
-    engine.planner.create_hegemony_plan = AsyncMock(
-        return_value=(3, MagicMock(title="T"))
-    )
+    engine.planner.create_hegemony_plan = AsyncMock(return_value=(3, MagicMock(title="T")))
     engine.planner.plan_auditor = None
     reporter = make_reporter()
     assert await PlanStep().execute(ctx, engine, reporter) is True
@@ -198,9 +197,7 @@ async def test_plan_step_easy_parameters_optional_paths():
     # easy_parameters に値がある場合はその値が使われる
     ctx2 = make_ctx(easy_parameters={"enable_erotic": True, "erotic_intensity": 4})
     engine2 = make_engine()
-    engine2.planner.create_hegemony_plan = AsyncMock(
-        return_value=(4, MagicMock(title="T2"))
-    )
+    engine2.planner.create_hegemony_plan = AsyncMock(return_value=(4, MagicMock(title="T2")))
     engine2.planner.plan_auditor = None
     assert await PlanStep().execute(ctx2, engine2, reporter) is True
     call_kwargs2 = engine2.planner.create_hegemony_plan.call_args.kwargs
@@ -227,8 +224,9 @@ async def test_write_step_success_and_failure_propagation():
         assert ctx.failed_episodes == [{"ep": 1}]
 
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.backend.workflows._shared_ops.execute_with_retry",
-                  AsyncMock(side_effect=RuntimeError("write failed")))
+        m.setattr(
+            "src.backend.workflows._shared_ops.execute_with_retry", AsyncMock(side_effect=RuntimeError("write failed"))
+        )
         with pytest.raises(RuntimeError, match="write failed"):
             await WriteStep().execute(ctx, make_ctx(), reporter)
 
@@ -239,8 +237,7 @@ async def test_write_step_stop_signal():
     engine = make_engine()
     reporter = make_reporter(should_stop=True)
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.backend.workflows._shared_ops.execute_with_retry",
-                  AsyncMock(return_value=(100, [])))
+        m.setattr("src.backend.workflows._shared_ops.execute_with_retry", AsyncMock(return_value=(100, [])))
         assert await WriteStep().execute(ctx, engine, reporter) is False
 
 
@@ -330,8 +327,7 @@ async def test_audit_rewrite_passes_when_score_meets_target():
         m.setattr("src.services.pipeline_steps.create_audit_adapter", lambda engine: adapter)
         spice = MagicMock()
         spice.extract_spice = MagicMock(return_value=["spicy"])
-        m.setattr("src.services.pipeline_steps.create_spice_guard_adapter",
-                  lambda genre: spice)
+        m.setattr("src.services.pipeline_steps.create_spice_guard_adapter", lambda genre: spice)
         assert await AuditRewriteStep().execute(ctx, engine, reporter) is True
 
     assert ctx.average_audit_score == 97.0
@@ -354,15 +350,13 @@ async def test_audit_rewrite_rewrites_and_updates_content():
     with pytest.MonkeyPatch.context() as m:
         adapter = MagicMock()
         # First audit low, second audit high -> single rewrite
-        adapter.audit_episode = AsyncMock(side_effect=[{"score": 50.0, "improvements": ["fix"]},
-                                                       {"score": 96.0}])
+        adapter.audit_episode = AsyncMock(side_effect=[{"score": 50.0, "improvements": ["fix"]}, {"score": 96.0}])
         m.setattr("src.services.pipeline_steps.create_audit_adapter", lambda engine: adapter)
         spice = MagicMock()
         spice.extract_spice = MagicMock(return_value=[])
         spice.build_rewrite_prompt = MagicMock(return_value="prompt")
         spice.clean_markers = MagicMock(side_effect=lambda text: text)
-        m.setattr("src.services.pipeline_steps.create_spice_guard_adapter",
-                  lambda genre: spice)
+        m.setattr("src.services.pipeline_steps.create_spice_guard_adapter", lambda genre: spice)
         assert await AuditRewriteStep().execute(ctx, engine, reporter) is True
 
     engine.repo.episode.update_content.assert_called_once_with(1, 1, "rewritten content")
@@ -387,8 +381,7 @@ async def test_audit_rewrite_marks_human_review_after_max_iterations():
         spice.extract_spice = MagicMock(return_value=[])
         spice.build_rewrite_prompt = MagicMock(return_value="prompt")
         spice.clean_markers = MagicMock(side_effect=lambda text: text)
-        m.setattr("src.services.pipeline_steps.create_spice_guard_adapter",
-                  lambda genre: spice)
+        m.setattr("src.services.pipeline_steps.create_spice_guard_adapter", lambda genre: spice)
         assert await AuditRewriteStep().execute(ctx, engine, reporter) is True
 
     detail = ctx.episodes_detail[0]
@@ -411,8 +404,7 @@ async def test_audit_rewrite_no_improvements_breaks_loop():
         m.setattr("src.services.pipeline_steps.create_audit_adapter", lambda engine: adapter)
         spice = MagicMock()
         spice.extract_spice = MagicMock(return_value=[])
-        m.setattr("src.services.pipeline_steps.create_spice_guard_adapter",
-                  lambda genre: spice)
+        m.setattr("src.services.pipeline_steps.create_spice_guard_adapter", lambda genre: spice)
         assert await AuditRewriteStep().execute(ctx, engine, reporter) is True
 
     assert ctx.episodes_detail[0]["rewrite_count"] == 0
@@ -515,8 +507,7 @@ async def test_illustration_step_skip_paths():
     assert await IllustrationStep().execute(ctx, MagicMock(), reporter) is True
     assert ctx.warnings[-1] == "illustration: illustration_settings.enableIllustration is not set"
 
-    ctx = make_ctx(enable_illustration=True,
-                   illustration_settings={"enableIllustration": True}, book_id=None)
+    ctx = make_ctx(enable_illustration=True, illustration_settings={"enableIllustration": True}, book_id=None)
     assert await IllustrationStep().execute(ctx, MagicMock(), reporter) is True
     assert ctx.warnings[-1] == "illustration: book_id is None"
 
@@ -528,23 +519,19 @@ def patch_illustration_workflow(monkeypatch, execute_result):
         instance.execute = AsyncMock(side_effect=execute_result)
     else:
         instance.execute = AsyncMock(return_value=execute_result)
-    monkeypatch.setattr("src.backend.workflows.illustration_workflow.IllustrationWorkflow",
-                        lambda **kwargs: instance)
+    monkeypatch.setattr("src.backend.workflows.illustration_workflow.IllustrationWorkflow", lambda **kwargs: instance)
     return instance
 
 
 @pytest.mark.asyncio
 async def test_illustration_step_success_with_injected_agent():
-    ctx = make_ctx(enable_illustration=True,
-                   illustration_settings={"enableIllustration": True})
+    ctx = make_ctx(enable_illustration=True, illustration_settings={"enableIllustration": True})
     engine = make_engine()
     engine.illustration_agent = MagicMock()
     reporter = make_reporter()
 
     with pytest.MonkeyPatch.context() as m:
-        instance = patch_illustration_workflow(
-            m, {"status": "success", "illustrations": [{"url": "x"}]}
-        )
+        instance = patch_illustration_workflow(m, {"status": "success", "illustrations": [{"url": "x"}]})
         assert await IllustrationStep().execute(ctx, engine, reporter) is True
     assert ctx.illustrations == [{"url": "x"}]
     assert engine.illustration_agent is not None
@@ -556,8 +543,7 @@ async def test_illustration_step_success_with_injected_agent():
 @pytest.mark.asyncio
 async def test_illustration_step_fallback_agent_creation():
     """engine.illustration_agent 未注入時のフォールバック経路。"""
-    ctx = make_ctx(enable_illustration=True,
-                   illustration_settings={"enableIllustration": True})
+    ctx = make_ctx(enable_illustration=True, illustration_settings={"enableIllustration": True})
     engine = make_engine()
     # engine に illustration_agent 属性がない状態
     del engine.illustration_agent
@@ -565,20 +551,16 @@ async def test_illustration_step_fallback_agent_creation():
 
     agent = MagicMock()
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.agents.illustration_agent.IllustrationAgent",
-                  lambda **kwargs: agent)
+        m.setattr("src.agents.illustration_agent.IllustrationAgent", lambda **kwargs: agent)
         m.setattr("src.services.image_service.ImageService", lambda **kwargs: MagicMock())
-        patch_illustration_workflow(
-            m, {"status": "success", "illustrations": [{"url": "y"}]}
-        )
+        patch_illustration_workflow(m, {"status": "success", "illustrations": [{"url": "y"}]})
         assert await IllustrationStep().execute(ctx, engine, reporter) is True
     assert ctx.illustrations == [{"url": "y"}]
 
 
 @pytest.mark.asyncio
 async def test_illustration_step_failure_and_error_are_non_fatal():
-    ctx = make_ctx(enable_illustration=True,
-                   illustration_settings={"enableIllustration": True})
+    ctx = make_ctx(enable_illustration=True, illustration_settings={"enableIllustration": True})
     engine = make_engine()
     engine.illustration_agent = MagicMock()  # fallback 経路は専用テストで検証
     reporter = make_reporter()
@@ -618,19 +600,27 @@ async def test_marketing_step_preset_title_fallback():
     reporter = make_reporter()
 
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.services.pipeline_steps.load_preset_for_pipeline",
-                  lambda genre, archetype: {
-                      "titles": {"title_templates": ["Preset Title"]},
-                      "marketing": {"synopsis_structure": {"hook": "Hook"},
-                                    "catchphrase_templates": ["Catch"],
-                                    "tags": ["t1", "t2"]},
-                  })
+        m.setattr(
+            "src.services.pipeline_steps.load_preset_for_pipeline",
+            lambda genre, archetype: {
+                "titles": {"title_templates": ["Preset Title"]},
+                "marketing": {
+                    "synopsis_structure": {"hook": "Hook"},
+                    "catchphrase_templates": ["Catch"],
+                    "tags": ["t1", "t2"],
+                },
+            },
+        )
         assert await MarketingStep().execute(ctx, engine, reporter) is True
 
     assert ctx.title == "Preset Title"
-    assert ctx.marketing_pack == {"title": "Preset Title", "concept": "Hook",
-                                  "synopsis": {"hook": "Hook"}, "catchphrase": "Catch",
-                                  "tags": ["t1", "t2"]}
+    assert ctx.marketing_pack == {
+        "title": "Preset Title",
+        "concept": "Hook",
+        "synopsis": {"hook": "Hook"},
+        "catchphrase": "Catch",
+        "tags": ["t1", "t2"],
+    }
     assert ctx.easy_parameters["catchphrase"] == "Catch"
     engine.llm.generate.assert_not_called()
 
@@ -643,8 +633,7 @@ async def test_marketing_step_llm_title_fallback():
     reporter = make_reporter()
 
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.services.pipeline_steps.load_preset_for_pipeline",
-                  lambda genre, archetype: {})
+        m.setattr("src.services.pipeline_steps.load_preset_for_pipeline", lambda genre, archetype: {})
         assert await MarketingStep().execute(ctx, engine, reporter) is True
 
     assert ctx.title == "LLM Title"
@@ -660,8 +649,7 @@ async def test_marketing_step_fixed_template_and_llm_error():
     reporter = make_reporter()
 
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.services.pipeline_steps.load_preset_for_pipeline",
-                  lambda genre, archetype: {})
+        m.setattr("src.services.pipeline_steps.load_preset_for_pipeline", lambda genre, archetype: {})
         assert await MarketingStep().execute(ctx, engine, reporter) is True
 
     assert ctx.title == "sfの物語"
@@ -673,8 +661,7 @@ async def test_marketing_step_existing_title_skips_llm():
     engine = make_engine()
     reporter = make_reporter()
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.services.pipeline_steps.load_preset_for_pipeline",
-                  lambda genre, archetype: {})
+        m.setattr("src.services.pipeline_steps.load_preset_for_pipeline", lambda genre, archetype: {})
         assert await MarketingStep().execute(ctx, engine, reporter) is True
     assert ctx.title == "Already Set"
     engine.llm.generate.assert_not_called()
@@ -715,13 +702,9 @@ async def test_illustration_point_step_generates_points():
     char1.name = "主人公"
     char2 = MagicMock()
     char2.name = "ライバル"
-    engine.repo.bible.get_by_book_id = AsyncMock(
-        return_value=MagicMock(characters=[char1, char2])
-    )
+    engine.repo.bible.get_by_book_id = AsyncMock(return_value=MagicMock(characters=[char1, char2]))
     engine.repo.plot.get_all_plots = AsyncMock(return_value=[])
-    engine.repo.episode.get_all_by_book_id = AsyncMock(
-        return_value=[MagicMock() for _ in range(5)]
-    )
+    engine.repo.episode.get_all_by_book_id = AsyncMock(return_value=[MagicMock() for _ in range(5)])
     reporter = make_reporter()
 
     assert await IllustrationPointGenerationStep().execute(ctx, engine, reporter) is True
@@ -752,9 +735,7 @@ async def test_illustration_point_step_bible_missing_and_error():
 async def test_illustration_point_step_dict_characters_and_no_episodes():
     ctx = make_ctx(enable_illustration=True)
     engine = make_engine()
-    engine.repo.bible.get_by_book_id = AsyncMock(
-        return_value=MagicMock(characters=[{"name": "Dict子"}])
-    )
+    engine.repo.bible.get_by_book_id = AsyncMock(return_value=MagicMock(characters=[{"name": "Dict子"}]))
     engine.repo.episode.get_all_by_book_id = AsyncMock(return_value=[])
     reporter = make_reporter()
     assert await IllustrationPointGenerationStep().execute(ctx, engine, reporter) is True

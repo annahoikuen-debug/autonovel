@@ -1,5 +1,6 @@
 from src.services.compression import FourLayerCompressor, ProtectedContext
 
+
 def test_compression_pipeline_outputs_high_consistency_metrics():
     compressor = FourLayerCompressor()
     text = "勇者アレンは聖剣バルムンクを構えた。背後には魔法使いエレナが控えている。古の予言『月が紅く染まる時』の謎が迫る。"

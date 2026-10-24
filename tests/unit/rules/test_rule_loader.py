@@ -1,4 +1,5 @@
 """Step 4: ルールローダーテスト。"""
+
 from __future__ import annotations
 
 
@@ -29,9 +30,9 @@ class TestRuleLoader:
         yaml_file = tmp_path / "rules.yaml"
         yaml_file.write_text(
             "rules:\n"
-            "  - event_type: \"betrayal\"\n"
-            "    source_role: \"victim\"\n"
-            "    target_role: \"perpetrator\"\n"
+            '  - event_type: "betrayal"\n'
+            '    source_role: "victim"\n'
+            '    target_role: "perpetrator"\n'
             "    emotion_deltas:\n"
             "      affection: -0.5\n"
             "    decay_per_episode: 0.2\n",
@@ -47,12 +48,12 @@ class TestRuleLoader:
         yaml_file = tmp_path / "rules.yaml"
         yaml_file.write_text(
             "rules:\n"
-            "  - event_type: \"betrayal\"\n"
-            "    source_role: \"victim\"\n"
-            "    target_role: \"perpetrator\"\n"
+            '  - event_type: "betrayal"\n'
+            '    source_role: "victim"\n'
+            '    target_role: "perpetrator"\n'
             "    emotion_deltas:\n"
             "      affection: -0.5\n"
-            "    condition: \"never_registered_cond\"\n",
+            '    condition: "never_registered_cond"\n',
             encoding="utf-8",
         )
         loader = RuleLoader()
@@ -65,16 +66,16 @@ class TestRuleLoader:
         yaml_file = tmp_path / "rules.yaml"
         yaml_file.write_text(
             "rules:\n"
-            "  - event_type: \"betrayal\"\n"
-            "    source_role: \"victim\"\n"
-            "    target_role: \"perpetrator\"\n"
+            '  - event_type: "betrayal"\n'
+            '    source_role: "victim"\n'
+            '    target_role: "perpetrator"\n'
             "    emotion_deltas:\n"
             "      affection: -0.5\n"
-            "  - source_role: \"victim\"\n"  # event_type 欠落
+            '  - source_role: "victim"\n'  # event_type 欠落
             "    emotion_deltas: {}\n"
-            "  - event_type: \"nonexistent_type\"\n"  # 不正タイプ
-            "    source_role: \"victim\"\n"
-            "    target_role: \"perpetrator\"\n"
+            '  - event_type: "nonexistent_type"\n'  # 不正タイプ
+            '    source_role: "victim"\n'
+            '    target_role: "perpetrator"\n'
             "    emotion_deltas: {}\n",
             encoding="utf-8",
         )

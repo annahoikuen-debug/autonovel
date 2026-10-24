@@ -3,8 +3,10 @@ from typing import Optional, List, Literal
 from pydantic import Field
 from src.domain.schemas.base import TimestampedSchema, AutoNovelBaseSchema
 
+
 class SceneBeat(AutoNovelBaseSchema):
     """プロットから分解された物理動作・五感ビート（v4より完全継承）"""
+
     beat_num: int = Field(..., description="ビート番号")
     physical_action: str = Field(..., description="肉体的な動作描写")
     sensory_tags: List[str] = Field(
@@ -17,19 +19,24 @@ class SceneBeat(AutoNovelBaseSchema):
     )
     word_budget: int = Field(default=300, description="このビートに配分する目標文字数")
 
+
 class CliffhangerDef(AutoNovelBaseSchema):
     """Web小説の離脱を防ぐ引き・クリフハンガー3分類（v4より完全継承）"""
+
     type: Literal["New Crisis", "Shocking Truth", "Quiet Foreshadowing"] = Field(
         default="New Crisis",
         description="引きの分類（新たな危機 / 衝撃の真実 / 静かな伏線）",
     )
     description: str = Field(..., description="クリフハンガーの具体的な描写・引きのフック")
 
+
 class EmotionalHookSpec(AutoNovelBaseSchema):
     """読者の感情を揺さぶりカタルシスを生む感情フック（v4より完全継承）"""
+
     hook_type: str = Field(default="catharsis", description="カタルシス / 共感 / 緊張感 / ギャップ萌え")
     target_scene: str = Field(default="", description="フックを仕掛けるシーン")
     appeal_point: str = Field(default="", description="読者への最大の訴求ポイント")
+
 
 class ChapterSchema(TimestampedSchema):
     id: int
@@ -46,6 +53,7 @@ class ChapterSchema(TimestampedSchema):
     cliffhanger: Optional[CliffhangerDef] = None
     emotional_hook: Optional[EmotionalHookSpec] = None
 
+
 class ChapterCreateRequest(AutoNovelBaseSchema):
     book_id: int
     episode_number: int = Field(..., ge=1)
@@ -54,6 +62,7 @@ class ChapterCreateRequest(AutoNovelBaseSchema):
     scene_beats: List[SceneBeat] = Field(default_factory=list)
     cliffhanger: Optional[CliffhangerDef] = None
     emotional_hook: Optional[EmotionalHookSpec] = None
+
 
 class ChapterGenerateRequest(AutoNovelBaseSchema):
     chapter_id: int

@@ -1,5 +1,6 @@
 # src/agents/skills/v1/easy_mode_marketing.py
 """easy_mode 専用 MarketingSkill - 簡易納品パッケージ生成"""
+
 from __future__ import annotations
 
 import logging
@@ -36,6 +37,7 @@ class EasyModeMarketingSkill(SkillAgent):
 
             # MarketingAgent を使用して ZIP 生成
             from src.agents.marketing import MarketingAgent
+
             marketing_agent = MarketingAgent(
                 repo=self.repo,
                 prompt_manager=self.pm,
@@ -61,7 +63,9 @@ class EasyModeMarketingSkill(SkillAgent):
                         "one_line_summary": getattr(p, "summary", ""),
                     }
                     for p in plots
-                ] if plots else [],
+                ]
+                if plots
+                else [],
                 "bible_settings": getattr(bible, "model_dump", lambda: {})() if bible else {},
             }
 

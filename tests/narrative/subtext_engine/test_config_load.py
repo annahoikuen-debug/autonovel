@@ -16,8 +16,8 @@ def test_config_load_from_yaml():
 
     # Test processing with YAML-loaded engine
     block = engine.process_block(
-        engine.registry.list_rules()[0].to_model() and
-        __import__("src.narrative.subtext_engine.models", fromlist=["DialogueBlock"]).DialogueBlock(
+        engine.registry.list_rules()[0].to_model()
+        and __import__("src.narrative.subtext_engine.models", fromlist=["DialogueBlock"]).DialogueBlock(
             speaker="User", lines=["「ごめんなさい」"]
         )
     )

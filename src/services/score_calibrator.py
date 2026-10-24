@@ -15,6 +15,7 @@ from typing import Any
 @dataclass
 class CalibrationConfig:
     """Configuration for auditor score calibration."""
+
     target_mean: float = 65.0
     target_std: float = 12.0
     confidence_weight: float = 0.30  # Shrinkage towards prior mean when confidence < 1.0
@@ -109,7 +110,9 @@ class ScoreCalibrator:
         is_outlier = abs(z_score) >= self.config.outlier_threshold_z
 
         # 5. Bound clamping
-        if self.config.enable_sigmoid_bounds and (bayesian_score < self.config.clamp_min or bayesian_score > self.config.clamp_max):
+        if self.config.enable_sigmoid_bounds and (
+            bayesian_score < self.config.clamp_min or bayesian_score > self.config.clamp_max
+        ):
             final_score = sigmoid_scale(bayesian_score, center=self.config.target_mean, scale=self.config.target_std)
         else:
             final_score = max(self.config.clamp_min, min(self.config.clamp_max, bayesian_score))

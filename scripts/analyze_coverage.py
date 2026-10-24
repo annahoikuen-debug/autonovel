@@ -55,6 +55,6 @@ for d, s in dir_stats.items():
         pct = (cov / stmts * 100) if stmts > 0 else 0
         all_files.append((fpath, stmts, cov, missing, pct))
 
-all_files.sort(key=lambda x: x[3], reverse=True) # sort by missing
+all_files.sort(key=lambda x: x[3], reverse=True)  # sort by missing
 for fpath, stmts, cov, missing, pct in all_files[:30]:
     print(f"{missing:>5} missing | {stmts:>5} total | {pct:>5.1f}% cov | src/{fpath}")

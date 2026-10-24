@@ -1,4 +1,5 @@
 """Sensory and Rhetoric Vocabulary Schemas and URI Parser."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -9,6 +10,7 @@ import re
 @dataclass
 class SensoryWord:
     """感覚・レトリック語彙定義"""
+
     word: str
     category: str  # visual, auditory, olfactory, tactile, psychological, metaphor, onomatopoeia
     example_sentence: str
@@ -20,6 +22,7 @@ class SensoryWord:
 @dataclass
 class SampledVocabResult:
     """情動強度サンプリング結果"""
+
     category: str
     target_intensity: float
     items: List[Dict[str, Any]]
@@ -30,6 +33,7 @@ class SampledVocabResult:
 @dataclass
 class GenreVocabSet:
     """ジャンル別語彙セット"""
+
     genre: str
     words: List[SensoryWord] = field(default_factory=list)
 

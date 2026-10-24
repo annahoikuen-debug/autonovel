@@ -3,6 +3,7 @@ from typing import Optional, Callable
 
 logger = logging.getLogger(__name__)
 
+
 class FallbackGenerator:
     """
     LLM API エラー/タイムアウト時の静的ルールベース代替ストーリージェネレーター。
@@ -37,8 +38,7 @@ class FallbackGenerator:
                 return self.primary_generator(genre, length, keywords)
             except Exception as e:
                 self.logger.warning(
-                    f"プライマリジェネレーターが失敗しました: {e}. フォールバックを使用します。",
-                    exc_info=True
+                    f"プライマリジェネレーターが失敗しました: {e}. フォールバックを使用します。", exc_info=True
                 )
 
         # フォールバック: 静的ルールベースのストーリーを生成
@@ -55,7 +55,7 @@ class FallbackGenerator:
             "ラブコメ": "高校に転入した主人公は、クラスの人気者と偶然出会い。誤解とすれ違いを繰り返しながら、次第に惹かれ合っていく。",
             "SF": "22世紀の宇宙開発時代、主人公は新惑星の調査隊に選抜される。未知の生命体との遭遇と、船内の陰謀が待っていた。",
             "ミステリー": "静かな田舎町で起こった連続殺人事件。探偵は証拠を集め、容疑者の証言を丁寧に分析して真相に迫る。",
-            "歴史": "江戸時代末期、維新志士として生きる主人公は、新しい時代への変革を願いながら日々を過ごした。"
+            "歴史": "江戸時代末期、維新志士として生きる主人公は、新しい時代への変革を願いながら日々を過ごした。",
         }
 
         base_story = templates.get(genre, "これはサンプルストーリーです。")
@@ -85,6 +85,7 @@ default_fallback_generator = FallbackGenerator()
 if __name__ == "__main__":
     # 簡単な動作テスト
     import logging
+
     logging.basicConfig(level=logging.INFO)
 
     generator = FallbackGenerator()

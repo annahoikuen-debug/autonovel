@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class BeatType(str, Enum):
     """Narrative beat types."""
+
     SETUP = "SETUP"
     RISING = "RISING"
     BATTLE = "BATTLE"
@@ -23,10 +24,13 @@ class BeatType(str, Enum):
 
 class Beat(BaseModel):
     """Represents a single episode beat in the plot."""
+
     model_config = ConfigDict(extra="ignore")
 
     episode: int = Field(..., description="Episode index (1-based)")
-    tension: Optional[float] = Field(default=5.0, description="Tension score between 0.0 and 10.0 (or None/NaN if missing)")
+    tension: Optional[float] = Field(
+        default=5.0, description="Tension score between 0.0 and 10.0 (or None/NaN if missing)"
+    )
     beat_type: BeatType = Field(default=BeatType.SETUP, description="Structural beat type")
     title: str = Field(default="", description="Episode title")
     summary: str = Field(default="", description="Episode summary or key events")
@@ -38,6 +42,7 @@ class Beat(BaseModel):
 
 class CorrectionAction(BaseModel):
     """Recorded correction applied to an episode."""
+
     model_config = ConfigDict(extra="ignore")
 
     episode: int
@@ -50,6 +55,7 @@ class CorrectionAction(BaseModel):
 
 class ValidationResult(BaseModel):
     """Structural validation outcome."""
+
     model_config = ConfigDict(extra="ignore")
 
     is_valid: bool = True

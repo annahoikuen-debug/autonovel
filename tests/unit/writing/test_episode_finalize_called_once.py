@@ -104,18 +104,14 @@ async def test_finalize_called_exactly_once_on_legacy_path(monkeypatch):
     """`use_beat_to_scene=False` の旧一括生成経路でも finalize がちょうど1回であること。"""
     writer = _make_writer()
     # 旧経路は `_get_scene_orchestrator` を叩かないことを保証する
-    writer._get_scene_orchestrator = MagicMock(
-        side_effect=AssertionError("旧経路でシーンオーケストレータを呼んでいる")
-    )
+    writer._get_scene_orchestrator = MagicMock(side_effect=AssertionError("旧経路でシーンオーケストレータを呼んでいる"))
 
     calls: list = []
     monkeypatch.setattr(writer, "_post_episode_finalize", _recorder(calls))
 
     await writer.run(_make_ctx(use_beat_to_scene=False))
 
-    assert len(calls) == 1, (
-        f"_post_episode_finalize が {len(calls)} 回呼ばれた（1回であるべき）"
-    )
+    assert len(calls) == 1, f"_post_episode_finalize が {len(calls)} 回呼ばれた（1回であるべき）"
 
 
 @pytest.mark.asyncio
@@ -154,9 +150,7 @@ async def test_write_alone_does_not_finalize(monkeypatch):
     `write()` は本文生成のみ。不管（finalize）は `run()` の責務である。
     """
     writer = _make_writer()
-    writer._get_scene_orchestrator = MagicMock(
-        side_effect=AssertionError("旧経路でシーンオーケストレータを呼んでいる")
-    )
+    writer._get_scene_orchestrator = MagicMock(side_effect=AssertionError("旧経路でシーンオーケストレータを呼んでいる"))
 
     calls: list = []
     monkeypatch.setattr(writer, "_post_episode_finalize", _recorder(calls))
@@ -167,10 +161,7 @@ async def test_write_alone_does_not_finalize(monkeypatch):
         {"use_beat_to_scene": False, "prose_refiner_enabled": False},
     )
 
-    assert calls == [], (
-        f"write() から finalize が {len(calls)} 回呼ばれた。"
-        "単一実行点は run() のみであるべき。"
-    )
+    assert calls == [], f"write() から finalize が {len(calls)} 回呼ばれた。単一実行点は run() のみであるべき。"
 
 
 async def _noop():

@@ -1,4 +1,5 @@
 """ディジェクトサービスのユニットテスト。"""
+
 from __future__ import annotations
 
 from src.services.digest_service import CHAPTER_MAX_LENGTH, generate_suggestions, process_chapter

@@ -4,6 +4,7 @@ EasyModeWorkflow → AutoWorkflowPipeline 委譲テスト
 EasyModeWorkflow がインラインロジックではなく、統合パイプライン
 (AutoWorkflowPipeline) に正しく委譲しているかを検証する。
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -32,9 +33,7 @@ class MockReporter:
     def state(self) -> _State:
         return self._State(self._should_stop)
 
-    def update_progress(
-        self, current: int, total: int, message: str = "", sub_message: str = ""
-    ) -> None:
+    def update_progress(self, current: int, total: int, message: str = "", sub_message: str = "") -> None:
         self.progress_calls.append((current, total, message, sub_message))
 
     def report(self, message: str, level: str = "info") -> None:
@@ -53,9 +52,7 @@ def _make_mock_engine() -> MagicMock:
             title_idea="タイトル",
         )
     )
-    engine.planner.create_hegemony_plan = AsyncMock(
-        return_value=(1, MagicMock(title="テスト小説"))
-    )
+    engine.planner.create_hegemony_plan = AsyncMock(return_value=(1, MagicMock(title="テスト小説")))
     engine.planner.plan_auditor = MagicMock()
     engine.planner.plan_auditor.audit_bible_completeness = AsyncMock(return_value=True)
     engine.writer = MagicMock()
@@ -63,9 +60,7 @@ def _make_mock_engine() -> MagicMock:
     engine.llm = MagicMock()
     engine.llm.generate = AsyncMock(return_value="テキスト")
     engine.auditor = MagicMock()
-    engine.auditor.audit = AsyncMock(
-        return_value={"overall_score": 900, "issues": [], "improvements": []}
-    )
+    engine.auditor.audit = AsyncMock(return_value={"overall_score": 900, "issues": [], "improvements": []})
     engine.repo = MagicMock()
     engine.repo.plot = MagicMock()
     engine.repo.plot.get_all_plots = AsyncMock(return_value=[])
@@ -73,9 +68,7 @@ def _make_mock_engine() -> MagicMock:
     engine.repo.bible.get_by_book_id = AsyncMock(return_value=MagicMock())
     engine.repo.plot.get_by_book_and_number = AsyncMock(return_value=MagicMock())
     engine.repo.episode = MagicMock()
-    engine.repo.episode.get_by_book_and_number = AsyncMock(
-        return_value=MagicMock(content="テスト本文")
-    )
+    engine.repo.episode.get_by_book_and_number = AsyncMock(return_value=MagicMock(content="テスト本文"))
     engine.repo.episode.update_content = AsyncMock(return_value=True)
     engine.repo.get_book = AsyncMock(return_value=MagicMock(title="テスト小説"))
     return engine
@@ -121,17 +114,13 @@ class TestEasyModeWorkflowDelegation:
         return MockReporter()
 
     @pytest.mark.asyncio
-    async def test_easy_mode_delegates_to_pipeline(
-        self, mock_engine: MagicMock, mock_reporter: MockReporter
-    ) -> None:
+    async def test_easy_mode_delegates_to_pipeline(self, mock_engine: MagicMock, mock_reporter: MockReporter) -> None:
         """EasyModeWorkflow.execute() が AutoWorkflowPipeline に委譲する"""
         from src.backend.workflows.easy_mode_workflow import EasyModeWorkflow
 
         workflow = EasyModeWorkflow(engine=mock_engine)
 
-        with patch(
-            "src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline"
-        ) as mock_create:
+        with patch("src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline") as mock_create:
             mock_pipeline = MagicMock()
             mock_pipeline.execute = AsyncMock(return_value=_make_full_auto_result())
             mock_create.return_value = mock_pipeline
@@ -156,9 +145,7 @@ class TestEasyModeWorkflowDelegation:
 
         workflow = EasyModeWorkflow(engine=mock_engine)
 
-        with patch(
-            "src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline"
-        ) as mock_create:
+        with patch("src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline") as mock_create:
             mock_pipeline = MagicMock()
             mock_pipeline.execute = AsyncMock(return_value=_make_full_auto_result())
             mock_create.return_value = mock_pipeline
@@ -185,12 +172,13 @@ class TestEasyModeWorkflowDelegation:
 
         workflow = EasyModeWorkflow(engine=mock_engine)
 
-        with patch(
-            "src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline"
-        ) as mock_create, patch(
-            "src.backend.workflows.easy_mode_workflow.ProgressReporterAdapter",
-            wraps=ProgressReporterAdapter,
-        ) as mock_adapter_cls:
+        with (
+            patch("src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline") as mock_create,
+            patch(
+                "src.backend.workflows.easy_mode_workflow.ProgressReporterAdapter",
+                wraps=ProgressReporterAdapter,
+            ) as mock_adapter_cls,
+        ):
             mock_pipeline = MagicMock()
             mock_pipeline.execute = AsyncMock(return_value=_make_full_auto_result())
             mock_create.return_value = mock_pipeline
@@ -206,9 +194,7 @@ class TestEasyModeWorkflowDelegation:
             call = mock_adapter_cls.call_args
             is_easy_mode_kw = call.kwargs.get("is_easy_mode")
             # 1番目の positional arg は reporter, 2番目 or kwargs は is_easy_mode
-            positional_is_easy_mode = (
-                call.args[1] if len(call.args) >= 2 else None
-            )
+            positional_is_easy_mode = call.args[1] if len(call.args) >= 2 else None
             assert is_easy_mode_kw is True or positional_is_easy_mode is True, (
                 f"Expected is_easy_mode=True, got args={call.args}, kwargs={call.kwargs}"
             )
@@ -222,9 +208,7 @@ class TestEasyModeWorkflowDelegation:
 
         workflow = EasyModeWorkflow(engine=mock_engine)
 
-        with patch(
-            "src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline"
-        ) as mock_create:
+        with patch("src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline") as mock_create:
             mock_pipeline = MagicMock()
             mock_pipeline.execute = AsyncMock(return_value=_make_full_auto_result())
             mock_create.return_value = mock_pipeline
@@ -253,9 +237,7 @@ class TestEasyModeWorkflowDelegation:
 
         workflow = EasyModeWorkflow(engine=mock_engine)
 
-        with patch(
-            "src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline"
-        ) as mock_create:
+        with patch("src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline") as mock_create:
             mock_pipeline = MagicMock()
             mock_pipeline.execute = AsyncMock(return_value=_make_full_auto_result())
             mock_create.return_value = mock_pipeline
@@ -281,9 +263,7 @@ class TestEasyModeWorkflowDelegation:
 
         workflow = EasyModeWorkflow(engine=mock_engine)
 
-        with patch(
-            "src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline"
-        ) as mock_create:
+        with patch("src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline") as mock_create:
             mock_pipeline = MagicMock()
             mock_pipeline.execute = AsyncMock(return_value=_make_full_auto_result())
             mock_create.return_value = mock_pipeline
@@ -303,9 +283,7 @@ class TestEasyModeWorkflowDelegation:
 
         workflow = EasyModeWorkflow(engine=mock_engine)
 
-        with patch(
-            "src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline"
-        ) as mock_create:
+        with patch("src.backend.workflows.easy_mode_workflow.create_easy_mode_pipeline") as mock_create:
             mock_pipeline = MagicMock()
             mock_pipeline.execute = AsyncMock(return_value=_make_full_auto_result())
             mock_create.return_value = mock_pipeline

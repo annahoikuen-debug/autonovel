@@ -42,9 +42,7 @@ TRANSITION_HEAVY = SampleText(
 
 # Three sentences in a row with identical sentence ends.
 SAME_STRUCTURE_TEXT = SampleText(
-    text=(
-        "彼は走った。彼女は走った。世界は走った。"
-    ),
+    text=("彼は走った。彼女は走った。世界は走った。"),
     label="same_structure",
     expected_categories={AICategory.SAME_STRUCTURE},
 )
@@ -65,8 +63,7 @@ DIRECT_EMOTION_TEXT = SampleText(
 # LLM hedging pile-up.
 HEDGING_TEXT = SampleText(
     text=(
-        "おそらく、彼はそうするかもしれません。たぶん、来ると思います。"
-        "考えられますが、確証はないのではないでしょうか。"
+        "おそらく、彼はそうするかもしれません。たぶん、来ると思います。考えられますが、確証はないのではないでしょうか。"
     ),
     label="hedging",
     expected_categories={AICategory.HEDGING_PATTERNS},
@@ -75,10 +72,7 @@ HEDGING_TEXT = SampleText(
 
 # Essay-style template phrases.
 TEMPLATE_TEXT = SampleText(
-    text=(
-        "重要なことに、彼は遅刻した。注目すべきは、その理由だ。"
-        "結論として、謝罪は必要である。"
-    ),
+    text=("重要なことに、彼は遅刻した。注目すべきは、その理由だ。結論として、謝罪は必要である。"),
     label="template",
     expected_categories={AICategory.TEMPLATE_PHRASES},
 )
@@ -88,8 +82,10 @@ TEMPLATE_TEXT = SampleText(
 UNIFORM_PARAGRAPH_TEXT = SampleText(
     text=(
         "森は静かだった。霧が低く垂れていた。風が鳴っていた。"
-        "\n\n" "光は弱かった。草が揺れていた。鳥が泣いていた。"
-        "\n\n" "道は細かった。水が流れていた。影が伸びていた。"
+        "\n\n"
+        "光は弱かった。草が揺れていた。鳥が泣いていた。"
+        "\n\n"
+        "道は細かった。水が流れていた。影が伸びていた。"
     ),
     label="uniform_paragraph",
     expected_categories={AICategory.UNIFORM_PARAGRAPH},
@@ -98,10 +94,7 @@ UNIFORM_PARAGRAPH_TEXT = SampleText(
 
 # Lots of generic adjectives.
 GENERIC_TEXT = SampleText(
-    text=(
-        "素晴らしい朝だった。興味深い人物がいた。多様な意見がある。"
-        "重要な決断だ。深刻な状況だ。様々な選択肢がある。"
-    ),
+    text=("素晴らしい朝だった。興味深い人物がいた。多様な意見がある。重要な決断だ。深刻な状況だ。様々な選択肢がある。"),
     label="generic_vocab",
     expected_categories={AICategory.GENERIC_VOCABULARY},
 )

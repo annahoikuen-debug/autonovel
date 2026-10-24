@@ -4,6 +4,7 @@ docs/STATUS.md は「このテストは N 件緑」と散文で書いている�
 その N がずれると、效果測定表というものの性質（測定値である）が壊れる。
 よって **N を実測して照合する**。
 """
+
 from __future__ import annotations
 
 import re
@@ -34,9 +35,7 @@ def _collect(path: str) -> int:
     )
     # 収集できないtofails。skip すると「収集が壊れている = そもそも検査不能」という
     # 状態で Hawaiiian に this gate が黙って無効化され、doc の嘘が放置される。
-    assert proc.returncode == 0, (
-        f"{path} を収集できません（returncode={proc.returncode}）: {proc.stdout[-400:]}"
-    )
+    assert proc.returncode == 0, f"{path} を収集できません（returncode={proc.returncode}）: {proc.stdout[-400:]}"
     m = re.search(r"(\d+) tests? collected", proc.stdout)
     return int(m.group(1)) if m else len(re.findall(r"::", proc.stdout))
 
@@ -45,8 +44,7 @@ def test_status_md_contains_measurable_claims():
     """このテストが意味を持つため、対象パターンが 1 つも無い状態を検出すること。"""
     text = STATUS.read_text(encoding="utf-8")
     assert CLAIM_RE.findall(text), (
-        "docs/STATUS.md に「（**N件**緑）」形式の自己申告が無い。"
-        "本テストが無意味になっている状態を検出する"
+        "docs/STATUS.md に「（**N件**緑）」形式の自己申告が無い。本テストが無意味になっている状態を検出する"
     )
 
 

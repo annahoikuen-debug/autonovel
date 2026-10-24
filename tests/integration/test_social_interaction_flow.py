@@ -7,6 +7,7 @@ Verifies the end-to-end flow:
 4. SocialGraphSyncer synchronizes nodes and edges to Apache AGE.
 5. ContextBuilderAgent injects the updated social relationships into the next episode's writing context.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -28,10 +29,7 @@ async def test_social_interaction_end_to_end_flow():
     # 1. Setup SocialInteractionManager & Listener
     mock_session = MagicMock()
     manager = SocialInteractionManager(age_client=mock_age)
-    register_social_listener(
-        event_bus, manager, session_factory=lambda: mock_session, graph_name="novel_graph"
-    )
-
+    register_social_listener(event_bus, manager, session_factory=lambda: mock_session, graph_name="novel_graph")
 
     characters = [
         {"id": "hero", "name": "アルカディア", "role": "若き勇者"},
@@ -70,10 +68,12 @@ async def test_social_interaction_end_to_end_flow():
 
     # 5. Build context for Episode 2 using ContextBuilderAgent
     repo = MagicMock()
-    repo.get_plot = AsyncMock(return_value=MagicMock(
-        summary="第2話: 囚われた仲間を救うため、森の奥深くへ向かう。",
-        detailed_blueprint="アルカディアはヴォルケインとの決着を持ち越し、森へ向かう。",
-    ))
+    repo.get_plot = AsyncMock(
+        return_value=MagicMock(
+            summary="第2話: 囚われた仲間を救うため、森の奥深くへ向かう。",
+            detailed_blueprint="アルカディアはヴォルケインとの決着を持ち越し、森へ向かう。",
+        )
+    )
     repo.get_book = AsyncMock(return_value=MagicMock())
     c1 = MagicMock()
     c1.name = "アルカディア"

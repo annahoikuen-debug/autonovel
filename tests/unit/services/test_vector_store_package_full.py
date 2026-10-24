@@ -15,6 +15,7 @@ from src.services.vector_store import (
 # 1. InMemoryFallbackStore Tests
 # ==============================================================================
 
+
 class TestInMemoryFallbackStore:
     @pytest.fixture
     def store(self):
@@ -44,7 +45,7 @@ class TestInMemoryFallbackStore:
             ["id1", "id2"],
             ["doc1", "doc2"],
             [[1.0, 0.0], [0.0, 1.0]],
-            [{"genre": "fantasy"}, {"genre": "school"}]
+            [{"genre": "fantasy"}, {"genre": "school"}],
         )
 
         # Filter fantasy
@@ -110,8 +111,8 @@ class TestInMemoryFallbackStore:
             [
                 {"entities": ["Hero"], "relations": [{"src": "Hero", "dst": "Sword", "type": "owns"}]},
                 {"entities": ["Sword"], "relations": [{"src": "Sword", "dst": "Legend", "type": "part_of"}]},
-                {"entities": ["Legend"], "status": "retired"}
-            ]
+                {"entities": ["Legend"], "status": "retired"},
+            ],
         )
 
         # BFS neighbors
@@ -129,16 +130,19 @@ class TestInMemoryFallbackStore:
         validity_ok = await store.check_entity_validity(collection, "Hero")
         assert validity_ok["valid"] is True
 
+
 # ==============================================================================
 # 2. PgVectorStore Tests (Mocked)
 # ==============================================================================
 
+
 class TestPgVectorStore:
     @pytest.fixture
     def mock_db(self):
-        with patch("src.services.vector_store.pgvector.create_async_engine") as mock_engine, \
-             patch("src.services.vector_store.pgvector.async_sessionmaker") as mock_sessionmaker_factory:
-
+        with (
+            patch("src.services.vector_store.pgvector.create_async_engine") as mock_engine,
+            patch("src.services.vector_store.pgvector.async_sessionmaker") as mock_sessionmaker_factory,
+        ):
             # session_factory() -> session
             mock_session = AsyncMock()
             # Ensure the session acts as an async context manager
@@ -156,11 +160,7 @@ class TestPgVectorStore:
             ]
             mock_session.execute.return_value = mock_result
 
-            yield {
-                "engine": mock_engine,
-                "sessionmaker": mock_sessionmaker_factory,
-                "session": mock_session
-            }
+            yield {"engine": mock_engine, "sessionmaker": mock_sessionmaker_factory, "session": mock_session}
 
     @pytest.mark.asyncio
     async def test_pg_ensure_table(self, mock_db):
@@ -183,7 +183,7 @@ class TestPgVectorStore:
         # Add 150 documents (should trigger 2 batches: 100 + 50)
         ids = [f"id{i}" for i in range(150)]
         docs = [f"doc{i}" for i in range(150)]
-        embs = [[0.1]*1536 for _ in range(150)]
+        embs = [[0.1] * 1536 for _ in range(150)]
 
         await store.add_documents("test_col", ids, docs, embs)
 
@@ -191,14 +191,16 @@ class TestPgVectorStore:
         # 1 for _ensure_table (if not cached) + 2 for batches
         # But _ensure_table is called inside add_documents
         # Let's count the INSERT statements
-        insert_calls = [call for call in mock_db["session"].execute.call_args_list if "INSERT INTO" in str(call.args[0])]
+        insert_calls = [
+            call for call in mock_db["session"].execute.call_args_list if "INSERT INTO" in str(call.args[0])
+        ]
         assert len(insert_calls) == 2
 
     @pytest.mark.asyncio
     async def test_pg_search_sql_construction(self, mock_db):
         store = PgVectorStore(database_url="postgresql://user:pass@localhost/db")
 
-        await store.search("test_col", [0.1]*1536, where={"genre": "fantasy"})
+        await store.search("test_col", [0.1] * 1536, where={"genre": "fantasy"})
 
         # Check if WHERE clause was correctly added
         last_call = mock_db["session"].execute.call_args
@@ -214,14 +216,16 @@ class TestPgVectorStore:
         mock_db["session"].execute.side_effect = Exception("DB Error")
 
         with pytest.raises(Exception) as excinfo:
-            await store.add_documents("test_col", ["id1"], ["doc1"], [[0.1]*1536])
+            await store.add_documents("test_col", ["id1"], ["doc1"], [[0.1] * 1536])
 
         assert "DB Error" in str(excinfo.value)
         mock_db["session"].rollback.assert_called()
 
+
 # ==============================================================================
 # 3. ChromaVectorStore Tests (Mocked)
 # ==============================================================================
+
 
 class TestChromaVectorStore:
     @pytest.fixture
@@ -234,11 +238,7 @@ class TestChromaVectorStore:
         mock_client.get_or_create_collection.return_value = mock_collection
         mock_client.get_collection.return_value = mock_collection
 
-        return {
-            "provider": mock_provider,
-            "client": mock_client,
-            "collection": mock_collection
-        }
+        return {"provider": mock_provider, "client": mock_client, "collection": mock_collection}
 
     @pytest.mark.asyncio
     async def test_chroma_batch_add(self, mock_chroma):
@@ -247,7 +247,7 @@ class TestChromaVectorStore:
         # Add 500 documents (should trigger 2 batches: 416 + 84)
         ids = [f"id{i}" for i in range(500)]
         docs = [f"doc{i}" for i in range(500)]
-        embs = [[0.1]*1536 for _ in range(500)]
+        embs = [[0.1] * 1536 for _ in range(500)]
 
         # Manually inject collection to avoid initialization logic
         store._collections["test_col"] = mock_chroma["collection"]
@@ -279,11 +279,7 @@ class TestChromaVectorStore:
         store._bm25_indexes["test_col"]["bm25"].get_scores.return_value = [10.0]
 
         res = await store.hybrid_search(
-            "test_col",
-            query_text="test query",
-            query_embedding=[0.1]*1536,
-            top_k=2,
-            alpha=0.5
+            "test_col", query_text="test query", query_embedding=[0.1] * 1536, top_k=2, alpha=0.5
         )
 
         # Should contain both v1 and b1
@@ -291,9 +287,11 @@ class TestChromaVectorStore:
         assert "v1" in ids
         assert "b1" in ids
 
+
 # ==============================================================================
 # 4. get_default_store Tests
 # ==============================================================================
+
 
 class TestGetDefaultStore:
     @patch("src.services.vector_store.InMemoryFallbackStore")
@@ -339,21 +337,27 @@ class TestGetDefaultStore:
         # Priority: PgVector > Chroma > Memory
 
         # Case 1: PgVector available
-        with patch("src.services.vector_store.HAS_PGVECTOR", True), \
-             patch("src.services.vector_store.PgVectorStore") as mock_pg:
+        with (
+            patch("src.services.vector_store.HAS_PGVECTOR", True),
+            patch("src.services.vector_store.PgVectorStore") as mock_pg,
+        ):
             get_default_store()
             mock_pg.assert_called()
 
         # Case 2: PgVector unavailable, Chroma available
-        with patch("src.services.vector_store.HAS_PGVECTOR", False), \
-             patch("src.services.vector_store.HAS_CHROMA", True), \
-             patch("src.services.vector_store.ChromaVectorStore") as mock_chroma:
+        with (
+            patch("src.services.vector_store.HAS_PGVECTOR", False),
+            patch("src.services.vector_store.HAS_CHROMA", True),
+            patch("src.services.vector_store.ChromaVectorStore") as mock_chroma,
+        ):
             get_default_store()
             mock_chroma.assert_called()
 
         # Case 3: Both unavailable -> Memory
-        with patch("src.services.vector_store.HAS_PGVECTOR", False), \
-             patch("src.services.vector_store.HAS_CHROMA", False), \
-             patch("src.services.vector_store.InMemoryFallbackStore") as mock_inmem:
+        with (
+            patch("src.services.vector_store.HAS_PGVECTOR", False),
+            patch("src.services.vector_store.HAS_CHROMA", False),
+            patch("src.services.vector_store.InMemoryFallbackStore") as mock_inmem,
+        ):
             get_default_store()
             mock_inmem.assert_called()

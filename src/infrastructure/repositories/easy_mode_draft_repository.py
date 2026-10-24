@@ -189,10 +189,12 @@ class EasyModeDraftRepository(BaseRepository[EasyModeDraft]):
             最新の ReviewSession インスタンス。存在しない場合は None。
         """
         result = await self.session.execute(
-            select(EasyModeDraft).where(
+            select(EasyModeDraft)
+            .where(
                 EasyModeDraft.parent_draft_id == request_id,
                 EasyModeDraft.kind == "review_session",
-            ).order_by(EasyModeDraft.created_at.desc())
+            )
+            .order_by(EasyModeDraft.created_at.desc())
         )
         draft = result.scalars().first()
         if draft is None:

@@ -79,6 +79,7 @@ def _hash_token(value: Any, deterministic: bool = False) -> str:
 @dataclass
 class PurifiedFeedback:
     """Represents text feedback purified of cross-proposal leaks (Step 1)."""
+
     original_critique: str
     purified_text: str
     removed_entities: list[str] = field(default_factory=list)
@@ -86,7 +87,10 @@ class PurifiedFeedback:
 
 
 PROPOSAL_LEAK_PATTERNS: list[re.Pattern] = [
-    re.compile(r"(?:[案プラン]|proposal|plan)\s*([A-Za-z0-9１-９一二三])(?:の|では|における|について|という|案)?", re.IGNORECASE),
+    re.compile(
+        r"(?:[案プラン]|proposal|plan)\s*([A-Za-z0-9１-９一二三])(?:の|では|における|について|という|案)?",
+        re.IGNORECASE,
+    ),
     re.compile(r"([A-Za-z0-9１-９一二三])案(?:の|では|における|について|という)?", re.IGNORECASE),
     re.compile(r"(?:他案|別の案|対抗案|候補[0-9１-９一二三A-Za-z])(?:の|では|における)?", re.IGNORECASE),
 ]
@@ -164,11 +168,7 @@ class BlindFeedbackPurifier:
             return self.purify_critique(critique, forbidden_terms)
 
         try:
-            prompt = (
-                f"{BLIND_PURIFIER_SYSTEM_PROMPT}\n\n"
-                f"【元のレビュー】\n{critique}\n\n"
-                f"【純化後レビュー】"
-            )
+            prompt = f"{BLIND_PURIFIER_SYSTEM_PROMPT}\n\n【元のレビュー】\n{critique}\n\n【純化後レビュー】"
             res = await self.llm_adapter.generate(prompt, max_tokens=500)
             cleaned_text = res.strip() if isinstance(res, str) else str(res).strip()
             return PurifiedFeedback(
@@ -185,6 +185,7 @@ class BlindFeedbackPurifier:
 @dataclass
 class IsolationViolation:
     """Represents a single isolation violation detected during verification."""
+
     path: str
     violation_type: str  # "marker_leak" | "unscrubbed_key" | "cross_round_contamination"
     detail: str
@@ -193,6 +194,7 @@ class IsolationViolation:
 @dataclass
 class VerificationResult:
     """Result of verify_isolation() check."""
+
     passed: bool
     violations: list[IsolationViolation]
     checked_at: datetime = field(default_factory=datetime.now)
@@ -354,9 +356,7 @@ class BlindReviewGate:
         self.deterministic: bool = deterministic or (mode == "deterministic_hash")
         self.blocked_keys: set[str] = {k.lower() for k in (blocked_keys or [])}
         # Build or use provided isolation schema
-        self.schema: IsolationSchema = schema or IsolationSchema.from_legacy(
-            self.forbidden_agents, self.blocked_keys
-        )
+        self.schema: IsolationSchema = schema or IsolationSchema.from_legacy(self.forbidden_agents, self.blocked_keys)
         # Current round ID for cross-round contamination detection
         self.current_round_id: str | None = current_round_id
         self._blocked_count: int = 0
@@ -373,6 +373,7 @@ class BlindReviewGate:
         """Deterministic hash of gate configuration for audit/reproducibility."""
         import hashlib
         import json
+
         config = {
             "forbidden_agents": sorted(self.forbidden_agents),
             "mode": self.mode,
@@ -455,9 +456,7 @@ class BlindReviewGate:
                         if self.mode == "scrub":
                             out[k] = BLOCKED_TOKEN_FMT.format(source="cross_round_contamination")
                         else:
-                            out[k] = HASH_TOKEN_FMT.format(
-                                digest=_hash_token(v, deterministic=self.deterministic)
-                            )
+                            out[k] = HASH_TOKEN_FMT.format(digest=_hash_token(v, deterministic=self.deterministic))
                         self._blocked_count += 1
                         continue
 
@@ -466,9 +465,7 @@ class BlindReviewGate:
                     if self.mode == "scrub":
                         out[k] = BLOCKED_TOKEN_FMT.format(source=source)
                     else:
-                        out[k] = HASH_TOKEN_FMT.format(
-                            digest=_hash_token(v, deterministic=self.deterministic)
-                        )
+                        out[k] = HASH_TOKEN_FMT.format(digest=_hash_token(v, deterministic=self.deterministic))
                     self._blocked_count += 1
                     continue
                 out[k] = self._deep_scrub(v, new_path)
@@ -508,19 +505,23 @@ class BlindReviewGate:
                     if isinstance(v, str) and v.startswith(("<BLOCKED:", "<HASH:")):
                         # Allow markers in _blind_meta (cross-round metadata)
                         if not current_path.endswith("_blind_meta") and not is_blocked:
-                            violations.append(IsolationViolation(
-                                path=new_path,
-                                violation_type="marker_leak",
-                                detail=f"Scrub marker leaked in public field: {v[:50]}",
-                            ))
+                            violations.append(
+                                IsolationViolation(
+                                    path=new_path,
+                                    violation_type="marker_leak",
+                                    detail=f"Scrub marker leaked in public field: {v[:50]}",
+                                )
+                            )
 
                     # Check for unscrubbed blocked keys (blocked key should have marker)
                     if is_blocked and not (isinstance(v, str) and v.startswith(("<BLOCKED:", "<HASH:"))):
-                        violations.append(IsolationViolation(
-                            path=new_path,
-                            violation_type="unscrubbed_key",
-                            detail=f"Blocked key not scrubbed: {k}",
-                        ))
+                        violations.append(
+                            IsolationViolation(
+                                path=new_path,
+                                violation_type="unscrubbed_key",
+                                detail=f"Blocked key not scrubbed: {k}",
+                            )
+                        )
 
                     check(v, new_path)
             elif isinstance(obj, (list, tuple)):
@@ -534,9 +535,7 @@ class BlindReviewGate:
         )
 
 
-def verify_no_cross_proposal_contamination(
-    proposals: dict[str, Any] | list[dict[str, Any]]
-) -> VerificationResult:
+def verify_no_cross_proposal_contamination(proposals: dict[str, Any] | list[dict[str, Any]]) -> VerificationResult:
     """Verify that candidate proposals have no mutual context leaks or cross-contamination (Step 10).
 
     Args:
@@ -598,11 +597,13 @@ def verify_no_cross_proposal_contamination(
             # Check 4.1: Explicit leak phrases (e.g., "A案では", "他案")
             leaks = detect_proposal_leaks(text_val)
             for leak in leaks:
-                violations.append(IsolationViolation(
-                    path=text_path,
-                    violation_type="cross_proposal_leak_pattern",
-                    detail=f"Detected leak phrase '{leak}' in {label}",
-                ))
+                violations.append(
+                    IsolationViolation(
+                        path=text_path,
+                        violation_type="cross_proposal_leak_pattern",
+                        detail=f"Detected leak phrase '{leak}' in {label}",
+                    )
+                )
 
             # Check 4.2: Entities from OTHER proposals
             for other_label, other_ents in proposal_entities.items():
@@ -613,11 +614,13 @@ def verify_no_cross_proposal_contamination(
                     if len(ent) < 2:
                         continue
                     if ent in text_val:
-                        violations.append(IsolationViolation(
-                            path=text_path,
-                            violation_type="cross_proposal_contamination",
-                            detail=f"Detected entity '{ent}' from {other_label} leaked into {label}",
-                        ))
+                        violations.append(
+                            IsolationViolation(
+                                path=text_path,
+                                violation_type="cross_proposal_contamination",
+                                detail=f"Detected entity '{ent}' from {other_label} leaked into {label}",
+                            )
+                        )
 
     return VerificationResult(
         passed=len(violations) == 0,

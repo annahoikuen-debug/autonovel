@@ -110,9 +110,7 @@ class OpenAIApiClient(BaseLLMClient):
         if response_schema and hasattr(response_schema, "model_fields"):
             fields = list(response_schema.model_fields.keys())
             if "※重要:" not in messages[-1]["content"]:
-                messages[-1]["content"] += (
-                    f"\n\n※重要: JSONには以下のキーを必ず含めてください: {', '.join(fields)}"
-                )
+                messages[-1]["content"] += f"\n\n※重要: JSONには以下のキーを必ず含めてください: {', '.join(fields)}"
                 messages[-1]["content"] += (
                     "\n\nCRITICAL: Output MUST be valid JSON ONLY. Start with '{' and end with '}'."
                 )
@@ -171,11 +169,9 @@ class OpenAIApiClient(BaseLLMClient):
         prompt_tokens = usage_metadata.prompt_tokens if usage_metadata else 0
         completion_tokens = usage_metadata.completion_tokens if usage_metadata else 0
         # SDK が total_tokens を返す場合はそれを優先する。無い場合のみ導出する。
-        total_tokens = (
-            getattr(usage_metadata, "total_tokens", 0)
-            if usage_metadata
-            else 0
-        ) or (prompt_tokens + completion_tokens)
+        total_tokens = (getattr(usage_metadata, "total_tokens", 0) if usage_metadata else 0) or (
+            prompt_tokens + completion_tokens
+        )
 
         class MockUsage:
             def __init__(self, p, c, t):
@@ -196,9 +192,7 @@ class OpenAIApiClient(BaseLLMClient):
         # with_llm_retry() が成功時に cooldown.on_success() を呼ぶためここでは
         # 呼ばない（二重計上は AdaptiveCooldown のランプを 2 倍速にして
         # レートリミッタを実質無効化していた）。
-        logger.info(
-            f"✅ OpenAI Success: model={current_model}, len={len(prompt)}, dur={duration:.2f}s"
-        )
+        logger.info(f"✅ OpenAI Success: model={current_model}, len={len(prompt)}, dur={duration:.2f}s")
         return metadata, story, usage
 
     @with_llm_retry()

@@ -1,4 +1,5 @@
 """Tests for src/services/graphrag_sync_service.py."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
@@ -65,9 +66,7 @@ class TestMergePendingDeltas:
         assert await svc.merge_pending_deltas(9) == 2
 
     async def test_batch_size_limit(self):
-        repo = make_repo(
-            get_setting_deltas=[{"id": i, "merged_to_graphrag": False} for i in range(5)]
-        )
+        repo = make_repo(get_setting_deltas=[{"id": i, "merged_to_graphrag": False} for i in range(5)])
         svc = GraphRAGSyncService(repo=repo)
         svc.merge_setting_delta = AsyncMock(return_value=True)
         assert await svc.merge_pending_deltas(9, batch_size=2) == 2
@@ -130,9 +129,7 @@ class TestKnowledgeGraphUpdate:
     async def test_query_built_for_dotted_path(self):
         kg = AsyncMock()
         svc = GraphRAGSyncService(kg_client=kg)
-        await svc._update_knowledge_graph(
-            {"field_path": "world_rules.magic.mana", "new_value": 5, "book_id": 3}
-        )
+        await svc._update_knowledge_graph({"field_path": "world_rules.magic.mana", "new_value": 5, "book_id": 3})
         query, params = kg.execute_query.await_args.args
         assert params == {
             "book_id": 3,

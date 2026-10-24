@@ -130,9 +130,7 @@ class StyleRagManager:
         from src.core.observability import TraceContext, get_structured_logger
 
         logger = get_structured_logger("StyleRAG")
-        logger.info(
-            f"🎯 Style RAG: Found {len(results)} samples.", trace_id=TraceContext.get_trace_id()
-        )
+        logger.info(f"🎯 Style RAG: Found {len(results)} samples.", trace_id=TraceContext.get_trace_id())
         return results
 
     def _get_fallback_sample(self, phase: str) -> str:
@@ -153,9 +151,7 @@ class StyleRagManager:
         if not samples:
             return ""
 
-        formatted_samples = "\n\n".join(
-            [f"【サンプル{i + 1}】\n{s}" for i, s in enumerate(samples)]
-        )
+        formatted_samples = "\n\n".join([f"【サンプル{i + 1}】\n{s}" for i, s in enumerate(samples)])
 
         return (
             "\n### 🏆 覇権作品・文体エミュレーション（最高位の質感） ###\n"

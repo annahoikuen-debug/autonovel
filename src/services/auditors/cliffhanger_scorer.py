@@ -2,6 +2,7 @@
 Cliffhanger Scorer for opening and ongoing episodes.
 PLAN 02: 序盤3話特化型 ドーパミン注入・クリフハンガー強制エンジン
 """
+
 from __future__ import annotations
 
 import re
@@ -56,30 +57,36 @@ def score_cliffhanger(text: str) -> CliffhangerEvaluation:
 
     if triumph_matches:
         score = min(100.0, 85.0 + len(triumph_matches) * 5.0)
-        candidates.append((
-            CliffhangerType.TRIUMPH_TRIGGER,
-            triumph_matches,
-            score,
-            f"主人公の反撃予告や冷笑・覚醒で終わる爽快な引きです（検知: {', '.join(triumph_matches)}）。",
-        ))
+        candidates.append(
+            (
+                CliffhangerType.TRIUMPH_TRIGGER,
+                triumph_matches,
+                score,
+                f"主人公の反撃予告や冷笑・覚醒で終わる爽快な引きです（検知: {', '.join(triumph_matches)}）。",
+            )
+        )
 
     if shocking_matches:
         score = min(100.0, 80.0 + len(shocking_matches) * 5.0)
-        candidates.append((
-            CliffhangerType.SHOCKING_TRUTH,
-            shocking_matches,
-            score,
-            f"衝撃の事実判明や裏切りの露見で終わる強い引きです（検知: {', '.join(shocking_matches)}）。",
-        ))
+        candidates.append(
+            (
+                CliffhangerType.SHOCKING_TRUTH,
+                shocking_matches,
+                score,
+                f"衝撃の事実判明や裏切りの露見で終わる強い引きです（検知: {', '.join(shocking_matches)}）。",
+            )
+        )
 
     if crisis_matches:
         score = min(100.0, 80.0 + len(crisis_matches) * 5.0)
-        candidates.append((
-            CliffhangerType.CRISIS,
-            crisis_matches,
-            score,
-            f"急襲や絶体絶命の危機で終わる強い引きです（検知: {', '.join(crisis_matches)}）。",
-        ))
+        candidates.append(
+            (
+                CliffhangerType.CRISIS,
+                crisis_matches,
+                score,
+                f"急襲や絶体絶命の危機で終わる強い引きです（検知: {', '.join(crisis_matches)}）。",
+            )
+        )
 
     if candidates:
         # マッチ件数の多さ、次いでスコアの高さで最上位を選択

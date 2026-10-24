@@ -27,7 +27,7 @@ async def test_get_budget_consumption_ratio_success():
     mock_db.execute.return_value = mock_book_result
 
     # Mock CostRepository
-    with patch('src.backend.routers.cost.CostRepository') as mock_repo_class:
+    with patch("src.backend.routers.cost.CostRepository") as mock_repo_class:
         mock_repo_instance = AsyncMock()
         mock_repo_class.return_value = mock_repo_instance
 
@@ -37,18 +37,14 @@ async def test_get_budget_consumption_ratio_success():
             "total_tokens": 1500,
             "record_count": 15,
             "by_task": {},
-            "timeseries": []
+            "timeseries": [],
         }
 
         # Mock get_budget result (budget = 10.0 USD)
         mock_repo_instance.get_budget.return_value = 10.0
 
         # Call the function
-        result = await get_budget_consumption_ratio(
-            book_id=1,
-            current_user=mock_current_user,
-            db=mock_db
-        )
+        result = await get_budget_consumption_ratio(book_id=1, current_user=mock_current_user, db=mock_db)
 
         # Assertions
         assert result["book_id"] == 1
@@ -75,11 +71,7 @@ async def test_get_budget_consumption_ratio_book_not_found():
 
     # Call the function and expect exception
     with pytest.raises(HTTPException) as exc_info:
-        await get_budget_consumption_ratio(
-            book_id=999,
-            current_user=mock_current_user,
-            db=mock_db
-        )
+        await get_budget_consumption_ratio(book_id=999, current_user=mock_current_user, db=mock_db)
 
     assert exc_info.value.status_code == 404
     assert "Book not found" in str(exc_info.value.detail)
@@ -106,11 +98,7 @@ async def test_get_budget_consumption_ratio_access_denied():
 
     # Call the function and expect exception
     with pytest.raises(HTTPException) as exc_info:
-        await get_budget_consumption_ratio(
-            book_id=1,
-            current_user=mock_current_user,
-            db=mock_db
-        )
+        await get_budget_consumption_ratio(book_id=1, current_user=mock_current_user, db=mock_db)
 
     assert exc_info.value.status_code == 403
     assert "Access denied" in str(exc_info.value.detail)
@@ -136,7 +124,7 @@ async def test_get_budget_consumption_ratio_no_budget():
     mock_db.execute.return_value = mock_book_result
 
     # Mock CostRepository
-    with patch('src.backend.routers.cost.CostRepository') as mock_repo_class:
+    with patch("src.backend.routers.cost.CostRepository") as mock_repo_class:
         mock_repo_instance = AsyncMock()
         mock_repo_class.return_value = mock_repo_instance
 
@@ -146,18 +134,14 @@ async def test_get_budget_consumption_ratio_no_budget():
             "total_tokens": 1000,
             "record_count": 10,
             "by_task": {},
-            "timeseries": []
+            "timeseries": [],
         }
 
         # Mock get_budget result (budget = 0.0 USD - no budget set)
         mock_repo_instance.get_budget.return_value = 0.0
 
         # Call the function
-        result = await get_budget_consumption_ratio(
-            book_id=1,
-            current_user=mock_current_user,
-            db=mock_db
-        )
+        result = await get_budget_consumption_ratio(book_id=1, current_user=mock_current_user, db=mock_db)
 
         # Assertions
         assert result["book_id"] == 1

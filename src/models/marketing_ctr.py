@@ -2,6 +2,7 @@
 マーケティング・タイトルCTR最大化モデル
 PLAN 01: タイトル＆あらすじCTR爆発エンジン
 """
+
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
@@ -30,6 +31,8 @@ class ViralTitleRequest(BaseModel):
 class ViralTitleResponse(BaseModel):
     """バズタイトル生成レスポンス"""
 
-    top_recommendations: list[TitleCandidate] = Field(..., min_length=1, max_length=5, description="CTR最上位候補 (1-5案)")
+    top_recommendations: list[TitleCandidate] = Field(
+        ..., min_length=1, max_length=5, description="CTR最上位候補 (1-5案)"
+    )
     all_candidates: list[TitleCandidate] = Field(..., description="全生成候補")
     selected_synopsis: str = Field("", description="最上位タイトルに連動して生成されたあらすじ")

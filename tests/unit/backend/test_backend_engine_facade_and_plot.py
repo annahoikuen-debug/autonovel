@@ -1,4 +1,5 @@
 """Coverage tests for src/backend/engine_facade.py and src/backend/engine_plot.py."""
+
 from __future__ import annotations
 
 import json
@@ -14,6 +15,7 @@ from src.backend.engine_utils import AdaptiveCooldown
 # --------------------------------------------------------------------------
 # engine_facade
 # --------------------------------------------------------------------------
+
 
 @pytest.fixture
 def facade():
@@ -31,9 +33,23 @@ def test_facade_config_accessors(facade):
 @pytest.mark.parametrize(
     "attr",
     [
-        "repo", "llm", "pm", "ctx_mgr", "formatter", "validator", "auditor",
-        "narrative", "critique", "marketing", "bible_agent", "plot_agent",
-        "style_rag", "db", "planner", "writer", "plot_service",
+        "repo",
+        "llm",
+        "pm",
+        "ctx_mgr",
+        "formatter",
+        "validator",
+        "auditor",
+        "narrative",
+        "critique",
+        "marketing",
+        "bible_agent",
+        "plot_agent",
+        "style_rag",
+        "db",
+        "planner",
+        "writer",
+        "plot_service",
     ],
 )
 def test_facade_property_delegation(facade, attr):
@@ -79,6 +95,7 @@ async def test_facade_method_delegation(facade):
 # --------------------------------------------------------------------------
 # engine_plot
 # --------------------------------------------------------------------------
+
 
 def _plot(**kwargs):
     from src.models.db import PlotDbModel
@@ -234,9 +251,7 @@ async def test_enforce_entertainment_gate(monkeypatch):
     async def fake_loop(**kwargs):
         return _Result()
 
-    monkeypatch.setattr(
-        "src.backend.entertainment_loop.run_entertainment_first_loop", fake_loop
-    )
+    monkeypatch.setattr("src.backend.entertainment_loop.run_entertainment_first_loop", fake_loop)
     result = await engine_plot.enforce_entertainment_gate(MagicMock(), "plot", "chars")
     assert result.interest_score == 90
 
@@ -246,8 +261,6 @@ async def test_enforce_entertainment_gate(monkeypatch):
     async def fake_low(**kwargs):
         return _Low()
 
-    monkeypatch.setattr(
-        "src.backend.entertainment_loop.run_entertainment_first_loop", fake_low
-    )
+    monkeypatch.setattr("src.backend.entertainment_loop.run_entertainment_first_loop", fake_low)
     with pytest.raises(RuntimeError, match="面白さ検証不合格"):
         await engine_plot.enforce_entertainment_gate(MagicMock(), "plot", "chars")

@@ -1,4 +1,5 @@
 """Testcontainers フィクスチャ for integration tests."""
+
 from __future__ import annotations
 
 import os
@@ -8,6 +9,8 @@ import redis
 from pathlib import Path
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+
+
 def _docker_available() -> bool:
     """Docker デーモンに接続できるか判定する (testcontainers 実行の前提条件)."""
     try:
@@ -23,6 +26,7 @@ try:
     from testcontainers.core.container import DockerContainer
     from testcontainers.postgres import PostgresContainer
     from testcontainers.redis import RedisContainer
+
     HAS_TESTCONTAINERS = _docker_available()
 except ImportError:
     DockerContainer = None
@@ -80,7 +84,6 @@ def postgres_container():
     postgres.stop()
 
 
-
 @pytest.fixture(scope="session")
 def postgres_engine(postgres_container):
     """Create SQLAlchemy engine for PostgreSQL and run migrations."""
@@ -98,7 +101,7 @@ def postgres_engine(postgres_container):
 
     # Run migrations
     root_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-    alembic_cfg = Config(os.path.join(root_dir, 'alembic.ini'))
+    alembic_cfg = Config(os.path.join(root_dir, "alembic.ini"))
     alembic_cfg.set_main_option("sqlalchemy.url", postgres_url)
     command.upgrade(alembic_cfg, "head")
 

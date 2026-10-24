@@ -46,9 +46,7 @@ def test_long_serial_100ep_passes_validation():
     from src.services.structure_validator import validate
 
     spine = resolve_spine("exile_rise", "long_serial", "web", 100)
-    chapters = [
-        {"chapter_number": b.ep_start, "tension": int(b.tension * 10)} for b in spine.beats
-    ]
+    chapters = [{"chapter_number": b.ep_start, "tension": int(b.tension * 10)} for b in spine.beats]
     result = validate(chapters, pattern_key="exile_rise")
     assert result["pattern_key"] == "exile_rise"
     assert result["total_chapters"] == len(spine.beats)
@@ -89,9 +87,7 @@ def test_off_quality_produces_byte_identical_prompt():
     for ep in range(1, 41):
         section = build_spine_section(spine, "off", ep_num=ep)
         assert section == "", f"off なのに注入された: {section!r}"
-    with_section = NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE.format(
-        **kwargs, spine_section=""
-    )
+    with_section = NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE.format(**kwargs, spine_section="")
     assert with_section == legacy
     current = NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE.format(**kwargs)
     assert current == legacy

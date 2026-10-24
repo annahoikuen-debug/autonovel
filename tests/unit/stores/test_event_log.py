@@ -1,4 +1,5 @@
 """Step 12: EventLog ストアテスト (JSONL append-only)。"""
+
 from __future__ import annotations
 
 
@@ -9,8 +10,14 @@ from src.stores.event_log import EventLogStore, DEFAULT_LOG_PATH
 
 def _signal(source="A", target="B", emotion=EmotionType.AFFECTION, value=0.5, episode="ep14"):
     return EmotionalSignal(
-        source=source, target=target, emotion_type=emotion, value=value,
-        confidence=1.0, evidence_span="test", episode_id=episode, cause="betrayal",
+        source=source,
+        target=target,
+        emotion_type=emotion,
+        value=value,
+        confidence=1.0,
+        evidence_span="test",
+        episode_id=episode,
+        cause="betrayal",
     )
 
 
@@ -35,7 +42,7 @@ class TestEventLogStore:
         assert result[0].episode_id == "ep15"
 
         # 全件
-        assert store.query() .__len__() == 3
+        assert store.query().__len__() == 3
         assert store.count() == 3
 
     def test_jsonl_format(self, tmp_path):
@@ -48,6 +55,7 @@ class TestEventLogStore:
         content = log_path.read_text(encoding="utf-8").strip().split("\n")
         assert len(content) == 2
         import json
+
         for line in content:
             data = json.loads(line)
             assert "source" in data

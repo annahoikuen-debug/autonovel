@@ -115,6 +115,7 @@ class TestResilientLLMGateway:
     async def test_rate_limit_fallback(self):
         class RateLimitError(Exception):
             pass
+
         failing = AsyncMock()
         failing.generate_text.side_effect = RateLimitError("429")
         ok = AsyncMock()
@@ -132,6 +133,7 @@ class TestResilientLLMGateway:
         class DummySchema:
             def model_json_schema(self):
                 return {"type": "object", "properties": {"x": {"type": "int"}}}
+
         out = normalize_schema_prompt("hello", DummySchema())
         assert "JSON" in out or "json" in out
         assert "x" in out

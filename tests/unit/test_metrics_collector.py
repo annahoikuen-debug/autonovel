@@ -1,4 +1,5 @@
 """Tests for Metrics Collector (Step 4)."""
+
 import pytest
 from src.backend.tasks.metrics_collector import (
     NoOpMetricsCollector,
@@ -43,7 +44,7 @@ def test_task_metrics_dataclass():
         status="completed",
         retry_count=1,
         worker_id="w1",
-        resource_usage={"cpu": 1.0, "ram": 512, "gpu": 0}
+        resource_usage={"cpu": 1.0, "ram": 512, "gpu": 0},
     )
     assert m.task_id == "t1"
     assert m.duration_seconds == 2.5

@@ -122,19 +122,21 @@ class TestPlotIntegrityMonitor:
     def monitor(self):
         """モックLLM付きモニター"""
         mock_llm = AsyncMock()
-        mock_llm.generate_json = AsyncMock(return_value={
-            "metadata": {
-                "causality_links": [
-                    {
-                        "cause_entity": "アルス",
-                        "cause_event": "聖剣を抜いた",
-                        "effect_entity": "封印",
-                        "effect_event": "解かれた",
-                        "confidence": 0.95,
-                    }
-                ]
+        mock_llm.generate_json = AsyncMock(
+            return_value={
+                "metadata": {
+                    "causality_links": [
+                        {
+                            "cause_entity": "アルス",
+                            "cause_event": "聖剣を抜いた",
+                            "effect_entity": "封印",
+                            "effect_event": "解かれた",
+                            "confidence": 0.95,
+                        }
+                    ]
+                }
             }
-        })
+        )
         return PlotIntegrityMonitor(llm=mock_llm)
 
     @pytest.fixture
@@ -218,11 +220,7 @@ class TestPlotIntegrityMonitor:
             mock_extraction.extract_graph_from_text.side_effect = [bp_result, ct_result]
 
             # LLMモックの設定（因果抽出用）
-            monitor.llm.generate_json = AsyncMock(return_value={
-                "metadata": {
-                    "causality_links": []
-                }
-            })
+            monitor.llm.generate_json = AsyncMock(return_value={"metadata": {"causality_links": []}})
 
             is_ok, score, result = await monitor.check_integrity(
                 [], sample_blueprint, sample_content, threshold=0.7, book_id=1, ep_num=1
@@ -238,14 +236,18 @@ class TestPlotIntegrityMonitor:
         """因果鎖切れ検出テスト"""
         links = [
             CausalityLink(
-                cause_entity="アルス", cause_event="聖剣を抜く",
-                effect_entity="封印", effect_event="解かれる",
-                source="blueprint"
+                cause_entity="アルス",
+                cause_event="聖剣を抜く",
+                effect_entity="封印",
+                effect_event="解かれる",
+                source="blueprint",
             ),
             CausalityLink(
-                cause_entity="封印", cause_event="解かれる",
-                effect_entity="魔王", effect_event="復活",
-                source="blueprint"
+                cause_entity="封印",
+                cause_event="解かれる",
+                effect_entity="魔王",
+                effect_event="復活",
+                source="blueprint",
             ),
             # ここが切れている: 魔王が復活した後の因果がない
         ]
@@ -259,19 +261,25 @@ class TestPlotIntegrityMonitor:
         """繋がっている因果鎖は broken にならない"""
         links = [
             CausalityLink(
-                cause_entity="アルス", cause_event="聖剣を抜く",
-                effect_entity="封印", effect_event="解かれる",
-                source="blueprint"
+                cause_entity="アルス",
+                cause_event="聖剣を抜く",
+                effect_entity="封印",
+                effect_event="解かれる",
+                source="blueprint",
             ),
             CausalityLink(
-                cause_entity="封印", cause_event="解かれる",
-                effect_entity="魔王", effect_event="復活",
-                source="blueprint"
+                cause_entity="封印",
+                cause_event="解かれる",
+                effect_entity="魔王",
+                effect_event="復活",
+                source="blueprint",
             ),
             CausalityLink(
-                cause_entity="魔王", cause_event="復活",
-                effect_entity="世界", effect_event="滅亡の危機",
-                source="blueprint"
+                cause_entity="魔王",
+                cause_event="復活",
+                effect_entity="世界",
+                effect_event="滅亡の危機",
+                source="blueprint",
             ),
         ]
         monitor._verify_causality_chains(links)
@@ -320,8 +328,12 @@ class TestPlotIntegrityMonitor:
     @pytest.mark.asyncio
     async def test_generate_patches_multiple_types(self, monitor):
         """複数タイプ混在時"""
-        broken = [CausalityLink(cause_entity="A", cause_event="a", effect_entity="B", effect_event="b", source="blueprint")]
-        foreshadowing = [ForeshadowingItem(entity_name="X", setup_chapter=1, setup_context="ctx", expected_payoff="payoff")]
+        broken = [
+            CausalityLink(cause_entity="A", cause_event="a", effect_entity="B", effect_event="b", source="blueprint")
+        ]
+        foreshadowing = [
+            ForeshadowingItem(entity_name="X", setup_chapter=1, setup_context="ctx", expected_payoff="payoff")
+        ]
         contradictions = ["矛盾1"]
 
         patches = await monitor._generate_patches(broken, foreshadowing, contradictions)
@@ -347,8 +359,16 @@ class TestPlotIntegrityMonitor:
 
     def test_calculate_score_foreshadowing(self, monitor):
         """伏線未回収で減点"""
-        fs_critical = [ForeshadowingItem(entity_name="X", setup_chapter=1, setup_context="c", expected_payoff="p", importance="Critical")]
-        fs_major = [ForeshadowingItem(entity_name="Y", setup_chapter=1, setup_context="c", expected_payoff="p", importance="Major")]
+        fs_critical = [
+            ForeshadowingItem(
+                entity_name="X", setup_chapter=1, setup_context="c", expected_payoff="p", importance="Critical"
+            )
+        ]
+        fs_major = [
+            ForeshadowingItem(
+                entity_name="Y", setup_chapter=1, setup_context="c", expected_payoff="p", importance="Major"
+            )
+        ]
         score = monitor._calculate_score([], fs_critical + fs_major, [], [])
         # Critical: 0.15, Major: 0.08 減点
         assert score == pytest.approx(0.77, rel=0.01)
@@ -373,7 +393,11 @@ class TestPlotIntegrityMonitor:
     def test_is_initial_entity(self, monitor):
         """始端エンティティ判定"""
         link = CausalityLink(
-            cause_entity="主人公", cause_event="旅立ち", effect_entity="世界", effect_event="冒険開始", source="blueprint"
+            cause_entity="主人公",
+            cause_event="旅立ち",
+            effect_entity="世界",
+            effect_event="冒険開始",
+            source="blueprint",
         )
         assert monitor._is_initial_entity("主人公", [link]) is True
 

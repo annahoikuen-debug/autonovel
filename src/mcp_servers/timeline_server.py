@@ -1,4 +1,5 @@
 """Timeline MCP Server Implementation (JSON-RPC)."""
+
 from __future__ import annotations
 
 from typing import Any, Dict
@@ -35,10 +36,12 @@ class TimelineMCPServer:
                     {"uri": "novel://memory/timeline", "name": "Global Timeline"},
                 ]
                 for ep_num in self.provider.digests.keys():
-                    resources.append({
-                        "uri": f"novel://memory/episode/{ep_num}/digest",
-                        "name": f"Episode {ep_num} Digest",
-                    })
+                    resources.append(
+                        {
+                            "uri": f"novel://memory/episode/{ep_num}/digest",
+                            "name": f"Episode {ep_num} Digest",
+                        }
+                    )
                 return {"jsonrpc": "2.0", "result": {"resources": resources}, "id": req_id}
 
             elif method == "resources/read":
@@ -46,9 +49,7 @@ class TimelineMCPServer:
                 content = self.provider.read_resource(uri)
                 return {
                     "jsonrpc": "2.0",
-                    "result": {
-                        "contents": [{"uri": uri, "mimeType": "text/plain", "text": content}]
-                    },
+                    "result": {"contents": [{"uri": uri, "mimeType": "text/plain", "text": content}]},
                     "id": req_id,
                 }
             else:

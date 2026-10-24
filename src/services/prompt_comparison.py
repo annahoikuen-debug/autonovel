@@ -50,9 +50,7 @@ def weighted_total(scores: dict[str, float], weights: dict[str, float] | None = 
     return round(total, 4)
 
 
-def decide_winner(
-    results: list[dict[str, Any]], weights: dict[str, float] | None = None
-) -> dict[str, Any]:
+def decide_winner(results: list[dict[str, Any]], weights: dict[str, float] | None = None) -> dict[str, Any]:
     """各バージョンの評価結果から勝者を決定する。"""
     if not results:
         return {"winner_id": None, "reason": "no results"}

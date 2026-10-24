@@ -37,12 +37,16 @@ def run_mypy() -> "tuple[Counter, int]":
     """mypy を実行し (ファイル別エラー数, 総数) を返す。"""
     p = subprocess.run(
         [
-            sys.executable, "-m", "mypy", "src",
+            sys.executable,
+            "-m",
+            "mypy",
+            "src",
             "--ignore-missing-imports",
             "--no-error-summary",
             "--show-error-codes",
         ],
-        capture_output=True, text=True,
+        capture_output=True,
+        text=True,
     )
     counts: Counter = Counter()
     total = 0
@@ -54,7 +58,7 @@ def run_mypy() -> "tuple[Counter, int]":
         # 相対化 (CI では Linux、ローカルでは Windows でも同じキーにする)
         for prefix in ("./",):
             if path.startswith(prefix):
-                path = path[len(prefix):]
+                path = path[len(prefix) :]
         counts[path] += 1
         total += 1
     return counts, total

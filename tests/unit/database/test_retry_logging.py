@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import AsyncMock, patch
 from src.backend.database.core import retry_with_logging
 
+
 @pytest.mark.asyncio
 async def test_retry_success_first_attempt():
     mock_func = AsyncMock(return_value="OK")
@@ -11,6 +12,7 @@ async def test_retry_success_first_attempt():
     res = await decorated()
     assert res == "OK"
     assert mock_func.call_count == 1
+
 
 @pytest.mark.asyncio
 async def test_retry_success_after_failure():
@@ -22,6 +24,7 @@ async def test_retry_success_after_failure():
         res = await decorated()
         assert res == "RECOVERED"
         assert mock_func.call_count == 2
+
 
 @pytest.mark.asyncio
 async def test_retry_exhausted_raises_exception():

@@ -1,4 +1,5 @@
 """Character dictionary loader."""
+
 from __future__ import annotations
 
 import functools
@@ -46,6 +47,7 @@ def _load_character_dict_frozen(path: Optional[str] = None) -> frozenset:
             data = yaml.safe_load(f)
         elif path.endswith(".json"):
             import json
+
             data = json.load(f)
         else:
             raise ValueError(f"Unsupported format: {path}")

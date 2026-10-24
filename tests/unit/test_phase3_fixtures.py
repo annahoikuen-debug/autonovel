@@ -1,5 +1,6 @@
 # tests/unit/test_phase3_fixtures.py
 """Phase 3 フィクスチャ動作確認テスト"""
+
 from __future__ import annotations
 
 
@@ -18,19 +19,19 @@ def test_phase3_config_fixture(phase3_config):
 def test_mock_llm_fixture(mock_llm):
     """mock_llm フィクスチャが正しく注入される"""
     assert mock_llm is not None
-    assert hasattr(mock_llm, 'generate')
+    assert hasattr(mock_llm, "generate")
 
 
 def test_mock_graph_client_fixture(mock_graph_client):
     """mock_graph_client フィクスチャが正しく注入される"""
     assert mock_graph_client is not None
-    assert hasattr(mock_graph_client, 'query')
+    assert hasattr(mock_graph_client, "query")
 
 
 def test_mock_redis_fixture(mock_redis):
     """mock_redis フィクスチャが正しく注入される"""
     assert mock_redis is not None
-    assert hasattr(mock_redis, 'get')
+    assert hasattr(mock_redis, "get")
 
 
 def test_sample_entities_fixture(sample_entities):
@@ -59,6 +60,7 @@ def test_sample_context_fixture(sample_context):
 def test_agent_context_fixture(agent_context):
     """agent_context フィクスチャが正しく注入される"""
     from src.agents.orchestrator import AgentContext
+
     assert isinstance(agent_context, AgentContext)
     assert agent_context.book_id == 1
     assert agent_context.branch_id == 1

@@ -56,6 +56,7 @@ async def test_admin_jwt_is_allowed(monkeypatch):
     monkeypatch.setattr(settings, "AUTH_DISABLED", False)
 
     from src.backend.security.jwt import create_access_token
+
     token = create_access_token(data={"sub": "1", "role": "admin"})
 
     async def mock_get_current_user(token, db):
@@ -73,6 +74,7 @@ async def test_regular_user_jwt_is_forbidden(monkeypatch):
     monkeypatch.setattr(settings, "AUTH_DISABLED", False)
 
     from src.backend.security.jwt import create_access_token
+
     token = create_access_token(data={"sub": "2", "role": "user"})
 
     async def mock_get_current_user(token, db):

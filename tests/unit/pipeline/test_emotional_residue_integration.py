@@ -1,4 +1,5 @@
 """Integration tests for emotional residue extraction pipeline."""
+
 from __future__ import annotations
 
 import pytest
@@ -87,6 +88,7 @@ class TestEmotionalResidueIntegration:
         """ベクトルシリアライズ・復元"""
         vector = EmotionalVector(episode_id="ep01")
         from src.pipeline.emotional_residue import EmotionalSignal
+
         vector.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.5, 0.8, "...", "ep01"))
 
         data = vector.to_dict()

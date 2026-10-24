@@ -133,7 +133,7 @@ class TestComputeCoverage:
     def test_partial_coverage(self):
         entities = {"アリス", "ボブ", "東京"}
         draft = "アリスは東京に行った。"
-        assert compute_coverage(draft, entities) == 2/3
+        assert compute_coverage(draft, entities) == 2 / 3
 
     def test_no_coverage(self):
         entities = {"アリス", "ボブ"}

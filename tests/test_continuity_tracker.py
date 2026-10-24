@@ -40,9 +40,7 @@ class TestContinuityTracker:
 
     def test_get_previous(self, temp_db):
         tracker = ContinuityTracker(db_path=temp_db)
-        snap = CharacterStateSnapshot(
-            character_name="花子", episode_num=1, stamina_level="exhausted"
-        )
+        snap = CharacterStateSnapshot(character_name="花子", episode_num=1, stamina_level="exhausted")
         tracker.save_snapshot(snap)
         prev = tracker.get_previous_snapshot(2, "花子")
         assert prev is not None
@@ -56,9 +54,7 @@ class TestContinuityTracker:
 class TestStaminaChecks:
     def test_stamina_contradiction(self, temp_db):
         tracker = ContinuityTracker(db_path=temp_db)
-        snap = CharacterStateSnapshot(
-            character_name="花子", episode_num=1, stamina_level="exhausted"
-        )
+        snap = CharacterStateSnapshot(character_name="花子", episode_num=1, stamina_level="exhausted")
         tracker.save_snapshot(snap)
 
         text = "花子は元気に活力を持って走り出した。力が漲っていた。"
@@ -68,9 +64,7 @@ class TestStaminaChecks:
 
     def test_stamina_natural_transition(self, temp_db):
         tracker = ContinuityTracker(db_path=temp_db)
-        snap = CharacterStateSnapshot(
-            character_name="花子", episode_num=1, stamina_level="exhausted"
-        )
+        snap = CharacterStateSnapshot(character_name="花子", episode_num=1, stamina_level="exhausted")
         tracker.save_snapshot(snap)
 
         text = "花子はまだ疲弊したまま、ぐったりと横たわっていた。"
@@ -81,9 +75,7 @@ class TestStaminaChecks:
 class TestPsychChecks:
     def test_psych_contradiction(self, temp_db):
         tracker = ContinuityTracker(db_path=temp_db)
-        snap = CharacterStateSnapshot(
-            character_name="太郎", episode_num=1, psych_state="distressed"
-        )
+        snap = CharacterStateSnapshot(character_name="太郎", episode_num=1, psych_state="distressed")
         tracker.save_snapshot(snap)
 
         text = "太郎は恍惚とした表情で歓喜に包まれていた。至福の時だった。"
@@ -95,9 +87,7 @@ class TestPsychChecks:
 class TestClothingContinuity:
     def test_clothing_contradiction(self, temp_db):
         tracker = ContinuityTracker(db_path=temp_db)
-        snap = CharacterStateSnapshot(
-            character_name="花子", episode_num=1, clothing_state="fully_undressed"
-        )
+        snap = CharacterStateSnapshot(character_name="花子", episode_num=1, clothing_state="fully_undressed")
         tracker.save_snapshot(snap)
 
         text = "花子は部屋の中を歩き回っていた。窓の外を眺めていた。"
@@ -107,9 +97,7 @@ class TestClothingContinuity:
 
     def test_clothing_with_time_passage(self, temp_db):
         tracker = ContinuityTracker(db_path=temp_db)
-        snap = CharacterStateSnapshot(
-            character_name="花子", episode_num=1, clothing_state="fully_undressed"
-        )
+        snap = CharacterStateSnapshot(character_name="花子", episode_num=1, clothing_state="fully_undressed")
         tracker.save_snapshot(snap)
 
         text = "翌朝、花子は部屋の中を歩き回っていた。"

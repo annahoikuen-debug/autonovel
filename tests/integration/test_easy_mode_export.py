@@ -51,9 +51,7 @@ async def test_create_export_package_structure() -> None:
         ],
     }
 
-    zip_bytes, zip_filename = await agent.create_export_package(
-        book_id=101, book_data=dummy_book_data
-    )
+    zip_bytes, zip_filename = await agent.create_export_package(book_id=101, book_data=dummy_book_data)
 
     assert zip_filename == "export_101.zip"
     assert len(zip_bytes) > 0

@@ -19,6 +19,7 @@ try:
 
     # クラスの継承関係を確認
     from src.services.pipeline_base import WorkflowStep
+
     if isinstance(step, WorkflowStep):
         print("✅ WorkflowStep を継承していることを確認")
     else:
@@ -26,7 +27,7 @@ try:
         sys.exit(1)
 
     # メソッドの存在を確認
-    if hasattr(step, 'execute') and callable(getattr(step, 'execute')):
+    if hasattr(step, "execute") and callable(getattr(step, "execute")):
         print("✅ execute メソッドが存在することを確認")
     else:
         print("❌ execute メソッドが存在しない")
@@ -37,5 +38,6 @@ try:
 except Exception as e:
     print(f"❌ エラーが発生しました: {e}")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)

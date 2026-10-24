@@ -1,4 +1,5 @@
 """官能エージェント高度化（語彙刷新・LLM評価・GraphRAG連携・挿絵プロンプト）のテスト."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock

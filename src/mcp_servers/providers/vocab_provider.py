@@ -1,4 +1,5 @@
 """Sensory Vocabulary Provider for Rhetoric and Sensory Expressions (Proposal 4)."""
+
 from __future__ import annotations
 
 import logging
@@ -208,7 +209,7 @@ class SensoryVocabProvider:
 
         lines = [f"=== Sensory & Rhetoric Vocabulary for [{genre.upper()}] ==="]
         for w in words:
-            lines.append(f"- [{w.category.upper()}] {w.word} (Intensity: {w.intensity}): \"{w.example_sentence}\"")
+            lines.append(f'- [{w.category.upper()}] {w.word} (Intensity: {w.intensity}): "{w.example_sentence}"')
 
         return "\n".join(lines)
 
@@ -227,4 +228,3 @@ class SensoryVocabProvider:
                     continue
                 suggestions.append(f"{w.word} ({w.category}, 強度:{w.intensity}): {w.example_sentence}")
         return suggestions
-

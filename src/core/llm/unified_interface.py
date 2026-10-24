@@ -7,6 +7,7 @@ from src.core.llm.types import LLMRequest, LLMResponse, StreamChunk
 
 T = TypeVar("T")
 
+
 def with_metrics(func: Callable):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -16,7 +17,9 @@ def with_metrics(func: Callable):
         if isinstance(result, LLMResponse):
             result.latency_ms = (end - start) * 1000
         return result
+
     return wrapper
+
 
 class IUnifiedLLMClient(ABC):
     @abstractmethod

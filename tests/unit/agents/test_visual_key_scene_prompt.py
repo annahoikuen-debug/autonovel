@@ -1,8 +1,9 @@
 import jinja2
 
+
 def test_visual_key_scene_inclusion():
-    env = jinja2.Environment(loader=jinja2.FileSystemLoader('prompts/templates/narrative'))
-    template = env.get_template('final_writing_prompt.j2')
+    env = jinja2.Environment(loader=jinja2.FileSystemLoader("prompts/templates/narrative"))
+    template = env.get_template("final_writing_prompt.j2")
     # Render with minimal context
     rendered = template.render(
         quota_inst="",
@@ -21,6 +22,6 @@ def test_visual_key_scene_inclusion():
         target_word_count=0,
         tone_inst="",
         CONTENT_SEPARATOR="---",
-        dialogue_profiles={}
+        dialogue_profiles={},
     )
     assert "ビジュアルシーン（大ゴマ・見開き級）必須配置" in rendered

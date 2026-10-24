@@ -1,4 +1,5 @@
 """Quality gate for 24-panel manga sheet validation."""
+
 from __future__ import annotations
 
 import logging

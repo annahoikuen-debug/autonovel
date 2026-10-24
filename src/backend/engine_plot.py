@@ -81,9 +81,7 @@ async def get_emotional_hook_for_plot(
         try:
             if branch_id is not None:
                 # branch_id は作品間で共有される（既定 1）ため book_id も渡す
-                loaded = await repo.get_plot(
-                    branch_id, ep_num, branch_id=branch_id, book_id=book_id
-                )
+                loaded = await repo.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
             else:
                 loaded = await repo.get_plot(book_id, ep_num)
             if loaded is not None:

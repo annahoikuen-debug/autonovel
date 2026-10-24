@@ -46,15 +46,11 @@ class _FakePromptManager:
         return f"[fast_plot_screen]\n{blueprint}"
 
     @staticmethod
-    def build_critic_feedback_prompt(
-        issue_list: Any = None, draft_content: str = "", blueprint: str = ""
-    ) -> str:
+    def build_critic_feedback_prompt(issue_list: Any = None, draft_content: str = "", blueprint: str = "") -> str:
         return f"[critic]\n{draft_content}\n{blueprint}"
 
     @staticmethod
-    def build_ability_audit_prompt(
-        blueprint: str, settings_json: str, characters_json: str
-    ) -> str:
+    def build_ability_audit_prompt(blueprint: str, settings_json: str, characters_json: str) -> str:
         return f"[ability_audit]\n{blueprint}\n{settings_json}\n{characters_json}"
 
 
@@ -150,7 +146,9 @@ def _ctx(agent: AuditAgent) -> AgentContext:
 
 def _outcomes(agent: AuditAgent, verdicts: dict[str, bool]) -> list[dict[str, Any]]:
     agent = _build_agent(verdicts)
-    return asyncio.run(agent.run_audit_phase(_ctx(agent).artifacts["writing_context"], "学院の夜、ルナは欠けた剣を見つめた。", 1, 3))[0]
+    return asyncio.run(
+        agent.run_audit_phase(_ctx(agent).artifacts["writing_context"], "学院の夜、ルナは欠けた剣を見つめた。", 1, 3)
+    )[0]
 
 
 # ---------------------------------------------------------------------------
@@ -202,9 +200,7 @@ def test_critical_failure_triggers_regeneration() -> None:
     result = asyncio.run(agent.execute(_ctx(agent)))
     gate = result.artifacts.get("gate_evaluation", {})
 
-    assert gate["aggregate_score"] < gate["threshold"], (
-        f"重篤4件の集約スコアが閾値を下回っていない: {gate}"
-    )
+    assert gate["aggregate_score"] < gate["threshold"], f"重篤4件の集約スコアが閾値を下回っていない: {gate}"
     assert result.should_retry is True, "重篤な失敗で再執筆していない"
     assert result.is_backtrack is True
     assert result.next_agent == AgentName.WRITING
@@ -361,8 +357,7 @@ def test_quality_score_not_degraded_vs_baseline() -> None:
     multiples = [s for k, s in scores.items() if len(k) >= 2]
     assert singles and multiples, "測定用のパターンが不足している"
     assert statistics.mean(multiples) < statistics.mean(singles), (
-        f"複数不合格の平均 {statistics.mean(multiples)} が単発 "
-        f"{statistics.mean(singles)} を下回っていない"
+        f"複数不合格の平均 {statistics.mean(multiples)} が単発 {statistics.mean(singles)} を下回っていない"
     )
     assert min(multiples) < min(singles), "最も重い複数不合格が単発不合格を下回っていない"
 
@@ -378,9 +373,7 @@ def test_quality_score_not_degraded_vs_baseline() -> None:
         assert result.artifacts["requires_user_review"] is True, (
             f"{pattern}: ユーザー確認フラグが立たないまま通過している"
         )
-        assert "patch_review_id" in result.artifacts, (
-            f"{pattern}: PatchReview が作られていない"
-        )
+        assert "patch_review_id" in result.artifacts, f"{pattern}: PatchReview が作られていない"
         assert result.artifacts["audit_status"] in (
             "passed_with_warnings",
             "patched",
@@ -394,13 +387,9 @@ def test_quality_score_not_degraded_vs_baseline() -> None:
     #    `=1`（新スコア集約）の両方で走らせて比率を比較する。
     legacy_ratio = _measure_regeneration_ratio(gate_enabled=False)
     score_ratio = _measure_regeneration_ratio(gate_enabled=True)
-    print(
-        f"[実測] 再執筆比率: all-or-nothing {legacy_ratio:.0%} "
-        f"→ score-aggregation {score_ratio:.0%}"
-    )
+    print(f"[実測] 再執筆比率: all-or-nothing {legacy_ratio:.0%} → score-aggregation {score_ratio:.0%}")
     assert legacy_ratio > score_ratio, (
-        f"スコア集約が再執筆率を下げていない: "
-        f"legacy {legacy_ratio:.0%} <= score {score_ratio:.0%}"
+        f"スコア集約が再執筆率を下げていない: legacy {legacy_ratio:.0%} <= score {score_ratio:.0%}"
     )
     # 旧ゲートが「1件でも落ちたら全滅」であったことの確認（実測ベースライン）
     assert legacy_ratio == 1.0, (
@@ -427,10 +416,7 @@ def test_severity_weighting_actually_affects_score() -> None:
     """
     mild = _score_with_severity("low")
     critical = _score_with_severity("critical")
-    print(
-        f"[実測] severity 別 score（加点残）: low={mild:.1f} "
-        f"critical={critical:.1f}"
-    )
+    print(f"[実測] severity 別 score（加点残）: low={mild:.1f} critical={critical:.1f}")
     assert critical < mild, (
         "severity がスコア計算に反映されていない"
         f"（low={mild:.1f}, critical={critical:.1f}）。"
@@ -616,9 +602,7 @@ def test_all_five_audit_items_are_preserved() -> None:
         "causal_integrity",
     ]
     assert all(c.blocking for c in CORE_AUDIT_CRITERIA), "既存5監査のいずれかが非ブロック化されている"
-    assert all(c.learning_key == c.audit_id for c in CORE_AUDIT_CRITERIA), (
-        "学習データキーが1対1で対応していない"
-    )
+    assert all(c.learning_key == c.audit_id for c in CORE_AUDIT_CRITERIA), "学習データキーが1対1で対応していない"
 
 
 def test_unified_auditor_failure_is_non_blocking_by_default() -> None:
@@ -634,12 +618,8 @@ def test_unified_auditor_failure_is_non_blocking_by_default() -> None:
 
     result = asyncio.run(agent.execute(_ctx(agent)))
     assert result.artifacts["audit_status"] == "passed"
-    unified_outcome = [
-        o for o in agent.last_gate_evaluation["scored_audit_ids"]
-    ]
-    assert "unified_qualitative" not in unified_outcome, (
-        "既定で UnifiedAuditor がゲート集計に混入している"
-    )
+    unified_outcome = [o for o in agent.last_gate_evaluation["scored_audit_ids"]]
+    assert "unified_qualitative" not in unified_outcome, "既定で UnifiedAuditor がゲート集計に混入している"
 
 
 def test_evaluate_gate_module_helper_is_callable() -> None:

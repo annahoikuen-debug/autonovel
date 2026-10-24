@@ -1,4 +1,5 @@
 """Unit tests for MemoryManager."""
+
 from src.agents.memory.interfaces import MemoryEntry, WorkingFrame
 from src.agents.memory.manager import MemoryManager
 
@@ -10,11 +11,13 @@ def test_get_emotional_context_fallback():
     assert manager.get_emotional_context(("A", "B")) == {}
 
     # 2. Archival にのみエントリが存在する場合のフォールバック
-    manager.archival_memory.insert(MemoryEntry(
-        id="arch1",
-        content="過去のAとBの出会いの記録",
-        metadata={"pair": ["A", "B"]},
-    ))
+    manager.archival_memory.insert(
+        MemoryEntry(
+            id="arch1",
+            content="過去のAとBの出会いの記録",
+            metadata={"pair": ["A", "B"]},
+        )
+    )
     res = manager.get_emotional_context(("A", "B"))
     assert res.get("fallback_source") == "archival"
     assert "過去のAとBの出会いの記録" in res.get("content", "")

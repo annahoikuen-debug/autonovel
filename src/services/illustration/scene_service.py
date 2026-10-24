@@ -95,9 +95,7 @@ class SceneIllustrator:
     def __init__(self, image_service: ImageService):
         self.image_service = image_service
 
-    async def generate_for_scene(
-        self, scene_text: str, request: IllustrationRequest
-    ) -> IllustrationResult:
+    async def generate_for_scene(self, scene_text: str, request: IllustrationRequest) -> IllustrationResult:
         start = time.time()
         prompt = build_scene_prompt(scene_text, request.book_context)
         prompt = apply_safety_modifier(prompt, request.safety_level, IllustrationType.EPISODE)

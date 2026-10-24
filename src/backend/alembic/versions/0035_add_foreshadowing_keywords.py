@@ -17,6 +17,7 @@ Create Date: 2026-10-05 00:00:00.000000
     * 全操作に存在ガード（冪等）。`foreshadowings` 自体が未作成の
       環境（0000 ベースライン前）では何もしない。
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa

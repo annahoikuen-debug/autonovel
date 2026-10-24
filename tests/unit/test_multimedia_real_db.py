@@ -38,8 +38,10 @@ def db_engine():
 def session_factory(db_engine):
     # DDL for SQLite tables needed by multimedia service
     from sqlalchemy import text
+
     with db_engine.connect() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS multimedia_artifacts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 book_id INTEGER,
@@ -49,8 +51,10 @@ def session_factory(db_engine):
                 metadata_json TEXT,
                 created_at TIMESTAMP
             );
-        """))
-        conn.execute(text("""
+        """)
+        )
+        conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS multimedia_tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 task_id TEXT,
@@ -60,8 +64,10 @@ def session_factory(db_engine):
                 started_at TIMESTAMP,
                 finished_at TIMESTAMP
             );
-        """))
-        conn.execute(text("""
+        """)
+        )
+        conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS audio_assets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 book_id INTEGER,
@@ -71,7 +77,8 @@ def session_factory(db_engine):
                 file_size_bytes INTEGER,
                 created_at TIMESTAMP
             );
-        """))
+        """)
+        )
         conn.commit()
 
     return sessionmaker(bind=db_engine)
@@ -87,6 +94,7 @@ def db_session(session_factory):
 @pytest.fixture
 def service(session_factory, tmp_path, monkeypatch):
     from src.backend.config import settings
+
     monkeypatch.setattr(settings, "ENABLE_MULTIMEDIA", True)
     loader = SeriesDataLoader(session_factory=session_factory)
     return MultimediaService(
@@ -110,10 +118,12 @@ def test_real_db_generate_media_mix_and_ebook(service, db_session):
 
     bible = Bible(
         book_id=book.id,
-        settings=json.dumps({
-            "characters": {"archetypes": {"hero": "タロウ"}},
-            "style": {"tone": "dramatic"},
-        }),
+        settings=json.dumps(
+            {
+                "characters": {"archetypes": {"hero": "タロウ"}},
+                "style": {"tone": "dramatic"},
+            }
+        ),
     )
     db_session.add(bible)
 
@@ -197,8 +207,10 @@ def test_empty_book_router_returns_422(service, db_session):
     client = TestClient(app)
 
     try:
-        with patch("src.backend.routers.multimedia.is_multimedia_enabled", return_value=True), \
-             patch("src.backend.routers.multimedia.verify_book_ownership", new_callable=AsyncMock):
+        with (
+            patch("src.backend.routers.multimedia.is_multimedia_enabled", return_value=True),
+            patch("src.backend.routers.multimedia.verify_book_ownership", new_callable=AsyncMock),
+        ):
             response = client.post(
                 "/multimedia/media-mix",
                 json={"book_id": book.id, "format": "manga", "episode_num": 1},

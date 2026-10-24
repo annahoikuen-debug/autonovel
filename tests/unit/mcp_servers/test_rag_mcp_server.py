@@ -1,4 +1,5 @@
 """Unit tests for RAG & Memory MCP Server."""
+
 from __future__ import annotations
 
 from src.mcp_servers.providers.rag_provider import RAGMemoryProvider, RAGQueryRequest

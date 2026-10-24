@@ -1,5 +1,6 @@
 # src/agents/skills/v2/audit_skill.py
 """AuditSkill v2 - Multi-layer quality assurance with 8 specialist auditors."""
+
 from __future__ import annotations
 
 import logging

@@ -3,6 +3,7 @@
 本プロジェクト歴史上の 4 件の IDOR を恒久的に検出する。
 新規 router を追加したとき、本テストが ownership 不足を検出する。
 """
+
 from __future__ import annotations
 
 import ast
@@ -125,8 +126,7 @@ def _calls_any_marker(func_node: ast.AST, markers: tuple[str, ...]) -> bool:
             return True
     return False
 
-
-# docstring だけが guard 名を書いているだけの handler を検出できることの
+    # docstring だけが guard 名を書いているだけの handler を検出できることの
     # 自己テスト。これが無いとガードの偽陽性を検出できない。
     src = '''
 async def handler(book_id: int, current_user=None):
@@ -162,9 +162,7 @@ def test_no_router_exposes_book_id_without_ownership_check():
                 continue
             if not _calls_any_marker(node, OWNERSHIP_MARKERS):
                 offenders.append(f"{p}:{node.lineno} {node.name}")
-    assert not offenders, (
-        "book_id を受けるのに所有者検証が無いハンドラ:\n  " + "\n  ".join(offenders)
-    )
+    assert not offenders, "book_id を受けるのに所有者検証が無いハンドラ:\n  " + "\n  ".join(offenders)
 
 
 # ------------------------------------------------------------------
@@ -227,10 +225,7 @@ def test_entity_id_mutations_require_ownership_check():
             if not _calls_any_marker(node, OWNERSHIP_MARKERS):
                 offenders.append(f"{p}:{node.lineno} {node.name}")
 
-    assert not offenders, (
-        "entity_id を受ける変更系ハンドラに所有権ガードが無い:\n  "
-        + "\n  ".join(offenders)
-    )
+    assert not offenders, "entity_id を受ける変更系ハンドラに所有権ガードが無い:\n  " + "\n  ".join(offenders)
 
 
 def test_every_router_with_book_id_also_requires_authentication():

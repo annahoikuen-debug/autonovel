@@ -1,4 +1,5 @@
 """Unit tests for SudachiPy-based Japanese tokenizer (Step 26)."""
+
 from __future__ import annotations
 
 import pytest
@@ -158,7 +159,7 @@ class TestCreateJapaneseTokenizer:
     def test_returns_tokenizer(self):
         tokenizer = create_japanese_tokenizer()
         assert tokenizer is not None
-        assert hasattr(tokenizer, 'extract_nouns')
+        assert hasattr(tokenizer, "extract_nouns")
 
     @pytest.mark.skipif(not SUDACHI_AVAILABLE, reason="sudachipy not installed")
     def test_returns_hybrid_when_available(self):
@@ -167,7 +168,7 @@ class TestCreateJapaneseTokenizer:
 
     def test_fallback_when_sudachi_unavailable(self):
         """Test fallback to regex when Sudachi fails."""
-        with patch('src.services.compression.japanese_tokenizer.SUDACHI_AVAILABLE', False):
+        with patch("src.services.compression.japanese_tokenizer.SUDACHI_AVAILABLE", False):
             tokenizer = create_japanese_tokenizer()
             assert isinstance(tokenizer, RegexJapaneseTokenizer)
 
@@ -186,6 +187,7 @@ class TestLayer1KeywordExtractorIntegration:
 
     def test_extract_with_custom_config(self):
         from src.services.compression.models import SudachiConfig
+
         config = SudachiConfig(min_length=3)
         extractor = Layer1KeywordExtractor(top_n=10, tokenizer_config=config)
         text = "勇者アルカディアが聖剣エクスカリバーを抜く"
@@ -202,6 +204,7 @@ class TestLayer1KeywordExtractorIntegration:
 
     def test_module_level_tokenize_function(self):
         from src.services.compression.layer1_keywords import tokenize_japanese_words
+
         text = "勇者アルカディア"
         nouns = tokenize_japanese_words(text)
         assert isinstance(nouns, list)

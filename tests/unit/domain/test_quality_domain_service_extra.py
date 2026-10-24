@@ -18,9 +18,20 @@ from src.domain.value_objects.scores import BookScore, CostScore, QolScore, Tens
 
 
 class FakePlot:
-    def __init__(self, episode_number=1, tension=50, catharsis=0, catharsis_type="",
-                 state_integrity=100, emotional_resonance=0, thematic_depth=0,
-                 literary_beauty=0, erotic_intensity=0, cost_score=0.0, qol_delta=0):
+    def __init__(
+        self,
+        episode_number=1,
+        tension=50,
+        catharsis=0,
+        catharsis_type="",
+        state_integrity=100,
+        emotional_resonance=0,
+        thematic_depth=0,
+        literary_beauty=0,
+        erotic_intensity=0,
+        cost_score=0.0,
+        qol_delta=0,
+    ):
         self.episode_number = episode_number
         self.tension_score = TensionScore(value=tension)
         self.catharsis = catharsis
@@ -126,7 +137,10 @@ class TestCalculator:
 
     def test_tension_curve_empty(self):
         assert QualityCalculator.calculate_tension_curve([]) == {
-            "episodes": [], "trend": "unknown", "peaks": [], "valleys": []
+            "episodes": [],
+            "trend": "unknown",
+            "peaks": [],
+            "valleys": [],
         }
 
     def test_tension_curve_peaks_valleys(self):
@@ -312,9 +326,7 @@ class TestQualityDomainServiceExtra:
 
     def test_generate_quality_report(self):
         svc = self.make()
-        report = svc.generate_quality_report(
-            NovelId("novel-1"), [FakePlot()], [FakeChapter(score_story=70)]
-        )
+        report = svc.generate_quality_report(NovelId("novel-1"), [FakePlot()], [FakeChapter(score_story=70)])
         assert report["novel_id"] == str(NovelId("novel-1"))
         assert "generated_at" in report
         assert "tension_analysis" in report
@@ -402,9 +414,7 @@ class TestQualityDomainServiceExtra:
         重なる前に ``calculate_plot_quality_score`` は BookScore.WEIGHTS を流用して
         total_weight=0 になり、常に overall=0 を返していた。
         """
-        assert set(BookScore.PLOT_QUALITY_WEIGHTS) == set(
-            QualityCalculator.PLOT_QUALITY_DIMENSIONS
-        )
+        assert set(BookScore.PLOT_QUALITY_WEIGHTS) == set(QualityCalculator.PLOT_QUALITY_DIMENSIONS)
         assert not (set(BookScore.PLOT_QUALITY_WEIGHTS) & set(BookScore.WEIGHTS))
         assert set(QualityCalculator.PLOT_QUALITY_WEIGHTS) == set(BookScore.PLOT_QUALITY_WEIGHTS)
 
@@ -437,4 +447,3 @@ class TestQualityDomainServiceExtra:
         svc = self.make()
         with pytest.raises(QualityValidationError):
             svc.set_custom_weights({"story": 0.5})
-

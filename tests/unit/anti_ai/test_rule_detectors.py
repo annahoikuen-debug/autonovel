@@ -60,20 +60,14 @@ class TestTransitionOveruseDetector:
         _check_offsets(text, v)
 
     def test_disabled_in_config(self):
-        cfg = AntiAIConfig(
-            detectors=DetectorSettings(
-                TRANSITION_OVERUSE=TransitionOveruseSettings(enabled=False)
-            )
-        )
+        cfg = AntiAIConfig(detectors=DetectorSettings(TRANSITION_OVERUSE=TransitionOveruseSettings(enabled=False)))
         d = TransitionOveruseDetector(config=cfg)
         v = d.detect("しかし、走る。さらに、歩く。また、跳ねる。")
         assert len(v) == 0
 
     def test_score_in_range(self):
         v = self.d.detect("しかし、走る。さらに、歩く。また、跳ねる。なお、泳ぐ。")
-        s = self.d.score_from_violations(
-            "しかし、走る。さらに、歩く。また、跳ねる。なお、泳ぐ。", v
-        )
+        s = self.d.score_from_violations("しかし、走る。さらに、歩く。また、跳ねる。なお、泳ぐ。", v)
         assert 0 <= s <= 100
 
 
@@ -93,20 +87,12 @@ class TestSameStructureDetector:
         _check_offsets(text, v)
 
     def test_disabled(self):
-        cfg = AntiAIConfig(
-            detectors=DetectorSettings(
-                SAME_STRUCTURE=SameStructureSettings(enabled=False)
-            )
-        )
+        cfg = AntiAIConfig(detectors=DetectorSettings(SAME_STRUCTURE=SameStructureSettings(enabled=False)))
         d = SameStructureDetector(config=cfg)
         assert d.detect("走った。走った。走った。") == []
 
     def test_custom_count(self):
-        cfg = AntiAIConfig(
-            detectors=DetectorSettings(
-                SAME_STRUCTURE=SameStructureSettings(consecutive_count=4)
-            )
-        )
+        cfg = AntiAIConfig(detectors=DetectorSettings(SAME_STRUCTURE=SameStructureSettings(consecutive_count=4)))
         d = SameStructureDetector(config=cfg)
         v = d.detect("走った。走った。走った。")  # only 3
         assert len(v) == 0
@@ -128,10 +114,7 @@ class TestDirectEmotionDetector:
         assert len(v) == 0
 
     def test_above_limit(self):
-        text = (
-            "悲しいと思った。風が頬を叩く。懐かしいと感じた。"
-            "つまらないと思った。最後に、怒りを覚えた。"
-        )
+        text = "悲しいと思った。風が頬を叩く。懐かしいと感じた。つまらないと思った。最後に、怒りを覚えた。"
         v = self.d.detect(text)
         assert len(v) >= 1
         _check_offsets(text, v)
@@ -153,9 +136,7 @@ class TestHedgingPatternsDetector:
         _check_offsets(text, v)
 
     def test_disabled(self):
-        cfg = AntiAIConfig(
-            detectors=DetectorSettings(HEDGING_PATTERNS=HedgingSettings(enabled=False))
-        )
+        cfg = AntiAIConfig(detectors=DetectorSettings(HEDGING_PATTERNS=HedgingSettings(enabled=False)))
         d = HedgingPatternsDetector(config=cfg)
         assert d.detect("おそらく、たぶん、かもしれません。") == []
 
@@ -176,11 +157,7 @@ class TestTemplatePhrasesDetector:
         _check_offsets(text, v)
 
     def test_min_matches_threshold(self):
-        cfg = AntiAIConfig(
-            detectors=DetectorSettings(
-                TEMPLATE_PHRASES=TemplatePhrasesSettings(min_matches=5)
-            )
-        )
+        cfg = AntiAIConfig(detectors=DetectorSettings(TEMPLATE_PHRASES=TemplatePhrasesSettings(min_matches=5)))
         d = TemplatePhrasesDetector(config=cfg)
         # Only 2 matches, but config requires 5 → no violations
         v = d.detect("重要なことには、注目すべきは、結論として、")
@@ -203,7 +180,11 @@ class TestUniformParagraphDetector:
 
     def test_varied_lengths(self):
         # Each paragraph is very different in length
-        text = "短い。\n\n" "これは中くらいの長さの段落で、もう少し長い。\n\n" "非常に長い段落を書いています。物語は続くのでした。長い長い文章は読者を引き込むものなのです。"
+        text = (
+            "短い。\n\n"
+            "これは中くらいの長さの段落で、もう少し長い。\n\n"
+            "非常に長い段落を書いています。物語は続くのでした。長い長い文章は読者を引き込むものなのです。"
+        )
         v = self.d.detect(text)
         assert len(v) == 0
 

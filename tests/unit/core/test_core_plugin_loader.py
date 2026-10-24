@@ -64,26 +64,21 @@ def test_get_plugin_class_invalid_config():
 
 
 def test_get_plugin_class_import_error():
-    SystemPluginLoader._config = {
-        "no_module": {"module": "non_existent_module_xyz", "class": "SomeClass"}
-    }
+    SystemPluginLoader._config = {"no_module": {"module": "non_existent_module_xyz", "class": "SomeClass"}}
     result = SystemPluginLoader.get_plugin_class("no_module", default_class=dict)
     assert result is dict
 
 
 def test_get_plugin_class_attribute_error():
-    SystemPluginLoader._config = {
-        "no_attr": {"module": "math", "class": "NonExistentFunctionInMath"}
-    }
+    SystemPluginLoader._config = {"no_attr": {"module": "math", "class": "NonExistentFunctionInMath"}}
     result = SystemPluginLoader.get_plugin_class("no_attr", default_class=list)
     assert result is list
 
 
 def test_get_plugin_class_success():
-    SystemPluginLoader._config = {
-        "valid_plugin": {"module": "unittest.mock", "class": "MagicMock"}
-    }
+    SystemPluginLoader._config = {"valid_plugin": {"module": "unittest.mock", "class": "MagicMock"}}
     from unittest.mock import MagicMock
+
     result = SystemPluginLoader.get_plugin_class("valid_plugin")
     assert result is MagicMock
     assert SystemPluginLoader._class_cache["valid_plugin"] is MagicMock

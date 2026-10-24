@@ -99,13 +99,15 @@ class HybridRetriever:
             meta["dense_rank"] = item.dense_rank
             meta["sparse_rank"] = item.sparse_rank
 
-            final_results.append(SearchResult(
-                id=item.doc_id,
-                content=item.content,
-                metadata=meta,
-                source="hybrid_rrf",
-                score=norm_score,
-                similarity=norm_score,
-            ))
+            final_results.append(
+                SearchResult(
+                    id=item.doc_id,
+                    content=item.content,
+                    metadata=meta,
+                    source="hybrid_rrf",
+                    score=norm_score,
+                    similarity=norm_score,
+                )
+            )
 
         return final_results

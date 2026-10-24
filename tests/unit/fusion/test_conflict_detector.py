@@ -1,4 +1,5 @@
 """Unit tests for ConflictDetector."""
+
 from src.fusion.config import FusionConfig
 from src.fusion.conflict_detector import ConflictDetector
 from src.fusion.models import SourceVector

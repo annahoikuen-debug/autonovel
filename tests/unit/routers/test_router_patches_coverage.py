@@ -1,4 +1,5 @@
 """Patches router coverage: approve/reject/edit/review/setting-versions/paragraph flows."""
+
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -38,10 +39,8 @@ def make_uow(session=None, misc=None, db=None):
     return uow
 
 
-def make_patch(patch_id=1, book_id=10, status="pending", patch_type="config",
-               content="{}"):
-    return SimpleNamespace(id=patch_id, book_id=book_id, status=status,
-                           patch_type=patch_type, patch_content=content)
+def make_patch(patch_id=1, book_id=10, status="pending", patch_type="config", content="{}"):
+    return SimpleNamespace(id=patch_id, book_id=book_id, status=status, patch_type=patch_type, patch_content=content)
 
 
 @pytest.fixture(autouse=True)
@@ -53,12 +52,14 @@ def patch_uow_and_ownership(monkeypatch):
     """
     uow = make_uow()
     import src.backend.database.uow as uow_source
+
     monkeypatch.setattr(patches_module, "UnitOfWork", lambda db=None: uow)
     monkeypatch.setattr(uow_source, "UnitOfWork", lambda db=None: uow)
     monkeypatch.setattr(patches_module.AppContainer, "db", lambda: None)
     monkeypatch.setattr(patches_module, "verify_book_ownership", AsyncMock())
     # 関数内 import される所有権確認も差し替え
     import src.backend.security.owner_guard as owner_guard_source
+
     monkeypatch.setattr(owner_guard_source, "verify_book_ownership", AsyncMock())
     return SimpleNamespace(uow=uow)
 
@@ -111,6 +112,7 @@ async def test_approve_patch_already_processed(patch_uow_and_ownership):
     result.scalar_one_or_none.return_value = patch
     uow.session.execute = AsyncMock(return_value=result)
     from src.core.exceptions import ValidationError
+
     with pytest.raises(ValidationError, match="already approved"):
         await approve_patch(1, None, current_user=MagicMock())
 
@@ -125,11 +127,9 @@ async def test_approve_patch_config_safe_applies_globalconfig(patch_uow_and_owne
     uow.misc.update_patch_status = AsyncMock()
 
     validation = SimpleNamespace(is_safe=True, sanitized_patch={"key": "value"}, errors=[])
-    monkeypatch.setattr(patches_module.PatchValidator, "validate_config_patch",
-                        lambda content: validation)
+    monkeypatch.setattr(patches_module.PatchValidator, "validate_config_patch", lambda content: validation)
     set_calls = []
-    monkeypatch.setattr(patches_module.GlobalConfig,
-                        "set", lambda self, k, v: set_calls.append((k, v)))
+    monkeypatch.setattr(patches_module.GlobalConfig, "set", lambda self, k, v: set_calls.append((k, v)))
 
     result_msg = await approve_patch(1, None, current_user=MagicMock())
     assert result_msg == {"message": "Patch approved and applied successfully"}
@@ -145,11 +145,10 @@ async def test_approve_patch_config_unsafe_raises(patch_uow_and_ownership, monke
     result.scalar_one_or_none.return_value = patch
     uow.session.execute = AsyncMock(return_value=result)
 
-    validation = SimpleNamespace(is_safe=False, sanitized_patch=None,
-                                 errors=["dangerous key"])
-    monkeypatch.setattr(patches_module.PatchValidator, "validate_config_patch",
-                        lambda content: validation)
+    validation = SimpleNamespace(is_safe=False, sanitized_patch=None, errors=["dangerous key"])
+    monkeypatch.setattr(patches_module.PatchValidator, "validate_config_patch", lambda content: validation)
     from src.core.exceptions import ValidationError
+
     with pytest.raises(ValidationError, match="dangerous key"):
         await approve_patch(1, None, current_user=MagicMock())
 
@@ -163,9 +162,9 @@ async def test_approve_patch_config_safe_but_no_sanitized(patch_uow_and_ownershi
     uow.session.execute = AsyncMock(return_value=result)
 
     validation = SimpleNamespace(is_safe=True, sanitized_patch=None, errors=[])
-    monkeypatch.setattr(patches_module.PatchValidator, "validate_config_patch",
-                        lambda content: validation)
+    monkeypatch.setattr(patches_module.PatchValidator, "validate_config_patch", lambda content: validation)
     from src.core.exceptions import ValidationError
+
     with pytest.raises(ValidationError, match="Sanitized patch is missing"):
         await approve_patch(1, None, current_user=MagicMock())
 
@@ -185,11 +184,9 @@ async def test_approve_patch_prompt_with_version(patch_uow_and_ownership, monkey
     uow.prompt_versions.set_active_prompt_version = AsyncMock()
 
     validation = SimpleNamespace(is_safe=True, errors=[])
-    monkeypatch.setattr(patches_module.PatchValidator, "validate_prompt_patch",
-                        lambda content: validation)
+    monkeypatch.setattr(patches_module.PatchValidator, "validate_prompt_patch", lambda content: validation)
     set_calls = []
-    monkeypatch.setattr(patches_module.GlobalConfig,
-                        "set", lambda self, k, v: set_calls.append((k, v)))
+    monkeypatch.setattr(patches_module.GlobalConfig, "set", lambda self, k, v: set_calls.append((k, v)))
 
     result_msg = await approve_patch(1, None, current_user=MagicMock())
     assert result_msg == {"message": "Patch approved and applied successfully"}
@@ -212,11 +209,9 @@ async def test_approve_patch_prompt_without_version(patch_uow_and_ownership, mon
     uow.misc.update_patch_status = AsyncMock()
 
     validation = SimpleNamespace(is_safe=True, errors=[])
-    monkeypatch.setattr(patches_module.PatchValidator, "validate_prompt_patch",
-                        lambda content: validation)
+    monkeypatch.setattr(patches_module.PatchValidator, "validate_prompt_patch", lambda content: validation)
     set_calls = []
-    monkeypatch.setattr(patches_module.GlobalConfig,
-                        "set", lambda self, k, v: set_calls.append((k, v)))
+    monkeypatch.setattr(patches_module.GlobalConfig, "set", lambda self, k, v: set_calls.append((k, v)))
 
     result_msg = await approve_patch(1, None, current_user=MagicMock())
     assert result_msg == {"message": "Patch approved and applied successfully"}
@@ -251,6 +246,7 @@ async def test_reject_patch_not_found_and_already_processed(patch_uow_and_owners
     result.scalar_one_or_none.return_value = None
     uow.session.execute = AsyncMock(return_value=result)
     from src.core.exceptions import ValidationError
+
     with pytest.raises(NotFoundError):
         await reject_patch(999, None, current_user=MagicMock())
 
@@ -276,8 +272,7 @@ async def test_edit_patch_config(patch_uow_and_ownership, monkeypatch):
     uow.session.execute = AsyncMock(return_value=result)
 
     validation = SimpleNamespace(is_safe=True, errors=[])
-    monkeypatch.setattr(patches_module.PatchValidator, "validate_config_patch",
-                        lambda content: validation)
+    monkeypatch.setattr(patches_module.PatchValidator, "validate_config_patch", lambda content: validation)
     req = SimpleNamespace(content='{"new": "value"}')
 
     result_msg = await edit_patch(1, req, current_user=MagicMock())
@@ -298,8 +293,7 @@ async def test_edit_patch_prompt_syncs_version(patch_uow_and_ownership, monkeypa
     uow.session.execute = AsyncMock(side_effect=[patch_result, ver_result])
 
     validation = SimpleNamespace(is_safe=True, errors=[])
-    monkeypatch.setattr(patches_module.PatchValidator, "validate_prompt_patch",
-                        lambda content: validation)
+    monkeypatch.setattr(patches_module.PatchValidator, "validate_prompt_patch", lambda content: validation)
     req = SimpleNamespace(content="new")
 
     result_msg = await edit_patch(1, req, current_user=MagicMock())
@@ -317,10 +311,10 @@ async def test_edit_patch_unsafe_and_errors(patch_uow_and_ownership, monkeypatch
     uow.session.execute = AsyncMock(return_value=result)
 
     validation = SimpleNamespace(is_safe=False, errors=["invalid"])
-    monkeypatch.setattr(patches_module.PatchValidator, "validate_prompt_patch",
-                        lambda content: validation)
+    monkeypatch.setattr(patches_module.PatchValidator, "validate_prompt_patch", lambda content: validation)
     req = SimpleNamespace(content="new")
     from src.core.exceptions import ValidationError
+
     with pytest.raises(ValidationError, match="invalid"):
         await edit_patch(1, req, current_user=MagicMock())
 
@@ -356,7 +350,9 @@ async def test_get_review_detail(patch_uow_and_ownership):
     uow.misc.get_patch_review = AsyncMock(return_value=review)
     result = await get_review_detail(3, current_user=MagicMock())
     assert result == review
-    patches_module.verify_book_ownership.assert_awaited_once_with(10, patches_module.verify_book_ownership.call_args[0][1], patches_module.verify_book_ownership.call_args[0][2])
+    patches_module.verify_book_ownership.assert_awaited_once_with(
+        10, patches_module.verify_book_ownership.call_args[0][1], patches_module.verify_book_ownership.call_args[0][2]
+    )
 
 
 @pytest.mark.asyncio
@@ -370,8 +366,7 @@ async def test_get_review_detail_not_found(patch_uow_and_ownership):
 @pytest.mark.asyncio
 async def test_approve_review_with_audit_issues(patch_uow_and_ownership):
     uow = patch_uow_and_ownership.uow
-    review = {"id": 3, "book_id": 10, "status": "under_review",
-              "audit_issue_ids": [1, 2]}
+    review = {"id": 3, "book_id": 10, "status": "under_review", "audit_issue_ids": [1, 2]}
     uow.misc.get_patch_review = AsyncMock(return_value=review)
     uow.misc.update_patch_review_status = AsyncMock()
     uow.session.execute = AsyncMock()
@@ -402,6 +397,7 @@ async def test_approve_review_errors(patch_uow_and_ownership):
     uow = patch_uow_and_ownership.uow
     uow.misc.get_patch_review = AsyncMock(return_value=None)
     from src.core.exceptions import ValidationError
+
     with pytest.raises(NotFoundError):
         await approve_review(999, ReviewActionRequest(), current_user=MagicMock())
 
@@ -420,16 +416,14 @@ async def test_reject_review_requires_comment(patch_uow_and_ownership):
     review = {"id": 3, "book_id": 10, "status": "under_review", "audit_issue_ids": []}
     uow.misc.get_patch_review = AsyncMock(return_value=review)
     uow.misc.update_patch_review_status = AsyncMock()
-    result_msg = await reject_review(3, ReviewActionRequest(comment="reason"),
-                                     current_user=MagicMock())
+    result_msg = await reject_review(3, ReviewActionRequest(comment="reason"), current_user=MagicMock())
     assert result_msg == {"message": "Review rejected successfully"}
 
 
 @pytest.mark.asyncio
 async def test_reject_review_success(patch_uow_and_ownership):
     uow = patch_uow_and_ownership.uow
-    review = {"id": 3, "book_id": 10, "status": "under_review",
-              "audit_issue_ids": [1]}
+    review = {"id": 3, "book_id": 10, "status": "under_review", "audit_issue_ids": [1]}
     uow.misc.get_patch_review = AsyncMock(return_value=review)
     uow.misc.update_patch_review_status = AsyncMock()
     uow.session.execute = AsyncMock()
@@ -450,8 +444,7 @@ async def test_revise_review_success(patch_uow_and_ownership):
     uow.misc.get_patch_review = AsyncMock(return_value=review)
     uow.session.execute = AsyncMock()
 
-    req = ReviseReviewRequest(proposed_content="better text", reviewer_id="u1",
-                              comment="fix")
+    req = ReviseReviewRequest(proposed_content="better text", reviewer_id="u1", comment="fix")
     result_msg = await revise_review(3, req, current_user=MagicMock())
     assert result_msg == {"message": "Review revised successfully, awaiting re-approval"}
     uow.session.execute.assert_awaited_once()
@@ -462,15 +455,14 @@ async def test_revise_review_errors(patch_uow_and_ownership):
     uow = patch_uow_and_ownership.uow
     uow.misc.get_patch_review = AsyncMock(return_value=None)
     from src.core.exceptions import ValidationError
+
     with pytest.raises(NotFoundError):
-        await revise_review(999, ReviseReviewRequest(proposed_content="x"),
-                            current_user=MagicMock())
+        await revise_review(999, ReviseReviewRequest(proposed_content="x"), current_user=MagicMock())
 
     review = {"id": 3, "book_id": 10, "status": "approved"}
     uow.misc.get_patch_review = AsyncMock(return_value=review)
     with pytest.raises(ValidationError, match="Cannot revise review"):
-        await revise_review(3, ReviseReviewRequest(proposed_content="x"),
-                            current_user=MagicMock())
+        await revise_review(3, ReviseReviewRequest(proposed_content="x"), current_user=MagicMock())
 
 
 # ============================================================================
@@ -521,9 +513,7 @@ async def test_patch_paragraph_success(patch_uow_and_ownership, monkeypatch):
     chapter = SimpleNamespace(
         id=5,
         book_id=10,
-        content="original content of paragraph 0\n\n"
-                "original content of paragraph 1\n\n"
-                "original content of paragraph 2",
+        content="original content of paragraph 0\n\noriginal content of paragraph 1\n\noriginal content of paragraph 2",
     )
     result = MagicMock()
     result.scalar_one_or_none.return_value = chapter

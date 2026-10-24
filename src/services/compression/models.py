@@ -1,4 +1,5 @@
 """Data models for 4-Layer Context Compression (Step 25)."""
+
 from __future__ import annotations
 
 from typing import Any, Literal
@@ -24,14 +25,19 @@ SceneType = Literal[
 class ProtectedContext(BaseModel):
     """Context elements strictly protected from pruning or compression (Step 52)."""
 
-    active_characters: list[str] = Field(default_factory=list, description="Characters physically present in current scene")
-    pending_foreshadowing_ids: list[str] = Field(default_factory=list, description="Foreshadowing IDs awaiting imminent resolution")
+    active_characters: list[str] = Field(
+        default_factory=list, description="Characters physically present in current scene"
+    )
+    pending_foreshadowing_ids: list[str] = Field(
+        default_factory=list, description="Foreshadowing IDs awaiting imminent resolution"
+    )
     critical_keywords: list[str] = Field(default_factory=list, description="Essential scene intent keywords")
     pinned_entities: set[str] = Field(default_factory=set, description="Entities guaranteed not to be trimmed")
 
 
 class SudachiConfig(BaseModel):
     """Configuration for SudachiPy tokenizer."""
+
     split_mode: Literal["A", "B", "C"] = Field(default="C", description="Tokenization mode: A=short, B=medium, C=long")
     include_proper: bool = Field(default=True, description="Include proper nouns")
     include_compound: bool = Field(default=True, description="Include compound nouns")
@@ -151,6 +157,7 @@ CompressionResult = CompressedContextResult
 
 class ReversibleEntityFact(BaseModel):
     """固有名詞と抽象概念を併保持するデュアル表現 (Layer 3)"""
+
     entity: str = Field(description="元の固有名詞（例：抜刀・迅雷）")
     concept: str = Field(description="一般化された抽象概念（例：雷撃系近接スキル）")
     category: str = Field(description="所属カテゴリ（例：武術・スキル）")
@@ -166,6 +173,7 @@ class ReversibleEntityFact(BaseModel):
 
 class CompressionQualityMetrics(BaseModel):
     """圧縮品質・情報保持率の定量的評価指標"""
+
     character_retention_score: float = Field(default=1.0, description="登場人物の保持率 (0.0 - 1.0)")
     foreshadowing_retention_score: float = Field(default=1.0, description="未回収伏線の保持率 (0.0 - 1.0)")
     proper_noun_retention_score: float = Field(default=1.0, description="主要固有名詞の残存率 (0.0 - 1.0)")
@@ -175,6 +183,7 @@ class CompressionQualityMetrics(BaseModel):
 
 class SceneFlowHistory(BaseModel):
     """シーン遷移文脈履歴"""
+
     recent_scene_types: list[SceneType] = Field(default_factory=list, description="直近3〜5話のシーン遷移履歴")
     episode_goal: str = Field(default="", description="本エピソードの主目的（例: 作戦会議・休息・決戦）")
     pacing_tag: str = Field(default="normal", description="テンポ感: setup / confrontation / resolution")
@@ -202,7 +211,9 @@ def load_compression_config(path: str = "config/context_compression.yaml") -> Co
             top_keywords=l1.get("top_k", 20),
             max_hops=comp.get("layer2_subgraph", {}).get("max_hops", 2),
             relevance_threshold=comp.get("layer2_subgraph", {}).get("relevance_threshold", 0.5),
-            preserve_categories=comp.get("layer4_trimming", {}).get("preserve_categories", ["主要キャラ", "核心設定", "伏線"]),
+            preserve_categories=comp.get("layer4_trimming", {}).get(
+                "preserve_categories", ["主要キャラ", "核心設定", "伏線"]
+            ),
             sudachi=sudachi_cfg,
         )
     except Exception:

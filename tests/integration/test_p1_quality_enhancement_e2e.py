@@ -34,22 +34,22 @@ def mock_context_builder():
     # で呼び出すため AsyncMock である必要がある（同期 Mock だと
     # "object Mock can't be used in 'await' expression" で 3シーン全滅する）。
     # また result.error は真値判定されるため None を明示する。
-    builder.execute = AsyncMock(
-        return_value=Mock(error=None, artifacts={"writing_context": {}})
-    )
+    builder.execute = AsyncMock(return_value=Mock(error=None, artifacts={"writing_context": {}}))
     return builder
 
 
 @pytest.fixture
 def mock_context_retriever():
     retriever = Mock(spec=LongFormContextRetriever)
-    retriever.retrieve_writing_context = Mock(return_value={
-        "pending_foreshadowings": [],
-        "relevant_foreshadowings": [],
-        "subgraph_edges": [],
-        "character_states": [],
-        "current_episode": 1,
-    })
+    retriever.retrieve_writing_context = Mock(
+        return_value={
+            "pending_foreshadowings": [],
+            "relevant_foreshadowings": [],
+            "subgraph_edges": [],
+            "character_states": [],
+            "current_episode": 1,
+        }
+    )
     retriever.format_context_for_prompt = Mock(return_value="## 本話で意識・回収すべき伏線・設定\n- テスト伏線: 説明")
     return retriever
 
@@ -57,12 +57,14 @@ def mock_context_retriever():
 @pytest.fixture
 def mock_audio_synthesizer():
     synthesizer = Mock(spec=ChapterAudioSynthesizer)
-    synthesizer.synthesize_chapter = Mock(return_value={
-        "file_path": "/tmp/test.wav",
-        "duration_seconds": 10.0,
-        "lines_count": 5,
-        "emotion_distribution": {"neutral": 100.0},
-    })
+    synthesizer.synthesize_chapter = Mock(
+        return_value={
+            "file_path": "/tmp/test.wav",
+            "duration_seconds": 10.0,
+            "lines_count": 5,
+            "emotion_distribution": {"neutral": 100.0},
+        }
+    )
     return synthesizer
 
 
@@ -132,9 +134,7 @@ async def test_p1_e2e_pipeline_mocked(
     # v5.3 以降の既定経路 (use_beat_to_scene=True) は 1話を3シーン
     # （導入・衝突・引き）に分割して生成し結合するため、
     # モック本文がシーン数 (=3) 回繰り返される。
-    written_text = await episode_writer.write(
-        book_id=1, ep_num=1, context={"prose_refiner_enabled": False}
-    )
+    written_text = await episode_writer.write(book_id=1, ep_num=1, context={"prose_refiner_enabled": False})
     assert "テスト本文" in written_text
     assert written_text.count("テスト本文") == 3
 
@@ -232,9 +232,7 @@ async def test_writing_with_foreshadowing_retrieval_e2e(
 
     # Now, test with a written text that contains the keyword
     written_text_with_key = "古い鍵を見つけた主人公は、驚いた。"
-    resolved_with_key = episode_writer.detect_resolved_foreshadowings(
-        written_text_with_key, pending_fs
-    )
+    resolved_with_key = episode_writer.detect_resolved_foreshadowings(written_text_with_key, pending_fs)
     assert resolved_with_key == ["fs1"]
 
 
@@ -253,9 +251,7 @@ async def test_synthesizer_with_detected_emotions_e2e(
         "character_states": [],
         "current_episode": 3,
     }
-    mock_context_retriever.format_context_for_prompt.return_value = (
-        "## 本話で意識・回収すべき伏線・設定\n"
-    )
+    mock_context_retriever.format_context_for_prompt.return_value = "## 本話で意識・回収すべき伏線・設定\n"
 
     # Execute writing
     written_text = await episode_writer.write(book_id=1, ep_num=3, context={})
@@ -280,7 +276,6 @@ async def test_synthesizer_with_detected_emotions_e2e(
     # This test is more about the flow than the actual emotion detection.
 
 
-
 async def test_llm_media_scripts_e2e(
     episode_writer,
     mock_context_retriever,
@@ -296,9 +291,7 @@ async def test_llm_media_scripts_e2e(
         "character_states": [],
         "current_episode": 4,
     }
-    mock_context_retriever.format_context_for_prompt.return_value = (
-        "## 本話で意識・回収すべき伏線・設定\n"
-    )
+    mock_context_retriever.format_context_for_prompt.return_value = "## 本話で意識・回収すべき伏線・設定\n"
 
     # Execute writing
     written_text = await episode_writer.write(book_id=1, ep_num=4, context={})
@@ -337,9 +330,7 @@ async def test_commercial_quality_check_e2e(
         "character_states": [],
         "current_episode": 5,
     }
-    mock_context_retriever.format_context_for_prompt.return_value = (
-        "## 本話で意識・回収すべき伏線・設定\n"
-    )
+    mock_context_retriever.format_context_for_prompt.return_value = "## 本話で意識・回収すべき伏線・設定\n"
 
     # Execute writing
     written_text = await episode_writer.write(book_id=1, ep_num=5, context={})
@@ -359,7 +350,7 @@ async def test_commercial_quality_check_e2e(
     # Prepare dimension scores for CommercialQualityMetrics
     dimension_scores = {
         "foreshadowing_alignment": 88.0,  # from consistency auditor
-        "emotion_expression": 85.0,       # from emotion evaluation (mocked)
+        "emotion_expression": 85.0,  # from emotion evaluation (mocked)
         # We can add other dimensions if needed, but for the test we focus on these two.
     }
     # We don't have specialist scores for this test, so we'll leave it empty or None.

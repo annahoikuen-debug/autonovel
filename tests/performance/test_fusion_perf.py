@@ -1,4 +1,5 @@
 """Performance tests for Week 4 Fusion Layer."""
+
 import time
 from src.fusion.config import FusionConfig
 from src.fusion.conflict_detector import ConflictDetector
@@ -13,7 +14,7 @@ def test_fusion_performance_100_pairs():
     config = FusionConfig()
 
     for i in range(100):
-        src, tgt = f"Char{i}", f"Char{i+1}"
+        src, tgt = f"Char{i}", f"Char{i + 1}"
         v_anno = EmotionalVector(episode_id="ep1")
         v_anno.set_signal(EmotionalSignal(src, tgt, EmotionType.FEAR, 0.8, 1.0, "...", "ep1"))
         store.upsert("annotation", f"ep1:{src}->{tgt}", v_anno)

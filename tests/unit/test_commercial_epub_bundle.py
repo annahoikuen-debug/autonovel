@@ -30,7 +30,8 @@ def db_engine():
     )
     Base.metadata.create_all(engine)
     with engine.connect() as conn:
-        conn.execute(text("""
+        conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS multimedia_artifacts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 book_id INTEGER,
@@ -40,8 +41,10 @@ def db_engine():
                 metadata_json TEXT,
                 created_at TIMESTAMP
             );
-        """))
-        conn.execute(text("""
+        """)
+        )
+        conn.execute(
+            text("""
             CREATE TABLE IF NOT EXISTS multimedia_tasks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 task_id TEXT,
@@ -51,7 +54,8 @@ def db_engine():
                 started_at TIMESTAMP,
                 finished_at TIMESTAMP
             );
-        """))
+        """)
+        )
         conn.commit()
     yield engine
     Base.metadata.drop_all(engine)
@@ -72,6 +76,7 @@ def db_session(session_factory):
 @pytest.fixture
 def service(session_factory, tmp_path, monkeypatch):
     from src.backend.config import settings
+
     monkeypatch.setattr(settings, "ENABLE_MULTIMEDIA", True)
     loader = SeriesDataLoader(session_factory=session_factory)
     return MultimediaService(
@@ -137,7 +142,9 @@ def test_export_ebook_with_db_illustrations(service, db_session, tmp_path):
         {
             "book_id": book.id,
             "path": str(img_path2),
-            "meta": json.dumps({"position": "chapter_start", "chapter_index": 2, "caption": "第2章 挿絵", "media_type": "image/png"}),
+            "meta": json.dumps(
+                {"position": "chapter_start", "chapter_index": 2, "caption": "第2章 挿絵", "media_type": "image/png"}
+            ),
         },
     )
     db_session.commit()

@@ -1,4 +1,5 @@
 """OpenAI アダプタのユニットテスト。"""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -40,6 +41,7 @@ def test_openai_adapter_init_with_key():
 def test_openai_adapter_init_default_key():
     """OpenAIAdapter はデフォルトキーで初期化される。"""
     from src.backend.config import settings
+
     settings.OPENAI_API_KEY = "sk-default-456"
 
     adapter = OpenAIAdapter()

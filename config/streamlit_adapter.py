@@ -20,6 +20,7 @@ except ImportError:
 try:
     from streamlit.runtime.scriptrunner import get_script_run_ctx
 except ImportError:
+
     def get_script_run_ctx():
         return None
 
@@ -151,9 +152,7 @@ class StreamlitConfig(GlobalConfig):
                 self.set(config_key, choice)
 
         st.subheader("🤖 モデル設定")
-        st.caption(
-            "各工程で使用するAIモデルを選択します。OpenRouter等のOpenAI互換モデルも指定可能です。"
-        )
+        st.caption("各工程で使用するAIモデルを選択します。OpenRouter等のOpenAI互換モデルも指定可能です。")
         render_model_selector(
             "model_planning",
             "📝 プロット用モデル",
@@ -173,9 +172,7 @@ class StreamlitConfig(GlobalConfig):
         st.divider()
 
         st.subheader("🔑 OpenRouter / OpenAI互換プロバイダ")
-        st.caption(
-            "モデルに OpenAI互換モデル（「/」を含むIDや gpt/claude/llama 等）を選んだ場合に使用します。"
-        )
+        st.caption("モデルに OpenAI互換モデル（「/」を含むIDや gpt/claude/llama 等）を選んだ場合に使用します。")
         openrouter_key = st.text_input(
             "API Key",
             type="password",
@@ -219,9 +216,7 @@ class StreamlitConfig(GlobalConfig):
         st.sidebar.selectbox(
             "安全追加モード",
             options=SAFE_APPEND_MODE_OPTIONS,
-            index=SAFE_APPEND_MODE_OPTIONS.index(
-                self.get("safe_append_mode", SAFE_APPEND_MODE_DEFAULT)
-            ),
+            index=SAFE_APPEND_MODE_OPTIONS.index(self.get("safe_append_mode", SAFE_APPEND_MODE_DEFAULT)),
             key="cfg_safe_append_mode",
             on_change=lambda: _sync("safe_append_mode", "cfg_safe_append_mode"),
             help="テキスト追加時にトークン上限を超えそうな場合の挙動（自動調整、警告のみ、エラー終了）を設定します。",

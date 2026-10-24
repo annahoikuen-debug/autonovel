@@ -56,8 +56,7 @@ def _defines_method(relative_path: str, class_name: str, method_name: str) -> bo
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef) and node.name == class_name:
             return any(
-                isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
-                and item.name == method_name
+                isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef)) and item.name == method_name
                 for item in node.body
             )
     return False
@@ -65,15 +64,13 @@ def _defines_method(relative_path: str, class_name: str, method_name: str) -> bo
 
 class TestBuildContextIsReachable:
     def test_build_context_is_defined(self) -> None:
-        assert _defines_method(
-            "src/agents/writing/episode_writer.py", "EpisodeWriter", "build_context"
-        ), "EpisodeWriter.build_context が定義されていない（前提の変化）"
+        assert _defines_method("src/agents/writing/episode_writer.py", "EpisodeWriter", "build_context"), (
+            "EpisodeWriter.build_context が定義されていない（前提の変化）"
+        )
 
     def test_build_context_has_at_least_one_call_site(self) -> None:
         """B-T3 核心: 呼び出し元 0 件 = 死んだコード。1件以上 있어야 한다。"""
-        sites = _method_call_sites(
-            "src/agents/writing/episode_writer.py", "build_context"
-        )
+        sites = _method_call_sites("src/agents/writing/episode_writer.py", "build_context")
         assert sites, (
             "EpisodeWriter.build_context() の呼び出し元が 0 件。"
             "契約伏線 ID / 3層記憶がプロンプトに載らない dead-letter に regress した。"
@@ -81,27 +78,21 @@ class TestBuildContextIsReachable:
 
     def test_build_context_called_from_run(self) -> None:
         """統合点は `run()` 経路であること（=` write() から直接ではない）。"""
-        sites = _method_call_sites(
-            "src/agents/writing/episode_writer.py", "build_context"
-        )
+        sites = _method_call_sites("src/agents/writing/episode_writer.py", "build_context")
         # `build_context` は `_merge_full_context` から呼ばれ、
         # `_merge_full_context` は `run()` から呼ばれる（2段配線）。
-        assert any(
-            scope.endswith("_merge_full_context") for scope, _ in sites
-        ), f"build_context の呼び出し元が _merge_full_context ではない: {sites}"
-
-        merge_sites = _method_call_sites(
-            "src/agents/writing/episode_writer.py", "_merge_full_context"
+        assert any(scope.endswith("_merge_full_context") for scope, _ in sites), (
+            f"build_context の呼び出し元が _merge_full_context ではない: {sites}"
         )
+
+        merge_sites = _method_call_sites("src/agents/writing/episode_writer.py", "_merge_full_context")
         assert any(scope.endswith("run") for scope, _ in merge_sites), (
             f"_merge_full_context が run() から呼ばれていない: {merge_sites}"
         )
 
     def test_generator_defines_writing_generator(self) -> None:
         """前提の固定: `generator.py` に `WritingGenerator` があること。"""
-        assert _defines_method(
-            "src/agents/writing/generator.py", "WritingGenerator", "_write_single_episode_core"
-        )
+        assert _defines_method("src/agents/writing/generator.py", "WritingGenerator", "_write_single_episode_core")
 
 
 class TestNoWholesaleContextReplacement:

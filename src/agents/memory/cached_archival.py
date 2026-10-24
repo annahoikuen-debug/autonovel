@@ -1,4 +1,5 @@
 """Cached wrapper for ArchivalMemory to accelerate repeated semantic searches."""
+
 from __future__ import annotations
 
 from collections import OrderedDict

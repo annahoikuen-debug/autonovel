@@ -108,7 +108,6 @@ class WritingGraphManager:
         if hasattr(manager, "session_factory"):
             self.checkpoint_manager = CheckpointManager(manager.session_factory)
 
-
     def _save_checkpoint_if_needed(self, state: dict[str, Any], step_name: str, step_index: int) -> None:
         """ステップ完了時にチェックポイントを保存"""
         task_id = state.get("task_id")
@@ -131,9 +130,7 @@ class WritingGraphManager:
 
     def _build_graph(self):
         if not HAS_LANGGRAPH or StateGraph is None:
-            logger.warning(
-                "langgraph が未インストールのため WritingGraphManager はグラフ実行をスキップします。"
-            )
+            logger.warning("langgraph が未インストールのため WritingGraphManager はグラフ実行をスキップします。")
             return None
 
         workflow = StateGraph(WritingGraphState)
@@ -163,9 +160,7 @@ class WritingGraphManager:
             },
         )
 
-        workflow.add_conditional_edges(
-            "critic", self.route_after_critic, {"retry": "drafting", "finish": "dogfeed"}
-        )
+        workflow.add_conditional_edges("critic", self.route_after_critic, {"retry": "drafting", "finish": "dogfeed"})
 
         workflow.add_conditional_edges(
             "review_wait",
@@ -225,9 +220,7 @@ class WritingGraphManager:
             if isinstance(state.get("context"), dict)
             else "unknown"
         )
-        cache_key = (
-            f"ep{state.get('ep_num', 'unknown')}_{genre_str}_{state.get('is_easy_mode', False)}"
-        )
+        cache_key = f"ep{state.get('ep_num', 'unknown')}_{genre_str}_{state.get('is_easy_mode', False)}"
 
         # キャッシュからgen_ctxを取得（試み）
         cached_gen_ctx = self._get_cached_gen_ctx(cache_key)
@@ -263,9 +256,7 @@ class WritingGraphManager:
                     break
                 except Exception as e:
                     if attempt < 2:
-                        logger.warning(
-                            f"node_prepare attempt {attempt + 1} failed: {e}, retrying in {retry_delay}s"
-                        )
+                        logger.warning(f"node_prepare attempt {attempt + 1} failed: {e}, retrying in {retry_delay}s")
                         await asyncio.sleep(retry_delay)
                         retry_delay = min(retry_delay * RETRY_BACKOFF_FACTOR, MAX_RETRY_DELAY)
                     else:
@@ -275,12 +266,11 @@ class WritingGraphManager:
         # v5.0: 最大反復回数を1回に制限（全文再生成の多重ループ廃止）
         try:
             from config.project_context import ProjectContext
+
             base_max_ac_iter = min(ProjectContext.get_setting("actor_critic_max_iterations", 1), 1)
         except (ImportError, Exception):
             base_max_ac_iter = 1
         max_ac_iter = 1 if ncs_score < 40 else base_max_ac_iter
-
-
 
         # 早期終了判定: NCSスコアが極めて高い場合はdogfeedスキップ
         if ncs_score >= 90:
@@ -396,9 +386,7 @@ class WritingGraphManager:
                 )
 
                 # 品質が極めて高い場合は早期終了フラグ
-                quality_skip = (
-                    rate >= QUALITY_THRESHOLD_EARLY_EXIT and is_integrity_ok and is_causal_ok
-                )
+                quality_skip = rate >= QUALITY_THRESHOLD_EARLY_EXIT and is_integrity_ok and is_causal_ok
                 if quality_skip:
                     logger.info(
                         f"High quality detected (rate={rate:.2f}) for Ep.{state['ep_num']}, suggesting early termination"
@@ -465,19 +453,13 @@ class WritingGraphManager:
                     if review:
                         status = review.get("status")
                         if status == "approved":
-                            logger.info(
-                                f"Patch review {patch_review_id} approved for Ep.{state['ep_num']}"
-                            )
+                            logger.info(f"Patch review {patch_review_id} approved for Ep.{state['ep_num']}")
                             return {"review_status": "approved"}
                         elif status == "rejected":
-                            logger.info(
-                                f"Patch review {patch_review_id} rejected for Ep.{state['ep_num']}"
-                            )
+                            logger.info(f"Patch review {patch_review_id} rejected for Ep.{state['ep_num']}")
                             return {"review_status": "rejected"}
                         elif status == "needs_revision":
-                            logger.info(
-                                f"Patch review {patch_review_id} needs revision for Ep.{state['ep_num']}"
-                            )
+                            logger.info(f"Patch review {patch_review_id} needs revision for Ep.{state['ep_num']}")
                             return {"review_status": "revised"}
                         # under_review または generated の場合は継続
             except Exception as e:
@@ -522,9 +504,7 @@ class WritingGraphManager:
         if state.get("requires_user_review"):
             patch_review_id = state.get("patch_review_id")
             if patch_review_id:
-                logger.info(
-                    f"Routing to review_wait for Ep.{state.get('ep_num')} (patch_review_id={patch_review_id})"
-                )
+                logger.info(f"Routing to review_wait for Ep.{state.get('ep_num')} (patch_review_id={patch_review_id})")
                 return "review_wait"
 
         # 整合性・因果性双方がOKの場合 (v5.0 Early Exit)
@@ -541,17 +521,13 @@ class WritingGraphManager:
             )
             return "finish"
 
-
         # 因果性のみ失敗で重監査モードの場合
         if not state.get("is_causal_ok") and state.get("should_heavy_audit", True):
             return "heal"
 
         # 反復可能で重監査モードの場合
-        if state.get("ac_iter", 0) < state.get("max_ac_iter", 1) and state.get(
-            "should_heavy_audit", True
-        ):
+        if state.get("ac_iter", 0) < state.get("max_ac_iter", 1) and state.get("should_heavy_audit", True):
             return "critic"
-
 
         return "finish"
 
@@ -603,9 +579,7 @@ class WritingGraphManager:
                 )
                 return "retry"
             else:
-                logger.info(
-                    f"Max iterations reached, skipping critic retry for Ep.{state.get('ep_num')}"
-                )
+                logger.info(f"Max iterations reached, skipping critic retry for Ep.{state.get('ep_num')}")
         return "finish"
 
     async def node_healing(self, state: WritingGraphState):
@@ -615,7 +589,9 @@ class WritingGraphManager:
         # v5.0 1パッチPDCA: UnifiedAuditorが提示した局所修正パッチがある場合は全文再生成を行わずに適用
         actionable_patch = state.get("actionable_patch")
         if actionable_patch and state.get("draft_content"):
-            logger.info(f"v5.0 1-Patch PDCA: Applying focused single-patch instead of full rewrite for Ep.{state['ep_num']}")
+            logger.info(
+                f"v5.0 1-Patch PDCA: Applying focused single-patch instead of full rewrite for Ep.{state['ep_num']}"
+            )
             healed_content = state["draft_content"] + "\n\n" + actionable_patch
             return {
                 "draft_content": healed_content,
@@ -624,7 +600,6 @@ class WritingGraphManager:
             }
 
         blueprint = state["context"]["plot"].detailed_blueprint
-
 
         # 指数関数的バックオフ付きリトライ
         retry_delay = DEFAULT_RETRY_DELAY
@@ -648,9 +623,7 @@ class WritingGraphManager:
                 }
             except Exception as e:
                 last_error = e
-                logger.warning(
-                    f"Healing attempt {attempt + 1} failed for Ep.{state['ep_num']}: {e}"
-                )
+                logger.warning(f"Healing attempt {attempt + 1} failed for Ep.{state['ep_num']}: {e}")
                 if attempt < 2:
                     await asyncio.sleep(retry_delay + random.uniform(0, 0.2))
                     retry_delay = min(retry_delay * RETRY_BACKOFF_FACTOR, MAX_RETRY_DELAY)
@@ -693,9 +666,7 @@ class WritingGraphManager:
                 return {"dogfeed_ok": dogfeed_ok}
             except Exception as e:
                 last_error = e
-                logger.warning(
-                    f"Dogfeed attempt {attempt + 1} failed for Ep.{state['ep_num']}: {e}"
-                )
+                logger.warning(f"Dogfeed attempt {attempt + 1} failed for Ep.{state['ep_num']}: {e}")
                 if attempt < 2:
                     await asyncio.sleep(retry_delay + random.uniform(0, 0.2))
                     retry_delay = min(retry_delay * RETRY_BACKOFF_FACTOR, MAX_RETRY_DELAY)
@@ -724,7 +695,6 @@ class WritingGraphManager:
             "timestamp": time.time(),
         }
 
-
         # 品質メトリクスを記録
         try:
             from .quality_metrics import QualityMetrics
@@ -750,9 +720,7 @@ class WritingGraphManager:
             logger.warning(f"Failed to record quality metrics for Ep.{ep_num}: {e}")
 
         if not (
-            state.get("is_integrity_ok")
-            and state.get("is_causal_ok")
-            and state.get("dogfeed_ok", True)
+            state.get("is_integrity_ok") and state.get("is_causal_ok") and state.get("dogfeed_ok", True)
         ) and not state.get("is_easy_mode", False):
             await self.manager._register_lazy_patch(
                 ep_num,
@@ -782,9 +750,7 @@ class WritingGraphManager:
                     draft_text=draft_content,
                 )
                 if resolved_titles:
-                    logger.info(
-                        f"Foreshadowing auto-resolved in Ep.{ep_num}: {resolved_titles}"
-                    )
+                    logger.info(f"Foreshadowing auto-resolved in Ep.{ep_num}: {resolved_titles}")
                     final_meta["resolved_foreshadowings"] = resolved_titles
         except Exception as e:
             logger.warning(f"Foreshadowing auto-resolve failed for Ep.{ep_num}: {e}")
@@ -804,16 +770,15 @@ class WritingGraphManager:
         # v5.0: 最大反復回数を1回にハード制限
         try:
             from config.project_context import ProjectContext
+
             base_max = min(ProjectContext.get_setting("actor_critic_max_iterations", 1), 1)
         except (ImportError, Exception):
             base_max = 1
-
 
         return {
             "ep_num": ep_num,
             "start_time": time.time(),
             "passion": passion,
-
             "is_easy_mode": is_easy_mode,
             "context": ctx,
             "sys_inst": sys_inst,
@@ -847,9 +812,7 @@ class WritingGraphManager:
     ) -> tuple[str, dict[str, Any], bool]:
         """実行メソッド - チェックポイント対応"""
         logger.info(f"Starting LangGraph execution for Ep.{ep_num} (easy_mode={is_easy_mode})")
-        initial_state = self._create_initial_state(
-            ep_num, ctx, sys_inst, fw_prompt, passion, is_easy_mode
-        )
+        initial_state = self._create_initial_state(ep_num, ctx, sys_inst, fw_prompt, passion, is_easy_mode)
 
         if self.workflow is None:
             # LangGraph 非依存のフォールバック: ノードを順次実行
@@ -967,9 +930,7 @@ class WritingGraphManager:
         if prev_metrics is None:
             return True  # 記録なしは許可
         if prev_metrics.overall_quality < 0.7:
-            logger.warning(
-                f"Dependency Ep.{depends_on} has low quality (score={prev_metrics.overall_quality:.2f})"
-            )
+            logger.warning(f"Dependency Ep.{depends_on} has low quality (score={prev_metrics.overall_quality:.2f})")
             return False
         return True
 
@@ -997,8 +958,6 @@ class WritingGraphManager:
         if depends_on is not None:
             quality_ok = await self._check_dependency(ep_num, depends_on)
             if not quality_ok:
-                logger.warning(
-                    f"Ep.{ep_num}: Dependency Ep.{depends_on} quality issue, but proceeding"
-                )
+                logger.warning(f"Ep.{ep_num}: Dependency Ep.{depends_on} quality issue, but proceeding")
             await self._wait_for_dependency(ep_num, depends_on)
         return await self.run(ep_num, ctx, sys_inst, fw_prompt, passion, is_easy_mode)

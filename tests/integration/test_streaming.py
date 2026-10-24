@@ -5,6 +5,7 @@
 - 切断検知: クライアント切断時に adapter.cancel() が呼ばれる
 - レート制限: 同一 IP から短時間に大量リクエストが来ると 429 を返す
 """
+
 from __future__ import annotations
 
 import base64
@@ -147,9 +148,7 @@ def test_stream_post_invokes_cancel_on_disconnect(client: TestClient, monkeypatc
     assert cancel_called["n"] >= 1
 
 
-def test_stream_invokes_cancel_on_disconnect(
-    client: TestClient, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_stream_invokes_cancel_on_disconnect(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     """クライアント切断時に adapter.cancel() が呼ばれる。
 
     ``request.is_disconnected`` は starlette の内部 ``receive`` チャネルを

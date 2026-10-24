@@ -15,6 +15,7 @@ PLAN_H1R H1R-3 で判定方式を変更した:
 オブジェクト同一性で判定する。prefix の有無に依存せず、エイリアスにも強い。
 （``docs/TEST_STRATEGY.md``「ソース文字列 grep を assert にするな」の適用）
 """
+
 from __future__ import annotations
 
 import glob
@@ -70,8 +71,8 @@ ALLOWLIST = {"metrics"}
 # 理由 必须（同じ内容が tests/regression/test_H1_routing_drift.py にある）。
 CONDITIONAL_MOUNTS = {
     "multimedia": (
-        "server.py:194 `if plugin_registry.is_enabled(\"multimedia\")` が true のときだけ "
-        "prefix=\"/multimedia\" でマウントされる。testing プロファイルではプラグインが無効。"
+        'server.py:194 `if plugin_registry.is_enabled("multimedia")` が true のときだけ '
+        'prefix="/multimedia" でマウントされる。testing プロファイルではプラグインが無効。'
         "TODO(H1-10): プラグイン有効時の検証を統合テストに追加"
     ),
 }
@@ -83,9 +84,7 @@ def test_conditional_mounts_have_a_reason():
     """条件付きマウントを allowlist に挙げたなら、理由と TODO 番号を書く（§9）。"""
     for name, reason in CONDITIONAL_MOUNTS.items():
         assert reason.strip(), f"{name} の CONDITIONAL_MOUNTS に理由が無い"
-        assert "TODO(H1-" in reason, (
-            f"{name} の CONDITIONAL_MOUNTS に TODO(H1-N) の番号が無い（§9: 数値外れ禁止）"
-        )
+        assert "TODO(H1-" in reason, f"{name} の CONDITIONAL_MOUNTS に TODO(H1-N) の番号が無い（§9: 数値外れ禁止）"
 
 
 def _app_paths() -> set[str]:

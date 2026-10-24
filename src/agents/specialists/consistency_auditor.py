@@ -90,7 +90,8 @@ class ConsistencyAuditor(SpecialistAuditor):
         foreshadowing_context = ctx.get("foreshadowing_context", "")
         if not draft:
             return SpecialistAuditResult(
-                "consistency", 0.0,
+                "consistency",
+                0.0,
                 feedback={"error": "no draft_text"},
                 suggestions=["Provide draft_text in context"],
             )
@@ -168,7 +169,9 @@ class ConsistencyAuditor(SpecialistAuditor):
         draft = ctx.get("draft_text", "") or ""
         bible = ctx.get("world_bible_snapshot") or {}
         if not draft:
-            return SpecialistAuditResult("consistency", 0.0, feedback={"error": "no draft_text", "fallback": "rule-based"}, degraded=True)
+            return SpecialistAuditResult(
+                "consistency", 0.0, feedback={"error": "no draft_text", "fallback": "rule-based"}, degraded=True
+            )
 
         entities = extract_entities(draft, bible)
         all_entities = set()
@@ -176,7 +179,9 @@ class ConsistencyAuditor(SpecialistAuditor):
             all_entities.update(ent_set)
 
         if not all_entities:
-            return SpecialistAuditResult("consistency", 60.0, feedback={"coverage": "neutral", "fallback": "rule-based"}, degraded=True)
+            return SpecialistAuditResult(
+                "consistency", 60.0, feedback={"coverage": "neutral", "fallback": "rule-based"}, degraded=True
+            )
 
         graph = build_relation_graph(bible)
         consistency_score = check_semantic_consistency(draft, graph)
@@ -262,4 +267,4 @@ class ConsistencyAuditor(SpecialistAuditor):
         return "\n".join(parts)
 
 
-__all__ = ["ConsistencyAuditor"]
+__all__ = ["ConsistencyAuditor"]

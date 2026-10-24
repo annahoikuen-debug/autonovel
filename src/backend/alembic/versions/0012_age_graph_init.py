@@ -26,11 +26,7 @@ def upgrade() -> None:
     import sqlalchemy as sa
 
     bind = op.get_bind()
-    has_age = bool(
-        bind.execute(
-            sa.text("SELECT 1 FROM pg_available_extensions WHERE name = 'age';")
-        ).scalar()
-    )
+    has_age = bool(bind.execute(sa.text("SELECT 1 FROM pg_available_extensions WHERE name = 'age';")).scalar())
 
     # Ensure extensions
     op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
@@ -80,11 +76,7 @@ def downgrade() -> None:
     import sqlalchemy as sa
 
     bind = op.get_bind()
-    has_age = bool(
-        bind.execute(
-            sa.text("SELECT 1 FROM pg_available_extensions WHERE name = 'age';")
-        ).scalar()
-    )
+    has_age = bool(bind.execute(sa.text("SELECT 1 FROM pg_available_extensions WHERE name = 'age';")).scalar())
     if not has_age:
         return
 

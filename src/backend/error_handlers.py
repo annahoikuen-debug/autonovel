@@ -1,4 +1,5 @@
 """グローバル例外ハンドラ (RFC 7807 準拠)。"""
+
 import logging
 
 from fastapi import Request, HTTPException, status, FastAPI
@@ -103,10 +104,12 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     invalid_params = []
     for err in exc.errors():
         loc = " -> ".join(str(part) for part in err.get("loc", []))
-        invalid_params.append({
-            "name": loc,
-            "reason": err.get("msg", "Invalid value"),
-        })
+        invalid_params.append(
+            {
+                "name": loc,
+                "reason": err.get("msg", "Invalid value"),
+            }
+        )
 
     problem = ProblemDetails(
         type="https://autonovel.local/errors/validation-error",

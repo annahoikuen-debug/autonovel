@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from src.services.exporters.epub_vertical_styler import COMMERCIAL_VERTICAL_CSS
 
+
 class EpubGenerator:
     """縦書きEPUB 3生成およびCSSスタイル検証ファサード."""
 

@@ -43,9 +43,7 @@ class TestRepositoryContract:
         called = _repo_calls_in("agents/writing/generator.py")
         assert called, "generator.py で self.repo.* の呼び出しが見つからない（解析前提の変化）"
         missing = sorted(m for m in called if not hasattr(BookRepository, m))
-        assert not missing, (
-            f"BookRepository に存在しないメソッドを呼んでいる: {missing}"
-        )
+        assert not missing, f"BookRepository に存在しないメソッドを呼んでいる: {missing}"
 
     def test_agent_calls_are_satisfied(self) -> None:
         from src.infrastructure.repositories.book import BookRepository
@@ -53,9 +51,7 @@ class TestRepositoryContract:
         called = _repo_calls_in("agents/writing/agent.py")
         assert called, "agent.py で self.repo.* の呼び出しが見つからない（解析前提の変化）"
         missing = sorted(m for m in called if not hasattr(BookRepository, m))
-        assert not missing, (
-            f"agent.py が呼ぶ repo メソッドの欠損状態が想定と不一致: missing={missing}"
-        )
+        assert not missing, f"agent.py が呼ぶ repo メソッドの欠損状態が想定と不一致: missing={missing}"
 
     def test_chapter_repository_provides_the_primitives(self) -> None:
         """委譲先 ``ChapterRepository`` がプリミティブを持つこと（前提の固定）。"""
@@ -107,9 +103,7 @@ class TestBeatToSceneWiring:
     def test_beat_to_scene_is_the_default(self) -> None:
         from src.agents.writing.generator import WritingGenerator
 
-        assert getattr(WritingGenerator, "DEFAULT_USE_BEAT_TO_SCENE", True) or hasattr(
-            WritingGenerator, "generate"
-        )
+        assert getattr(WritingGenerator, "DEFAULT_USE_BEAT_TO_SCENE", True) or hasattr(WritingGenerator, "generate")
 
     def test_beat_to_scene_handler_exists(self) -> None:
         from src.agents.writing.episode_writer import EpisodeWriter

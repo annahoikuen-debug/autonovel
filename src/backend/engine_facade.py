@@ -155,6 +155,4 @@ class EngineFacade:
         book_id: int,
         tolerance: float = 0.2,
     ) -> tuple[bool, float]:
-        return await self._engine.validate_tension_deviation(
-            ep_num, generated_tension, book_id, tolerance
-        )
+        return await self._engine.validate_tension_deviation(ep_num, generated_tension, book_id, tolerance)

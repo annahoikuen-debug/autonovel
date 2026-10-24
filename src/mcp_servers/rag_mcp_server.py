@@ -1,4 +1,5 @@
 """RAG & Memory MCP Server Implementation."""
+
 from __future__ import annotations
 
 from typing import Any, Dict

@@ -9,6 +9,7 @@ Part 2: Token budget & API cost monitoring guard.
 Records detailed token consumption per agent/model for cost analytics
 and automatic model downgrade decisions.
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa

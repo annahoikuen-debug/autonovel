@@ -41,8 +41,7 @@ async def test_pillar3_full_regression():
         {"proposal_id": "p2", "title": "魔法薬師の日常", "theme": "スローライフ", "characters": ["エマ"]},
     ]
     custom_contexts = {
-        p["proposal_id"]: ProposalSandboxContext(proposal_id=p["proposal_id"], metadata={"data": p})
-        for p in proposals
+        p["proposal_id"]: ProposalSandboxContext(proposal_id=p["proposal_id"], metadata={"data": p}) for p in proposals
     }
     runner = ProposalIsolationRunner(proposal_ids=list(custom_contexts.keys()))
 
@@ -94,8 +93,20 @@ async def test_pillar3_full_regression():
     mock_rag = MagicMock()
     mock_rag.age_client = None
     mock_rag.search_similar_chunks.return_value = [
-        SearchResult(id="1", content="魔導槍は古代の英霊が遺した神器。", metadata={"name": "魔導槍", "status": "active"}, source="item", score=0.9),
-        SearchResult(id="2", content="先代魔王は百年前に封印された。", metadata={"name": "先代魔王", "status": "sealed"}, source="lore", score=0.85),
+        SearchResult(
+            id="1",
+            content="魔導槍は古代の英霊が遺した神器。",
+            metadata={"name": "魔導槍", "status": "active"},
+            source="item",
+            score=0.9,
+        ),
+        SearchResult(
+            id="2",
+            content="先代魔王は百年前に封印された。",
+            metadata={"name": "先代魔王", "status": "sealed"},
+            source="lore",
+            score=0.85,
+        ),
     ]
     rag_service = ReflectiveRAGService(rag_service=mock_rag, relevance_threshold=0.5)
     rag_output = await rag_service.retrieve_with_reflection(
@@ -125,7 +136,9 @@ async def test_pillar3_full_regression():
         {"source": "レイ", "target": "魔導槍", "type": "装備"},
         {"source": "レイ", "target": "魔王城", "type": "侵攻"},
     ]
-    raw_story = ("第10話：決戦。\nレイは魔導槍を握りしめ、魔王城の階段を駆け上がった。未回収伏線 FS-REI-DESTINY が鳴動する。\n") * 10
+    raw_story = (
+        "第10話：決戦。\nレイは魔導槍を握りしめ、魔王城の階段を駆け上がった。未回収伏線 FS-REI-DESTINY が鳴動する。\n"
+    ) * 10
 
     protected = ProtectedContext(
         active_characters=["レイ"],
@@ -156,10 +169,7 @@ async def test_pillar3_full_regression():
     assert budgets["rag_budget"] + budgets["compression_budget"] == 3000
 
     # Final verification of combined context
-    final_combined = (
-        f"{formatted_rag}\n\n"
-        f"{comp_res.layer4.compressed_text}\n"
-    )
+    final_combined = f"{formatted_rag}\n\n{comp_res.layer4.compressed_text}\n"
     assert "レイ" in final_combined
     assert "魔導槍" in final_combined
 

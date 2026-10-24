@@ -18,19 +18,13 @@ class AuditService:
     async def screen_plot(self, blueprint: str) -> tuple[bool, str]:
         return await self.fast_screener.screen_plot(blueprint)
 
-    async def audit_ability(
-        self, blueprint: str, settings_json: str, characters_json: str
-    ) -> tuple[bool, str, str]:
-        return await self.ability_checker.audit_ability_consistency(
-            blueprint, settings_json, characters_json
-        )
+    async def audit_ability(self, blueprint: str, settings_json: str, characters_json: str) -> tuple[bool, str, str]:
+        return await self.ability_checker.audit_ability_consistency(blueprint, settings_json, characters_json)
 
     async def audit_deai(self, content: str) -> tuple[bool, str]:
         return await self.deai_auditor.audit(content)
 
-    def get_erotic_advice(
-        self, intensities: list[int], current_ep: int, total_eps: int
-    ) -> list[str]:
+    def get_erotic_advice(self, intensities: list[int], current_ep: int, total_eps: int) -> list[str]:
         """官能シーンのタイミングに関するAIアドバイスを返す。"""
         advice = []
 
@@ -44,8 +38,6 @@ class AuditService:
         if intensities:
             avg = sum(intensities) / len(intensities)
             if avg > 3.5:
-                advice.append(
-                    "⚠️ 全体の官能強度の平均が高めです。情緒的な「溜め」の回を増やすことを検討してください。"
-                )
+                advice.append("⚠️ 全体の官能強度の平均が高めです。情緒的な「溜め」の回を増やすことを検討してください。")
 
         return advice

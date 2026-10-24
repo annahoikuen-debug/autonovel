@@ -252,9 +252,7 @@ class SubtextEngine:
             "processing_time_ms": 0.0,
         }
 
-    def detect_conflicts(
-        self, sample_blocks: List[DialogueBlock]
-    ) -> List[Dict[str, Any]]:
+    def detect_conflicts(self, sample_blocks: List[DialogueBlock]) -> List[Dict[str, Any]]:
         """Step 21: Detects rules that match the same block and could conflict."""
         conflicts = []
         rules = self.registry.list_rules(enabled_only=True)
@@ -267,10 +265,12 @@ class SubtextEngine:
                     matching_rules.append(rule.id)
 
             if len(matching_rules) > 1:
-                conflicts.append({
-                    "speaker": block.speaker,
-                    "text": block.raw_text(),
-                    "matching_rules": matching_rules,
-                })
+                conflicts.append(
+                    {
+                        "speaker": block.speaker,
+                        "text": block.raw_text(),
+                        "matching_rules": matching_rules,
+                    }
+                )
 
         return conflicts

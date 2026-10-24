@@ -1,5 +1,6 @@
 # tests/unit/test_enrichment_multimedia.py
 """EnrichmentAgent マルチメディアシナリオ生成の単体テスト"""
+
 from src.agents.enrichment.multimedia import (
     classify_scene_type,
     render_manga_script,

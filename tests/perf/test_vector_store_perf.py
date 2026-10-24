@@ -3,6 +3,7 @@
 InMemoryFallbackStore と EmbeddingService の組み合わせで実測値を測定.
 ``-m perf`` で実行可能 (`pytest -m perf`).
 """
+
 from __future__ import annotations
 
 import time

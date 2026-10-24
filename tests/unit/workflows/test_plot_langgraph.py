@@ -12,14 +12,15 @@ async def test_plot_langgraph_fallback_execution():
     mock_engine.repo.create_or_replace_plot = AsyncMock()
     mock_engine.pm = MagicMock()
     mock_engine.ctx_mgr = MagicMock()
-    mock_engine.ctx_mgr.get_optimal_context = AsyncMock(return_value=(
-        {"character_id": 1, "traits": ["brave"]},  # character_context
-        {"prev_events": ["event1"]}                 # previous_context
-    ))
+    mock_engine.ctx_mgr.get_optimal_context = AsyncMock(
+        return_value=(
+            {"character_id": 1, "traits": ["brave"]},  # character_context
+            {"prev_events": ["event1"]},  # previous_context
+        )
+    )
     mock_engine.generate_json = AsyncMock()
     mock_engine.generate_json.return_value = MagicMock(
-        success=True,
-        metadata={"scenes": [{"title": "Scene 1", "content": "content"}]}
+        success=True, metadata={"scenes": [{"title": "Scene 1", "content": "content"}]}
     )
     mock_engine.logic_validator = MagicMock()
     mock_engine.auditor = MagicMock()
@@ -31,7 +32,7 @@ async def test_plot_langgraph_fallback_execution():
 
     # langgraphが利用できない場合のフォールバックパスをテストするため、
     # あえてHAS_LANGGRAPHをFalseにする
-    with patch('src.backend.workflows.plot_langgraph.HAS_LANGGRAPH', False):
+    with patch("src.backend.workflows.plot_langgraph.HAS_LANGGRAPH", False):
         # runメソッドを実行
         result = await manager.run(book_id=1, ep_num=1, branch_id=1)
 
@@ -70,19 +71,21 @@ async def test_plot_langgraph_with_mocked_workflow():
     # langgraphが利用可能な状態をシミュレート
     # workflow属性にモックを直接設定
     mock_workflow = MagicMock()
-    mock_workflow.ainvoke = AsyncMock(return_value={
-        "book_id": 1,
-        "ep_num": 1,
-        "branch_id": 1,
-        "status": "completed",
-        "final_plot": {
+    mock_workflow.ainvoke = AsyncMock(
+        return_value={
             "book_id": 1,
             "ep_num": 1,
             "branch_id": 1,
-            "blueprint": {"scenes": [{"title": "Test Scene"}]},
-            "scenes": [{"title": "Test Scene", "content": "test content"}]
+            "status": "completed",
+            "final_plot": {
+                "book_id": 1,
+                "ep_num": 1,
+                "branch_id": 1,
+                "blueprint": {"scenes": [{"title": "Test Scene"}]},
+                "scenes": [{"title": "Test Scene", "content": "test content"}],
+            },
         }
-    })
+    )
     manager.workflow = mock_workflow
 
     # runメソッドを実行
@@ -135,18 +138,13 @@ async def test_node_align_context():
     """node_align_contextのテスト"""
     mock_engine = MagicMock()
     mock_engine.ctx_mgr = MagicMock()
-    mock_engine.ctx_mgr.get_optimal_context = AsyncMock(return_value=(
-        {"character_id": 1, "traits": ["brave"]},
-        {"prev_events": ["event1"]}
-    ))
+    mock_engine.ctx_mgr.get_optimal_context = AsyncMock(
+        return_value=({"character_id": 1, "traits": ["brave"]}, {"prev_events": ["event1"]})
+    )
 
     manager = PlotGraphManager(mock_engine)
 
-    state = {
-        "book_id": 1,
-        "ep_num": 1,
-        "branch_id": 1
-    }
+    state = {"book_id": 1, "ep_num": 1, "branch_id": 1}
 
     result = await manager.node_align_context(state)
 
@@ -160,17 +158,11 @@ async def test_node_generate_blueprint():
     """node_generate_blueprintのテスト"""
     mock_engine = MagicMock()
     mock_engine.generate_json = AsyncMock()
-    mock_engine.generate_json.return_value = MagicMock(
-        success=True,
-        metadata={"plot_points": ["point1", "point2"]}
-    )
+    mock_engine.generate_json.return_value = MagicMock(success=True, metadata={"plot_points": ["point1", "point2"]})
 
     manager = PlotGraphManager(mock_engine)
 
-    state = {
-        "book_id": 1,
-        "ep_num": 1
-    }
+    state = {"book_id": 1, "ep_num": 1}
 
     result = await manager.node_generate_blueprint(state)
 
@@ -189,15 +181,11 @@ async def test_node_audit_plot():
     """node_audit_plotのテスト"""
     mock_engine = MagicMock()
     mock_engine.auditor = MagicMock()
-    mock_engine.auditor.audit = AsyncMock(return_value=MagicMock(
-        model_dump=lambda: {"consistent": True, "score": 0.9}
-    ))
+    mock_engine.auditor.audit = AsyncMock(return_value=MagicMock(model_dump=lambda: {"consistent": True, "score": 0.9}))
 
     manager = PlotGraphManager(mock_engine)
 
-    state = {
-        "blueprint": {"plot_points": ["point1", "point2"]}
-    }
+    state = {"blueprint": {"plot_points": ["point1", "point2"]}}
 
     result = await manager.node_audit_plot(state)
 
@@ -215,10 +203,7 @@ async def test_node_expand_scenes():
 
     state = {
         "blueprint": {
-            "scenes": [
-                {"title": "Scene 1", "content": "Content 1"},
-                {"title": "Scene 2", "content": "Content 2"}
-            ]
+            "scenes": [{"title": "Scene 1", "content": "Content 1"}, {"title": "Scene 2", "content": "Content 2"}]
         }
     }
 
@@ -226,7 +211,7 @@ async def test_node_expand_scenes():
 
     assert result["scenes"] == [
         {"title": "Scene 1", "content": "Content 1"},
-        {"title": "Scene 2", "content": "Content 2"}
+        {"title": "Scene 2", "content": "Content 2"},
     ]
     assert result["status"] == "scenes_expanded"
 
@@ -240,13 +225,7 @@ async def test_node_save_plot():
 
     manager = PlotGraphManager(mock_engine)
 
-    state = {
-        "book_id": 1,
-        "ep_num": 2,
-        "branch_id": 3,
-        "blueprint": {"act": 1},
-        "scenes": [{"title": "Test Scene"}]
-    }
+    state = {"book_id": 1, "ep_num": 2, "branch_id": 3, "blueprint": {"act": 1}, "scenes": [{"title": "Test Scene"}]}
 
     result = await manager.node_save_plot(state)
 
@@ -293,7 +272,7 @@ def test_plot_langgraph_state_structure():
         "is_consistent": True,
         "retry_count": 0,
         "max_retries": 3,
-        "status": "starting"
+        "status": "starting",
     }
 
     assert state["book_id"] == 1

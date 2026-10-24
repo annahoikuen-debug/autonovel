@@ -38,9 +38,19 @@ async def test_digest_generate_awaitable_and_attributes():
         return Attr()
 
     assert await generate_episode_digest(SimpleNamespace(generate=agen), "b", 1) == "text版"
-    assert await generate_episode_digest(SimpleNamespace(generate=lambda prompt, temperature=None: Attr()), "b", 1) == "text版"
-    assert await generate_episode_digest(SimpleNamespace(generate=lambda prompt, temperature=None: Content()), "b", 1) == str(Content().content)
-    assert await generate_episode_digest(SimpleNamespace(generate=lambda prompt, temperature=None: {"content": "dict版"}), "b", 1) == "dict版"
+    assert (
+        await generate_episode_digest(SimpleNamespace(generate=lambda prompt, temperature=None: Attr()), "b", 1)
+        == "text版"
+    )
+    assert await generate_episode_digest(
+        SimpleNamespace(generate=lambda prompt, temperature=None: Content()), "b", 1
+    ) == str(Content().content)
+    assert (
+        await generate_episode_digest(
+            SimpleNamespace(generate=lambda prompt, temperature=None: {"content": "dict版"}), "b", 1
+        )
+        == "dict版"
+    )
     res = await generate_episode_digest(SimpleNamespace(generate=lambda prompt, temperature=None: 42), "b", 1)
     assert res.startswith("第1話要約:")
 
@@ -154,9 +164,7 @@ async def test_digest_service_summarize_and_save():
     llm = SimpleNamespace(generate=lambda prompt, temperature=None: "要約")
     svc = EpisodeDigestService(repo, llm)
     assert await svc.summarize_and_save(1, 1, "本文") == "要約"
-    repo.save_digest.assert_awaited_once_with(
-        book_id=1, episode_num=1, digest_text="要約"
-    )
+    repo.save_digest.assert_awaited_once_with(book_id=1, episode_num=1, digest_text="要約")
 
     svc2 = EpisodeDigestService(None, None)
     assert await svc2.summarize_and_save(1, 1, "本文")
@@ -221,9 +229,7 @@ def test_build_context_layers():
 
 
 def test_build_context_budget_guard():
-    b = RollingMemoryBuilder(
-        max_recent_digests=10, max_total_chars=400, max_total_tokens=10_000
-    )
+    b = RollingMemoryBuilder(max_recent_digests=10, max_total_chars=400, max_total_tokens=10_000)
     digests = [f"第{i}話: " + "あ" * 200 for i in range(1, 10)]
     ctx = b.build_context("設定", digests, "本文")
     assert len(ctx) < 10_000
@@ -231,9 +237,7 @@ def test_build_context_budget_guard():
 
 
 def test_build_context_prev_episode_shortening():
-    b = RollingMemoryBuilder(
-        max_recent_digests=2, max_total_chars=300, max_total_tokens=10_000
-    )
+    b = RollingMemoryBuilder(max_recent_digests=2, max_total_chars=300, max_total_tokens=10_000)
     ctx = b.build_context("x" * 250, ["d1", "d2"], "あ" * 5000)
     assert len(ctx) < 5000
     assert "前略" in ctx

@@ -3,6 +3,7 @@ import pytest
 from unittest.mock import AsyncMock
 from src.agents.specialists.unified_auditor import UnifiedAuditor
 
+
 @pytest.mark.asyncio
 async def test_agent_speed_benchmark_static_audit():
     """静的ルール解析（第1層）が1回あたり1ms未満（目標<0.001s）で完了することを検証"""
@@ -21,6 +22,7 @@ async def test_agent_speed_benchmark_static_audit():
     avg_time_ms = (elapsed / iterations) * 1000.0
     print(f"\n[BENCHMARK] Average Quantitative Audit Time: {avg_time_ms:.3f} ms")
     assert avg_time_ms < 5.0  # 5ms未満（超高速）
+
 
 @pytest.mark.asyncio
 async def test_agent_speed_benchmark_full_hybrid():

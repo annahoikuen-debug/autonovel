@@ -53,11 +53,7 @@ from src.services.compression.models import (
     SudachiConfig as PydanticSudachiConfig,
 )
 
-TEXT = (
-    "アルトは魔導剣を抜刀し、魔王と決闘した。"
-    "ルナは火球の魔術で敵を撃破した。"
-    "聖剣arteが彼の手の中にある。"
-)
+TEXT = "アルトは魔導剣を抜刀し、魔王と決闘した。ルナは火球の魔術で敵を撃破した。聖剣arteが彼の手の中にある。"
 
 
 # --------------------------------------------------------------------------
@@ -112,9 +108,7 @@ def test_create_japanese_tokenizer(monkeypatch):
     assert isinstance(create_japanese_tokenizer(), RegexJapaneseTokenizer)
 
     monkeypatch.setattr(mod, "SUDACHI_AVAILABLE", True)
-    monkeypatch.setattr(
-        mod, "HybridJapaneseTokenizer", MagicMock(side_effect=RuntimeError("boom"))
-    )
+    monkeypatch.setattr(mod, "HybridJapaneseTokenizer", MagicMock(side_effect=RuntimeError("boom")))
     assert isinstance(create_japanese_tokenizer(), RegexJapaneseTokenizer)
 
 
@@ -320,9 +314,10 @@ def test_layer2_age_early_returns():
     # v5.3 以降 age_client はメソッド引数ではなくコンストラクタ注入（DI）。
     # 未注入なら keyword_scores を渡しても age_empty で早期リターンする。
     without_client = Layer2SubgraphExtractor(age_client=None)
-    assert without_client.extract_from_age(
-        MagicMock(), "g", ["a"], keyword_scores={"a": 1.0}
-    ).stats["source"] == "age_empty"
+    assert (
+        without_client.extract_from_age(MagicMock(), "g", ["a"], keyword_scores={"a": 1.0}).stats["source"]
+        == "age_empty"
+    )
     with_client = Layer2SubgraphExtractor(age_client=MagicMock())
     assert with_client.extract_from_age(MagicMock(), "g", [""]).seed_entity_names == [""]
 
@@ -331,7 +326,7 @@ def test_layer2_age_query_and_parse():
     ex = Layer2SubgraphExtractor(age_client=MagicMock())
     session = MagicMock()
     session.execute.return_value = [
-        ('"アルト"', '["Character"]', '{"role": "主人公"}', '"魔導剣"', '["Item"]', '{}', '["所持"]'),
+        ('"アルト"', '["Character"]', '{"role": "主人公"}', '"魔導剣"', '["Item"]', "{}", '["所持"]'),
         ('"アルト"', '["Character"]', '{"role": "主人公"}', None, None, None, None),
     ]
     out = ex.extract_from_age(session, "g", ["アルト'quote"], keyword_scores={"アルト": 1.0})
@@ -528,10 +523,7 @@ def test_trim_tight_budget_trims_concepts():
     abstraction = AbstractionLayerOutput(
         abstract_concepts=[f"概念{i}" for i in range(10)],
         categorized_facts={
-            "主要キャラ": [
-                {"entity": f"E{i}", "fact": f"事実{i} " * 5, "dual_name": f"E{i}"}
-                for i in range(5)
-            ]
+            "主要キャラ": [{"entity": f"E{i}", "fact": f"事実{i} " * 5, "dual_name": f"E{i}"} for i in range(5)]
         },
     )
     out = t.trim(abstraction, max_tokens=20)
@@ -598,8 +590,7 @@ def test_trim_all_pinned_keeps_fact_byte_identical():
         out = t.trim(abstraction, max_tokens=budget, protected_context=protected)
         if out.pinned_count:
             assert fact in out.compressed_text, (
-                f"予算={budget} でピン留め事実が削られた: "
-                f"{len(out.compressed_text)} 文字"
+                f"予算={budget} でピン留め事実が削られた: {len(out.compressed_text)} 文字"
             )
 
 

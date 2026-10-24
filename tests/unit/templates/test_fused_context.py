@@ -1,4 +1,5 @@
 """Unit tests for fused_emotional_context.j2 template."""
+
 from src.pipeline.prompt_builder import get_jinja_env
 
 
@@ -6,10 +7,24 @@ def test_render_with_conflicts():
     template = get_jinja_env().get_template("fused_emotional_context.j2")
 
     high_confidence = [
-        {"source": "A", "target": "B", "emotion_ja": "恐怖", "value": 0.8, "cause": "第14話裏切り", "primary_source": "annotation"},
+        {
+            "source": "A",
+            "target": "B",
+            "emotion_ja": "恐怖",
+            "value": 0.8,
+            "cause": "第14話裏切り",
+            "primary_source": "annotation",
+        },
     ]
     medium_confidence = [
-        {"source": "A", "target": "C", "emotion_ja": "緊張", "value": 0.4, "cause": "", "primary_source": "rule_engine"},
+        {
+            "source": "A",
+            "target": "C",
+            "emotion_ja": "緊張",
+            "value": 0.4,
+            "cause": "",
+            "primary_source": "rule_engine",
+        },
     ]
     low_confidence = [
         {"source": "C", "target": "A", "emotion_ja": "好意", "value": 0.2, "cause": "", "primary_source": "pipeline"},

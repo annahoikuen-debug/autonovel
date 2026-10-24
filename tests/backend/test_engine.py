@@ -41,7 +41,7 @@ class TestUltimateHegemonyEngine:
             bible_agent=Mock(),
             plot_agent=Mock(),
             style_rag=Mock(),
-            illustration_agent=Mock()
+            illustration_agent=Mock(),
         )
 
         assert engine.api_key == "test-key"
@@ -58,12 +58,7 @@ class TestUltimateHegemonyEngine:
         mock_repo = Mock()
         mock_llm = Mock()
 
-        engine = UltimateHegemonyEngine(
-            api_key="test-key",
-            repo=mock_repo,
-            llm=mock_llm,
-            plot_service=None
-        )
+        engine = UltimateHegemonyEngine(api_key="test-key", repo=mock_repo, llm=mock_llm, plot_service=None)
 
         assert engine.plot_service is not None
         # PlotService が作成されることを確認（実際のクラス名は省略）
@@ -72,12 +67,7 @@ class TestUltimateHegemonyEngine:
         """plot_service も repo も None の場合、plot_service が None のままになることを確認"""
         mock_llm = Mock()
 
-        engine = UltimateHegemonyEngine(
-            api_key="test-key",
-            llm=mock_llm,
-            plot_service=None,
-            repo=None
-        )
+        engine = UltimateHegemonyEngine(api_key="test-key", llm=mock_llm, plot_service=None, repo=None)
 
         assert engine.plot_service is None
 
@@ -91,10 +81,7 @@ class TestUltimateHegemonyEngine:
     def test_legacy_dep_returns_correct_object_when_injected(self):
         """レガシー依存関係が注入されている場合に正しいオブジェクトを返すことを確認"""
         mock_planner = Mock()
-        engine = UltimateHegemonyEngine(
-            api_key="test-key",
-            planner=mock_planner
-        )
+        engine = UltimateHegemonyEngine(api_key="test-key", planner=mock_planner)
 
         assert engine.planner == mock_planner
         assert engine.planning_agent == mock_planner  # planning_agent も planner を参照
@@ -115,7 +102,7 @@ class TestUltimateHegemonyEngine:
             "bible_agent": Mock(),
             "plot_agent": Mock(),
             "style_rag": Mock(),
-            "illustration_agent": Mock()
+            "illustration_agent": Mock(),
         }
 
         engine = UltimateHegemonyEngine(api_key="test-key", **mocks)
@@ -216,9 +203,7 @@ class TestUltimateHegemonyEngine:
 
         engine = UltimateHegemonyEngine(api_key="test-key", plot_service=mock_plot_service)
 
-        result = await engine.determine_target_tension(
-            book_id=1, ep_num=1, genre="fantasy", story_type="adventure"
-        )
+        result = await engine.determine_target_tension(book_id=1, ep_num=1, genre="fantasy", story_type="adventure")
 
         assert result == 0.75
         mock_plot_service.determine_target_tension.assert_called_once_with(
@@ -233,9 +218,7 @@ class TestUltimateHegemonyEngine:
 
         engine = UltimateHegemonyEngine(api_key="test-key", plot_service=mock_plot_service)
 
-        result = await engine.validate_tension_deviation(
-            ep_num=1, generated_tension=0.6, book_id=1, tolerance=0.2
-        )
+        result = await engine.validate_tension_deviation(ep_num=1, generated_tension=0.6, book_id=1, tolerance=0.2)
 
         assert result == (True, 0.5)
         mock_plot_service.validate_tension_deviation.assert_called_once_with(
@@ -249,7 +232,7 @@ class TestUltimateHegemonyEngine:
         mock_pm = Mock()
         mock_generate_json = Mock()
 
-        with patch('src.backend.workflows.reverse_plot_workflow.ReversePlotGenerationWorkflow') as mock_workflow_class:
+        with patch("src.backend.workflows.reverse_plot_workflow.ReversePlotGenerationWorkflow") as mock_workflow_class:
             mock_workflow_instance = Mock()
             mock_workflow_instance.execute = AsyncMock(return_value={"result": "success"})
             mock_workflow_class.return_value = mock_workflow_instance
@@ -258,25 +241,19 @@ class TestUltimateHegemonyEngine:
                 api_key="test-key",
                 repo=mock_repo,
                 pm=mock_pm,
-                llm=Mock()  # generate_json 経由で llm が必要
+                llm=Mock(),  # generate_json 経由で llm が必要
             )
             engine.llm.generate_json = mock_generate_json
 
             mock_reporter = Mock()
             result = await engine.reverse_plot_generation_workflow(
-                answers={"key": "value"},
-                target_episodes=5,
-                genre="fantasy",
-                reporter=mock_reporter
+                answers={"key": "value"}, target_episodes=5, genre="fantasy", reporter=mock_reporter
             )
 
             assert result == {"result": "success"}
             mock_workflow_class.assert_called_once_with(mock_repo, mock_pm, mock_generate_json)
             mock_workflow_instance.execute.assert_called_once_with(
-                mock_reporter,
-                answers={"key": "value"},
-                target_episodes=5,
-                genre="fantasy"
+                mock_reporter, answers={"key": "value"}, target_episodes=5, genre="fantasy"
             )
 
 

@@ -9,9 +9,7 @@ def test_global_narrative_balancer_orchestrate():
     balancer = GlobalNarrativeBalancer()
 
     # 40 episodes with mid-arc stagnation (ep 15 to 25)
-    beats = [
-        Beat(episode=i, tension=3.0, beat_type=BeatType.DAILY) for i in range(1, 41)
-    ]
+    beats = [Beat(episode=i, tension=3.0, beat_type=BeatType.DAILY) for i in range(1, 41)]
     beats[39] = Beat(episode=40, tension=9.0, beat_type=BeatType.CLIMAX)
 
     plot_state = PlotState.from_beats(beats, total_episodes=40)

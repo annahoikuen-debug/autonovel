@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from src.monitoring.sentry import init_sentry
 from src.api.middleware.error_handler import ErrorHandlerMiddleware
 
+
 @pytest.fixture
 def client():
     app = FastAPI()
@@ -15,12 +16,15 @@ def client():
     patcher.start()
     try:
         init_sentry(app)
+
         @app.get("/trigger-error")
         def trigger_error():
             raise RuntimeError("Test error")
+
         yield TestClient(app, raise_server_exceptions=False)
     finally:
         patcher.stop()
+
 
 @patch("src.monitoring.sentry.sentry_sdk.capture_exception")
 def test_sentry_captures_exception(mock_capture, client):

@@ -1,4 +1,5 @@
 """Data schemas for Context Pruning MCP Server (Dynamic Context Pruning)."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -7,6 +8,7 @@ from pydantic import BaseModel, Field
 
 class CharacterProfileItem(BaseModel):
     """キャラクタープロファイル定義"""
+
     name: str
     aliases: List[str] = Field(default_factory=list)
     role: str = ""
@@ -20,6 +22,7 @@ class CharacterProfileItem(BaseModel):
 
 class LoreItem(BaseModel):
     """世界観・Lore設定項目"""
+
     id: str
     title: str
     category: str = "world"  # world, magic, geography, faction, item
@@ -30,6 +33,7 @@ class LoreItem(BaseModel):
 
 class ForeshadowingItem(BaseModel):
     """伏線項目"""
+
     id: str
     title: str
     description: str = ""
@@ -41,6 +45,7 @@ class ForeshadowingItem(BaseModel):
 
 class PruneContextRequest(BaseModel):
     """コンテキスト枝刈り（プルーニング）リクエスト"""
+
     plot_blueprint: str = Field(..., description="エピソードプロット・シーン概要・あらすじ本文")
     characters: List[Dict[str, Any]] = Field(default_factory=list, description="全キャラクター定義リスト")
     world_lore: List[Dict[str, Any]] = Field(default_factory=list, description="世界観設定項目リスト")
@@ -52,6 +57,7 @@ class PruneContextRequest(BaseModel):
 
 class PrunedContextResult(BaseModel):
     """プルーニング結果"""
+
     active_characters: List[Dict[str, Any]] = Field(default_factory=list, description="登場キャラ（詳細保持）")
     peripheral_characters: List[Dict[str, Any]] = Field(default_factory=list, description="関係キャラ（1行サマリ）")
     excluded_characters: List[str] = Field(default_factory=list, description="完全除外されたキャラ名")

@@ -1,4 +1,5 @@
 """API client for NanoBanana 2 Lite (Gemini 3.1 Flash-Lite Image)."""
+
 from __future__ import annotations
 
 import logging
@@ -23,6 +24,7 @@ class NanoBananaClient:
         if not self.mock_mode:
             try:
                 from google import genai
+
                 self.client = genai.Client(api_key=self.config.api_key)
             except Exception as e:
                 # SDK 初期化失敗時はパイプラインを落とさずモックへ縮退する

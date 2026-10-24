@@ -7,6 +7,7 @@ GET/POST/DELETE /api/branches/{book_id}/nodes... は ``requires_book_ownership``
 このテストは「他人の book_id + 他人の branch_id」の組み合わせが
 ``load_branch_graph`` に到達しないことを保証する。
 """
+
 from __future__ import annotations
 
 import pytest
@@ -64,6 +65,5 @@ async def test_branch_node_endpoints_reject_foreign_branch(endpoint_name):
             await endpoint(book_id=999, branch_id=4242, node_id="n1", session=uow.session)
 
     assert exc.value.status_code == 403, (
-        f"{endpoint_name} は foreign branch を 403 で拒否すべき。"
-        f"実際: {exc.value.status_code}"
+        f"{endpoint_name} は foreign branch を 403 で拒否すべき。実際: {exc.value.status_code}"
     )

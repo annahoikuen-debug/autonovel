@@ -1,4 +1,5 @@
 """Emotion lexicon and pattern configuration loader."""
+
 from __future__ import annotations
 
 import functools

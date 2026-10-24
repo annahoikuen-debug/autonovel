@@ -496,6 +496,7 @@ async def trigger_audio_synthesis(
         from src.backend.database.core import get_db_manager
         from src.backend.database.models import Chapter
         from sqlalchemy import select
+
         db_mgr = get_db_manager()
         # DatabaseManager には session() がなく get_session() のみ存在する
         async with db_mgr.get_session() as session:
@@ -510,6 +511,7 @@ async def trigger_audio_synthesis(
         raise HTTPException(status_code=400, detail="Chapter text is empty")
 
     from src.backend.tasks.multimedia_tasks import synthesize_chapter_audio_task
+
     task = synthesize_chapter_audio_task(
         book_id=payload.book_id,
         episode_num=payload.episode_num,
@@ -532,6 +534,7 @@ async def get_chapter_audio(
     from src.backend.database.core import get_db_manager
     from src.backend.database.models import AudioAssetModel
     from sqlalchemy import select
+
     db_mgr = get_db_manager()
     # DatabaseManager には session() がなく get_session() のみ存在する
     async with db_mgr.get_session() as session:
@@ -566,12 +569,11 @@ async def stream_audio_file(
     from src.backend.database.core import get_db_manager
     from src.backend.database.models import AudioAssetModel
     from sqlalchemy import select
+
     db_mgr = get_db_manager()
     # DatabaseManager には session() がなく get_session() のみ存在する
     async with db_mgr.get_session() as session:
-        result = await session.execute(
-            select(AudioAssetModel).where(AudioAssetModel.id == audio_id)
-        )
+        result = await session.execute(select(AudioAssetModel).where(AudioAssetModel.id == audio_id))
         audio = result.scalar_one_or_none()
         if not audio or not Path(audio.file_path).exists():
             raise HTTPException(status_code=404, detail="Audio asset file not found")

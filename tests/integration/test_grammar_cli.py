@@ -10,18 +10,22 @@ def test_grammar_cli_execution(tmp_path):
     dot_file = tmp_path / "forest.dot"
     md_file = tmp_path / "report.md"
 
-    beats = [
-        {"episode": i, "tension": 3.0, "beat_type": "DAILY"} for i in range(1, 21)
-    ]
+    beats = [{"episode": i, "tension": 3.0, "beat_type": "DAILY"} for i in range(1, 21)]
     with open(input_file, "w", encoding="utf-8") as f:
         json.dump(beats, f)
 
-    ret = main([
-        "--input", str(input_file),
-        "--output", str(output_file),
-        "--dot", str(dot_file),
-        "--md", str(md_file),
-    ])
+    ret = main(
+        [
+            "--input",
+            str(input_file),
+            "--output",
+            str(output_file),
+            "--dot",
+            str(dot_file),
+            "--md",
+            str(md_file),
+        ]
+    )
     assert ret == 0
     assert output_file.exists()
     assert dot_file.exists()

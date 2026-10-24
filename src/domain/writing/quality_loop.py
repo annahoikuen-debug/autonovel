@@ -138,12 +138,14 @@ class QualityLoop:
 
             # 7. 再生成アクション決定
             action = self._determine_regeneration_action(low_dimensions)
-            regeneration_history.append({
-                "attempt": retry_count,
-                "score": overall_score,
-                "low_dimensions": low_dimensions,
-                "action": action.focus_dimensions,
-            })
+            regeneration_history.append(
+                {
+                    "attempt": retry_count,
+                    "score": overall_score,
+                    "low_dimensions": low_dimensions,
+                    "action": action.focus_dimensions,
+                }
+            )
 
             if reporter:
                 reporter.report(f"再生成実行: 対象次元={action.focus_dimensions}", "warning")
@@ -156,7 +158,7 @@ class QualityLoop:
                 ctx.artifacts["anti_ai_loop_result"] = anti_ai_result.to_dict()
 
             # 9. バックオフ待機
-            wait_time = self.backoff_base ** retry_count
+            wait_time = self.backoff_base**retry_count
             if reporter:
                 reporter.report(f"{wait_time:.1f}秒待機後、再生成実行", "info")
             await asyncio.sleep(wait_time)

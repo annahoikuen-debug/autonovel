@@ -1,6 +1,7 @@
 import zipfile
 from src.easy_mode.phase3.asset_pack import pack_to_zip
 
+
 def test_pack_to_zip(tmp_path):
     target_dir = tmp_path / "assets"
     target_dir.mkdir()

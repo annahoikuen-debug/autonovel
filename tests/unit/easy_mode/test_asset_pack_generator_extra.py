@@ -27,7 +27,9 @@ def make_episode(num: int = 1) -> EpisodeResult:
     )
 
 
-def make_series(n: int = 2, genre: str = "fantasy", bible: dict | None = None, metadata: dict | None = None) -> SeriesResult:
+def make_series(
+    n: int = 2, genre: str = "fantasy", bible: dict | None = None, metadata: dict | None = None
+) -> SeriesResult:
     return SeriesResult(
         genre=genre,
         title="物語",
@@ -293,9 +295,7 @@ class TestGraphOutputs:
         monkeypatch.setattr(ap, "MediaFormat", ShimbFormat)
         gen = AssetPackGenerator("fantasy", {})
         exporter = MagicMock()
-        script = MediaScript(
-            format=MediaFormat.MANGA, title="t", episode_num=1, source_content="c"
-        )
+        script = MediaScript(format=MediaFormat.MANGA, title="t", episode_num=1, source_content="c")
         exporter.export_all.return_value = {MediaFormat.MANGA: script}
         exporter.save_all.side_effect = lambda scripts, d: {
             MediaFormat.MANGA: _write(d / "ep001_manga.json", script.to_json())
@@ -352,9 +352,7 @@ class TestGraphOutputs:
         # 例外は握り潰されるため戻り値は空。パス検証とログ出力の経路を通す。
         gen = AssetPackGenerator("fantasy", {})
         gen.ebook_exporter = MagicMock()
-        files = gen._generate_ebooks(
-            make_series(1), tmp_path, ["epub"], cover_image_path=str(tmp_path / "nope.png")
-        )
+        files = gen._generate_ebooks(make_series(1), tmp_path, ["epub"], cover_image_path=str(tmp_path / "nope.png"))
         assert files == {}
 
     def test_generate_ebooks_cover_exists(self, tmp_path):
@@ -364,9 +362,7 @@ class TestGraphOutputs:
         gen.ebook_exporter = MagicMock()
         out = tmp_path / "out"
         out.mkdir()
-        files = gen._generate_ebooks(
-            make_series(1), out, ["epub"], cover_image_path=str(cover)
-        )
+        files = gen._generate_ebooks(make_series(1), out, ["epub"], cover_image_path=str(cover))
         assert files == {}
 
     def test_init_components(self, monkeypatch):
@@ -425,9 +421,7 @@ class TestGeneratePack:
         gen.media_exporter = MagicMock()
         gen.media_exporter.export_all.return_value = {}
         gen.media_exporter.save_all.return_value = {}
-        zip_path = gen.generate_pack(
-            make_series(1), tmp_path, include_if_routes=False, include_ebook=False
-        )
+        zip_path = gen.generate_pack(make_series(1), tmp_path, include_if_routes=False, include_ebook=False)
         assert zip_path.exists()
         assert zip_path.name.startswith("pack_")
 
@@ -468,9 +462,7 @@ class TestGeneratePack:
             licensing={"type": "CC0"},
         )
         data = json.loads(
-            (tmp_path / "asset_pack_lic" / "05_metadata" / "pack_metadata.json").read_text(
-                encoding="utf-8"
-            )
+            (tmp_path / "asset_pack_lic" / "05_metadata" / "pack_metadata.json").read_text(encoding="utf-8")
         )
         assert data["licensing"] == {"type": "CC0"}
 
@@ -486,5 +478,3 @@ class TestGeneratePack:
             include_ebook=False,
         )
         assert pack.name == "a_b_c.zip"
-
-

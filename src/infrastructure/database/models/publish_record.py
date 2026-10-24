@@ -26,9 +26,7 @@ class PublishRecord(Base):
 
     # ユニーク制約：同一書籍・同一話・同一プラットフォームは1レコード
     __table_args__ = (
-        UniqueConstraint(
-            "book_id", "episode_num", "platform", name="uq_publish_record_book_ep_platform"
-        ),
+        UniqueConstraint("book_id", "episode_num", "platform", name="uq_publish_record_book_ep_platform"),
         Index("ix_publish_record_book_platform", "book_id", "platform"),
     )
 

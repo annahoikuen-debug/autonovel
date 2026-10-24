@@ -1,7 +1,8 @@
 # tests/integration/test_book_score_flow.py
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -37,25 +38,30 @@ def mock_repo():
 @pytest.fixture
 def mock_book_score_calculator():
     calc = MagicMock(spec=BookScoreCalculator)
-    calc.calculate = AsyncMock(return_value=MagicMock(
-        overall_score=80.0,
-        structure_score=85.0,
-        coherency_score=75.0,
-        factual_grounding_score=80.0,
-        visual_textual_synergy_score=85.0,
-        reader_experience_score=75.0,
-    ))
-    calc._get_weights = MagicMock(return_value={
-        "structure": 25, "coherency": 25, "factual_grounding": 20,
-        "visual_textual_synergy": 15, "reader_experience": 15,
-    })
+    calc.calculate = AsyncMock(
+        return_value=MagicMock(
+            overall_score=80.0,
+            structure_score=85.0,
+            coherency_score=75.0,
+            factual_grounding_score=80.0,
+            visual_textual_synergy_score=85.0,
+            reader_experience_score=75.0,
+        )
+    )
+    calc._get_weights = MagicMock(
+        return_value={
+            "structure": 25,
+            "coherency": 25,
+            "factual_grounding": 20,
+            "visual_textual_synergy": 15,
+            "reader_experience": 15,
+        }
+    )
     return calc
 
 
 @pytest.mark.asyncio
-async def test_planning_service_predict_book_score(
-    mock_bible_generator, mock_repo, mock_book_score_calculator
-):
+async def test_planning_service_predict_book_score(mock_bible_generator, mock_repo, mock_book_score_calculator):
     """PlanningService で企画アウトラインから BookScore 予測ができること"""
     service = PlanningService(
         bible_generator=mock_bible_generator,
@@ -82,9 +88,7 @@ async def test_planning_service_predict_book_score(
 
 
 @pytest.mark.asyncio
-async def test_writing_service_calculate_book_score(
-    mock_repo, mock_book_score_calculator
-):
+async def test_writing_service_calculate_book_score(mock_repo, mock_book_score_calculator):
     """WritingService で執筆後に BookScore 計算ができること"""
     writer = MagicMock()
     writer.generate_episodes = AsyncMock(return_value=3000)
@@ -102,9 +106,13 @@ async def test_writing_service_calculate_book_score(
 
     # 執筆実行
     word_count = await service.generate_episodes(
-        book_id=1, start_ep=1, end_ep=1,
-        passion=0.8, target_word_count=3000,
-        is_easy_mode=False, reporter=MagicMock(),
+        book_id=1,
+        start_ep=1,
+        end_ep=1,
+        passion=0.8,
+        target_word_count=3000,
+        is_easy_mode=False,
+        reporter=MagicMock(),
     )
     assert word_count == 3000
 
@@ -117,18 +125,18 @@ async def test_writing_service_calculate_book_score(
 
 
 @pytest.mark.asyncio
-async def test_writing_service_regeneration_triggered(
-    mock_repo, mock_book_score_calculator
-):
+async def test_writing_service_regeneration_triggered(mock_repo, mock_book_score_calculator):
     """スコア閾値未満で再生成トリガーが発火すること"""
-    mock_book_score_calculator.calculate = AsyncMock(return_value=MagicMock(
-        overall_score=60.0,  # 閾値70未満
-        structure_score=50.0,
-        coherency_score=65.0,
-        factual_grounding_score=70.0,
-        visual_textual_synergy_score=55.0,
-        reader_experience_score=60.0,
-    ))
+    mock_book_score_calculator.calculate = AsyncMock(
+        return_value=MagicMock(
+            overall_score=60.0,  # 閾値70未満
+            structure_score=50.0,
+            coherency_score=65.0,
+            factual_grounding_score=70.0,
+            visual_textual_synergy_score=55.0,
+            reader_experience_score=60.0,
+        )
+    )
 
     writer = MagicMock()
     service = WritingService(

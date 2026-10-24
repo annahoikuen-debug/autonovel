@@ -1,6 +1,7 @@
 # scripts/test_plot_subversion_roundtrip.py
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 
 from src.models.plot import PlotEpisode
 

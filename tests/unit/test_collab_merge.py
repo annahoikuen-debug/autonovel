@@ -2,6 +2,7 @@
 
 import pytest
 
+
 # Import the function directly by copying it here to avoid container issues
 def merge_paragraphs_lww(
     server_content: str,
@@ -46,48 +47,28 @@ def merge_paragraphs_lww(
 
 def test_merge_no_conflict():
     """Test merging identical content."""
-    merged, conflicts = merge_paragraphs_lww(
-        "Para1\n\nPara2",
-        "Para1\n\nPara2",
-        {"A": 1},
-        {"A": 1}
-    )
+    merged, conflicts = merge_paragraphs_lww("Para1\n\nPara2", "Para1\n\nPara2", {"A": 1}, {"A": 1})
     assert merged == "Para1\n\nPara2"
     assert conflicts == []
 
 
 def test_merge_client_adds_paragraph():
     """Test when client adds new paragraph."""
-    merged, conflicts = merge_paragraphs_lww(
-        "Para1",
-        "Para1\n\nPara2",
-        {"A": 1},
-        {"B": 1}
-    )
+    merged, conflicts = merge_paragraphs_lww("Para1", "Para1\n\nPara2", {"A": 1}, {"B": 1})
     assert merged == "Para1\n\nPara2"
     assert conflicts == []
 
 
 def test_merge_server_adds_paragraph():
     """Test when server has extra paragraph."""
-    merged, conflicts = merge_paragraphs_lww(
-        "Para1\n\nPara2",
-        "Para1",
-        {"A": 1},
-        {"B": 1}
-    )
+    merged, conflicts = merge_paragraphs_lww("Para1\n\nPara2", "Para1", {"A": 1}, {"B": 1})
     assert merged == "Para1\n\nPara2"
     assert conflicts == []
 
 
 def test_merge_conflict_same_paragraph():
     """Test conflict detection on same paragraph."""
-    merged, conflicts = merge_paragraphs_lww(
-        "Para1\n\nPara2",
-        "Para1\n\nPara2_modified",
-        {"A": 1},
-        {"B": 1}
-    )
+    merged, conflicts = merge_paragraphs_lww("Para1\n\nPara2", "Para1\n\nPara2_modified", {"A": 1}, {"B": 1})
     assert len(conflicts) == 1
     assert conflicts[0]["index"] == 1
     assert conflicts[0]["server_text"] == "Para2"
@@ -96,24 +77,14 @@ def test_merge_conflict_same_paragraph():
 
 def test_merge_lww_client_wins():
     """Test LWW - client wins with higher VC sum."""
-    merged, conflicts = merge_paragraphs_lww(
-        "Para1\n\nPara2_server",
-        "Para1\n\nPara2_client",
-        {"A": 1},
-        {"B": 2}
-    )
+    merged, conflicts = merge_paragraphs_lww("Para1\n\nPara2_server", "Para1\n\nPara2_client", {"A": 1}, {"B": 2})
     assert merged == "Para1\n\nPara2_client"
     assert len(conflicts) == 1
 
 
 def test_merge_lww_server_wins():
     """Test LWW - server wins with higher VC sum."""
-    merged, conflicts = merge_paragraphs_lww(
-        "Para1\n\nPara2_server",
-        "Para1\n\nPara2_client",
-        {"A": 2},
-        {"B": 1}
-    )
+    merged, conflicts = merge_paragraphs_lww("Para1\n\nPara2_server", "Para1\n\nPara2_client", {"A": 2}, {"B": 1})
     assert merged == "Para1\n\nPara2_server"
     assert len(conflicts) == 1
 
@@ -121,47 +92,27 @@ def test_merge_lww_server_wins():
 def test_merge_lww_tie_alphabetical():
     """Test LWW tie-breaker: alphabetical username wins."""
     # A < B alphabetically, so server (A) wins
-    merged, conflicts = merge_paragraphs_lww(
-        "Para1\n\nPara2_server",
-        "Para1\n\nPara2_client",
-        {"A": 1},
-        {"B": 1}
-    )
+    merged, conflicts = merge_paragraphs_lww("Para1\n\nPara2_server", "Para1\n\nPara2_client", {"A": 1}, {"B": 1})
     assert merged == "Para1\n\nPara2_server"
 
 
 def test_merge_empty_server():
     """Test merge when server has no content."""
-    merged, conflicts = merge_paragraphs_lww(
-        "",
-        "Para1\n\nPara2",
-        {},
-        {"A": 1}
-    )
+    merged, conflicts = merge_paragraphs_lww("", "Para1\n\nPara2", {}, {"A": 1})
     assert merged == "Para1\n\nPara2"
     assert conflicts == []
 
 
 def test_merge_empty_client():
     """Test merge when client sends empty content."""
-    merged, conflicts = merge_paragraphs_lww(
-        "Para1\n\nPara2",
-        "",
-        {"A": 1},
-        {}
-    )
+    merged, conflicts = merge_paragraphs_lww("Para1\n\nPara2", "", {"A": 1}, {})
     assert merged == "Para1\n\nPara2"
     assert conflicts == []
 
 
 def test_merge_multiple_conflicts():
     """Test multiple paragraph conflicts."""
-    merged, conflicts = merge_paragraphs_lww(
-        "P1\n\nP2\n\nP3",
-        "P1_mod\n\nP2_mod\n\nP3",
-        {"A": 1},
-        {"B": 1}
-    )
+    merged, conflicts = merge_paragraphs_lww("P1\n\nP2\n\nP3", "P1_mod\n\nP2_mod\n\nP3", {"A": 1}, {"B": 1})
     assert len(conflicts) == 2
     assert conflicts[0]["index"] == 0
     assert conflicts[1]["index"] == 1

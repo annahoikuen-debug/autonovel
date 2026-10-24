@@ -4,6 +4,7 @@ Subscribes to 'writing.completed' events emitted on the EventBus,
 and automatically invokes SocialInteractionManager.process_scene()
 in the background to simulate character journals, reactions, and relationship updates.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -39,7 +40,8 @@ class SocialEventListener:
 
             logger.info(
                 "SocialEventListener: Received writing.completed for book_id=%s, ep_num=%s. Starting social processing...",
-                book_id, ep_num
+                book_id,
+                ep_num,
             )
 
             session = None
@@ -51,6 +53,7 @@ class SocialEventListener:
 
             try:
                 import inspect
+
                 async_fn = getattr(self.manager, "process_scene_async", None)
                 if async_fn is not None and inspect.iscoroutinefunction(async_fn):
                     result = await async_fn(

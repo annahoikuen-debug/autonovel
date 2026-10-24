@@ -1,4 +1,5 @@
 """Unit tests for SensoryVocabProvider."""
+
 from __future__ import annotations
 
 from src.mcp_servers.vocab_schemas import SensoryWord
@@ -15,8 +16,12 @@ def test_vocab_provider_empty():
 def test_vocab_provider_registration_and_reading():
     provider = SensoryVocabProvider()
     words = [
-        SensoryWord(word="冷たい鉄の感触", category="tactile", example_sentence="剣の柄が冷たく掌に食い込む。", nuance="tension"),
-        SensoryWord(word="血の鉄錆の匂い", category="olfactory", example_sentence="鼻腔を突く血の匂い。", nuance="danger"),
+        SensoryWord(
+            word="冷たい鉄の感触", category="tactile", example_sentence="剣の柄が冷たく掌に食い込む。", nuance="tension"
+        ),
+        SensoryWord(
+            word="血の鉄錆の匂い", category="olfactory", example_sentence="鼻腔を突く血の匂い。", nuance="danger"
+        ),
     ]
     provider.register_words("fantasy", words)
 

@@ -3,6 +3,7 @@
 自前GPUホスティング（月数万円）を撤廃し、外部従量API（DALL-E 3, fal.ai, Replicate等）へ
 透過的に切り替えるためのアダプタ抽象基底クラス。
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

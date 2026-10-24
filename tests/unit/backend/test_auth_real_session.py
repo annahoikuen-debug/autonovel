@@ -1,4 +1,5 @@
 """実DBセッションを用いた get_current_user の単体テスト"""
+
 import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -8,6 +9,7 @@ import src.backend.database.models_tenant  # noqa: F401  (Tenant FK 解決のた
 from src.backend.database.models import Base, User
 from src.backend.auth import get_current_user
 from src.backend.security.jwt import create_access_token
+
 
 @pytest_asyncio.fixture
 async def real_db_session():
@@ -32,6 +34,7 @@ async def real_db_session():
     yield session
     await session.close()
     await engine.dispose()
+
 
 @pytest.mark.asyncio
 async def test_get_current_user_with_real_session_no_await_error(real_db_session, monkeypatch):

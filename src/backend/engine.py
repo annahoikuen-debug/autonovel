@@ -79,6 +79,7 @@ class UltimateHegemonyEngine(Orchestrator):
             self.plot_service = plot_service
         elif repo is not None:
             from src.services.plot_service import PlotService
+
             self.plot_service = PlotService(repo=repo)
         else:
             self.plot_service = None
@@ -249,6 +250,7 @@ class UltimateHegemonyEngine(Orchestrator):
         reporter: Any | None = None,
     ) -> Any:
         from src.backend.workflows.reverse_plot_workflow import ReversePlotGenerationWorkflow
+
         workflow = ReversePlotGenerationWorkflow(self.repo, self.pm, self.generate_json)
         return await workflow.execute(
             reporter,

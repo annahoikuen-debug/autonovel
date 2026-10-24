@@ -2,19 +2,14 @@ import stripe
 from src.backend.config import settings
 
 # Initialize Stripe with API key from settings
-stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
+stripe.api_key = getattr(settings, "STRIPE_SECRET_KEY", "")
+
 
 class StripeClient:
     """Stripe SDKラッパークラス"""
 
     @staticmethod
-    def create_checkout_session(
-        user_id: int,
-        user_email: str,
-        price_id: str,
-        success_url: str,
-        cancel_url: str
-    ) -> str:
+    def create_checkout_session(user_id: int, user_email: str, price_id: str, success_url: str, cancel_url: str) -> str:
         """
         Stripe Checkout Sessionを生成してURLを返す
 
@@ -35,17 +30,17 @@ class StripeClient:
             # Checkout Sessionを作成
             session = stripe.checkout.Session.create(
                 customer=customer.id,
-                payment_method_types=['card'],
-                line_items=[{
-                    'price': price_id,
-                    'quantity': 1,
-                }],
-                mode='subscription',
+                payment_method_types=["card"],
+                line_items=[
+                    {
+                        "price": price_id,
+                        "quantity": 1,
+                    }
+                ],
+                mode="subscription",
                 success_url=success_url,
                 cancel_url=cancel_url,
-                metadata={
-                    'user_id': str(user_id)
-                }
+                metadata={"user_id": str(user_id)},
             )
 
             return session.url
@@ -90,12 +85,7 @@ class StripeClient:
                 return customers.data[0]
 
             # 新規顧客作成
-            customer = stripe.Customer.create(
-                email=user_email,
-                metadata={
-                    'user_id': str(user_id)
-                }
-            )
+            customer = stripe.Customer.create(email=user_email, metadata={"user_id": str(user_id)})
             return customer
         except Exception as e:
             raise Exception(f"Failed to get or create customer: {str(e)}")

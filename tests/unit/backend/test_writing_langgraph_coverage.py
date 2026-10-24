@@ -1,4 +1,5 @@
 """WritingGraphManager coverage: nodes, routing, cache, fallback execution."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -12,19 +13,11 @@ from src.backend.workflows.writing_langgraph import (
 def make_manager():
     manager = MagicMock()
     manager.session_factory = None
-    manager._phase_prepare_context = AsyncMock(
-        return_value=("gen_ctx", True, False, False, 50)
-    )
-    manager._phase_drafting = AsyncMock(
-        return_value=("本文" * 100, {"meta": 1})
-    )
-    manager._phase_audit = AsyncMock(
-        return_value=(True, 0.95, True, "ok", [])
-    )
+    manager._phase_prepare_context = AsyncMock(return_value=("gen_ctx", True, False, False, 50))
+    manager._phase_drafting = AsyncMock(return_value=("本文" * 100, {"meta": 1}))
+    manager._phase_audit = AsyncMock(return_value=(True, 0.95, True, "ok", []))
     manager._phase_critic = AsyncMock(return_value=False)
-    manager._phase_healing = AsyncMock(
-        return_value=("healed", True, "healed_ok")
-    )
+    manager._phase_healing = AsyncMock(return_value=("healed", True, "healed_ok"))
     manager._run_dogfeeding_loop = AsyncMock(return_value=True)
     manager._register_lazy_patch = AsyncMock()
     manager.repo = MagicMock()
@@ -43,10 +36,12 @@ def make_state(**overrides):
         "ep_num": 1,
         "passion": 0.6,
         "is_easy_mode": False,
-        "context": {"plot": MagicMock(detailed_blueprint="blueprint"),
-                    "genre_str": "fantasy",
-                    "prev_integrity": 100,
-                    "engine_key": "unknown"},
+        "context": {
+            "plot": MagicMock(detailed_blueprint="blueprint"),
+            "genre_str": "fantasy",
+            "prev_integrity": 100,
+            "engine_key": "unknown",
+        },
         "sys_inst": "sys",
         "fw_prompt": "fw",
         "ac_iter": 0,
@@ -74,6 +69,7 @@ def make_state(**overrides):
 def test_manager_init_without_langgraph(mgr):
     # langgraph 未導入環境では workflow=None（フォールバック）, checkpointer=None
     import src.backend.workflows.writing_langgraph as module
+
     if module.HAS_LANGGRAPH:
         assert mgr.workflow is not None
     else:
@@ -98,6 +94,7 @@ def test_manager_init_with_checkpoint_manager():
 
 def test_build_graph_returns_none_without_langgraph(monkeypatch):
     import src.backend.workflows.writing_langgraph as module
+
     if module.HAS_LANGGRAPH:
         pytest.skip("langgraph installed")
     manager = make_manager()
@@ -194,9 +191,7 @@ async def test_node_prepare_cache_hit(mgr):
 @pytest.mark.asyncio
 async def test_node_prepare_high_ncs_skips_dogfeed(mgr):
     WritingGraphManager.clear_gen_ctx_cache()
-    mgr.manager._phase_prepare_context = AsyncMock(
-        return_value=("gen_ctx", True, False, False, 95)
-    )
+    mgr.manager._phase_prepare_context = AsyncMock(return_value=("gen_ctx", True, False, False, 95))
     result = await mgr.node_prepare(make_state())
     assert result["should_dogfeed"] is False
 
@@ -237,9 +232,7 @@ async def test_node_drafting_success(mgr):
 
 @pytest.mark.asyncio
 async def test_node_drafting_insufficient_content_retries(mgr):
-    mgr.manager._phase_drafting = AsyncMock(
-        side_effect=[("short", {}), ("本文" * 100, {"meta": 2})]
-    )
+    mgr.manager._phase_drafting = AsyncMock(side_effect=[("short", {}), ("本文" * 100, {"meta": 2})])
     with pytest.MonkeyPatch.context() as m:
         m.setattr("src.backend.workflows.writing_langgraph.asyncio.sleep", AsyncMock())
         result = await mgr.node_drafting(make_state())
@@ -283,9 +276,7 @@ async def test_node_audit_success(mgr):
 
 @pytest.mark.asyncio
 async def test_node_audit_low_quality_no_skip(mgr):
-    mgr.manager._phase_audit = AsyncMock(
-        return_value=(True, 0.5, False, "bad", [{"type": "x"}])
-    )
+    mgr.manager._phase_audit = AsyncMock(return_value=(True, 0.5, False, "bad", [{"type": "x"}]))
     result = await mgr.node_audit(make_state())
     assert result["rate"] == 0.5
     assert "quality_skip" not in result or result.get("quality_skip") is False
@@ -315,11 +306,14 @@ async def test_node_review_wait_no_id():
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("status_value,expected", [
-    ("approved", "approved"),
-    ("rejected", "rejected"),
-    ("needs_revision", "revised"),
-])
+@pytest.mark.parametrize(
+    "status_value,expected",
+    [
+        ("approved", "approved"),
+        ("rejected", "rejected"),
+        ("needs_revision", "revised"),
+    ],
+)
 async def test_node_review_wait_statuses(status_value, expected):
     manager = make_manager()
     manager.repo.misc.get_patch_review = AsyncMock(return_value={"status": status_value})
@@ -327,8 +321,12 @@ async def test_node_review_wait_statuses(status_value, expected):
     with pytest.MonkeyPatch.context() as m:
         # ProjectContext は関数内 import されるため config 側をパッチする
         import config.project_context as project_context
-        m.setattr(project_context.ProjectContext, "get_setting",
-                  staticmethod(lambda key, default=None: 0.01 if "poll" in key else 1))
+
+        m.setattr(
+            project_context.ProjectContext,
+            "get_setting",
+            staticmethod(lambda key, default=None: 0.01 if "poll" in key else 1),
+        )
         result = await mgr.node_review_wait(make_state(patch_review_id=5))
     assert result == {"review_status": expected}
 
@@ -340,19 +338,26 @@ async def test_node_review_wait_error_and_timeout():
     mgr = WritingGraphManager(manager)
     with pytest.MonkeyPatch.context() as m:
         import config.project_context as project_context
-        m.setattr(project_context.ProjectContext, "get_setting",
-                  staticmethod(lambda key, default=None: 0.01 if "poll" in key else 1))
+
+        m.setattr(
+            project_context.ProjectContext,
+            "get_setting",
+            staticmethod(lambda key, default=None: 0.01 if "poll" in key else 1),
+        )
         result = await mgr.node_review_wait(make_state(patch_review_id=5))
     assert result == {"review_status": "timeout"}
 
 
-@pytest.mark.parametrize("review_status,expected", [
-    ("approved", "approved"),
-    ("rejected", "rejected"),
-    ("revised", "revised"),
-    ("timeout", "timeout"),
-    (None, "timeout"),
-])
+@pytest.mark.parametrize(
+    "review_status,expected",
+    [
+        ("approved", "approved"),
+        ("rejected", "rejected"),
+        ("revised", "revised"),
+        ("timeout", "timeout"),
+        (None, "timeout"),
+    ],
+)
 def test_route_after_review_wait(mgr, review_status, expected):
     assert mgr.route_after_review_wait({"review_status": review_status}) == expected
 
@@ -391,8 +396,7 @@ def test_route_after_audit_heal_on_causal_fail(mgr):
 
 
 def test_route_after_audit_critic_on_other_failures(mgr):
-    state = make_state(is_integrity_ok=False, is_causal_ok=True,
-                       should_heavy_audit=True, ac_iter=0, max_ac_iter=3)
+    state = make_state(is_integrity_ok=False, is_causal_ok=True, should_heavy_audit=True, ac_iter=0, max_ac_iter=3)
     assert mgr.route_after_audit(state) == "critic"
 
 
@@ -449,8 +453,7 @@ async def test_node_healing_actionable_patch(mgr):
 @pytest.mark.asyncio
 async def test_node_healing_success_and_failure(mgr):
     result = await mgr.node_healing(make_state())
-    assert result == {"draft_content": "healed", "is_causal_ok": True,
-                      "causal_reason": "healed_ok"}
+    assert result == {"draft_content": "healed", "is_causal_ok": True, "causal_reason": "healed_ok"}
 
     mgr.manager._phase_healing = AsyncMock(side_effect=RuntimeError("heal fail"))
     with pytest.MonkeyPatch.context() as m:
@@ -569,9 +572,19 @@ async def test_check_dependency_and_wait(mgr):
     # Low quality dependency -> False
     from src.backend.workflows.quality_metrics import QualityMetrics
     import time as time_module
-    low = QualityMetrics(ep_num=1, integrity_ok=False, causal_ok=False, rate=0.1,
-                         ac_iter=0, threshold=0, timestamp=time_module.time(),
-                         genre="fantasy", dogfeed_ok=False, causal_reason="")
+
+    low = QualityMetrics(
+        ep_num=1,
+        integrity_ok=False,
+        causal_ok=False,
+        rate=0.1,
+        ac_iter=0,
+        threshold=0,
+        timestamp=time_module.time(),
+        genre="fantasy",
+        dogfeed_ok=False,
+        causal_reason="",
+    )
     mgr.metrics_collector.record(low)
     assert await mgr._check_dependency(2, 1) is False
 

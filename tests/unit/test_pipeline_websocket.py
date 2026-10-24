@@ -9,17 +9,16 @@ from src.backend.schemas.pipeline_events import PipelineEvent
 app = FastAPI()
 app.include_router(pipeline_router)
 
+
 def test_pipeline_websocket_and_hub(monkeypatch):
     from src.backend.config import settings
+
     monkeypatch.setattr(settings, "AUTH_DISABLED", True)
     client = TestClient(app)
 
     with client.websocket_connect("/api/ws/pipeline/999") as websocket:
         ev = PipelineEvent(
-            event_type="task_started",
-            book_id=999,
-            task_id="task_001",
-            payload={"message": "Writing chapter 1"}
+            event_type="task_started", book_id=999, task_id="task_001", payload={"message": "Writing chapter 1"}
         )
         asyncio.run(pipeline_event_hub.broadcast(ev))
 
@@ -28,20 +27,17 @@ def test_pipeline_websocket_and_hub(monkeypatch):
         assert data["book_id"] == 999
         assert data["task_id"] == "task_001"
 
-        ev2 = PipelineEvent(
-            event_type="score_updated",
-            book_id=999,
-            task_id="task_001",
-            payload={"score": 82.5}
-        )
+        ev2 = PipelineEvent(event_type="score_updated", book_id=999, task_id="task_001", payload={"score": 82.5})
         asyncio.run(pipeline_event_hub.broadcast(ev2))
 
         data2 = websocket.receive_json()
         assert data2["event_type"] == "score_updated"
         assert data2["payload"]["score"] == 82.5
 
+
 def test_sse_pipeline_stream(monkeypatch):
     from src.backend.config import settings
+
     monkeypatch.setattr(settings, "AUTH_DISABLED", True)
     # 本番は切断/期限まで待機する無期限ループ (旧 range(5) ハードコード廃止)。
     # TestClient は ASGI アプリ完了まで待つため、テストでは短い期限を注入して

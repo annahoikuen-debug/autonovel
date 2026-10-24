@@ -45,7 +45,5 @@ class SharpEdgeSpec(BaseModel):
     @classmethod
     def warn_if_not_preserved(cls, v: bool) -> bool:
         if v is False:
-            logger.warning(
-                "preserve_on_quality_polish=False: 品質磨き上げで角が削除される可能性があります"
-            )
+            logger.warning("preserve_on_quality_polish=False: 品質磨き上げで角が削除される可能性があります")
         return v

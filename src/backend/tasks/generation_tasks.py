@@ -98,24 +98,16 @@ def _sync_deduct_credits(
                     transaction_type,
                 )
                 return
-        stmt = (
-            update(User)
-            .where(User.id == user_id, User.credits >= amount)
-            .values(credits=User.credits - amount)
-        )
+        stmt = update(User).where(User.id == user_id, User.credits >= amount).values(credits=User.credits - amount)
         result = session.execute(stmt)
         if result.rowcount == 0:
-            user_exists = session.execute(
-                select(User.id).where(User.id == user_id)
-            ).scalar_one_or_none()
+            user_exists = session.execute(select(User.id).where(User.id == user_id)).scalar_one_or_none()
             if not user_exists:
                 raise ValueError(f"ユーザーが見つかりません: {user_id}")
             session.rollback()
             raise ValueError(f"クレジット残高不足: user_id={user_id}, amount={amount}")
         # balance_after は NOT NULL のため、控除後の残高を取得して記録する。
-        new_balance = session.execute(
-            select(User.credits).where(User.id == user_id)
-        ).scalar_one()
+        new_balance = session.execute(select(User.credits).where(User.id == user_id)).scalar_one()
         tx = _credit_transaction(user_id, -amount, transaction_type, description, task_id)
         tx.balance_after = new_balance
         session.add(tx)
@@ -157,13 +149,9 @@ def _sync_grant_credits(
                     tx_type,
                 )
                 return
-        session.execute(
-            update(User).where(User.id == user_id).values(credits=User.credits + amount)
-        )
+        session.execute(update(User).where(User.id == user_id).values(credits=User.credits + amount))
         # balance_after は NOT NULL のため、付与後の残高を取得して記録する。
-        new_balance = session.execute(
-            select(User.credits).where(User.id == user_id)
-        ).scalar_one()
+        new_balance = session.execute(select(User.credits).where(User.id == user_id)).scalar_one()
         tx = _credit_transaction(user_id, amount, tx_type, description, task_id)
         tx.balance_after = new_balance
         session.add(tx)
@@ -175,9 +163,7 @@ def _sync_grant_credits(
         session.close()
 
 
-def _credit_transaction(
-    user_id: int, amount: int, tx_type: str, description: str, task_id: str | None
-) -> Any:
+def _credit_transaction(user_id: int, amount: int, tx_type: str, description: str, task_id: str | None) -> Any:
     """CreditTransaction 台帳レコードを構築する。"""
     from src.backend.database.models_billing import CreditTransaction
 

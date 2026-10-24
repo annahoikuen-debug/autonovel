@@ -19,6 +19,7 @@ from src.services.age_client import (
 # 1. Utility Function Tests
 # ==============================================================================
 
+
 class TestAgeClientUtils:
     def test_parse_agtype(self):
         # Basic types
@@ -28,7 +29,7 @@ class TestAgeClientUtils:
 
         # agtype strings
         assert _parse_agtype('{"key": "val"}') == {"key": "val"}
-        assert _parse_agtype('[1, 2, 3]') == [1, 2, 3]
+        assert _parse_agtype("[1, 2, 3]") == [1, 2, 3]
 
         # Vertex/Edge suffixes
         assert _parse_agtype('"Hero"::vertex') == "Hero"
@@ -39,11 +40,7 @@ class TestAgeClientUtils:
 
     def test_interpolate_cypher_params(self):
         query = "MATCH (n) WHERE n.name = $name AND n.age = $age AND n.active = $active"
-        params = {
-            "name": "O'Connor",
-            "age": 25,
-            "active": True
-        }
+        params = {"name": "O'Connor", "age": 25, "active": True}
         result = _interpolate_cypher_params(query, params)
         assert "n.name = 'O''Connor'" in result
         assert "n.age = 25" in result
@@ -51,11 +48,7 @@ class TestAgeClientUtils:
 
     def test_interpolate_cypher_params_complex(self):
         query = "MATCH (n) SET n.props = $props, n.tags = $tags, n.meta = $meta"
-        params = {
-            "props": {"level": 10, "rank": "S"},
-            "tags": ["hero", "legend"],
-            "meta": None
-        }
+        params = {"props": {"level": 10, "rank": "S"}, "tags": ["hero", "legend"], "meta": None}
         result = _interpolate_cypher_params(query, params)
         assert 'n.props = {"level": 10, "rank": "S"}' in result
         assert 'n.tags = ["hero", "legend"]' in result
@@ -88,18 +81,20 @@ class TestAgeClientUtils:
         # Mock an exception with pgcode
         mock_exc = MagicMock(spec=OperationalError)
         mock_exc.orig = MagicMock()
-        mock_exc.orig.pgcode = "40001" # serialization_failure
+        mock_exc.orig.pgcode = "40001"  # serialization_failure
         assert _is_retryable_db_error(mock_exc) is True
 
-        mock_exc.orig.pgcode = "00000" # success/unknown
+        mock_exc.orig.pgcode = "00000"  # success/unknown
         assert _is_retryable_db_error(mock_exc) is False
 
         # Non-DB error
         assert _is_retryable_db_error(ValueError("test")) is False
 
+
 # ==============================================================================
 # 2. AgeClient Core Tests
 # ==============================================================================
+
 
 class TestAgeClient:
     @pytest.fixture
@@ -128,9 +123,7 @@ class TestAgeClient:
         mock_err.orig = MagicMock(pgcode="42P04")
 
         # Sequence: 1. LOAD, 2. SET, 3. create_graph (FAIL), 4. check exists (SUCCESS)
-        mock_session.execute.side_effect = [
-            None, None, mock_err, MagicMock(first=lambda: MagicMock(scalar=lambda: 1))
-        ]
+        mock_session.execute.side_effect = [None, None, mock_err, MagicMock(first=lambda: MagicMock(scalar=lambda: 1))]
 
         success = client.init_graph(mock_session)
         assert success is True
@@ -144,11 +137,7 @@ class TestAgeClient:
         mock_row._mapping = {"result": '{"name": "Hero", "level": 10}'}
         mock_session.execute.return_value = [mock_row]
 
-        res = client.execute_cypher(
-            mock_session,
-            "MATCH (n) RETURN n",
-            parameters={"name": "Hero"}
-        )
+        res = client.execute_cypher(mock_session, "MATCH (n) RETURN n", parameters={"name": "Hero"})
 
         assert isinstance(res, CypherResult)
         assert len(res.records) == 1
@@ -180,12 +169,7 @@ class TestAgeClient:
 
     def test_upsert_node(self, mock_session):
         client = AgeClient(default_graph_name="test_graph")
-        success = client.upsert_node(
-            mock_session,
-            label="Character",
-            name="Hero",
-            properties={"level": 10}
-        )
+        success = client.upsert_node(mock_session, label="Character", name="Hero", properties={"level": 10})
         assert success is True
         sql = str(mock_session.execute.call_args[0][0])
         assert "MERGE (n:Character {name: 'Hero'})" in sql
@@ -196,7 +180,7 @@ class TestAgeClient:
         nodes = [
             {"label": "Character", "name": "Hero", "properties": {"level": 10}},
             {"label": "Item", "name": "Sword", "properties": {"power": 100}},
-            {"label": "Character", "name": "", "properties": {}}, # Should be skipped
+            {"label": "Character", "name": "", "properties": {}},  # Should be skipped
         ]
         count = client.upsert_nodes_batch(mock_session, nodes)
         assert count == 2
@@ -206,10 +190,12 @@ class TestAgeClient:
         client = AgeClient(default_graph_name="test_graph")
         success = client.upsert_edge(
             mock_session,
-            source_label="Character", source_name="Hero",
-            target_label="Item", target_name="Sword",
+            source_label="Character",
+            source_name="Hero",
+            target_label="Item",
+            target_name="Sword",
             relation_type="owns",
-            properties={"since": "2023"}
+            properties={"since": "2023"},
         )
         assert success is True
         sql = str(mock_session.execute.call_args[0][0])
@@ -270,10 +256,10 @@ class TestAgeClient:
             mock_conn.cursor.return_value.__enter__.return_value = mock_cur
 
             # Mock results for node_count, edge_count, labels, rel_types
-            mock_cur.fetchone.return_value = ('100',)
+            mock_cur.fetchone.return_value = ("100",)
             mock_cur.fetchall.side_effect = [
-                [("Label1",), ("Label2",)], # labels
-                [("REL1",), ("REL2",)],     # rel_types
+                [("Label1",), ("Label2",)],  # labels
+                [("REL1",), ("REL2",)],  # rel_types
             ]
 
             # We need to mock the session bind to get the URL
@@ -322,9 +308,11 @@ class TestAgeClient:
         conflicts = client._check_temporal_conflicts(mock_session, "test_graph", "Hero")
         assert "temporal_reversed" in conflicts
 
+
 # ==============================================================================
 # 3. Retry Logic Tests
 # ==============================================================================
+
 
 def test_safe_retry_mechanism():
     # We want to test that @_safe_retry actually retries on specific exceptions
@@ -333,6 +321,7 @@ def test_safe_retry_mechanism():
     from src.services.age_client import _safe_retry
 
     call_count = 0
+
     @_safe_retry(max_attempts=3)
     def unstable_func():
         nonlocal call_count
@@ -345,10 +334,12 @@ def test_safe_retry_mechanism():
     assert unstable_func() == "success"
     assert call_count == 3
 
+
 def test_safe_retry_failure():
     from src.services.age_client import _safe_retry
 
     call_count = 0
+
     @_safe_retry(max_attempts=2)
     def failing_func():
         nonlocal call_count

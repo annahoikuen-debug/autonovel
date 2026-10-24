@@ -30,6 +30,7 @@
 本ファイルは再発防止の**静的ゲート**である。実際のプロセス内変化ではなく、
 ソースが意図どおりの引数を持つことを確認する。
 """
+
 from __future__ import annotations
 
 import ast
@@ -62,30 +63,24 @@ class TestAlembicDoesNotDisableExistingLoggers:
                 continue
             func = node.func
             # logging.config.fileConfig(...) または fileConfig(...)
-            is_fileconfig = (
-                isinstance(func, ast.Attribute) and func.attr == "fileConfig"
-            ) or (isinstance(func, ast.Name) and func.id == "fileConfig")
+            is_fileconfig = (isinstance(func, ast.Attribute) and func.attr == "fileConfig") or (
+                isinstance(func, ast.Name) and func.id == "fileConfig"
+            )
             if is_fileconfig:
                 fileconfig_calls.append(node)
 
-        assert fileconfig_calls, (
-            f"{ENV_PY} に fileConfig の呼び出しが見つからない。"
-            "テストの前提が古くなっている可能性"
-        )
+        assert fileconfig_calls, f"{ENV_PY} に fileConfig の呼び出しが見つからない。テストの前提が古くなっている可能性"
 
         offenders = []
         for call in fileconfig_calls:
             kwargs = {k.arg: k.value for k in call.keywords if k.arg}
             node_value = kwargs.get("disable_existing_loggers")
-            if node_value is None or not (
-                isinstance(node_value, ast.Constant) and node_value.value is False
-            ):
+            if node_value is None or not (isinstance(node_value, ast.Constant) and node_value.value is False):
                 offenders.append(ast.dump(call)[:120])
 
         assert not offenders, (
             "fileConfig に disable_existing_loggers=False が明示されていない呼び出しがあります。"
-            "Python の既定は True で、プロセス内の全ロガーが無言で無効化されます:\n"
-            + "\n".join(offenders)
+            "Python の既定は True で、プロセス内の全ロガーが無言で無効化されます:\n" + "\n".join(offenders)
         )
 
     def test_no_bare_fileconfig_remains(self) -> None:
@@ -96,12 +91,11 @@ class TestAlembicDoesNotDisableExistingLoggers:
             if not isinstance(node, ast.Call):
                 continue
             func = node.func
-            is_fileconfig = (
-                isinstance(func, ast.Attribute) and func.attr == "fileConfig"
-            ) or (isinstance(func, ast.Name) and func.id == "fileConfig")
+            is_fileconfig = (isinstance(func, ast.Attribute) and func.attr == "fileConfig") or (
+                isinstance(func, ast.Name) and func.id == "fileConfig"
+            )
             if not is_fileconfig:
                 continue
             assert len(node.args) == 1, (
-                "fileConfig の呼び出し形が想定と異なる。"
-                "disable_existing_loggers の明示を追加したか確認すること"
+                "fileConfig の呼び出し形が想定と異なる。disable_existing_loggers の明示を追加したか確認すること"
             )

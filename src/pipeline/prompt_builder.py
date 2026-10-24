@@ -1,4 +1,5 @@
 """Prompt builder for emotional context injection."""
+
 from __future__ import annotations
 
 import logging
@@ -105,6 +106,7 @@ def build_fused_emotional_context_prompt(
 
     if fusion_engine is None and vector_store is not None:
         from src.fusion.engine import FusionEngine
+
         fusion_engine = FusionEngine(vector_store)
 
     if fusion_engine is None:
@@ -148,12 +150,14 @@ def build_fused_emotional_context_prompt(
     for c in fused_vector.conflicts:
         emo_str = c.emotion.value if hasattr(c.emotion, "value") else str(c.emotion)
         emo_ja = EMOTION_JA_MAP.get(emo_str, emo_str)
-        formatted_conflicts.append({
-            "pair": c.pair,
-            "emotion": emo_str,
-            "emotion_ja": emo_ja,
-            "sources": c.sources,
-        })
+        formatted_conflicts.append(
+            {
+                "pair": c.pair,
+                "emotion": emo_str,
+                "emotion_ja": emo_ja,
+                "sources": c.sources,
+            }
+        )
 
     try:
         template = get_jinja_env().get_template("fused_emotional_context.j2")

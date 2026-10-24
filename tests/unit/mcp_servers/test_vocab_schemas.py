@@ -1,4 +1,5 @@
 """Unit tests for vocabulary schemas and URI parser."""
+
 from __future__ import annotations
 
 from src.mcp_servers.vocab_schemas import (
@@ -24,7 +25,7 @@ def test_vocab_schemas_instantiation():
         word="泥の匂い",
         category="olfactory",
         example_sentence="雨上がりの湿った泥の匂いが鼻をついた。",
-        nuance="gloomy"
+        nuance="gloomy",
     )
     assert word.category == "olfactory"
 

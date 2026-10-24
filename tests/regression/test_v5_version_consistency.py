@@ -101,9 +101,7 @@ def test_prod_compose_image_tags(authoritative_version: str) -> None:
     assert tags, "docker-compose.prod.yml に autonovel-* イメージタグが見つかりません"
 
     mismatched = [t for t in tags if t != authoritative_version]
-    assert not mismatched, (
-        f"docker-compose.prod.yml のイメージタグが {authoritative_version} と不一致: {mismatched}"
-    )
+    assert not mismatched, f"docker-compose.prod.yml のイメージタグが {authoritative_version} と不一致: {mismatched}"
 
 
 def test_readme_version_matches(authoritative_version: str) -> None:

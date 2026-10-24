@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 from src.backend.database.repositories.plot import PlotRepository
 from src.backend.database.models import Plot
 
+
 @pytest.mark.asyncio
 async def test_plot_repository_save_and_fetch():
     mock_session = AsyncMock()
@@ -48,7 +49,7 @@ async def test_plot_repository_save_and_fetch():
         sanctuary_event="",
         is_locked=False,
         is_simulation=False,
-        simulation_id=""
+        simulation_id="",
     )
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = mock_plot

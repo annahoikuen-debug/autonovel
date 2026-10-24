@@ -3,6 +3,7 @@
 プロットイベントを処理して感情シグナルを生成し、エピソード単位での
 一括処理・減衰・永続化を提供する。
 """
+
 from __future__ import annotations
 
 import logging
@@ -83,7 +84,10 @@ class RuleEngine:
             # 4. 状態マシンに delta 適用 (ルールの decay_per_episode を紐付け)
             for emotion_type, delta in rule.emotion_deltas.items():
                 new_value = self.state_machine.apply_delta(
-                    source, target, emotion_type, delta,
+                    source,
+                    target,
+                    emotion_type,
+                    delta,
                     decay_per_episode=rule.decay_per_episode,
                 )
                 signal = EmotionalSignal(
@@ -99,7 +103,11 @@ class RuleEngine:
                 signals.append(signal)
                 logger.debug(
                     "Rule %s applied: %s -> %s [%s] %.3f",
-                    rule.rule_id, source, target, emotion_type.value, new_value,
+                    rule.rule_id,
+                    source,
+                    target,
+                    emotion_type.value,
+                    new_value,
                 )
 
         return signals
@@ -221,15 +229,19 @@ class RuleEngine:
         # Graph: 各シグナルからエッジ upsert
         if graph_store is not None:
             for signal in self._iter_last_signals(vector):
-                graph_store.upsert_edge(signal.source, signal.target, {
-                    "affection": vector.get_value(signal.source, signal.target, EmotionType.AFFECTION),
-                    "tension": vector.get_value(signal.source, signal.target, EmotionType.TENSION),
-                    "fear": vector.get_value(signal.source, signal.target, EmotionType.FEAR),
-                    "trust": vector.get_value(signal.source, signal.target, EmotionType.TRUST),
-                    "intimacy": vector.get_value(signal.source, signal.target, EmotionType.INTIMACY),
-                    "cause": signal.cause or "",
-                    "episode": episode,
-                })
+                graph_store.upsert_edge(
+                    signal.source,
+                    signal.target,
+                    {
+                        "affection": vector.get_value(signal.source, signal.target, EmotionType.AFFECTION),
+                        "tension": vector.get_value(signal.source, signal.target, EmotionType.TENSION),
+                        "fear": vector.get_value(signal.source, signal.target, EmotionType.FEAR),
+                        "trust": vector.get_value(signal.source, signal.target, EmotionType.TRUST),
+                        "intimacy": vector.get_value(signal.source, signal.target, EmotionType.INTIMACY),
+                        "cause": signal.cause or "",
+                        "episode": episode,
+                    },
+                )
 
         # Log: 各シグナルを append
         if log_store is not None:

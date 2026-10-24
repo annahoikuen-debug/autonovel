@@ -139,9 +139,7 @@ class ReportGenerator:
                     f"### 第{ep.ep_num}話: {ep.title}",
                     f"- 文字数: {ep.word_count}",
                     f"- 品質スコア: {ep.quality_score:.2f}",
-                    f"- 要約: {ep.summary[:100]}..."
-                    if len(ep.summary) > 100
-                    else f"- 要約: {ep.summary}",
+                    f"- 要約: {ep.summary[:100]}..." if len(ep.summary) > 100 else f"- 要約: {ep.summary}",
                     "",
                 ]
             )

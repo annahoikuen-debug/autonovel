@@ -1,4 +1,5 @@
 """Tests for script watcher service."""
+
 from __future__ import annotations
 
 import pytest
@@ -27,6 +28,7 @@ class TestScriptWatcher:
     @pytest.fixture
     def mock_vector_store(self):
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         store = RedisVectorStore(skip_connection_check=True)
         store.client = redis_client
@@ -183,7 +185,8 @@ beats:
     emotion: "fear"
     delta: 0.5
     cause: "test"
----""", encoding="utf-8"
+---""",
+            encoding="utf-8",
         )
         (temp_dir / "readme.md").write_text("# Readme", encoding="utf-8")
 

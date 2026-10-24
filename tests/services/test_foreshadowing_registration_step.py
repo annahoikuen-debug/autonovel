@@ -6,6 +6,7 @@ from src.models.foreshadowing import Foreshadowing
 
 class MockStatusReporter:
     """モックの StatusReporter"""
+
     def __init__(self):
         self.reports = []
         self._should_stop = False
@@ -21,11 +22,13 @@ class MockStatusReporter:
         class State:
             def should_stop(self):
                 return self._should_stop
+
         return State()
 
 
 class MockPlot:
     """モックの Plot（伏線ヒントを持つ）"""
+
     def __init__(self, volume=1, episode=2, chapter=3, foreshadowing_hint="欠けた鍵の行方"):
         self.volume = volume
         self.episode = episode
@@ -35,6 +38,7 @@ class MockPlot:
 
 class MockPlotRepository:
     """モックの Plot リポジトリ（get_all_plots は async）"""
+
     def __init__(self, plots):
         self._plots = plots
 
@@ -44,12 +48,14 @@ class MockPlotRepository:
 
 class MockRepo:
     """モックの UnitOfWork。実装は engine.repo.plot.get_all_plots(...) を呼ぶ"""
+
     def __init__(self, plots):
         self.plot = MockPlotRepository(plots)
 
 
 class MockEngineWithRepository:
     """伏線リポジトリを持つモックの UltimateHegemonyEngine"""
+
     def __init__(self, plots=None):
         self.foreshadowing_repository = MockForeshadowingRepository()
         self.repo = MockRepo(plots if plots is not None else [MockPlot()])
@@ -57,6 +63,7 @@ class MockEngineWithRepository:
 
 class MockEngineWithoutRepository:
     """伏線リポジトリを持たないモックの UltimateHegemonyEngine"""
+
     def __init__(self, plots=None):
         self.foreshadowing_repository = None
         self.repo = MockRepo(plots if plots is not None else [MockPlot()])
@@ -64,6 +71,7 @@ class MockEngineWithoutRepository:
 
 class MockForeshadowingRepository:
     """モックの伏線リポジトリ"""
+
     def __init__(self):
         self.added_items = []
 
@@ -103,7 +111,7 @@ async def test_foreshadowing_registration_step_execute_with_no_book_id():
         target_eps=10,
         initial_limit=3,
         word_count=2000,
-        book_id=None  # 重要: None
+        book_id=None,  # 重要: None
     )
     engine = MockEngineWithRepository()  # リポジトリはあっても book_id が None なので使われない
     reporter = MockStatusReporter()
@@ -132,7 +140,7 @@ async def test_foreshadowing_registration_step_execute_with_repository():
         target_eps=10,
         initial_limit=3,
         word_count=2000,
-        book_id=123  # 任意の値
+        book_id=123,  # 任意の値
     )
     engine = MockEngineWithRepository()
     reporter = MockStatusReporter()
@@ -175,7 +183,7 @@ async def test_foreshadowing_registration_step_execute_fallback_to_context():
         target_eps=10,
         initial_limit=3,
         word_count=2000,
-        book_id=456  # 任意の値
+        book_id=456,  # 任意の値
         # foreshadowings フィールドはデフォルトで空リスト
     )
     engine = MockEngineWithoutRepository()  # リポジトリがない
@@ -231,7 +239,7 @@ async def test_foreshadowing_registration_step_execute_exception_handling():
         target_eps=10,
         initial_limit=3,
         word_count=2000,
-        book_id=789
+        book_id=789,
     )
     engine = MockEngineThatRaises()
     reporter = MockStatusReporter()

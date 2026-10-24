@@ -170,11 +170,7 @@ class SameStructureDetector(BaseRuleDetector):
                 # Flag the whole run except the first sentence (one is fine).
                 for k in range(i + 1, j):
                     s_start, s_end, _ = sentences[k]
-                    violations.append(
-                        self._make_violation(
-                            s_start, s_end, text[s_start:s_end], severity=Severity.HIGH
-                        )
-                    )
+                    violations.append(self._make_violation(s_start, s_end, text[s_start:s_end], severity=Severity.HIGH))
             i = j
         return violations
 
@@ -220,11 +216,7 @@ class DirectEmotionDetector(BaseRuleDetector):
             matches.sort(key=lambda m: m.start())
             if len(matches) > per_paragraph_limit:
                 for m in matches[per_paragraph_limit:]:
-                    violations.append(
-                        self._make_violation(
-                            p_start + m.start(), p_start + m.end(), m.group(0)
-                        )
-                    )
+                    violations.append(self._make_violation(p_start + m.start(), p_start + m.end(), m.group(0)))
         return violations
 
     def score_from_violations(self, text: str, violations: list[ViolationSpan]) -> float:
@@ -259,11 +251,7 @@ class HedgingPatternsDetector(BaseRuleDetector):
         for s_start, s_end, sentence in sentences:
             for pat in HEDGING_PATTERNS:
                 for m in pat.finditer(sentence):
-                    violations.append(
-                        self._make_violation(
-                            s_start + m.start(), s_start + m.end(), m.group(0)
-                        )
-                    )
+                    violations.append(self._make_violation(s_start + m.start(), s_start + m.end(), m.group(0)))
         # Sort by start offset to guarantee stable ordering.
         violations.sort(key=lambda v: v.start)
         return violations
@@ -353,9 +341,7 @@ class UniformParagraphDetector(BaseRuleDetector):
                 # All paragraphs in the window are too uniform.
                 for k in range(i, i + min_paragraphs):
                     p_start, p_end, _ = paragraphs[k]
-                    violations.append(
-                        self._make_violation(p_start, p_end, text[p_start:p_end])
-                    )
+                    violations.append(self._make_violation(p_start, p_end, text[p_start:p_end]))
         # Deduplicate while preserving order (use set on (start,end))
         seen: set[tuple[int, int]] = set()
         deduped: list[ViolationSpan] = []
@@ -424,6 +410,7 @@ class EmotionSyllogismDetector(BaseRuleDetector):
     def __init__(self, config: Any = None):
         super().__init__(config=config)
         from src.services.anti_ai.syllogism_patterns import SYLLOGISM_PATTERNS
+
         self.patterns = SYLLOGISM_PATTERNS
 
     def detect(self, text: str) -> list[ViolationSpan]:

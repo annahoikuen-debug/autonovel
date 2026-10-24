@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class BudgetStatus(Enum):
-    NORMAL = "normal"      # 70%未満
-    WARNING = "warning"    # 70-90%
+    NORMAL = "normal"  # 70%未満
+    WARNING = "warning"  # 70-90%
     EXCEEDED = "exceeded"  # 100%超
 
 

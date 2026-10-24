@@ -1,4 +1,5 @@
 """planning_options の実レスポンスを JSON で書き出す（FE テストの唯一の fixture 源）。"""
+
 from __future__ import annotations
 
 import argparse

@@ -1,4 +1,5 @@
 """Unit tests for SceneTransitionValidator."""
+
 from __future__ import annotations
 
 from src.mcp_servers.transition_schemas import SceneState

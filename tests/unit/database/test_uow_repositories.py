@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 from src.backend.database.uow import UnitOfWork
 
+
 def test_uow_repository_properties():
     mock_db = MagicMock()
     uow = UnitOfWork(db=mock_db)

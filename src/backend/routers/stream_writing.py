@@ -3,6 +3,7 @@
 コンテキスト構築、五感ビート執筆、二層監査、完了までの進捗率とフェーズ情報を
 リアルタイムにクライアントへPush配信する。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -52,6 +53,7 @@ async def _run_writing_pipeline(
                     self.content = ""
                     self.summary = ""
                     self.killer_phrase = ""
+
             chapter = MockChapter()
 
         # コンテキスト構築フェーズ
@@ -200,20 +202,26 @@ async def stream_chapter_generation(
                 payload = json.dumps(event, ensure_ascii=False)
                 yield f"data: {payload}\n\n"
         except HTTPException as e:
-            error_payload = json.dumps({
-                "phase": "Error",
-                "progress": 0,
-                "message": f"エラー: {e.detail}",
-                "timestamp": time.time(),
-            }, ensure_ascii=False)
+            error_payload = json.dumps(
+                {
+                    "phase": "Error",
+                    "progress": 0,
+                    "message": f"エラー: {e.detail}",
+                    "timestamp": time.time(),
+                },
+                ensure_ascii=False,
+            )
             yield f"data: {error_payload}\n\n"
         except Exception as e:
-            error_payload = json.dumps({
-                "phase": "Error",
-                "progress": 0,
-                "message": f"予期せぬエラー: {str(e)}",
-                "timestamp": time.time(),
-            }, ensure_ascii=False)
+            error_payload = json.dumps(
+                {
+                    "phase": "Error",
+                    "progress": 0,
+                    "message": f"予期せぬエラー: {str(e)}",
+                    "timestamp": time.time(),
+                },
+                ensure_ascii=False,
+            )
             yield f"data: {error_payload}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

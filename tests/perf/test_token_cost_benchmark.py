@@ -1,4 +1,3 @@
-
 # 1Mトークンあたりの価格 (USD)
 MODEL_RATES = {
     "gemini-2.5-flash": {"input": 0.075, "output": 0.30},
@@ -6,12 +5,12 @@ MODEL_RATES = {
 }
 USD_JPY = 150.0
 
+
 def calculate_episode_cost_jpy(model: str, input_tokens: int, output_tokens: int) -> float:
     rates = MODEL_RATES[model]
-    cost_usd = (input_tokens / 1_000_000.0) * rates["input"] + (
-        output_tokens / 1_000_000.0
-    ) * rates["output"]
+    cost_usd = (input_tokens / 1_000_000.0) * rates["input"] + (output_tokens / 1_000_000.0) * rates["output"]
     return cost_usd * USD_JPY
+
 
 def test_token_cost_benchmark_gemini_flash():
     """v5.0: 1話あたりのトークン消費（執筆＋二層監査）とコストが目標（<5円）に収まることを検証"""
@@ -36,6 +35,7 @@ def test_token_cost_benchmark_gemini_flash():
 
     # 1話あたりのコストが 5円 未満（実質 1円 未満）であることをアサート
     assert cost_jpy < 1.0  # Gemini Flashなら1円未満で完結
+
 
 def test_token_cost_benchmark_claude_haiku():
     """Claude 3.5 Haiku を使用した場合でも5円以内に収まることを検証"""

@@ -57,10 +57,7 @@ class DialogueFormatter:
     @staticmethod
     def compress_explanatory_dialogue(text: str) -> str:
         lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
-        dialogue_indices = [
-            i for i, line in enumerate(lines)
-            if line.startswith("「") and line.endswith("」")
-        ]
+        dialogue_indices = [i for i, line in enumerate(lines) if line.startswith("「") and line.endswith("」")]
 
         if len(dialogue_indices) >= 3 and dialogue_indices[-1] - dialogue_indices[0] == len(dialogue_indices) - 1:
             # 3 or more consecutive dialogue lines: keep first beat + last line
@@ -104,9 +101,15 @@ class DialogueFormatter:
         i = 0
         while i < len(lines):
             cur = lines[i]
-            if i + 1 < len(lines) and cur.startswith("「") and cur.endswith("」") and lines[i + 1].startswith("「") and lines[i + 1].endswith("」"):
+            if (
+                i + 1 < len(lines)
+                and cur.startswith("「")
+                and cur.endswith("」")
+                and lines[i + 1].startswith("「")
+                and lines[i + 1].endswith("」")
+            ):
                 # Merge into one line with pause beat
-                merged = f"「{cur[1:-1]}……{lines[i+1][1:-1]}」"
+                merged = f"「{cur[1:-1]}……{lines[i + 1][1:-1]}」"
                 new_lines.append(merged)
                 i += 2
             else:

@@ -1,6 +1,5 @@
 """Unit tests for Safe Publishing Assistant (Steps 1-12)."""
 
-
 from src.models.publishing_assistant import TargetPlatform
 from src.services.publishing.content_splitter import ContentSplitter
 from src.services.publishing.ai_disclosure_generator import AIDisclosureGenerator
@@ -48,11 +47,7 @@ def test_compliance_validator():
     """Test compliance validation for titles, character counts, and sensitive expressions."""
     # Normal case
     warnings_ok = ComplianceValidator.validate_chapter(
-        platform="kakuyomu",
-        chapter_title="第1話 平和な日常",
-        main_content="あ" * 1000,
-        foreword="",
-        afterword=""
+        platform="kakuyomu", chapter_title="第1話 平和な日常", main_content="あ" * 1000, foreword="", afterword=""
     )
     # Should contain disclosure recommendation warning
     assert any("タグ" in w or "設定" in w for w in warnings_ok)

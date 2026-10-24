@@ -100,6 +100,7 @@ async def test_save_or_update_book_with_chapter_async():
 async def test_book_repository_concurrency():
     """複数セッションによる並行タスク作成・更新がデッドロックなく完了することを検証 (Step 4)"""
     async with create_test_db() as session_factory:
+
         async def worker(worker_id: int):
             async with session_factory() as session:
                 repo = BookRepository(session)

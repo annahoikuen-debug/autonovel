@@ -13,20 +13,16 @@ async def test_writing_graph_complete_flow():
     mock_manager = MagicMock()
 
     # 各ノードのモックを設定
-    mock_manager._phase_prepare_context = AsyncMock(return_value=(
-        "fake_gen_ctx", True, False, False, 50
-    ))
-    mock_manager._phase_drafting = AsyncMock(return_value=(
-        "Completed draft content " * 10,  # 230+文字
-        {"words": 230}
-    ))
-    mock_manager._phase_audit = AsyncMock(return_value=(
-        True, 0.85, True, "OK", []
-    ))
+    mock_manager._phase_prepare_context = AsyncMock(return_value=("fake_gen_ctx", True, False, False, 50))
+    mock_manager._phase_drafting = AsyncMock(
+        return_value=(
+            "Completed draft content " * 10,  # 230+文字
+            {"words": 230},
+        )
+    )
+    mock_manager._phase_audit = AsyncMock(return_value=(True, 0.85, True, "OK", []))
     mock_manager._phase_critic = AsyncMock(return_value=False)  # リトライ不要
-    mock_manager._phase_healing = AsyncMock(return_value=(
-        "healed content", True, "Fixed"
-    ))
+    mock_manager._phase_healing = AsyncMock(return_value=("healed content", True, "Fixed"))
     mock_manager._run_dogfeeding_loop = AsyncMock(return_value=True)
     mock_manager._register_lazy_patch = AsyncMock()
 
@@ -44,7 +40,7 @@ async def test_writing_graph_complete_flow():
     # 生成後に patch しても `self.workflow` は実グラフのままなので、
     # 意図に反して graph 経路が走り、checkpointer（MemorySaver）が
     # MagicMock を msgpack 化しようとして fatal error になる。
-    with patch('src.backend.workflows.writing_langgraph.HAS_LANGGRAPH', False):
+    with patch("src.backend.workflows.writing_langgraph.HAS_LANGGRAPH", False):
         # WritingGraphManagerのインスタンスを patch 内で作る（workflow は None になる）
         manager = WritingGraphManager(mock_manager)
         assert manager.workflow is None, "HAS_LANGGRAPH=False ならフォールバックオブジェクトになる"
@@ -56,7 +52,7 @@ async def test_writing_graph_complete_flow():
             sys_inst="System instruction",
             fw_prompt="Write a story",
             passion=0.8,
-            is_easy_mode=False
+            is_easy_mode=False,
         )
 
         # アサーション
@@ -85,13 +81,15 @@ async def test_writing_graph_flow_with_mocked_workflow():
     # langgraphが利用可能な状態をシミュレート
     # workflow属性にモックを直接設定
     mock_workflow = MagicMock()
-    mock_workflow.ainvoke = AsyncMock(return_value={
-        "draft_content": "完成した第1話原稿",
-        "final_meta": {"score": 85},
-        "is_integrity_ok": True,
-        "is_causal_ok": True,
-        "status": "completed"
-    })
+    mock_workflow.ainvoke = AsyncMock(
+        return_value={
+            "draft_content": "完成した第1話原稿",
+            "final_meta": {"score": 85},
+            "is_integrity_ok": True,
+            "is_causal_ok": True,
+            "status": "completed",
+        }
+    )
     manager.workflow = mock_workflow
 
     # 初期状態を作成する内部メソッドもモック
@@ -117,11 +115,11 @@ async def test_writing_graph_flow_with_mocked_workflow():
         "status": "pending",
         "patch_review_id": None,
         "review_status": None,
-        "requires_user_review": False
+        "requires_user_review": False,
     }
 
     # _create_initial_stateをモック
-    with patch.object(manager, '_create_initial_state', return_value=initial_state):
+    with patch.object(manager, "_create_initial_state", return_value=initial_state):
         # runメソッドを実行
         draft, meta, is_ok = await manager.run(
             ep_num=1,
@@ -129,7 +127,7 @@ async def test_writing_graph_flow_with_mocked_workflow():
             sys_inst="System instruction",
             fw_prompt="Write a story",
             passion=0.8,
-            is_easy_mode=False
+            is_easy_mode=False,
         )
 
         # アサーション（計画書の例に合わせる）

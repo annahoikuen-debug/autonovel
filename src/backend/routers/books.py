@@ -50,9 +50,7 @@ async def delete_book(book_id: int, current_user: User = Depends(get_current_use
 
 
 @router.get("/{book_id}/book-scores/history", response_model=BookScoreHistoryResponse)
-async def get_book_score_history(
-    book_id: int, current_user: User = Depends(get_current_user)
-):
+async def get_book_score_history(book_id: int, current_user: User = Depends(get_current_user)):
     async with UnitOfWork(AppContainer.db()) as uow:
         # IDOR 防止: 作品の所有権を検証する
         await verify_book_ownership(book_id, current_user, uow)

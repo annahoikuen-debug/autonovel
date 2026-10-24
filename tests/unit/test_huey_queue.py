@@ -79,5 +79,6 @@ def test_execute_agent_node_task_error_handling():
 def test_system_router_huey_health():
     """Step 46-47の検証: system.py / server.py の Huey 連携"""
     from src.backend.routers.system import router
+
     routes = [r.path for r in router.routes]
     assert any("huey/health" in r for r in routes)

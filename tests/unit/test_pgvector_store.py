@@ -12,8 +12,10 @@ class TestPgVectorStore:
 
     def test_init(self):
         """Test initialization."""
-        with patch("src.services.vector_store.create_async_engine") as mock_engine, \
-             patch("src.services.vector_store.async_sessionmaker") as mock_session:
+        with (
+            patch("src.services.vector_store.create_async_engine") as mock_engine,
+            patch("src.services.vector_store.async_sessionmaker") as mock_session,
+        ):
             store = PgVectorStore(
                 database_url="postgresql+asyncpg://user:pass@localhost/db",
                 dimension=768,
@@ -28,8 +30,10 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_ensure_table(self):
         """Test _ensure_table creates table and index."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with (
+            patch("src.services.vector_store.create_async_engine"),
+            patch("src.services.vector_store.async_sessionmaker"),
+        ):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -50,8 +54,10 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_add_documents(self):
         """Test add_documents inserts data."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with (
+            patch("src.services.vector_store.create_async_engine"),
+            patch("src.services.vector_store.async_sessionmaker"),
+        ):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -75,8 +81,10 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_search(self):
         """Test search returns results."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with (
+            patch("src.services.vector_store.create_async_engine"),
+            patch("src.services.vector_store.async_sessionmaker"),
+        ):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -86,9 +94,7 @@ class TestPgVectorStore:
             store._ensure_table = AsyncMock(return_value=True)
             # Mock execute to return fake rows
             mock_result = MagicMock()
-            mock_result.fetchall.return_value = [
-                ("id1", "content1", {"meta": "val"}, 0.1)
-            ]
+            mock_result.fetchall.return_value = [("id1", "content1", {"meta": "val"}, 0.1)]
             mock_session.execute.return_value = mock_result
 
             results = await store.search("test", [0.1, 0.2], top_k=1)
@@ -103,8 +109,10 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_search_with_score(self):
         """Test search_with_score filters by min_score."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with (
+            patch("src.services.vector_store.create_async_engine"),
+            patch("src.services.vector_store.async_sessionmaker"),
+        ):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -127,8 +135,10 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_delete_by_id(self):
         """Test delete_by_id removes rows."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with (
+            patch("src.services.vector_store.create_async_engine"),
+            patch("src.services.vector_store.async_sessionmaker"),
+        ):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -144,8 +154,10 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_clear_collection(self):
         """Test clear_collection truncates table."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with (
+            patch("src.services.vector_store.create_async_engine"),
+            patch("src.services.vector_store.async_sessionmaker"),
+        ):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -161,8 +173,10 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_hybrid_search(self):
         """Test hybrid_search combines vector and text results."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with (
+            patch("src.services.vector_store.create_async_engine"),
+            patch("src.services.vector_store.async_sessionmaker"),
+        ):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -170,10 +184,12 @@ class TestPgVectorStore:
             mock_session.__aexit__.return_value = None
             store._ensure_table = AsyncMock(return_value=True)
             # Mock search_with_score to return vector results
-            store.search_with_score = AsyncMock(return_value=[
-                {"id": "1", "content": "vec1", "similarity": 0.9, "metadata": {}},
-                {"id": "2", "content": "vec2", "similarity": 0.7, "metadata": {}},
-            ])
+            store.search_with_score = AsyncMock(
+                return_value=[
+                    {"id": "1", "content": "vec1", "similarity": 0.9, "metadata": {}},
+                    {"id": "2", "content": "vec2", "similarity": 0.7, "metadata": {}},
+                ]
+            )
             # Mock the text search execute
             mock_result = MagicMock()
             mock_result.fetchall.return_value = [
@@ -197,4 +213,3 @@ class TestPgVectorStore:
             assert "1" in ids or "2" in ids or "3" in ids
             # Ensure rrf_score key exists
             assert "rrf_score" in results[0]
-

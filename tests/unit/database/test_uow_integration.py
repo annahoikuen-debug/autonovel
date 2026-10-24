@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.backend.database.uow import UnitOfWork
 
+
 @pytest.mark.asyncio
 async def test_uow_atomic_rollback_on_failure():
     mock_session = AsyncMock()
@@ -27,6 +28,7 @@ async def test_uow_atomic_rollback_on_failure():
     mock_session.rollback.assert_awaited_once()
     mock_session.commit.assert_not_awaited()
     mock_session.close.assert_awaited_once()
+
 
 @pytest.mark.asyncio
 async def test_uow_atomic_commit_on_success():

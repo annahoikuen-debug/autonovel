@@ -1,6 +1,7 @@
 """
 narrative_spine_composer.py - EmotionalHookSpec と SharpEdgeSpec をプロンプトに統合するコンポーザー
 """
+
 from __future__ import annotations
 
 from typing import Optional

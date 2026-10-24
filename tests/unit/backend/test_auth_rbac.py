@@ -1,4 +1,5 @@
 """API Key が admin 権限を付与しないことを検証するテスト"""
+
 import pytest
 from unittest.mock import AsyncMock, patch
 from src.backend.auth import require_admin_user_or_key, _get_dev_mock_user
@@ -13,9 +14,7 @@ async def test_api_key_does_not_grant_admin():
         with patch("src.backend.auth.require_api_key", new_callable=AsyncMock) as mock_req:
             mock_req.return_value = "valid-key"
             with patch("src.backend.auth.decode_token", return_value=None):
-                user = await require_admin_user_or_key(
-                    token=None, authorization="Bearer valid-key", db=AsyncMock()
-                )
+                user = await require_admin_user_or_key(token=None, authorization="Bearer valid-key", db=AsyncMock())
                 assert user.role != "admin", "API Key should not grant admin role"
 
 

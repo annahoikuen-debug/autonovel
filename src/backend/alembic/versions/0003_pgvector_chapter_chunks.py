@@ -34,10 +34,7 @@ def upgrade() -> None:
     op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
     if not _table_exists("chapter_chunks"):
         return
-    op.execute(
-        "ALTER TABLE chapter_chunks "
-        "ALTER COLUMN embedding TYPE vector(1536) USING embedding::vector;"
-    )
+    op.execute("ALTER TABLE chapter_chunks ALTER COLUMN embedding TYPE vector(1536) USING embedding::vector;")
     op.execute(
         "CREATE INDEX IF NOT EXISTS ix_chapter_chunks_embedding "
         "ON chapter_chunks USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);"

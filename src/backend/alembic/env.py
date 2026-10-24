@@ -39,9 +39,7 @@ if config is not None:
         #
         # Alembic 用の設定を読み込みたいだけで、既存アプリケーションのロガーを
         # 無効化する意図はないため、明示的に False を渡す。
-        logging.config.fileConfig(
-            config.config_file_name, disable_existing_loggers=False
-        )
+        logging.config.fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 

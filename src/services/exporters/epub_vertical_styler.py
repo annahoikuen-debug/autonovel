@@ -1,4 +1,5 @@
 """Commercial Vertical EPUB 3 CSS Styler for Kindle (KDP) and Rakuten Kobo (v5.0 Step 15)."""
+
 from __future__ import annotations
 
 COMMERCIAL_VERTICAL_CSS = """@charset "UTF-8";

@@ -7,6 +7,7 @@ from src.services.auditors.rule_based_metrics import (
     verify_character_suffixes,
 )
 
+
 def test_rule_based_metrics_comprehensive():
     sample = "主人公は歩いた。目の前には広大な城。「止まれ！」と兵士が叫んだ。その時、空が割れた！？"
     rhythm = calculate_sentence_rhythm(sample)
@@ -24,6 +25,7 @@ def test_rule_based_metrics_comprehensive():
 
     cliff = evaluate_cliffhanger_ending(sample)
     assert cliff >= 70.0  # 末尾に！？があるため高得点
+
 
 def test_character_suffix_verification():
     dialogues = ["わたくしが参りますわ", "ごきげんようですわ"]

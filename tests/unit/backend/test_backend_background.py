@@ -1,4 +1,5 @@
 """Coverage tests for src/backend/background.py (progress state, reporters, task manager)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -48,6 +49,7 @@ def _patch_redis(monkeypatch, client):
 # --------------------------------------------------------------------------
 # save strategies
 # --------------------------------------------------------------------------
+
 
 def test_select_strategy_prefers_redis(monkeypatch):
     _patch_redis(monkeypatch, _FakeRedis())
@@ -149,6 +151,7 @@ def test_noop_strategy():
 # ProgressState
 # --------------------------------------------------------------------------
 
+
 def test_progress_state_defaults(monkeypatch):
     _patch_redis(monkeypatch, None)
     state = ProgressState()
@@ -241,6 +244,7 @@ def test_should_stop_rate_limits_checks(monkeypatch):
 # --------------------------------------------------------------------------
 # Reporters
 # --------------------------------------------------------------------------
+
 
 def test_background_report(monkeypatch):
     _patch_redis(monkeypatch, None)
@@ -344,6 +348,7 @@ def test_module_level_report_exception_helper(monkeypatch, caplog):
 # --------------------------------------------------------------------------
 # BackgroundTaskManager
 # --------------------------------------------------------------------------
+
 
 def test_background_task_manager_lifecycle(monkeypatch):
     _patch_redis(monkeypatch, None)

@@ -28,7 +28,7 @@ class PatchMerger:
             return original_text
 
         # Split original text into paragraphs by blank lines
-        raw_paragraphs = re.split(r'\n\s*\n', original_text.strip())
+        raw_paragraphs = re.split(r"\n\s*\n", original_text.strip())
         paragraphs = [p.strip() for p in raw_paragraphs if p.strip()]
 
         if not paragraphs:

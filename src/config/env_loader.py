@@ -2,6 +2,7 @@ import os
 import yaml
 from typing import Any, Dict
 
+
 def load_config() -> Dict[str, Any]:
     """
     Load configuration based on the ENVIRONMENT variable.
@@ -14,7 +15,7 @@ def load_config() -> Dict[str, Any]:
     if not os.path.exists(config_file):
         config_file = "config/local.yaml"
 
-    with open(config_file, 'r', encoding='utf-8') as f:
+    with open(config_file, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
 
     # Validate and convert types (example validation)

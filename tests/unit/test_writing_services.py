@@ -1,4 +1,5 @@
 """Unit tests for WritingGenerationContext in src/backend/writing_service.py."""
+
 from unittest.mock import MagicMock
 from src.backend.writing_service import WritingGenerationContext
 
@@ -30,7 +31,7 @@ def test_writing_generation_context_with_values():
         target_word_count=1500,
         enable_polishing=False,
         prose_sample="Sample prose",
-        plot={"key": "value"}
+        plot={"key": "value"},
     )
 
     assert ctx.sys_inst == "Base instruction"
@@ -123,5 +124,3 @@ def test_writing_service_audit_generated_text():
     assert "warnings" in result
     assert isinstance(result["warnings"], list)
     assert result["quantitative_score"] > 0
-
-

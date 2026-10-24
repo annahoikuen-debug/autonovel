@@ -5,6 +5,7 @@ API ルート自動ドキュメント生成スクリプト.
 FastAPI アプリから OpenAPI スキーマを取得し、
 マークダウン形式の API ドキュメントを生成する。
 """
+
 from __future__ import annotations
 
 import json
@@ -20,22 +21,25 @@ from src.backend.server import app
 def _group_endpoints_by_tag(paths: dict) -> dict[str, list[dict]]:
     """エンドポイントをタグごとにグループ化"""
     from typing import Any
+
     tag_to_endpoints: dict[str, list[dict[str, Any]]] = {}
     for path, methods in paths.items():
         for method, details in methods.items():
             if method.upper() in ("GET", "POST", "PUT", "DELETE", "PATCH"):
                 tags = details.get("tags", ["default"])
                 for tag in tags:
-                    tag_to_endpoints.setdefault(tag, []).append({
-                        "path": path,
-                        "method": method.upper(),
-                        "summary": details.get("summary", ""),
-                        "description": details.get("description", ""),
-                        "operation_id": details.get("operationId", ""),
-                        "parameters": details.get("parameters", []),
-                        "responses": details.get("responses", {}),
-                        "request_body": details.get("requestBody", {}),
-                    })
+                    tag_to_endpoints.setdefault(tag, []).append(
+                        {
+                            "path": path,
+                            "method": method.upper(),
+                            "summary": details.get("summary", ""),
+                            "description": details.get("description", ""),
+                            "operation_id": details.get("operationId", ""),
+                            "parameters": details.get("parameters", []),
+                            "responses": details.get("responses", {}),
+                            "request_body": details.get("requestBody", {}),
+                        }
+                    )
     return tag_to_endpoints
 
 
@@ -131,7 +135,7 @@ def generate_markdown_docs() -> str:
         "---",
         "",
         "## エンドポイント一覧",
-        ""
+        "",
     ]
 
     # タグごとにグループ化
@@ -149,6 +153,8 @@ def generate_markdown_docs() -> str:
             lines.append("")
 
     return "\n".join(lines)
+
+
 def main():
     """メイン実行"""
     output_path = Path(__file__).resolve().parent.parent / "docs" / "api" / "endpoints.md"

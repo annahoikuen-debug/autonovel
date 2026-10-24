@@ -1,4 +1,5 @@
 """Additional tests for src/services/script_watcher.py to increase coverage."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock

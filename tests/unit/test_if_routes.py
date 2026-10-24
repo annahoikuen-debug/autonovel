@@ -45,9 +45,7 @@ def test_branch_condition_contains():
 
 def test_route_choice_apply_effects_nested():
     """`apply_effects` がネストした dict キーに副作用を反映できることを確認。"""
-    choice = RouteChoice(
-        id="c1", text="選択", effects={"player.affection": 10, "flags.hero": True}
-    )
+    choice = RouteChoice(id="c1", text="選択", effects={"player.affection": 10, "flags.hero": True})
     new_ctx = choice.apply_effects({"player": {"affection": 5}, "flags": {}})
     assert new_ctx["player"]["affection"] == 10
     assert new_ctx["flags"]["hero"] is True
@@ -81,9 +79,7 @@ def _make_series(eps: int = 1) -> SeriesResult:
 
 def test_if_route_generator_minimum_nodes():
     """1 話のシリーズから最低 1 ノードが生成される。"""
-    gen = IFRouteGenerator(
-        "ハイファンタジー (R15)", {"characters": {"archetypes": {}}, "erotic": {}}
-    )
+    gen = IFRouteGenerator("ハイファンタジー (R15)", {"characters": {"archetypes": {}}, "erotic": {}})
     series = _make_series(eps=1)
     graph = gen.generate_from_series(series)
     assert len(graph.nodes) >= 1
@@ -98,4 +94,3 @@ def test_if_route_graph_validate():
     )
     errors = graph.validate()
     assert isinstance(errors, list)
-

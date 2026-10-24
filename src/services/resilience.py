@@ -92,8 +92,6 @@ def get_system_status() -> dict[str, Any]:
         "gemini": gemini,
         "cache_first": offline,
         "recommendation": (
-            "オフライン: セマンティックキャッシュからの再開を推奨"
-            if offline
-            else "オンライン: 通常通り生成可能"
+            "オフライン: セマンティックキャッシュからの再開を推奨" if offline else "オンライン: 通常通り生成可能"
         ),
     }

@@ -446,12 +446,9 @@ class SocialRepository:
                     continue
 
                 # keep_ids に含まれない古いレコードを削除
-                del_stmt = (
-                    delete(RelationshipHistory)
-                    .where(
-                        RelationshipHistory.relationship_id == rid,
-                        ~RelationshipHistory.id.in_(keep_ids),
-                    )
+                del_stmt = delete(RelationshipHistory).where(
+                    RelationshipHistory.relationship_id == rid,
+                    ~RelationshipHistory.id.in_(keep_ids),
                 )
                 del_res = await session.execute(del_stmt)
                 deleted_total += del_res.rowcount or 0

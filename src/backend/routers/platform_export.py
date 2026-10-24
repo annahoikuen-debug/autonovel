@@ -3,6 +3,7 @@
 「なろう」「カクヨム」「アルファポリス」等の各プラットフォーム規格に
 最適化されたテキスト（字下げ・ルビ記法・前書き/後書き）を返却する。
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException

@@ -15,6 +15,7 @@
 1. raw string 拒否という**意図**を（実装できる／できないの両方で）固定し
 2. Protocol の型注釈が実装と一致することを固定する
 """
+
 from __future__ import annotations
 
 import ast
@@ -60,9 +61,7 @@ class TestRawStringIsRejected:
 
         with pytest.raises(TypeError) as exc:
             await method("SELECT 1")
-        assert method_name in str(exc.value), (
-            f"エラーメッセージがメソッド名を含まない: {exc.value}"
-        )
+        assert method_name in str(exc.value), f"エラーメッセージがメソッド名を含まない: {exc.value}"
 
 
 @pytest.mark.integration
@@ -78,9 +77,7 @@ class TestProtocolMatchesImplementation:
         """
         from src.core.interfaces import DatabaseManagerProtocol
 
-        sig = typing.get_type_hints(
-            getattr(DatabaseManagerProtocol, method_name)
-        )
+        sig = typing.get_type_hints(getattr(DatabaseManagerProtocol, method_name))
         query_type = sig.get("query") or sig.get("sql")
         assert query_type is not None, f"{method_name} に query/sql の型注釈が無い"
 
@@ -102,9 +99,7 @@ class TestProtocolMatchesImplementation:
 
         sig = typing.get_type_hints(DatabaseManagerProtocol.fetch_one)
         rendered = str(sig.get("query"))
-        assert "TextClause" in rendered, (
-            f"Protocol が TextClause を要求していない: {rendered}"
-        )
+        assert "TextClause" in rendered, f"Protocol が TextClause を要求していない: {rendered}"
 
     @pytest.mark.asyncio
     async def test_enqueue_write_also_rejects_raw_string(self) -> None:
@@ -141,8 +136,7 @@ class TestProtocolMatchesImplementation:
                 and any(
                     # `str` はソース上は組み込み名なので AST 上は
                     # Constant ではなく Name として現れる
-                    (isinstance(a, ast.Name) and a.id == "str")
-                    or (isinstance(a, ast.Constant) and a.value == "str")
+                    (isinstance(a, ast.Name) and a.id == "str") or (isinstance(a, ast.Constant) and a.value == "str")
                     for a in node.args
                 )
                 for stmt in body
@@ -193,8 +187,7 @@ class TestFetchLastrowidUsesBoundParameters:
             if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
         }
         assert "exec_driver_sql" not in called, (
-            "fetch_lastrowid が exec_driver_sql を使っている。"
-            "他のメソッドと同様に conn.execute() を使うべき"
+            "fetch_lastrowid が exec_driver_sql を使っている。他のメソッドと同様に conn.execute() を使うべき"
         )
         assert "execute" in called, "fetch_lastrowid が execute を呼んでいない"
 

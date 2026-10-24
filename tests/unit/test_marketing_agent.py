@@ -1,4 +1,5 @@
 """MarketingAgent / マーケティング関連エンドポイントのユニットテスト."""
+
 from __future__ import annotations
 
 import io
@@ -30,9 +31,7 @@ async def test_generate_pack_success():
     llm = _make_llm({"metadata": {"title": "テスト作品", "tags": ["A", "B"]}})
     agent = MarketingAgent(llm=llm, prompt_manager=_make_pm())
 
-    result = await agent.generate_pack(
-        book_title="テスト作品", synopsis="あらすじ", latest_ep=1
-    )
+    result = await agent.generate_pack(book_title="テスト作品", synopsis="あらすじ", latest_ep=1)
 
     assert result == {"title": "テスト作品", "tags": ["A", "B"]}
     llm.generate_json.assert_awaited_once()
@@ -44,9 +43,7 @@ async def test_generate_pack_missing_metadata_key():
     llm = _make_llm({"title": "直接タイトル", "tags": ["x"]})
     agent = MarketingAgent(llm=llm, prompt_manager=_make_pm())
 
-    result = await agent.generate_pack(
-        book_title="元タイトル", synopsis="あらすじ", latest_ep=2
-    )
+    result = await agent.generate_pack(book_title="元タイトル", synopsis="あらすじ", latest_ep=2)
 
     assert result["title"] == "直接タイトル"
     assert result["tags"] == ["x"]
@@ -60,9 +57,7 @@ async def test_generate_pack_no_prompt_manager():
     agent = MarketingAgent(llm=llm, prompt_manager=None)
     agent.prompt_manager = None
 
-    result = await agent.generate_pack(
-        book_title="t", synopsis="s", latest_ep=1
-    )
+    result = await agent.generate_pack(book_title="t", synopsis="s", latest_ep=1)
 
     assert result["title"] == "t"
     assert result["tags"] == []
@@ -156,9 +151,7 @@ def test_post_export_package_endpoint(client, real_db_manager):
 
     fake_zip = b"PK\x03\x04fake_zip_bytes"
     fake_engine = MagicMock()
-    fake_engine.marketing.create_export_package = AsyncMock(
-        return_value=(fake_zip, "export_1.zip")
-    )
+    fake_engine.marketing.create_export_package = AsyncMock(return_value=(fake_zip, "export_1.zip"))
 
     from src.backend.routers import marketing as marketing_router
 

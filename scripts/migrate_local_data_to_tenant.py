@@ -7,6 +7,7 @@ from src.backend.security.password import hash_password
 # 既存のデータベースファイル
 DB_URL = "sqlite+aiosqlite:///autonovel.db"
 
+
 async def migrate_data():
     engine = create_async_engine(DB_URL)
     async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -17,7 +18,7 @@ async def migrate_data():
             email="admin@autonovel.local",
             hashed_password=hash_password("admin_password_change_me"),
             display_name="Admin",
-            role="admin"
+            role="admin",
         )
         session.add(admin)
         await session.commit()
@@ -26,6 +27,7 @@ async def migrate_data():
 
         # 2. user_id が NULL の Book を検索
         from sqlalchemy import select
+
         result = await session.execute(select(Book).where(Book.user_id.is_(None)))
         books = result.scalars().all()
 
@@ -36,6 +38,7 @@ async def migrate_data():
 
         await session.commit()
         print("Migration completed.")
+
 
 if __name__ == "__main__":
     asyncio.run(migrate_data())

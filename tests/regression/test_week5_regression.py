@@ -1,4 +1,5 @@
 """Comprehensive regression tests for Week 5 Hierarchical Agent Memory."""
+
 from src.agents.memory.branch_manager import BranchMemoryManager
 from src.agents.memory.cached_archival import CachedArchivalMemory
 from src.agents.memory.compaction import CompactionPolicy
@@ -31,9 +32,9 @@ def test_tool_calls_update_core_memory(tmp_path):
     store = InMemoryVectorStore()
     agent = WriterAgent(vector_store=store, save_directory=tmp_path)
 
-    agent.tool_handler.handle_call("update_emotion", {
-        "source": "A", "target": "B", "emotion": "affection", "delta": 0.4, "reason": "告白"
-    })
+    agent.tool_handler.handle_call(
+        "update_emotion", {"source": "A", "target": "B", "emotion": "affection", "delta": 0.4, "reason": "告白"}
+    )
     assert agent.memory_manager.core_memory.character_emotions["A->B"]["affection"] == 0.4
 
 

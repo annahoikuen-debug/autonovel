@@ -123,9 +123,7 @@ async def test_existing_safe_replace_still_wins(monkeypatch: pytest.MonkeyPatch)
         actionable="後付けの文章",
     )
 
-    out = await agent.try_local_patch(
-        "MAGIC が光った。", unified_report=report, failed_outcomes=[]
-    )
+    out = await agent.try_local_patch("MAGIC が光った。", unified_report=report, failed_outcomes=[])
 
     assert out is not None and out["strategy"] == "safe_replace"
     assert out["text"] == "MAGICITE が光った。"
@@ -139,9 +137,7 @@ async def test_span_patch_disabled_returns_none_like_before(monkeypatch: pytest.
     out = await agent.try_local_patch(
         TEXT,
         unified_report=None,
-        failed_outcomes=[
-            {"audit_id": "deai", "severity": "medium", "error": None, "feedback": "古代の魔導書"}
-        ],
+        failed_outcomes=[{"audit_id": "deai", "severity": "medium", "error": None, "feedback": "古代の魔導書"}],
     )
     assert out is None
 
@@ -156,9 +152,7 @@ async def test_span_patch_disabled_falls_back_to_actionable(monkeypatch: pytest.
     out = await agent.try_local_patch(
         TEXT,
         unified_report=report,
-        failed_outcomes=[
-            {"audit_id": "deai", "severity": "medium", "error": None, "feedback": "古代の魔導書"}
-        ],
+        failed_outcomes=[{"audit_id": "deai", "severity": "medium", "error": None, "feedback": "古代の魔導書"}],
     )
     assert out is not None and out["strategy"] == "actionable_patch"
     assert out["text"].endswith("追記すべき文章")

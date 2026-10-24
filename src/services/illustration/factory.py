@@ -3,6 +3,7 @@
 ComfyUIなどの自前常駐GPUサーバー依存を完全に撤廃し、
 オンデマンドの外部従量APIアダプタ（fal.ai / DALL-E 3 / Mock）へ一本化する。
 """
+
 from __future__ import annotations
 
 import os
@@ -18,6 +19,7 @@ from .sd_client import SDWebUIClient
 
 
 # ── v5.0 新画像生成アダプタファクトリ (外部従量API) ──
+
 
 def get_image_adapter(provider: str | None = None) -> ImageGenerationAdapter:
     """外部従量APIベースの画像生成アダプタを取得する。
@@ -51,6 +53,7 @@ def get_image_adapter(provider: str | None = None) -> ImageGenerationAdapter:
 
 
 # ── 後方互換性レガシークライアント ──
+
 
 def get_image_client(provider: str | None = None) -> ImageGeneratorClient:
     """旧インターフェース (ImageGeneratorClient) 互換用ファクトリ。"""

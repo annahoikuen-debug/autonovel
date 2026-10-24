@@ -36,14 +36,10 @@ def async_retry(max_attempts: int = 3, base_delay: float = 1.0):
                     attempt += 1
                     if attempt >= max_attempts:
                         logger.error(f"Attempt {attempt} failed permanently: {exc}")
-                        raise PipelineError(
-                            f"Pipeline step failed after {attempt} attempts: {exc}"
-                        ) from exc
+                        raise PipelineError(f"Pipeline step failed after {attempt} attempts: {exc}") from exc
                     delay = base_delay * (2 ** (attempt - 1))
                     jitter = delay * 0.1 * random.uniform(0.5, 1.5)  # randomized jitter
-                    logger.warning(
-                        f"Attempt {attempt} failed with {exc}. Retrying in {delay + jitter:.2f}s..."
-                    )
+                    logger.warning(f"Attempt {attempt} failed with {exc}. Retrying in {delay + jitter:.2f}s...")
                     await asyncio.sleep(delay + jitter)
 
         return wrapper
@@ -70,7 +66,7 @@ class CommercialPipeline:
         genre: str = "ファンタジー",
         concept: str = "現代日本",
         keywords: str = "",
-        target_word_count_per_episode: int = 3000
+        target_word_count_per_episode: int = 3000,
     ) -> dict[str, Any]:
         """
         指定された書籍に対してバッチエピソードを生成する。
@@ -95,7 +91,7 @@ class CommercialPipeline:
             "target_eps": batch_size,
             "target_word_count_per_episode": target_word_count_per_episode,
             "platforms": ["kakuyomu"],  # デフォルトプラットフォーム
-            "trend_memo": ""
+            "trend_memo": "",
         }
 
         # 空のサンプルリストとプラットフォームリストを準備
@@ -103,22 +99,14 @@ class CommercialPipeline:
         platforms = ["kakuyomu"]
 
         # 既存のrunメソッドを呼び出し（投稿はしない）
-        result = await self.run(
-            series_config=series_config,
-            samples=samples,
-            platforms=platforms,
-            do_publish=False
-        )
+        result = await self.run(series_config=series_config, samples=samples, platforms=platforms, do_publish=False)
 
         # 結果を期待される形式に変換
         if "error" in result:
             return {"completed_episodes": []}
 
         selected_episodes = result.get("selected", [])
-        completed_episodes = [
-            ep.get("ep_num") for ep in selected_episodes
-            if ep.get("ep_num") is not None
-        ]
+        completed_episodes = [ep.get("ep_num") for ep in selected_episodes if ep.get("ep_num") is not None]
 
         return {"completed_episodes": completed_episodes}
 
@@ -316,9 +304,7 @@ class CommercialPipeline:
                     csv_content += f"{platform},{episode['ep_num']},{episode['title']},{episode['format']},{episode['target_word_count']},/output/{platform}_ep{episode['ep_num']}.txt\n"
 
             # CSVファイルへ書き込み（実際の出力は /tmp 以下に実装）
-            csv_path = (
-                self.csv_path
-            )  # 修正2: ハードコードされたパスを使用せず、インスタンス変数を使用
+            csv_path = self.csv_path  # 修正2: ハードコードされたパスを使用せず、インスタンス変数を使用
             with open(csv_path, "w", encoding="utf-8") as f:
                 f.write(csv_content)
 
@@ -370,9 +356,7 @@ class CommercialPipeline:
                 auth_success = await publisher.authenticate(platform_creds)
                 if not auth_success:
                     logger.error(f"認証失敗: {platform}")
-                    results[platform] = [
-                        PublishResult(success=False, platform=platform, error="認証失敗")
-                    ]
+                    results[platform] = [PublishResult(success=False, platform=platform, error="認証失敗")]
                     continue
 
                 platform_results = []
@@ -387,9 +371,7 @@ class CommercialPipeline:
 
                         if post_id:
                             # 既存話の更新
-                            result = await publisher.update_chapter(
-                                post_id, episode, platform_creds
-                            )
+                            result = await publisher.update_chapter(post_id, episode, platform_creds)
                         else:
                             # 新規投稿（第1話の場合はpublish、それ以外はupdate_chapter）
                             if episode.get("ep_num", 1) == 1:
@@ -414,12 +396,8 @@ class CommercialPipeline:
                         await publisher._apply_rate_limit()
 
                     except Exception as e:
-                        logger.exception(
-                            f"Episode {episode.get('ep_num')} publish failed on {platform}"
-                        )
-                        platform_results.append(
-                            PublishResult(success=False, platform=platform, error=str(e))
-                        )
+                        logger.exception(f"Episode {episode.get('ep_num')} publish failed on {platform}")
+                        platform_results.append(PublishResult(success=False, platform=platform, error=str(e)))
 
                 results[platform] = platform_results
                 logger.info(
@@ -428,9 +406,7 @@ class CommercialPipeline:
 
             except Exception as e:
                 logger.exception(f"Platform {platform} publish failed entirely")
-                results[platform] = [
-                    PublishResult(success=False, platform=platform, error=f"Platform error: {e}")
-                ]
+                results[platform] = [PublishResult(success=False, platform=platform, error=f"Platform error: {e}")]
 
         return results
 
@@ -514,5 +490,6 @@ class CommercialPipeline:
                 "schedule_csv": None,
                 "publish_results": {},
             }
+
 
 # TEST

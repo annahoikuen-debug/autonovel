@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from src.api.middleware.error_handler import ErrorHandlerMiddleware
 
+
 @pytest.fixture
 def client():
     app = FastAPI()
@@ -14,6 +15,7 @@ def client():
 
     return TestClient(app)
 
+
 def test_returns_generic_error_message(client):
     resp = client.get("/trigger-error")
     assert resp.status_code == 500
@@ -23,6 +25,7 @@ def test_returns_generic_error_message(client):
     # スタックトレースが含まれていないこと
     assert "traceback" not in data
     assert "File" not in str(data)
+
 
 def test_404_returns_default_message(client):
     resp = client.get("/nonexistent")

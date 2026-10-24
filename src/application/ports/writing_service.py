@@ -11,23 +11,17 @@ class IWritingService(ABC):
     """Interface for writing generation service."""
 
     @abstractmethod
-    async def write_episode(
-        self, dto: WriteEpisodeDTO
-    ) -> str:
+    async def write_episode(self, dto: WriteEpisodeDTO) -> str:
         """Write episode content and return the content."""
         ...
 
     @abstractmethod
-    async def rewrite_episode(
-        self, dto: RewriteEpisodeDTO
-    ) -> str:
+    async def rewrite_episode(self, dto: RewriteEpisodeDTO) -> str:
         """Rewrite episode content and return the new content."""
         ...
 
     # Optional: generate illustration for an episode
     @abstractmethod
-    async def generate_episode_illustration(
-        self, novel_id: str, episode_number: int
-    ) -> IllustrationResponseDTO:
+    async def generate_episode_illustration(self, novel_id: str, episode_number: int) -> IllustrationResponseDTO:
         """Generate an illustration for an episode."""
         ...

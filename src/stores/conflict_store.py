@@ -1,4 +1,5 @@
 """Conflict store for recording detected and resolved conflicts."""
+
 from __future__ import annotations
 
 import json

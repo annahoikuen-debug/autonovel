@@ -2,6 +2,7 @@
 Pydantic models for Opening Booster and Cliffhanger Scorer.
 PLAN 02: 序盤3話特化型 ドーパミン注入・クリフハンガー強制エンジン
 """
+
 from __future__ import annotations
 
 from enum import Enum
@@ -9,10 +10,10 @@ from pydantic import BaseModel, Field
 
 
 class CliffhangerType(str, Enum):
-    CRISIS = "crisis"                     # 命や立場の危機直前で終了
-    SHOCKING_TRUTH = "shocking_truth"     # 衝撃の事実判明・裏切りで終了
-    TRIUMPH_TRIGGER = "triumph_trigger"   # これから反撃という瞬間で終了
-    PEACEFUL = "peaceful"                 # 平穏（不合格・リライト対象）
+    CRISIS = "crisis"  # 命や立場の危機直前で終了
+    SHOCKING_TRUTH = "shocking_truth"  # 衝撃の事実判明・裏切りで終了
+    TRIUMPH_TRIGGER = "triumph_trigger"  # これから反撃という瞬間で終了
+    PEACEFUL = "peaceful"  # 平穏（不合格・リライト対象）
 
 
 class CliffhangerEvaluation(BaseModel):

@@ -58,9 +58,7 @@ router = APIRouter(
 )
 
 
-async def enforce_book_ownership(
-    book_id: int, current_user: User = Depends(get_current_user)
-) -> None:
+async def enforce_book_ownership(book_id: int, current_user: User = Depends(get_current_user)) -> None:
     """book_id を対象にした所有者検証（FastAPI 依存）。
 
     認証 (``get_current_user``) は router レベルで行われていたが、
@@ -117,7 +115,6 @@ def requires_book_ownership(handler):
     return wrapper
 
 
-
 async def get_branch_session() -> AsyncGenerator[AsyncSession, None]:
     """FastAPI Depends 用の AsyncSession プロバイダ."""
     mgr = get_db_manager()
@@ -147,9 +144,7 @@ def _validate_uuid(session_id: str) -> bool:
         return False
 
 
-async def _assert_play_session_ownership(
-    session_id: str, current_user: User, session: AsyncSession
-) -> Any:
+async def _assert_play_session_ownership(session_id: str, current_user: User, session: AsyncSession) -> Any:
     """``session_id`` -> プレイセッション -> 作品 の順に辿り、所有者を検証する。
 
     プレイセッションの ``session_id`` は UUID のみで所有者を保持しないため、
@@ -210,7 +205,6 @@ async def list_branches(
         return [_to_response(b) for b in branches]
 
 
-
 @router.get("/{book_id}/tree", response_model=dict)
 async def get_branch_tree(
     book_id: int,
@@ -228,31 +222,34 @@ async def get_branch_tree(
 
         for branch in branches:
             # ノードデータ
-            nodes.append({
-                "id": int(branch.id),
-                "data": {
-                    "label": str(branch.name) if branch.name else None,
-                    "bookId": int(branch.book_id),
-                    "parentId": int(branch.parent_id) if branch.parent_id else None,
-                    "forkEpNum": int(branch.fork_ep_num) if branch.fork_ep_num is not None else 0,
-                    "createdAt": branch.created_at.isoformat() if branch.created_at else None
-                },
-                "position": { "x": 0, "y": 0 }  # レイアウトはフロントエンドで計算
-            })
+            nodes.append(
+                {
+                    "id": int(branch.id),
+                    "data": {
+                        "label": str(branch.name) if branch.name else None,
+                        "bookId": int(branch.book_id),
+                        "parentId": int(branch.parent_id) if branch.parent_id else None,
+                        "forkEpNum": int(branch.fork_ep_num) if branch.fork_ep_num is not None else 0,
+                        "createdAt": branch.created_at.isoformat() if branch.created_at else None,
+                    },
+                    "position": {"x": 0, "y": 0},  # レイアウトはフロントエンドで計算
+                }
+            )
 
             # エッジデータ（親が存在する場合）
             if branch.parent_id is not None:
-                edges.append({
-                    "id": f"edge-{branch.parent_id}-{branch.id}",
-                    "source": branch.parent_id,
-                    "target": branch.id,
-                    "type": "smoothstep"
-                })
+                edges.append(
+                    {
+                        "id": f"edge-{branch.parent_id}-{branch.id}",
+                        "source": branch.parent_id,
+                        "target": branch.id,
+                        "type": "smoothstep",
+                    }
+                )
 
-        return {
-            "nodes": nodes,
-            "edges": edges
-        }
+        return {"nodes": nodes, "edges": edges}
+
+
 def _compute_unified_diff(content_a: str, content_b: str) -> str:
     lines_a = content_a.splitlines(keepends=True)
     lines_b = content_b.splitlines(keepends=True)
@@ -312,6 +309,7 @@ async def get_branch_diff(
         "diff_unified": diff_unified,
         "diff_side_by_side": diff_side_by_side,
     }
+
 
 @router.get("/{book_id}/graph", response_model=BranchGraphResponse)
 @requires_book_ownership
@@ -407,19 +405,13 @@ async def preview_merge(
         raise HTTPException(status_code=404, detail="Branch not found")
 
     # マージポイントの章内容を取得
-    source_chapter = await chapter_repo.get_chapter(
-        payload.source_branch_id, payload.merge_ep_num, book_id=book_id
-    )
-    target_chapter = await chapter_repo.get_chapter(
-        payload.target_branch_id, payload.merge_ep_num, book_id=book_id
-    )
+    source_chapter = await chapter_repo.get_chapter(payload.source_branch_id, payload.merge_ep_num, book_id=book_id)
+    target_chapter = await chapter_repo.get_chapter(payload.target_branch_id, payload.merge_ep_num, book_id=book_id)
 
     # ベースブランチ（共通祖先）の内容を取得（簡易実装：ターゲットブランチの親）
     base_chapter_content = ""
     if target_branch.parent_id is not None:
-        base_chapter = await chapter_repo.get_chapter(
-            target_branch.parent_id, payload.merge_ep_num, book_id=book_id
-        )
+        base_chapter = await chapter_repo.get_chapter(target_branch.parent_id, payload.merge_ep_num, book_id=book_id)
         if base_chapter:
             base_chapter_content = base_chapter.content or ""
 
@@ -430,24 +422,32 @@ async def preview_merge(
     has_conflict = False
     conflict_chunks = []
 
-    if source_content != target_content and source_content != base_chapter_content and target_content != base_chapter_content:
+    if (
+        source_content != target_content
+        and source_content != base_chapter_content
+        and target_content != base_chapter_content
+    ):
         # 三方向の変更が異なる場合はコンフリクト
         has_conflict = True
-        conflict_chunks.append({
-            "id": f"conflict-{payload.source_branch_id}-{payload.target_branch_id}-{payload.merge_ep_num}",
-            "base": base_chapter_content,
-            "source": source_content,
-            "target": target_content,
-        })
+        conflict_chunks.append(
+            {
+                "id": f"conflict-{payload.source_branch_id}-{payload.target_branch_id}-{payload.merge_ep_num}",
+                "base": base_chapter_content,
+                "source": source_content,
+                "target": target_content,
+            }
+        )
     elif source_content != target_content:
         # ソースとターゲットのみが異なる場合もコンフリクトとして扱う（簡易）
         has_conflict = True
-        conflict_chunks.append({
-            "id": f"conflict-{payload.source_branch_id}-{payload.target_branch_id}-{payload.merge_ep_num}",
-            "base": base_chapter_content,
-            "source": source_content,
-            "target": target_content,
-        })
+        conflict_chunks.append(
+            {
+                "id": f"conflict-{payload.source_branch_id}-{payload.target_branch_id}-{payload.merge_ep_num}",
+                "base": base_chapter_content,
+                "source": source_content,
+                "target": target_content,
+            }
+        )
 
     # マージ後の内容をシミュレート（簡易：ソースを優先）
     merged_content = source_content if source_content else target_content
@@ -483,6 +483,7 @@ async def commit_branch_merge(
     # EventBus への branch.merged イベント発行 (Step 56)
     try:
         from src.agents.event_bus import AgentEvent, get_event_bus
+
         bus = get_event_bus()
         await bus.publish(
             AgentEvent(
@@ -689,9 +690,7 @@ async def play_load(
 
     save_points = list(sess.save_points_json or [])
     if not (0 <= index < len(save_points)):
-        raise HTTPException(
-            status_code=400, detail=f"Save index out of range (0-{len(save_points) - 1})"
-        )
+        raise HTTPException(status_code=400, detail=f"Save index out of range (0-{len(save_points) - 1})")
 
     save = save_points[index]
     await repo.update_play_session_state(
@@ -940,8 +939,15 @@ async def _authenticate_websocket(websocket: WebSocket) -> User | None:
         token = auth_header.strip()
 
     if settings.AUTH_DISABLED:
-        return User(id=1, email="dev@autonovel.local", display_name="Dev Admin",
-                    role="admin", status="active", plan_tier="enterprise", credits=99999)
+        return User(
+            id=1,
+            email="dev@autonovel.local",
+            display_name="Dev Admin",
+            role="admin",
+            status="active",
+            plan_tier="enterprise",
+            credits=99999,
+        )
     if not token:
         return None
 
@@ -1017,9 +1023,7 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
                 message_count = 0
             message_count += 1
             if message_count > _WS_MAX_MESSAGES_PER_SEC:
-                await websocket.send_json(
-                    {"type": "error", "message": "Too many messages"}
-                )
+                await websocket.send_json({"type": "error", "message": "Too many messages"})
                 await websocket.close(code=_WS_POLICY_VIOLATION)
                 return
 
@@ -1054,9 +1058,7 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
                 choices = current.get("choices", []) or []
                 chosen = next((c for c in choices if c.get("id") == choice_id), None)
                 if chosen is None:
-                    await websocket.send_json(
-                        {"type": "error", "message": "Choice not available"}
-                    )
+                    await websocket.send_json({"type": "error", "message": "Choice not available"})
                     continue
 
                 new_node_id = chosen.get("target_node_id") or sess.current_node_id
@@ -1076,9 +1078,7 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
                     save_points_json=list(sess.save_points_json or []),
                 )
                 if not ok:
-                    await websocket.send_json(
-                        {"type": "error", "message": "Concurrent modification"}
-                    )
+                    await websocket.send_json({"type": "error", "message": "Concurrent modification"})
                     continue
                 await session.commit()
 
@@ -1114,7 +1114,7 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
                 save_points = list(sess.save_points_json or [])
                 if not (0 <= index < len(save_points)):
                     await websocket.send_json(
-                        {"type": "error", "message": f"Save index out of range (0-{len(save_points)-1})"}
+                        {"type": "error", "message": f"Save index out of range (0-{len(save_points) - 1})"}
                     )
                     continue
                 save = save_points[index]
@@ -1139,9 +1139,7 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
                 break
 
             else:
-                await websocket.send_json(
-                    {"type": "error", "message": f"Unknown action: {action}"}
-                )
+                await websocket.send_json({"type": "error", "message": f"Unknown action: {action}"})
 
     except WebSocketDisconnect:
         logger.info("ws disconnected session_id=%s", session_id)
@@ -1180,11 +1178,9 @@ def _minimal_epub(branch_name: str, nodes_in_order: list[dict[str, Any]]) -> byt
 </container>""",
         )
         # content.opf
-        spine_items = "\n".join(
-            f'    <itemref idref="ch{i+1}"/>' for i in range(len(nodes_in_order))
-        )
+        spine_items = "\n".join(f'    <itemref idref="ch{i + 1}"/>' for i in range(len(nodes_in_order)))
         manifest_items = "\n".join(
-            f'    <item id="ch{i+1}" href="ch{i+1}.xhtml" media-type="application/xhtml+xml"/>'
+            f'    <item id="ch{i + 1}" href="ch{i + 1}.xhtml" media-type="application/xhtml+xml"/>'
             for i in range(len(nodes_in_order))
         )
         zf.writestr(
@@ -1209,7 +1205,7 @@ def _minimal_epub(branch_name: str, nodes_in_order: list[dict[str, Any]]) -> byt
         # nav.xhtml
         nav_items_list = []
         for i, n in enumerate(nodes_in_order):
-            nav_items_list.append(f'    <li><a href="ch{i+1}.xhtml">第{n.get("episode_num", i+1)}話</a></li>')
+            nav_items_list.append(f'    <li><a href="ch{i + 1}.xhtml">第{n.get("episode_num", i + 1)}話</a></li>')
         nav_items = "\n".join(nav_items_list)
         zf.writestr(
             "OEBPS/nav.xhtml",
@@ -1229,12 +1225,12 @@ def _minimal_epub(branch_name: str, nodes_in_order: list[dict[str, Any]]) -> byt
         for i, n in enumerate(nodes_in_order):
             content = (n.get("content") or "").replace("<", "&lt;").replace(">", "&gt;")
             zf.writestr(
-                f"OEBPS/ch{i+1}.xhtml",
+                f"OEBPS/ch{i + 1}.xhtml",
                 f"""<?xml version="1.0" encoding="UTF-8"?>
 <html xmlns="http://www.w3.org/1999/xhtml">
-<head><title>第{n.get("episode_num", i+1)}話</title></head>
+<head><title>第{n.get("episode_num", i + 1)}話</title></head>
 <body>
-  <h1>第{n.get("episode_num", i+1)}話</h1>
+  <h1>第{n.get("episode_num", i + 1)}話</h1>
   <p>{content}</p>
 </body>
 </html>""",

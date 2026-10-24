@@ -45,7 +45,8 @@ class FactualAuditor(SpecialistAuditor):
         bible = ctx.get("world_bible_snapshot") or {}
         if not draft:
             return SpecialistAuditResult(
-                "factual", 0.0,
+                "factual",
+                0.0,
                 feedback={"error": "no draft_text"},
                 suggestions=["Provide draft_text in context"],
             )
@@ -136,4 +137,4 @@ class FactualAuditor(SpecialistAuditor):
         )
 
 
-__all__ = ["FactualAuditor"]
+__all__ = ["FactualAuditor"]

@@ -11,6 +11,7 @@ from src.backend.auth import get_current_user
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
+
 @router.post("/register", response_model=UserProfileResponse)
 async def register(request: UserRegisterRequest, db: AsyncSession = Depends(get_async_db)):
     result = await db.execute(select(User).where(User.email == request.email))
@@ -21,12 +22,13 @@ async def register(request: UserRegisterRequest, db: AsyncSession = Depends(get_
         email=request.email,
         hashed_password=hash_password(request.password),
         display_name=request.display_name,
-        credits=50
+        credits=50,
     )
     db.add(user)
     await db.commit()
     await db.refresh(user)
     return user
+
 
 def _issue_tokens(user: User) -> dict:
     """ユーザー向けのアクセストークンとリフレッシュトークンを発行する。"""
@@ -78,6 +80,7 @@ async def refresh(
         raise HTTPException(status_code=401, detail="ユーザーが存在しないか、無効化されています")
 
     return _issue_tokens(user)
+
 
 @router.get("/me", response_model=UserProfileResponse)
 async def get_me(user: User = Depends(get_current_user)):

@@ -602,9 +602,7 @@ class EpisodeWriter(BaseAgent):
                 session=ctx.artifacts.get("session"),
             )
         except Exception as e:  # noqa: BLE001 - コンテキスト補完は補助なので落とさない
-            logger.warning(
-                "Ep.%s: コンテキスト補完でエラー（既存contextで継続）: %s", ctx.ep_num, e
-            )
+            logger.warning("Ep.%s: コンテキスト補完でエラー（既存contextで継続）: %s", ctx.ep_num, e)
             return base
 
         if not isinstance(built, dict) or not built:
@@ -612,9 +610,7 @@ class EpisodeWriter(BaseAgent):
 
         merged = dict(built)
         for key, value in base.items():
-            if self._is_context_placeholder(value) and not self._is_context_placeholder(
-                built.get(key)
-            ):
+            if self._is_context_placeholder(value) and not self._is_context_placeholder(built.get(key)):
                 # 呼び出し元は空、`context_builder` は値あり → 後者採用
                 continue
             merged[key] = value

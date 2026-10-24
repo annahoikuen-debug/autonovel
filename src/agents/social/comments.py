@@ -1,4 +1,5 @@
 """Simulate Character Reactions and Comments on Journals (Step 49)."""
+
 from __future__ import annotations
 
 import logging
@@ -9,8 +10,6 @@ from datetime import datetime, timezone
 from src.agents.social.models import JournalEntry, SocialComment, ReactionType
 
 logger = logging.getLogger(__name__)
-
-
 
 
 import asyncio
@@ -127,9 +126,7 @@ async def simulate_character_reactions_async(
     author_name = journal.character_name
 
     candidates = [
-        c for c in other_characters
-        if str(c.get("id", c.get("name", ""))) != author_id
-        and c.get("name") != author_name
+        c for c in other_characters if str(c.get("id", c.get("name", ""))) != author_id and c.get("name") != author_name
     ]
 
     selected = candidates[:max_reactions]
@@ -171,6 +168,7 @@ def simulate_character_reactions(
 
     if loop and loop.is_running():
         import concurrent.futures
+
         with concurrent.futures.ThreadPoolExecutor() as executor:
             future = executor.submit(
                 asyncio.run,

@@ -1,4 +1,5 @@
 """Surgical Patch & Local Diff Provider for MCP Server (Proposal 3)."""
+
 from __future__ import annotations
 
 import difflib
@@ -12,6 +13,7 @@ from src.services.safe_replace import SafeReplacer
 @dataclass
 class PatchApplicationResult:
     """局所パッチ適用結果"""
+
     patched_text: str
     original_text: str
     total_requested: int
@@ -26,6 +28,7 @@ class PatchApplicationResult:
 @dataclass
 class PatchWindow:
     """局所パッチ修正用コンテキストウィンドウ"""
+
     window_id: str
     target_quote: str
     padded_context: str
@@ -83,50 +86,60 @@ class SurgicalPatchProvider:
                 rat = getattr(diff, "rationale", "")
 
             if not orig or not sug:
-                failed.append({
-                    "location": loc,
-                    "original_quote": orig,
-                    "improved_suggestion": sug,
-                    "reason": "original_quote または improved_suggestion が空です",
-                })
+                failed.append(
+                    {
+                        "location": loc,
+                        "original_quote": orig,
+                        "improved_suggestion": sug,
+                        "reason": "original_quote または improved_suggestion が空です",
+                    }
+                )
                 continue
 
             # 1. 完全一致の探索
             if orig in original_text:
                 mappings[orig] = sug
-                applied.append({
-                    "location": loc,
-                    "original_quote": orig,
-                    "improved_suggestion": sug,
-                    "rationale": rat,
-                    "match_type": "exact",
-                })
+                applied.append(
+                    {
+                        "location": loc,
+                        "original_quote": orig,
+                        "improved_suggestion": sug,
+                        "rationale": rat,
+                        "match_type": "exact",
+                    }
+                )
             elif allow_fuzzy:
                 # 2. ファジーマッチ（空白・改行・記号の差異を許容）
                 matched_target = self._find_fuzzy_match(original_text, orig)
                 if matched_target:
                     mappings[matched_target] = sug
-                    applied.append({
-                        "location": loc,
-                        "original_quote": matched_target,
-                        "improved_suggestion": sug,
-                        "rationale": rat,
-                        "match_type": "fuzzy",
-                    })
+                    applied.append(
+                        {
+                            "location": loc,
+                            "original_quote": matched_target,
+                            "improved_suggestion": sug,
+                            "rationale": rat,
+                            "match_type": "fuzzy",
+                        }
+                    )
                 else:
-                    failed.append({
+                    failed.append(
+                        {
+                            "location": loc,
+                            "original_quote": orig,
+                            "improved_suggestion": sug,
+                            "reason": "本文中に一致する引用箇所が見つかりませんでした",
+                        }
+                    )
+            else:
+                failed.append(
+                    {
                         "location": loc,
                         "original_quote": orig,
                         "improved_suggestion": sug,
                         "reason": "本文中に一致する引用箇所が見つかりませんでした",
-                    })
-            else:
-                failed.append({
-                    "location": loc,
-                    "original_quote": orig,
-                    "improved_suggestion": sug,
-                    "reason": "本文中に一致する引用箇所が見つかりませんでした",
-                })
+                    }
+                )
 
         # 衝突なしの1パス安全置換を実行
         if mappings:

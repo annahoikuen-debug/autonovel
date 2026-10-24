@@ -26,11 +26,7 @@ class TestPublisherDataClasses:
     def test_publish_result_creation(self):
         """PublishResult作成テスト"""
         result = PublishResult(
-            success=True,
-            platform="narou",
-            post_id="12345",
-            url="https://example.com/12345",
-            metadata={"episode": 1}
+            success=True, platform="narou", post_id="12345", url="https://example.com/12345", metadata={"episode": 1}
         )
         assert result.success is True
         assert result.platform == "narou"
@@ -56,6 +52,7 @@ class TestPublisherDataClasses:
     def test_narou_credentials(self):
         """NarouCredentialsテスト"""
         from src.services.publishers.narou import NarouCredentials
+
         creds = NarouCredentials(email="test@test.com", password="pass123")
         assert creds.email == "test@test.com"
         assert creds.password == "pass123"
@@ -64,6 +61,7 @@ class TestPublisherDataClasses:
     def test_kakuyomu_credentials(self):
         """KakuyomuCredentialsテスト"""
         from src.services.publishers.kakuyomu import KakuyomuCredentials
+
         creds = KakuyomuCredentials(api_token="token123", user_id="user456")
         assert creds.api_token == "token123"
         assert creds.user_id == "user456"
@@ -72,6 +70,7 @@ class TestPublisherDataClasses:
     def test_kobo_credentials(self):
         """KoboCredentialsテスト"""
         from src.services.publishers.kobo import KoboCredentials
+
         creds = KoboCredentials(client_id="id", client_secret="secret")
         assert creds.client_id == "id"
         assert creds.client_secret == "secret"
@@ -80,6 +79,7 @@ class TestPublisherDataClasses:
     def test_kindle_credentials(self):
         """KindleCredentialsテスト"""
         from src.services.publishers.kindle import KindleCredentials
+
         creds = KindleCredentials(client_id="id", client_secret="secret", refresh_token="refresh")
         assert creds.client_id == "id"
         assert creds.client_secret == "secret"
@@ -212,6 +212,7 @@ class TestAsyncRetry:
 
 class MockPublisher(PublisherAdapter):
     """テスト用モックPublisher"""
+
     platform = "mock"
     description = "Mock Publisher"
 

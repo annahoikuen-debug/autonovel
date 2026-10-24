@@ -141,9 +141,7 @@ def detect_unsupported_elements(text: str, platform: str) -> List[str]:
     footnote_pattern = r"\^\[([^\]]+)\]"
     footnote_matches = re.findall(footnote_pattern, text)
     if footnote_matches and platform in ["narou", "nocturn", "txt"]:
-        warnings.append(
-            f"脚注が検出されました ({len(footnote_matches)}個)。{platform} では括弧表記に変換されます。"
-        )
+        warnings.append(f"脚注が検出されました ({len(footnote_matches)}個)。{platform} では括弧表記に変換されます。")
 
     # HTMLタグなど、明確にサポートされていないものをチェック（簡易的に）
     html_tag_pattern = r"<[^>]+>"
@@ -202,9 +200,7 @@ def process_content_for_platform(text: str, platform: str) -> tuple[str, List[st
         image_pattern = r'!\[([^\]]*)\]\(([^)]+)(?:\s+"[^"]*")?\)'
         if re.search(image_pattern, original_text):
             if platform in ["narou", "nocturn", "txt"]:
-                warnings.append(
-                    f"画像プレースホルダが検出されました。{platform} では代替テキストに変換されます。"
-                )
+                warnings.append(f"画像プレースホルダが検出されました。{platform} では代替テキストに変換されます。")
 
     # ルビ記法を処理
     text = process_ruby_markup(text, platform)
@@ -213,9 +209,9 @@ def process_content_for_platform(text: str, platform: str) -> tuple[str, List[st
     original_text = text
     text = process_footnotes(text, platform)
     if text != original_text:
-# 脚注が実際に変換された場合は警告を追加
-         footnote_pattern = r"\^\[([^\]]+)\]"
-         if re.search(footnote_pattern, original_text):
+        # 脚注が実際に変換された場合は警告を追加
+        footnote_pattern = r"\^\[([^\]]+)\]"
+        if re.search(footnote_pattern, original_text):
             if platform in ["narou", "nocturn", "txt"]:
                 warnings.append(f"脚注が検出されました。{platform} では括弧表記に変換されます。")
 
@@ -301,9 +297,7 @@ class BaseExporter(ABC):
         """小説全体をプラットフォーム用テキストに整形して返す。"""
 
     @abstractmethod
-    def export_stream(
-        self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
-    ) -> Generator[str, None, None]:
+    def export_stream(self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]) -> Generator[str, None, None]:
         """小説を章ごとにストリーミングで整形してyieldする。"""
 
     def _header(self, novel: Dict[str, Any]) -> str:
@@ -442,9 +436,7 @@ class NarouExporter(BaseExporter):
         # ストリーミング版を呼び出して結果を結合
         return "".join(self.export_stream(novel, chapters))
 
-    def export_stream(
-        self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
-    ) -> Generator[str, None, None]:
+    def export_stream(self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]) -> Generator[str, None, None]:
         # ヘッダー
         header = self._header(novel)
         yield self.apply_template_filters(header, self.platform, novel)
@@ -483,9 +475,7 @@ class KakuyomuExporter(BaseExporter):
     def export(self, novel: Dict[str, Any], chapters: List[Dict[str, Any]]) -> str:
         return "".join(self.export_stream(novel, chapters))
 
-    def export_stream(
-        self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
-    ) -> Generator[str, None, None]:
+    def export_stream(self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]) -> Generator[str, None, None]:
         yield f"# {novel.get('title', '無題')}\n\n"
         yield novel.get("synopsis", "") + "\n\n"
         for i, ch in enumerate(chapters):
@@ -514,9 +504,7 @@ class NocturneExporter(BaseExporter):
     def export(self, novel: Dict[str, Any], chapters: List[Dict[str, Any]]) -> str:
         return "".join(self.export_stream(novel, chapters))
 
-    def export_stream(
-        self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
-    ) -> Generator[str, None, None]:
+    def export_stream(self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]) -> Generator[str, None, None]:
         yield f"# {novel.get('title', '無題')}\n\n"
         yield "[R18] 成年向けコンテンツを含みます。\n\n"
         for i, ch in enumerate(chapters):
@@ -547,14 +535,8 @@ class PlainTextExporter(BaseExporter):
     def export(self, novel: Dict[str, Any], chapters: List[Dict[str, Any]]) -> str:
         return "".join(self.export_stream(novel, chapters))
 
-    def export_stream(
-        self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
-    ) -> Generator[str, None, None]:
-        yield (
-            f"『{novel.get('title', '無題')}』\n\nあらすじ：\n{novel.get('synopsis', '')}\n\n"
-            + "=" * 30
-            + "\n"
-        )
+    def export_stream(self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]) -> Generator[str, None, None]:
+        yield (f"『{novel.get('title', '無題')}』\n\nあらすじ：\n{novel.get('synopsis', '')}\n\n" + "=" * 30 + "\n")
         for i, ch in enumerate(chapters):
             # 本文をプレーンテキスト向けに整形（UTF-8 BOMなし、LF改行統一）
             body_raw = ch.get("content") or ""
@@ -577,9 +559,7 @@ class MarkdownExporter(BaseExporter):
     def export(self, novel: Dict[str, Any], chapters: List[Dict[str, Any]]) -> str:
         return "".join(self.export_stream(novel, chapters))
 
-    def export_stream(
-        self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
-    ) -> Generator[str, None, None]:
+    def export_stream(self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]) -> Generator[str, None, None]:
         yield from self._render_markdown_stream(novel, chapters)
 
 
@@ -596,9 +576,7 @@ class EpubExporter(BaseExporter):
         # ストリーミング版を呼び出して結果を結合
         return "".join(self.export_stream(novel, chapters))
 
-    def export_stream(
-        self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
-    ) -> Generator[str, None, None]:
+    def export_stream(self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]) -> Generator[str, None, None]:
         # TODO(H1-9): EPUB は本来 XHTML コンテナであり、Markdown をそのまま入れるのは
         # 不正解。実際の高品質な EPUB 生成は /api/export/ebook（multimedia）側が行う。
         # この経路を直すときは tests/unit/services/exporters/test_base.py と
@@ -615,9 +593,7 @@ class PdfExporter(BaseExporter):
         # ストリーミング版を呼び出して結果を結合
         return "".join(self.export_stream(novel, chapters))
 
-    def export_stream(
-        self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]
-    ) -> Generator[str, None, None]:
+    def export_stream(self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]) -> Generator[str, None, None]:
         # TODO(H1-9): **既知の欠陥** — PDF エクスポータが Markdown を返している。
         # YAML フロントマターと "#" 見出しは PDF には無意味な文字列で、
         # 拡張子 .pdf のファイルに Markdown が書き込まれる。

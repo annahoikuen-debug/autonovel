@@ -1,4 +1,5 @@
 """Friends Discovery: Infer and create related character candidates (Step 47)."""
+
 from __future__ import annotations
 
 import json
@@ -119,33 +120,39 @@ def discover_related_characters(
     for tpl in ROLE_INFERENCE_TEMPLATES:
         if any(p in combined_text for p in tpl["pattern"]):
             for c in tpl["candidates"]:
-                matched_candidates.append(DiscoveredCharacterCandidate(
-                    name=c["name"],
-                    relation_to_base_char=f"{char_name}の{c['relation']}",
-                    role=c["role"],
-                    archetype=c["archetype"],
-                    personality=c["personality"],
-                    conflict_potential=c["conflict_potential"],
-                ))
+                matched_candidates.append(
+                    DiscoveredCharacterCandidate(
+                        name=c["name"],
+                        relation_to_base_char=f"{char_name}の{c['relation']}",
+                        role=c["role"],
+                        archetype=c["archetype"],
+                        personality=c["personality"],
+                        conflict_potential=c["conflict_potential"],
+                    )
+                )
 
     # パターンにヒットしない場合の一般フォールバック
     if not matched_candidates:
-        matched_candidates.append(DiscoveredCharacterCandidate(
-            name=f"{char_name}の旧友・ローガン",
-            relation_to_base_char=f"{char_name}が少年時代を共に過ごした幼馴染",
-            role="ally",
-            archetype="忠実な戦友",
-            personality="豪快で実直。主人公を常に背中から支える。",
-            conflict_potential="主人公の変化に対する戸惑いと忠誠心の揺らぎ。",
-        ))
-        matched_candidates.append(DiscoveredCharacterCandidate(
-            name="暗影の密偵・シャドウ",
-            relation_to_base_char=f"{char_name}を影から監視する謎の諜報員",
-            role="informant",
-            archetype="謎めいた傍観者",
-            personality="寡黙で神出鬼没。真意を決して見せない。",
-            conflict_potential="敵か味方か測れない情報提供による疑心暗鬼。",
-        ))
+        matched_candidates.append(
+            DiscoveredCharacterCandidate(
+                name=f"{char_name}の旧友・ローガン",
+                relation_to_base_char=f"{char_name}が少年時代を共に過ごした幼馴染",
+                role="ally",
+                archetype="忠実な戦友",
+                personality="豪快で実直。主人公を常に背中から支える。",
+                conflict_potential="主人公の変化に対する戸惑いと忠誠心の揺らぎ。",
+            )
+        )
+        matched_candidates.append(
+            DiscoveredCharacterCandidate(
+                name="暗影の密偵・シャドウ",
+                relation_to_base_char=f"{char_name}を影から監視する謎の諜報員",
+                role="informant",
+                archetype="謎めいた傍観者",
+                personality="寡黙で神出鬼没。真意を決して見せない。",
+                conflict_potential="敵か味方か測れない情報提供による疑心暗鬼。",
+            )
+        )
 
     return matched_candidates[:count]
 

@@ -1,4 +1,5 @@
 """Robust LLM Fallback and Retry Enhancements (Improvement Proposal 3)."""
+
 from __future__ import annotations
 
 import logging
@@ -62,7 +63,6 @@ async def robust_execute_with_fallbacks(
 
     if last_exc:
         raise RuntimeError(
-            f"All {len(all_fns)} LLM fallback execution paths failed; "
-            f"last error: {type(last_exc).__name__}: {last_exc}"
+            f"All {len(all_fns)} LLM fallback execution paths failed; last error: {type(last_exc).__name__}: {last_exc}"
         ) from last_exc
     raise RuntimeError("All LLM fallback execution paths failed without explicit exception.")

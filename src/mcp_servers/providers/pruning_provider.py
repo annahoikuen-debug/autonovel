@@ -1,4 +1,5 @@
 """Context Pruning Provider - Deterministic context optimization for prompt building."""
+
 from __future__ import annotations
 
 import logging
@@ -143,11 +144,13 @@ class ContextPruningProvider:
             # Activeキャラと強い関係性がある、またはメインキャラであれば1行要約枠として保持
             if name in active_relations or importance == "main":
                 summary_line = f"役割: {c.get('role', '関係者')} / 性格: {c.get('personality', '不明')}"
-                peripheral.append({
-                    "name": name,
-                    "role": c.get("role", ""),
-                    "summary": summary_line,
-                })
+                peripheral.append(
+                    {
+                        "name": name,
+                        "role": c.get("role", ""),
+                        "summary": summary_line,
+                    }
+                )
             else:
                 excluded.append(name)
 

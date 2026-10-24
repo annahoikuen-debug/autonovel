@@ -1,4 +1,5 @@
 """Unit tests for src/services/exporters/epub_manifest_builder.py."""
+
 import pytest
 
 from src.services.exporters.epub_manifest_builder import (
@@ -61,9 +62,7 @@ class TestDetectImageMediaType:
 
 class TestEpubIllustrationItem:
     def test_auto_detect_from_bytes(self):
-        item = EpubIllustrationItem(
-            image_id="i1", image_bytes=b"\x89PNG\r\n\x1a\n", file_name="x.bin"
-        )
+        item = EpubIllustrationItem(image_id="i1", image_bytes=b"\x89PNG\r\n\x1a\n", file_name="x.bin")
         assert item.media_type == "image/png"
 
     def test_explicit_media_type_kept(self):
@@ -104,9 +103,7 @@ class TestBuildNavXhtml:
         assert "A &amp; B" in out
 
     def test_exclude_hrefs(self):
-        out = EpubManifestBuilder.build_nav_xhtml(
-            "目次", CHAPTERS, exclude_hrefs={"xhtml/p-001.xhtml"}
-        )
+        out = EpubManifestBuilder.build_nav_xhtml("目次", CHAPTERS, exclude_hrefs={"xhtml/p-001.xhtml"})
         assert "p-001.xhtml" not in out
         assert "p-002.xhtml" in out
 
@@ -134,9 +131,7 @@ class TestBuildTocNcx:
         assert "xhtml/p-001.xhtml" in out
 
     def test_exclude_hrefs_renumbers(self):
-        out = EpubManifestBuilder.build_toc_ncx(
-            "u", "T", CHAPTERS, exclude_hrefs={"xhtml/p-001.xhtml"}
-        )
+        out = EpubManifestBuilder.build_toc_ncx("u", "T", CHAPTERS, exclude_hrefs={"xhtml/p-001.xhtml"})
         assert "p-001.xhtml" not in out
         assert 'playOrder="1"' in out
         assert 'playOrder="2"' not in out
@@ -214,9 +209,7 @@ class TestBuildStandardOpf:
         assert '<meta name="cover"' not in out
 
     def test_spine_items(self):
-        out = EpubManifestBuilder.build_standard_opf(
-            "u", "T", spine_items=["p-cover", "p-1", "p-2"]
-        )
+        out = EpubManifestBuilder.build_standard_opf("u", "T", spine_items=["p-cover", "p-1", "p-2"])
         assert '<itemref idref="p-cover" />' in out
         assert '<itemref idref="p-1" />' in out
 
@@ -226,9 +219,7 @@ class TestBuildStandardOpf:
 
     def test_illustration_duplicate_id_skipped(self):
         items = [{"id": "img-i1", "href": "existing.png", "media-type": "image/png"}]
-        out = EpubManifestBuilder.build_standard_opf(
-            "u", "T", manifest_items=items, illustrations=[_ill()]
-        )
+        out = EpubManifestBuilder.build_standard_opf("u", "T", manifest_items=items, illustrations=[_ill()])
         assert 'href="existing.png"' in out
         assert 'href="images/a.png"' not in out
 
@@ -288,9 +279,7 @@ class TestBuildStandardOpf:
         assert out.index('idref="p-ill-f1"') < out.index('idref="p-1"')
 
     def test_non_chapter_spine_refs_kept(self):
-        out = EpubManifestBuilder.build_standard_opf(
-            "u", "T", spine_items=["nav", "ncx", "p-1"], illustrations=[]
-        )
+        out = EpubManifestBuilder.build_standard_opf("u", "T", spine_items=["nav", "ncx", "p-1"], illustrations=[])
         assert '<itemref idref="nav" />' in out
         assert '<itemref idref="ncx" />' in out
 

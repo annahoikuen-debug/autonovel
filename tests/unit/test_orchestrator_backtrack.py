@@ -4,6 +4,7 @@
 This test reproduces the bug where audit failure causes AUDIT to re-execute
 instead of transitioning back to WRITING.
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -21,11 +22,7 @@ class MockWritingAgent:
         self.call_count += 1
         # Simulate writing producing text
         ctx.artifacts["drafted_text"] = f"Chapter {ctx.ep_num} draft attempt {self.call_count}"
-        return AgentResult(
-            next_agent=AgentName.AUDIT,
-            artifacts=ctx.artifacts,
-            should_retry=False
-        )
+        return AgentResult(next_agent=AgentName.AUDIT, artifacts=ctx.artifacts, should_retry=False)
 
 
 class MockAuditAgent:
@@ -50,7 +47,7 @@ class MockAuditAgent:
                     "audit_status": "rejected",
                 },
                 should_retry=True,
-                error=None
+                error=None,
             )
         else:
             # Pass audit
@@ -61,7 +58,7 @@ class MockAuditAgent:
                     "audit_status": "passed",
                 },
                 should_retry=False,
-                error=None
+                error=None,
             )
 
 
@@ -74,11 +71,7 @@ class MockIllustrationAgent:
     async def __call__(self, ctx: AgentContext) -> AgentResult:
         self.call_count += 1
         ctx.artifacts["illustrations"] = ["illustration_1.png"]
-        return AgentResult(
-            next_agent=None,
-            artifacts=ctx.artifacts,
-            should_retry=False
-        )
+        return AgentResult(next_agent=None, artifacts=ctx.artifacts, should_retry=False)
 
 
 @pytest.mark.asyncio
@@ -107,7 +100,9 @@ async def test_backtrack_from_audit_to_writing():
     # Verify the flow: WRITING -> AUDIT (fail) -> WRITING -> AUDIT (pass) -> ILLUSTRATION
     assert writing_agent.call_count == 2, f"Expected WRITING called 2 times, got {writing_agent.call_count}"
     assert audit_agent.call_count == 2, f"Expected AUDIT called 2 times, got {audit_agent.call_count}"
-    assert illustration_agent.call_count == 1, f"Expected ILLUSTRATION called 1 time, got {illustration_agent.call_count}"
+    assert illustration_agent.call_count == 1, (
+        f"Expected ILLUSTRATION called 1 time, got {illustration_agent.call_count}"
+    )
 
     # Verify final state
     assert result_ctx.artifacts.get("audit_status") == "passed"
@@ -198,7 +193,8 @@ async def test_backtrack_event_published():
 
     # Verify backtrack event was published
     backtrack_calls = [
-        call for call in mock_event_bus.publish_async.call_args_list
+        call
+        for call in mock_event_bus.publish_async.call_args_list
         if call[0][0].payload.get("status") == "backtracked"
     ]
     assert len(backtrack_calls) == 1, "Expected exactly one backtracked event"
@@ -211,12 +207,7 @@ async def test_backtrack_event_published():
 @pytest.mark.asyncio
 async def test_agent_result_is_backtrack_field():
     """Test that AgentResult has is_backtrack field."""
-    result = AgentResult(
-        next_agent=AgentName.WRITING,
-        artifacts={},
-        should_retry=True,
-        is_backtrack=True
-    )
+    result = AgentResult(next_agent=AgentName.WRITING, artifacts={}, should_retry=True, is_backtrack=True)
     assert result.is_backtrack is True
 
     # Default should be False
@@ -245,6 +236,7 @@ async def test_self_repair_scenario():
     5. Audit agent passes improved draft.
     6. Flow proceeds to illustration.
     """
+
     # Mock writing agent that checks for regeneration directive
     class SelfRepairWritingAgent:
         def __init__(self):
@@ -262,11 +254,7 @@ async def test_self_repair_scenario():
             else:
                 # First attempt: draft without improvement
                 ctx.artifacts["drafted_text"] = f"Chapter {ctx.ep_num} initial draft"
-            return AgentResult(
-                next_agent=AgentName.AUDIT,
-                artifacts=ctx.artifacts,
-                should_retry=False
-            )
+            return AgentResult(next_agent=AgentName.AUDIT, artifacts=ctx.artifacts, should_retry=False)
 
     # Mock audit agent that checks for improvement in draft
     class ImprovementCheckingAuditAgent:
@@ -292,7 +280,7 @@ async def test_self_repair_scenario():
                         "audit_status": "rejected",
                     },
                     should_retry=True,
-                    error=None
+                    error=None,
                 )
             else:
                 # Pass audit
@@ -303,7 +291,7 @@ async def test_self_repair_scenario():
                         "audit_status": "passed",
                     },
                     should_retry=False,
-                    error=None
+                    error=None,
                 )
 
     class MockIllustrationAgent:
@@ -313,11 +301,7 @@ async def test_self_repair_scenario():
         async def __call__(self, ctx: AgentContext) -> AgentResult:
             self.call_count += 1
             ctx.artifacts["illustrations"] = ["illustration_1.png"]
-            return AgentResult(
-                next_agent=None,
-                artifacts=ctx.artifacts,
-                should_retry=False
-            )
+            return AgentResult(next_agent=None, artifacts=ctx.artifacts, should_retry=False)
 
     writing_agent = SelfRepairWritingAgent()
     audit_agent = ImprovementCheckingAuditAgent(require_improvement=True)
@@ -337,11 +321,14 @@ async def test_self_repair_scenario():
     # Verify the flow: WRITING (fail) -> AUDIT -> WRITING (improved) -> AUDIT (pass) -> ILLUSTRATION
     assert writing_agent.call_count == 2, f"Expected WRITING called 2 times, got {writing_agent.call_count}"
     assert audit_agent.call_count == 2, f"Expected AUDIT called 2 times, got {audit_agent.call_count}"
-    assert illustration_agent.call_count == 1, f"Expected ILLUSTRATION called 1 time, got {illustration_agent.call_count}"
+    assert illustration_agent.call_count == 1, (
+        f"Expected ILLUSTRATION called 1 time, got {illustration_agent.call_count}"
+    )
 
     # Verify that the writing agent used the directive on the second call
-    assert writing_agent.last_directive == "Improve character development", \
+    assert writing_agent.last_directive == "Improve character development", (
         f"Expected directive 'Improve character development', got {writing_agent.last_directive}"
+    )
 
     # Verify final state
     assert result_ctx.artifacts.get("audit_status") == "passed"

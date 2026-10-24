@@ -1,4 +1,5 @@
 """下位互換性維持のためのシム。実体は src.services.audit.aggregator に移動しました。"""
+
 import importlib
 import sys
 import types

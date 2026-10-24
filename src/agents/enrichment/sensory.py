@@ -1,5 +1,6 @@
 # src/agents/enrichment/sensory.py
 """感覚拡充モジュール: 抽象的感情描写を五感ベースの具体描写に変換"""
+
 from __future__ import annotations
 
 import re
@@ -10,6 +11,7 @@ from dataclasses import dataclass
 @dataclass
 class EmotionSpan:
     """検出された抽象的感情フレーズ"""
+
     start: int
     end: int
     emotion: str
@@ -49,7 +51,7 @@ def extract_sentence_span(text: str, match_start: int, match_end: int) -> tuple[
 
 def detect_trailing_conjunction(text: str, match_end: int) -> str:
     """感情語の直後に続く接続助詞を検知する（Step 26）"""
-    trailing_sub = text[match_end:match_end + 15]
+    trailing_sub = text[match_end : match_end + 15]
     for pat in CONJUNCTION_PATTERNS:
         m = re.search(pat, trailing_sub)
         if m:
@@ -107,29 +109,78 @@ EMOTION_TO_SENSORY_MAP = {
 # 抽象的感情表現の検出パターン
 ABSTRACT_EMOTION_PATTERNS = {
     "sadness": [
-        r"悲し(?:い|み|かった|みたい|く)", r"哀し(?:い|み|かった|く)", r"泣きたい", r"涙が出(?:る|た)", r"胸が締め付けられ",
-        r"心が痛(?:い|む|んだ)", r"虚し(?:い|さ|く)", r"絶望", r"失望", r"嘆き", r"落ち込(?:み|んだ)",
+        r"悲し(?:い|み|かった|みたい|く)",
+        r"哀し(?:い|み|かった|く)",
+        r"泣きたい",
+        r"涙が出(?:る|た)",
+        r"胸が締め付けられ",
+        r"心が痛(?:い|む|んだ)",
+        r"虚し(?:い|さ|く)",
+        r"絶望",
+        r"失望",
+        r"嘆き",
+        r"落ち込(?:み|んだ)",
     ],
     "anger": [
-        r"怒り", r"腹が立(?:つ|った)", r"ムカつ(?:く|いた)", r"イライラ", r"激怒", r"憤慨",
-        r"堪えられな(?:い)", r"許せな(?:い)", r"腹の虫が治らない", r"カッとな(?:る|った)",
+        r"怒り",
+        r"腹が立(?:つ|った)",
+        r"ムカつ(?:く|いた)",
+        r"イライラ",
+        r"激怒",
+        r"憤慨",
+        r"堪えられな(?:い)",
+        r"許せな(?:い)",
+        r"腹の虫が治らない",
+        r"カッとな(?:る|った)",
         r"悔し(?:い|さ|かった|く)",
     ],
     "fear": [
-        r"恐ろし(?:い|さ|く|かった)", r"怖(?:い|がった|く|さ)", r"恐怖", r"戦慄", r"怯え", r"おびえ",
-        r"背筋が凍る", r"血の気が引く", r"逃げ出した(?:い)", r"震えが止まらな(?:い)",
+        r"恐ろし(?:い|さ|く|かった)",
+        r"怖(?:い|がった|く|さ)",
+        r"恐怖",
+        r"戦慄",
+        r"怯え",
+        r"おびえ",
+        r"背筋が凍る",
+        r"血の気が引く",
+        r"逃げ出した(?:い)",
+        r"震えが止まらな(?:い)",
     ],
     "joy": [
-        r"嬉し(?:い|さ|く|かった)", r"喜び", r"幸せ", r"歓喜", r"至福", r"笑顔", r"喜ん(?:だ|で)",
-        r"心が弾(?:む|んだ)", r"最高", r"夢のよう", r"感激",
+        r"嬉し(?:い|さ|く|かった)",
+        r"喜び",
+        r"幸せ",
+        r"歓喜",
+        r"至福",
+        r"笑顔",
+        r"喜ん(?:だ|で)",
+        r"心が弾(?:む|んだ)",
+        r"最高",
+        r"夢のよう",
+        r"感激",
     ],
     "surprise": [
-        r"驚(?:き|いた)", r"衝撃", r"呆然", r"目を見開", r"息を呑", r"信じられな(?:い)",
-        r"予想外", r"意外", r"まさか", r"吃驚",
+        r"驚(?:き|いた)",
+        r"衝撃",
+        r"呆然",
+        r"目を見開",
+        r"息を呑",
+        r"信じられな(?:い)",
+        r"予想外",
+        r"意外",
+        r"まさか",
+        r"吃驚",
     ],
     "disgust": [
-        r"嫌悪", r"吐き気", r"不快", r"気持ち悪(?:い|さ|く|かった)", r"ぞっとする", r"鳥肌",
-        r"受け付けな(?:い)", r"生理的に無理", r"吐きそう",
+        r"嫌悪",
+        r"吐き気",
+        r"不快",
+        r"気持ち悪(?:い|さ|く|かった)",
+        r"ぞっとする",
+        r"鳥肌",
+        r"受け付けな(?:い)",
+        r"生理的に無理",
+        r"吐きそう",
     ],
 }
 
@@ -179,17 +230,19 @@ def detect_abstract_emotions(text: str, skip_dialogue: bool = True) -> list[Emot
                 if not overlap:
                     s_start, s_end, s_text = extract_sentence_span(text, match_start, match_end)
                     conj = detect_trailing_conjunction(text, match_end)
-                    spans.append(EmotionSpan(
-                        start=match_start,
-                        end=match_end,
-                        emotion=emotion,
-                        intensity=0.7,  # デフォルト強度
-                        abstract_phrase=phrase,
-                        sentence_start=s_start,
-                        sentence_end=s_end,
-                        sentence_text=s_text,
-                        trailing_conjunction=conj,
-                    ))
+                    spans.append(
+                        EmotionSpan(
+                            start=match_start,
+                            end=match_end,
+                            emotion=emotion,
+                            intensity=0.7,  # デフォルト強度
+                            abstract_phrase=phrase,
+                            sentence_start=s_start,
+                            sentence_end=s_end,
+                            sentence_text=s_text,
+                            trailing_conjunction=conj,
+                        )
+                    )
 
     # 位置でソート
     spans.sort(key=lambda x: x.start)
@@ -199,6 +252,7 @@ def detect_abstract_emotions(text: str, skip_dialogue: bool = True) -> list[Emot
 async def _call_llm_async(llm: Any, prompt: str) -> str:
     """同期・非同期の各種LLMインターフェース（generate, ainvoke, agenerate, call）を統一して非同期実行"""
     import inspect
+
     if hasattr(llm, "generate"):
         res = llm.generate(prompt)
         if inspect.isawaitable(res):
@@ -320,6 +374,7 @@ async def generate_sensory_details(
                 )
 
             import asyncio
+
             raw_output = await asyncio.wait_for(
                 _call_llm_async(llm, prompt),
                 timeout=timeout_seconds,
@@ -327,33 +382,35 @@ async def generate_sensory_details(
 
             cleaned = str(raw_output).strip()
             # Step 57: 固定タグ・デバッグ風プレフィックス ([visual]等) の完全撤廃
-            cleaned = re.sub(r'\[[a-zA-Z0-9_]+\]\s*', '', cleaned)
-            cleaned = cleaned.strip('"\'')
+            cleaned = re.sub(r"\[[a-zA-Z0-9_]+\]\s*", "", cleaned)
+            cleaned = cleaned.strip("\"'")
             if len(cleaned) >= 5:
                 return [cleaned]
         except asyncio.TimeoutError:
             import logging
+
             logging.getLogger(__name__).warning(
                 "LLM sensory detail generation timed out after %.1fs for phrase: %s",
-                timeout_seconds, emotion_span.abstract_phrase
+                timeout_seconds,
+                emotion_span.abstract_phrase,
             )
         except Exception as e:
             import logging
+
             logging.getLogger(__name__).warning("LLM sensory detail generation failed: %s", e)
 
     # Step 21: フォールバック処理
     return _fallback_sensory_details(emotion_span, selected_senses, sensory_map)
 
 
-
 def sanitize_punctuation(text: str) -> str:
     """不正な句読点並び（。。、。が、等）を自動補正（Step 30）"""
-    text = re.sub(r'。+', '。', text)
-    text = re.sub(r'、+', '、', text)
-    text = re.sub(r'。、', '、', text)
-    text = re.sub(r'、。', '。', text)
+    text = re.sub(r"。+", "。", text)
+    text = re.sub(r"、+", "、", text)
+    text = re.sub(r"。、", "、", text)
+    text = re.sub(r"、。", "。", text)
     # 接続助詞直前の不自然な句点を除去（独立した文頭接続詞「でも、」「だが、」等は保護）
-    text = re.sub(r'。(が|ものの|ので|から|ため|ながら)', r'\1', text)
+    text = re.sub(r"。(が|ものの|ので|から|ため|ながら)", r"\1", text)
     return text
 
 
@@ -366,7 +423,7 @@ def validate_rewritten_sentence(rewritten: str, original: str) -> bool:
     if len(stripped) < 3:
         return False
     # 日本語・英数字が1文字も含まれない（記号のみ等）
-    if not re.search(r'[一-龯ぁ-んァ-ヴa-zA-Z0-9]', stripped):
+    if not re.search(r"[一-龯ぁ-んァ-ヴa-zA-Z0-9]", stripped):
         return False
     # エラー文字列や不正なスタブ
     if any(err in stripped for err in ["Error", "None", "undefined", "[object Object]"]):
@@ -397,8 +454,7 @@ def replace_with_sensory_expansion(
         span = item[0]
         return span.sentence_start if span.sentence_end > span.sentence_start else span.start
 
-    sorted_spans = sorted(zip(emotion_spans, sensory_details_list),
-                          key=get_sort_key, reverse=True)
+    sorted_spans = sorted(zip(emotion_spans, sensory_details_list), key=get_sort_key, reverse=True)
 
     enriched_text = text
     expansions_meta = []
@@ -413,18 +469,18 @@ def replace_with_sensory_expansion(
             expanded_parts = []
             for d in details:
                 # 万一残存する [sense] タグを確実に除去
-                clean_d = re.sub(r'\[[a-zA-Z0-9_]+\]\s*', '', d).strip()
+                clean_d = re.sub(r"\[[a-zA-Z0-9_]+\]\s*", "", d).strip()
                 if clean_d:
                     expanded_parts.append(clean_d)
 
             raw_expansion = "。".join(expanded_parts)
 
             # Step 33: 生成された五感描写自体の文法健全性チェック（破損時は元の文/フレーズにロールバック）
-            if not validate_rewritten_sentence(raw_expansion, text[span.start:span.end]):
+            if not validate_rewritten_sentence(raw_expansion, text[span.start : span.end]):
                 import logging
+
                 logging.getLogger(__name__).warning(
-                    "Sensory expansion validation failed for '%s' -> rolling back to original.",
-                    raw_expansion
+                    "Sensory expansion validation failed for '%s' -> rolling back to original.", raw_expansion
                 )
                 expanded = original_chunk
             else:
@@ -435,7 +491,7 @@ def replace_with_sensory_expansion(
                 if is_sentence_level:
                     # 感情語の後ろの後続節（例：「〜が耐えた。」の「耐えた。」）
                     after_pos = span.end + len(span.trailing_conjunction)
-                    trailing_clause = text[after_pos:span.sentence_end]
+                    trailing_clause = text[after_pos : span.sentence_end]
 
                     if span.trailing_conjunction and trailing_clause:
                         # expanded が既に trailing_clause を含んでいない場合は自然に結合
@@ -452,20 +508,22 @@ def replace_with_sensory_expansion(
         # メタデータ
         senses = []
         for d in details:
-            match = re.search(r'\[([a-zA-Z0-9_]+)\]', d)
+            match = re.search(r"\[([a-zA-Z0-9_]+)\]", d)
             if match:
                 senses.append(match.group(1))
         if not senses and details:
             senses = ["sensory"]
 
-        expansions_meta.append({
-            "original_phrase": span.abstract_phrase,
-            "original_sentence": span.sentence_text or text[rep_start:rep_end],
-            "expanded_text": expanded,
-            "emotion": span.emotion,
-            "senses_covered": senses,
-            "position": rep_start,
-        })
+        expansions_meta.append(
+            {
+                "original_phrase": span.abstract_phrase,
+                "original_sentence": span.sentence_text or text[rep_start:rep_end],
+                "expanded_text": expanded,
+                "emotion": span.emotion,
+                "senses_covered": senses,
+                "position": rep_start,
+            }
+        )
 
     # メタデータを元の順序（位置昇順）に戻す
     expansions_meta.reverse()
@@ -493,17 +551,14 @@ async def expand_sensory_details_pipeline(
 
     # 2. 各感情に対する感覚詳細生成（Step 20: asyncio.gather 並列化）
     import asyncio
+
     tasks = [
-        generate_sensory_details(
-            span, scene_context, pov, llm, prompt_manager, timeout_seconds=timeout_seconds
-        )
+        generate_sensory_details(span, scene_context, pov, llm, prompt_manager, timeout_seconds=timeout_seconds)
         for span in emotion_spans
     ]
     all_sensory_details = await asyncio.gather(*tasks)
 
     # 3. 置換実行
-    enriched_text, expansions_meta = replace_with_sensory_expansion(
-        text, emotion_spans, list(all_sensory_details)
-    )
+    enriched_text, expansions_meta = replace_with_sensory_expansion(text, emotion_spans, list(all_sensory_details))
 
     return enriched_text, expansions_meta

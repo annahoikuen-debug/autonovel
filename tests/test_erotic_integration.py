@@ -28,23 +28,27 @@ class MockEngine:
         self.auditor = MagicMock()
 
         # デフォルトモック設定
-        self.planner.infer_easy_mode_params = AsyncMock(return_value=MagicMock(
-            genre_key="ファンタジー",
-            core_idea="テストコンセプト",
-            mc_concept="チート主人公",
-            title_idea="テスト小説",
-        ))
+        self.planner.infer_easy_mode_params = AsyncMock(
+            return_value=MagicMock(
+                genre_key="ファンタジー",
+                core_idea="テストコンセプト",
+                mc_concept="チート主人公",
+                title_idea="テスト小説",
+            )
+        )
         self.planner.create_hegemony_plan = AsyncMock(return_value=(1, MagicMock(title="テスト小説")))
         self.planner.plan_auditor = MagicMock()
         self.planner.plan_auditor.audit_bible_completeness = AsyncMock(return_value=True)
 
         self.writer.generate_episodes_pipeline = AsyncMock(return_value=(10000, []))
         self.llm.generate = AsyncMock(return_value="リライトされた本文")
-        self.auditor.audit = AsyncMock(return_value={
-            "overall_score": 900,  # 1000点満点
-            "issues": [],
-            "improvements": ["もっと面白く"],
-        })
+        self.auditor.audit = AsyncMock(
+            return_value={
+                "overall_score": 900,  # 1000点満点
+                "issues": [],
+                "improvements": ["もっと面白く"],
+            }
+        )
 
         # リポジトリモック
         self.repo.plot.get_all_plots = AsyncMock(return_value=[])
@@ -105,7 +109,6 @@ async def test_erotic_parameters_propagated_to_planner():
     # PlanStepのみを含むパイプラインを作成
     pipeline = AutoWorkflowPipeline([PlanStep()])
 
-
     # パイプラインを実行
     result = await pipeline.execute(ctx, mock_engine, mock_reporter)
 
@@ -126,6 +129,8 @@ async def test_erotic_parameters_propagated_to_planner():
     # コンテキストにエロティックパラメータが設定されていることを確認
     assert ctx.easy_parameters.get("enable_erotic") is True
     assert ctx.easy_parameters.get("erotic_intensity") == 3
+
+
 @pytest.mark.asyncio
 async def test_erotic_disabled_when_not_requested():
     """エロティックが要求されていない場合は無効になることを確認"""
@@ -197,7 +202,7 @@ async def test_full_auto_pipeline_with_erotic():
         enable_illustration=True,
     )
 
-# パイプラインを実行
+    # パイプラインを実行
     result = await pipeline.execute(ctx, mock_engine, mock_reporter)
 
     # 成功することを確認
@@ -210,5 +215,3 @@ async def test_full_auto_pipeline_with_erotic():
     call_args = mock_engine.planner.create_hegemony_plan.call_args
     assert call_args.kwargs.get("enable_erotic") is True
     assert call_args.kwargs.get("erotic_intensity") == 4
-
-

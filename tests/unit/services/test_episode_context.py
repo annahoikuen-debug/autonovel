@@ -2,9 +2,11 @@ import pytest
 
 from src.services.episode_context import EpisodeContextBuilder
 
+
 def test_init():
     builder = EpisodeContextBuilder()
     assert builder._episode_history == []
+
 
 @pytest.mark.asyncio
 async def test_build_context_first_episode():
@@ -20,6 +22,7 @@ async def test_build_context_first_episode():
     assert builder._episode_history[0]["ep_num"] == 1
     assert builder._episode_history[0]["context"] == context
 
+
 @pytest.mark.asyncio
 async def test_build_context_with_previous_episode():
     builder = EpisodeContextBuilder()
@@ -27,7 +30,7 @@ async def test_build_context_with_previous_episode():
         "title": "前話のタイトル",
         "ending": "前話の結末",
         "summary": "前話のあらすじ",
-        "key_events": ["イベント1", "イベント2"]
+        "key_events": ["イベント1", "イベント2"],
     }
     context = await builder.build_context(book_id=1, ep_num=2, previous_episode=previous)
     assert context["book_id"] == 1
@@ -45,11 +48,17 @@ async def test_build_context_with_previous_episode():
     assert builder._episode_history[0]["ep_num"] == 2
     assert builder._episode_history[0]["context"] == context
 
+
 @pytest.mark.asyncio
 async def test_build_context_without_previous_episode_not_first():
     builder = EpisodeContextBuilder()
     # First, add a dummy history to simulate previous episode
-    builder._episode_history = [{"ep_num": 1, "context": {"ep_num": 1, "book_id": 1, "is_first": True, "is_last": False, "target_word_count": 3000}}]
+    builder._episode_history = [
+        {
+            "ep_num": 1,
+            "context": {"ep_num": 1, "book_id": 1, "is_first": True, "is_last": False, "target_word_count": 3000},
+        }
+    ]
     # Now build for ep_num=2 without providing previous_episode
     context = await builder.build_context(book_id=1, ep_num=2)
     assert context["book_id"] == 1
@@ -64,6 +73,7 @@ async def test_build_context_without_previous_episode_not_first():
     assert len(builder._episode_history) == 2
     assert builder._episode_history[1]["ep_num"] == 2
 
+
 def test_add_to_history_and_limit():
     builder = EpisodeContextBuilder()
     # Add 11 episodes
@@ -73,17 +83,32 @@ def test_add_to_history_and_limit():
     assert builder._episode_history[0]["ep_num"] == 2  # First should be ep_num=2
     assert builder._episode_history[-1]["ep_num"] == 11
 
+
 def test_get_last_episode_summary_empty():
     builder = EpisodeContextBuilder()
     summary = builder._get_last_episode_summary()
     assert summary == {"title": "", "ending": "", "summary": ""}
 
+
 def test_get_last_episode_summary_with_data():
     builder = EpisodeContextBuilder()
     # Manually set history
     builder._episode_history = [
-        {"ep_num": 1, "context": {"ep_num": 1, "book_id": 1, "is_first": True, "is_last": False, "target_word_count": 3000, "previous_episode": {"title": "前話タイトル", "ending": "前話結末", "summary": "前話あらすじ"}}},
-        {"ep_num": 2, "context": {"ep_num": 2, "book_id": 1, "is_first": False, "is_last": False, "target_word_count": 3000}},
+        {
+            "ep_num": 1,
+            "context": {
+                "ep_num": 1,
+                "book_id": 1,
+                "is_first": True,
+                "is_last": False,
+                "target_word_count": 3000,
+                "previous_episode": {"title": "前話タイトル", "ending": "前話結末", "summary": "前話あらすじ"},
+            },
+        },
+        {
+            "ep_num": 2,
+            "context": {"ep_num": 2, "book_id": 1, "is_first": False, "is_last": False, "target_word_count": 3000},
+        },
     ]
     summary = builder._get_last_episode_summary()
     # The last context is for ep_num=2, its context does not have previous_episode, so we look at its context's previous_episode? Actually _get_last_episode_summary returns the previous_episode from the last context's context.
@@ -93,13 +118,27 @@ def test_get_last_episode_summary_with_data():
     assert summary == {"title": "", "ending": "", "summary": ""}
     # Let's instead set the second element to have a previous_episode in its context.
     builder._episode_history = [
-        {"ep_num": 1, "context": {"ep_num": 1, "book_id": 1, "is_first": True, "is_last": False, "target_word_count": 3000}},
-        {"ep_num": 2, "context": {"ep_num": 2, "book_id": 1, "is_first": False, "is_last": False, "target_word_count": 3000, "previous_episode": {"title": "前々話タイトル", "ending": "前々話結末", "summary": "前々話あらすじ"}}},
+        {
+            "ep_num": 1,
+            "context": {"ep_num": 1, "book_id": 1, "is_first": True, "is_last": False, "target_word_count": 3000},
+        },
+        {
+            "ep_num": 2,
+            "context": {
+                "ep_num": 2,
+                "book_id": 1,
+                "is_first": False,
+                "is_last": False,
+                "target_word_count": 3000,
+                "previous_episode": {"title": "前々話タイトル", "ending": "前々話結末", "summary": "前々話あらすじ"},
+            },
+        },
     ]
     summary = builder._get_last_episode_summary()
     assert summary["title"] == "前々話タイトル"
     assert summary["ending"] == "前々話結末"
     assert summary["summary"] == "前々話あらすじ"
+
 
 def test_get_history():
     builder = EpisodeContextBuilder()
@@ -112,11 +151,13 @@ def test_get_history():
     history.append({"ep_num": 3, "context": {}})
     assert len(builder._episode_history) == 2  # Original unchanged
 
+
 def test_clear_history():
     builder = EpisodeContextBuilder()
     builder._episode_history = [{"ep_num": 1, "context": {}}]
     builder.clear_history()
     assert builder._episode_history == []
+
 
 @pytest.mark.asyncio
 async def test_set_final_episode():

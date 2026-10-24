@@ -2,6 +2,7 @@
 
 「なろう」「カクヨム」「アルファポリス」向けの整形コピーAPIを検証。
 """
+
 from fastapi.testclient import TestClient
 
 from src.backend.server import app

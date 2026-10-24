@@ -1,4 +1,5 @@
 """Source contribution and quality metrics analysis for fusion layer."""
+
 from __future__ import annotations
 
 import json
@@ -34,10 +35,7 @@ def analyze_source_contribution(fused_history: List[FusedVector]) -> Dict[str, A
             adoption_counts[src] = adoption_counts.get(src, 0) + 1
             confidences.append(fval.confidence)
 
-    adoption_rates = {
-        src: (cnt / total_values if total_values > 0 else 0.0)
-        for src, cnt in adoption_counts.items()
-    }
+    adoption_rates = {src: (cnt / total_values if total_values > 0 else 0.0) for src, cnt in adoption_counts.items()}
 
     avg_conf = sum(confidences) / len(confidences) if confidences else 0.0
     min_conf = min(confidences) if confidences else 0.0

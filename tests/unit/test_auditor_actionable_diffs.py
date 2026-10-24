@@ -32,14 +32,14 @@ def test_consistency_fallback_generates_actionable_diffs_on_contradiction():
     # Draft with contradiction: deceased character acting
     contradiction_draft = "勇者は既に息絶えていた。しかし次の瞬間、勇者は元気に笑って剣を振った。"
     auditor = ConsistencyAuditor()  # No LLM -> fallback
-    result = auditor._fallback({
-        "draft_text": contradiction_draft,
-        "world_bible_snapshot": {
-            "characters": [
-                {"name": "勇者", "status": "死亡", "description": "第1話で命を落とした"}
-            ]
+    result = auditor._fallback(
+        {
+            "draft_text": contradiction_draft,
+            "world_bible_snapshot": {
+                "characters": [{"name": "勇者", "status": "死亡", "description": "第1話で命を落とした"}]
+            },
         }
-    })
+    )
 
     assert result.degraded
     # 矛盾検出の有無にかかわらず diffs の型を検証する
@@ -53,21 +53,26 @@ def test_consistency_fallback_generates_actionable_diffs_on_contradiction():
 @pytest.mark.asyncio
 async def test_structure_auditor_with_llm_actionable_diffs():
     mock_llm = MagicMock()
-    mock_llm.ainvoke = AsyncMock(return_value=json.dumps({
-        "score": 70.0,
-        "critique": "中盤の展開が間延びしている。",
-        "suggestions": ["展開のテンポアップ"],
-        "confidence": 0.9,
-        "reasoning": "中盤停滞",
-        "actionable_diffs": [
+    mock_llm.ainvoke = AsyncMock(
+        return_value=json.dumps(
             {
-                "location": "承セクション中盤",
-                "original_quote": "主人公は店で買い物をして、その後お茶を飲んでぼんやり過ごした。",
-                "improved_suggestion": "街の路地で不穏な黒服の集団を目撃し、身を隠しながら追跡を開始した。",
-                "rationale": "無目的な日常シーンをプロット進展に繋がるサスペンス展開に置換するため"
-            }
-        ]
-    }, ensure_ascii=False))
+                "score": 70.0,
+                "critique": "中盤の展開が間延びしている。",
+                "suggestions": ["展開のテンポアップ"],
+                "confidence": 0.9,
+                "reasoning": "中盤停滞",
+                "actionable_diffs": [
+                    {
+                        "location": "承セクション中盤",
+                        "original_quote": "主人公は店で買い物をして、その後お茶を飲んでぼんやり過ごした。",
+                        "improved_suggestion": "街の路地で不穏な黒服の集団を目撃し、身を隠しながら追跡を開始した。",
+                        "rationale": "無目的な日常シーンをプロット進展に繋がるサスペンス展開に置換するため",
+                    }
+                ],
+            },
+            ensure_ascii=False,
+        )
+    )
 
     auditor = StructureAuditor(llm=mock_llm)
     result = await auditor.audit({"draft_text": "テストドラフト" * 50})

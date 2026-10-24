@@ -16,6 +16,7 @@
     3. **必ず `repo.add()` / `repo.add_many()` を通す**。
        raw `insert()` を使うと設置 KPI（`foreshadowing_planted_total`）が脱落する。
 """
+
 from __future__ import annotations
 
 import logging
@@ -163,10 +164,7 @@ async def plant_from_roadmap(
         return []
 
     # 冪等判定用の既存キー。DB 側判定にして、スキップ理由がログに残るようにする。
-    existing = {
-        (row.planted_episode, row.title)
-        for row in await repo.get_by_book_id(book_id)
-    }
+    existing = {(row.planted_episode, row.title) for row in await repo.get_by_book_id(book_id)}
 
     pending: list[dict] = []
     seen_in_batch: set = set()
@@ -209,8 +207,7 @@ async def plant_from_roadmap(
 
     if not pending:
         logger.info(
-            "foreshadowing planting produced no new rows: book_id=%s "
-            "(no_setup=%s duplicate=%s)",
+            "foreshadowing planting produced no new rows: book_id=%s (no_setup=%s duplicate=%s)",
             book_id,
             skipped_no_setup,
             skipped_duplicate,

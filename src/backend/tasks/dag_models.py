@@ -1,4 +1,5 @@
 """DAG Task and Dependency Graph Models (Step 35)."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -62,9 +63,7 @@ class DAGGraph(BaseModel):
             if task.status in ["pending", "ready"]:
                 # Check parents
                 parents_done = all(
-                    self.nodes[p_id].status == "completed"
-                    for p_id in task.dependencies
-                    if p_id in self.nodes
+                    self.nodes[p_id].status == "completed" for p_id in task.dependencies if p_id in self.nodes
                 )
                 # If any parent is failed or cancelled, task cannot be ready (will be cancelled by cascade)
                 parents_failed = any(

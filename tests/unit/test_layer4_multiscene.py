@@ -1,6 +1,5 @@
 """Unit tests for Layer 4 Multi-scene awareness and Protected Token pinning (Part 5 / Steps 49-54)."""
 
-
 from src.services.compression.layer4_trimming import (
     Layer4SceneTrimmer,
     SCENE_CATEGORY_WEIGHTS,
@@ -15,8 +14,15 @@ from src.services.compression.models import (
 def test_9_scene_types_weights_and_keywords():
     """Test completeness of 9-scene types weights matrix and keyword dictionaries (Steps 49-51)."""
     expected_scenes = [
-        "combat", "daily", "psychological", "political",
-        "romance", "mystery", "flashback", "survival", "general",
+        "combat",
+        "daily",
+        "psychological",
+        "political",
+        "romance",
+        "mystery",
+        "flashback",
+        "survival",
+        "general",
     ]
 
     for sc in expected_scenes:

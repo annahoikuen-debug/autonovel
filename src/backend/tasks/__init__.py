@@ -205,9 +205,7 @@ def run_test_coro(task_id: str, message: str, trace_id: str | None = None):
         def __init__(self):
             self.db = db
 
-    state = ProgressState(
-        is_running=False, task_id=task_id, repo=FakeEngine(), skip_initial_save=True
-    )
+    state = ProgressState(is_running=False, task_id=task_id, repo=FakeEngine(), skip_initial_save=True)
     state.result_data = "SuccessValue"
     state.logs = [message]
     state._save_to_db()
@@ -215,9 +213,7 @@ def run_test_coro(task_id: str, message: str, trace_id: str | None = None):
 
 @huey.task(retries=3, retry_delay=5)
 @with_trace_context
-def async_score_narrative_metrics(
-    book_id: int, branch_id: int, ep_num: int, trace_id: str | None = None
-):
+def async_score_narrative_metrics(book_id: int, branch_id: int, ep_num: int, trace_id: str | None = None):
     """エピソードのスコアリングをバックグラウンドで実行するタスク"""
     import asyncio
 
@@ -246,9 +242,7 @@ def async_score_narrative_metrics(
 
 @huey.task(retries=3, retry_delay=5)
 @with_trace_context
-def enqueue_audit_after_write(
-    book_id: int, write_from: int, write_to: int, trace_id: str | None = None
-):
+def enqueue_audit_after_write(book_id: int, write_from: int, write_to: int, trace_id: str | None = None):
     """執筆完了後の論理監査 (Shadow Mode) をバックグラウンドで実行するタスク。"""
     import asyncio
 
@@ -262,9 +256,7 @@ def enqueue_audit_after_write(
             async with db.get_session() as session:
                 for ep_num in range(write_from, write_to + 1):
                     await auditor.audit_episode(session, book_id, ep_num)
-                logger.info(
-                    f"Shadow audit finished for book_id={book_id}, ep{write_from}-ep{write_to}"
-                )
+                logger.info(f"Shadow audit finished for book_id={book_id}, ep{write_from}-ep{write_to}")
         except Exception as e:
             logger.exception(f"Error in enqueue_audit_after_write for book_id={book_id}: {e}")
 

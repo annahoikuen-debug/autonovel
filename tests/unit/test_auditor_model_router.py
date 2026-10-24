@@ -31,8 +31,14 @@ class TestAuditorModelRouter:
         auditors = router.list_configured_auditors()
         assert len(auditors) == 8
         assert set(auditors) == {
-            "factual", "consistency", "style", "multimodal",
-            "creativity", "reader_hook", "emotion_curve", "structure"
+            "factual",
+            "consistency",
+            "style",
+            "multimodal",
+            "creativity",
+            "reader_hook",
+            "emotion_curve",
+            "structure",
         }
 
     def test_fallback_chains_present(self):

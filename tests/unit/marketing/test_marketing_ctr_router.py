@@ -1,6 +1,7 @@
 """
 PLAN 01 - Step 10: マーケティングCTR APIエンドポイントの単体テスト
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, patch

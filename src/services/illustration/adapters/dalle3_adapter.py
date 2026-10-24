@@ -2,6 +2,7 @@
 
 常駐GPUサーバー不要で、1枚あたり約$0.040（約6円）の従量課金で高品位な挿絵・表紙を生成する。
 """
+
 from __future__ import annotations
 
 import base64

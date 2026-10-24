@@ -61,9 +61,7 @@ class PatchValidator:
                         k = k.strip()
                         v = v.strip()
                         # クォーテーションの除去と簡易キャスト
-                        if (v.startswith('"') and v.endswith('"')) or (
-                            v.startswith("'") and v.endswith("'")
-                        ):
+                        if (v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'")):
                             v = v[1:-1]
                         elif v.lower() == "true":
                             v = True
@@ -187,9 +185,7 @@ class PatchValidator:
         for df in cls.DANGEROUS_FUNCTIONS:
             # プロンプト内に `import os; os.system(...)` などの記述があるかを正規表現等で警戒
             if df in patch_content:
-                warnings.append(
-                    f"Dangerous function/module keyword '{df}' detected in prompt content"
-                )
+                warnings.append(f"Dangerous function/module keyword '{df}' detected in prompt content")
 
         # プロンプトパッチは警告のみとし、重大な破損や明らかな脅威以外は is_safe=True で通すが、警告を結果に残す
         is_safe = len(errors) == 0

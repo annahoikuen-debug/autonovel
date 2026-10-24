@@ -1,4 +1,5 @@
 """Unit and integration tests for NanoBanana 2 Lite Manga Pipeline."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -31,9 +32,7 @@ def test_prompt_generator_builds_24_panel_silent_prompt():
         setting="高校の屋上",
         aspect_ratio=AspectRatio.RATIO_3_4,
     )
-    char_refs = [
-        CharacterReference(name="タロウ", master_image_path=Path("data/manga/char_ref/taro.png"))
-    ]
+    char_refs = [CharacterReference(name="タロウ", master_image_path=Path("data/manga/char_ref/taro.png"))]
 
     prompt = gen.build_prompt(ep, character_refs=char_refs)
 
@@ -61,6 +60,7 @@ def test_quality_gate_evaluates_image(tmp_path: Path):
     img = Image.new("L", (768, 1024), color=255)
     # 線画とベタ黒を描画してコントラストを持たせる
     from PIL import ImageDraw
+
     draw = ImageDraw.Draw(img)
     for y in range(0, 1024, 64):
         draw.line([(0, y), (768, y)], fill=0, width=4)

@@ -2,6 +2,7 @@
 
 ベンチマーク閾値を超えた場合に失敗し、速度劣化を検知する。
 """
+
 import time
 import pytest
 
@@ -32,18 +33,16 @@ def test_age_upsert_1000_nodes_performance(db_session):
     client = AgeClient(default_graph_name="perf_test_nodes")
     assert client.init_graph(db_session) is True
 
-    nodes = [
-        {"label": "Character", "name": f"キャラ{i}", "properties": {"idx": i}}
-        for i in range(1000)
-    ]
+    nodes = [{"label": "Character", "name": f"キャラ{i}", "properties": {"idx": i}} for i in range(1000)]
 
     start = _now_ms()
     count = client.upsert_nodes_batch(db_session, nodes)
     elapsed = _now_ms() - start
 
     assert count == 1000
-    assert elapsed < THRESHOLDS["age_upsert_1000_nodes_ms"], \
+    assert elapsed < THRESHOLDS["age_upsert_1000_nodes_ms"], (
         f"UPSERT 1000 nodes took {elapsed:.0f}ms, threshold {THRESHOLDS['age_upsert_1000_nodes_ms']}ms"
+    )
 
 
 @pytest.mark.perf
@@ -61,7 +60,7 @@ def test_age_upsert_10000_edges_performance(db_session):
             "source_label": "Character",
             "source_name": f"C{i}",
             "target_label": "Character",
-            "target_name": f"C{i+1}",
+            "target_name": f"C{i + 1}",
             "relation_type": "KNOWS",
         }
         for i in range(199)
@@ -85,12 +84,14 @@ def test_pgvector_ingest_1000_docs_performance(pgvector_store):
     ids = [f"doc{i}" for i in range(1000)]
 
     import asyncio
+
     start = _now_ms()
     asyncio.run(pgvector_store.add_documents("perf_ingest", ids, docs, embeddings))
     elapsed = _now_ms() - start
 
-    assert elapsed < THRESHOLDS["pgvector_ingest_1000_docs_ms"], \
+    assert elapsed < THRESHOLDS["pgvector_ingest_1000_docs_ms"], (
         f"Ingest 1000 docs took {elapsed:.0f}ms, threshold {THRESHOLDS['pgvector_ingest_1000_docs_ms']}ms"
+    )
 
 
 @pytest.mark.perf
@@ -111,8 +112,9 @@ def test_pgvector_search_1000_docs_performance(pgvector_store):
     elapsed = _now_ms() - start
 
     assert len(results) == 10
-    assert elapsed < THRESHOLDS["pgvector_search_1000_docs_ms"], \
+    assert elapsed < THRESHOLDS["pgvector_search_1000_docs_ms"], (
         f"Search 1000 docs took {elapsed:.0f}ms, threshold {THRESHOLDS['pgvector_search_1000_docs_ms']}ms"
+    )
 
 
 @pytest.mark.perf
@@ -120,8 +122,9 @@ def test_rag_hybrid_search_performance(db_session):
     """ハイブリッド検索が閾値以内"""
     # テストデータ準備
     from src.infrastructure.database.models.chunk import ChapterChunk
+
     chunks = [
-        ChapterChunk(chapter_id=1, chunk_index=i, content=f"チャンク {i} の内容", embedding=[0.1]*1536)
+        ChapterChunk(chapter_id=1, chunk_index=i, content=f"チャンク {i} の内容", embedding=[0.1] * 1536)
         for i in range(100)
     ]
     db_session.add_all(chunks)
@@ -132,7 +135,7 @@ def test_rag_hybrid_search_performance(db_session):
     client.init_graph(db_session)
     for i in range(20):
         client.upsert_node(db_session, "Character", f"キャラ{i}", {})
-        client.upsert_edge(db_session, "Character", f"キャラ{i}", "Character", f"キャラ{i+1}", "KNOWS", {})
+        client.upsert_edge(db_session, "Character", f"キャラ{i}", "Character", f"キャラ{i + 1}", "KNOWS", {})
     db_session.commit()
 
     service = GraphRAGService()
@@ -142,8 +145,9 @@ def test_rag_hybrid_search_performance(db_session):
     elapsed = _now_ms() - start
 
     assert len(results) > 0
-    assert elapsed < THRESHOLDS["rag_hybrid_search_ms"], \
+    assert elapsed < THRESHOLDS["rag_hybrid_search_ms"], (
         f"Hybrid search took {elapsed:.0f}ms, threshold {THRESHOLDS['rag_hybrid_search_ms']}ms"
+    )
 
 
 @pytest.mark.perf
@@ -157,20 +161,26 @@ def test_pipeline_single_chapter_performance(db_session):
 
     mock_extraction = GraphExtractionResult(
         entities=[Entity(name=f"エンティティ{i}", type="Character", description="", properties={}) for i in range(20)],
-        relationships=[Relationship(source=f"エンティティ{i}", target=f"エンティティ{i+1}", type="KNOWS", detail="") for i in range(19)],
-        plot_summary="テスト要約"
+        relationships=[
+            Relationship(source=f"エンティティ{i}", target=f"エンティティ{i + 1}", type="KNOWS", detail="")
+            for i in range(19)
+        ],
+        plot_summary="テスト要約",
     )
 
-    with patch("src.services.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
-         patch("src.services.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
-         patch("src.services.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
+    with (
+        patch("src.services.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction),
+        patch("src.services.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction),
+        patch("src.services.graph_pipeline.settings.ENABLE_GRAPHRAG", True),
+    ):
         start = _now_ms()
         result = pipeline.process_chapter_knowledge(db_session, 999, text)
         elapsed = _now_ms() - start
 
     assert result["success"] is True
-    assert elapsed < THRESHOLDS["pipeline_single_chapter_ms"], \
+    assert elapsed < THRESHOLDS["pipeline_single_chapter_ms"], (
         f"Pipeline single chapter took {elapsed:.0f}ms, threshold {THRESHOLDS['pipeline_single_chapter_ms']}ms"
+    )
 
 
 @pytest.mark.perf
@@ -184,8 +194,9 @@ def test_embedding_generation_1000_texts_performance():
 
     assert len(embeddings) == 1000
     assert all(len(e) == 1536 for e in embeddings)
-    assert elapsed < THRESHOLDS["embedding_generation_1000_texts_ms"], \
+    assert elapsed < THRESHOLDS["embedding_generation_1000_texts_ms"], (
         f"Embedding 1000 texts took {elapsed:.0f}ms, threshold {THRESHOLDS['embedding_generation_1000_texts_ms']}ms"
+    )
 
 
 # ベンチマーク基準値管理用

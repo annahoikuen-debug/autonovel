@@ -4,7 +4,6 @@
 ルビ変換（|漢字《ルビ》・《《傍点》》）の正常性を検証する。
 """
 
-
 from src.services.formatters.platform_copy_formatter import (
     FormattedChapterPayload,
     PlatformCopyFormatter,
@@ -55,9 +54,7 @@ class TestKakuyomuLineRhythm:
 
     def test_paragraph_separated_by_blank_line(self) -> None:
         """段落間に自然な1行空行が配置される。"""
-        res = PlatformCopyFormatter.format_for_platform(
-            "T", "文1\n文2", platform="kakuyomu", indent_enabled=False
-        )
+        res = PlatformCopyFormatter.format_for_platform("T", "文1\n文2", platform="kakuyomu", indent_enabled=False)
         assert res.body == "文1\n文2"
 
     def test_multiple_paragraphs_normalized(self) -> None:

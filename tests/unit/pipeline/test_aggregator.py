@@ -1,4 +1,5 @@
 """Tests for signal aggregator."""
+
 from __future__ import annotations
 
 

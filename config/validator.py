@@ -42,9 +42,7 @@ class ConfigValidator:
     @staticmethod
     def load_settings_toml(path: str = "autonovel/config/settings.toml") -> GlobalConfigModel:
         resolved_path = ConfigValidator._resolve_config_path(path)
-        logger.debug(
-            f"[LOAD] ConfigValidator.load_settings_toml() called from: path={resolved_path}"
-        )
+        logger.debug(f"[LOAD] ConfigValidator.load_settings_toml() called from: path={resolved_path}")
         try:
             if not resolved_path.exists():
                 raise FileNotFoundError(f"設定ファイルが見つかりません: {resolved_path}")
@@ -69,11 +67,7 @@ class ConfigValidator:
                 raise FileNotFoundError(f"設定ファイルが見つかりません: {resolved_path}")
             with open(resolved_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
-            result = (
-                ModelRegistryModel(**data["model_registry"])
-                if "model_registry" in data
-                else ModelRegistryModel()
-            )
+            result = ModelRegistryModel(**data["model_registry"]) if "model_registry" in data else ModelRegistryModel()
             logger.debug(f"[LOAD] models.yaml loaded: planning={result.planning}")
             return result
         except Exception as e:
@@ -85,17 +79,13 @@ class ConfigValidator:
         path: str = "autonovel/config/system_plugins.yaml",
     ) -> SystemPluginsModel:
         resolved_path = ConfigValidator._resolve_config_path(path)
-        logger.debug(
-            f"[LOAD] ConfigValidator.load_system_plugins_yaml() called from: path={resolved_path}"
-        )
+        logger.debug(f"[LOAD] ConfigValidator.load_system_plugins_yaml() called from: path={resolved_path}")
         try:
             if not resolved_path.exists():
                 raise FileNotFoundError(f"設定ファイルが見つかりません: {resolved_path}")
             with open(resolved_path, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
-            result = (
-                SystemPluginsModel(**data["plugins"]) if "plugins" in data else SystemPluginsModel()
-            )
+            result = SystemPluginsModel(**data["plugins"]) if "plugins" in data else SystemPluginsModel()
             logger.debug("[LOAD] system_plugins.yaml loaded")
             return result
         except Exception as e:
@@ -130,9 +120,7 @@ class ConfigValidator:
         path: str = "autonovel/config/interaction_matrix.yaml",
     ) -> InteractionMatrixModel:
         resolved_path = ConfigValidator._resolve_config_path(path)
-        logger.debug(
-            f"[LOAD] ConfigValidator.load_interaction_matrix_yaml() called from: path={resolved_path}"
-        )
+        logger.debug(f"[LOAD] ConfigValidator.load_interaction_matrix_yaml() called from: path={resolved_path}")
         try:
             if not resolved_path.exists():
                 raise FileNotFoundError(f"設定ファイルが見つかりません: {resolved_path}")
@@ -148,9 +136,7 @@ class ConfigValidator:
     @staticmethod
     def load_domain_profile_json(path: str) -> DomainProfileModel:
         resolved_path = ConfigValidator._resolve_config_path(path)
-        logger.debug(
-            f"[LOAD] ConfigValidator.load_domain_profile_json() called from: path={resolved_path}"
-        )
+        logger.debug(f"[LOAD] ConfigValidator.load_domain_profile_json() called from: path={resolved_path}")
         try:
             if not resolved_path.exists():
                 raise FileNotFoundError(f"ドメインプロファイルが見つかりません: {resolved_path}")
@@ -193,12 +179,8 @@ class ConfigValidator:
                 return default_factory()
 
         # 1. 個別ファイルをロード
-        settings_model = _safe_load(
-            ConfigValidator.load_settings_toml, lambda: GlobalConfigModel(), "settings.toml"
-        )
-        models = _safe_load(
-            ConfigValidator.load_models_yaml, lambda: ModelRegistryModel(), "models.yaml"
-        )
+        settings_model = _safe_load(ConfigValidator.load_settings_toml, lambda: GlobalConfigModel(), "settings.toml")
+        models = _safe_load(ConfigValidator.load_models_yaml, lambda: ModelRegistryModel(), "models.yaml")
         plugins = _safe_load(
             ConfigValidator.load_system_plugins_yaml,
             lambda: SystemPluginsModel(),

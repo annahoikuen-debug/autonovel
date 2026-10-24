@@ -13,6 +13,7 @@ H1 M1 でこのモジュールの ``check_database`` を書き換えた际、
 どちらも「mock を 넣으면緑」で素の呼び出し paths는 緑にならないため、
 このテストは **mock を使わない**。
 """
+
 from __future__ import annotations
 
 from src.services.resilience import _sync_engine_url, check_database, get_system_status
@@ -41,9 +42,7 @@ def test_check_database_does_not_create_an_event_loop():
     policy = asyncio.events.get_event_loop_policy()
     after = getattr(policy, "_local", None)
     loop_after = getattr(after, "loop", None) if after is not None else None
-    assert loop_after is loop_before, (
-        f"check_database がイベントループを生成した: {loop_before!r} -> {loop_after!r}"
-    )
+    assert loop_after is loop_before, f"check_database がイベントループを生成した: {loop_before!r} -> {loop_after!r}"
 
 
 def test_get_system_status_reports_database_ok():
@@ -58,12 +57,8 @@ def test_get_system_status_reports_database_ok():
 def test_sync_engine_url_drops_the_async_driver():
     from sqlalchemy.engine import make_url
 
-    assert _sync_engine_url(
-        make_url("sqlite+aiosqlite:///./x.db")
-    ).get_backend_name() == "sqlite"
-    assert _sync_engine_url(
-        make_url("postgresql+asyncpg://u:p@h/db")
-    ).get_backend_name() == "postgresql"
+    assert _sync_engine_url(make_url("sqlite+aiosqlite:///./x.db")).get_backend_name() == "sqlite"
+    assert _sync_engine_url(make_url("postgresql+asyncpg://u:p@h/db")).get_backend_name() == "postgresql"
 
 
 def test_check_database_returns_error_instead_of_raising_when_db_is_broken(monkeypatch):
@@ -74,7 +69,5 @@ def test_check_database_returns_error_instead_of_raising_when_db_is_broken(monke
         class engine:  # noqa: N801
             url = "not-a-url"
 
-    monkeypatch.setattr(
-        container_mod.AppContainer, "db", staticmethod(lambda: _BrokenManager())
-    )
+    monkeypatch.setattr(container_mod.AppContainer, "db", staticmethod(lambda: _BrokenManager()))
     assert check_database() == "error"

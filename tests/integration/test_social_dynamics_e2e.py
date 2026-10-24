@@ -1,4 +1,5 @@
 """E2E Integration Test for Character Social Dynamics (Step 65)."""
+
 from __future__ import annotations
 
 import pytest
@@ -25,6 +26,7 @@ async def test_social_dynamics_lifecycle_e2e():
     book_id = 8888
     async with db.get_session() as session:
         from sqlalchemy import select
+
         res = await session.execute(select(Book).where(Book.id == book_id))
         if not res.scalar_one_or_none():
             session.add(Book(id=book_id, title="E2E Novel", genre="fantasy"))
@@ -97,6 +99,7 @@ async def test_social_dynamics_lifecycle_e2e():
         async with db.get_session() as session:
             from sqlalchemy import delete
             from src.backend.database.models import CharacterRelationship
+
             await session.execute(delete(CharacterRelationship).where(CharacterRelationship.book_id == book_id))
             await session.execute(delete(Book).where(Book.id == book_id))
             await session.commit()

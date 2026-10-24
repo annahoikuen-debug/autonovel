@@ -5,6 +5,7 @@
 - MarketingService: 作品データのパッケージング・エクスポート
 - スコアラー: CTR / キャッチフレーズ
 """
+
 from src.agents.marketing import MarketingAgent
 from src.services.marketing.export_package import MarketingService, DEFAULT_FALLBACK
 from src.services.marketing.ctr_scorer import score_title_ctr

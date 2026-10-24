@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field
 
+
 class CharacterVoiceProfile(BaseModel):
     character_name: str
     first_person: list[str] = Field(..., description="一人称 (例: ['俺', 'オレ'])")

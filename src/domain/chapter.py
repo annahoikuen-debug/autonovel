@@ -13,16 +13,10 @@ class ChapterBase(BaseModel):
     ep_num: int = Field(..., ge=1, description="エピソード番号")
     title: str = Field(..., min_length=1, max_length=200, description="章タイトル")
     content: str = Field(default="", description="本文内容")
-    status: str = Field(
-        default="draft", pattern=r"^(draft|writing|completed|archived)$", description="ステータス"
-    )
+    status: str = Field(default="draft", pattern=r"^(draft|writing|completed|archived)$", description="ステータス")
     word_count: int = Field(default=0, ge=0, description="文字数")
-    created_at: float = Field(
-        default_factory=lambda: datetime.now().timestamp(), description="作成日時"
-    )
-    updated_at: float = Field(
-        default_factory=lambda: datetime.now().timestamp(), description="更新日時"
-    )
+    created_at: float = Field(default_factory=lambda: datetime.now().timestamp(), description="作成日時")
+    updated_at: float = Field(default_factory=lambda: datetime.now().timestamp(), description="更新日時")
 
 
 class ChapterCreate(BaseModel):

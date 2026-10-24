@@ -23,4 +23,5 @@ def test_age_client_deprecation_warning():
     """Verify importing age_client emits a DeprecationWarning."""
     with pytest.deprecated_call():
         import src.services.age_client
+
         importlib.reload(src.services.age_client)

@@ -76,9 +76,7 @@ async def plan_generation(
     from src.backend.tasks import execute_service_workflow
 
     task_id = generate_task_id("plan_gen")
-    await _create_task(
-        task_id, "企画作成を開始中...", total_steps=1, user_id=getattr(current_user, "id", None)
-    )
+    await _create_task(task_id, "企画作成を開始中...", total_steps=1, user_id=getattr(current_user, "id", None))
     execute_service_workflow(
         task_id=task_id,
         api_key=req.api_key,
@@ -326,7 +324,6 @@ async def wizard_save(
     return {"book_id": book_id, "branch_id": 1, "success": True}
 
 
-
 @router.post("/expand-beats", response_model=list[BeatItemSchema])
 async def expand_commercial_beats(
     req: ExpandBeatsRequest,
@@ -346,8 +343,7 @@ async def expand_commercial_beats(
     )
     spine_summary = build_spine_summary(spine)
     beat_plan = "\n".join(
-        f"{i + 1}. 第{b.ep_start}-{b.ep_end}話 / {b.label}: {b.duty}"
-        for i, b in enumerate(spine.beats)
+        f"{i + 1}. 第{b.ep_start}-{b.ep_end}話 / {b.label}: {b.duty}" for i, b in enumerate(spine.beats)
     )
 
     llm = LLMGateway()

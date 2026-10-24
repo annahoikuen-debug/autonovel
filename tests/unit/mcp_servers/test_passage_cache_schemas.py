@@ -1,4 +1,5 @@
 """Unit tests for passage cache schemas."""
+
 from __future__ import annotations
 
 from src.mcp_servers.passage_cache_schemas import (
@@ -13,7 +14,7 @@ def test_passage_cache_schemas_instantiation():
         passage_id="p1",
         intent="Hero enters tavern",
         body="The wooden door creaked open, smelling of ale.",
-        tags=["tavern", "opening"]
+        tags=["tavern", "opening"],
     )
     assert passage.passage_id == "p1"
     assert passage.hit_count == 0

@@ -1,4 +1,5 @@
 """Tool execution handler with error handling and dispatching."""
+
 from __future__ import annotations
 
 import logging
@@ -36,6 +37,7 @@ class ToolHandler:
             args = call.get("arguments") or (call.get("function", {}).get("arguments", {}))
             if isinstance(args, str):
                 import json
+
                 try:
                     args = json.loads(args)
                 except Exception:

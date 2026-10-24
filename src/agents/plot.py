@@ -54,6 +54,7 @@ class PlotAgent(SkillAgent):
 
         # Parse the JSON response
         import json
+
         try:
             response_data = json.loads(result)
             beats = response_data.get("beats", [])
@@ -190,9 +191,7 @@ class PlotAgent(SkillAgent):
             # ----- リトライ -----
             if attempt < max_retries - 1:
                 if reporter:
-                    reporter.report(
-                        f"🔄 {ep_num}話: 監査不合格、リトライ {attempt + 2}/{max_retries}", "info"
-                    )
+                    reporter.report(f"🔄 {ep_num}話: 監査不合格、リトライ {attempt + 2}/{max_retries}", "info")
 
                 # 修正指示付きで再生成
                 retry_result = await self._expand_single_plot(
@@ -210,9 +209,7 @@ class PlotAgent(SkillAgent):
                     continue
 
         # ----- 最大リトライ超過 -----
-        raise RuntimeError(
-            f"{ep_num}話: 監査リトライ最大回数({max_retries})を超過。最終エラー: {last_error_summary}"
-        )
+        raise RuntimeError(f"{ep_num}話: 監査リトライ最大回数({max_retries})を超過。最終エラー: {last_error_summary}")
 
     async def _run_audits(
         self,
@@ -322,9 +319,7 @@ class PlotAgent(SkillAgent):
         try:
             async with self._uow_factory():
                 if reporter:
-                    reporter.report(
-                        f"💾 データベースを更新中... (第{start_ep}話以降のアーカイブ/保存)", "info"
-                    )
+                    reporter.report(f"💾 データベースを更新中... (第{start_ep}話以降のアーカイブ/保存)", "info")
 
                 # 古いプロットを削除
                 if hasattr(self.repo, "archive_plots_from"):
@@ -367,9 +362,7 @@ class PlotAgent(SkillAgent):
         Returns:
             過去文脈文字列
         """
-        past_plots = await self.repo.get_plots_between(
-            branch_id, 1, start_ep - 1, book_id=book_id
-        )
+        past_plots = await self.repo.get_plots_between(branch_id, 1, start_ep - 1, book_id=book_id)
         if not past_plots:
             return "【過去文脈】\n過去のプロットはありません。\n"
 
@@ -478,9 +471,7 @@ class PlotAgent(SkillAgent):
             )
             return AgentResult(
                 next_agent=AgentName.BIBLE,
-                artifacts={
-                    "plots": [p.model_dump() if hasattr(p, "model_dump") else p for p in plots]
-                },
+                artifacts={"plots": [p.model_dump() if hasattr(p, "model_dump") else p for p in plots]},
             )
         except Exception as e:
             return AgentResult(

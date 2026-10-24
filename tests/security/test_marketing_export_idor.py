@@ -24,6 +24,7 @@ async def export_package_post(book_id: int, req: MarketingExportRequest):
 `tests/security/test_idor_regression.py` は静的ゲート（ガード呼び出しの有無）であり、
 ここでは実際にリクエストを飛ばして応答コードを確認する。
 """
+
 from __future__ import annotations
 
 import pytest
@@ -40,9 +41,7 @@ def export_client(real_db_manager, monkeypatch):
     from src.backend.database.core import DatabaseManager
     from src.core.container import AppContainer
 
-    AppContainer.db.override(
-        providers.Object(DatabaseManager(os.environ["DATABASE_URL"]))
-    )
+    AppContainer.db.override(providers.Object(DatabaseManager(os.environ["DATABASE_URL"])))
     from src.backend.server import app
 
     yield TestClient(app)
@@ -91,9 +90,7 @@ def _patch_engine(monkeypatch):
 
     fake_zip = b"PK\x03\x04"
     fake_engine = MagicMock()
-    fake_engine.marketing.create_export_package = AsyncMock(
-        return_value=(fake_zip, "export.zip")
-    )
+    fake_engine.marketing.create_export_package = AsyncMock(return_value=(fake_zip, "export.zip"))
     monkeypatch.setattr(marketing_router, "get_engine", lambda *a, **k: fake_engine)
     return fake_engine
 
@@ -119,21 +116,15 @@ class TestExportPackageOwnershipEnforced:
         """自分の作品なら 200。"""
         _patch_user(monkeypatch, 1)
         _patch_engine(monkeypatch)
-        resp = export_client.post(
-            "/api/marketing/export_package/1", json={"api_key": "k"}
-        )
+        resp = export_client.post("/api/marketing/export_package/1", json={"api_key": "k"})
         assert resp.status_code == 200, resp.text
 
     def test_non_owner_is_rejected(self, export_client, books, monkeypatch) -> None:
         """他人の作品は 403。IDOR の核心。"""
         _patch_user(monkeypatch, 1)
         engine = _patch_engine(monkeypatch)
-        resp = export_client.post(
-            "/api/marketing/export_package/2", json={"api_key": "k"}
-        )
-        assert resp.status_code == 403, (
-            f"他人の作品にアクセスできてしまう: {resp.status_code} {resp.text}"
-        )
+        resp = export_client.post("/api/marketing/export_package/2", json={"api_key": "k"})
+        assert resp.status_code == 403, f"他人の作品にアクセスできてしまう: {resp.status_code} {resp.text}"
         assert not engine.marketing.create_export_package.called, (
             "権限チェックを通過する前にエクスポート本体が呼ばれている"
         )
@@ -142,14 +133,10 @@ class TestExportPackageOwnershipEnforced:
         """存在しない book_id は 404。総当たり走査で何も抜けない。"""
         _patch_user(monkeypatch, 1)
         _patch_engine(monkeypatch)
-        resp = export_client.post(
-            "/api/marketing/export_package/99999", json={"api_key": "k"}
-        )
+        resp = export_client.post("/api/marketing/export_package/99999", json={"api_key": "k"})
         assert resp.status_code == 404, resp.text
 
-    def test_get_and_post_enforce_ownership_consistently(
-        self, export_client, books, monkeypatch
-    ) -> None:
+    def test_get_and_post_enforce_ownership_consistently(self, export_client, books, monkeypatch) -> None:
         """GET 版と POST 版が同じ判定を返すこと。
 
         修正前は GET のみ検証され POST は素通しだったため、
@@ -157,14 +144,8 @@ class TestExportPackageOwnershipEnforced:
         """
         _patch_user(monkeypatch, 1)
         _patch_engine(monkeypatch)
-        post = export_client.post(
-            "/api/marketing/export_package/2", json={"api_key": "k"}
-        )
-        get = export_client.get(
-            "/api/marketing/export_package/2", headers={"X-API-Key": "k"}
-        )
+        post = export_client.post("/api/marketing/export_package/2", json={"api_key": "k"})
+        get = export_client.get("/api/marketing/export_package/2", headers={"X-API-Key": "k"})
         assert post.status_code in (403, 404), post.status_code
         assert get.status_code in (403, 404), get.status_code
-        assert post.status_code == get.status_code, (
-            f"GET({get.status_code}) と POST({post.status_code}) の判定が異なる"
-        )
+        assert post.status_code == get.status_code, f"GET({get.status_code}) と POST({post.status_code}) の判定が異なる"

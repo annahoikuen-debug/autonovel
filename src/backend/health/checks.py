@@ -38,9 +38,7 @@ async def check_database(db_manager) -> HealthCheckResult:
         pool = db_manager.engine.pool
         checked_in = pool.checkedin() if hasattr(pool, "checkedin") else 0
         pool_size = pool.size() if hasattr(pool, "size") else 0
-        return HealthCheckResult(
-            status=HealthStatus.OK, latency_ms=latency, details=f"pool={checked_in}/{pool_size}"
-        )
+        return HealthCheckResult(status=HealthStatus.OK, latency_ms=latency, details=f"pool={checked_in}/{pool_size}")
     except Exception as e:
         logger.warning(f"DB health check failed: {e}")
         return HealthCheckResult(status=HealthStatus.ERROR, error=str(e))
@@ -49,9 +47,7 @@ async def check_database(db_manager) -> HealthCheckResult:
 async def check_redis(redis_url: str | None) -> HealthCheckResult:
     """Redis PING + INFO clients"""
     if not redis_url:
-        return HealthCheckResult(
-            status=HealthStatus.NOT_CONFIGURED, error="REDIS_URL not configured"
-        )
+        return HealthCheckResult(status=HealthStatus.NOT_CONFIGURED, error="REDIS_URL not configured")
     start = time.perf_counter()
     try:
         import redis.asyncio as redis
@@ -80,9 +76,7 @@ async def check_chromadb() -> HealthCheckResult:
         # dependency_injector's provided instance
         provider = AppContainer.chroma_client_provider()
         if not provider:
-            return HealthCheckResult(
-                status=HealthStatus.NOT_CONFIGURED, error="ChromaDB provider not initialized"
-            )
+            return HealthCheckResult(status=HealthStatus.NOT_CONFIGURED, error="ChromaDB provider not initialized")
 
         # If it's a Singleton provider object, evaluate it (call it) to get the instance
         if hasattr(provider, "__call__") and not hasattr(provider, "get_client"):
@@ -90,9 +84,7 @@ async def check_chromadb() -> HealthCheckResult:
 
         client = provider.get_client() if hasattr(provider, "get_client") else provider
         if not client:
-            return HealthCheckResult(
-                status=HealthStatus.NOT_CONFIGURED, error="ChromaDB client not initialized"
-            )
+            return HealthCheckResult(status=HealthStatus.NOT_CONFIGURED, error="ChromaDB client not initialized")
 
         # Safely call heartbeat
         try:
@@ -109,9 +101,7 @@ async def check_chromadb() -> HealthCheckResult:
             pass
 
         latency = (time.perf_counter() - start) * 1000
-        return HealthCheckResult(
-            status=HealthStatus.OK, latency_ms=latency, details=f"collections={len(collections)}"
-        )
+        return HealthCheckResult(status=HealthStatus.OK, latency_ms=latency, details=f"collections={len(collections)}")
     except Exception as e:
         logger.warning(f"ChromaDB health check failed: {e}")
         return HealthCheckResult(status=HealthStatus.ERROR, error=str(e))
@@ -125,9 +115,7 @@ async def check_llm_gateway(api_key: str | None) -> HealthCheckResult:
 
     # ヘルスチェックでの LLM 呼び出しは既定で無効（実 API コールは費用が発生するため）
     # 環境変数 KAKU_HEALTH_CHECK_LLM=true で明示的に有効化できる
-    if not settings.HEALTH_CHECK_LLM_PROBE and os.getenv(
-        "KAKU_HEALTH_CHECK_LLM", "false"
-    ).lower() != "true":
+    if not settings.HEALTH_CHECK_LLM_PROBE and os.getenv("KAKU_HEALTH_CHECK_LLM", "false").lower() != "true":
         return HealthCheckResult(
             status=HealthStatus.NOT_CONFIGURED,
             details="LLM check disabled (set HEALTH_CHECK_LLM_PROBE=true to enable)",
@@ -146,9 +134,7 @@ async def check_llm_gateway(api_key: str | None) -> HealthCheckResult:
             cooldown=AdaptiveCooldown(base_sec=60.0, min_sec=60.0, max_sec=60.0, name="healthcheck"),
         )
         model_name = settings.GEMINI_MODEL
-        result = await factory.generate_text(
-            model=model_name, prompt="ping", max_tokens=1, temperature=0.0
-        )
+        result = await factory.generate_text(model=model_name, prompt="ping", max_tokens=1, temperature=0.0)
         latency = (time.perf_counter() - start) * 1000
         return HealthCheckResult(
             status=HealthStatus.OK if result else HealthStatus.ERROR,
@@ -166,13 +152,7 @@ async def check_worker() -> HealthCheckResult:
         from src.backend.tasks import huey
 
         backend_class = huey.backend.__class__.__name__ if hasattr(huey, "backend") else "unknown"
-        huey_backend = (
-            "redis"
-            if "Redis" in backend_class
-            else "sqlite"
-            if "Sqlite" in backend_class
-            else "unknown"
-        )
+        huey_backend = "redis" if "Redis" in backend_class else "sqlite" if "Sqlite" in backend_class else "unknown"
         queue_depth = huey.pending_count()
         return HealthCheckResult(
             status=HealthStatus.OK,
@@ -193,8 +173,7 @@ async def check_enrichment_agent() -> HealthCheckResult:
         # 機能フラグチェック
         if not settings.ENRICHMENT_ENABLED:
             return HealthCheckResult(
-                status=HealthStatus.NOT_CONFIGURED,
-                details="Enrichment disabled via ENRICHMENT_ENABLED=false"
+                status=HealthStatus.NOT_CONFIGURED, details="Enrichment disabled via ENRICHMENT_ENABLED=false"
             )
 
         # 依存コンポーネントチェック
@@ -202,6 +181,7 @@ async def check_enrichment_agent() -> HealthCheckResult:
 
         # LLM 可用性
         from src.backend.config import settings as backend_settings
+
         if not backend_settings.GEMINI_API_KEY or backend_settings.GEMINI_API_KEY == "DUMMY":
             issues.append("GEMINI_API_KEY not configured")
 
@@ -212,6 +192,7 @@ async def check_enrichment_agent() -> HealthCheckResult:
             else:
                 # 簡易チェック: プロンプトテンプレート読み込み
                 from prompts.enrichment.trivia_insertion import TRIVIA_INSERTION_PROMPT
+
                 if not TRIVIA_INSERTION_PROMPT:
                     issues.append("Trivia prompt template not loaded")
         except Exception as e:

@@ -2,6 +2,7 @@ import asyncio
 from src.core.llm.types import LLMRequest
 from src.core.llm.adapters.mock_unified_client import UnifiedMockLLMClient
 
+
 def test_mock_client():
     client = UnifiedMockLLMClient("Hello")
     req = LLMRequest(prompt="hi")

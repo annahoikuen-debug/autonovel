@@ -1,4 +1,5 @@
 """MCP Agent Bridge - Connecting core agents (WritingAgent, AuditAgent) with deterministic tool providers."""
+
 from __future__ import annotations
 
 import logging

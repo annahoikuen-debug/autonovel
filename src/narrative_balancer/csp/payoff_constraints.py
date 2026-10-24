@@ -32,7 +32,7 @@ class PayoffConstraintBuilder(ConstraintBuilder):
             # If setup[i] is true, there must be at least one payoff in [i + 1, min(n, i + max_dist + 1)]
             if i + 1 < n:
                 window_end = min(n, i + max_dist + 1)
-                payoffs_in_window = vars.payoff[i + 1:window_end]
+                payoffs_in_window = vars.payoff[i + 1 : window_end]
                 if payoffs_in_window:
                     # setup[i] => sum(payoffs_in_window) >= 1
                     model.Add(sum(payoffs_in_window) >= 1).OnlyEnforceIf(vars.setup[i])

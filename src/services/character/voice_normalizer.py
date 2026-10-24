@@ -2,6 +2,7 @@ import re
 from src.services.character.voice_linter import VoiceLinter
 from src.models.character_voice_profile import CharacterVoiceProfile
 
+
 class VoiceNormalizer:
     """セリフの自動修復サービス"""
 
@@ -36,6 +37,6 @@ class VoiceNormalizer:
             if not any(dialogue.endswith(e) for e in known_endings):
                 # 句点を除去して語尾を追加（既存の語尾っぽいものを除外）
                 # 本当はより高度な形態素解析が必要
-                dialogue = re.sub(r'([。！？])$', '', dialogue) + target_ending
+                dialogue = re.sub(r"([。！？])$", "", dialogue) + target_ending
 
         return dialogue

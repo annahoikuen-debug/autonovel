@@ -1,5 +1,6 @@
 # src/agents/skills/v1/easy_mode_illustration.py
 """easy_mode 専用 IllustrationSkill - 簡易挿絵生成"""
+
 from __future__ import annotations
 
 import logging

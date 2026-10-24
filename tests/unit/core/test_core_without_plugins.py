@@ -59,10 +59,7 @@ class TestCoreWithoutPlugins:
         sys.modules.pop("src.backend.server", None)
         sys.modules.pop("src.core.plugin_registry", None)
         server = importlib.import_module("src.backend.server")
-        has_multimedia = any(
-            getattr(route, "path", "").startswith("/multimedia")
-            for route in server.app.routes
-        )
+        has_multimedia = any(getattr(route, "path", "").startswith("/multimedia") for route in server.app.routes)
         assert has_multimedia is False
 
     def test_multimedia_plugin_not_loaded(self, all_plugins_disabled):

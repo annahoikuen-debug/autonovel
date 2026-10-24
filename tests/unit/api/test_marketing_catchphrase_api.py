@@ -113,9 +113,7 @@ async def test_generate_catchphrases_with_llm_mock():
         patch("prompts.manager.PromptManager") as mock_pm_class,
     ):
         mock_pm = MagicMock()
-        mock_pm.build_viral_catchphrase_prompt = AsyncMock(
-            return_value="キャッチコピー生成プロンプト"
-        )
+        mock_pm.build_viral_catchphrase_prompt = AsyncMock(return_value="キャッチコピー生成プロンプト")
         mock_pm_class.return_value = mock_pm
 
         mock_container = MagicMock()

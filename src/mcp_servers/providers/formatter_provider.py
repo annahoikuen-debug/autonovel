@@ -1,4 +1,5 @@
 """Novel Formatting & Multi-Platform Linting Provider for MCP Server (Proposal 9)."""
+
 from __future__ import annotations
 
 import re
@@ -12,6 +13,7 @@ from src.services.formatters.platform_formatter import PlatformFormatter
 @dataclass
 class LintIssue:
     """リント検出項目"""
+
     issue_type: str
     message: str
     severity: str  # error, warning, info
@@ -23,6 +25,7 @@ class LintIssue:
 @dataclass
 class FormattedNovelResult:
     """整形・リント結果"""
+
     formatted_text: str
     original_length: int
     formatted_length: int
@@ -101,7 +104,7 @@ class NovelFormatterProvider:
         for match in re.finditer(r"…+|―+|―+", text):
             chunk = match.group(0)
             if len(chunk) % 2 != 0:
-                line_no = text[:match.start()].count("\n") + 1
+                line_no = text[: match.start()].count("\n") + 1
                 issues.append(
                     LintIssue(
                         issue_type="odd_ellipses",
@@ -130,7 +133,7 @@ class NovelFormatterProvider:
         # 4. 地の文の全角インデント漏れ
         for i, line in enumerate(lines, 1):
             s = line.strip()
-            if s and not s.startswith(("「", "『", "（", "(", "【", "［", "[", "〈", "《", "“", "\"")):
+            if s and not s.startswith(("「", "『", "（", "(", "【", "［", "[", "〈", "《", "“", '"')):
                 if not line.startswith("　"):
                     issues.append(
                         LintIssue(
@@ -186,12 +189,8 @@ class NovelFormatterProvider:
         target_platform = self._normalize_platform(platform)
 
         formatted_content = self.format_novel(content, platform).formatted_text
-        formatted_foreword = (
-            self.format_novel(foreword, platform).formatted_text if foreword else ""
-        )
-        formatted_afterword = (
-            self.format_novel(afterword, platform).formatted_text if afterword else ""
-        )
+        formatted_foreword = self.format_novel(foreword, platform).formatted_text if foreword else ""
+        formatted_afterword = self.format_novel(afterword, platform).formatted_text if afterword else ""
 
         # タイトル長チェック
         limit_warnings = PlatformFormatter.validate_limits(title, "", target_platform)

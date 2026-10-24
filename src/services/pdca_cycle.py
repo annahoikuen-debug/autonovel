@@ -79,25 +79,25 @@ class ClosedLoopPDCARunner:
         await self.aggregator.run_all(ctx)
         initial_audit = self.aggregator.aggregate(genre=genre)
         initial_score = (
-            initial_audit.calibrated_overall
-            if initial_audit.calibrated_overall is not None
-            else initial_audit.overall
+            initial_audit.calibrated_overall if initial_audit.calibrated_overall is not None else initial_audit.overall
         )
 
         current_score = initial_score
         best_draft = current_draft
         best_score = current_score
 
-        history.append({
-            "cycle": 0,
-            "draft_chars": len(current_draft),
-            "score": round(current_score, 2),
-            "scores_by_specialist": dict(initial_audit.by_specialist),
-            "calibrated_scores": dict(initial_audit.calibrated_by_specialist),
-            "lowest_dimension": initial_audit.lowest_dimension(),
-            "directives_count": 0,
-            "delta": 0.0,
-        })
+        history.append(
+            {
+                "cycle": 0,
+                "draft_chars": len(current_draft),
+                "score": round(current_score, 2),
+                "scores_by_specialist": dict(initial_audit.by_specialist),
+                "calibrated_scores": dict(initial_audit.calibrated_by_specialist),
+                "lowest_dimension": initial_audit.lowest_dimension(),
+                "directives_count": 0,
+                "delta": 0.0,
+            }
+        )
 
         converged = current_score >= self.target_score
 
@@ -120,13 +120,13 @@ class ClosedLoopPDCARunner:
                 for target in target_paras:
                     idx = target.index
                     # Get context: previous and next paragraphs
-                    prev_para = indexed_paras[idx - 1]['text'] if idx > 0 else ""
-                    next_para = indexed_paras[idx + 1]['text'] if idx < len(indexed_paras) - 1 else ""
+                    prev_para = indexed_paras[idx - 1]["text"] if idx > 0 else ""
+                    next_para = indexed_paras[idx + 1]["text"] if idx < len(indexed_paras) - 1 else ""
                     context = {
-                        'prev_paragraph': prev_para,
-                        'next_paragraph': next_para,
-                        'directive': target.directive,
-                        'issue_category': target.issue_category,
+                        "prev_paragraph": prev_para,
+                        "next_paragraph": next_para,
+                        "directive": target.directive,
+                        "issue_category": target.issue_category,
                     }
                     # Rewrite the paragraph
                     patch_result = await self.patch_agent.rewrite_paragraph(target, context)
@@ -147,6 +147,7 @@ class ClosedLoopPDCARunner:
                 ctx["lowest_dimension"] = lowest_dim
 
                 import inspect
+
                 if inspect.iscoroutinefunction(self.writer):
                     new_draft = await self.writer(ctx)
                 else:
@@ -165,11 +166,7 @@ class ClosedLoopPDCARunner:
             # E. Re-audit the new draft
             await self.aggregator.run_all(ctx)
             re_audit = self.aggregator.aggregate(genre=genre)
-            new_score = (
-                re_audit.calibrated_overall
-                if re_audit.calibrated_overall is not None
-                else re_audit.overall
-            )
+            new_score = re_audit.calibrated_overall if re_audit.calibrated_overall is not None else re_audit.overall
 
             delta = round(new_score - current_score, 2)
             current_score = new_score
@@ -178,21 +175,24 @@ class ClosedLoopPDCARunner:
                 best_score = current_score
                 best_draft = current_draft
 
-            history.append({
-                "cycle": cycle,
-                "draft_chars": len(current_draft),
-                "score": round(new_score, 2),
-                "scores_by_specialist": dict(re_audit.by_specialist),
-                "calibrated_scores": dict(re_audit.calibrated_by_specialist),
-                "lowest_dimension": re_audit.lowest_dimension(),
-                "directives_count": len(target_paras),  # Number of paragraphs patched
-                "delta": delta,
-            })
+            history.append(
+                {
+                    "cycle": cycle,
+                    "draft_chars": len(current_draft),
+                    "score": round(new_score, 2),
+                    "scores_by_specialist": dict(re_audit.by_specialist),
+                    "calibrated_scores": dict(re_audit.calibrated_by_specialist),
+                    "lowest_dimension": re_audit.lowest_dimension(),
+                    "directives_count": len(target_paras),  # Number of paragraphs patched
+                    "delta": delta,
+                }
+            )
 
             # Real-time event broadcast for live score monitor
             try:
                 from src.backend.websocket.pipeline_hub import pipeline_event_hub
                 from src.backend.schemas.pipeline_events import PipelineEvent
+
                 await pipeline_event_hub.broadcast(
                     PipelineEvent(
                         event_type="score_updated",
@@ -209,9 +209,10 @@ class ClosedLoopPDCARunner:
                                     "original_quote": d.original_quote,
                                     "improved_suggestion": d.improved_suggestion,
                                     "rationale": d.rationale,
-                                } for d in getattr(re_audit, "actionable_diffs", [])
+                                }
+                                for d in getattr(re_audit, "actionable_diffs", [])
                             ],
-                        }
+                        },
                     )
                 )
             except Exception:
@@ -287,6 +288,7 @@ class ClosedLoopPDCARunner:
         if self.event_bus:
             try:
                 from src.agents.event_bus import AgentEvent
+
                 await self.event_bus.publish_async(
                     AgentEvent(
                         agent="audit.pdca",
@@ -310,6 +312,7 @@ class ClosedLoopPDCARunner:
         try:
             from src.backend.websocket.pipeline_hub import pipeline_event_hub
             from src.backend.schemas.pipeline_events import PipelineEvent
+
             await pipeline_event_hub.broadcast(
                 PipelineEvent(
                     event_type="pdca_cycle",
@@ -323,7 +326,7 @@ class ClosedLoopPDCARunner:
                         "cycles_run": result.cycle_number,
                         "converged": result.converged,
                         "history": result.history,
-                    }
+                    },
                 )
             )
         except Exception:

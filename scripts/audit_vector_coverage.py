@@ -7,6 +7,7 @@ Usage:
     0  全コレクション成功
     1  失敗あり
 """
+
 from __future__ import annotations
 
 import argparse

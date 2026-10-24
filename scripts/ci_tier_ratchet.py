@@ -22,6 +22,7 @@
 Tier1 全体を起動すると自身を含めて再帰する。2026-10-03 に実際に
 プロセスを爆発させた実例がある）。CI から直接実行する。
 """
+
 from __future__ import annotations
 
 import argparse
@@ -74,11 +75,15 @@ def run_tier1_isolated() -> tuple[set[str], list[str]]:
     for path in files:
         proc = subprocess.run(
             [
-                sys.executable, "-m", "pytest",
+                sys.executable,
+                "-m",
+                "pytest",
                 str(path).replace("\\", "/"),
-                "-q", "--tb=no",
+                "-q",
+                "--tb=no",
                 "--continue-on-collection-errors",
-                "-p", "no:cacheprovider",
+                "-p",
+                "no:cacheprovider",
                 "--timeout=300",
             ],
             capture_output=True,
@@ -110,11 +115,15 @@ def run_tier1() -> tuple[int, set[str]]:
     """
     proc = subprocess.run(
         [
-            sys.executable, "-m", "pytest",
+            sys.executable,
+            "-m",
+            "pytest",
             *TIER1_PATHS,
-            "-q", "--tb=no",
+            "-q",
+            "--tb=no",
             "--continue-on-collection-errors",
-            "-p", "no:cacheprovider",
+            "-p",
+            "no:cacheprovider",
             "--timeout=300",
         ],
         capture_output=True,
@@ -251,8 +260,7 @@ def main() -> int:
 
     if not BASELINE.exists():
         print(
-            f"FAIL: ベースライン {BASELINE} が存在しない。"
-            "先に `--update` で作成すること",
+            f"FAIL: ベースライン {BASELINE} が存在しない。先に `--update` で作成すること",
             file=sys.stderr,
         )
         return 1
@@ -267,8 +275,7 @@ def main() -> int:
 
     if new_failures:
         print(
-            "FAIL: Tier1 に新たな失敗ファイルが "
-            f"{len(new_failures)} 件発生しました（= 新しい回帰）:",
+            f"FAIL: Tier1 に新たな失敗ファイルが {len(new_failures)} 件発生しました（= 新しい回帰）:",
             file=sys.stderr,
         )
         for f in new_failures:

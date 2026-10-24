@@ -1,4 +1,5 @@
 """下位互換性維持のためのシム。実体は src.services.audit.adapter に移動しました。"""
+
 import warnings
 
 warnings.warn(

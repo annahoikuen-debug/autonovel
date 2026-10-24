@@ -10,9 +10,7 @@ from typing import Any
 class TraceContext:
     """Trace context for request correlation."""
 
-    _current_trace_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-        "_current_trace_id", default=None
-    )
+    _current_trace_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("_current_trace_id", default=None)
 
     @classmethod
     def get_trace_id(cls) -> str:

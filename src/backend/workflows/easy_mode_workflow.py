@@ -30,7 +30,9 @@ class EasyModeWorkflow(BaseWorkflow):
     統合パイプライン (AutoWorkflowPipeline) に委譲。
     """
 
-    async def _save_checkpoint(self, book_id: int, last_completed_ep: int, compressed_context: dict[str, Any] | None = None) -> None:
+    async def _save_checkpoint(
+        self, book_id: int, last_completed_ep: int, compressed_context: dict[str, Any] | None = None
+    ) -> None:
         """チェックポイントを保存する"""
         checkpoint_data = {
             "last_completed_ep": last_completed_ep,
@@ -108,7 +110,9 @@ class EasyModeWorkflow(BaseWorkflow):
                         # 開始位置を調整（ただし、end_epが指定されている場合はそれを尊重）
                         adjusted_start_ep = max_completed_ep + 1
                         if end_ep is None or adjusted_start_ep <= end_ep:
-                            logger.info(f"Resuming from episode {adjusted_start_ep} (completed {max_completed_ep} episodes)")
+                            logger.info(
+                                f"Resuming from episode {adjusted_start_ep} (completed {max_completed_ep} episodes)"
+                            )
                             ctx.start_ep = adjusted_start_ep
                         else:
                             logger.info(f"All episodes already completed (up to {max_completed_ep}), nothing to do")
@@ -151,7 +155,7 @@ class EasyModeWorkflow(BaseWorkflow):
                 await self._save_checkpoint(
                     book_id=ctx.book_id,
                     last_completed_ep=last_completed_ep,
-                    compressed_context=None  # TODO: Implement context compression in later step
+                    compressed_context=None,  # TODO: Implement context compression in later step
                 )
                 logger.info(f"Checkpoint saved: book {ctx.book_id}, up to episode {last_completed_ep}")
             except Exception as e:

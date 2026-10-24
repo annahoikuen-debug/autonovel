@@ -1,4 +1,5 @@
 """High-load Stress and Benchmark Script for Social Dynamics and DAGScheduler (Steps 63-64)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -26,6 +27,7 @@ async def benchmark_social_repository(num_pairs: int = 15, history_per_pair: int
 
     # Ensure tables exist in the db engine via async run_sync
     from src.backend.database.models import Base
+
     async_eng = getattr(db, "engine", None)
     if async_eng is not None and hasattr(async_eng, "begin"):
         async with async_eng.begin() as conn:
@@ -35,8 +37,10 @@ async def benchmark_social_repository(num_pairs: int = 15, history_per_pair: int
     book_id = 9999
 
     from src.backend.database.models import Book
+
     async with db.get_session() as session:
         from sqlalchemy import select
+
         res = await session.execute(select(Book).where(Book.id == book_id))
         if not res.scalar_one_or_none():
             session.add(Book(id=book_id, title="Benchmark Novel", genre="fantasy"))
@@ -103,6 +107,7 @@ async def benchmark_social_repository(num_pairs: int = 15, history_per_pair: int
         # Cleanup benchmark data
         async with db.get_session() as session:
             from sqlalchemy import delete
+
             await session.execute(delete(CharacterRelationship).where(CharacterRelationship.book_id == book_id))
             await session.execute(delete(Book).where(Book.id == book_id))
             await session.commit()
@@ -123,7 +128,7 @@ async def benchmark_dag_scheduler(num_tasks: int = 30) -> float:
             resources=TaskResourceRequirement(cpu_cores=1.0, ram_mb=512),
         )
         if i > 0 and i % 5 != 0:
-            node.dependencies.append(f"task_{i-1}")
+            node.dependencies.append(f"task_{i - 1}")
         graph.add_node(node)
 
     async def work_item(idx: int):

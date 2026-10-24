@@ -1,4 +1,5 @@
 """Tests for Worker Recovery Manager (Steps 51-53, 56-57)."""
+
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -107,10 +108,7 @@ class TestWorkerRecoveryManager:
         _, session = mock_db_manager
 
         # Mock running tasks
-        mock_logs = [
-            MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running")
-            for i in range(3)
-        ]
+        mock_logs = [MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running") for i in range(3)]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_logs
         session.execute.return_value = mock_result
@@ -131,10 +129,7 @@ class TestWorkerRecoveryManager:
 
         # Mock zombie tasks (heartbeat older than threshold)
         old_time = datetime.now() - timedelta(seconds=400)
-        mock_zombies = [
-            MagicMock(spec=TaskWALLogModel, task_id=f"zombie_{i}", heartbeat_at=old_time)
-            for i in range(2)
-        ]
+        mock_zombies = [MagicMock(spec=TaskWALLogModel, task_id=f"zombie_{i}", heartbeat_at=old_time) for i in range(2)]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_zombies
         session.execute.return_value = mock_result
@@ -166,14 +161,16 @@ class TestWorkerRecoveryManager:
         # Mock zombie tasks
         old_time = datetime.now() - timedelta(seconds=400)
         mock_zombies = [
-            MagicMock(spec=TaskWALLogModel, task_id=f"zombie_{i}", dag_id="dag_1", node_id=f"node_{i}", heartbeat_at=old_time)
+            MagicMock(
+                spec=TaskWALLogModel, task_id=f"zombie_{i}", dag_id="dag_1", node_id=f"node_{i}", heartbeat_at=old_time
+            )
             for i in range(2)
         ]
 
         # Mock detect_zombie_tasks to return zombies
-        with patch.object(recovery_manager, 'detect_zombie_tasks', return_value=mock_zombies):
+        with patch.object(recovery_manager, "detect_zombie_tasks", return_value=mock_zombies):
             # Mock _get_recovery_attempt_count to return 0 (first attempt)
-            with patch.object(recovery_manager, '_get_recovery_attempt_count', return_value=0):
+            with patch.object(recovery_manager, "_get_recovery_attempt_count", return_value=0):
                 recovered = await recovery_manager.recover_orphan_tasks()
 
         assert len(recovered) == 2
@@ -200,9 +197,9 @@ class TestWorkerRecoveryManager:
             heartbeat_at=old_time,
         )
 
-        with patch.object(recovery_manager, 'detect_zombie_tasks', return_value=[mock_zombie]):
+        with patch.object(recovery_manager, "detect_zombie_tasks", return_value=[mock_zombie]):
             # Mock _get_recovery_attempt_count to return 3 (exceeded max of 3)
-            with patch.object(recovery_manager, '_get_recovery_attempt_count', return_value=3):
+            with patch.object(recovery_manager, "_get_recovery_attempt_count", return_value=3):
                 recovered = await recovery_manager.recover_orphan_tasks()
 
         assert len(recovered) == 0
@@ -250,10 +247,7 @@ class TestWorkerRecoveryManager:
         """Test pausing downstream tasks of a failed node."""
         _, session = mock_db_manager
 
-        mock_tasks = [
-            MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running")
-            for i in range(3)
-        ]
+        mock_tasks = [MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running") for i in range(3)]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_tasks
         session.execute.return_value = mock_result
@@ -321,8 +315,8 @@ class TestWorkerRecoveryManagerIntegration:
         )
 
         # Mock detect_zombie_tasks
-        with patch.object(recovery_manager, 'detect_zombie_tasks', return_value=[mock_zombie]):
-            with patch.object(recovery_manager, '_get_recovery_attempt_count', return_value=0):
+        with patch.object(recovery_manager, "detect_zombie_tasks", return_value=[mock_zombie]):
+            with patch.object(recovery_manager, "_get_recovery_attempt_count", return_value=0):
                 recovered = await recovery_manager.recover_orphan_tasks()
 
         assert "task_1" in recovered
@@ -334,8 +328,7 @@ class TestWorkerRecoveryManagerIntegration:
         _, session = mock_db_manager
 
         mock_logs = [
-            MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running", heartbeat_at=None)
-            for i in range(5)
+            MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running", heartbeat_at=None) for i in range(5)
         ]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_logs

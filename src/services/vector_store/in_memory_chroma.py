@@ -25,6 +25,7 @@ Chroma 互換インターフェースを持つインメモリ実装を別モジ�
 「Chroma が無い環境で動作する」ためのフェールバックであり、
 検索品質を代替するものではありません。
 """
+
 from __future__ import annotations
 
 import re
@@ -143,16 +144,10 @@ class InMemoryCollection:
             found_ids = [i for i in ids if i in self._records]
             targets = [self._records[i] for i in found_ids]
         else:
-            targets = [
-                r for r in self._records.values() if _matches_where(r["metadata"], where)
-            ]
+            targets = [r for r in self._records.values() if _matches_where(r["metadata"], where)]
             found_ids = list(self._records)[: len(targets)]
             # 順序を保持するため、ID を取得し直す
-            found_ids = [
-                doc_id
-                for doc_id, rec in self._records.items()
-                if _matches_where(rec["metadata"], where)
-            ]
+            found_ids = [doc_id for doc_id, rec in self._records.items() if _matches_where(rec["metadata"], where)]
 
         return {
             "ids": found_ids,
@@ -191,17 +186,13 @@ class InMemoryCollection:
             out["distances"][0].append(max(0.0, min(1.0, distance)))
         return out
 
-    def delete(
-        self, ids: list[str] | None = None, where: dict[str, Any] | None = None
-    ) -> None:
+    def delete(self, ids: list[str] | None = None, where: dict[str, Any] | None = None) -> None:
         """削除。"""
         if ids is not None:
             for i in ids:
                 self._records.pop(i, None)
             return
-        for doc_id in [
-            d for d, r in self._records.items() if _matches_where(r["metadata"], where)
-        ]:
+        for doc_id in [d for d, r in self._records.items() if _matches_where(r["metadata"], where)]:
             self._records.pop(doc_id, None)
 
 

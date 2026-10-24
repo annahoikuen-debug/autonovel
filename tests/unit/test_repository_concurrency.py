@@ -3,6 +3,7 @@ Unit tests verifying Phase 3 database and repository concurrency fixes:
 - Async get_state / set_state with proper datetime types
 - Concurrent AsyncSession isolation in recalc_all_book_scores
 """
+
 import pytest
 from src.core.container import AppContainer
 

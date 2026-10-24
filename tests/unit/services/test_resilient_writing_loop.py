@@ -4,6 +4,7 @@ from src.services.llm.provider_failover import ProviderFailoverManager
 from src.services.billing.cost_budget_guard import CostBudgetConfig
 from src.services.billing.token_budget_tracker import TokenBudgetTracker, CostBudgetExceededError
 
+
 @pytest.mark.asyncio
 async def test_failover_and_budget_integration():
     manager = ProviderFailoverManager()

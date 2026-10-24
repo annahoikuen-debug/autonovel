@@ -1,6 +1,6 @@
 """Test to check if postgres fixture works."""
-from __future__ import annotations
 
+from __future__ import annotations
 
 
 def test_postgres_fixture(postgres_container):

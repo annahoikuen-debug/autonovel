@@ -2,6 +2,7 @@
 Unit tests for PromptComposer emotion instruction integration.
 PLAN 03 - Step 9: 執筆プロンプトへの生々しい感情指示埋め込み検証
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock

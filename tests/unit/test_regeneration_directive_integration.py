@@ -24,20 +24,16 @@ def test_adapter_to_agent_result_injects_actionable_diffs():
                     location="冒頭第1段落",
                     original_quote="彼は歩いた。",
                     improved_suggestion="なぜ誰もいないのか？ 彼は歩き続けた。",
-                    rationale="冒頭に謎を付与"
+                    rationale="冒頭に謎を付与",
                 )
-            ]
+            ],
         ),
         "structure": SpecialistAuditResult(
             specialist_name="structure",
             score=80.0,
-        )
+        ),
     }
-    score_res = BookScoreResult(
-        overall=65.0,
-        by_specialist={"reader_hook": 55.0, "structure": 80.0},
-        raw=raw_results
-    )
+    score_res = BookScoreResult(overall=65.0, by_specialist={"reader_hook": 55.0, "structure": 80.0}, raw=raw_results)
 
     ctx = AgentContext(book_id=1, branch_id=1, ep_num=1)
     agent_result = node.to_agent_result(score_res, ctx, min_pass_score=70.0, max_retries=2)

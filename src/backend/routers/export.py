@@ -77,10 +77,7 @@ async def export_book(
         await verify_book_ownership(book_id, current_user, uow)
 
         chapters_list = await uow.chapters.get_all_non_anchor_chapters(book_id)
-        chapters = [
-            {"ep_num": c.ep_num, "title": c.title, "content": c.content or ""}
-            for c in chapters_list
-        ]
+        chapters = [{"ep_num": c.ep_num, "title": c.title, "content": c.content or ""} for c in chapters_list]
 
         novel = {
             "title": book_row.title,

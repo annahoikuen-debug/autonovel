@@ -19,6 +19,7 @@ async def test_dag_replanning_and_localized_retry_e2e():
     """Test full E2E flow where an audit failure triggers DAG replanning and successful recovery."""
     event_bus = MagicMock()
     from unittest.mock import AsyncMock
+
     event_bus.publish_async = AsyncMock()
 
     # Track draft version

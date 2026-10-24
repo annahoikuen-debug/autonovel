@@ -17,9 +17,7 @@ from src.backend.server import lifespan  # noqa: E402
 @pytest.mark.asyncio
 async def test_shutdown_cancels_prefetch():
     with (
-        patch(
-            "src.services.semantic_cache.cancel_all_prefetch", new=AsyncMock(return_value=2)
-        ) as m,
+        patch("src.services.semantic_cache.cancel_all_prefetch", new=AsyncMock(return_value=2)) as m,
         patch("src.core.executor_manager.executor_manager") as ex,
         patch("src.backend.server.init_db"),
         patch("src.backend.server.configure_logging"),
@@ -33,9 +31,7 @@ async def test_shutdown_cancels_prefetch():
 @pytest.mark.asyncio
 async def test_shutdown_runs_even_if_startup_side_effect_fails():
     with (
-        patch(
-            "src.services.semantic_cache.cancel_all_prefetch", new=AsyncMock(return_value=0)
-        ) as m,
+        patch("src.services.semantic_cache.cancel_all_prefetch", new=AsyncMock(return_value=0)) as m,
         patch("src.core.executor_manager.executor_manager"),
         patch("src.backend.server.init_db"),
         patch("src.backend.server.configure_logging"),
@@ -60,7 +56,7 @@ async def test_shutdown_survives_prefetch_cancel_failure():
         patch("src.backend.server.configure_logging"),
     ):
         async with lifespan(MagicMock()):
-                pass
+            pass
         ex.shutdown.assert_called_once()
 
 

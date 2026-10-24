@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 from src.backend.database.repositories.bible import BibleRepository
 from src.backend.database.models import Bible
 
+
 @pytest.mark.asyncio
 async def test_bible_repository_create_and_get_latest():
     mock_session = AsyncMock()
@@ -18,13 +19,7 @@ async def test_bible_repository_create_and_get_latest():
     mock_session.add.assert_called_once()
 
     # Mock fetching latest
-    mock_bible = Bible(
-        id=1,
-        book_id=1,
-        settings="{\"world\": \"cyberpunk\"}",
-        revealed="None",
-        version=1
-    )
+    mock_bible = Bible(id=1, book_id=1, settings='{"world": "cyberpunk"}', revealed="None", version=1)
     mock_result = MagicMock()
     mock_result.scalar_one_or_none.return_value = mock_bible
     mock_session.execute.return_value = mock_result
@@ -32,6 +27,7 @@ async def test_bible_repository_create_and_get_latest():
     fetched = await repo.get_latest_bible(1)
     assert fetched is not None
     assert fetched.version == 1
+
 
 @pytest.mark.asyncio
 async def test_bible_repository_get_latest_none():

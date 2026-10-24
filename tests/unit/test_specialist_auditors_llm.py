@@ -172,7 +172,7 @@ async def test_low_confidence_triggers_fallback(standard_weights):
             "characters": [{"name": "アリス"}, {"name": "ボブ"}],
             "locations": [{"name": "東京"}],
             "items": [{"name": "剣"}],
-        }
+        },
     }
 
     result = await auditor._safe_audit(ctx)

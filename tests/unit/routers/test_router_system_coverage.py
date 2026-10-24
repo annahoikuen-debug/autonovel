@@ -1,4 +1,5 @@
 """System router coverage: status, models info, skills, circuit breaker, priorities."""
+
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -42,6 +43,7 @@ def reset_globals():
 async def test_system_status():
     with pytest.MonkeyPatch.context() as m:
         import src.services.resilience as resilience
+
         m.setattr(resilience, "get_system_status", lambda: {"status": "ok", "db": True})
         result = await system_status()
     assert result == {"status": "ok", "db": True}
@@ -51,6 +53,7 @@ async def test_system_status():
 async def test_offline_flag():
     with pytest.MonkeyPatch.context() as m:
         import src.services.resilience as resilience
+
         m.setattr(resilience, "is_offline_mode_enabled", lambda: True)
         result = await offline_flag()
     assert result == {"offline_mode_enabled": True, "cache_first": True}
@@ -63,6 +66,7 @@ async def test_get_huey_health_status():
     # モジュール属性を直接パッチする
     with pytest.MonkeyPatch.context() as m:
         import sys as sys_module
+
         fake_huey = MagicMock()
         fake_huey.check_huey_health = lambda: {"healthy": True}
         m.setitem(sys_module.modules, "src.backend.tasks.huey", fake_huey)
@@ -100,6 +104,7 @@ async def test_get_llm_gateway_initialization():
     with pytest.MonkeyPatch.context() as m:
         import src.llm.circuit_breaker as cb_module
         import src.llm.resilient_gateway as rg_module
+
         cb = MagicMock()
         gw = MagicMock()
         m.setattr(cb_module, "LLMCircuitBreaker", lambda: cb)
@@ -192,6 +197,7 @@ def test_get_shared_orchestrator_singleton():
                 self._skill_registry["fake"] = MagicMock()
 
         import src.agents.orchestrator as orch_module
+
         m.setattr(orch_module, "Orchestrator", FakeOrchestrator)
         r1 = system_module.get_shared_orchestrator()
         r2 = system_module.get_shared_orchestrator()
@@ -251,11 +257,12 @@ async def test_recalc_all_book_scores():
         # （sys.modules への差し替えは不要。実装の import 先は src.backend.database.models）
         # BookScoreCalculator / Repository のみ差し替え
         import src.services.book_score_service as bss_module
+
         calculator = MagicMock()
         calculator.calculate = AsyncMock(return_value=MagicMock())
-        m.setattr(bss_module, "BookScoreCalculator",
-                  lambda repository=None: calculator)
+        m.setattr(bss_module, "BookScoreCalculator", lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr_module
+
         m.setattr(bsr_module, "BookScoreRepository", lambda s: MagicMock())
 
         result = await recalc_all_book_scores()
@@ -269,8 +276,7 @@ async def test_recalc_all_book_scores():
 @pytest.mark.asyncio
 async def test_recalc_all_book_scores_error():
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.backend.database.core.get_db_manager",
-                  MagicMock(side_effect=RuntimeError("db fail")))
+        m.setattr("src.backend.database.core.get_db_manager", MagicMock(side_effect=RuntimeError("db fail")))
         result = await recalc_all_book_scores()
     assert result["status"] == "error"
     assert "detail" in result
@@ -290,6 +296,7 @@ async def test_get_improvement_priorities_empty():
         repo = MagicMock()
         repo.get_all_for_book = AsyncMock(return_value=[])
         import src.backend.database.repositories.book_score as bsr_module
+
         m.setattr(bsr_module, "BookScoreRepository", lambda s: repo)
 
         result = await get_improvement_priorities(1)
@@ -301,10 +308,13 @@ async def test_get_improvement_priorities_empty():
 async def test_get_improvement_priorities_with_scores():
     scores = []
     for i in range(3):
-        s = SimpleNamespace(structure_score=50.0, coherency_score=80.0,
-                            factual_grounding_score=60.0,
-                            visual_textual_synergy_score=75.0,
-                            reader_experience_score=85.0)
+        s = SimpleNamespace(
+            structure_score=50.0,
+            coherency_score=80.0,
+            factual_grounding_score=60.0,
+            visual_textual_synergy_score=75.0,
+            reader_experience_score=85.0,
+        )
         scores.append(s)
 
     with pytest.MonkeyPatch.context() as m:
@@ -318,6 +328,7 @@ async def test_get_improvement_priorities_with_scores():
         repo = MagicMock()
         repo.get_all_for_book = AsyncMock(return_value=scores)
         import src.backend.database.repositories.book_score as bsr_module
+
         m.setattr(bsr_module, "BookScoreRepository", lambda s: repo)
 
         result = await get_improvement_priorities(1)

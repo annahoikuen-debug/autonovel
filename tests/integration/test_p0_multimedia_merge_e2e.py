@@ -339,7 +339,6 @@ def test_illustrated_commercial_epub_e2e(p0_e2e_setup):
         has_ill_xhtml = any("ill-" in name for name in namelist)
         assert has_ill_xhtml, f"Illustration XHTML not found in EPUB: {namelist}"
 
-
         # 4. OPF (マニフェスト) の検証
         opf_name = next(name for name in namelist if name.endswith(".opf"))
         opf_content = zf.read(opf_name).decode("utf-8")
@@ -406,10 +405,12 @@ def test_branch_fork_merge_commit_e2e(p0_e2e_setup):
 
     # EventBus のイベント購読リスナーを用意
     received_events = []
+
     async def on_merged(event):
         received_events.append(event)
 
     from src.agents.event_bus import get_event_bus
+
     bus = get_event_bus()
     bus.subscribe("branch.merged", on_merged)
 

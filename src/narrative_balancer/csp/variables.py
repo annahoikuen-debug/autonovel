@@ -29,9 +29,7 @@ class CSPVariables:
         self.characters = characters or ["Protagonist", "Rival", "Mentor"]
 
         # Tension integer variable: 1 to 10
-        self.tension: List[Any] = [
-            model.NewIntVar(1, 10, f"tension_{i}") for i in range(n_episodes)
-        ]
+        self.tension: List[Any] = [model.NewIntVar(1, 10, f"tension_{i}") for i in range(n_episodes)]
 
         # Beat type variable: 0 to len(BeatType)-1
         num_types = len(BeatType)
@@ -40,29 +38,19 @@ class CSPVariables:
         ]
 
         # Defeat flag (boolean)
-        self.defeat: List[cp_model.IntVar] = [
-            model.NewBoolVar(f"defeat_{i}") for i in range(n_episodes)
-        ]
+        self.defeat: List[cp_model.IntVar] = [model.NewBoolVar(f"defeat_{i}") for i in range(n_episodes)]
 
         # Foreshadowing setup & payoff flags (boolean)
-        self.setup: List[cp_model.IntVar] = [
-            model.NewBoolVar(f"setup_{i}") for i in range(n_episodes)
-        ]
-        self.payoff: List[cp_model.IntVar] = [
-            model.NewBoolVar(f"payoff_{i}") for i in range(n_episodes)
-        ]
+        self.setup: List[cp_model.IntVar] = [model.NewBoolVar(f"setup_{i}") for i in range(n_episodes)]
+        self.payoff: List[cp_model.IntVar] = [model.NewBoolVar(f"payoff_{i}") for i in range(n_episodes)]
 
         # Character presence: dict mapping char -> list of BoolVar
         self.char_presence: Dict[str, List[cp_model.IntVar]] = {}
         for ch in self.characters:
-            self.char_presence[ch] = [
-                model.NewBoolVar(f"char_{ch}_ep_{i}") for i in range(n_episodes)
-            ]
+            self.char_presence[ch] = [model.NewBoolVar(f"char_{ch}_ep_{i}") for i in range(n_episodes)]
 
         # Auxiliary: Disaster beat indicator
-        self.is_disaster: List[cp_model.IntVar] = [
-            model.NewBoolVar(f"is_disaster_{i}") for i in range(n_episodes)
-        ]
+        self.is_disaster: List[cp_model.IntVar] = [model.NewBoolVar(f"is_disaster_{i}") for i in range(n_episodes)]
         disaster_idx = BEAT_TYPE_MAP[BeatType.DISASTER]
         mid_disaster_idx = BEAT_TYPE_MAP[BeatType.MIDPOINT_DISASTER]
 

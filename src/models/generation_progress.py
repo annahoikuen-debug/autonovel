@@ -2,6 +2,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 from src.models.base import MODEL_CONFIG_DEFAULTS
 
+
 class AgentThoughtStep(BaseModel):
     phase: str = Field(..., description="フェーズ（planning, rag_retrieval, writing, refining 等）")
     step_name: str = Field(..., description="ステップ名（例: 伏線の照合中）")

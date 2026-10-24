@@ -94,10 +94,11 @@ class TestPurpleProseDetoxIntegration:
         """Test that episode-based limits work correctly."""
         # Use very low limits for testing
         pipeline = ProseDetoxPipeline(
-            stream_guard=__import__('src.services.anti_ai.purple_prose_filter',
-                                   fromlist=['PurpleProseFilter']).PurpleProseFilter(
+            stream_guard=__import__(
+                "src.services.anti_ai.purple_prose_filter", fromlist=["PurpleProseFilter"]
+            ).PurpleProseFilter(
                 max_aggressive_per_episode=1,  # Only 1 allowed per episode
-                max_metaphor_per_1k_chars=2   # Only 2 allowed per 1000 chars
+                max_metaphor_per_1k_chars=2,  # Only 2 allowed per 1000 chars
             )
         )
 
@@ -121,7 +122,7 @@ class TestPurpleProseDetoxIntegration:
         # Create a reasonably sized text chunk
         base_text = "彼は歯を食いしばり、まるで獣のように吠えた。血の気が引くほど怖がっていた。"
         # Repeat to make it longer
-        long_text = (base_text * 50)  # ~50 repetitions
+        long_text = base_text * 50  # ~50 repetitions
 
         cleaned_text, metrics = detox_prose(long_text, episode_id="perf_test")
 
@@ -142,8 +143,9 @@ class TestPurpleProseDetoxIntegration:
         """Test metaphor density limiting."""
         # Tight metaphor limit
         pipeline = ProseDetoxPipeline(
-            stream_guard=__import__('src.services.anti_ai.purple_prose_filter',
-                                   fromlist=['PurpleProseFilter']).PurpleProseFilter(
+            stream_guard=__import__(
+                "src.services.anti_ai.purple_prose_filter", fromlist=["PurpleProseFilter"]
+            ).PurpleProseFilter(
                 max_metaphor_per_1k_chars=2  # Only 2 metaphors per 1000 chars
             )
         )

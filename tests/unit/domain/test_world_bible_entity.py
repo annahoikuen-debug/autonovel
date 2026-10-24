@@ -85,7 +85,10 @@ class TestWorldBible:
         novel_id = NovelId.generate()
         b1 = WorldBible.create(novel_id)
         clone = WorldBible(
-            id=b1.id, novel_id=b1.novel_id, settings=b1.settings, revealed=b1.revealed,
+            id=b1.id,
+            novel_id=b1.novel_id,
+            settings=b1.settings,
+            revealed=b1.revealed,
         )
         assert hash(b1) == hash(clone)
 
@@ -95,23 +98,32 @@ class TestPendingSetting:
 
     def test_valid(self):
         ps = PendingSetting(
-            id=SettingId.generate(), novel_id=NovelId.generate(),
-            field_name="magic", proposed_value=TextContent("魔法"), confidence=0.9,
+            id=SettingId.generate(),
+            novel_id=NovelId.generate(),
+            field_name="magic",
+            proposed_value=TextContent("魔法"),
+            confidence=0.9,
         )
         assert ps.status == "pending"
 
     def test_invalid_confidence(self):
         with pytest.raises(ValueError):
             PendingSetting(
-                id=SettingId.generate(), novel_id=NovelId.generate(),
-                field_name="x", proposed_value=TextContent("y"), confidence=2.0,
+                id=SettingId.generate(),
+                novel_id=NovelId.generate(),
+                field_name="x",
+                proposed_value=TextContent("y"),
+                confidence=2.0,
             )
 
     def test_invalid_field_name(self):
         with pytest.raises(ValueError):
             PendingSetting(
-                id=SettingId.generate(), novel_id=NovelId.generate(),
-                field_name="", proposed_value=TextContent("y"), confidence=0.5,
+                id=SettingId.generate(),
+                novel_id=NovelId.generate(),
+                field_name="",
+                proposed_value=TextContent("y"),
+                confidence=0.5,
             )
 
 
@@ -120,7 +132,9 @@ class TestSetting:
 
     def test_valid(self):
         s = Setting(
-            id=SettingId.generate(), name="マナ", value=TextContent("魔力"),
+            id=SettingId.generate(),
+            name="マナ",
+            value=TextContent("魔力"),
             category="magic_system",
         )
         assert s.is_revealed is False
@@ -151,8 +165,10 @@ class TestLore:
 
     def test_create_factory(self):
         lore = Lore.create(
-            novel_id=NovelId.generate(), title="古王国の歴史",
-            content=MarkdownText("説明文"), category="history",
+            novel_id=NovelId.generate(),
+            title="古王国の歴史",
+            content=MarkdownText("説明文"),
+            category="history",
         )
         assert lore.is_secret is False
         assert lore.tags == []

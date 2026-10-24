@@ -28,6 +28,7 @@ CI は緑を返しうる。このゲートはcollection 自体を検証し、
 テストの検証力が 0 になると、その後に追加するゲートもすべて無意味になる。
 実行されていることの確認は、他のあらゆるゲートの前提条件である。
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -77,9 +78,7 @@ class TestCollectionIsHealthy:
         proc = _collect_tests()
 
         error_lines = [
-            line
-            for line in proc.stdout.splitlines()
-            if line.startswith("ERROR ") or line.startswith("E   ")
+            line for line in proc.stdout.splitlines() if line.startswith("ERROR ") or line.startswith("E   ")
         ]
         assert not error_lines, (
             "テストの collection error があります。該当テストは実行されません:\n"
@@ -94,9 +93,7 @@ class TestCollectionIsHealthy:
         現れることがある。このテストは無条件な「緑」を弾く。
         """
         proc = _collect_tests()
-        assert proc.returncode in (0, 1), (
-            f"collection が異常終了した (rc={proc.returncode}):\n{proc.stderr[-2000:]}"
-        )
+        assert proc.returncode in (0, 1), f"collection が異常終了した (rc={proc.returncode}):\n{proc.stderr[-2000:]}"
 
         # `9493 tests collected` 相当の行を探す
         collected = 0
@@ -107,6 +104,5 @@ class TestCollectionIsHealthy:
                     if token.isdigit():
                         collected = max(collected, int(token))
         assert collected > 1000, (
-            f"収集されたテストが {collected} 件しかない。"
-            "collection error で全体が中断されている可能性がある"
+            f"収集されたテストが {collected} 件しかない。collection error で全体が中断されている可能性がある"
         )

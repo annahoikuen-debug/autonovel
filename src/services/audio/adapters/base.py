@@ -3,6 +3,7 @@
 常駐VOICEVOXコンテナ（数GBメモリ消費）を廃止し、
 外部オンデマンド従量API（OpenAI TTS, ElevenLabs等）へ移行するための基底クラス。
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -50,4 +51,3 @@ class AudioTtsAdapter(ABC):
 # クラス名エイリアス（互換用）
 AudioTtsRequest = TtsRequest
 AudioTtsResult = TtsResult
-

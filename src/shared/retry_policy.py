@@ -10,9 +10,7 @@ class RetryPolicy(BaseModel):
     max_delay: float = Field(default=30.0, ge=0.0)
     exponential_backoff: bool = True
     jitter: bool = True
-    retryable_status_codes: tuple[int, ...] = Field(
-        default_factory=lambda: (429, 500, 502, 503, 504)
-    )
+    retryable_status_codes: tuple[int, ...] = Field(default_factory=lambda: (429, 500, 502, 503, 504))
 
     def calculate_delay(self, attempt: int) -> float:
         """

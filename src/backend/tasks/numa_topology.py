@@ -1,4 +1,5 @@
 """NUMA/PCIe Topology Detection (Step 5)."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -8,6 +9,7 @@ from typing import Dict, List, Optional
 @dataclass(slots=True)
 class NUMATopology:
     """NUMA ノードとリソースのマッピング。"""
+
     cpu_to_numa: Dict[int, int] = field(default_factory=dict)  # logical_core -> numa_node
     gpu_to_numa: Dict[int, int] = field(default_factory=dict)  # gpu_index -> numa_node
     numa_nodes: List[int] = field(default_factory=list)
@@ -69,6 +71,7 @@ def detect_gpu_numa_py3nvml() -> Dict[int, int]:
     """py3nvml で GPU->NUMA 推定 (PCIe バス情報から)。"""
     try:
         import pynvml
+
         pynvml.nvmlInit()
     except Exception:
         return {}

@@ -98,7 +98,7 @@ def _extract_stream_book_id(path: str) -> int | None:
     """
     if not path.startswith(STREAM_PATH_PREFIX):
         return None
-    segments = [s for s in path[len(STREAM_PATH_PREFIX):].split("/") if s]
+    segments = [s for s in path[len(STREAM_PATH_PREFIX) :].split("/") if s]
     # writing/{book_id}/{ep_num} / pipeline/{book_id}
     if not segments:
         return None
@@ -125,7 +125,6 @@ def is_safe_api_key_match(provided: str, expected: str) -> bool:
     if not provided or not expected:
         return False
     return secrets.compare_digest(provided, expected)
-
 
 
 class GlobalAuthMiddleware(BaseHTTPMiddleware):
@@ -156,11 +155,7 @@ class GlobalAuthMiddleware(BaseHTTPMiddleware):
                 require_api_key,
             )
 
-            if (
-                get_current_user in overrides
-                or require_api_key in overrides
-                or require_admin_user_or_key in overrides
-            ):
+            if get_current_user in overrides or require_api_key in overrides or require_admin_user_or_key in overrides:
                 return await call_next(request)
 
         # 2. CORS Preflight (OPTIONS) は通過
@@ -233,4 +228,3 @@ class GlobalAuthMiddleware(BaseHTTPMiddleware):
 
 # Backward-compatible alias
 AuthMiddleware = GlobalAuthMiddleware
-

@@ -1,7 +1,9 @@
 """API コントラクトテスト using schemathesis."""
+
 from __future__ import annotations
 
 import pytest
+
 schemathesis = pytest.importorskip("schemathesis")
 if schemathesis is not None:
     openapi = schemathesis.openapi
@@ -65,7 +67,7 @@ def test_api_schema_with_schemathesis(contract_client):
     # スキーマオブジェクトが何らかの操作をサポートしていることを確認
     # 具体的な属性名はバージョンによって異なる可能性があるため、
     # 単にオブジェクトが存在し、何らかの方法でパスにアクセスできることを確認する
-    assert hasattr(schema, 'paths') or hasattr(schema, '_raw_schema') or True  # 少なくともオブジェクトは存在する
+    assert hasattr(schema, "paths") or hasattr(schema, "_raw_schema") or True  # 少なくともオブジェクトは存在する
 
 
 # スキーマフィクスチャ: OpenAPI スキーマを取得し、schemathesis オブジェクトを作成

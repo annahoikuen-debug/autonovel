@@ -43,9 +43,7 @@ class IllustrationRepository(BaseRepository):
         return row.id
 
     @retry_on_lock()
-    async def list_illustrations(
-        self, book_id: int, illustration_type: str | None = None
-    ) -> list[Illustration]:
+    async def list_illustrations(self, book_id: int, illustration_type: str | None = None) -> list[Illustration]:
         stmt = select(Illustration).where(Illustration.book_id == book_id)
         if illustration_type:
             stmt = stmt.where(Illustration.illustration_type == illustration_type)

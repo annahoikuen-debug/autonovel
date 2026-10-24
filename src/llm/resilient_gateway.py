@@ -46,9 +46,7 @@ def normalize_schema_prompt(prompt: str, response_schema: Any | None) -> str:
     except TypeError:
         schema_text = str(schema)
     return (
-        f"{prompt}\n\n"
-        "出力は次のJSONスキーマに厳密に従った有効なJSONのみとしてください。\n"
-        f"```json\n{schema_text}\n```"
+        f"{prompt}\n\n出力は次のJSONスキーマに厳密に従った有効なJSONのみとしてください。\n```json\n{schema_text}\n```"
     )
 
 
@@ -185,8 +183,7 @@ class ResilientLLMGateway:
                 # 実プロバイダが全部失敗したときに、MockAdapter の出力が
                 # 本物の LLM 出力と区別できないままパイプラインを流していた。
                 last_unavailable = RuntimeError(
-                    "Refusing to use the 'mock' LLM provider in production. "
-                    f"Set {ALLOW_MOCK_ENV}=1 only for tests/CI."
+                    f"Refusing to use the 'mock' LLM provider in production. Set {ALLOW_MOCK_ENV}=1 only for tests/CI."
                 )
                 logger.error("%s", last_unavailable)
                 if next_provider:
@@ -274,16 +271,9 @@ class ResilientLLMGateway:
             signature = None
         if signature is not None:
             parameters = signature.parameters
-            accepts_kwargs = any(
-                parameter.kind is inspect.Parameter.VAR_KEYWORD
-                for parameter in parameters.values()
-            )
+            accepts_kwargs = any(parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters.values())
             if not accepts_kwargs:
-                call_kwargs = {
-                    key: value
-                    for key, value in call_kwargs.items()
-                    if key in parameters
-                }
+                call_kwargs = {key: value for key, value in call_kwargs.items() if key in parameters}
             call_args: dict[str, Any] = {}
             if "model_name" in parameters:
                 call_args["model_name"] = provider_name
@@ -378,9 +368,7 @@ class ResilientLLMGateway:
         return provider
 
     @staticmethod
-    def _next_candidate(
-        candidates: list[str], attempt: int, seen: set[str]
-    ) -> str | None:
+    def _next_candidate(candidates: list[str], attempt: int, seen: set[str]) -> str | None:
         for candidate in candidates[attempt + 1 :]:
             if candidate not in seen:
                 return candidate

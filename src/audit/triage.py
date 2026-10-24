@@ -15,9 +15,9 @@ from typing import Iterable, List
 from src.audit.static_rules import SEVERITY_CRITICAL, Issue
 
 # トリアージ段階（ RepairPlanner / AuditAgent が参照する）
-TRIAGE_MINOR = "minor"    # LLM不要・即時ルールで解決
+TRIAGE_MINOR = "minor"  # LLM不要・即時ルールで解決
 TRIAGE_MEDIUM = "medium"  # 1〜2段落の局所LLMパッチ
-TRIAGE_MAJOR = "major"    # シーン単位の再生成
+TRIAGE_MAJOR = "major"  # シーン単位の再生成
 
 # outcome の severity 値 → トリアージ段階の対応表
 _MAJOR_SEVERITIES = frozenset({"critical"})

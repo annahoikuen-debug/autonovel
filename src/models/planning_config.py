@@ -15,9 +15,7 @@ class PlanningConfig(BaseModel):
     initial_plot_limit: int = Field(default=1, description="初期プロット生成数")
     tension_threshold: int = Field(default=85, description="緊張（テンション）閾値。")
     tension_gain: float = Field(default=1.0, description="緊張蓄積倍率")
-    engine_key: str = Field(
-        default="conflict", description="エンジンキー（conflict / comfort / enigma / zamaa 等）"
-    )
+    engine_key: str = Field(default="conflict", description="エンジンキー（conflict / comfort / enigma / zamaa 等）")
     enable_erotic: bool = Field(default=False, description="官能モードのオンオフ")
     erotic_intensity: int = Field(default=2, description="官能表現の過激度 (1-5)")
 

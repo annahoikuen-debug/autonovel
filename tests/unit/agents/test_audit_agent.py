@@ -1,4 +1,5 @@
 """Tests for src/agents/audit_agent.py."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -23,6 +24,7 @@ from src.agents.orchestrator import AgentContext, AgentName
 # Helper fixtures and constants
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def mock_repo():
     """Mock repository."""
@@ -39,30 +41,36 @@ def mock_llm():
     """Mock LLM."""
     llm = MagicMock()
     # Properly mock the LLM for both direct calls and generate_json
-    llm.generate_json = AsyncMock(return_value={
-        "hook_score": 85.0,
-        "emotional_score": 90.0,
-        "character_consistency": 80.0,
-        "overall_score": 85.0,
-        "critique": "良好なストーリーです。",
-        "actionable_patch": None
-    })
-    llm.generate = AsyncMock(return_value='''{
+    llm.generate_json = AsyncMock(
+        return_value={
+            "hook_score": 85.0,
+            "emotional_score": 90.0,
+            "character_consistency": 80.0,
+            "overall_score": 85.0,
+            "critique": "良好なストーリーです。",
+            "actionable_patch": None,
+        }
+    )
+    llm.generate = AsyncMock(
+        return_value="""{
         "hook_score": 85.0,
         "emotional_score": 90.0,
         "character_consistency": 80.0,
         "overall_score": 85.0,
         "critique": "良好なストーリーです。",
         "actionable_patch": null
-    }''')
-    llm.generate_text = AsyncMock(return_value='''{
+    }"""
+    )
+    llm.generate_text = AsyncMock(
+        return_value="""{
         "hook_score": 85.0,
         "emotional_score": 90.0,
         "character_consistency": 80.0,
         "overall_score": 85.0,
         "critique": "良好なストーリーです。",
         "actionable_patch": null
-    }''')
+    }"""
+    )
     llm.return_value = {"metadata": {"is_valid": True, "feedback": "OK"}}
     return llm
 
@@ -119,6 +127,7 @@ def sample_drafted_text():
 # Initialization tests
 # ---------------------------------------------------------------------------
 
+
 def test_audit_agent_init_defaults(mock_repo, mock_llm, mock_prompt_manager, mock_edge_preserver):
     """AuditAgent initialization sets internal components."""
     agent = AuditAgent(
@@ -164,6 +173,7 @@ def test_audit_agent_init_with_unified_auditor(mock_repo, mock_llm, mock_prompt_
 # Environment flag tests
 # ---------------------------------------------------------------------------
 
+
 def test_is_score_gate_enabled_default(monkeypatch):
     """is_score_gate_enabled respects environment and default."""
     monkeypatch.delenv("ENABLE_AUDIT_SCORE_GATE", raising=False)
@@ -192,14 +202,13 @@ def test_get_gate_threshold_default(monkeypatch):
 # Core audit running tests
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_run_core_audits_blueprint_missing(audit_agent, sample_writing_context, sample_drafted_text):
     """_run_core_audits removes fast_screen when blueprint missing."""
     ctx = dict(sample_writing_context)
     ctx["plot"]["detailed_blueprint"] = ""  # empty blueprint
-    plan = await audit_agent._run_core_audits(
-        ctx, sample_drafted_text, book_id=1, ep_num=1
-    )
+    plan = await audit_agent._run_core_audits(ctx, sample_drafted_text, book_id=1, ep_num=1)
     audit_ids = [c.audit_id for c, _ in plan]
     assert "fast_screen" not in audit_ids
     assert set(audit_ids) == {"logical_consistency", "deai", "ability_consistency", "causal_integrity"}
@@ -208,9 +217,7 @@ async def test_run_core_audits_blueprint_missing(audit_agent, sample_writing_con
 @pytest.mark.asyncio
 async def test_run_core_audits_factories(audit_agent, sample_writing_context, sample_drafted_text):
     """_run_core_audits returns correct factory functions."""
-    plan = await audit_agent._run_core_audits(
-        sample_writing_context, sample_drafted_text, book_id=1, ep_num=1
-    )
+    plan = await audit_agent._run_core_audits(sample_writing_context, sample_drafted_text, book_id=1, ep_num=1)
     assert len(plan) == len(CORE_AUDIT_CRITERIA)
     # Each item is (criterion, factory_callable)
     for criterion, factory in plan:
@@ -221,6 +228,7 @@ async def test_run_core_audits_factories(audit_agent, sample_writing_context, sa
 # ---------------------------------------------------------------------------
 # Outcome conversion tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_core_to_outcome_passed(audit_agent):
@@ -321,18 +329,34 @@ def test_unified_to_outcome_rejected(audit_agent):
 # Full audit phase tests
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
-async def test_run_audit_phase_parallel_success(audit_agent, sample_writing_context, sample_drafted_text, mock_repo, mock_llm, mock_prompt_manager, mock_edge_preserver):
+async def test_run_audit_phase_parallel_success(
+    audit_agent,
+    sample_writing_context,
+    sample_drafted_text,
+    mock_repo,
+    mock_llm,
+    mock_prompt_manager,
+    mock_edge_preserver,
+):
     """run_audit_phase runs audits in parallel and returns outcomes."""
     # Mock all internal auditors to return success
-    with patch.object(audit_agent._fast_screener, "screen_plot", AsyncMock(return_value=(True, "OK"))), \
-         patch.object(audit_agent._logical_auditor, "audit_logical_consistency", AsyncMock(return_value=(True, "OK", 0.9))), \
-         patch.object(audit_agent._deai_auditor, "audit", AsyncMock(return_value=(True, "OK"))), \
-         patch.object(audit_agent._ability_checker, "audit_ability_consistency", AsyncMock(return_value=(True, "OK", "suggestion"))), \
-         patch.object(audit_agent._plot_monitor, "extract_keywords", AsyncMock(return_value=["主人公", "村"])), \
-         patch.object(audit_agent._plot_monitor, "check_integrity", AsyncMock(return_value=(True, 0.9, MagicMock()))), \
-         patch.object(audit_agent, "_resolve_unified_auditor", return_value=None):
-
+    with (
+        patch.object(audit_agent._fast_screener, "screen_plot", AsyncMock(return_value=(True, "OK"))),
+        patch.object(
+            audit_agent._logical_auditor, "audit_logical_consistency", AsyncMock(return_value=(True, "OK", 0.9))
+        ),
+        patch.object(audit_agent._deai_auditor, "audit", AsyncMock(return_value=(True, "OK"))),
+        patch.object(
+            audit_agent._ability_checker,
+            "audit_ability_consistency",
+            AsyncMock(return_value=(True, "OK", "suggestion")),
+        ),
+        patch.object(audit_agent._plot_monitor, "extract_keywords", AsyncMock(return_value=["主人公", "村"])),
+        patch.object(audit_agent._plot_monitor, "check_integrity", AsyncMock(return_value=(True, 0.9, MagicMock()))),
+        patch.object(audit_agent, "_resolve_unified_auditor", return_value=None),
+    ):
         outcomes, latency = await audit_agent.run_audit_phase(
             sample_writing_context, sample_drafted_text, book_id=42, ep_num=7, parallel=True
         )
@@ -352,13 +376,18 @@ async def test_run_audit_phase_parallel_success(audit_agent, sample_writing_cont
 @pytest.mark.asyncio
 async def test_run_audit_phase_serial(audit_agent, sample_writing_context, sample_drafted_text):
     """run_audit_phase can run in serial mode."""
-    with patch.object(audit_agent._fast_screener, "screen_plot", AsyncMock(return_value=(True, "OK"))), \
-         patch.object(audit_agent._logical_auditor, "audit_logical_consistency", AsyncMock(return_value=(True, "OK", 0.9))), \
-         patch.object(audit_agent._deai_auditor, "audit", AsyncMock(return_value=(True, "OK"))), \
-         patch.object(audit_agent._ability_checker, "audit_ability_consistency", AsyncMock(return_value=(True, "OK", ""))), \
-         patch.object(audit_agent._plot_monitor, "extract_keywords", AsyncMock(return_value=[])), \
-         patch.object(audit_agent._plot_monitor, "check_integrity", AsyncMock(return_value=(True, 1.0, MagicMock()))):
-
+    with (
+        patch.object(audit_agent._fast_screener, "screen_plot", AsyncMock(return_value=(True, "OK"))),
+        patch.object(
+            audit_agent._logical_auditor, "audit_logical_consistency", AsyncMock(return_value=(True, "OK", 0.9))
+        ),
+        patch.object(audit_agent._deai_auditor, "audit", AsyncMock(return_value=(True, "OK"))),
+        patch.object(
+            audit_agent._ability_checker, "audit_ability_consistency", AsyncMock(return_value=(True, "OK", ""))
+        ),
+        patch.object(audit_agent._plot_monitor, "extract_keywords", AsyncMock(return_value=[])),
+        patch.object(audit_agent._plot_monitor, "check_integrity", AsyncMock(return_value=(True, 1.0, MagicMock()))),
+    ):
         outcomes, latency = await audit_agent.run_audit_phase(
             sample_writing_context, sample_drafted_text, book_id=1, ep_num=1, parallel=False
         )
@@ -372,31 +401,38 @@ async def test_run_audit_phase_handles_auditor_exceptions(audit_agent, sample_wr
     """run_audit_phase continues when individual auditors raise exceptions."""
     # Mock unified auditor to return a successful report
     mock_unified_auditor = MagicMock()
-    mock_unified_auditor.audit = AsyncMock(return_value=MagicMock(
-        is_acceptable=True,
-        final_score=85.0,
-        quantitative_score=80.0,
-        qualitative=MagicMock(
-            critique="良好なストーリーです。",
-            hook_score=85.0,
-            emotional_score=90.0,
-            character_consistency=80.0,
-            overall_score=85.0,
-            actionable_patch=None
+    mock_unified_auditor.audit = AsyncMock(
+        return_value=MagicMock(
+            is_acceptable=True,
+            final_score=85.0,
+            quantitative_score=80.0,
+            qualitative=MagicMock(
+                critique="良好なストーリーです。",
+                hook_score=85.0,
+                emotional_score=90.0,
+                character_consistency=80.0,
+                overall_score=85.0,
+                actionable_patch=None,
+            ),
+            detected_cliches=[],
+            dialogue_ratio=0.0,
+            conflicts=[],
+        )
+    )
+
+    with (
+        patch.object(audit_agent._fast_screener, "screen_plot", AsyncMock(side_effect=ValueError("boom"))),
+        patch.object(
+            audit_agent._logical_auditor, "audit_logical_consistency", AsyncMock(return_value=(True, "OK", 0.9))
         ),
-        detected_cliches=[],
-        dialogue_ratio=0.0,
-        conflicts=[]
-    ))
-
-    with patch.object(audit_agent._fast_screener, "screen_plot", AsyncMock(side_effect=ValueError("boom"))), \
-         patch.object(audit_agent._logical_auditor, "audit_logical_consistency", AsyncMock(return_value=(True, "OK", 0.9))), \
-         patch.object(audit_agent._deai_auditor, "audit", AsyncMock(return_value=(True, "OK"))), \
-         patch.object(audit_agent._ability_checker, "audit_ability_consistency", AsyncMock(return_value=(True, "OK", ""))), \
-         patch.object(audit_agent._plot_monitor, "extract_keywords", AsyncMock(return_value=[])), \
-         patch.object(audit_agent._plot_monitor, "check_integrity", AsyncMock(return_value=(True, 1.0, MagicMock()))), \
-         patch.object(audit_agent, "_resolve_unified_auditor", return_value=mock_unified_auditor):
-
+        patch.object(audit_agent._deai_auditor, "audit", AsyncMock(return_value=(True, "OK"))),
+        patch.object(
+            audit_agent._ability_checker, "audit_ability_consistency", AsyncMock(return_value=(True, "OK", ""))
+        ),
+        patch.object(audit_agent._plot_monitor, "extract_keywords", AsyncMock(return_value=[])),
+        patch.object(audit_agent._plot_monitor, "check_integrity", AsyncMock(return_value=(True, 1.0, MagicMock()))),
+        patch.object(audit_agent, "_resolve_unified_auditor", return_value=mock_unified_auditor),
+    ):
         outcomes, latency = await audit_agent.run_audit_phase(
             sample_writing_context, sample_drafted_text, book_id=1, ep_num=1
         )
@@ -422,15 +458,64 @@ async def test_run_audit_phase_handles_auditor_exceptions(audit_agent, sample_wr
 # Gate evaluation tests
 # ---------------------------------------------------------------------------
 
+
 def test_evaluate_gate_all_passed():
     """evaluate_gate with all passed outcomes."""
     outcomes = [
-        {"audit_id": "fast_screen", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "high", "effective_severity": None},
-        {"audit_id": "logical_consistency", "passed": True, "score": 100.0, "weight": 1.5, "blocking": True, "severity": "high", "effective_severity": None},
-        {"audit_id": "deai", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "medium", "effective_severity": None},
-        {"audit_id": "ability_consistency", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "medium", "effective_severity": None},
-        {"audit_id": "causal_integrity", "passed": True, "score": 100.0, "weight": 1.5, "blocking": True, "severity": "high", "effective_severity": None},
-        {"audit_id": "unified_qualitative", "passed": True, "score": 100.0, "weight": 1.0, "blocking": False, "severity": "medium", "effective_severity": None},
+        {
+            "audit_id": "fast_screen",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "logical_consistency",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.5,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "deai",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "medium",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "ability_consistency",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "medium",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "causal_integrity",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.5,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "unified_qualitative",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": False,
+            "severity": "medium",
+            "effective_severity": None,
+        },
     ]
     result = evaluate_gate(outcomes)
     assert result["requires_regeneration"] is False
@@ -443,12 +528,60 @@ def test_evaluate_gate_all_passed():
 def test_evaluate_gate_one_failed_high():
     """evaluate_gate with one high severity failure."""
     outcomes = [
-        {"audit_id": "fast_screen", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "high", "effective_severity": None},
-        {"audit_id": "logical_consistency", "passed": False, "score": 40.0, "weight": 1.5, "blocking": True, "severity": "high", "effective_severity": "high"},  # 60 penalty -> 40
-        {"audit_id": "deai", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "medium", "effective_severity": None},
-        {"audit_id": "ability_consistency", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "medium", "effective_severity": None},
-        {"audit_id": "causal_integrity", "passed": True, "score": 100.0, "weight": 1.5, "blocking": True, "severity": "high", "effective_severity": None},
-        {"audit_id": "unified_qualitative", "passed": True, "score": 100.0, "weight": 1.0, "blocking": False, "severity": "medium", "effective_severity": None},
+        {
+            "audit_id": "fast_screen",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "logical_consistency",
+            "passed": False,
+            "score": 40.0,
+            "weight": 1.5,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": "high",
+        },  # 60 penalty -> 40
+        {
+            "audit_id": "deai",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "medium",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "ability_consistency",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "medium",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "causal_integrity",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.5,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "unified_qualitative",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": False,
+            "severity": "medium",
+            "effective_severity": None,
+        },
     ]
     result = evaluate_gate(outcomes)
     # Weighted sum: (100*1 + 40*1.5 + 100*1 + 100*1 + 100*1.5) = 100 + 60 + 100 + 100 + 150 = 510
@@ -463,12 +596,60 @@ def test_evaluate_gate_one_failed_high():
 def test_evaluate_gate_critical_failure():
     """evaluate_gate with critical failure (score 0)."""
     outcomes = [
-        {"audit_id": "fast_screen", "passed": False, "score": 0.0, "weight": 1.0, "blocking": True, "severity": "critical", "effective_severity": "critical"},
-        {"audit_id": "logical_consistency", "passed": True, "score": 100.0, "weight": 1.5, "blocking": True, "severity": "high", "effective_severity": None},
-        {"audit_id": "deai", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "medium", "effective_severity": None},
-        {"audit_id": "ability_consistency", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "medium", "effective_severity": None},
-        {"audit_id": "causal_integrity", "passed": True, "score": 100.0, "weight": 1.5, "blocking": True, "severity": "high", "effective_severity": None},
-        {"audit_id": "unified_qualitative", "passed": True, "score": 100.0, "weight": 1.0, "blocking": False, "severity": "medium", "effective_severity": None},
+        {
+            "audit_id": "fast_screen",
+            "passed": False,
+            "score": 0.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "critical",
+            "effective_severity": "critical",
+        },
+        {
+            "audit_id": "logical_consistency",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.5,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "deai",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "medium",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "ability_consistency",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "medium",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "causal_integrity",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.5,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "unified_qualitative",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": False,
+            "severity": "medium",
+            "effective_severity": None,
+        },
     ]
     result = evaluate_gate(outcomes)
     assert result["critical_failure"] is True
@@ -479,11 +660,51 @@ def test_evaluate_gate_score_gate_disabled(monkeypatch):
     """evaluate_gate falls back to all-or-nothing when score gate disabled."""
     monkeypatch.setenv("ENABLE_AUDIT_SCORE_GATE", "false")
     outcomes = [
-        {"audit_id": "fast_screen", "passed": False, "score": 50.0, "weight": 1.0, "blocking": True, "severity": "high", "effective_severity": None},
-        {"audit_id": "logical_consistency", "passed": True, "score": 100.0, "weight": 1.5, "blocking": True, "severity": "high", "effective_severity": None},
-        {"audit_id": "deai", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "medium", "effective_severity": None},
-        {"audit_id": "ability_consistency", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "medium", "effective_severity": None},
-        {"audit_id": "causal_integrity", "passed": True, "score": 100.0, "weight": 1.5, "blocking": True, "severity": "high", "effective_severity": None},
+        {
+            "audit_id": "fast_screen",
+            "passed": False,
+            "score": 50.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "logical_consistency",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.5,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "deai",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "medium",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "ability_consistency",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.0,
+            "blocking": True,
+            "severity": "medium",
+            "effective_severity": None,
+        },
+        {
+            "audit_id": "causal_integrity",
+            "passed": True,
+            "score": 100.0,
+            "weight": 1.5,
+            "blocking": True,
+            "severity": "high",
+            "effective_severity": None,
+        },
     ]
     result = evaluate_gate(outcomes)
     # With score gate disabled, requires_regeneration = bool(failed)
@@ -494,6 +715,7 @@ def test_evaluate_gate_score_gate_disabled(monkeypatch):
 # ---------------------------------------------------------------------------
 # Local patch tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_try_local_patch_disabled(audit_agent):
@@ -521,10 +743,12 @@ async def test_try_local_patch_safe_replacer_success(audit_agent):
     conflict.suggested_value = "おじいさん"
     unified_report.conflicts = [conflict]
 
-    with patch("src.agents.audit_agent.is_local_patch_enabled", return_value=True), \
-         patch("src.agents.audit_agent.is_span_patch_enabled", return_value=False), \
-         patch("src.agents.audit_agent.is_async_polish_enabled", return_value=False), \
-         patch("src.services.safe_replace.SafeReplacer") as mock_sr:
+    with (
+        patch("src.agents.audit_agent.is_local_patch_enabled", return_value=True),
+        patch("src.agents.audit_agent.is_span_patch_enabled", return_value=False),
+        patch("src.agents.audit_agent.is_async_polish_enabled", return_value=False),
+        patch("src.services.safe_replace.SafeReplacer") as mock_sr,
+    ):
         mock_instance = MagicMock()
         mock_instance.replace.return_value = "主人公はおじいさんに会った。"
         mock_sr.return_value = mock_instance
@@ -543,11 +767,13 @@ async def test_try_local_patch_actionable_patch(audit_agent):
     qualitative.actionable_patch = "【追加】主人公は決意を新たにした。"
     unified_report.qualitative = qualitative
 
-    with patch("src.agents.audit_agent.is_local_patch_enabled", return_value=True), \
-         patch("src.agents.audit_agent.is_span_patch_enabled", return_value=False), \
-         patch("src.agents.audit_agent.is_async_polish_enabled", return_value=False), \
-         patch("src.services.safe_replace.SafeReplacer"), \
-         patch("src.generation.local_polish.LocalPolisher"):
+    with (
+        patch("src.agents.audit_agent.is_local_patch_enabled", return_value=True),
+        patch("src.agents.audit_agent.is_span_patch_enabled", return_value=False),
+        patch("src.agents.audit_agent.is_async_polish_enabled", return_value=False),
+        patch("src.services.safe_replace.SafeReplacer"),
+        patch("src.generation.local_polish.LocalPolisher"),
+    ):
         result = await audit_agent.try_local_patch("主人公は歩いた。", unified_report, [])
         assert result is not None
         assert result["strategy"] == "actionable_patch"
@@ -558,6 +784,7 @@ async def test_try_local_patch_actionable_patch(audit_agent):
 # ---------------------------------------------------------------------------
 # Agent execute tests
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_audit_agent_execute_missing_artifacts(audit_agent):
@@ -578,28 +805,124 @@ async def test_audit_agent_execute_missing_artifacts(audit_agent):
 async def test_audit_agent_execute_success(audit_agent, sample_writing_context, sample_drafted_text, mock_repo):
     """execute runs audit and returns success when all pass."""
     # Mock audits to pass
-    with patch.object(audit_agent, "run_audit_phase", AsyncMock(return_value=(
-        [  # outcomes
-            {"audit_id": "fast_screen", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "high", "effective_severity": None, "feedback": "OK", "learning_adjusted": False, "confidence_adjustment": 0.0, "error": None, "detail": {}},
-            {"audit_id": "logical_consistency", "passed": True, "score": 100.0, "weight": 1.5, "blocking": True, "severity": "high", "effective_severity": None, "feedback": "OK", "learning_adjusted": False, "confidence_adjustment": 0.0, "error": None, "detail": {}},
-            {"audit_id": "deai", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "medium", "effective_severity": None, "feedback": "OK", "learning_adjusted": False, "confidence_adjustment": 0.0, "error": None, "detail": {}},
-            {"audit_id": "ability_consistency", "passed": True, "score": 100.0, "weight": 1.0, "blocking": True, "severity": "medium", "effective_severity": None, "feedback": "OK", "learning_adjusted": False, "confidence_adjustment": 0.0, "error": None, "detail": {}},
-            {"audit_id": "causal_integrity", "passed": True, "score": 100.0, "weight": 1.5, "blocking": True, "severity": "high", "effective_severity": None, "feedback": "OK", "learning_adjusted": False, "confidence_adjustment": 0.0, "error": None, "detail": {}},
-            {"audit_id": "unified_qualitative", "passed": True, "score": 100.0, "weight": 1.0, "blocking": False, "severity": "medium", "effective_severity": None, "feedback": "OK", "learning_adjusted": False, "confidence_adjustment": 0.0, "error": None, "detail": {}},
-        ],
-        0.1  # latency
-    ))), \
-         patch.object(audit_agent, "evaluate_gate", return_value={
-            "mode": "score_aggregation",
-            "aggregate_score": 95.0,
-            "threshold": 70.0,
-            "requires_regeneration": False,
-            "critical_failure": False,
-            "failed_count": 0,
-            "scored_audit_ids": ["fast_screen", "logical_consistency", "deai", "ability_consistency", "causal_integrity"],
-            "advisory": False,
-            "advisory_reason": "",
-         }):
+    with (
+        patch.object(
+            audit_agent,
+            "run_audit_phase",
+            AsyncMock(
+                return_value=(
+                    [  # outcomes
+                        {
+                            "audit_id": "fast_screen",
+                            "passed": True,
+                            "score": 100.0,
+                            "weight": 1.0,
+                            "blocking": True,
+                            "severity": "high",
+                            "effective_severity": None,
+                            "feedback": "OK",
+                            "learning_adjusted": False,
+                            "confidence_adjustment": 0.0,
+                            "error": None,
+                            "detail": {},
+                        },
+                        {
+                            "audit_id": "logical_consistency",
+                            "passed": True,
+                            "score": 100.0,
+                            "weight": 1.5,
+                            "blocking": True,
+                            "severity": "high",
+                            "effective_severity": None,
+                            "feedback": "OK",
+                            "learning_adjusted": False,
+                            "confidence_adjustment": 0.0,
+                            "error": None,
+                            "detail": {},
+                        },
+                        {
+                            "audit_id": "deai",
+                            "passed": True,
+                            "score": 100.0,
+                            "weight": 1.0,
+                            "blocking": True,
+                            "severity": "medium",
+                            "effective_severity": None,
+                            "feedback": "OK",
+                            "learning_adjusted": False,
+                            "confidence_adjustment": 0.0,
+                            "error": None,
+                            "detail": {},
+                        },
+                        {
+                            "audit_id": "ability_consistency",
+                            "passed": True,
+                            "score": 100.0,
+                            "weight": 1.0,
+                            "blocking": True,
+                            "severity": "medium",
+                            "effective_severity": None,
+                            "feedback": "OK",
+                            "learning_adjusted": False,
+                            "confidence_adjustment": 0.0,
+                            "error": None,
+                            "detail": {},
+                        },
+                        {
+                            "audit_id": "causal_integrity",
+                            "passed": True,
+                            "score": 100.0,
+                            "weight": 1.5,
+                            "blocking": True,
+                            "severity": "high",
+                            "effective_severity": None,
+                            "feedback": "OK",
+                            "learning_adjusted": False,
+                            "confidence_adjustment": 0.0,
+                            "error": None,
+                            "detail": {},
+                        },
+                        {
+                            "audit_id": "unified_qualitative",
+                            "passed": True,
+                            "score": 100.0,
+                            "weight": 1.0,
+                            "blocking": False,
+                            "severity": "medium",
+                            "effective_severity": None,
+                            "feedback": "OK",
+                            "learning_adjusted": False,
+                            "confidence_adjustment": 0.0,
+                            "error": None,
+                            "detail": {},
+                        },
+                    ],
+                    0.1,  # latency
+                )
+            ),
+        ),
+        patch.object(
+            audit_agent,
+            "evaluate_gate",
+            return_value={
+                "mode": "score_aggregation",
+                "aggregate_score": 95.0,
+                "threshold": 70.0,
+                "requires_regeneration": False,
+                "critical_failure": False,
+                "failed_count": 0,
+                "scored_audit_ids": [
+                    "fast_screen",
+                    "logical_consistency",
+                    "deai",
+                    "ability_consistency",
+                    "causal_integrity",
+                ],
+                "advisory": False,
+                "advisory_reason": "",
+            },
+        ),
+    ):
         ctx = AgentContext(
             book_id=42,
             ep_num=7,
@@ -621,6 +944,7 @@ async def test_audit_agent_execute_success(audit_agent, sample_writing_context, 
 # ---------------------------------------------------------------------------
 # Miscellaneous
 # ---------------------------------------------------------------------------
+
 
 def test_audit_criterion_immutable():
     """AuditCriterion is frozen (immutable)."""

@@ -1,8 +1,10 @@
 """API契約テスト: Editor Router (POST /api/editor/audit)."""
+
 from fastapi.testclient import TestClient
 from src.backend.server import app
 
 client = TestClient(app)
+
 
 def test_post_audit_fast_hybrid_endpoint():
     """POST /api/editor/audit 正常系API契約テスト"""
@@ -20,6 +22,7 @@ def test_post_audit_fast_hybrid_endpoint():
     assert "quantitative_score" in data
     assert "conflicts" in data
     assert isinstance(data["conflicts"], list)
+
 
 def test_post_audit_fast_hybrid_validation_error():
     """POST /api/editor/audit 空テキスト時のバリデーションテスト"""

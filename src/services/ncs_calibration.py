@@ -37,9 +37,7 @@ class NarrativeCoherenceScorer:
             + self.weights["theme_unity"] * theme_score
         )
 
-    def calibrate_diversity_threshold(
-        self, training_data: list[dict[str, Any]]
-    ) -> dict[str, float]:
+    def calibrate_diversity_threshold(self, training_data: list[dict[str, Any]]) -> dict[str, float]:
         """erotic_diversity_score の閾値を人間評価データから校正する。
 
         Args:

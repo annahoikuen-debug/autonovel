@@ -4,6 +4,7 @@
 ベースラインを下げることで改善を追えるが、
 「全エラー 0 化」を目的とはしない (PLAN_H1 §9 で対象外と明記)。
 """
+
 from __future__ import annotations
 
 import argparse
@@ -19,9 +20,9 @@ COUNT_RE = re.compile(r"Found\s+(\d+)\s+error")
 
 def run_ruff() -> int:
     p = subprocess.run(
-        [sys.executable, "-m", "ruff", "check", "src", "tests", "config", "scripts",
-         "--output-format=concise"],
-        capture_output=True, text=True,
+        [sys.executable, "-m", "ruff", "check", "src", "tests", "config", "scripts", "--output-format=concise"],
+        capture_output=True,
+        text=True,
     )
     m = COUNT_RE.search(p.stdout + p.stderr)
     return int(m.group(1)) if m else 0

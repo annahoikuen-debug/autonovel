@@ -5,6 +5,7 @@
 コンテキスト長（文字数・推定トークン数）が爆発せず一定のウィンドウ内に
 安定収束（フラット化）することを検証する。
 """
+
 import time
 
 from src.services.context_compression.rolling_memory import RollingMemoryBuilder
@@ -32,7 +33,11 @@ def test_rolling_memory_token_stability_20_episodes():
 
     # 1話〜20話までのシミュレーション
     for ep in range(1, 21):
-        prev_text = f"第{ep-1}話の本文サンプル。レオンとフェイは敵の追手を振り切り、新たな街の門をくぐった。" * 15 if ep > 1 else ""
+        prev_text = (
+            f"第{ep - 1}話の本文サンプル。レオンとフェイは敵の追手を振り切り、新たな街の門をくぐった。" * 15
+            if ep > 1
+            else ""
+        )
         stats = builder.get_context_stats(
             bible_summary=bible,
             past_digests=digests,

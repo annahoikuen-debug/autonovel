@@ -1,4 +1,5 @@
 """Scene Transition Validator Provider for Continuity and Consistency Checks."""
+
 from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple
@@ -39,17 +40,13 @@ class SceneTransitionValidator:
             かつ travel_method 未指定の場合にコンフリクトを検出する汎用ルールの有効化。
         """
         if forbidden_instant_moves is None:
-            self.forbidden_instant_moves: List[Tuple[str, str]] = list(
-                DEFAULT_FORBIDDEN_INSTANT_MOVES
-            )
+            self.forbidden_instant_moves: List[Tuple[str, str]] = list(DEFAULT_FORBIDDEN_INSTANT_MOVES)
         else:
             self.forbidden_instant_moves = list(forbidden_instant_moves)
         self.allowed_transitions = allowed_transitions
         self.enforce_remote_metadata_rule = enforce_remote_metadata_rule
 
-    def validate_transition(
-        self, from_state: SceneState, to_state: SceneState
-    ) -> TransitionValidationResult:
+    def validate_transition(self, from_state: SceneState, to_state: SceneState) -> TransitionValidationResult:
         """前シーン (from_state) から現シーン (to_state) への状態変化を検証する"""
         conflicts: List[TransitionConflict] = []
         patches: List[str] = []
@@ -115,9 +112,7 @@ class SceneTransitionValidator:
                             severity="warning",
                         )
                     )
-                    patches.append(
-                        "Add travel_method metadata or a travel scene for the remote transition."
-                    )
+                    patches.append("Add travel_method metadata or a travel scene for the remote transition.")
 
         # 2. 所持品矛盾チェック (例: 持っていなかったアイテムが突然使用されているなど)
         for item in to_state.inventory:
@@ -128,7 +123,7 @@ class SceneTransitionValidator:
                         TransitionConflict(
                             conflict_type="inventory",
                             message=f"Character {to_state.character_name} uses item '{item}' without acquiring it in previous scenes.",
-                            severity="warning"
+                            severity="warning",
                         )
                     )
                     patches.append(f"Insert an item acquisition event for '{item}'.")
@@ -140,7 +135,7 @@ class SceneTransitionValidator:
                     TransitionConflict(
                         conflict_type="status",
                         message=f"Character {to_state.character_name} recovered from critical injury to normal instantly without healing.",
-                        severity="error"
+                        severity="error",
                     )
                 )
                 patches.append("Add a healing magic or resting scene before returning to normal status.")

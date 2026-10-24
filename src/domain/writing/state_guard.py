@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ValidationResult:
     """検証結果"""
+
     is_valid: bool
     errors: list[str]
     warnings: list[str]
@@ -57,11 +58,7 @@ class StateGuard:
             if project_ctx.genre not in valid_genres:
                 warnings.append(f"未知のジャンル: {project_ctx.genre}")
 
-        return ValidationResult(
-            is_valid=len(errors) == 0,
-            errors=errors,
-            warnings=warnings
-        )
+        return ValidationResult(is_valid=len(errors) == 0, errors=errors, warnings=warnings)
 
     async def ensure_chapter_sequence(
         self,
@@ -107,9 +104,7 @@ class StateGuard:
             if existing_numbers:
                 max_existing = max(existing_numbers)
                 if start_ep > max_existing + 1:
-                    logger.warning(
-                        f"チャプターにギャップがあります: 既存最大={max_existing}, 次={start_ep}"
-                    )
+                    logger.warning(f"チャプターにギャップがあります: 既存最大={max_existing}, 次={start_ep}")
 
             return True
 
@@ -149,8 +144,4 @@ class StateGuard:
                 if not ctx["plot"].strip():
                     warnings.append("プロットが空文字列です")
 
-        return ValidationResult(
-            is_valid=len(errors) == 0,
-            errors=errors,
-            warnings=warnings
-        )
+        return ValidationResult(is_valid=len(errors) == 0, errors=errors, warnings=warnings)

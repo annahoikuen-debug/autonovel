@@ -2,6 +2,7 @@
 
 Docker デーモンが利用できない環境では skip する（Phase 2: 外部環境依存テストの切り分け）。
 """
+
 from __future__ import annotations
 
 import pytest

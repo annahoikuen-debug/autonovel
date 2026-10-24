@@ -1,5 +1,6 @@
 # src/infrastructure/database/models/book_score.py
 """BookScore ORM モデル"""
+
 from sqlalchemy import Column, Integer, Float, DateTime, ForeignKey, String, JSON
 from src.infrastructure.database.models.base_orm import Base
 from datetime import datetime

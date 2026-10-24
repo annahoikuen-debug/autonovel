@@ -5,6 +5,7 @@ A-T5: フラグ OFF で 0件返し、DB に副作用ゼロ（ロールバック�
 A-T6: `foreshadowing_setup="なし"` / 空文字は設置されない
 A-T7: `planting_service` と `foreshadowing_repo` に生 `insert()` が無いこと（AST 固定）
 """
+
 from __future__ import annotations
 
 import ast
@@ -63,9 +64,7 @@ async def session_factory():
                         marketing_data="",
                     )
                 )
-    factory = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
+    factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     try:
         yield factory
     finally:
@@ -148,9 +147,7 @@ async def test_plant_sets_target_and_scope_from_planner(session_factory):
 
         for record in planted:
             assert record.target_episode is not None
-            assert record.target_episode > record.planted_episode, (
-                "回収先は設置話より後であること（horizon 0 は禁止）"
-            )
+            assert record.target_episode > record.planted_episode, "回収先は設置話より後であること（horizon 0 は禁止）"
             assert record.scope in ("short_term", "long_term")
             assert record.status == "planted"
 
@@ -237,9 +234,7 @@ async def test_flag_off_means_no_planting_end_to_end(session_factory, monkeypatc
     enabled = planting_service.is_planting_enabled()
     async with session_factory() as session:
         repo = DbForeshadowingRepository(session)
-        result = await plant_from_roadmap(
-            repo, 1, _roadmap(), 40, planting_enabled=enabled
-        )
+        result = await plant_from_roadmap(repo, 1, _roadmap(), 40, planting_enabled=enabled)
         await repo.commit()
         assert result == []
 
@@ -346,9 +341,7 @@ async def test_plant_does_not_use_raw_insert(session_factory):
         repo = DbForeshadowingRepository(session)
         await plant_from_roadmap(repo, 1, _roadmap(), 40)
         await repo.commit()
-        statuses = await session.execute(
-            select(ForeshadowingModel.status).where(ForeshadowingModel.book_id == 1)
-        )
+        statuses = await session.execute(select(ForeshadowingModel.status).where(ForeshadowingModel.book_id == 1))
         assert sorted(statuses.scalars().all()) == ["planted", "planted"]
 
 
@@ -428,9 +421,7 @@ def _attribute_call_names(tree: ast.AST, attribute: str) -> list[ast.Call]:
     return [
         node
         for node in ast.walk(tree)
-        if isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Attribute)
-        and node.func.attr == attribute
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == attribute
     ]
 
 
@@ -439,16 +430,13 @@ def test_planting_service_uses_repo_add_or_add_many():
 
     docstring 内の言及を拾わないよう、文字列ではなく **AST** で呼び出しを見る。
     """
-    source = _module_path("src.services.foreshadowing.planting_service").read_text(
-        encoding="utf-8"
-    )
+    source = _module_path("src.services.foreshadowing.planting_service").read_text(encoding="utf-8")
     tree = ast.parse(source)
     add_many_calls = _attribute_call_names(tree, "add_many")
     add_calls = [
         call
         for call in _attribute_call_names(tree, "add")
-        if isinstance(call.func.value, ast.Name)
-        and call.func.value.id == "repo"
+        if isinstance(call.func.value, ast.Name) and call.func.value.id == "repo"
     ]
     assert add_many_calls, "repo.add_many(...) を呼んでいること"
     assert add_calls == [], "単発の repo.add(...) は add_many 経由に統一する"
@@ -459,9 +447,7 @@ def test_planting_service_never_calls_db_orm_insert_directly():
 
     セッションを直叩きすると `_report_planted` を飛ばす余地が生まれる。
     """
-    source = _module_path("src.services.foreshadowing.planting_service").read_text(
-        encoding="utf-8"
-    )
+    source = _module_path("src.services.foreshadowing.planting_service").read_text(encoding="utf-8")
     assert ".db.add(" not in source
     assert "session.add(" not in source
 

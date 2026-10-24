@@ -22,9 +22,7 @@ class PromptBuilder:
     )
 
     @classmethod
-    def build_negative_prompt(
-        cls, custom_negative: str | None = None, include_standard: bool = True
-    ) -> str:
+    def build_negative_prompt(cls, custom_negative: str | None = None, include_standard: bool = True) -> str:
         """
         ネガティブプロンプトを構築する。
 

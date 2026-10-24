@@ -1,4 +1,5 @@
 """Integration test demonstrating the combined workflow of MCP servers (Lore, Vocab, Tension, Timeline, Audit)."""
+
 from __future__ import annotations
 
 import pytest
@@ -44,7 +45,15 @@ async def test_mcp_servers_collaborative_workflow():
 
     # --- Step 1: Lore Lookup ---
     from src.mcp_servers.schemas import CharacterProfile, WorldBibleSection
-    lore_provider.register_bible_section(WorldBibleSection(section_id="magic_system", title="魔法体系", content="詠唱なしの即時発動型元素魔法。ただし魔力枯渇の危険あり。", tags=["magic"]))
+
+    lore_provider.register_bible_section(
+        WorldBibleSection(
+            section_id="magic_system",
+            title="魔法体系",
+            content="詠唱なしの即時発動型元素魔法。ただし魔力枯渇の危険あり。",
+            tags=["magic"],
+        )
+    )
     lore_provider.register_character(CharacterProfile(name="アリス", role="魔導士", personality="クールで仲間思い"))
 
     query_req = {
@@ -60,6 +69,7 @@ async def test_mcp_servers_collaborative_workflow():
 
     # --- Step 2: Vocabulary / Sensory Metaphor Suggestion ---
     from src.mcp_servers.vocab_schemas import SensoryWord
+
     vocab_provider.register_words(
         genre="fantasy",
         words=[
@@ -67,9 +77,9 @@ async def test_mcp_servers_collaborative_workflow():
                 word="冷たい石壁の感触",
                 category="tactile",
                 example_sentence="背中に当たる冷たい石壁が意識を覚醒させる。",
-                nuance="tension"
+                nuance="tension",
             )
-        ]
+        ],
     )
     vocab_req = {
         "jsonrpc": "2.0",
@@ -95,7 +105,12 @@ async def test_mcp_servers_collaborative_workflow():
 
     # --- Step 5: Timeline & Episode Digest Logging ---
     from src.mcp_servers.timeline_schemas import EpisodeDigest
-    timeline_provider.record_episode_digest(EpisodeDigest(episode_num=5, summary="アリスがダンジョン内で魔法を発動した。", footholds_or_foreshadowings=["魔法発動"]))
+
+    timeline_provider.record_episode_digest(
+        EpisodeDigest(
+            episode_num=5, summary="アリスがダンジョン内で魔法を発動した。", footholds_or_foreshadowings=["魔法発動"]
+        )
+    )
 
     # Read timeline URI resource
     uri_req = {

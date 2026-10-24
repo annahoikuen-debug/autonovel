@@ -2,6 +2,7 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from src.backend.server import app
 
+
 @pytest.mark.asyncio
 async def test_rfc7807_error_response_format():
     transport = ASGITransport(app=app)

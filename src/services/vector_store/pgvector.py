@@ -1,6 +1,7 @@
 """
 src/services/vector_store/pgvector.py - PostgreSQL + pgvector ベクトルストア実装
 """
+
 from __future__ import annotations
 
 import json
@@ -18,10 +19,12 @@ logger = logging.getLogger(__name__)
 try:
     from sqlalchemy import text
     from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
     HAS_PGVECTOR = True
 except Exception as e:
     logger.warning(f"[VECTOR STORE] Failed to import pgvector/sqlalchemy: {e}.")
     HAS_PGVECTOR = False
+
 
 def _embedding_to_pgvector(emb: list[float]) -> str:
     """Convert embedding list to pgvector string format."""
@@ -56,9 +59,7 @@ class PgVectorStore(BaseVectorStore):
             max_overflow=max_overflow,
             pool_pre_ping=True,
         )
-        self._session_factory = async_sessionmaker(
-            bind=self._engine, class_=AsyncSession, expire_on_commit=False
-        )
+        self._session_factory = async_sessionmaker(bind=self._engine, class_=AsyncSession, expire_on_commit=False)
         self._initialized_tables: set[str] = set()
 
     async def _get_session(self) -> AsyncSession:
@@ -165,16 +166,12 @@ class PgVectorStore(BaseVectorStore):
                     batch_ids = ids[start:end]
                     batch_docs = documents[start:end]
                     batch_embs = embeddings[start:end]
-                    batch_metas = (
-                        metadatas[start:end] if metadatas else [{} for _ in range(end - start)]
-                    )
+                    batch_metas = metadatas[start:end] if metadatas else [{} for _ in range(end - start)]
 
                     # UPSERT (ON CONFLICT DO UPDATE)
                     values = []
                     params = {}
-                    for i, (doc_id, doc, emb, meta) in enumerate(
-                        zip(batch_ids, batch_docs, batch_embs, batch_metas)
-                    ):
+                    for i, (doc_id, doc, emb, meta) in enumerate(zip(batch_ids, batch_docs, batch_embs, batch_metas)):
                         param_prefix = f"doc{start + i}"
                         values.append(
                             f"(:{param_prefix}_id, :{param_prefix}_content, :{param_prefix}_emb, :{param_prefix}_meta)"
@@ -353,9 +350,7 @@ class PgVectorStore(BaseVectorStore):
         await self._ensure_table(collection_name)
 
         # ベクトル検索（より多く取得して後でフィルタリング）
-        vector_results = await self.search_with_score(
-            collection_name, query_embedding, top_k * 3, where, min_score=0.0
-        )
+        vector_results = await self.search_with_score(collection_name, query_embedding, top_k * 3, where, min_score=0.0)
 
         # 全文検索 (tsvector)
         text_results = []
@@ -472,8 +467,6 @@ class PgVectorStore(BaseVectorStore):
         """エンジンを閉じる."""
         await self._engine.dispose()
         logger.info("[PGVECTOR STORE] Engine disposed")
-
-
 
 
 __all__ = ["PgVectorStore", "HAS_PGVECTOR", "_embedding_to_pgvector"]

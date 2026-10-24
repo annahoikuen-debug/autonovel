@@ -1,6 +1,7 @@
 import pytest
 from src.agents.context_builder_agent import ContextBuilderAgent
 
+
 @pytest.mark.asyncio
 async def test_context_builder_build():
     agent = ContextBuilderAgent()
@@ -8,11 +9,7 @@ async def test_context_builder_build():
     mock_chars = [{"name": "アリス", "role": "主人公"}]
 
     ctx = await agent.build_context(
-        book_id="b1",
-        episode_number=2,
-        bible_data=mock_bible,
-        characters=mock_chars,
-        prev_summary="第1話であらすじ"
+        book_id="b1", episode_number=2, bible_data=mock_bible, characters=mock_chars, prev_summary="第1話であらすじ"
     )
 
     assert "ファンタジー帝国" in str(ctx)

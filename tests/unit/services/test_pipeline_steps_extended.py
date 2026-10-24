@@ -1,4 +1,5 @@
 """Extended coverage for src/services/pipeline_steps.py."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -102,8 +103,10 @@ class TestPlanStep:
         engine.repo.plot.get_all_plots = AsyncMock(return_value=[MagicMock(tension=10), MagicMock(tension=99)])
         engine.plot_expander = None
 
-        with patch("src.backend.engine_narrative.WavePatternAnalyzer") as wave_cls, \
-             patch("config.project_context.ProjectContext") as pc:
+        with (
+            patch("src.backend.engine_narrative.WavePatternAnalyzer") as wave_cls,
+            patch("config.project_context.ProjectContext") as pc,
+        ):
             pattern = MagicMock()
             pattern.catharsis_points = [1, 2]
             pattern.model_dump.return_value = {"pattern_type": "x"}
@@ -152,8 +155,10 @@ class TestPlanStep:
         engine.plot_expander = None
         reporter = make_reporter()
 
-        with patch("src.backend.engine_narrative.WavePatternAnalyzer") as wave_cls, \
-             patch("config.project_context.ProjectContext"):
+        with (
+            patch("src.backend.engine_narrative.WavePatternAnalyzer") as wave_cls,
+            patch("config.project_context.ProjectContext"),
+        ):
             pattern = MagicMock()
             pattern.catharsis_points = []
             pattern.model_dump.return_value = {}
@@ -318,8 +323,10 @@ class TestCatharsisAnalysisStep:
         engine = make_engine()
         engine.repo.plot.get_all_plots = AsyncMock(return_value=[MagicMock(tension=1), MagicMock()])
         reporter = make_reporter()
-        with patch("src.backend.engine_narrative.WavePatternAnalyzer") as wave_cls, \
-             patch("config.project_context.ProjectContext") as pc:
+        with (
+            patch("src.backend.engine_narrative.WavePatternAnalyzer") as wave_cls,
+            patch("config.project_context.ProjectContext") as pc,
+        ):
             pattern = MagicMock()
             pattern.catharsis_points = [3]
             pattern.model_dump.return_value = {"a": 1}
@@ -333,8 +340,10 @@ class TestCatharsisAnalysisStep:
         ctx = make_ctx(enable_catharsis_analysis=True, book_id=1)
         engine = make_engine()
         engine.repo.plot.get_all_plots = AsyncMock(return_value=None)
-        with patch("src.backend.engine_narrative.WavePatternAnalyzer") as wave_cls, \
-             patch("config.project_context.ProjectContext"):
+        with (
+            patch("src.backend.engine_narrative.WavePatternAnalyzer") as wave_cls,
+            patch("config.project_context.ProjectContext"),
+        ):
             pattern = MagicMock()
             pattern.catharsis_points = []
             pattern.model_dump.return_value = {}
@@ -392,8 +401,10 @@ class TestAuditRewriteStep:
     async def test_episodes_pass_without_rewrite(self):
         ctx = self._ctx()
         engine = self._engine(score=95.0)
-        with patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter), \
-             patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard):
+        with (
+            patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter),
+            patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard),
+        ):
             assert await AuditRewriteStep().execute(ctx, engine, make_reporter()) is True
         assert ctx.average_audit_score == 95.0
         assert len(ctx.episodes_detail) == 3
@@ -404,8 +415,10 @@ class TestAuditRewriteStep:
         ctx = self._ctx()
         engine = self._engine()
         engine.repo.episode.get_by_book_and_number = AsyncMock(return_value=None)
-        with patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter), \
-             patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard):
+        with (
+            patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter),
+            patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard),
+        ):
             assert await AuditRewriteStep().execute(ctx, engine, make_reporter()) is True
         assert ctx.episodes_detail == []
 
@@ -415,8 +428,10 @@ class TestAuditRewriteStep:
         engine._audit_adapter.audit_episode = AsyncMock(
             side_effect=[{"score": 50.0, "improvements": ["a"]}, {"score": 95.0, "improvements": []}]
         )
-        with patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter), \
-             patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard):
+        with (
+            patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter),
+            patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard),
+        ):
             assert await AuditRewriteStep().execute(ctx, engine, make_reporter()) is True
         assert ctx.episodes_detail[0]["rewrite_count"] == 1
         engine.repo.episode.update_content.assert_awaited()
@@ -429,19 +444,21 @@ class TestAuditRewriteStep:
             enable_spice_guard=True,
         )
         engine = self._engine(score=10.0)
-        with patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter), \
-             patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard):
+        with (
+            patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter),
+            patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard),
+        ):
             await AuditRewriteStep().execute(ctx, engine, make_reporter())
         assert ctx.episodes_detail[0]["needs_human_review"] is True
 
     async def test_no_improvements_breaks(self):
         ctx = self._ctx()
         engine = self._engine(score=10.0)
-        engine._audit_adapter.audit_episode = AsyncMock(
-            return_value={"score": 10.0, "improvements": []}
-        )
-        with patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter), \
-             patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard):
+        engine._audit_adapter.audit_episode = AsyncMock(return_value={"score": 10.0, "improvements": []})
+        with (
+            patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter),
+            patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard),
+        ):
             await AuditRewriteStep().execute(ctx, engine, make_reporter())
         assert ctx.episodes_detail[0]["rewrite_count"] == 0
 
@@ -449,8 +466,10 @@ class TestAuditRewriteStep:
         ctx = self._ctx()
         engine = self._engine(score=10.0)
         engine.llm.generate = AsyncMock(return_value="   ")
-        with patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter), \
-             patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard):
+        with (
+            patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter),
+            patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard),
+        ):
             await AuditRewriteStep().execute(ctx, engine, make_reporter())
         assert ctx.episodes_detail[0]["rewrite_count"] == 0
 
@@ -458,8 +477,10 @@ class TestAuditRewriteStep:
         ctx = self._ctx()
         engine = self._engine(score=10.0)
         engine.llm.generate = AsyncMock(side_effect=RuntimeError("llm down"))
-        with patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter), \
-             patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard):
+        with (
+            patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter),
+            patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard),
+        ):
             await AuditRewriteStep().execute(ctx, engine, make_reporter())
         assert ctx.episodes_detail[0]["rewrite_count"] == 0
 
@@ -467,8 +488,10 @@ class TestAuditRewriteStep:
         ctx = self._ctx()
         engine = self._engine()
         engine.repo.episode.get_by_book_and_number = AsyncMock(side_effect=RuntimeError("db"))
-        with patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter), \
-             patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard):
+        with (
+            patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter),
+            patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard),
+        ):
             assert await AuditRewriteStep().execute(ctx, engine, make_reporter()) is True
         assert ctx.episodes_detail[0]["error"] == "db"
         assert ctx.episodes_detail[0]["needs_human_review"] is True
@@ -476,8 +499,10 @@ class TestAuditRewriteStep:
     async def test_stop_signal_aborts(self):
         ctx = self._ctx()
         engine = self._engine()
-        with patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter), \
-             patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard):
+        with (
+            patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter),
+            patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard),
+        ):
             assert await AuditRewriteStep().execute(ctx, engine, make_reporter(should_stop=True)) is False
 
     async def test_bible_without_dict(self):
@@ -492,8 +517,10 @@ class TestAuditRewriteStep:
             return {"score": 95.0, "improvements": []}
 
         engine._audit_adapter.audit_episode = AsyncMock(side_effect=cap)
-        with patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter), \
-             patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard):
+        with (
+            patch("src.services.pipeline_steps.create_audit_adapter", return_value=engine._audit_adapter),
+            patch("src.services.pipeline_steps.create_spice_guard_adapter", return_value=engine._guard),
+        ):
             await AuditRewriteStep().execute(ctx, engine, make_reporter())
         assert [e["episode"] for _, e in seen] == [1, 2, 3]
         assert all(ctx_["bible"] is None and ctx_["plot"] is None for _, ctx_ in seen)
@@ -605,9 +632,11 @@ class TestIllustrationStep:
         engine.illustration_agent = None
         wf = MagicMock()
         wf.execute = AsyncMock(return_value={"status": "success", "illustrations": []})
-        with patch("src.backend.workflows.illustration_workflow.IllustrationWorkflow", return_value=wf), \
-             patch("src.services.image_service.ImageService") as image_service, \
-             patch("src.backend.config.settings") as settings:
+        with (
+            patch("src.backend.workflows.illustration_workflow.IllustrationWorkflow", return_value=wf),
+            patch("src.services.image_service.ImageService") as image_service,
+            patch("src.backend.config.settings") as settings,
+        ):
             settings.get_gemini_api_key.return_value = "key"
             assert await IllustrationStep().execute(ctx, engine, make_reporter()) is True
         image_service.assert_called_once()
@@ -657,7 +686,7 @@ class TestMarketingStep:
     async def test_llm_title_fallback(self):
         ctx = make_ctx(enable_marketing=True, book_id=1, title="", archetype_key="")
         engine = make_engine()
-        engine.llm.generate = AsyncMock(return_value='「LLM Title」\nextra line')
+        engine.llm.generate = AsyncMock(return_value="「LLM Title」\nextra line")
         with patch("src.services.pipeline_steps.load_preset_for_pipeline", return_value=None):
             assert await MarketingStep().execute(ctx, engine, make_reporter()) is True
         assert ctx.title == "LLM Title"
@@ -798,7 +827,9 @@ class TestForeshadowingRegistrationStep:
         ctx = make_ctx(book_id=1)
         reporter = make_reporter()
         assert await ForeshadowingRegistrationStep().execute(ctx, self._engine([]), reporter) is True
-        assert any("find" in str(c) or "not found" in str(c) or "プロット" in str(c) for c in reporter.report.call_args_list)
+        assert any(
+            "find" in str(c) or "not found" in str(c) or "プロット" in str(c) for c in reporter.report.call_args_list
+        )
 
     async def test_plots_without_hints(self):
         ctx = make_ctx(book_id=1)

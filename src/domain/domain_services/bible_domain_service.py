@@ -15,11 +15,13 @@ from src.domain.repositories.world_bible_repository import IWorldBibleRepository
 
 class BibleValidationError(Exception):
     """Raised when bible validation fails."""
+
     pass
 
 
 class SettingConflictType(Enum):
     """Types of setting conflicts."""
+
     DIRECT_CONTRADICTION = "direct_contradiction"
     SEMANTIC_CONFLICT = "semantic_conflict"
     MISSING_DEPENDENCY = "missing_dependency"
@@ -30,6 +32,7 @@ class SettingConflictType(Enum):
 @dataclass
 class SettingConflict:
     """Represents a conflict between settings."""
+
     conflict_type: SettingConflictType
     field_path: str
     existing_value: Any
@@ -42,6 +45,7 @@ class SettingConflict:
 @dataclass
 class ConsistencyReport:
     """Report of world bible consistency check."""
+
     is_consistent: bool
     conflicts: List[SettingConflict]
     warnings: List[str]
@@ -107,28 +111,32 @@ class BibleConsistencyChecker:
 
             # Direct contradiction check
             if existing_value is not None and existing_value != new_value:
-                conflicts.append(SettingConflict(
-                    conflict_type=SettingConflictType.DIRECT_CONTRADICTION,
-                    field_path=field_path,
-                    existing_value=existing_value,
-                    new_value=new_value,
-                    description=f"Field '{field_path}' already has value '{existing_value}', proposing '{new_value}'",
-                    severity="error",
-                ))
+                conflicts.append(
+                    SettingConflict(
+                        conflict_type=SettingConflictType.DIRECT_CONTRADICTION,
+                        field_path=field_path,
+                        existing_value=existing_value,
+                        new_value=new_value,
+                        description=f"Field '{field_path}' already has value '{existing_value}', proposing '{new_value}'",
+                        severity="error",
+                    )
+                )
 
             # Dependency check
             if field_path in self.SETTING_DEPENDENCIES:
                 for dep in self.SETTING_DEPENDENCIES[field_path]:
                     dep_value = self._get_nested_value(current, dep)
                     if dep_value is None:
-                        conflicts.append(SettingConflict(
-                            conflict_type=SettingConflictType.MISSING_DEPENDENCY,
-                            field_path=field_path,
-                            existing_value=dep_value,
-                            new_value=new_value,
-                            description=f"Setting '{field_path}' requires '{dep}' to be set first",
-                            severity="warning",
-                        ))
+                        conflicts.append(
+                            SettingConflict(
+                                conflict_type=SettingConflictType.MISSING_DEPENDENCY,
+                                field_path=field_path,
+                                existing_value=dep_value,
+                                new_value=new_value,
+                                description=f"Setting '{field_path}' requires '{dep}' to be set first",
+                                severity="warning",
+                            )
+                        )
 
             # Mutual exclusivity check
             for group in self.MUTUALLY_EXCLUSIVE:
@@ -137,14 +145,16 @@ class BibleConsistencyChecker:
                         if other != field_path:
                             other_value = self._get_nested_value(current, other)
                             if other_value is not None:
-                                conflicts.append(SettingConflict(
-                                    conflict_type=SettingConflictType.SEMANTIC_CONFLICT,
-                                    field_path=field_path,
-                                    existing_value=other_value,
-                                    new_value=new_value,
-                                    description=f"'{field_path}' may conflict with '{other}' (mutually exclusive settings)",
-                                    severity="warning",
-                                ))
+                                conflicts.append(
+                                    SettingConflict(
+                                        conflict_type=SettingConflictType.SEMANTIC_CONFLICT,
+                                        field_path=field_path,
+                                        existing_value=other_value,
+                                        new_value=new_value,
+                                        description=f"'{field_path}' may conflict with '{other}' (mutually exclusive settings)",
+                                        severity="warning",
+                                    )
+                                )
 
         return conflicts
 
@@ -170,14 +180,16 @@ class BibleConsistencyChecker:
         for existing in current_lore:
             # Check for duplicate titles in same category
             if existing.category == new_lore.category and existing.title.lower() == new_lore.title.lower():
-                conflicts.append(SettingConflict(
-                    conflict_type=SettingConflictType.DIRECT_CONTRADICTION,
-                    field_path=f"lore.{new_lore.category}.{new_lore.title}",
-                    existing_value=existing.content.content,
-                    new_value=new_lore.content.content,
-                    description=f"Lore entry '{new_lore.title}' already exists in category '{new_lore.category}'",
-                    severity="error",
-                ))
+                conflicts.append(
+                    SettingConflict(
+                        conflict_type=SettingConflictType.DIRECT_CONTRADICTION,
+                        field_path=f"lore.{new_lore.category}.{new_lore.title}",
+                        existing_value=existing.content.content,
+                        new_value=new_lore.content.content,
+                        description=f"Lore entry '{new_lore.title}' already exists in category '{new_lore.category}'",
+                        severity="error",
+                    )
+                )
 
             # Check for contradictory content (simple keyword overlap with opposite sentiment)
             if existing.category == new_lore.category:
@@ -188,29 +200,39 @@ class BibleConsistencyChecker:
                 for kw in existing_keywords:
                     opposite = self._get_opposite(kw)
                     if opposite and opposite in new_keywords:
-                        conflicts.append(SettingConflict(
-                            conflict_type=SettingConflictType.SEMANTIC_CONFLICT,
-                            field_path=f"lore.{new_lore.category}.{new_lore.title}",
-                            existing_value=kw,
-                            new_value=opposite,
-                            description=f"Possible contradiction: '{kw}' vs '{opposite}' in {new_lore.category}",
-                            severity="warning",
-                        ))
+                        conflicts.append(
+                            SettingConflict(
+                                conflict_type=SettingConflictType.SEMANTIC_CONFLICT,
+                                field_path=f"lore.{new_lore.category}.{new_lore.title}",
+                                existing_value=kw,
+                                new_value=opposite,
+                                description=f"Possible contradiction: '{kw}' vs '{opposite}' in {new_lore.category}",
+                                severity="warning",
+                            )
+                        )
 
         return conflicts
 
     def _extract_keywords(self, text: str) -> Set[str]:
         """Extract meaningful keywords from text."""
         # Simple extraction - in reality would use NLP
-        words = re.findall(r'[一-龯ァ-ヴーa-zA-Z]{2,}', text)
+        words = re.findall(r"[一-龯ァ-ヴーa-zA-Z]{2,}", text)
         return {w.lower() for w in words if len(w) > 2}
 
     def _get_opposite(self, word: str) -> Optional[str]:
         """Get opposite word for contradiction detection."""
         opposites = {
-            "生": "死", "生きる": "死ぬ", "存在": "不在", "真実": "嘘",
-            "光": "闇", "善": "悪", "平和": "戦争", "愛": "憎しみ",
-            "自由": "束縛", "強い": "弱い", "古い": "新しい",
+            "生": "死",
+            "生きる": "死ぬ",
+            "存在": "不在",
+            "真実": "嘘",
+            "光": "闇",
+            "善": "悪",
+            "平和": "戦争",
+            "愛": "憎しみ",
+            "自由": "束縛",
+            "強い": "弱い",
+            "古い": "新しい",
         }
         return opposites.get(word)
 
@@ -220,14 +242,16 @@ class BibleConsistencyChecker:
         if not bible:
             return ConsistencyReport(
                 is_consistent=False,
-                conflicts=[SettingConflict(
-                    conflict_type=SettingConflictType.DIRECT_CONTRADICTION,
-                    field_path="bible",
-                    existing_value=None,
-                    new_value=None,
-                    description="World bible not found",
-                    severity="critical",
-                )],
+                conflicts=[
+                    SettingConflict(
+                        conflict_type=SettingConflictType.DIRECT_CONTRADICTION,
+                        field_path="bible",
+                        existing_value=None,
+                        new_value=None,
+                        description="World bible not found",
+                        severity="critical",
+                    )
+                ],
                 warnings=[],
                 suggestions=["Create world bible first"],
                 checked_settings=0,
@@ -245,27 +269,31 @@ class BibleConsistencyChecker:
         # Check for circular dependencies
         circular = self._detect_circular_dependencies(flat_settings)
         for cycle in circular:
-            all_conflicts.append(SettingConflict(
-                conflict_type=SettingConflictType.CIRCULAR_DEPENDENCY,
-                field_path=" -> ".join(cycle),
-                existing_value=cycle[0],
-                new_value=cycle[-1],
-                description=f"Circular dependency detected: {' -> '.join(cycle)}",
-                severity="error",
-            ))
+            all_conflicts.append(
+                SettingConflict(
+                    conflict_type=SettingConflictType.CIRCULAR_DEPENDENCY,
+                    field_path=" -> ".join(cycle),
+                    existing_value=cycle[0],
+                    new_value=cycle[-1],
+                    description=f"Circular dependency detected: {' -> '.join(cycle)}",
+                    severity="error",
+                )
+            )
 
         # Check revealed vs unrevealed consistency
         revealed_dict = self._parse_settings(bible.revealed)
         for key, value in revealed_dict.items():
             if key in flat_settings and flat_settings[key] != value:
-                all_conflicts.append(SettingConflict(
-                    conflict_type=SettingConflictType.INCONSISTENT_VALUE,
-                    field_path=f"revealed.{key}",
-                    existing_value=flat_settings[key],
-                    new_value=value,
-                    description=f"Revealed value differs from actual setting: '{key}'",
-                    severity="warning",
-                ))
+                all_conflicts.append(
+                    SettingConflict(
+                        conflict_type=SettingConflictType.INCONSISTENT_VALUE,
+                        field_path=f"revealed.{key}",
+                        existing_value=flat_settings[key],
+                        new_value=value,
+                        description=f"Revealed value differs from actual setting: '{key}'",
+                        severity="warning",
+                    )
+                )
 
         # Check pending settings
         # get_pending_settings() は List[PendingSetting] を返す
@@ -285,7 +313,7 @@ class BibleConsistencyChecker:
 
         for group in lore_by_category.values():
             for i, lore in enumerate(group):
-                others = group[:i] + group[i + 1:]
+                others = group[:i] + group[i + 1 :]
                 if others:
                     all_conflicts.extend(self.check_lore_consistency(others, lore))
 
@@ -413,6 +441,7 @@ class BibleDomainService:
     Pure business logic - no infrastructure dependencies.
     Depends only on repository interfaces.
     """
+
     bible_repo: IWorldBibleRepository
 
     def __post_init__(self):
@@ -588,7 +617,9 @@ class BibleDomainService:
         conflicts = self._consistency_checker.check_lore_consistency(existing_lore, lore)
         critical_conflicts = [c for c in conflicts if c.severity in ("error", "critical")]
         if critical_conflicts:
-            raise BibleValidationError(f"Lore conflicts detected: {', '.join(c.description for c in critical_conflicts)}")
+            raise BibleValidationError(
+                f"Lore conflicts detected: {', '.join(c.description for c in critical_conflicts)}"
+            )
 
         return await self.bible_repo.save_lore(novel_id, lore)
 

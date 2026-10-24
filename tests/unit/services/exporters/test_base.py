@@ -28,6 +28,7 @@ from src.services.exporters.base import (
 
 # Helper function tests
 
+
 def test_normalize_newlines():
     assert normalize_newlines("") == ""
     assert normalize_newlines("hello") == "hello"
@@ -38,17 +39,19 @@ def test_normalize_newlines():
     assert normalize_newlines("hello\n\n\n\nworld") == "hello\n\nworld"
     assert normalize_newlines("hello\n\nworld\n\n\n") == "hello\n\nworld\n\n"
 
+
 def test_escape_ruby_markup():
     assert escape_ruby_markup("") == ""
     assert escape_ruby_markup("|漢字《かんじ》|") == "|漢字《かんじ》|"
     assert escape_ruby_markup("rubyなし") == "rubyなし"
 
+
 def test_process_image_placeholders():
     # narou
     assert process_image_placeholders("![alt](url)", "narou") == "[画像: alt]"
-    assert process_image_placeholders("![alt](url \"title\")", "narou") == "[画像: alt]"
+    assert process_image_placeholders('![alt](url "title")', "narou") == "[画像: alt]"
     assert process_image_placeholders("![alt](url)", "kakuyomu") == "![alt](url)"
-    assert process_image_placeholders("![alt](url \"title\")", "kakuyomu") == "![alt](url \"title\")"
+    assert process_image_placeholders('![alt](url "title")', "kakuyomu") == '![alt](url "title")'
     assert process_image_placeholders("![alt](url)", "nocturn") == "[画像: alt]"
     assert process_image_placeholders("![alt](url)", "markdown") == "![alt](url)"
     assert process_image_placeholders("![alt](url)", "txt") == "[画像: alt]"
@@ -57,6 +60,7 @@ def test_process_image_placeholders():
     # altなし
     assert process_image_placeholders("![](url)", "narou") == "[画像]"
     assert process_image_placeholders("![](url)", "narou") == "[画像]"
+
 
 def test_process_ruby_markup():
     # narou
@@ -70,6 +74,7 @@ def test_process_ruby_markup():
     # 複数
     assert process_ruby_markup("|あ《ア》| |い《イ》|", "narou") == "|あ《ア》| |い《イ》|"
 
+
 def test_process_footnotes():
     # narou
     assert process_footnotes("^[注釈]", "narou") == "（注釈）"
@@ -81,6 +86,7 @@ def test_process_footnotes():
     assert process_footnotes("^[注釈]", "txt") == "（注釈）"
     # 脚注なし
     assert process_footnotes("脚注なし", "narou") == "脚注なし"
+
 
 def test_detect_unsupported_elements():
     text = "![alt](url) ^[注釈] <b>bold</b>"
@@ -97,21 +103,25 @@ def test_detect_unsupported_elements():
     warns = detect_unsupported_elements(text, "markdown")
     assert len(warns) == 0
 
+
 def test_sanitize_for_narou():
     assert sanitize_for_narou("![alt](url)") == "[画像: alt]"
     assert sanitize_for_narou("^[注釈]") == "（注釈）"
     assert sanitize_for_narou("|漢字《かんじ》|") == "|漢字《かんじ》|"
     assert sanitize_for_narou("<b>bold</b>") == "<b>bold</b>"  # HTMLは変換されない
 
+
 def test_sanitize_for_kakuyomu():
     assert sanitize_for_kakuyomu("![alt](url)") == "![alt](url)"
     assert sanitize_for_kakuyomu("^[注釈]") == "[^注釈]"
     assert sanitize_for_kakuyomu("|漢字《かんじ》|") == "|漢字《かんじ》|"
 
+
 def test_sanitize_for_nocturne():
     assert sanitize_for_nocturne("![alt](url)") == "[画像: alt]"
     assert sanitize_for_nocturne("^[注釈]") == "（注釈）"
     assert sanitize_for_nocturne("|漢字《かんじ》|") == "|漢字《かんじ》|"
+
 
 def test_sanitize_for_markdown():
     assert sanitize_for_markdown("![alt](url)") == "![alt](url)"
@@ -119,20 +129,24 @@ def test_sanitize_for_markdown():
     assert sanitize_for_markdown("|漢字《かんじ》|") == "<ruby>漢字<rt>かんじ</rt></ruby>"
     assert sanitize_for_markdown("<b>bold</b>") == "<b>bold</b>"
 
+
 def test_sanitize_for_plain_text():
     assert sanitize_for_plain_text("![alt](url)") == "[画像: alt]"
     assert sanitize_for_plain_text("^[注釈]") == "（注釈）"
     assert sanitize_for_plain_text("|漢字《かんじ》|") == "漢字"
     assert sanitize_for_plain_text("\ufeffhello") == "hello"  # BOM除去
 
+
 def test_escape_md():
     input_str = "hello*world_#!"
     expected = "hello\\*world\\_\\#\\!"
     assert escape_md(input_str) == expected
 
+
 def test_ruby_filter():
     assert ruby_filter("|漢字《かんじ》|") == "|漢字《かんじ》|"
     assert ruby_filter("plain") == "plain"
+
 
 def test_pagebreak_filter():
     assert pagebreak_filter("narou") == "\n=====\n"
@@ -141,13 +155,16 @@ def test_pagebreak_filter():
     assert pagebreak_filter("markdown") == "---\n"
     assert pagebreak_filter("txt") == "\n" + "-" * 20 + "\n"
 
+
 def test_wordcount_filter():
     assert wordcount_filter("") == 0
     assert wordcount_filter("abc") == 3
     assert wordcount_filter("あいう") == 3
     assert wordcount_filter("hello world") == 11  # 空白も含む文字数
 
+
 # Exporterクラスのテスト
+
 
 class DummyExporter(BaseExporter):
     platform = "dummy"
@@ -159,6 +176,7 @@ class DummyExporter(BaseExporter):
     def export_stream(self, novel, chapters):
         yield "ダミーストリーム"
 
+
 def test_base_exporter():
     exporter = DummyExporter()
     novel = {"title": "テスト", "synopsis": "テスト用の小説。"}
@@ -169,13 +187,11 @@ def test_base_exporter():
     assert exporter._footer(novel) == ""
     assert exporter._format_chapter(chapters[0]) == "## 第1話\n\n第1話の内容。\n"
 
+
 def test_narou_exporter():
     exporter = NarouExporter()
     novel = {"title": "テストタイトル", "synopsis": "あらすじ。", "is_adult": False}
-    chapters = [
-        {"title": "第1話", "content": "こんにちは世界！![img](url)"},
-        {"title": "第2話", "content": "第2話。"}
-    ]
+    chapters = [{"title": "第1話", "content": "こんにちは世界！![img](url)"}, {"title": "第2話", "content": "第2話。"}]
     result = exporter.export(novel, chapters)
     # ヘッダーが存在することを確認
     assert "# テストタイトル\n\nあらすじ。\n" in result
@@ -186,13 +202,11 @@ def test_narou_exporter():
     assert "\n=====\n" in result
     assert "## 第2話\n\n第2話。\n" in result
 
+
 def test_kakuyomu_exporter():
     exporter = KakuyomuExporter()
     novel = {"title": "テストタイトル", "synopsis": "あらすじ。", "is_adult": True}
-    chapters = [
-        {"title": "第1話", "content": "こんにちは世界！![img](url)"},
-        {"title": "第2話", "content": "第2話。"}
-    ]
+    chapters = [{"title": "第1話", "content": "こんにちは世界！![img](url)"}, {"title": "第2話", "content": "第2話。"}]
     result = exporter.export(novel, chapters)
     assert "# テストタイトル\n\nあらすじ。\n\n" in result
     assert "![img](url)" in result  # 画像は保持
@@ -201,13 +215,11 @@ def test_kakuyomu_exporter():
     assert "### 第2話\n\n第2話。\n\n" in result
     assert "\n[R18]\n" in result  # 成年タグは最後に
 
+
 def test_nocturne_exporter():
     exporter = NocturneExporter()
     novel = {"title": "テストタイトル", "synopsis": "あらすじ。", "is_adult": True}
-    chapters = [
-        {"title": "第1話", "content": "こんにちは世界！![img](url)"},
-        {"title": "第2話", "content": "第2話。"}
-    ]
+    chapters = [{"title": "第1話", "content": "こんにちは世界！![img](url)"}, {"title": "第2話", "content": "第2話。"}]
     result = exporter.export(novel, chapters)
     assert "# テストタイトル\n\n" in result
     assert "[R18] 成年向けコンテンツを含みます。\n\n" in result
@@ -218,13 +230,11 @@ def test_nocturne_exporter():
     assert "\n[年齢確認: 18歳以上であることを確認しました]\n" in result
     assert "[官能]\n" in result
 
+
 def test_plain_text_exporter():
     exporter = PlainTextExporter()
     novel = {"title": "テストタイトル", "synopsis": "あらすじ。"}
-    chapters = [
-        {"title": "第1話", "content": "こんにちは世界！"},
-        {"title": "第2話", "content": "第2話。"}
-    ]
+    chapters = [{"title": "第1話", "content": "こんにちは世界！"}, {"title": "第2話", "content": "第2話。"}]
     result = exporter.export(novel, chapters)
     assert "『テストタイトル』\n\nあらすじ：\nあらすじ。\n\n" in result
     assert "=" * 30 + "\n" in result
@@ -232,25 +242,24 @@ def test_plain_text_exporter():
     assert "\n" + "-" * 20 + "\n" in result  # 区切り
     assert "◆ 第2話 ◆\n\n第2話。\n\n" in result
 
+
 def test_markdown_exporter():
     exporter = MarkdownExporter()
     novel = {"title": "テストタイトル", "synopsis": "あらすじ。", "tags": ["tag1", "tag2"]}
-    chapters = [
-        {"title": "第1話", "content": "こんにちは世界！"},
-        {"title": "第2話", "content": "第2話。"}
-    ]
+    chapters = [{"title": "第1話", "content": "こんにちは世界！"}, {"title": "第2話", "content": "第2話。"}]
     result = exporter.export(novel, chapters)
     # フロントマター
     assert "---\n" in result
     assert 'title: "テストタイトル"' in result
     assert 'description: "あらすじ。"' in result
-    assert 'tags: [tag1, tag2]' in result
+    assert "tags: [tag1, tag2]" in result
     assert "---\n\n" in result
     assert "# テストタイトル\n" in result
     assert "> あらすじ。\n\n" in result
     assert "## 第1話\n\nこんにちは世界！\n" in result
     assert "---\n" in result  # 区切り
     assert "## 第2話\n\n第2話。\n" in result
+
 
 def test_epub_exporter():
     exporter = EpubExporter()
@@ -260,11 +269,12 @@ def test_epub_exporter():
     assert "---\n" in result
     assert 'title: "テストタイトル"' in result
     assert 'description: "あらすじ。"' in result
-    assert 'tags: [tag1]' in result
+    assert "tags: [tag1]" in result
     assert "---\n\n" in result
     assert "# テストタイトル\n" in result
     assert "> あらすじ。\n\n" in result
     assert "## 第1話\n\nこんにちは世界！\n" in result
+
 
 def test_pdf_exporter():
     exporter = PdfExporter()
@@ -278,7 +288,9 @@ def test_pdf_exporter():
     assert "# テストタイトル\n" in result
     assert "## 第1話\n\nこんにちは世界！\n" in result
 
+
 # get_exporter と list_platforms のテスト
+
 
 def test_get_exporter():
     assert isinstance(get_exporter("narou"), NarouExporter)
@@ -291,6 +303,7 @@ def test_get_exporter():
     assert isinstance(get_exporter("pdf"), PdfExporter)
     # 不明なものはなろうをデフォルトとする
     assert isinstance(get_exporter("unknown"), NarouExporter)
+
 
 def test_list_platforms():
     platforms = list_platforms()

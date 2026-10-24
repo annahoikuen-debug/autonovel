@@ -44,6 +44,7 @@ class HybridScenario:
     school_students_annual_y3: int
     school_tuition: int
 
+
 def simulate_year(year: int, sc: HybridScenario) -> dict[str, float]:
     # 1. 自社出版 (年間累積効果)
     # 累積作品数（陳腐化減衰率を考慮: 年間30%減衰）
@@ -55,7 +56,8 @@ def simulate_year(year: int, sc: HybridScenario) -> dict[str, float]:
 
     # 2. 買い切りツール
     units = (
-        sc.standalone_units_monthly_y1 if year == 1
+        sc.standalone_units_monthly_y1
+        if year == 1
         else (sc.standalone_units_monthly_y2 if year == 2 else sc.standalone_units_monthly_y3)
     ) * 12
     line2_rev = units * sc.standalone_price
@@ -63,15 +65,24 @@ def simulate_year(year: int, sc: HybridScenario) -> dict[str, float]:
 
     # 3. B2C SaaS (期末平均アクティブ課金数で試算)
     users = (
-        (sc.saas_paid_users_m6 + sc.saas_paid_users_m12) / 2 if year == 1
+        (sc.saas_paid_users_m6 + sc.saas_paid_users_m12) / 2
+        if year == 1
         else (sc.saas_paid_users_m24 if year == 2 else sc.saas_paid_users_m36)
     )
     line3_rev = users * sc.saas_arpu * 12
     line3_cost = users * 12 * (sc.saas_arpu * 0.15 + 300)  # LLM原価(15%) + サーバーインフラ等
 
     # 4. B2B & スクール
-    b2b_proj = sc.b2b_projects_annual_y1 if year == 1 else (sc.b2b_projects_annual_y2 if year == 2 else sc.b2b_projects_annual_y3)
-    school_st = sc.school_students_annual_y1 if year == 1 else (sc.school_students_annual_y2 if year == 2 else sc.school_students_annual_y3)
+    b2b_proj = (
+        sc.b2b_projects_annual_y1
+        if year == 1
+        else (sc.b2b_projects_annual_y2 if year == 2 else sc.b2b_projects_annual_y3)
+    )
+    school_st = (
+        sc.school_students_annual_y1
+        if year == 1
+        else (sc.school_students_annual_y2 if year == 2 else sc.school_students_annual_y3)
+    )
     line4_rev = (b2b_proj * sc.b2b_avg_price) + (school_st * sc.school_tuition)
     line4_cost = line4_rev * 0.10  # 制作原価・教材更新
 
@@ -97,6 +108,7 @@ def simulate_year(year: int, sc: HybridScenario) -> dict[str, float]:
         "operating_profit": operating_profit,
         "operating_margin_pct": op_margin,
     }
+
 
 def run():
     scenarios = [
@@ -185,18 +197,35 @@ def run():
         y2 = simulate_year(2, sc)
         y3 = simulate_year(3, sc)
 
-        print(f"{'自社出版(KDP/DLsite)':<16} | ¥{y1['line1_rev']:>14,.0f} | ¥{y2['line1_rev']:>14,.0f} | ¥{y3['line1_rev']:>14,.0f}")
-        print(f"{'買い切りツール(BOOTH)':<16} | ¥{y1['line2_rev']:>14,.0f} | ¥{y2['line2_rev']:>14,.0f} | ¥{y3['line2_rev']:>14,.0f}")
-        print(f"{'B2C SaaS (月額)':<18} | ¥{y1['line3_rev']:>14,.0f} | ¥{y2['line3_rev']:>14,.0f} | ¥{y3['line3_rev']:>14,.0f}")
-        print(f"{'B2B受託・スクール':<17} | ¥{y1['line4_rev']:>14,.0f} | ¥{y2['line4_rev']:>14,.0f} | ¥{y3['line4_rev']:>14,.0f}")
+        print(
+            f"{'自社出版(KDP/DLsite)':<16} | ¥{y1['line1_rev']:>14,.0f} | ¥{y2['line1_rev']:>14,.0f} | ¥{y3['line1_rev']:>14,.0f}"
+        )
+        print(
+            f"{'買い切りツール(BOOTH)':<16} | ¥{y1['line2_rev']:>14,.0f} | ¥{y2['line2_rev']:>14,.0f} | ¥{y3['line2_rev']:>14,.0f}"
+        )
+        print(
+            f"{'B2C SaaS (月額)':<18} | ¥{y1['line3_rev']:>14,.0f} | ¥{y2['line3_rev']:>14,.0f} | ¥{y3['line3_rev']:>14,.0f}"
+        )
+        print(
+            f"{'B2B受託・スクール':<17} | ¥{y1['line4_rev']:>14,.0f} | ¥{y2['line4_rev']:>14,.0f} | ¥{y3['line4_rev']:>14,.0f}"
+        )
         print("-" * 80)
-        print(f"{'【売上高合計】':<17} | ¥{y1['total_revenue']:>14,.0f} | ¥{y2['total_revenue']:>14,.0f} | ¥{y3['total_revenue']:>14,.0f}")
+        print(
+            f"{'【売上高合計】':<17} | ¥{y1['total_revenue']:>14,.0f} | ¥{y2['total_revenue']:>14,.0f} | ¥{y3['total_revenue']:>14,.0f}"
+        )
         print(f"{'売上原価 (COGS)':<17} | ¥{y1['cogs']:>14,.0f} | ¥{y2['cogs']:>14,.0f} | ¥{y3['cogs']:>14,.0f}")
-        print(f"{'売上総利益 (粗利)':<16} | ¥{y1['gross_profit']:>14,.0f} | ¥{y2['gross_profit']:>14,.0f} | ¥{y3['gross_profit']:>14,.0f}")
+        print(
+            f"{'売上総利益 (粗利)':<16} | ¥{y1['gross_profit']:>14,.0f} | ¥{y2['gross_profit']:>14,.0f} | ¥{y3['gross_profit']:>14,.0f}"
+        )
         print(f"{'販管費 (SGA)':<19} | ¥{y1['sga']:>14,.0f} | ¥{y2['sga']:>14,.0f} | ¥{y3['sga']:>14,.0f}")
-        print(f"{'【営業利益】':<18} | ¥{y1['operating_profit']:>14,.0f} | ¥{y2['operating_profit']:>14,.0f} | ¥{y3['operating_profit']:>14,.0f}")
-        print(f"{'営業利益率 (%)':<17} | {y1['operating_margin_pct']:>13.1f}% | {y2['operating_margin_pct']:>13.1f}% | {y3['operating_margin_pct']:>13.1f}%")
+        print(
+            f"{'【営業利益】':<18} | ¥{y1['operating_profit']:>14,.0f} | ¥{y2['operating_profit']:>14,.0f} | ¥{y3['operating_profit']:>14,.0f}"
+        )
+        print(
+            f"{'営業利益率 (%)':<17} | {y1['operating_margin_pct']:>13.1f}% | {y2['operating_margin_pct']:>13.1f}% | {y3['operating_margin_pct']:>13.1f}%"
+        )
         print("\n")
+
 
 if __name__ == "__main__":
     run()

@@ -92,9 +92,7 @@ class FakeSkillA:
 
 def test_register_and_replace_skills(monkeypatch):
     orch = Orchestrator(nodes={})
-    monkeypatch.setattr(
-        "src.agents.skill_base.SkillAgent.discover_skills", staticmethod(lambda pkg: [FakeSkillA])
-    )
+    monkeypatch.setattr("src.agents.skill_base.SkillAgent.discover_skills", staticmethod(lambda pkg: [FakeSkillA]))
     orch.register_discovered_skills()
     assert orch.get_skill_class("fakea") is FakeSkillA
     orch.replace_skill("fakea", int)
@@ -105,9 +103,7 @@ def test_register_and_replace_skills(monkeypatch):
 
 def test_set_skill_version(monkeypatch):
     orch = Orchestrator(nodes={})
-    monkeypatch.setattr(
-        "src.agents.skill_base.SkillAgent.discover_skills", staticmethod(lambda pkg: [])
-    )
+    monkeypatch.setattr("src.agents.skill_base.SkillAgent.discover_skills", staticmethod(lambda pkg: []))
     orch.set_skill_version("v2")
     assert orch.get_active_version() == "v2"
     with pytest.raises(ValueError, match="Unsupported skill version"):
@@ -116,9 +112,7 @@ def test_set_skill_version(monkeypatch):
 
 def test_set_skill_version_metrics_failure_is_swallowed(monkeypatch):
     orch = Orchestrator(nodes={})
-    monkeypatch.setattr(
-        "src.agents.skill_base.SkillAgent.discover_skills", staticmethod(lambda pkg: [FakeSkillA])
-    )
+    monkeypatch.setattr("src.agents.skill_base.SkillAgent.discover_skills", staticmethod(lambda pkg: [FakeSkillA]))
     orch.set_skill_version("v1")
     assert orch.get_active_version() == "v1"
 
@@ -194,10 +188,12 @@ def test_build_execution_order_cyclic_raises():
 def _nodes(*specs):
     nodes = {}
     for name, result in specs:
+
         async def node(ctx, _r=result):
             if isinstance(_r, Exception):
                 raise _r
             return _r
+
         nodes[name] = node
     return nodes
 
@@ -214,17 +210,13 @@ async def test_run_linear_pipeline():
 
 
 async def test_run_with_explicit_start_and_enum():
-    orch = Orchestrator(
-        nodes=_nodes((AgentName.PLOT, _result(next_agent=None, artifacts={"x": 1})))
-    )
+    orch = Orchestrator(nodes=_nodes((AgentName.PLOT, _result(next_agent=None, artifacts={"x": 1}))))
     ctx = await orch.run(AgentContext(1, 1, 1), start=AgentName.PLOT)
     assert ctx.artifacts == {"x": 1}
 
 
 async def test_run_uses_ordered_skill_names_first():
-    orch = Orchestrator(
-        nodes=_nodes(("b", _result(next_agent=None)), ("a", _result(next_agent=None)))
-    )
+    orch = Orchestrator(nodes=_nodes(("b", _result(next_agent=None)), ("a", _result(next_agent=None))))
     orch._ordered_skill_names = ["a"]
     ctx = await orch.run(AgentContext(1, 1, 1))
     assert ctx.artifacts == {}
@@ -449,9 +441,7 @@ class AbSkillV:
 
 def _patch_skills(monkeypatch, cls=AbSkillV):
     # スキル名はクラス名から導出されるため、クラス名 'AbSkillV' -> 'AbSkillV'
-    monkeypatch.setattr(
-        "src.agents.skill_base.SkillAgent.discover_skills", staticmethod(lambda pkg: [cls])
-    )
+    monkeypatch.setattr("src.agents.skill_base.SkillAgent.discover_skills", staticmethod(lambda pkg: [cls]))
 
 
 async def test_run_ab_test_rejects_bad_version():
@@ -497,9 +487,7 @@ async def test_run_ab_test_winner_a(monkeypatch):
     def discover(pkg):
         return [fast if pkg.endswith("v1") else slow]
 
-    monkeypatch.setattr(
-        "src.agents.skill_base.SkillAgent.discover_skills", staticmethod(discover)
-    )
+    monkeypatch.setattr("src.agents.skill_base.SkillAgent.discover_skills", staticmethod(discover))
     orch = Orchestrator(nodes={})
     res = await orch.run_ab_test("cmp", "v1", "v2", [AgentContext(1, 1, 1)])
     assert res["winner"] == "a"
@@ -514,9 +502,7 @@ async def test_run_ab_test_winner_b(monkeypatch):
     def discover(pkg):
         return [slow if pkg.endswith("v1") else fast]
 
-    monkeypatch.setattr(
-        "src.agents.skill_base.SkillAgent.discover_skills", staticmethod(discover)
-    )
+    monkeypatch.setattr("src.agents.skill_base.SkillAgent.discover_skills", staticmethod(discover))
     orch = Orchestrator(nodes={})
     res = await orch.run_ab_test("cmp2", "v1", "v2", [AgentContext(1, 1, 1)])
     assert res["winner"] == "b"
@@ -532,9 +518,7 @@ async def test_run_ab_test_success_rate_winner_b(monkeypatch):
     def discover(pkg):
         return [bad if pkg.endswith("v1") else good]
 
-    monkeypatch.setattr(
-        "src.agents.skill_base.SkillAgent.discover_skills", staticmethod(discover)
-    )
+    monkeypatch.setattr("src.agents.skill_base.SkillAgent.discover_skills", staticmethod(discover))
     orch = Orchestrator(nodes={})
     res = await orch.run_ab_test("win", "v1", "v2", [AgentContext(1, 1, 1)])
     assert res["winner"] == "b"
@@ -556,9 +540,7 @@ async def test_run_ab_test_version_b_skill_missing(monkeypatch):
         calls["n"] += 1
         return [OnlyV1 if calls["n"] == 1 else OnlyV1b]
 
-    monkeypatch.setattr(
-        "src.agents.skill_base.SkillAgent.discover_skills", staticmethod(discover)
-    )
+    monkeypatch.setattr("src.agents.skill_base.SkillAgent.discover_skills", staticmethod(discover))
     orch = Orchestrator(nodes={})
     with pytest.raises(ValueError, match="not found in version v2"):
         await orch.run_ab_test("onlyv1", "v1", "v2", [AgentContext(1, 1, 1)])

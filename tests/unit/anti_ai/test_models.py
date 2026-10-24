@@ -18,21 +18,15 @@ from src.services.anti_ai.models import (
 
 class TestViolationSpan:
     def test_length_is_end_minus_start(self):
-        v = ViolationSpan(
-            category=AICategory.SAME_STRUCTURE, start=5, end=15, matched_text="0123456789"
-        )
+        v = ViolationSpan(category=AICategory.SAME_STRUCTURE, start=5, end=15, matched_text="0123456789")
         assert v.length == 10
 
     def test_length_zero_when_collapsed(self):
-        v = ViolationSpan(
-            category=AICategory.SAME_STRUCTURE, start=5, end=5, matched_text=""
-        )
+        v = ViolationSpan(category=AICategory.SAME_STRUCTURE, start=5, end=5, matched_text="")
         assert v.length == 0
 
     def test_length_never_negative(self):
-        v = ViolationSpan(
-            category=AICategory.SAME_STRUCTURE, start=10, end=5, matched_text=""
-        )
+        v = ViolationSpan(category=AICategory.SAME_STRUCTURE, start=10, end=5, matched_text="")
         assert v.length == 0
 
     def test_to_dict_uses_string_values(self):

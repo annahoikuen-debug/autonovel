@@ -3,6 +3,7 @@
 Step 8: `src/models/api_schemas` から `src/domain/schemas` への移行と
 レスポンスの正規化（ChapterSchema 統一）を担当する。
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
@@ -18,9 +19,7 @@ router = APIRouter(prefix="/api/chapters", tags=["chapters"])
 
 
 @router.get("/books/{book_id}", response_model=list[ChapterSchema])
-async def get_chapters(
-    book_id: int, current_user: User = Depends(get_current_user)
-) -> list[ChapterSchema]:
+async def get_chapters(book_id: int, current_user: User = Depends(get_current_user)) -> list[ChapterSchema]:
     """指定作品の全章を統一スキーマ ChapterSchema で正規化して返す。"""
     async with UnitOfWork(AppContainer.db()) as uow:
         await verify_book_ownership(book_id, current_user, uow)

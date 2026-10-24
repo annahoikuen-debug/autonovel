@@ -50,12 +50,8 @@ def _tables_with_fk_closure(*tables) -> list:
 async def _real_db(tmp_path):
     """伏線・ダイジェスト・作品行を持つ実 SQLite セッション工場を返す。"""
     db_path = tmp_path / "v53_long_form.db"
-    engine = create_async_engine(
-        f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False, connect_args={"timeout": 10}
-    )
-    tables = _tables_with_fk_closure(
-        ForeshadowingModel.__table__, EpisodeDigestModel.__table__
-    )
+    engine = create_async_engine(f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False, connect_args={"timeout": 10})
+    tables = _tables_with_fk_closure(ForeshadowingModel.__table__, EpisodeDigestModel.__table__)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all, tables=tables)
         for table in tables:
@@ -75,9 +71,7 @@ async def _real_db(tmp_path):
                         target_eps=30,
                     )
                 )
-    session_factory = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     try:
         yield session_factory
     finally:
@@ -89,9 +83,7 @@ def _raw_generation(metadata: dict) -> str:
     return (
         "少年は剣身に手を伸ばし、祈りを捧げた。\n"
         "眩い光とともに封印が解け、聖剣の封印は静かに開いた。\n\n"
-        "[METADATA_JSON]\n"
-        + json.dumps(metadata, ensure_ascii=False, indent=2)
-        + "\n[/METADATA_JSON]"
+        "[METADATA_JSON]\n" + json.dumps(metadata, ensure_ascii=False, indent=2) + "\n[/METADATA_JSON]"
     )
 
 
@@ -169,9 +161,7 @@ async def test_foreshadowing_auto_resolve_fires_in_production_path(tmp_path):
                     "genre": "fantasy",
                     "prose_refiner_enabled": False,
                     # プロンプトに渡した契約伏線と同一の ID
-                    "contract_foreshadowings": [
-                        {"id": foreshadowing_id, "title": "聖剣の封印"}
-                    ],
+                    "contract_foreshadowings": [{"id": foreshadowing_id, "title": "聖剣の封印"}],
                 }
             )
             result = await writer.run(ctx)
@@ -184,15 +174,9 @@ async def test_foreshadowing_auto_resolve_fires_in_production_path(tmp_path):
 
         async with sf() as verify:
             row = (
-                await verify.execute(
-                    select(ForeshadowingModel).where(
-                        ForeshadowingModel.id == foreshadowing_id
-                    )
-                )
+                await verify.execute(select(ForeshadowingModel).where(ForeshadowingModel.id == foreshadowing_id))
             ).scalar_one()
-            assert row.status == "resolved", (
-                f"伏線が resolved になっていない（status={row.status}）"
-            )
+            assert row.status == "resolved", f"伏線が resolved になっていない（status={row.status}）"
             assert row.resolved_episode == EPISODE_NUMBER
 
 
@@ -283,7 +267,6 @@ async def test_three_layer_context_reaches_prompt(tmp_path):
     """`EpisodeContextBuilder` 相当の3層テキストが最終プロンプトの本文に含まれる。"""
     from prompts.manager import PromptManager
 
-
     three_layer = {
         "layer1_bible": {"text": "【アルス】役割: 主人公"},
         "layer2_summary": {
@@ -306,9 +289,7 @@ async def test_three_layer_context_reaches_prompt(tmp_path):
                 captured["prompt"] = prompt
                 return prompt
 
-            writer.prompt_manager = SimpleNamespace(
-                build_final_writing_prompt=_capturing_build
-            )
+            writer.prompt_manager = SimpleNamespace(build_final_writing_prompt=_capturing_build)
 
             ctx = _agent_ctx(
                 {
@@ -367,12 +348,6 @@ async def test_abandon_is_called_when_postponement_impossible(tmp_path):
 
         async with sf() as verify:
             row = (
-                await verify.execute(
-                    select(ForeshadowingModel).where(
-                        ForeshadowingModel.id == foreshadowing_id
-                    )
-                )
+                await verify.execute(select(ForeshadowingModel).where(ForeshadowingModel.id == foreshadowing_id))
             ).scalar_one()
-            assert row.status == "abandoned", (
-                f"作品末尾の伏線が abandoned になっていない（status={row.status}）"
-            )
+            assert row.status == "abandoned", f"作品末尾の伏線が abandoned になっていない（status={row.status}）"

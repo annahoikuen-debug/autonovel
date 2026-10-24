@@ -50,10 +50,7 @@ async def export_for_publishing(
         )
         series = loader.load_series(config)
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Failed to load book data: {e}"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Failed to load book data: {e}")
 
     episodes_data = [
         {
@@ -106,10 +103,7 @@ async def preview_for_publishing(
         )
         series = loader.load_series(config)
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Failed to load book data: {e}"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Failed to load book data: {e}")
 
     # Find requested episode
     ep = None
@@ -121,10 +115,7 @@ async def preview_for_publishing(
         ep = series.episodes[0]
 
     if not ep:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Chapter {chapter_number} not found"
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Chapter {chapter_number} not found")
 
     formatted = PlatformFormatter.format_episode_with_author_notes(
         title=ep.title,

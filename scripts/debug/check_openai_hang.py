@@ -22,9 +22,7 @@ async def main():
     with patch("openai.AsyncOpenAI", return_value=mock_async):
         with patch("config.project_context.ProjectContext.get_setting", side_effect=lambda k, d=None: d):
             try:
-                result = await asyncio.wait_for(
-                    client.generate_json("gemma-3", "p", max_retries=2), timeout=30
-                )
+                result = await asyncio.wait_for(client.generate_json("gemma-3", "p", max_retries=2), timeout=30)
                 print("no exception:", result)
             except asyncio.TimeoutError:
                 print("TIMEOUT - hang confirmed in generate_json")

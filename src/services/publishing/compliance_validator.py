@@ -3,6 +3,7 @@ from typing import List
 from src.models.publishing_assistant import TargetPlatform
 from src.config.platform_compliance_rules import get_platform_rule
 
+
 class ComplianceValidator:
     """投稿前の規約違反（文字数オーバー、タイトル制限、ガイドライン違反表現）を
     事前検査するバリデーター。
@@ -10,11 +11,7 @@ class ComplianceValidator:
 
     @staticmethod
     def validate_chapter(
-        platform: TargetPlatform | str,
-        chapter_title: str,
-        main_content: str,
-        foreword: str = "",
-        afterword: str = ""
+        platform: TargetPlatform | str, chapter_title: str, main_content: str, foreword: str = "", afterword: str = ""
     ) -> List[str]:
         platform_str = platform.value if isinstance(platform, TargetPlatform) else str(platform).lower()
         rule = get_platform_rule(platform_str)
@@ -29,9 +26,7 @@ class ComplianceValidator:
         # 総文字数チェック
         total_chars = len(foreword) + len(main_content) + len(afterword)
         if total_chars > rule.max_chapter_chars:
-            warnings.append(
-                f"話の総文字数（{total_chars}文字）が上限（{rule.max_chapter_chars}文字）を超えています。"
-            )
+            warnings.append(f"話の総文字数（{total_chars}文字）が上限（{rule.max_chapter_chars}文字）を超えています。")
 
         # AI開示・タグ推奨通知
         if rule.requires_ai_disclosure:

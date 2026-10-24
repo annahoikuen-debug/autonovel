@@ -15,9 +15,7 @@ class CritiqueAgent:
         self.pm = pm
         self.generate_json = generate_json
         # Semantic edge preserver (None → legacy string-only check_edges_preserved)
-        self.edge_preserver = edge_preserver or SemanticEdgePreserver(
-            semantic_cache=None, use_semantic=False
-        )
+        self.edge_preserver = edge_preserver or SemanticEdgePreserver(semantic_cache=None, use_semantic=False)
 
     async def analyze_work_quality(self, book_id: int) -> str:
         book = await self.repo.get_book(book_id)
@@ -43,18 +41,14 @@ class CritiqueAgent:
         res = await self.generate_json(select_model("planning"), prompt, temp=0.3)
         return res.story_content
 
-    async def run_iterative_gap_analysis(
-        self, book_id: int, max_iterations: int = 10
-    ) -> GenerateResult:
+    async def run_iterative_gap_analysis(self, book_id: int, max_iterations: int = 10) -> GenerateResult:
         """全エピソードの『設計図 vs 本文』を一括で分析し、エンジンの最適化レポートを生成する（APIコールを1回に集約）"""
         book = await self.repo.get_book(book_id)
         chapters = await self.repo.get_all_non_anchor_chapters(book_id)
         plots = await self.repo.get_all_plots(book_id)
 
         if not chapters:
-            return GenerateResult(
-                success=False, error_message="分析対象のチャプターが存在しません。"
-            )
+            return GenerateResult(success=False, error_message="分析対象のチャプターが存在しません。")
 
         # 分析対象を最大10エピソードに制限
         target_chapters = chapters[:max_iterations]
@@ -75,9 +69,7 @@ class CritiqueAgent:
                     )
                     lost = semantic_lost
                 else:
-                    lost = check_edges_preserved(
-                        plot.detailed_blueprint or "", ch.content or "", edges
-                    )
+                    lost = check_edges_preserved(plot.detailed_blueprint or "", ch.content or "", edges)
                 if lost:
                     lost_types = ", ".join(e.edge_type for e in lost)
                     edge_loss_reports.append(f"第{ch.ep_num}話: 尖りが削られました ({lost_types})")
@@ -184,9 +176,7 @@ class CritiqueAgent:
                         # 平均スコアの算出
                         avg_score = None
                         if scores:
-                            vals = [
-                                float(v) for v in scores.values() if isinstance(v, (int, float))
-                            ]
+                            vals = [float(v) for v in scores.values() if isinstance(v, (int, float))]
                             if vals:
                                 avg_score = sum(vals) / len(vals)
 
@@ -205,9 +195,7 @@ class CritiqueAgent:
                 return res
             else:
                 error_feedback = "\n".join(errors)
-                logger.warning(
-                    f"❌ Patch validation failed on attempt {attempt + 1}: {error_feedback}"
-                )
+                logger.warning(f"❌ Patch validation failed on attempt {attempt + 1}: {error_feedback}")
                 attempt += 1
 
         # 全て失敗した場合
@@ -256,9 +244,7 @@ class CritiqueAgent:
             "}"
         )
         try:
-            res = await self.generate_json(
-                ProjectContext.get_setting("model_writing"), prompt, temp=temp
-            )
+            res = await self.generate_json(ProjectContext.get_setting("model_writing"), prompt, temp=temp)
             if res.success and res.metadata:
                 return res.metadata
         except Exception as e:

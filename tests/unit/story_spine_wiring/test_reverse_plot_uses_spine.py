@@ -28,9 +28,7 @@ def test_spine_is_the_single_source_of_tension():
     episodes = w._design_episodes(ANSWERS, w._design_arcs(ANSWERS, eps), eps, "ファンタジー")
     for e in episodes:
         beat = spine.at(e.ep_num)
-        assert e.tension == round(beat.tension * 100), (
-            f"第{e.ep_num}話の tension {e.tension} が Spine と一致しない"
-        )
+        assert e.tension == round(beat.tension * 100), f"第{e.ep_num}話の tension {e.tension} が Spine と一致しない"
 
 
 def test_opening_hook_is_actually_used():

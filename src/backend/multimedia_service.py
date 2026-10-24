@@ -74,8 +74,6 @@ def _extract_preset(series: SeriesResult) -> dict[str, Any]:
     }
 
 
-
-
 @dataclass
 class MultimediaResult:
     """サービス層の戻り値。"""
@@ -315,15 +313,17 @@ class MultimediaService:
                     logger.warning("Failed to read illustration file %s: %s", fp_str, exc)
                     continue
 
-                illustrations.append({
-                    "image_id": f"art_{row_id}",
-                    "image_bytes": data,
-                    "file_name": fp.name,
-                    "media_type": meta.get("media_type", "image/jpeg"),
-                    "position": meta.get("position", "chapter_start"),
-                    "chapter_index": meta.get("chapter_index", 1),
-                    "caption": meta.get("caption", ""),
-                })
+                illustrations.append(
+                    {
+                        "image_id": f"art_{row_id}",
+                        "image_bytes": data,
+                        "file_name": fp.name,
+                        "media_type": meta.get("media_type", "image/jpeg"),
+                        "position": meta.get("position", "chapter_start"),
+                        "chapter_index": meta.get("chapter_index", 1),
+                        "caption": meta.get("caption", ""),
+                    }
+                )
         except Exception as e:
             logger.debug("Could not query illustrations from multimedia_artifacts: %s", e)
 
@@ -349,15 +349,17 @@ class MultimediaService:
                     data = fp.read_bytes()
                 except Exception:
                     continue
-                illustrations.append({
-                    "image_id": f"ill_{row_id}",
-                    "image_bytes": data,
-                    "file_name": fp.name,
-                    "media_type": "image/jpeg",
-                    "position": pos or "chapter_start",
-                    "chapter_index": chap_num or 1,
-                    "caption": caption or "",
-                })
+                illustrations.append(
+                    {
+                        "image_id": f"ill_{row_id}",
+                        "image_bytes": data,
+                        "file_name": fp.name,
+                        "media_type": "image/jpeg",
+                        "position": pos or "chapter_start",
+                        "chapter_index": chap_num or 1,
+                        "caption": caption or "",
+                    }
+                )
         except Exception:
             pass
 
@@ -394,11 +396,9 @@ class MultimediaService:
                 if fmt == "epub":
                     # Step 54 & Step 41: Pure Python 商用縦書きEPUB 3ビルダーへの挿絵受け渡し
                     from src.services.exporters.epub_commercial_builder import CommercialEpubBuilder
+
                     builder = CommercialEpubBuilder()
-                    chap_list = [
-                        {"title": ep.title, "content": ep.content}
-                        for ep in series.episodes
-                    ]
+                    chap_list = [{"title": ep.title, "content": ep.content} for ep in series.episodes]
                     epub_bytes = builder.build_commercial_epub(
                         novel_meta={"title": series.title},
                         chapters=chap_list,
@@ -427,9 +427,7 @@ class MultimediaService:
                 logger.error("Failed to export %s: %s", fmt, exc)
                 fb = out_dir / f"{base}.{fmt}.error.json"
                 fb.write_text(
-                    json.dumps(
-                        {"format": fmt, "error": str(exc), "fallback": True}, ensure_ascii=False
-                    ),
+                    json.dumps({"format": fmt, "error": str(exc), "fallback": True}, ensure_ascii=False),
                     encoding="utf-8",
                 )
                 results[fmt] = str(fb)

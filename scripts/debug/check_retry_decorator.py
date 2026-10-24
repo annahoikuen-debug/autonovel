@@ -17,6 +17,6 @@ src = inspect.getsource(inner)
 idx = src.find("LLMTemporaryError")
 while idx != -1:
     print("---")
-    chunk = src[max(0, idx - 400): idx + 150]
+    chunk = src[max(0, idx - 400) : idx + 150]
     print(chunk.encode("utf-8", errors="replace").decode("utf-8", errors="replace"))
     idx = src.find("LLMTemporaryError", idx + 1)

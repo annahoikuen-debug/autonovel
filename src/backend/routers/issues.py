@@ -30,9 +30,7 @@ async def resolve_issue(issue_id: int, req: ResolveIssueRequest, current_user: U
     async with UnitOfWork(AppContainer.db()) as uow:
         issue = await uow.audit.get_issue(issue_id)
         if not issue:
-            raise NotFoundError(
-                "Issue not found", resource_type="AuditIssue", resource_id=str(issue_id)
-            )
+            raise NotFoundError("Issue not found", resource_type="AuditIssue", resource_id=str(issue_id))
 
         # 作品の所有権を検証
         await verify_book_ownership(issue.book_id, current_user, uow)
@@ -42,24 +40,18 @@ async def resolve_issue(issue_id: int, req: ResolveIssueRequest, current_user: U
 
         if req.action == "Auto-Fix":
             # Auto-Fix: Mark resolved and we can trigger rewrite or let user know
-            await uow.audit.update_issue_status(
-                issue_id, "resolved", resolved_note="Auto-Fix triggered"
-            )
+            await uow.audit.update_issue_status(issue_id, "resolved", resolved_note="Auto-Fix triggered")
             return {"status": "success", "message": "Issue marked as resolved via Auto-Fix."}
 
         elif req.action == "Foreshadowing":
             # Foreshadowing: Mark as foreshadowed in DB and add to WorldBible foreshadowing_map
-            await uow.audit.update_issue_status(
-                issue_id, "foreshadowed", resolved_note="Marked as Foreshadowing"
-            )
+            await uow.audit.update_issue_status(issue_id, "foreshadowed", resolved_note="Marked as Foreshadowing")
 
             # Add to Bible settings
             bible = await uow.bible.get_latest_bible(int(book_id))
             if bible:
                 settings = (
-                    json.loads(bible.settings or "{}")
-                    if isinstance(bible.settings, str)
-                    else bible.settings or {}
+                    json.loads(bible.settings or "{}") if isinstance(bible.settings, str) else bible.settings or {}
                 )
                 f_map = settings.get("foreshadowing_map", [])
 
@@ -87,9 +79,7 @@ async def resolve_issue(issue_id: int, req: ResolveIssueRequest, current_user: U
 
         elif req.action == "Ignore":
             # Ignore: Mark as ignored, add to exception rules
-            await uow.audit.update_issue_status(
-                issue_id, "ignored", resolved_note="Ignored (Rule of Cool)"
-            )
+            await uow.audit.update_issue_status(issue_id, "ignored", resolved_note="Ignored (Rule of Cool)")
 
             # Record exceptions in rules table
             await uow.rules.create_rule(

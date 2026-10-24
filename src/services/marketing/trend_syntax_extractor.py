@@ -2,6 +2,7 @@
 トレンド構文抽出ロジック
 PLAN 01: タイトル＆あらすじCTR爆発エンジン
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -38,9 +39,7 @@ def extract_syntax_features(title: str) -> dict[str, Any]:
         syntax_type = "一般"
 
     has_contrast = (
-        (has_exile and has_reversal)
-        or has_misunderstanding
-        or ("〜" in title and ("実は" in title or "今更" in title))
+        (has_exile and has_reversal) or has_misunderstanding or ("〜" in title and ("実は" in title or "今更" in title))
     )
 
     return {

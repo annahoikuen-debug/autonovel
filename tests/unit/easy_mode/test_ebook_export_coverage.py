@@ -1,4 +1,5 @@
 """Ebook export coverage: metadata, chapter processing, epub/pdf/mobi generation."""
+
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
@@ -19,12 +20,13 @@ from src.easy_mode.phase3.ebook_export import (
 
 def make_series(episode_count=2, with_prologue=True, with_epilogue=True):
     episodes = [
-        SimpleNamespace(title=f"第{i}話", content=f"本文{i}\n\n「セリフ{i}」\n\n強調！",
-                        episode_num=i)
+        SimpleNamespace(title=f"第{i}話", content=f"本文{i}\n\n「セリフ{i}」\n\n強調！", episode_num=i)
         for i in range(1, episode_count + 1)
     ]
-    metadata = {"prologue": "プロローグ本文" if with_prologue else None,
-                "epilogue": "エピローグ本文" if with_epilogue else None}
+    metadata = {
+        "prologue": "プロローグ本文" if with_prologue else None,
+        "epilogue": "エピローグ本文" if with_epilogue else None,
+    }
     return SimpleNamespace(title="テスト作品", episodes=episodes, metadata=metadata)
 
 
@@ -99,13 +101,13 @@ def test_format_content_dialogue_monologue_emphasis():
 
 def test_format_content_escapes_html():
     processor = EbookContentProcessor("fantasy")
-    formatted = processor._format_content('<script>alert(1)</script>')
+    formatted = processor._format_content("<script>alert(1)</script>")
     # raw < > are escaped, escaped entities are present
     assert "<script>" not in formatted
     assert "&" in formatted
     assert chr(38) + chr(108) + chr(116) + chr(59) in formatted
     # セリフ内のエスケープ
-    formatted2 = processor._format_content('「<b>強調</b>」')
+    formatted2 = processor._format_content("「<b>強調</b>」")
     assert chr(38) + chr(108) + chr(116) + chr(59) in formatted2
     assert '<p class="dialogue">' in formatted2
 
@@ -161,8 +163,7 @@ def test_epub_generator_generate(tmp_path):
 
 
 def test_epub_generator_generate_with_cover(tmp_path):
-    gen = EpubGenerator(make_metadata(cover_image=b"fake-image-data"),
-                        EbookContentProcessor("fantasy"))
+    gen = EpubGenerator(make_metadata(cover_image=b"fake-image-data"), EbookContentProcessor("fantasy"))
     series = make_series()
     out = gen.generate(series, tmp_path / "cover.epub")
     assert out.exists()
@@ -171,22 +172,19 @@ def test_epub_generator_generate_with_cover(tmp_path):
 def test_epub_generator_generate_with_cover_path(tmp_path):
     cover_file = tmp_path / "cover.jpg"
     cover_file.write_bytes(b"cover-bytes")
-    gen = EpubGenerator(make_metadata(cover_image_path=str(cover_file)),
-                        EbookContentProcessor("fantasy"))
+    gen = EpubGenerator(make_metadata(cover_image_path=str(cover_file)), EbookContentProcessor("fantasy"))
     out = gen.generate(make_series(), tmp_path / "cover2.epub")
     assert out.exists()
 
 
 def test_epub_generator_generate_cover_path_missing(tmp_path):
-    gen = EpubGenerator(make_metadata(cover_image_path=str(tmp_path / "nope.jpg")),
-                        EbookContentProcessor("fantasy"))
+    gen = EpubGenerator(make_metadata(cover_image_path=str(tmp_path / "nope.jpg")), EbookContentProcessor("fantasy"))
     out = gen.generate(make_series(), tmp_path / "cover3.epub")
     assert out.exists()
 
 
 def test_epub_generator_generate_with_subjects(tmp_path):
-    gen = EpubGenerator(make_metadata(subject=["s1", "s2"], description="desc"),
-                        EbookContentProcessor("fantasy"))
+    gen = EpubGenerator(make_metadata(subject=["s1", "s2"], description="desc"), EbookContentProcessor("fantasy"))
     out = gen.generate(make_series(), tmp_path / "subj.epub")
     assert out.exists()
 
@@ -227,6 +225,7 @@ def test_pdf_build_cover_toc_chapter_colophon():
     series = make_series()
     # custom styles setup
     from reportlab.lib.styles import getSampleStyleSheet
+
     styles = getSampleStyleSheet()
     gen._setup_custom_styles(styles)
 
@@ -236,8 +235,7 @@ def test_pdf_build_cover_toc_chapter_colophon():
     toc = gen._build_toc(series, styles)
     assert len(toc) == 6  # heading + spacer + 4 chapters
 
-    ch = Chapter(title="第1話", content='<p class="dialogue">セリフ</p>\n<p>本文</p>',
-                 episode_num=1)
+    ch = Chapter(title="第1話", content='<p class="dialogue">セリフ</p>\n<p>本文</p>', episode_num=1)
     chapter_story = gen._build_chapter(ch, styles)
     assert chapter_story
 
@@ -248,11 +246,13 @@ def test_pdf_build_cover_toc_chapter_colophon():
 def test_pdf_build_chapter_all_styles():
     gen = PdfGenerator(make_metadata(), EbookContentProcessor("fantasy"))
     from reportlab.lib.styles import getSampleStyleSheet
+
     styles = getSampleStyleSheet()
     gen._setup_custom_styles(styles)
 
-    content = ('<p class="dialogue">セリフ</p>\n\n<p class="monologue">独白</p>\n\n'
-               '<p class="emphasis">強調</p>\n\n<p>本文</p>')
+    content = (
+        '<p class="dialogue">セリフ</p>\n\n<p class="monologue">独白</p>\n\n<p class="emphasis">強調</p>\n\n<p>本文</p>'
+    )
     ch = Chapter(title="第1話", content=content, episode_num=1)
     story = gen._build_chapter(ch, styles)
     # anchor + title + spacer + 4 paragraphs
@@ -334,8 +334,7 @@ def test_exporter_genre_default(tmp_path):
 def test_exporter_create_metadata_with_kwargs(tmp_path):
     exporter = EbookExporter(make_metadata(), tmp_path)
     series = make_series()
-    meta = exporter.create_metadata(series, author="Custom Author", tags=["x"],
-                                    publisher="Custom Pub", genre="sf")
+    meta = exporter.create_metadata(series, author="Custom Author", tags=["x"], publisher="Custom Pub", genre="sf")
     assert meta.title == "テスト作品"
     assert meta.author == "Custom Author"
     assert meta.tags == ["x"]

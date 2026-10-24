@@ -1,7 +1,9 @@
 """ローカル設定が本番環境に漏れないことをテスト"""
+
 import os
 from unittest.mock import patch
 from src.config.env_loader import load_config
+
 
 def test_local_config_does_not_leak_to_production():
     # 本番環境をシミュレート

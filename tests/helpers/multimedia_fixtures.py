@@ -17,9 +17,7 @@ def make_minimal_preset(genre: str) -> dict[str, Any]:
 
 def make_minimal_episode(num: int = 1, title: str = "テスト話") -> EpisodeResult:
     """単体エピソードを組み立てるテストヘルパ。"""
-    content = (
-        f"第{num}話のテスト本文です。\n\n主人公は困難に立ち向かった。\n「行くぞ」と彼は言った。\n"
-    )
+    content = f"第{num}話のテスト本文です。\n\n主人公は困難に立ち向かった。\n「行くぞ」と彼は言った。\n"
     return EpisodeResult(
         episode_num=num,
         title=title,

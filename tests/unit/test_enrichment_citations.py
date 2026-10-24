@@ -1,5 +1,6 @@
 # tests/unit/test_enrichment_citations.py
 """EnrichmentAgent 引用付与の単体テスト"""
+
 import pytest
 from src.agents.enrichment_agent import EnrichmentAgent
 
@@ -61,10 +62,20 @@ class TestCitationAttachment:
         """脚注マーカー挿入"""
         text = "魔法システムAを使った。MPを消費した。"
         pairs = [
-            {"claim": "魔法システムAを使った", "position": 0, "end_position": 10,
-             "source": {"source": "世界観設定書・巻I", "page": "p.23"}, "score": 0.8},
-            {"claim": "MPを消費した", "position": 11, "end_position": 18,
-             "source": {"source": "世界観設定書・巻I", "page": "p.24"}, "score": 0.7},
+            {
+                "claim": "魔法システムAを使った",
+                "position": 0,
+                "end_position": 10,
+                "source": {"source": "世界観設定書・巻I", "page": "p.23"},
+                "score": 0.8,
+            },
+            {
+                "claim": "MPを消費した",
+                "position": 11,
+                "end_position": 18,
+                "source": {"source": "世界観設定書・巻I", "page": "p.24"},
+                "score": 0.7,
+            },
         ]
         enriched, meta = agent._insert_footnote_markers(text, pairs)
         assert "[^1]" in enriched
@@ -77,10 +88,20 @@ class TestCitationAttachment:
         """同一ソースは同一番号"""
         text = "魔法システムAを使った。魔法システムAは強力だ。"
         pairs = [
-            {"claim": "魔法システムAを使った", "position": 0, "end_position": 10,
-             "source": {"source": "世界観設定書・巻I", "page": "p.23"}, "score": 0.8},
-            {"claim": "魔法システムAは強力だ", "position": 11, "end_position": 21,
-             "source": {"source": "世界観設定書・巻I", "page": "p.23"}, "score": 0.7},
+            {
+                "claim": "魔法システムAを使った",
+                "position": 0,
+                "end_position": 10,
+                "source": {"source": "世界観設定書・巻I", "page": "p.23"},
+                "score": 0.8,
+            },
+            {
+                "claim": "魔法システムAは強力だ",
+                "position": 11,
+                "end_position": 21,
+                "source": {"source": "世界観設定書・巻I", "page": "p.23"},
+                "score": 0.7,
+            },
         ]
         enriched, meta = agent._insert_footnote_markers(text, pairs)
         assert enriched.count("[^1]") == 2
@@ -93,8 +114,12 @@ class TestCitationAttachment:
         """脚注スタイルフォーマット"""
         text = "魔法システムAを使った[^1]。"
         meta = [
-            {"marker": 1, "claim": "魔法システムAを使った",
-             "source": {"source": "世界観設定書・巻I", "page": "p.23"}, "score": 0.8},
+            {
+                "marker": 1,
+                "claim": "魔法システムAを使った",
+                "source": {"source": "世界観設定書・巻I", "page": "p.23"},
+                "score": 0.8,
+            },
         ]
         formatted = agent._format_citations(text, meta, "footnote")
         assert "【参考文献】" in formatted

@@ -66,9 +66,7 @@ def test_tracked_key_count_is_capped():
     for i in range(25):
         _check(limiter, f"10.1.0.{i}")
 
-    assert len(limiter._requests) <= 10, (
-        f"上限を超えてキーを保持している: {len(limiter._requests)}"
-    )
+    assert len(limiter._requests) <= 10, f"上限を超えてキーを保持している: {len(limiter._requests)}"
 
 
 def test_active_window_still_rate_limits_after_eviction_change():
@@ -93,6 +91,4 @@ def test_eviction_is_skipped_within_interval():
     time.sleep(1.05)
     _check(limiter, "10.2.0.2")
 
-    assert "10.2.0.1" in limiter._requests, (
-        "清掃の間隔が尊重されていない（毎リクエストで清掃している）"
-    )
+    assert "10.2.0.1" in limiter._requests, "清掃の間隔が尊重されていない（毎リクエストで清掃している）"

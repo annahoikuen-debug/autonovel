@@ -1,4 +1,5 @@
 """Scene Transition MCP Server Implementation (JSON-RPC)."""
+
 from __future__ import annotations
 
 from typing import Any, Dict

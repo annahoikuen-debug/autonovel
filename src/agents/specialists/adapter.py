@@ -1,5 +1,6 @@
 # src/agents/specialists/adapter.py
 """AuditAggregator pipeline adapter for Orchestrator integration."""
+
 from __future__ import annotations
 
 import logging
@@ -131,6 +132,7 @@ class AuditAggregatorNode:
         # Use experiment allocator for A/B variant selection
         variant_name = self._experiment_allocator.allocate(book_id, genre)
         from src.config.weight_variants import get_variant
+
         weights = get_variant(variant_name)
 
         # self.llm は __init__ で保持されているが、これまで
@@ -160,23 +162,15 @@ class AuditAggregatorNode:
             "draft_text": draft_text,
             "writing_context": ctx.artifacts.get("writing_context", {}),
             "world_bible_snapshot": ctx.artifacts.get("world_bible_snapshot", {}),
-            "world_bible": (
-                ctx.artifacts.get("world_bible")
-                or ctx.artifacts.get("world_bible_snapshot")
-                or {}
-            ),
+            "world_bible": (ctx.artifacts.get("world_bible") or ctx.artifacts.get("world_bible_snapshot") or {}),
             "genre": ctx.artifacts.get("genre", ""),
             "phase": ctx.artifacts.get("phase", "writing"),
             "plot_tree": ctx.artifacts.get("plot_tree") or ctx.artifacts.get("plot_summary", ""),
             "illustration_prompt": (
-                ctx.artifacts.get("illustration_prompt")
-                or ctx.artifacts.get("illustration_prompts")
-                or ""
+                ctx.artifacts.get("illustration_prompt") or ctx.artifacts.get("illustration_prompts") or ""
             ),
             "illustration_prompts": (
-                ctx.artifacts.get("illustration_prompts")
-                or ctx.artifacts.get("illustration_prompt")
-                or ""
+                ctx.artifacts.get("illustration_prompts") or ctx.artifacts.get("illustration_prompt") or ""
             ),
             "style_dna": ctx.artifacts.get("style_dna", {}),
         }
@@ -213,7 +207,9 @@ class AuditAggregatorNode:
             if actionable_diffs:
                 diff_lines = []
                 for d in actionable_diffs:
-                    diff_lines.append(f"- 箇所: {d.location}\n  修正前: {d.original_quote}\n  修正提案: {d.improved_suggestion}\n  理由: {d.rationale}")
+                    diff_lines.append(
+                        f"- 箇所: {d.location}\n  修正前: {d.original_quote}\n  修正提案: {d.improved_suggestion}\n  理由: {d.rationale}"
+                    )
                 regeneration_directive += "\n\n【具体的改稿サンプル(Actionable Diffs)】\n" + "\n".join(diff_lines)
 
         artifacts = {
@@ -331,6 +327,7 @@ class AuditAggregatorNode:
 
             # v5.0: 8並列LLM呼び出しを廃止し、二層ハイブリッド監査 UnifiedAuditor を実行
             from src.agents.specialists.unified_auditor import UnifiedAuditor
+
             unified = UnifiedAuditor(llm_gateway=self.llm)
             report = await unified.audit(draft_text)
 
@@ -359,7 +356,6 @@ class AuditAggregatorNode:
                 missing=[],
                 raw={},
             )
-
 
             # Include weight variant in score result for metrics
             variant_name = getattr(aggregator, "_weight_variant", "default_v1")
@@ -403,4 +399,3 @@ class AuditAggregatorNode:
     async def execute(self, ctx: AgentContext) -> AgentResult:
         """Alias for SkillAgent compatibility."""
         return await self(ctx)
-

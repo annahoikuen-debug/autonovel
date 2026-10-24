@@ -1,4 +1,5 @@
 """Main Pipeline Orchestrator for 1-Sheet 24-Panel Manga Generation."""
+
 from __future__ import annotations
 
 import logging
@@ -50,11 +51,7 @@ class MangaPipeline:
     ) -> MangaPipelineResult:
         """1話分の漫画シートを生成から超解像、オプション写植まで一気通貫で実行する。"""
         # 写植オプションフラグの決定
-        do_typeset = (
-            enable_typesetting
-            if enable_typesetting is not None
-            else self.config.enable_typesetting
-        )
+        do_typeset = enable_typesetting if enable_typesetting is not None else self.config.enable_typesetting
 
         # 1. プロンプト生成
         prompt = self.prompt_generator.build_prompt(episode, character_refs)
@@ -68,9 +65,7 @@ class MangaPipeline:
         for attempt in range(max_retries + 1):
             api_calls += 1
             raw_output_path = (
-                self.config.output_base_dir
-                / "raw_sheets"
-                / f"ep_{episode.episode_number}_attempt_{attempt}.png"
+                self.config.output_base_dir / "raw_sheets" / f"ep_{episode.episode_number}_attempt_{attempt}.png"
             )
             raw_sheet_path = self.client.generate_sheet(
                 prompt=prompt,
@@ -95,25 +90,15 @@ class MangaPipeline:
         assert raw_sheet_path is not None
 
         # 3. ローカル超解像（無料処理）
-        upscaled_path = (
-            self.config.output_base_dir
-            / "upscaled"
-            / f"ep_{episode.episode_number}_upscaled.png"
-        )
-        upscaled_sheet_path = self.upscaler.upscale(
-            raw_sheet_path, output_image_path=upscaled_path
-        )
+        upscaled_path = self.config.output_base_dir / "upscaled" / f"ep_{episode.episode_number}_upscaled.png"
+        upscaled_sheet_path = self.upscaler.upscale(raw_sheet_path, output_image_path=upscaled_path)
 
         # 4. 写植（オプション）
         final_output_path = upscaled_sheet_path
         typeset_applied = False
 
         if do_typeset and episode.dialogues:
-            typeset_path = (
-                self.config.output_base_dir
-                / "finalized"
-                / f"ep_{episode.episode_number}_final.png"
-            )
+            typeset_path = self.config.output_base_dir / "finalized" / f"ep_{episode.episode_number}_final.png"
             final_output_path = self.typesetter.apply_typesetting(
                 image_path=upscaled_sheet_path,
                 dialogues=episode.dialogues,

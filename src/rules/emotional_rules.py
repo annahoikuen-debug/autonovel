@@ -2,6 +2,7 @@
 
 プロットイベントに対する感情変化のルールと、ルール評価用コンテキスト。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

@@ -148,6 +148,7 @@ class DialogueExtractor:
     def _get_base_acoustics(self, emotion: SpeechEmotion) -> AcousticParameters:
         """感情に対応する基本音響パラメータを取得"""
         from src.services.audio.emotion_classifier import EMOTION_ACOUSTIC_TABLE
+
         return EMOTION_ACOUSTIC_TABLE.get(emotion, EMOTION_ACOUSTIC_TABLE[SpeechEmotion.NEUTRAL])
 
     def _resolve_speaker(self, paragraph: str, characters: list[str]) -> str:

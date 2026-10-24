@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock
 from src.services.redis_cache import RedisCacheService
 
+
 @pytest.mark.asyncio
 async def test_services_end_to_end_mock():
     redis_svc = RedisCacheService()

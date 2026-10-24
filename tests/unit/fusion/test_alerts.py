@@ -1,4 +1,5 @@
 """Unit tests for ConflictAlerter."""
+
 import logging
 from src.fusion.alerts import ConflictAlerter
 from src.fusion.config import FusionConfig

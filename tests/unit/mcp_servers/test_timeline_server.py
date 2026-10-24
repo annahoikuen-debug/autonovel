@@ -1,4 +1,5 @@
 """Unit tests for TimelineMCPServer."""
+
 from __future__ import annotations
 
 from src.mcp_servers.providers.timeline_provider import TimelineResourceProvider
@@ -13,12 +14,7 @@ def test_timeline_mcp_server_json_rpc():
     add_ev_req = {
         "jsonrpc": "2.0",
         "method": "add_timeline_event",
-        "params": {
-            "timestamp": "Year 100",
-            "location": "Capital",
-            "description": "Coronation",
-            "characters": ["King"]
-        },
+        "params": {"timestamp": "Year 100", "location": "Capital", "description": "Coronation", "characters": ["King"]},
         "id": 1,
     }
     resp1 = server.handle_request(add_ev_req)
@@ -28,11 +24,7 @@ def test_timeline_mcp_server_json_rpc():
     rec_dig_req = {
         "jsonrpc": "2.0",
         "method": "record_episode_digest",
-        "params": {
-            "episode_num": 10,
-            "summary": "King was crowned.",
-            "footholds_or_foreshadowings": ["Dark prophecy"]
-        },
+        "params": {"episode_num": 10, "summary": "King was crowned.", "footholds_or_foreshadowings": ["Dark prophecy"]},
         "id": 2,
     }
     resp2 = server.handle_request(rec_dig_req)

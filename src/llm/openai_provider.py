@@ -101,9 +101,7 @@ class OpenAIProvider(LLMProvider):
                 temp=temperature,
                 **kwargs,
             )
-            return LLMResponse(
-                content=content, metadata=metadata, usage=self._parse_usage(usage), success=True
-            )
+            return LLMResponse(content=content, metadata=metadata, usage=self._parse_usage(usage), success=True)
         except Exception as e:
             mapped = self._map_exception(e)
             raise mapped from e
@@ -115,9 +113,7 @@ class OpenAIProvider(LLMProvider):
 
         # usage_metadata が MockUsage 等の場合の対応
         return {
-            "prompt_tokens": getattr(
-                usage_metadata, "prompt_token_count", getattr(usage_metadata, "prompt_tokens", 0)
-            ),
+            "prompt_tokens": getattr(usage_metadata, "prompt_token_count", getattr(usage_metadata, "prompt_tokens", 0)),
             "completion_tokens": getattr(
                 usage_metadata,
                 "candidates_token_count",

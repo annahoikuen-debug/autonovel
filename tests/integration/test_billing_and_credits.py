@@ -3,6 +3,7 @@
 
 Stripeモックを用いた決済完了からクレジット反映、消費・枯渇ブロックのE2Eテスト
 """
+
 import pytest
 import pytest_asyncio
 from unittest.mock import MagicMock, patch
@@ -32,9 +33,7 @@ engine = create_async_engine(
     connect_args={"check_same_thread": False},
     poolclass=StaticPool,
 )
-TestingSessionLocal = sessionmaker(
-    engine, class_=AsyncSession, expire_on_commit=False
-)
+TestingSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
 async def override_get_db():
@@ -54,6 +53,7 @@ def allow_unsigned_webhooks(monkeypatch):
     未設定の環境では 400 になるのを防ぐ（tests/unit/test_webhook_idempotency.py 参照）。
     """
     from src.backend.routers import billing_webhook
+
     monkeypatch.setattr(billing_webhook, "WEBHOOK_SECRET", "")
     monkeypatch.setattr(billing_webhook, "ALLOW_UNSIGNED_WEBHOOKS", True)
 
@@ -272,9 +272,7 @@ async def test_stripe_webhook_handling(client: AsyncClient, db: AsyncSession, te
     assert balance == 350
 
     # サブスクリプションレコードが作成されたことを確認
-    result = await db.execute(
-        select(Subscription).where(Subscription.user_id == test_user.id)
-    )
+    result = await db.execute(select(Subscription).where(Subscription.user_id == test_user.id))
     subscription = result.scalar_one_or_none()
     assert subscription is not None
     assert subscription.stripe_subscription_id == "sub_test_123"

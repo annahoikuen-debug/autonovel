@@ -1,4 +1,5 @@
 """Unit tests for EmbeddingService cache + rate limit + __repr__."""
+
 from __future__ import annotations
 
 

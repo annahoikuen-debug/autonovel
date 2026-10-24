@@ -8,11 +8,12 @@ from enum import Enum
 
 class PublishPlatform(str, Enum):
     """Supported novel publishing platforms."""
-    NAROU = "narou"             # 小説家になろう
-    KAKUYOMU = "kakuyomu"       # カクヨム
-    ALPHAPOLIS = "alphapolis"   # アルファポリス
-    KDP_EPUB = "kdp_epub"       # Amazon KDP (縦書き電子書籍)
-    AOZORA = "aozora"           # 青空文庫形式
+
+    NAROU = "narou"  # 小説家になろう
+    KAKUYOMU = "kakuyomu"  # カクヨム
+    ALPHAPOLIS = "alphapolis"  # アルファポリス
+    KDP_EPUB = "kdp_epub"  # Amazon KDP (縦書き電子書籍)
+    AOZORA = "aozora"  # 青空文庫形式
 
 
 class RubyTranspiler:

@@ -8,6 +8,7 @@
   - **すべて既定 False**。ON にしない限り既存挙動は完全に現状維持される
   - `settings` / pydantic を参照しない（`os.environ` のみ。テストは monkeypatch で操作）
 """
+
 from __future__ import annotations
 
 import os

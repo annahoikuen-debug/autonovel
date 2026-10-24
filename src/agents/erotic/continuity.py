@@ -157,9 +157,7 @@ class SceneContinuityTracker:
                 items_held=json.loads(row["items_held"]) if row["items_held"] else [],
             )
 
-    def get_previous_snapshot(
-        self, episode_num: int, character_name: str
-    ) -> SceneStateSnapshot | None:
+    def get_previous_snapshot(self, episode_num: int, character_name: str) -> SceneStateSnapshot | None:
         """直前のエピソードの状態を取得する。"""
         return self.get_snapshot(episode_num - 1, character_name)
 
@@ -195,9 +193,7 @@ class SceneContinuityTracker:
 
         return "none"
 
-    def check_injury_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_injury_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """戦闘負傷の一貫性をチェックする。"""
         issues = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
@@ -263,9 +259,7 @@ class SceneContinuityTracker:
 
         return "neutral"
 
-    def check_attitude_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_attitude_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """会話態度の一貫性をチェックする。"""
         issues = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
@@ -275,11 +269,7 @@ class SceneContinuityTracker:
         current_attitude = self._detect_attitude(current_text)
         prev_attitude = prev_snapshot.attitude
 
-        if (
-            prev_attitude != "neutral"
-            and current_attitude != "neutral"
-            and prev_attitude != current_attitude
-        ):
+        if prev_attitude != "neutral" and current_attitude != "neutral" and prev_attitude != current_attitude:
             # 態度が急激に変化した（例: hostile -> friendly）場合に警告
             issues.append(
                 f"【整合性警告】{character_name}の態度が不自然に変化しています（{prev_attitude} → {current_attitude}）。心理描写やイベントによる変化があるか確認してください。"
@@ -307,9 +297,7 @@ class SceneContinuityTracker:
 
         return discoveries
 
-    def check_discovery_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_discovery_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """探索発見の一貫性をチェックする。"""
         issues = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
@@ -345,9 +333,7 @@ class SceneContinuityTracker:
         # 既定値
         return "staying"
 
-    def check_travel_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_travel_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """移動接続の一貫性をチェックする。"""
         issues = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
@@ -387,9 +373,7 @@ class SceneContinuityTracker:
         # ここでは簡易的に一人称でなければ三人称とする
         return "third_person"
 
-    def check_perspective_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_perspective_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """独白視点の一貫性をチェックする。"""
         issues = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
@@ -425,9 +409,7 @@ class SceneContinuityTracker:
             return "action"
         return "unknown"
 
-    def check_recovery_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_recovery_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """休息回復の一貫性をチェックする。"""
         issues = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
@@ -505,9 +487,7 @@ class SceneContinuityTracker:
                 found.append(keyword)
         return found
 
-    def check_foreshadowing_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_foreshadowing_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """伏線が適切に継承または回収されているかを確認する。"""
         issues = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
@@ -524,9 +504,7 @@ class SceneContinuityTracker:
         recovery_keywords = ["判明", "解決", "正体", "理由", "気づく"]
 
         if not current_foreshadows and not any(rk in current_text for rk in recovery_keywords):
-            issues.append(
-                "【伏線警告】前話で伏線が提示されていましたが、今回のシーンで継承または回収されていません。"
-            )
+            issues.append("【伏線警告】前話で伏線が提示されていましたが、今回のシーンで継承または回収されていません。")
 
         return issues
 
@@ -544,9 +522,7 @@ class SceneContinuityTracker:
             items_held=self._detect_item_ownership(text),
         )
 
-    def check_time_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_time_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """時間帯の不自然な遷移をチェックする。"""
         issues = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
@@ -575,9 +551,7 @@ class SceneContinuityTracker:
 
         return issues
 
-    def check_all_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_all_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """全ての整合性チェックをまとめて実行する。"""
         all_issues = []
 
@@ -599,9 +573,7 @@ class SceneContinuityTracker:
 
         return all_issues
 
-    def check_item_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_item_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """アイテムの所持状態に矛盾がないか確認する。"""
         issues = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
@@ -626,9 +598,7 @@ class SceneContinuityTracker:
                 ]
                 if not any(kw in current_text for kw in loss_keywords):
                     # 重要アイテム（キーワードに含まれるもの）が突然消えた場合に警告
-                    issues.append(
-                        f"アイテム '{item}' が前話から消失していますが、紛失や消費の描写がありません。"
-                    )
+                    issues.append(f"アイテム '{item}' が前話から消失していますが、紛失や消費の描写がありません。")
 
         return issues
 
@@ -741,9 +711,7 @@ class ContinuityTracker:
                 """)
                 conn.commit()
         except Exception as e:
-            logger.warning(
-                "Failed to initialize SQLite for ContinuityTracker: %s. Using memory only.", e
-            )
+            logger.warning("Failed to initialize SQLite for ContinuityTracker: %s. Using memory only.", e)
 
     def save_snapshot(self, snapshot: CharacterStateSnapshot) -> None:
         """エピソード終了時の状態を保存する。"""
@@ -826,9 +794,7 @@ class ContinuityTracker:
             logger.warning("Failed to get snapshot from SQLite: %s", e)
         return None
 
-    def get_previous_snapshot(
-        self, current_ep: int, character_name: str
-    ) -> CharacterStateSnapshot | None:
+    def get_previous_snapshot(self, current_ep: int, character_name: str) -> CharacterStateSnapshot | None:
         """前話のキャラクター状態を取得する。"""
         return self.get_snapshot(current_ep - 1, character_name)
 
@@ -926,9 +892,7 @@ class ContinuityTracker:
         )
         return snapshot
 
-    def check_stamina_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_stamina_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """前話の体力状態と今話冒層の体力状態の矛盾を検出する。"""
         issues: list[str] = []
         prev = self.get_previous_snapshot(current_ep, character_name)
@@ -949,9 +913,7 @@ class ContinuityTracker:
 
     RECOVERY_KEYWORDS = ["休む", "眠る", "回復", "癒す", "治療", "休息", "睡眠", "朝", "目覚め"]
 
-    def check_recovery_description(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_recovery_description(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """前話で疲弊→今話で回復している場合、回復描写があるか検証する。"""
         issues: list[str] = []
         prev = self.get_previous_snapshot(current_ep, character_name)
@@ -959,9 +921,7 @@ class ContinuityTracker:
             return issues
 
         if prev.stamina_level in ["exhausted", "tired"]:
-            current_stamina = self._detect_stamina(
-                current_text[: max(int(len(current_text) * 0.3), 100)]
-            )
+            current_stamina = self._detect_stamina(current_text[: max(int(len(current_text) * 0.3), 100)])
             if current_stamina in ["normal", "energetic"]:
                 recovery_found = any(kw in current_text[:500] for kw in self.RECOVERY_KEYWORDS)
                 if not recovery_found:
@@ -976,9 +936,7 @@ class ContinuityTracker:
         mapping = {"exhausted": 0, "tired": 1, "normal": 2, "energetic": 3}
         return mapping.get(level, 2)
 
-    def check_stamina_jump(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_stamina_jump(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """前話→今話で体力が2段階以上ジャンプした場合に警告する。"""
         issues: list[str] = []
         prev = self.get_previous_snapshot(current_ep, character_name)
@@ -998,9 +956,7 @@ class ContinuityTracker:
             )
         return issues
 
-    def check_psych_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_psych_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """前話の心理状態と今話冒頭の心理状態の矛盾を検出する。"""
         issues: list[str] = []
         prev = self.get_previous_snapshot(current_ep, character_name)
@@ -1023,18 +979,14 @@ class ContinuityTracker:
         "euphoric_to_anxious": ["裏切り", "暗雲", "別れ", "失う", "突き落と"],
     }
 
-    def check_psych_trigger(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_psych_trigger(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """心理状態が大きく変化する場合、トリガーイベントがあるか検証する。"""
         issues: list[str] = []
         prev = self.get_previous_snapshot(current_ep, character_name)
         if prev is None:
             return issues
 
-        current_psych = self._detect_psych_state(
-            current_text[: max(int(len(current_text) * 0.3), 100)]
-        )
+        current_psych = self._detect_psych_state(current_text[: max(int(len(current_text) * 0.3), 100)])
 
         if prev.psych_state == "distressed" and current_psych in ["content", "euphoric"]:
             trigger_kws = self.PSYCH_TRIGGER_KEYWORDS.get("distressed_to_content", [])
@@ -1057,9 +1009,7 @@ class ContinuityTracker:
         mapping = {"distressed": 0, "anxious": 1, "neutral": 2, "content": 3, "euphoric": 4}
         return mapping.get(state, 2)
 
-    def check_psych_jump(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_psych_jump(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         """前話→今話で心理状態が2段階以上ジャンプした場合に警告する。"""
         issues: list[str] = []
         prev = self.get_previous_snapshot(current_ep, character_name)
@@ -1085,9 +1035,7 @@ class ContinuityTracker:
         opening = text[:300]
         return any(kw in opening for kw in self.TIME_PASSAGE_KEYWORDS)
 
-    def check_clothing_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_clothing_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         from src.agents.erotic.filter import EroticIntegrityChecker
 
         """前話末の衣服状態が今話冒頭で矛盾していないか検証する。"""
@@ -1115,9 +1063,7 @@ class ContinuityTracker:
         mapping = {"stranger": 0, "acquaintance": 1, "close": 2, "intimate": 3, "bonded": 4}
         return mapping.get(level, 1)
 
-    def check_intimacy_regression(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_intimacy_regression(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         issues: list[str] = []
         prev = self.get_previous_snapshot(current_ep, character_name)
         if prev is None:
@@ -1134,9 +1080,7 @@ class ContinuityTracker:
             )
         return issues
 
-    def check_intimacy_rush(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_intimacy_rush(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         issues: list[str] = []
         prev = self.get_previous_snapshot(current_ep, character_name)
         if prev is None:
@@ -1155,9 +1099,7 @@ class ContinuityTracker:
 
     EROTIC_SCENE_MARKERS = ["【Peak", "【peak", "肌を重ね", "身を委ね", "口づけ", "抱きしめ"]
 
-    def check_intimacy_vs_erotic_level(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_intimacy_vs_erotic_level(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         issues: list[str] = []
         prev = self.get_previous_snapshot(current_ep, character_name)
         if prev is None:
@@ -1171,9 +1113,7 @@ class ContinuityTracker:
             )
         return issues
 
-    def check_location_continuity(
-        self, current_ep: int, character_name: str, current_text: str
-    ) -> list[str]:
+    def check_location_continuity(self, current_ep: int, character_name: str, current_text: str) -> list[str]:
         issues: list[str] = []
         prev = self.get_previous_snapshot(current_ep, character_name)
         if prev is None or prev.location == "unknown":
@@ -1206,9 +1146,7 @@ class ContinuityTracker:
         for w1, w2 in contradictions:
             if w1 in prev_weather and w2 in curr_weather:
                 if not self._has_time_passage(curr_start):
-                    issues.append(
-                        f"[環境矛盾] 前話末に'{w1}'描写 → 今話冒頭に'{w2}'描写。時間経過の描写がありません"
-                    )
+                    issues.append(f"[環境矛盾] 前話末に'{w1}'描写 → 今話冒頭に'{w2}'描写。時間経過の描写がありません")
         return issues
 
 

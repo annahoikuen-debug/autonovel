@@ -82,6 +82,7 @@ async def test_audit_agent_passes_when_all_audits_ok(audit_agent, mock_repo):
     audit_agent._plot_monitor.check_integrity = AsyncMock(return_value=(True, 1.0, None))
     # UnifiedAuditorが例外を投げないようにモック
     from src.agents.specialists.unified_auditor import UnifiedAuditor
+
     mock_unified_auditor = AsyncMock(spec=UnifiedAuditor)
     mock_unified_auditor.audit = AsyncMock(return_value=("OK", {}))
     audit_agent._unified_auditor = mock_unified_auditor
@@ -139,11 +140,13 @@ async def test_learning_data_service_negative_sample(mock_repo):
 
     service = LearningDataService(repo=mock_repo, chroma_client=mock_chroma)
 
-    mock_repo.misc.get_patch_review = AsyncMock(return_value={
-        "id": 1,
-        "audit_issue_ids": [1, 2],
-        "learning_metadata": {"negative_sample_candidates": ["logical_consistency", "causal_integrity"]},
-    })
+    mock_repo.misc.get_patch_review = AsyncMock(
+        return_value={
+            "id": 1,
+            "audit_issue_ids": [1, 2],
+            "learning_metadata": {"negative_sample_candidates": ["logical_consistency", "causal_integrity"]},
+        }
+    )
     mock_repo.session.execute = AsyncMock()
 
     count = await service.record_negative_sample(

@@ -1,4 +1,5 @@
 """Quantitative consistency and retention metrics for context compression."""
+
 from __future__ import annotations
 import re
 from src.services.compression.models import (
@@ -6,6 +7,7 @@ from src.services.compression.models import (
     ProtectedContext,
     TrimmedContextOutput,
 )
+
 
 def calculate_consistency_metrics(
     raw_text: str,

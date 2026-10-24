@@ -1,4 +1,5 @@
 """BookMapper の単体テスト。"""
+
 from datetime import datetime
 from src.backend.database.models import Book
 from src.domain.entities.novel import Novel

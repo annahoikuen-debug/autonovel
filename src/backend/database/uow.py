@@ -47,6 +47,7 @@ class UnitOfWork:
         if db is None:
             try:
                 from src.core.container import AppContainer
+
                 self.db = AppContainer.db()
             except Exception:
                 self.db = None  # type: ignore[assignment]
@@ -194,9 +195,7 @@ class UnitOfWork:
         if self.session is None:
             raise RuntimeError("Session not initialized")
         await self.session.execute(
-            update(Outbox)
-            .where(Outbox.id == event_id)
-            .values(status="done", processed_at=datetime.datetime.now())
+            update(Outbox).where(Outbox.id == event_id).values(status="done", processed_at=datetime.datetime.now())
         )
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -212,9 +211,7 @@ class UnitOfWork:
 
                 async def _commit_with_retry():
                     if self.session:
-                        await self.outbox_service.flush(
-                            self.session, self._chroma_additions, self._chroma_deletions
-                        )
+                        await self.outbox_service.flush(self.session, self._chroma_additions, self._chroma_deletions)
                         await self.session.commit()
                     else:
                         raise RuntimeError("Session is None during commit")

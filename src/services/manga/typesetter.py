@@ -1,4 +1,5 @@
 """Optional Typesetting and Speech Bubble Renderer for Manga Sheets."""
+
 from __future__ import annotations
 
 import logging
@@ -25,11 +26,7 @@ class MangaTypesetter:
     ) -> Path:
         """指定されたセリフリストを画像上の該当コマに写植する。"""
         if output_path is None:
-            output_path = (
-                image_path.parent.parent
-                / "finalized"
-                / f"typeset_{image_path.name}"
-            )
+            output_path = image_path.parent.parent / "finalized" / f"typeset_{image_path.name}"
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
 

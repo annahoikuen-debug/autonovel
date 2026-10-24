@@ -143,17 +143,13 @@ def _apply_env_overrides(cfg: AntiAIConfig) -> AntiAIConfig:
         ENABLE_ANTI_AI_LOOP        -> cfg.feature.enabled
     """
     if "ANTI_AI_LLM_ENABLED" in os.environ:
-        cfg.llm_sanity_check.enabled = os.environ["ANTI_AI_LLM_ENABLED"].lower() in (
-            "1", "true", "yes", "on"
-        )
+        cfg.llm_sanity_check.enabled = os.environ["ANTI_AI_LLM_ENABLED"].lower() in ("1", "true", "yes", "on")
     if "ANTI_AI_MAX_LOOPS" in os.environ:
         cfg.loop.max_iterations = int(os.environ["ANTI_AI_MAX_LOOPS"])
     if "ANTI_AI_THRESHOLD" in os.environ:
         cfg.loop.stop_threshold = float(os.environ["ANTI_AI_THRESHOLD"])
     if "ENABLE_ANTI_AI_LOOP" in os.environ:
-        cfg.feature.enabled = os.environ["ENABLE_ANTI_AI_LOOP"].lower() in (
-            "1", "true", "yes", "on"
-        )
+        cfg.feature.enabled = os.environ["ENABLE_ANTI_AI_LOOP"].lower() in ("1", "true", "yes", "on")
     return cfg
 
 

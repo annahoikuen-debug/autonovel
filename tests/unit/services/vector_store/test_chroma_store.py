@@ -1,4 +1,5 @@
 """Unit tests for src/services/vector_store/chroma.py using a fake ChromaDB client."""
+
 import sys
 import types
 from unittest.mock import MagicMock
@@ -304,9 +305,7 @@ class TestCollectionLifecycle:
 
     def test_initialize_subset(self):
         store, _ = make_store()
-        assert store.initialize_collections([CollectionType.SEMANTIC_CACHE]) == {
-            "semantic_cache": True
-        }
+        assert store.initialize_collections([CollectionType.SEMANTIC_CACHE]) == {"semantic_cache": True}
 
     def test_initialize_passes_metadata(self):
         store, client = make_store()
@@ -328,9 +327,7 @@ class TestCollectionLifecycle:
 
     def test_ensure_warns_on_space_mismatch(self, caplog):
         client = FakeClient()
-        client.collections["semantic_cache"] = FakeCollection(
-            "semantic_cache", {"hnsw:space": "l2"}
-        )
+        client.collections["semantic_cache"] = FakeCollection("semantic_cache", {"hnsw:space": "l2"})
         store, _ = make_store(client)
         config = DEFAULT_COLLECTIONS[CollectionType.SEMANTIC_CACHE]
         with caplog.at_level("WARNING"):
@@ -384,9 +381,7 @@ class TestCollectionLifecycle:
 
     def test_audit_collection_coverage(self):
         store, _ = make_store()
-        assert store.audit_collection_coverage([CollectionType.EPISODE_MEMORY]) == {
-            "episode_memory": True
-        }
+        assert store.audit_collection_coverage([CollectionType.EPISODE_MEMORY]) == {"episode_memory": True}
 
     def test_audit_collection_coverage_all(self):
         store, _ = make_store()
@@ -656,15 +651,11 @@ class TestHybridSearch:
 
         def get_scores(self, query_tokens):
             q = set(query_tokens)
-            return [
-                sum(1 for t in doc if t in q) / max(1, len(doc)) for doc in self.corpus
-            ]
+            return [sum(1 for t in doc if t in q) / max(1, len(doc)) for doc in self.corpus]
 
     @pytest.fixture(autouse=True)
     def _inject_list_bm25(self, monkeypatch):
-        monkeypatch.setitem(
-            chroma_mod.__dict__, "BM25Okapi", TestHybridSearch._ListBM25
-        )
+        monkeypatch.setitem(chroma_mod.__dict__, "BM25Okapi", TestHybridSearch._ListBM25)
         monkeypatch.setattr(chroma_mod, "HAS_BM25", True)
 
     def _seeded(self, with_bm25=True):

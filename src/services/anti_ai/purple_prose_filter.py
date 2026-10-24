@@ -85,9 +85,7 @@ class PurpleProseFilter:
 
         # Calculate current metaphor budget based on characters processed
         metaphor_budget = max(
-            0,
-            self.max_metaphor_per_1k_chars -
-            (self._metaphor_count * 1000 // max(self._character_count, 1))
+            0, self.max_metaphor_per_1k_chars - (self._metaphor_count * 1000 // max(self._character_count, 1))
         )
 
         # Process aggressive patterns first
@@ -96,8 +94,8 @@ class PurpleProseFilter:
             self._aggressive_regexes,
             self._aggressive_count,
             self.max_aggressive_per_episode,
-            lambda: setattr(self, '_aggressive_count', self._aggressive_count + 1),
-            "aggressive"
+            lambda: setattr(self, "_aggressive_count", self._aggressive_count + 1),
+            "aggressive",
         )
 
         # Process metaphor patterns with dynamic budget
@@ -106,8 +104,8 @@ class PurpleProseFilter:
             self._metaphor_regexes,
             self._metaphor_count,
             self._metaphor_count + metaphor_budget,  # Effective limit based on budget
-            lambda: setattr(self, '_metaphor_count', self._metaphor_count + 1),
-            "metaphor"
+            lambda: setattr(self, "_metaphor_count", self._metaphor_count + 1),
+            "metaphor",
         )
 
         return processed_text
@@ -119,7 +117,7 @@ class PurpleProseFilter:
         current_count: int,
         max_allowed: int,
         increment_counter: callable,
-        pattern_type: str
+        pattern_type: str,
     ) -> str:
         """Apply limits to a set of patterns in the text.
 
@@ -201,7 +199,7 @@ class PurpleProseFilter:
             "metaphor_count": self._metaphor_count,
             "character_count": self._character_count,
             "aggressive_per_episode": self._aggressive_count,
-            "metaphor_per_1k_chars": (
-                self._metaphor_count * 1000 // max(self._character_count, 1)
-            ) if self._character_count > 0 else 0
+            "metaphor_per_1k_chars": (self._metaphor_count * 1000 // max(self._character_count, 1))
+            if self._character_count > 0
+            else 0,
         }

@@ -1,4 +1,5 @@
 """Character mention extractor from text."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -10,12 +11,13 @@ from spacy.tokens import Doc
 @dataclass
 class CharacterMention:
     """キャラクター言及情報"""
-    text: str                    # 言及テキスト（名前、代名詞等）
-    start_char: int              # 文字列内開始位置
-    end_char: int                # 文字列内終了位置
-    token_start: int             # トークンインデックス開始
-    token_end: int               # トークンインデックス終了
-    is_pronoun: bool = False     # 代名詞かどうか
+
+    text: str  # 言及テキスト（名前、代名詞等）
+    start_char: int  # 文字列内開始位置
+    end_char: int  # 文字列内終了位置
+    token_start: int  # トークンインデックス開始
+    token_end: int  # トークンインデックス終了
+    is_pronoun: bool = False  # 代名詞かどうか
     entity_type: Optional[str] = None  # 固有表現タイプ (PERSON等)
     normalized_name: Optional[str] = None  # 正規化名（辞書マッチ時）
 
@@ -48,15 +50,17 @@ class CharacterExtractor:
             if ent.label_ in ("PERSON", "PER", "Character"):
                 span_key = (ent.start_char, ent.end_char)
                 if span_key not in seen_spans:
-                    mentions.append(CharacterMention(
-                        text=ent.text,
-                        start_char=ent.start_char,
-                        end_char=ent.end_char,
-                        token_start=ent.start,
-                        token_end=ent.end,
-                        entity_type=ent.label_,
-                        normalized_name=self._normalize_name(ent.text, dict_to_use),
-                    ))
+                    mentions.append(
+                        CharacterMention(
+                            text=ent.text,
+                            start_char=ent.start_char,
+                            end_char=ent.end_char,
+                            token_start=ent.start,
+                            token_end=ent.end,
+                            entity_type=ent.label_,
+                            normalized_name=self._normalize_name(ent.text, dict_to_use),
+                        )
+                    )
                     seen_spans.add(span_key)
 
         # 2. キャラ辞書マッチ（固有表現で取れなかったもの）
@@ -82,15 +86,17 @@ class CharacterExtractor:
                         # トークン位置を推定
                         token_start = self._char_to_token(doc, idx)
                         token_end = self._char_to_token(doc, end - 1) + 1
-                        mentions.append(CharacterMention(
-                            text=char_name,
-                            start_char=idx,
-                            end_char=end,
-                            token_start=token_start,
-                            token_end=token_end,
-                            entity_type="DICT_MATCH",
-                            normalized_name=char_name,
-                        ))
+                        mentions.append(
+                            CharacterMention(
+                                text=char_name,
+                                start_char=idx,
+                                end_char=end,
+                                token_start=token_start,
+                                token_end=token_end,
+                                entity_type="DICT_MATCH",
+                                normalized_name=char_name,
+                            )
+                        )
                         seen_spans.add(span_key)
                     start = end
 
@@ -99,15 +105,17 @@ class CharacterExtractor:
             if token.text in self.all_pronouns:
                 span_key = (token.idx, token.idx + len(token.text))
                 if span_key not in seen_spans:
-                    mentions.append(CharacterMention(
-                        text=token.text,
-                        start_char=token.idx,
-                        end_char=token.idx + len(token.text),
-                        token_start=token.i,
-                        token_end=token.i + 1,
-                        is_pronoun=True,
-                        entity_type="PRONOUN",
-                    ))
+                    mentions.append(
+                        CharacterMention(
+                            text=token.text,
+                            start_char=token.idx,
+                            end_char=token.idx + len(token.text),
+                            token_start=token.i,
+                            token_end=token.i + 1,
+                            is_pronoun=True,
+                            entity_type="PRONOUN",
+                        )
+                    )
                     seen_spans.add(span_key)
 
         # 位置順でソート
@@ -138,8 +146,9 @@ class CharacterExtractor:
 
         # セリフ記号「」で区切って最後の発言者を探す
         import re
+
         # 「キャラ名「セリフ」」パターンを全て抽出
-        pattern = r'([^「\n]+)「[^」]*」'
+        pattern = r"([^「\n]+)「[^」]*」"
         matches = list(re.finditer(pattern, text))
 
         if matches:

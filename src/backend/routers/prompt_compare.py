@@ -53,10 +53,7 @@ async def list_versions(
             .order_by(PromptVersion.id)
         )
         rows = result.scalars().all()
-    return [
-        {"id": r.id, "version_tag": r.version_tag, "content": r.content, "is_active": r.is_active}
-        for r in rows
-    ]
+    return [{"id": r.id, "version_tag": r.version_tag, "content": r.content, "is_active": r.is_active} for r in rows]
 
 
 @router.post("/books/{book_id}/compare")
@@ -83,19 +80,14 @@ async def compare(
             .where(PromptVersion.prompt_key == req.prompt_key)
             .order_by(PromptVersion.id)
         )
-        versions = [
-            {"id": r.id, "version_tag": r.version_tag, "content": r.content}
-            for r in result.scalars().all()
-        ]
+        versions = [{"id": r.id, "version_tag": r.version_tag, "content": r.content} for r in result.scalars().all()]
 
     # texts の数に合わせてバージョンを切り詰め/補完
     n = min(len(versions), len(req.texts))
     if n == 0:
         from fastapi import HTTPException
 
-        raise HTTPException(
-            status_code=404, detail="比較対象のプロンプトバージョンが見つかりません"
-        )
+        raise HTTPException(status_code=404, detail="比較対象のプロンプトバージョンが見つかりません")
     versions = versions[:n]
     texts = req.texts[:n]
     return await build_comparison(versions, texts, req.weights)

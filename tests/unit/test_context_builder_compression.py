@@ -1,4 +1,5 @@
 """ContextBuilderAgent 圧縮統合テスト"""
+
 from __future__ import annotations
 
 import pytest
@@ -74,7 +75,7 @@ class TestContextBuilderAgentCompression:
                 "repo": mock_repo,
                 "target_word_count": 3000,
                 "style_tag": None,
-            }
+            },
         )
         return ctx
 

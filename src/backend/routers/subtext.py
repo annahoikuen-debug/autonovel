@@ -57,6 +57,7 @@ class ProcessResponse(BaseModel):
 # 1. Rules API (PLAN_Y1 Step 23)
 # ==============================================================================
 
+
 @router.get("/rules", response_model=List[RewriteRuleModel])
 async def list_rules() -> List[RewriteRuleModel]:
     rules = engine_instance.registry.list_rules()
@@ -88,6 +89,7 @@ async def create_or_update_rule(
 # ==============================================================================
 # 2. Templates API (PLAN_Y2 Step 20)
 # ==============================================================================
+
 
 class TemplateCreateRequest(BaseModel):
     id: str
@@ -197,6 +199,7 @@ weight: {req.weight}
 # 3. Tokens API (PLAN_Y3 Step 20)
 # ==============================================================================
 
+
 class TokenPreviewRequest(BaseModel):
     text: str
     context: Optional[SubtextContext] = None
@@ -217,9 +220,7 @@ async def update_token_dictionary(
     """トークン辞書（プロセス共有）を更新する。"""
     token_expander._dict = content
     try:
-        token_expander.dict_path.write_text(
-            yaml.dump(content, allow_unicode=True), encoding="utf-8"
-        )
+        token_expander.dict_path.write_text(yaml.dump(content, allow_unicode=True), encoding="utf-8")
     except Exception as e:
         logger.warning(f"Failed to persist token dictionary: {e}")
     return {"status": "updated"}
@@ -234,6 +235,7 @@ async def preview_token_expansion(req: TokenPreviewRequest) -> Dict[str, Any]:
 # ==============================================================================
 # 4. Master Process Endpoint
 # ==============================================================================
+
 
 @router.post("/process", response_model=ProcessResponse)
 async def process_dialogue(

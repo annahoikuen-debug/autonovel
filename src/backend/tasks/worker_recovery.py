@@ -1,4 +1,5 @@
 """Worker Recovery Manager for DAG Task Crash Recovery (Steps 51-53, 56-57)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -19,6 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass(slots=True)
 class RecoveryConfig:
     """Configuration for worker recovery behavior."""
+
     heartbeat_interval_seconds: int = 30
     zombie_threshold_seconds: int = 300
     max_recovery_attempts: int = 3
@@ -134,9 +136,7 @@ class WorkerRecoveryManager:
                         f"attempts ({self.config.max_recovery_attempts}). Marking as failed."
                     )
                     await self._mark_task_failed(
-                        session,
-                        zombie.task_id,
-                        f"Exceeded max recovery attempts ({self.config.max_recovery_attempts})"
+                        session, zombie.task_id, f"Exceeded max recovery attempts ({self.config.max_recovery_attempts})"
                     )
                     await self._emit_alert(
                         "poison_pill",
@@ -180,9 +180,13 @@ class WorkerRecoveryManager:
 
     async def _mark_task_failed(self, session, task_id: str, error: str) -> None:
         """Mark a task as failed in WAL."""
-        stmt = update(TaskWALLogModel).where(TaskWALLogModel.task_id == task_id).values(
-            state="failed",
-            output_json=json.dumps({"error": error}),
+        stmt = (
+            update(TaskWALLogModel)
+            .where(TaskWALLogModel.task_id == task_id)
+            .values(
+                state="failed",
+                output_json=json.dumps({"error": error}),
+            )
         )
         await session.execute(stmt)
 
@@ -266,10 +270,14 @@ class WorkerRecoveryManager:
         Returns list of node_ids that can be resumed from.
         """
         async with self.db_manager.get_session() as session:
-            stmt = select(TaskWALLogModel).where(
-                TaskWALLogModel.dag_id == dag_id,
-                TaskWALLogModel.state == "completed",
-            ).order_by(TaskWALLogModel.created_at)
+            stmt = (
+                select(TaskWALLogModel)
+                .where(
+                    TaskWALLogModel.dag_id == dag_id,
+                    TaskWALLogModel.state == "completed",
+                )
+                .order_by(TaskWALLogModel.created_at)
+            )
             result = await session.execute(stmt)
             completed_logs = result.scalars().all()
 

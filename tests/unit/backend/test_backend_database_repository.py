@@ -1,4 +1,5 @@
 """Coverage tests for src/backend/database/repository.py (DataRepositoryFacade + BookRepository)."""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
@@ -55,6 +56,7 @@ async def async_session(tmp_path):
 # DataRepositoryFacade
 # --------------------------------------------------------------------------
 
+
 def test_facade_is_aliased():
     assert DataRepository is DataRepositoryFacade
 
@@ -76,8 +78,17 @@ async def test_facade_delegates_through_uow():
 async def test_facade_raises_for_unknown_attr_in_uow_mode():
     uow = MagicMock()
     for attr in (
-        "books", "plots", "chapters", "characters", "branches", "bible",
-        "misc", "rules", "audit", "prompt_versions", "illustrations",
+        "books",
+        "plots",
+        "chapters",
+        "characters",
+        "branches",
+        "bible",
+        "misc",
+        "rules",
+        "audit",
+        "prompt_versions",
+        "illustrations",
     ):
         setattr(uow, attr, MagicMock(spec=[]))
 
@@ -122,8 +133,16 @@ async def test_facade_auto_mode_unknown_attr(monkeypatch):
 
         async def __aenter__(self):
             for attr in (
-                "books", "plots", "chapters", "characters", "branches", "bible",
-                "misc", "rules", "audit", "prompt_versions",
+                "books",
+                "plots",
+                "chapters",
+                "characters",
+                "branches",
+                "bible",
+                "misc",
+                "rules",
+                "audit",
+                "prompt_versions",
             ):
                 setattr(self, attr, MagicMock(spec=[]))
             return self
@@ -164,6 +183,7 @@ async def test_facade_get_state_and_set_state(async_session):
 # --------------------------------------------------------------------------
 # BookRepository - construction / sync helpers
 # --------------------------------------------------------------------------
+
 
 def test_book_repository_construction_variants(sync_session):
     r1 = BookRepository(sync_session)
@@ -253,6 +273,7 @@ def test_safe_refresh_with_awaitable(sync_session, monkeypatch):
 # BookRepository - tasks
 # --------------------------------------------------------------------------
 
+
 def test_task_lifecycle_sync(sync_session):
     repo = BookRepository(sync_session)
     task = repo.create_task(task_id="t1", status="pending")
@@ -297,7 +318,10 @@ async def test_task_lifecycle_async(async_session):
 def test_get_book_sync_and_queries(sync_session):
     repo = BookRepository(sync_session)
     book = repo.save_or_update_book_with_chapter(
-        book_id=None, title="B", chapter_text="hello", character_params={"name": "Hero", "personality": "brave", "ability": "sword"}
+        book_id=None,
+        title="B",
+        chapter_text="hello",
+        character_params={"name": "Hero", "personality": "brave", "ability": "sword"},
     )
     assert repo.get_book(book.id).title == "B"
 
@@ -321,11 +345,11 @@ def test_get_book_sync_and_queries(sync_session):
 
 def test_save_or_update_updates_existing_chapter_and_character(sync_session):
     repo = BookRepository(sync_session)
-    book = repo.save_or_update_book_with_chapter(
-        book_id=None, chapter_text="first", character_params={"name": "A"}
-    )
+    book = repo.save_or_update_book_with_chapter(book_id=None, chapter_text="first", character_params={"name": "A"})
     repo.save_or_update_book_with_chapter(
-        book_id=book.id, chapter_text="updated", character_params={"name": "A", "personality": "calm", "ability": "magic"}
+        book_id=book.id,
+        chapter_text="updated",
+        character_params={"name": "A", "personality": "calm", "ability": "magic"},
     )
     chapter = sync_session.query(Chapter).filter_by(book_id=book.id, ep_num=1).one()
     assert chapter.content == "updated"
@@ -347,11 +371,16 @@ async def test_save_or_update_async(async_session):
     session, mgr = async_session
     repo = BookRepository(session)
     book = await repo.save_or_update_book_with_chapter_async(
-        book_id=None, title="AB", chapter_text="text", character_params={"name": "Z", "personality": "p", "ability": "a"}
+        book_id=None,
+        title="AB",
+        chapter_text="text",
+        character_params={"name": "Z", "personality": "p", "ability": "a"},
     )
     assert book.id is not None
 
-    same = await repo.save_or_update_book_with_chapter_async(book_id=book.id, chapter_text="text2", character_params={"name": "Z", "personality": "p2", "ability": "a2"})
+    same = await repo.save_or_update_book_with_chapter_async(
+        book_id=book.id, chapter_text="text2", character_params={"name": "Z", "personality": "p2", "ability": "a2"}
+    )
     assert same.id == book.id
 
     other = await repo.save_or_update_book_with_chapter_async(book_id=999998, title="Missing")
@@ -370,8 +399,12 @@ async def test_book_async_get_helpers(sync_session):
 
 def test_repository_module_exports():
     for name in (
-        "AuditRepository", "BibleRepository", "AsyncBookRepository",
-        "ChapterRepository", "CharacterRepository", "PlotRepository",
+        "AuditRepository",
+        "BibleRepository",
+        "AsyncBookRepository",
+        "ChapterRepository",
+        "CharacterRepository",
+        "PlotRepository",
         "NarrativeMetricRepository",
     ):
         assert hasattr(repo_mod, name)

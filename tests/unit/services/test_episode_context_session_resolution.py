@@ -85,11 +85,7 @@ def test_rejects_non_async_session():
 
 def _count_define(path: Path, name: str) -> int:
     tree = ast.parse(path.read_text(encoding="utf-8"))
-    return sum(
-        1
-        for n in ast.walk(tree)
-        if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == name
-    )
+    return sum(1 for n in ast.walk(tree) if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef)) and n.name == name)
 
 
 def test_single_definition_of_resolve_session_repo_wide():
@@ -102,9 +98,9 @@ def test_single_definition_of_resolve_session_repo_wide():
         count = _count_define(path, "_resolve_session")
         if count:
             offenders.append(f"{path.as_posix()}:{count}")
-    assert offenders == [
-        "src/agents/writing/episode_writer.py:1"
-    ], f"_resolve_session の定義が重複している: {offenders}"
+    assert offenders == ["src/agents/writing/episode_writer.py:1"], (
+        f"_resolve_session の定義が重複している: {offenders}"
+    )
 
 
 def test_episode_context_builder_has_no_dead_resolver():

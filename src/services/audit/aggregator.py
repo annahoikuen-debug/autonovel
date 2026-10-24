@@ -75,9 +75,7 @@ class BookScoreResult:
     def lowest_dimension(self, use_calibrated: bool = True) -> str | None:
         """Return the specialist with the lowest score, or None if no data."""
         target_dict = (
-            self.calibrated_by_specialist
-            if (use_calibrated and self.calibrated_by_specialist)
-            else self.by_specialist
+            self.calibrated_by_specialist if (use_calibrated and self.calibrated_by_specialist) else self.by_specialist
         )
         if not target_dict:
             return None
@@ -119,14 +117,10 @@ def validate_weights(weights: Mapping[str, float]) -> None:
         raise ValueError(f"Missing weights for specialists: {missing}")
     total = sum(weights[n] for n in SPECIALIST_NAMES)
     if abs(total - 1.0) > WEIGHT_TOLERANCE:
-        raise ValueError(
-            f"Weights must sum to 1.0 (got {total:.6f}); adjust the YAML"
-        )
+        raise ValueError(f"Weights must sum to 1.0 (got {total:.6f}); adjust the YAML")
 
 
-def renormalize(
-    weights: Mapping[str, float], present: Sequence[str]
-) -> dict[str, float]:
+def renormalize(weights: Mapping[str, float], present: Sequence[str]) -> dict[str, float]:
     """Re-normalize weights so the present specialists sum to 1.0.
 
     Missing specialists are removed; weights of present specialists are
@@ -182,6 +176,7 @@ class AuditAggregator:
         if calibrator is None:
             try:
                 from src.services.score_calibrator import ScoreCalibrator
+
                 self.calibrator = ScoreCalibrator()
             except Exception:
                 self.calibrator = None
@@ -201,7 +196,15 @@ class AuditAggregator:
         fast_screener: FastScreener | None = None,
     ) -> "AuditAggregator":
         specialists = list(registry.values())
-        return cls(specialists=specialists, weights=weights, event_bus=event_bus, calibrator=calibrator, model_router=model_router, batch_mode=batch_mode, fast_screener=fast_screener)
+        return cls(
+            specialists=specialists,
+            weights=weights,
+            event_bus=event_bus,
+            calibrator=calibrator,
+            model_router=model_router,
+            batch_mode=batch_mode,
+            fast_screener=fast_screener,
+        )
 
     def refresh_model_routing(self, config_path: str = "config/audit_models.yaml") -> None:
         """Hot reload the model routing config without restarting the app."""
@@ -321,17 +324,17 @@ class AuditAggregator:
             if outliers:
                 logger.warning(
                     "AuditAggregator: detected score outliers for specialists %s (genre=%s)",
-                    outliers, genre,
+                    outliers,
+                    genre,
                 )
 
             # キャリブレーション後総合得点
-            calibrated_overall = sum(
-                calibrated_by_specialist.get(n, 50.0) * weights_used[n] for n in present
-            )
+            calibrated_overall = sum(calibrated_by_specialist.get(n, 50.0) * weights_used[n] for n in present)
 
             # Step 22: 専門家間スコアの分散ペナルティ計算
             if len(present) >= 3:
                 import statistics
+
                 scores_list = [calibrated_by_specialist[n] for n in present]
                 stdev = statistics.stdev(scores_list)
                 if stdev > 18.0:
@@ -447,9 +450,7 @@ class AuditAggregator:
         except Exception:
             pass
 
-    async def _publish_completed(
-        self, name: str, result: SpecialistAuditResult, ctx: dict[str, Any]
-    ) -> None:
+    async def _publish_completed(self, name: str, result: SpecialistAuditResult, ctx: dict[str, Any]) -> None:
         if not self.event_bus:
             return
         try:
@@ -517,7 +518,11 @@ class AuditAggregator:
                         "outliers": book_score.outliers,
                         "variance_penalty": book_score.variance_penalty,
                         "regeneration_triggered": (
-                            (book_score.calibrated_overall if book_score.calibrated_overall is not None else book_score.overall)
+                            (
+                                book_score.calibrated_overall
+                                if book_score.calibrated_overall is not None
+                                else book_score.overall
+                            )
                             < min_pass_score
                         ),
                         "lowest_dimension": book_score.lowest_dimension(),

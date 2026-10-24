@@ -1,6 +1,6 @@
 """Step 17: プロットイベント監視・再計算テスト。"""
-from __future__ import annotations
 
+from __future__ import annotations
 
 
 from src.rules.rule_loader import (
@@ -78,9 +78,9 @@ class TestRecomputeFromEpisode:
         rules_file = tmp_path / "custom_rules.yaml"
         rules_file.write_text(
             "rules:\n"
-            "  - event_type: \"betrayal\"\n"
-            "    source_role: \"victim\"\n"
-            "    target_role: \"perpetrator\"\n"
+            '  - event_type: "betrayal"\n'
+            '    source_role: "victim"\n'
+            '    target_role: "perpetrator"\n'
             "    emotion_deltas:\n"
             "      affection: -0.5\n"
             "    decay_per_episode: 0.2\n",
@@ -89,12 +89,12 @@ class TestRecomputeFromEpisode:
         events_file = tmp_path / "custom_events.yaml"
         events_file.write_text(
             "episode_1:\n"
-            "  - event_id: \"e1\"\n"
-            "    event_type: \"betrayal\"\n"
+            '  - event_id: "e1"\n'
+            '    event_type: "betrayal"\n'
             "    scene: 1\n"
             "    roles:\n"
-            "      victim: \"X\"\n"
-            "      perpetrator: \"Y\"\n",
+            '      victim: "X"\n'
+            '      perpetrator: "Y"\n',
             encoding="utf-8",
         )
         result = recompute_from_episode(

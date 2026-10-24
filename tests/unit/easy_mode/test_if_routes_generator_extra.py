@@ -191,11 +191,7 @@ class TestIFRouteGraph:
 
     def test_get_next_nodes_merge_missing(self):
         g = IFRouteGraph()
-        g.add_node(
-            RouteNode(
-                id="a", episode_num=1, content="", branch_type=BranchType.MERGE, merge_target="zzz"
-            )
-        )
+        g.add_node(RouteNode(id="a", episode_num=1, content="", branch_type=BranchType.MERGE, merge_target="zzz"))
         assert g.get_next_nodes("a", {}) == []
 
     def test_get_next_nodes_filters_conditions(self):
@@ -258,9 +254,7 @@ class TestIFRouteGraph:
 
     def test_validate_traverse_merge_target(self):
         g = IFRouteGraph(entry_node_id="a")
-        g.add_node(
-            RouteNode(id="a", episode_num=1, content="", branch_type=BranchType.MERGE, merge_target="m")
-        )
+        g.add_node(RouteNode(id="a", episode_num=1, content="", branch_type=BranchType.MERGE, merge_target="m"))
         g.add_node(RouteNode(id="m", episode_num=2, content="", branch_type=BranchType.CHOICE))
         g.add_node(RouteNode(id="b", episode_num=3, content="", branch_type=BranchType.CHOICE))
         errors = g.validate()

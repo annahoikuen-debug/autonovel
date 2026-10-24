@@ -4,6 +4,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+
 def run_with_reruns(test_path, reruns=3, timeout_per_run=60):
     """指定テストを複数回実行し、結果を返す"""
     results = []
@@ -11,8 +12,9 @@ def run_with_reruns(test_path, reruns=3, timeout_per_run=60):
         try:
             result = subprocess.run(
                 ["pytest", test_path, "-v", "--tb=short", f"--timeout={timeout_per_run}"],
-                capture_output=True, text=True,
-                timeout=timeout_per_run + 10  # Add a little buffer
+                capture_output=True,
+                text=True,
+                timeout=timeout_per_run + 10,  # Add a little buffer
             )
             passed = result.returncode == 0
         except subprocess.TimeoutExpired:
@@ -25,13 +27,16 @@ def run_with_reruns(test_path, reruns=3, timeout_per_run=60):
             # For other exceptions, we treat as failed
         else:
             err_msg = ""
-        results.append({
-            "run": i+1,
-            "passed": passed,
-            "stdout": result.stdout if result else "",
-            "stderr": result.stderr if result else err_msg
-        })
+        results.append(
+            {
+                "run": i + 1,
+                "passed": passed,
+                "stdout": result.stdout if result else "",
+                "stderr": result.stderr if result else err_msg,
+            }
+        )
     return results
+
 
 def main():
     # fail_now.txt からテストリスト取得
@@ -117,6 +122,7 @@ def main():
         for test in flaky_results.keys():
             print(f"  - {test}")
     return 0 if len(flaky_results) == 0 else 1
+
 
 if __name__ == "__main__":
     sys.exit(main())

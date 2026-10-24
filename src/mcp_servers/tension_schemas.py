@@ -1,4 +1,5 @@
 """Tension and Emotion Schemas for Real-time Measurement and Curve Control."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -7,6 +8,7 @@ from pydantic import BaseModel, Field
 
 class TensionScore(BaseModel):
     """感情およびテンション測定結果"""
+
     tension_score: float = Field(..., description="0.0 to 100.0")
     polarity: float = Field(..., description="-1.0 (negative) to +1.0 (positive)")
     dominant_emotion: str = Field(..., description="tension, joy, sorrow, anger, calm")
@@ -16,6 +18,7 @@ class TensionScore(BaseModel):
 
 class SegmentTension(BaseModel):
     """エピソード内の局所セグメントテンション"""
+
     segment_index: int
     segment_label: str  # 序盤, 展開, クライマックス, 結末
     char_count: int = 0
@@ -28,6 +31,7 @@ class SegmentTension(BaseModel):
 
 class TargetCurveTemplate(BaseModel):
     """エピソードの目標感情曲線テンプレート"""
+
     curve_type: str
     description: str
     target_points: List[float]  # e.g. [30.0, 55.0, 85.0, 40.0]
@@ -37,6 +41,7 @@ class TargetCurveTemplate(BaseModel):
 
 class CurveAnalysisResult(BaseModel):
     """本文の感情曲線分析・目標乖離評価結果"""
+
     curve_type: str
     overall_avg_tension: float
     segments: List[SegmentTension] = Field(default_factory=list)
@@ -50,21 +55,65 @@ class CurveAnalysisResult(BaseModel):
 # 緊迫度・感情キーワード辞書
 TENSION_KEYWORDS = {
     "high_tension": [
-        "走る", "叫ぶ", "剣", "血", "逃げる", "迫る", "絶望", "閃光",
-        "怒り", "衝突", "戦い", "交錯", "激痛", "轟音", "殺気", "刃",
-        "run", "sword", "blood", "danger", "climax", "crisis",
+        "走る",
+        "叫ぶ",
+        "剣",
+        "血",
+        "逃げる",
+        "迫る",
+        "絶望",
+        "閃光",
+        "怒り",
+        "衝突",
+        "戦い",
+        "交錯",
+        "激痛",
+        "轟音",
+        "殺気",
+        "刃",
+        "run",
+        "sword",
+        "blood",
+        "danger",
+        "climax",
+        "crisis",
     ],
     "relief_catharsis": [
-        "安堵", "息を吐く", "微笑", "勝利", "静寂", "救われた", "光が満ちる",
-        "温もり", "平穏", "肩の力を抜く", "解き放たれる",
+        "安堵",
+        "息を吐く",
+        "微笑",
+        "勝利",
+        "静寂",
+        "救われた",
+        "光が満ちる",
+        "温もり",
+        "平穏",
+        "肩の力を抜く",
+        "解き放たれる",
     ],
     "positive": [
-        "笑う", "光", "希望", "温かい", "勝利", "成功", "喜び",
-        "smile", "hope", "victory",
+        "笑う",
+        "光",
+        "希望",
+        "温かい",
+        "勝利",
+        "成功",
+        "喜び",
+        "smile",
+        "hope",
+        "victory",
     ],
     "negative": [
-        "闇", "冷たい", "涙", "絶望", "敗北", "苦悶", "悲鳴",
-        "dark", "tears", "despair",
+        "闇",
+        "冷たい",
+        "涙",
+        "絶望",
+        "敗北",
+        "苦悶",
+        "悲鳴",
+        "dark",
+        "tears",
+        "despair",
     ],
 }
 

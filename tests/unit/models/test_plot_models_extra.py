@@ -1,4 +1,5 @@
 """src/models/plot.py の未カバー領域を網羅する単体テスト。"""
+
 from __future__ import annotations
 
 import pytest
@@ -39,9 +40,17 @@ from src.models.plot import (
 
 
 class TestExtractFloat:
-    @pytest.mark.parametrize("value,expected", [
-        (1, 1.0), (2.5, 2.5), ("3.5", 3.5), ("7", 7.0), (None, 0.0), ([], 0.0),
-    ])
+    @pytest.mark.parametrize(
+        "value,expected",
+        [
+            (1, 1.0),
+            (2.5, 2.5),
+            ("3.5", 3.5),
+            ("7", 7.0),
+            (None, 0.0),
+            ([], 0.0),
+        ],
+    )
     def test_extract(self, value, expected):
         assert extract_float(value) == expected
 
@@ -53,21 +62,30 @@ class TestExtractFloat:
 
 
 class TestNormalizeBeatType:
-    @pytest.mark.parametrize("value,expected", [
-        ("Introduction", "導入"),
-        ("Escalation", "展開"),
-        ("Conclusion", "結末"),
-        ("Aftermath", "余韻"),
-        ("Confrontation", "具体的行動"),
-        ("Tension", "内面葛藤"),
-    ])
+    @pytest.mark.parametrize(
+        "value,expected",
+        [
+            ("Introduction", "導入"),
+            ("Escalation", "展開"),
+            ("Conclusion", "結末"),
+            ("Aftermath", "余韻"),
+            ("Confrontation", "具体的行動"),
+            ("Tension", "内面葛藤"),
+        ],
+    )
     def test_exact(self, value, expected):
         assert normalize_beat_type(value) == expected
 
     def test_partial_longest_match(self):
         # "Revelation of Truth" は完全一致がなく長い英語語が優先される
         assert normalize_beat_type("Revelation of Truth") in {
-            "展開", "内面葛藤", "具体的行動", "余韻", "結末", "状況", "導入"
+            "展開",
+            "内面葛藤",
+            "具体的行動",
+            "余韻",
+            "結末",
+            "状況",
+            "導入",
         }
 
     def test_japanese_passthrough(self):
@@ -277,18 +295,20 @@ class TestPlotEpisodeProperties:
 
     def test_flat_aliases(self):
         # フラットキーはサブモデル（core_info/analytics/...）へ動的ルーティングされる
-        ep = PlotEpisode.model_validate({
-            "ep_num": 5,
-            "title": "T",
-            "tension": 60,
-            "misunderstanding_gap": "irony",
-            "burned_cost_or_loot": "代償",
-            "thematic_milestone": "M",
-            "emotional_resonance_score": 70,
-            "thematic_depth_score": 60,
-            "literary_beauty_score": 80,
-            "lite_model_director_notes": "N",
-        })
+        ep = PlotEpisode.model_validate(
+            {
+                "ep_num": 5,
+                "title": "T",
+                "tension": 60,
+                "misunderstanding_gap": "irony",
+                "burned_cost_or_loot": "代償",
+                "thematic_milestone": "M",
+                "emotional_resonance_score": 70,
+                "thematic_depth_score": 60,
+                "literary_beauty_score": 80,
+                "lite_model_director_notes": "N",
+            }
+        )
         assert ep.ep_num == 5
         assert ep.misunderstanding_gap == "irony"
         assert ep.burned_cost_or_loot == "代償"
@@ -299,12 +319,14 @@ class TestPlotEpisodeProperties:
         assert ep.lite_model_director_notes == "N"
 
     def test_dynamic_routing_of_submodel_fields(self):
-        ep = PlotEpisode.model_validate({
-            "tension": 33,
-            "knowledge_delta": 0.2,
-            "qol_delta": 7,
-            "ep_num": 2,
-        })
+        ep = PlotEpisode.model_validate(
+            {
+                "tension": 33,
+                "knowledge_delta": 0.2,
+                "qol_delta": 7,
+                "ep_num": 2,
+            }
+        )
         assert ep.analytics.tension == 33
         assert ep.enigma.knowledge_delta == 0.2
         assert ep.comfort.qol_delta == 7
@@ -370,9 +392,7 @@ class TestPlotEpisodeProperties:
 
 class TestGenreEpisodes:
     def test_mystery_catharsis(self):
-        m = MysteryEpisode.model_validate({
-            "ep_num": 1, "knowledge_delta": 0.5, "truth_convergence": 0.4
-        })
+        m = MysteryEpisode.model_validate({"ep_num": 1, "knowledge_delta": 0.5, "truth_convergence": 0.4})
         score = m.calculate_mystery_catharsis()
         assert score == 20
         rid = m.enigma.add_red_herring("c", 1)
@@ -397,26 +417,32 @@ class TestGenreEpisodes:
 
 class TestRoadmap:
     def test_aliases_and_normalization_logic(self):
-        r = RoadmapItem.model_validate({
-            "no": 3, "summary": "S", "style": "徹底的な論理思考", "enemy_status": "敵消滅"
-        })
+        r = RoadmapItem.model_validate({"no": 3, "summary": "S", "style": "徹底的な論理思考", "enemy_status": "敵消滅"})
         assert r.ep_num == 3
         assert r.resolution_style == "Logic"
         assert r.antagonist_status == "敵消滅"
         assert r.burned_cost_or_loot == "なし"
 
     def test_normalization_drama(self):
-        r = RoadmapItem.model_validate({
-            "ep_num": 1, "one_line_summary": "s", "resolution_style": "感動のドラマ",
-            "antagonist_status": "a",
-        })
+        r = RoadmapItem.model_validate(
+            {
+                "ep_num": 1,
+                "one_line_summary": "s",
+                "resolution_style": "感動のドラマ",
+                "antagonist_status": "a",
+            }
+        )
         assert r.resolution_style == "Focus_Drama"
 
     def test_normalization_cheat(self):
-        r = RoadmapItem.model_validate({
-            "ep_num": 1, "one_line_summary": "s", "resolution_style": "power fantasy",
-            "antagonist_status": "a",
-        })
+        r = RoadmapItem.model_validate(
+            {
+                "ep_num": 1,
+                "one_line_summary": "s",
+                "resolution_style": "power fantasy",
+                "antagonist_status": "a",
+            }
+        )
         assert r.resolution_style == "Cheat"
 
     def test_get_method(self):

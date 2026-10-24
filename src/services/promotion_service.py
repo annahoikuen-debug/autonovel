@@ -48,14 +48,10 @@ class PromotionService:
         key = f"promotion_token_{book_id}"
 
         async with self._db.get_session() as session:
-            existing = await session.execute(
-                InternalState.__table__.select().where(InternalState.key == key)
-            )
+            existing = await session.execute(InternalState.__table__.select().where(InternalState.key == key))
             row = existing.fetchone()
             if row is None:
-                await session.execute(
-                    InternalState.__table__.insert().values(key=key, value=f"{token}|{expires_at}")
-                )
+                await session.execute(InternalState.__table__.insert().values(key=key, value=f"{token}|{expires_at}"))
             else:
                 await session.execute(
                     InternalState.__table__.update()
@@ -103,9 +99,7 @@ class PromotionService:
                 result = await session.execute(Book.__table__.select().where(Book.id == b_id))
                 book_row = result.fetchone()
                 if book_row is not None:
-                    await session.execute(
-                        Book.__table__.update().where(Book.id == b_id).values(mode="advanced")
-                    )
+                    await session.execute(Book.__table__.update().where(Book.id == b_id).values(mode="advanced"))
                 else:
                     raise ValueError(f"Book record not found for db_book_id={b_id}")
             else:
@@ -122,20 +116,12 @@ class PromotionService:
                 from src.backend.database.models_foreshadowing import ForeshadowingModel
                 from src.services.foreshadowing.planner import plan_foreshadowing
 
-                fs_stmt = ForeshadowingModel.__table__.select().where(
-                    ForeshadowingModel.book_id == target_b_id
-                )
+                fs_stmt = ForeshadowingModel.__table__.select().where(ForeshadowingModel.book_id == target_b_id)
                 fs_existing = await session.execute(fs_stmt)
                 if fs_existing.first() is None:
-                    plot_stmt = (
-                        Plot.__table__.select()
-                        .where(Plot.book_id == target_b_id)
-                        .order_by(Plot.ep_num)
-                    )
+                    plot_stmt = Plot.__table__.select().where(Plot.book_id == target_b_id).order_by(Plot.ep_num)
                     plot_rows = (await session.execute(plot_stmt)).fetchall()
-                    total_eps = max(
-                        (getattr(p, "ep_num", 0) or 0 for p in plot_rows), default=0
-                    ) or None
+                    total_eps = max((getattr(p, "ep_num", 0) or 0 for p in plot_rows), default=0) or None
                     for p_row in plot_rows:
                         note = getattr(p_row, "detailed_blueprint", "") or ""
                         if note and note.strip():
@@ -157,23 +143,16 @@ class PromotionService:
                                 )
                             )
 
-
             # state_token を InternalState に永続化 (TTL 24h)
             from src.backend.database.models import InternalState
 
-            expires_at = (
-                datetime.now(timezone.utc) + timedelta(hours=STATE_TOKEN_TTL_HOURS)
-            ).isoformat()
+            expires_at = (datetime.now(timezone.utc) + timedelta(hours=STATE_TOKEN_TTL_HOURS)).isoformat()
             key = f"promotion_token_{book_id}"
-            existing = await session.execute(
-                InternalState.__table__.select().where(InternalState.key == key)
-            )
+            existing = await session.execute(InternalState.__table__.select().where(InternalState.key == key))
             row = existing.fetchone()
             payload = f"{state_token}|{expires_at}"
             if row is None:
-                await session.execute(
-                    InternalState.__table__.insert().values(key=key, value=payload)
-                )
+                await session.execute(InternalState.__table__.insert().values(key=key, value=payload))
             else:
                 await session.execute(
                     InternalState.__table__.update()

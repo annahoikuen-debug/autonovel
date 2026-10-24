@@ -1,4 +1,5 @@
 """Editor API Router の単体・統合テスト."""
+
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
@@ -162,4 +163,3 @@ def test_post_audit_fast_hybrid_validation_error():
     }
     response = client.post("/api/editor/audit", json=payload)
     assert response.status_code in (401, 422)
-

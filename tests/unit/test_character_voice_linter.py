@@ -2,6 +2,7 @@ from src.services.character.voice_linter import VoiceLinter
 from src.services.character.voice_normalizer import VoiceNormalizer
 from src.models.character_voice_profile import CharacterVoiceProfile
 
+
 def test_voice_linter_and_normalizer():
     profile = CharacterVoiceProfile(
         character_name="Test",
@@ -10,7 +11,7 @@ def test_voice_linter_and_normalizer():
         endings=["だぜ"],
         forbidden_words=["禁句"],
         catchphrases=[],
-        sample_dialogue=""
+        sample_dialogue="",
     )
     linter = VoiceLinter()
     normalizer = VoiceNormalizer()

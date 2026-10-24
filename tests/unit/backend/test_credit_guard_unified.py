@@ -8,6 +8,7 @@
 - 挿絵バッチ Huey タスクが失敗したときにクレジットを返金すること。
 - バッチの要求枚数見積りが IllustrationWorkflow の挙動と一致すること。
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -53,12 +54,14 @@ def test_orchestrated_generate_returns_402_when_credits_insufficient():
     app.dependency_overrides[get_current_user] = lambda: _broke_user(credits=0)
 
     generate_limiter.reset()
-    with patch(
-        "src.backend.routers.orchestrated.verify_book_ownership",
-        new=AsyncMock(return_value=MagicMock()),
-    ), patch("src.backend.routers.orchestrated.BookRepository") as mock_repo_cls, patch(
-        "src.backend.routers.orchestrated.generate_chapter_orchestrated_task"
-    ) as mock_task:
+    with (
+        patch(
+            "src.backend.routers.orchestrated.verify_book_ownership",
+            new=AsyncMock(return_value=MagicMock()),
+        ),
+        patch("src.backend.routers.orchestrated.BookRepository") as mock_repo_cls,
+        patch("src.backend.routers.orchestrated.generate_chapter_orchestrated_task") as mock_task,
+    ):
         mock_repo_cls.return_value.get_book.return_value = MagicMock(user_id=7)
         client = TestClient(app)
         resp = client.post("/orchestrated/generate", json=_orchestrated_payload())
@@ -117,16 +120,20 @@ def test_retry_failed_returns_402_when_credits_insufficient():
     app.include_router(episodes_module.router)
     app.dependency_overrides[get_current_user] = lambda: _broke_user(credits=0)
 
-    with patch(
-        "src.backend.routers.episodes.verify_book_ownership",
-        new=AsyncMock(return_value=MagicMock()),
-    ), patch(
-        "src.backend.routers.episodes._cancel_prefetch_for_book",
-        new=AsyncMock(return_value=0),
-    ) as mock_cancel, patch(
-        "src.backend.routers.episodes._create_task",
-        new=AsyncMock(return_value=None),
-    ) as mock_create:
+    with (
+        patch(
+            "src.backend.routers.episodes.verify_book_ownership",
+            new=AsyncMock(return_value=MagicMock()),
+        ),
+        patch(
+            "src.backend.routers.episodes._cancel_prefetch_for_book",
+            new=AsyncMock(return_value=0),
+        ) as mock_cancel,
+        patch(
+            "src.backend.routers.episodes._create_task",
+            new=AsyncMock(return_value=None),
+        ) as mock_create,
+    ):
         client = TestClient(app)
         resp = client.post(
             "/api/episodes/retry_failed",
@@ -153,10 +160,13 @@ def test_illustration_batch_returns_402_when_credits_insufficient():
     app.dependency_overrides[get_current_user] = lambda: _broke_user(credits=4)
     app.dependency_overrides[get_illustration_workflow] = lambda: MagicMock()
 
-    with patch(
-        "src.backend.routers.illustrations.verify_book_ownership",
-        new=AsyncMock(return_value=MagicMock()),
-    ), patch.object(illustration_tasks, "illustrate_batch_task") as mock_task:
+    with (
+        patch(
+            "src.backend.routers.illustrations.verify_book_ownership",
+            new=AsyncMock(return_value=MagicMock()),
+        ),
+        patch.object(illustration_tasks, "illustrate_batch_task") as mock_task,
+    ):
         client = TestClient(app)
         resp = client.post(
             "/api/illustrations/batch",
@@ -184,10 +194,13 @@ def test_illustration_batch_queues_when_credits_sufficient():
     app.dependency_overrides[get_current_user] = lambda: _broke_user(credits=5)
     app.dependency_overrides[get_illustration_workflow] = lambda: MagicMock()
 
-    with patch(
-        "src.backend.routers.illustrations.verify_book_ownership",
-        new=AsyncMock(return_value=MagicMock()),
-    ), patch.object(illustration_tasks, "illustrate_batch_task") as mock_task:
+    with (
+        patch(
+            "src.backend.routers.illustrations.verify_book_ownership",
+            new=AsyncMock(return_value=MagicMock()),
+        ),
+        patch.object(illustration_tasks, "illustrate_batch_task") as mock_task,
+    ):
         client = TestClient(app)
         resp = client.post(
             "/api/illustrations/batch",
@@ -211,10 +224,13 @@ def test_illustration_batch_disabled_skips_credit_check():
     app.dependency_overrides[get_current_user] = lambda: _broke_user(credits=0)
     app.dependency_overrides[get_illustration_workflow] = lambda: MagicMock()
 
-    with patch(
-        "src.backend.routers.illustrations.verify_book_ownership",
-        new=AsyncMock(return_value=MagicMock()),
-    ), patch.object(illustration_tasks, "illustrate_batch_task") as mock_task:
+    with (
+        patch(
+            "src.backend.routers.illustrations.verify_book_ownership",
+            new=AsyncMock(return_value=MagicMock()),
+        ),
+        patch.object(illustration_tasks, "illustrate_batch_task") as mock_task,
+    ):
         client = TestClient(app)
         resp = client.post(
             "/api/illustrations/batch",
@@ -234,12 +250,15 @@ def test_illustration_task_refunds_credits_on_failure():
     """生成失敗時、控除済みクレジットを (user_id, 額, task_id) で返金する。"""
     import src.backend.tasks.illustration_tasks as it
 
-    with patch.object(it, "_update_task"), patch.object(
-        it, "_deduct_batch_credits", return_value=(7, 5)
-    ) as mock_deduct, patch.object(it, "_refund_batch_credits") as mock_refund, patch.object(
-        it,
-        "_run_illustration_batch",
-        new=AsyncMock(side_effect=RuntimeError("LLM 生成に失敗")),
+    with (
+        patch.object(it, "_update_task"),
+        patch.object(it, "_deduct_batch_credits", return_value=(7, 5)) as mock_deduct,
+        patch.object(it, "_refund_batch_credits") as mock_refund,
+        patch.object(
+            it,
+            "_run_illustration_batch",
+            new=AsyncMock(side_effect=RuntimeError("LLM 生成に失敗")),
+        ),
     ):
         result = it.illustrate_batch_task.call_local(
             book_id=1,
@@ -256,12 +275,15 @@ def test_illustration_task_success_does_not_refund():
     """成功時はクレジットを返金しない (控除を確定させる)。"""
     import src.backend.tasks.illustration_tasks as it
 
-    with patch.object(it, "_update_task"), patch.object(
-        it, "_deduct_batch_credits", return_value=(7, 5)
-    ), patch.object(it, "_refund_batch_credits") as mock_refund, patch.object(
-        it,
-        "_run_illustration_batch",
-        new=AsyncMock(return_value={"status": "success", "illustrations": []}),
+    with (
+        patch.object(it, "_update_task"),
+        patch.object(it, "_deduct_batch_credits", return_value=(7, 5)),
+        patch.object(it, "_refund_batch_credits") as mock_refund,
+        patch.object(
+            it,
+            "_run_illustration_batch",
+            new=AsyncMock(return_value={"status": "success", "illustrations": []}),
+        ),
     ):
         result = it.illustrate_batch_task.call_local(
             book_id=1,
@@ -277,13 +299,16 @@ def test_illustration_task_deduction_failure_fails_without_refund():
     """控除に失敗した場合は何も取っていないため返金せずタスクを失敗させる。"""
     import src.backend.tasks.illustration_tasks as it
 
-    with patch.object(it, "_update_task") as mock_update, patch.object(
-        it,
-        "_deduct_batch_credits",
-        side_effect=ValueError("クレジット残高不足"),
-    ), patch.object(it, "_refund_batch_credits") as mock_refund, patch.object(
-        it, "_run_illustration_batch", new=AsyncMock()
-    ) as mock_run:
+    with (
+        patch.object(it, "_update_task") as mock_update,
+        patch.object(
+            it,
+            "_deduct_batch_credits",
+            side_effect=ValueError("クレジット残高不足"),
+        ),
+        patch.object(it, "_refund_batch_credits") as mock_refund,
+        patch.object(it, "_run_illustration_batch", new=AsyncMock()) as mock_run,
+    ):
         result = it.illustrate_batch_task.call_local(
             book_id=1,
             settings={"enableIllustration": True},
@@ -301,12 +326,11 @@ def test_illustration_task_refund_logs_and_survives_refund_error():
     """返金自体が失敗してもタスク結果は error のまま返り、例外で落ちないこと。"""
     import src.backend.tasks.illustration_tasks as it
 
-    with patch.object(it, "_update_task"), patch.object(
-        it, "_deduct_batch_credits", return_value=(7, 5)
-    ), patch.object(
-        it, "_refund_batch_credits", side_effect=RuntimeError("台帳書き込み失敗")
-    ), patch.object(
-        it, "_run_illustration_batch", new=AsyncMock(side_effect=RuntimeError("boom"))
+    with (
+        patch.object(it, "_update_task"),
+        patch.object(it, "_deduct_batch_credits", return_value=(7, 5)),
+        patch.object(it, "_refund_batch_credits", side_effect=RuntimeError("台帳書き込み失敗")),
+        patch.object(it, "_run_illustration_batch", new=AsyncMock(side_effect=RuntimeError("boom"))),
     ):
         result = it.illustrate_batch_task.call_local(
             book_id=1,

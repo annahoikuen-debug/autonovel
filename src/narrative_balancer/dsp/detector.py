@@ -25,7 +25,12 @@ def detect_sag_in_window(window: np.ndarray, cfg: DSPConfig) -> tuple[bool, floa
 
     # Condition 2: Flatness exceeds threshold and low-frequency dominance is high
     if flatness >= cfg.flatness_threshold and low_freq >= cfg.low_freq_ratio_threshold:
-        return True, flatness, low_freq, f"High spectral flatness ({flatness:.2f}) and low-frequency dominance ({low_freq:.2f})"
+        return (
+            True,
+            flatness,
+            low_freq,
+            f"High spectral flatness ({flatness:.2f}) and low-frequency dominance ({low_freq:.2f})",
+        )
 
     # Condition 3: Subdued mid-arc energy (prolonged dip in middle section)
     if mean_val < 4.5 and low_freq >= 0.70:
@@ -69,14 +74,16 @@ def scan_sags(curve: np.ndarray, cfg: DSPConfig) -> List[SagDetection]:
         is_sag, flatness, low_freq, reason = detect_sag_in_window(window, cfg)
         if is_sag:
             target_ep = start + w // 2  # Target intervention at center of sag window
-            detections.append(SagDetection(
-                start_episode=start + 1,  # 1-based index
-                end_episode=end,          # 1-based index
-                detected_episode=target_ep + 1,
-                spectral_flatness=flatness,
-                low_freq_ratio=low_freq,
-                is_sag=True,
-                reason=reason,
-            ))
+            detections.append(
+                SagDetection(
+                    start_episode=start + 1,  # 1-based index
+                    end_episode=end,  # 1-based index
+                    detected_episode=target_ep + 1,
+                    spectral_flatness=flatness,
+                    low_freq_ratio=low_freq,
+                    is_sag=True,
+                    reason=reason,
+                )
+            )
 
     return detections

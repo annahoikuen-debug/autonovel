@@ -3,7 +3,9 @@
 Disaster recovery drill script.
 Simulates the restore process for training purposes.
 """
+
 import logging
+
 
 def drill_restore():
     """
@@ -30,6 +32,7 @@ def drill_restore():
     logger.info("Step 5: Would start application and run smoke tests")
 
     logger.info("Disaster recovery drill completed.")
+
 
 if __name__ == "__main__":
     drill_restore()

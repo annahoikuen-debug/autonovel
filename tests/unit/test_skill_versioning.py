@@ -1,7 +1,8 @@
 # tests/unit/test_skill_versioning.py
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import pytest
 
@@ -12,12 +13,14 @@ from src.agents.orchestrator import AgentContext, AgentResult
 
 class MockSkillV1(SkillAgent):
     version = "1.0"
+
     async def execute(self, ctx: AgentContext) -> AgentResult:
         return AgentResult(next_agent=None, artifacts={"version": "v1"})
 
 
 class MockSkillV2(SkillAgent):
     version = "2.0"
+
     async def execute(self, ctx: AgentContext) -> AgentResult:
         return AgentResult(next_agent=None, artifacts={"version": "v2"})
 
@@ -38,19 +41,19 @@ def test_orchestrator_default_version():
 def test_orchestrator_register_v1():
     """v1 スキル登録"""
     orch = Orchestrator(nodes={})
-    orch.register_discovered_skills('src.agents.skills.v1')
+    orch.register_discovered_skills("src.agents.skills.v1")
     assert orch.get_active_version() == "v1"
-    assert 'planning' in orch._skill_registry
+    assert "planning" in orch._skill_registry
 
 
 def test_orchestrator_switch_version():
     """バージョン切替"""
     orch = Orchestrator(nodes={})
-    orch.register_discovered_skills('src.agents.skills.v1')
+    orch.register_discovered_skills("src.agents.skills.v1")
     assert orch.get_active_version() == "v1"
 
     # v2 へ切替（v2 は空でもエラーにならない）
-    orch.set_skill_version('v2')
+    orch.set_skill_version("v2")
     assert orch.get_active_version() == "v2"
 
 
@@ -58,7 +61,7 @@ def test_orchestrator_invalid_version():
     """無効なバージョンでエラー"""
     orch = Orchestrator(nodes={})
     with pytest.raises(ValueError):
-        orch.set_skill_version('v3')
+        orch.set_skill_version("v3")
 
 
 @pytest.mark.asyncio

@@ -2,6 +2,7 @@ from src.services.exporters.text_sanitizer import escape_xhtml_text
 from dataclasses import dataclass
 from typing import Literal
 
+
 def detect_image_media_type(filename: str = "", data: bytes | None = None) -> str:
     """拡張子およびマジックバイトから画像メディアタイプを自動判定 (Step 44)。"""
     if data:
@@ -58,10 +59,10 @@ class EpubManifestBuilder:
         """EPUB 3 ナビゲーション文書 (nav.xhtml) の自動生成 (Step 43)。"""
         nav_items = []
         for i, chap in enumerate(chapters):
-            href = chap.get("href", f"xhtml/p-{i+1:03d}.xhtml")
+            href = chap.get("href", f"xhtml/p-{i + 1:03d}.xhtml")
             if exclude_hrefs and href in exclude_hrefs:
                 continue
-            chap_title = escape_xhtml_text(chap.get("title", f"第{i+1}話"))
+            chap_title = escape_xhtml_text(chap.get("title", f"第{i + 1}話"))
             nav_items.append(f'<li><a href="{href}">{chap_title}</a></li>')
 
         items_html = "\n".join(nav_items)
@@ -95,10 +96,10 @@ class EpubManifestBuilder:
         nav_points = []
         order = 0
         for i, chap in enumerate(chapters):
-            href = chap.get("href", f"xhtml/p-{i+1:03d}.xhtml")
+            href = chap.get("href", f"xhtml/p-{i + 1:03d}.xhtml")
             if exclude_hrefs and href in exclude_hrefs:
                 continue
-            chap_title = escape_xhtml_text(chap.get("title", f"第{i+1}話"))
+            chap_title = escape_xhtml_text(chap.get("title", f"第{i + 1}話"))
             order += 1
             nav_points.append(f"""  <navPoint id="navPoint-{order}" playOrder="{order}">
     <navLabel><text>{chap_title}</text></navLabel>
@@ -167,11 +168,13 @@ class EpubManifestBuilder:
             for ill in illustrations:
                 img_id = f"img-{ill.image_id}"
                 page_id = f"p-ill-{ill.image_id}"
-                illustration_manifest_items.append({
-                    "id": img_id,
-                    "href": f"images/{ill.file_name}",
-                    "media-type": ill.media_type,
-                })
+                illustration_manifest_items.append(
+                    {
+                        "id": img_id,
+                        "href": f"images/{ill.file_name}",
+                        "media-type": ill.media_type,
+                    }
+                )
                 # Determine spine insertion point using XHTML page_id
                 if ill.position == "frontmatter":
                     illustration_spine_entries.append(("frontmatter", 0, page_id))

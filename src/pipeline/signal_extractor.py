@@ -1,4 +1,5 @@
 """Dependency-based emotional signal extractor."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ from src.pipeline.character_extractor import CharacterMention
 @dataclass
 class DependencyPattern:
     """依存構造パターン"""
+
     subj_dep: str
     obj_dep: str
     emotion_type: str
@@ -39,11 +41,9 @@ class SignalExtractor:
     def _default_patterns(self) -> list[DependencyPattern]:
         """デフォルトパターン（設定から読み込み）"""
         from src.pipeline.emotion_config import load_dependency_patterns
+
         raw_patterns = load_dependency_patterns()
-        return [
-            DependencyPattern(p[0], p[1], p[2], p[3])
-            for p in raw_patterns
-        ]
+        return [DependencyPattern(p[0], p[1], p[2], p[3]) for p in raw_patterns]
 
     def extract_signals(
         self,
@@ -64,9 +64,7 @@ class SignalExtractor:
 
         return signals
 
-    def _build_char_token_map(
-        self, doc: Doc, characters: list[CharacterMention]
-    ) -> dict[int, str]:
+    def _build_char_token_map(self, doc: Doc, characters: list[CharacterMention]) -> dict[int, str]:
         """トークンインデックス→キャラ名マップ"""
         char_map = {}
         for char in characters:
@@ -147,11 +145,10 @@ class SignalExtractor:
     def _classify_emotion(self, verb: Token, sent_text: str) -> tuple[str, float]:
         """動詞・文から感情タイプと値を判定"""
         from src.pipeline.polarity import classify_emotion
+
         return classify_emotion(verb, sent_text, self.lexicon)
 
-    def _calculate_confidence(
-        self, verb: Token, sent_text: str, subj: Token, obj: Token
-    ) -> float:
+    def _calculate_confidence(self, verb: Token, sent_text: str, subj: Token, obj: Token) -> float:
         """信頼度計算（0.0-1.0）"""
         base_conf = 0.5
 

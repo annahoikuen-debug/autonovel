@@ -1,4 +1,5 @@
 """商用縦書きEPUB 3組版ビルダー・ルビプロセッサ・縦書きCSSの単体テスト (v5.0 Step 15〜18)."""
+
 import io
 import zipfile
 

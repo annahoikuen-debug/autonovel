@@ -4,6 +4,7 @@ from fastapi import Request
 from src.backend.routers import billing_webhook
 from src.backend.routers.billing_webhook import handle_stripe_webhook
 
+
 @pytest.mark.asyncio
 async def test_stripe_webhook_grants_credits(monkeypatch):
     # 署名シークレット必須という本番安全設定の奥へ入るため、
@@ -11,7 +12,9 @@ async def test_stripe_webhook_grants_credits(monkeypatch):
     monkeypatch.setattr(billing_webhook, "WEBHOOK_SECRET", "whsec_test_secret")
     # Mock request
     mock_request = MagicMock(spec=Request)
-    mock_request.body = AsyncMock(return_value=b'{"id": "evt_test_123", "type": "checkout.session.completed", "data": {"object": {"id": "cs_test_123", "customer": "cus_test_123", "subscription": "sub_test_123"}}}')
+    mock_request.body = AsyncMock(
+        return_value=b'{"id": "evt_test_123", "type": "checkout.session.completed", "data": {"object": {"id": "cs_test_123", "customer": "cus_test_123", "subscription": "sub_test_123"}}}'
+    )
     mock_request.headers = {"stripe-signature": "sig_test"}
 
     # Mock database session
@@ -28,20 +31,22 @@ async def test_stripe_webhook_grants_credits(monkeypatch):
 
     # Mock Stripe.Webhook.construct_event to return our event
     with patch("stripe.Webhook.construct_event") as mock_construct:
-        mock_construct.return_value = {"id": "evt_test_123", "type": "checkout.session.completed", "data": {"object": {"id": "cs_test_123", "customer": "cus_test_123", "subscription": "sub_test_123"}}}
+        mock_construct.return_value = {
+            "id": "evt_test_123",
+            "type": "checkout.session.completed",
+            "data": {"object": {"id": "cs_test_123", "customer": "cus_test_123", "subscription": "sub_test_123"}},
+        }
 
         # Mock the Stripe Subscription retrieve
         with patch("stripe.Subscription.retrieve") as mock_sub_retrieve:
             mock_sub_retrieve.return_value = MagicMock(
-                items=MagicMock(data=[MagicMock(price=MagicMock(id="price_test_123"))]),
-                customer="cus_test_123"
+                items=MagicMock(data=[MagicMock(price=MagicMock(id="price_test_123"))]), customer="cus_test_123"
             )
 
             # Mock the get_credits_for_price_id function to return 100 credits
             with patch("src.backend.routers.billing_webhook.get_credits_for_price_id", return_value=100):
                 # Mock the get_tier_for_price_id function
                 with patch("src.backend.routers.billing_webhook.get_tier_for_price_id", return_value="pro"):
-
                     # Call the handler
                     await handle_stripe_webhook(mock_request, db=mock_session)
 
@@ -49,9 +54,7 @@ async def test_stripe_webhook_grants_credits(monkeypatch):
                     # アトミック UPDATE (db.execute) に一任される。
                     # 旧実装のような user.credits の直接加算 (二重付与) は行わない。
                     assert mock_user.plan_tier == "pro"
-                    executed_statements = [
-                        c for c in mock_session.execute.await_args_list
-                    ]
+                    executed_statements = [c for c in mock_session.execute.await_args_list]
                     assert executed_statements, "grant_credits のアトミック UPDATE が実行されていない"
                     # Assert that a StripeWebhookEvent record was added
                     assert mock_session.add.call_count >= 1

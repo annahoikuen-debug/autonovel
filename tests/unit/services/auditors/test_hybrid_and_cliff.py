@@ -45,9 +45,7 @@ class _LowFakeQual(_FakeQual):
 
 
 async def test_two_tier_auditor_pass(monkeypatch):
-    monkeypatch.setattr(
-        "src.services.auditors.hybrid_auditor.UnifiedAuditor", lambda: _FakeAuditor([])
-    )
+    monkeypatch.setattr("src.services.auditors.hybrid_auditor.UnifiedAuditor", lambda: _FakeAuditor([]))
     report = await TwoTierAuditor.audit_chapter("晴れた朝の物語。", forbidden_words=None)
     assert report.static_audit.passed is True
     assert report.qualitative_audit.score == 80
@@ -60,9 +58,7 @@ async def test_two_tier_auditor_pass(monkeypatch):
 
 
 async def test_two_tier_auditor_forbidden_word(monkeypatch):
-    monkeypatch.setattr(
-        "src.services.auditors.hybrid_auditor.UnifiedAuditor", lambda: _FakeAuditor([])
-    )
+    monkeypatch.setattr("src.services.auditors.hybrid_auditor.UnifiedAuditor", lambda: _FakeAuditor([]))
     report = await TwoTierAuditor.audit_chapter("これはNGワードを含む。", forbidden_words=["NGワード", "無い"])
     assert report.static_audit.passed is False
     assert len(report.static_audit.issues) == 1
@@ -85,6 +81,7 @@ async def test_two_tier_auditor_low_score(monkeypatch):
     class _Low(_FakeAuditor):
         def __init__(self):
             super().__init__([])
+
         async def audit_qualitative(self, text, character_profiles="", plot_spec=""):
             return _LowFakeQual()
 
@@ -102,6 +99,7 @@ async def test_two_tier_auditor_empty_patch(monkeypatch):
     class _A(_FakeAuditor):
         def __init__(self):
             super().__init__([])
+
         async def audit_qualitative(self, text, character_profiles="", plot_spec=""):
             return _NoPatch()
 

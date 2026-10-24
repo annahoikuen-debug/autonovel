@@ -1,4 +1,5 @@
 """Unit tests for anomaly detection."""
+
 from src.fusion.anomaly import AnomalyDetector
 from src.fusion.config import FusionConfig
 from src.fusion.models import Conflict, FusedValue, FusedVector

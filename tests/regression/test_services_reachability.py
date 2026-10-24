@@ -24,11 +24,7 @@ def _method_names_defined(relative_path: str, class_name: str) -> set[str]:
     tree = ast.parse((SRC / relative_path).read_text("utf-8"))
     for node in ast.walk(tree):
         if isinstance(node, ast.ClassDef) and node.name == class_name:
-            return {
-                item.name
-                for item in node.body
-                if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))
-            }
+            return {item.name for item in node.body if isinstance(item, (ast.FunctionDef, ast.AsyncFunctionDef))}
     return set()
 
 
@@ -41,11 +37,7 @@ def _call_sites_of_method(method_name: str) -> list[str]:
         except SyntaxError:
             continue
         for node in ast.walk(tree):
-            if (
-                isinstance(node, ast.Call)
-                and isinstance(node.func, ast.Attribute)
-                and node.func.attr == method_name
-            ):
+            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and node.func.attr == method_name:
                 offenders.append(f"{py_file.relative_to(ROOT_DIR)}:{node.lineno}")
     return offenders
 
@@ -57,8 +49,7 @@ class TestBibleServiceReachability:
         from src.services.bible_service import WorldBibleGenerator
 
         assert callable(getattr(WorldBibleGenerator, "generate", None)) or any(
-            not n.startswith("_") and callable(getattr(WorldBibleGenerator, n))
-            for n in dir(WorldBibleGenerator)
+            not n.startswith("_") and callable(getattr(WorldBibleGenerator, n)) for n in dir(WorldBibleGenerator)
         ), "WorldBibleGenerator に公開メソッドが無い（解析前提の変化）"
 
     def test_record_setting_delta_has_callers(self) -> None:
@@ -66,9 +57,7 @@ class TestBibleServiceReachability:
         from src.services.bible_service import WorldBibleGenerator
 
         assert hasattr(WorldBibleGenerator, "record_setting_delta")
-        assert _call_sites_of_method("record_setting_delta"), (
-            "record_setting_delta に src/ 内の呼び出し元が無い"
-        )
+        assert _call_sites_of_method("record_setting_delta"), "record_setting_delta に src/ 内の呼び出し元が無い"
 
 
 class TestImageServiceReachability:
@@ -90,9 +79,7 @@ class TestImageServiceReachability:
         from src.services.image_service import ImageService
 
         public = [
-            name
-            for name in dir(ImageService)
-            if not name.startswith("_") and callable(getattr(ImageService, name))
+            name for name in dir(ImageService) if not name.startswith("_") and callable(getattr(ImageService, name))
         ]
         called_any = False
         missing: list[str] = []
@@ -103,9 +90,7 @@ class TestImageServiceReachability:
                 called_any = True
             else:
                 missing.append(name)
-        assert called_any or not missing, (
-            f"ImageService の公開メソッドに呼び出し元が無い: {missing}"
-        )
+        assert called_any or not missing, f"ImageService の公開メソッドに呼び出し元が無い: {missing}"
 
 
 class TestExportServiceReachability:

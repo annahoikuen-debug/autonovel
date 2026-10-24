@@ -4,8 +4,12 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.domain.domain_services.bible_domain_service import (
-    BibleDomainService, BibleConsistencyChecker, BibleValidator, BibleValidationError,
-    SettingConflictType, ConsistencyReport,
+    BibleDomainService,
+    BibleConsistencyChecker,
+    BibleValidator,
+    BibleValidationError,
+    SettingConflictType,
+    ConsistencyReport,
 )
 from src.domain.entities.world_bible import WorldBible, Setting, Lore
 from src.domain.value_objects.ids import NovelId, SettingId
@@ -99,9 +103,16 @@ class TestBibleConsistencyChecker:
         # 対立なし・重複なし → 空リスト（実測: _get_opposite は日本語2文字語のみ対応で
         # ASCII 語は未対応のため、衝突なしの正常系を検証する）
         existing = [
-            Lore.create(novel_id=NovelId.generate(), title="kingdom", content=MarkdownText("light and truth"), category="history")
+            Lore.create(
+                novel_id=NovelId.generate(),
+                title="kingdom",
+                content=MarkdownText("light and truth"),
+                category="history",
+            )
         ]
-        new = Lore.create(novel_id=NovelId.generate(), title="empire", content=MarkdownText("dark and lie"), category="history")
+        new = Lore.create(
+            novel_id=NovelId.generate(), title="empire", content=MarkdownText("dark and lie"), category="history"
+        )
         conflicts = self.checker.check_lore_consistency(existing, new)
         assert conflicts == []
 
@@ -144,6 +155,7 @@ class TestBibleConsistencyChecker:
         # 実装側は .items() を呼ぶため、空 dict 相当の動作を確認するため
         # PendingSetting 未登録の状態で dict 前提の実装を検証する
         import unittest.mock as _mock
+
         with _mock.patch.object(bible, "get_pending_settings", return_value={}):
             report = await checker.full_consistency_check(novel_id)
         assert report.is_consistent is True
@@ -157,6 +169,7 @@ class TestBibleConsistencyChecker:
         repo.get_by_novel = AsyncMock(return_value=bible)
         checker = BibleConsistencyChecker(repo)
         import unittest.mock as _mock
+
         with _mock.patch.object(bible, "get_pending_settings", return_value={}):
             report = await checker.full_consistency_check(novel_id)
         assert any("initializing" in s or "empty" in s for s in report.suggestions)
@@ -371,6 +384,7 @@ class TestBibleDomainService:
         service.bible_repo.get_by_novel = AsyncMock(return_value=bible)
         # 実装は get_pending_settings().items() を呼ぶため dict を返すようモック
         import unittest.mock as _mock
+
         with _mock.patch.object(bible, "get_pending_settings", return_value={}):
             report = await service.check_consistency(novel_id)
         assert isinstance(report, ConsistencyReport)

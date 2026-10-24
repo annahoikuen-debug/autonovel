@@ -85,9 +85,7 @@ class PlotGraphManager:
 
     def _build_graph(self):
         if not HAS_LANGGRAPH or StateGraph is None:
-            logger.warning(
-                "langgraph が未インストールのため PlotGraphManager はグラフ実行をスキップします。"
-            )
+            logger.warning("langgraph が未インストールのため PlotGraphManager はグラフ実行をスキップします。")
             return None
 
         workflow = StateGraph(WorkflowState)
@@ -133,9 +131,7 @@ class PlotGraphManager:
             audit = await self.node_audit_plot(state)
             state.update(audit)
             attempts = 0
-            while self.should_retry_blueprint(state) == "retry" and attempts < state.get(
-                "max_retries", 3
-            ):
+            while self.should_retry_blueprint(state) == "retry" and attempts < state.get("max_retries", 3):
                 state.update(await self.node_generate_blueprint(state))
                 state.update(await self.node_audit_plot(state))
                 attempts += 1

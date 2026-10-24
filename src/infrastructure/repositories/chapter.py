@@ -132,9 +132,7 @@ class ChapterRepository(BaseRepository):
 
         ch.title = title
         ch.content = content
-        ch.summary = (
-            summary if isinstance(summary, str) else json.dumps(summary, ensure_ascii=False)
-        )
+        ch.summary = summary if isinstance(summary, str) else json.dumps(summary, ensure_ascii=False)
         if killer_phrase is not UNSET and killer_phrase is not None:
             ch.killer_phrase = killer_phrase
         if ai_insight is not UNSET and ai_insight is not None:
@@ -152,9 +150,7 @@ class ChapterRepository(BaseRepository):
             ch.qol_delta = qol_delta
         return not created
 
-    async def get_chapter(
-        self, branch_id: int, ep_num: int, book_id: int | None = None
-    ) -> ChapterDbModel | None:
+    async def get_chapter(self, branch_id: int, ep_num: int, book_id: int | None = None) -> ChapterDbModel | None:
         """1 話を取得する。
 
         ``branch_id`` は作品間で共有される（既定値 1）ため、``book_id`` を
@@ -171,18 +167,12 @@ class ChapterRepository(BaseRepository):
             return None
         from src.models import ChapterDbModel
 
-        return ChapterDbModel(
-            **self._parse_row(self._to_dict(ch), ["world_state", "trinity_review_log", "summary"])
-        )
+        return ChapterDbModel(**self._parse_row(self._to_dict(ch), ["world_state", "trinity_review_log", "summary"]))
 
     async def get_chapters_before(
         self, branch_id: int, ep_num: int, book_id: int | None = None
     ) -> list[ChapterDbModel]:
-        stmt = (
-            select(Chapter)
-            .where(Chapter.branch_id == branch_id)
-            .where(Chapter.ep_num < ep_num)
-        )
+        stmt = select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num < ep_num)
         if book_id is not None:
             stmt = stmt.where(Chapter.book_id == book_id)
         result = await self.session.execute(stmt.order_by(Chapter.ep_num.desc()))
@@ -190,11 +180,7 @@ class ChapterRepository(BaseRepository):
         from src.models import ChapterDbModel
 
         return [
-            ChapterDbModel(
-                **self._parse_row(
-                    self._to_dict(c), ["world_state", "trinity_review_log", "summary"]
-                )
-            )
+            ChapterDbModel(**self._parse_row(self._to_dict(c), ["world_state", "trinity_review_log", "summary"]))
             for c in chaps
         ]
 
@@ -232,18 +218,12 @@ class ChapterRepository(BaseRepository):
         from src.models import ChapterDbModel
 
         return [
-            ChapterDbModel(
-                **self._parse_row(
-                    self._to_dict(c), ["world_state", "trinity_review_log", "summary"]
-                )
-            )
+            ChapterDbModel(**self._parse_row(self._to_dict(c), ["world_state", "trinity_review_log", "summary"]))
             for c in chaps
         ]
 
     @retry_on_lock()
-    async def delete_chapter(
-        self, book_id: int, ep_num: int, branch_id: int | None = None
-    ) -> int:
+    async def delete_chapter(self, book_id: int, ep_num: int, branch_id: int | None = None) -> int:
         """指定作品の 1 話を削除する。
 
         ``book_id`` を条件に含めるのは ``delete_chapter`` が所有者的検証済みの
@@ -270,11 +250,7 @@ class ChapterRepository(BaseRepository):
         ``branch_id`` は作品間で共有される（既定 1）ため、HTTP 経由の書き込みでは
         ``book_id`` を必ず渡して他作品へ及ばないようにする。
         """
-        stmt = (
-            update(Chapter)
-            .where(Chapter.branch_id == branch_id)
-            .where(Chapter.ep_num == ep_num)
-        )
+        stmt = update(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num == ep_num)
         if book_id is not None:
             stmt = stmt.where(Chapter.book_id == book_id)
         result = await self.session.execute(stmt.values(content=content))
@@ -285,16 +261,10 @@ class ChapterRepository(BaseRepository):
         self, branch_id: int, ep_num: int, candidates: list[Any], book_id: int | None = None
     ) -> int:
         """チャプターの候補案のみを更新する"""
-        stmt = (
-            update(Chapter)
-            .where(Chapter.branch_id == branch_id)
-            .where(Chapter.ep_num == ep_num)
-        )
+        stmt = update(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num == ep_num)
         if book_id is not None:
             stmt = stmt.where(Chapter.book_id == book_id)
-        result = await self.session.execute(
-            stmt.values(candidates=json.dumps(candidates, ensure_ascii=False))
-        )
+        result = await self.session.execute(stmt.values(candidates=json.dumps(candidates, ensure_ascii=False)))
         return int(result.rowcount or 0)
 
     async def get_relevant_past_logs(
@@ -311,9 +281,7 @@ class ChapterRepository(BaseRepository):
         keywords = re.findall(r"[一-龠々]{2,}|[ァ-ヶー]{2,}", query_text)
         if not keywords:
             return ""
-        stmt = (
-            select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num < current_ep)
-        )
+        stmt = select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num < current_ep)
         if book_id is not None:
             stmt = stmt.where(Chapter.book_id == book_id)
         like_clauses = [Chapter.content.like(f"%{k}%") for k in keywords[:5]]

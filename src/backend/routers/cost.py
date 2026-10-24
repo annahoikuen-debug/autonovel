@@ -8,6 +8,7 @@ from src.backend.database import get_async_db
 from src.backend.database.models import User, Book, CostLogModel
 from src.backend.database.repositories import CostRepository
 from src.backend.security.roles import RoleChecker, UserRole
+
 router = APIRouter(
     prefix="/api/cost",
     tags=["cost"],
@@ -36,11 +37,13 @@ async def get_cost_summary(
         func.sum(CostLogModel.cost_usd).label("total_cost_usd"),
         func.sum(CostLogModel.input_tokens).label("total_input_tokens"),
         func.sum(CostLogModel.output_tokens).label("total_output_tokens"),
-        func.sum(getattr(CostLogModel, "cache_read_tokens", 0)).label("total_cache_read_tokens") if hasattr(CostLogModel, "cache_read_tokens") else func.sum(0).label("total_cache_read_tokens"),
-        func.sum(getattr(CostLogModel, "cache_creation_tokens", 0)).label("total_cache_creation_tokens") if hasattr(CostLogModel, "cache_creation_tokens") else func.sum(0).label("total_cache_creation_tokens"),
-    ).filter(
-        CostLogModel.timestamp >= start_of_month
-    )
+        func.sum(getattr(CostLogModel, "cache_read_tokens", 0)).label("total_cache_read_tokens")
+        if hasattr(CostLogModel, "cache_read_tokens")
+        else func.sum(0).label("total_cache_read_tokens"),
+        func.sum(getattr(CostLogModel, "cache_creation_tokens", 0)).label("total_cache_creation_tokens")
+        if hasattr(CostLogModel, "cache_creation_tokens")
+        else func.sum(0).label("total_cache_creation_tokens"),
+    ).filter(CostLogModel.timestamp >= start_of_month)
 
     # 一般ユーザー、または管理者でall_users=Falseの場合は自身が所有する書籍に限定
     if current_user.role != "admin" or not all_users:
@@ -96,6 +99,7 @@ async def get_budget_consumption_ratio(
     """特定の書籍のリアルタイム予算消費率を取得する。"""
     # 書籍の存在確認とアクセス権限チェック
     from sqlalchemy import select
+
     book_result = await db.execute(select(Book).where(Book.id == book_id))
     book = book_result.scalar_one_or_none()
 

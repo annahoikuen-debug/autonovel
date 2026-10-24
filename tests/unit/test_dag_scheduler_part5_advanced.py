@@ -1,4 +1,5 @@
 """Unit tests for DAGScheduler Part 5 (Steps 55-60): EventBus, Execution Summary, DAG Pipeline, and Status Endpoint."""
+
 from __future__ import annotations
 
 import pytest
@@ -21,6 +22,7 @@ async def test_event_bus_publishing():
     events_received = []
 
     mock_event_bus = MagicMock()
+
     async def fake_publish_async(event_type: str, payload: dict):
         events_received.append((event_type, payload))
 

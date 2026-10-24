@@ -1,4 +1,5 @@
 """Unit tests for src/narrative/subtext_templates/matcher.py (ContextMatcher)."""
+
 from __future__ import annotations
 
 import pytest
@@ -63,9 +64,16 @@ class TestContextMatcher:
 
     def test_score_candidate_emotion_mismatch(self, matcher, sample_candidate):
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="joy", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="joy",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
         candidate = sample_candidate
         candidate.metadata.context = {"emotion": "anger", "power_dynamic": "equal", "relationship": "rival"}
@@ -75,9 +83,16 @@ class TestContextMatcher:
 
     def test_score_candidate_emotion_neutral(self, matcher, sample_candidate):
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="neutral", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="neutral",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
         candidate = sample_candidate
         candidate.metadata.context = {"emotion": "anger", "power_dynamic": "equal", "relationship": "rival"}
@@ -102,9 +117,16 @@ class TestContextMatcher:
             metadata=meta,
         )
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="neutral", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="neutral",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
 
         score = matcher.score_candidate(candidate, context)
@@ -126,9 +148,16 @@ class TestContextMatcher:
             metadata=meta,
         )
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="neutral", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="neutral",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
 
         score = matcher.score_candidate(candidate, context)
@@ -150,9 +179,16 @@ class TestContextMatcher:
             metadata=meta,
         )
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="neutral", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="neutral",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
 
         score = matcher.score_candidate(candidate, context)
@@ -174,9 +210,16 @@ class TestContextMatcher:
             metadata=meta,
         )
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="neutral", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="neutral",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
         matcher.genre_weights = {"fantasy": {"emotional": 2.0}}
 
@@ -199,9 +242,16 @@ class TestContextMatcher:
             metadata=meta,
         )
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="neutral", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="neutral",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
         matcher.tone_weights = {"dark": {"emotional": 1.5}}
 
@@ -224,10 +274,16 @@ class TestContextMatcher:
             metadata=meta,
         )
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="anger", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark",
-            history_summary=["test_template_001", "other_001", "other_002"]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="anger",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=["test_template_001", "other_001", "other_002"],
         )
 
         score = matcher.score_candidate(candidate, context)
@@ -251,9 +307,16 @@ class TestContextMatcher:
         candidate.model_copy.return_value = candidate
 
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="anger", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="anger",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
 
         matches = matcher_with_constraints.match([candidate], context)
@@ -344,9 +407,16 @@ class TestContextMatcher:
         candidate2.model_copy.return_value = candidate2
 
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="neutral", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="neutral",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
 
         # Same seed should produce same result
@@ -371,9 +441,16 @@ class TestContextMatcher:
         candidate.metadata.id = "test"
 
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="", power_dynamic="", relationship="", intensity="",
-            genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="",
+            power_dynamic="",
+            relationship="",
+            intensity="",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
 
         score = matcher.score_candidate(candidate, context)
@@ -409,9 +486,16 @@ class TestContextMatcher:
         candidate_good.model_copy.return_value = candidate_good
 
         context = SubtextContext(
-            scene_id="scene_001", turn_index=1, speaker="protagonist",
-            emotion="joy", power_dynamic="equal", relationship="rival",
-            intensity="high", genre="fantasy", tone="dark", history_summary=[]
+            scene_id="scene_001",
+            turn_index=1,
+            speaker="protagonist",
+            emotion="joy",
+            power_dynamic="equal",
+            relationship="rival",
+            intensity="high",
+            genre="fantasy",
+            tone="dark",
+            history_summary=[],
         )
 
         # Test with all constraints passing

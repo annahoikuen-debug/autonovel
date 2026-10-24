@@ -12,6 +12,7 @@ from src.services.chunk_ingestion import backfill_missing_embeddings
 def _make_vector(seed: float, dim: int = 64) -> list[float]:
     """テスト用の正規化ベクトル生成ヘルパー"""
     import math
+
     vec = [(seed + i * 0.1) for i in range(dim)]
     norm = math.sqrt(sum(x * x for x in vec))
     return [x / norm for x in vec]

@@ -47,11 +47,7 @@ class PacingGraph:
     _FIRST_EXPLOSION_END = _V["first_win"].span[1]
     _CLIMAX_START = _V["last_stand"].span[0]
     _CLIMAX_END = _V["climax"].span[1]
-    _FINALE_START = (
-        _V["aftermath"].span[0]
-        if "aftermath" in _V
-        else (_V.get("coda") or _V.get("residue")).span[0]
-    )
+    _FINALE_START = _V["aftermath"].span[0] if "aftermath" in _V else (_V.get("coda") or _V.get("residue")).span[0]
 
     @staticmethod
     def get_instruction(ep_num: int, total_eps: int = 50, is_light: bool = False) -> dict[str, Any]:
@@ -230,9 +226,7 @@ class NarrativeController:
             "next_stress": adjusted_stress,
         }
 
-    def get_stress_history_data(
-        self, chapters: list[ChapterDbModel], plots: list[PlotDbModel]
-    ) -> list[dict[str, Any]]:
+    def get_stress_history_data(self, chapters: list[ChapterDbModel], plots: list[PlotDbModel]) -> list[dict[str, Any]]:
         """各エピソードのストレス蓄積値を可視化用に整形して返す"""
         stress_data = []
         for ch in chapters:
@@ -244,9 +238,7 @@ class NarrativeController:
             stress_data.append({"話数": ch.ep_num, "ストレス蓄積値": stress_val})
         return stress_data
 
-    def get_integrity_threshold(
-        self, genre: str, prev_integrity: int = 100, engine_key: str = ""
-    ) -> float:
+    def get_integrity_threshold(self, genre: str, prev_integrity: int = 100, engine_key: str = "") -> float:
         base = 0.6
         genre_lower = genre.lower()
         if any(x in genre_lower for x in ["シリアス", "ダーク", "復讐", "ミステリ", "推理"]):
@@ -299,9 +291,7 @@ class WavePatternAnalyzer:
             issues=issues,
         )
 
-    def _calculate_wave_score(
-        self, tension_history: list[int], catharsis_indices: list[int]
-    ) -> float:
+    def _calculate_wave_score(self, tension_history: list[int], catharsis_indices: list[int]) -> float:
         """波パターンの成熟度を0.0-100.0でスコアリング"""
         if not tension_history:
             return 0.0
@@ -311,10 +301,6 @@ class WavePatternAnalyzer:
             return 50.0
 
         expected_catharsis = total_eps / 7
-        ratio_score = (
-            min(100.0, (catharsis_count / expected_catharsis) * 100)
-            if expected_catharsis > 0
-            else 0.0
-        )
+        ratio_score = min(100.0, (catharsis_count / expected_catharsis) * 100) if expected_catharsis > 0 else 0.0
         variance_score = 100.0 - min(100.0, abs(len(catharsis_indices) - expected_catharsis) * 20)
         return (ratio_score + variance_score) / 2.0

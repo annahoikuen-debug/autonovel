@@ -1,4 +1,5 @@
 """Unit tests for VectorCollector."""
+
 from src.fusion.collector import VectorCollector
 from src.fusion.config import FusionConfig
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType

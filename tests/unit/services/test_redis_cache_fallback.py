@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock
 from src.services.redis_cache import RedisCacheService
 
+
 @pytest.mark.asyncio
 async def test_redis_cache_connection_error_safe_get():
     service = RedisCacheService()

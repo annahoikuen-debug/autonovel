@@ -469,6 +469,7 @@ class WritingAgent(SkillAgent):
         if actionable_diffs:
             try:
                 from src.mcp_servers.agent_mcp_bridge import get_default_bridge
+
                 bridge = getattr(self, "mcp_bridge", None) or get_default_bridge()
                 patch_res = bridge.apply_surgical_diffs(original_text, actionable_diffs, allow_fuzzy=True)
                 if patch_res.get("is_fully_applied") and patch_res.get("applied_count", 0) > 0:

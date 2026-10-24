@@ -32,9 +32,7 @@ def test_csp_balancer_repairs_midpoint_sag():
     balancer = CSPNarrativeBalancer(config=cfg)
 
     # Feed a sag where midpoint was set to low daily
-    sag_beats = [
-        Beat(episode=i, tension=3.0, beat_type=BeatType.DAILY) for i in range(1, 21)
-    ]
+    sag_beats = [Beat(episode=i, tension=3.0, beat_type=BeatType.DAILY) for i in range(1, 21)]
     repaired = balancer.balance(sag_beats)
     assert len(repaired) == 20
     # Repaired midpoint must satisfy tension >= 7

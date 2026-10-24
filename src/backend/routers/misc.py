@@ -72,9 +72,7 @@ async def get_opt_history(
     return [
         {
             "id": h.id,
-            "report_json": json.loads(h.report_json)
-            if isinstance(h.report_json, str)
-            else h.report_json,
+            "report_json": json.loads(h.report_json) if isinstance(h.report_json, str) else h.report_json,
             "created_at": h.created_at,
         }
         for h in history
@@ -113,15 +111,12 @@ async def get_planning_options():
 
     # STYLE_DEFINITIONSから必要な部分のみ抽出
     styles = {
-        k: {"name": v.get("name", k), "description": v.get("instruction", "")}
-        for k, v in STYLE_DEFINITIONS.items()
+        k: {"name": v.get("name", k), "description": v.get("instruction", "")} for k, v in STYLE_DEFINITIONS.items()
     }
 
     growth_curves = list(
         dict.fromkeys(
-            v.get("growth_curve")
-            for v in STORY_ARCHETYPES.values()
-            if isinstance(v, dict) and "growth_curve" in v
+            v.get("growth_curve") for v in STORY_ARCHETYPES.values() if isinstance(v, dict) and "growth_curve" in v
         )
     )
 

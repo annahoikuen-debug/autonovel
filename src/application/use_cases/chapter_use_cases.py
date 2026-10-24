@@ -105,14 +105,18 @@ class UpdateChapterUseCase:
 
             # Apply updates
             if dto.title is not None:
-                chapter = chapter.update_content(chapter.content).update_content(chapter.content)  # Update title via content replacement pattern
+                chapter = chapter.update_content(chapter.content).update_content(
+                    chapter.content
+                )  # Update title via content replacement pattern
                 # Since Chapter is frozen, we need to create new instance
                 chapter = Chapter(
                     id=chapter.id,
                     novel_id=chapter.novel_id,
                     branch_id=chapter.branch_id,
                     episode_number=chapter.episode_number,
-                    title=Chapter.__annotations__['title'].__metadata__[0](dto.title) if hasattr(Chapter.__annotations__['title'], '__metadata__') else dto.title,
+                    title=Chapter.__annotations__["title"].__metadata__[0](dto.title)
+                    if hasattr(Chapter.__annotations__["title"], "__metadata__")
+                    else dto.title,
                     content=chapter.content,
                     score_story=chapter.score_story,
                     killer_phrase=chapter.killer_phrase,

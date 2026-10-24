@@ -1,4 +1,5 @@
 """Compliance and Audit Provider for MCP Server."""
+
 from __future__ import annotations
 
 import re
@@ -9,6 +10,7 @@ from typing import Any, Callable, Dict, List, Optional
 @dataclass
 class AuditRule:
     """監査ルール定義"""
+
     rule_id: str
     description: str
     severity: str = "warning"  # error, warning, info
@@ -18,6 +20,7 @@ class AuditRule:
 @dataclass
 class AuditRequest:
     """監査リクエスト"""
+
     text: str
     active_rules: List[str] = field(default_factory=list)
 
@@ -25,6 +28,7 @@ class AuditRequest:
 @dataclass
 class AuditViolation:
     """違反事項"""
+
     rule_id: str
     message: str
     severity: str
@@ -36,6 +40,7 @@ class AuditViolation:
 @dataclass
 class AuditResponse:
     """監査レスポンス"""
+
     is_compliant: bool
     violations: List[AuditViolation] = field(default_factory=list)
     score: float = 100.0
@@ -44,6 +49,7 @@ class AuditResponse:
 @dataclass
 class DeterministicScreenResult:
     """決定論的プレ・オーディット結果（LLMコール削減用）"""
+
     passed: bool
     score: float
     violations: List[AuditViolation]
@@ -220,7 +226,7 @@ class AuditProvider:
             for match in re.finditer(r"…+|―+|―+", text):
                 chunk = match.group(0)
                 if len(chunk) % 2 != 0:
-                    line_no = text[:match.start()].count("\n") + 1
+                    line_no = text[: match.start()].count("\n") + 1
                     violations.append(
                         AuditViolation(
                             rule_id="odd_ellipses_or_dashes",
@@ -301,4 +307,3 @@ class AuditProvider:
             violations=violations,
             score=score,
         )
-

@@ -1,6 +1,5 @@
 """Unit tests for FourLayerCompressor end-to-end pipeline and ProtectedContext pinning (Part 5 / Steps 55-60)."""
 
-
 from src.services.compression.compressor import FourLayerCompressor
 from src.services.compression.models import (
     CompressionConfig,
@@ -54,9 +53,7 @@ def test_four_layer_compressor_pipeline_basic():
 
 def test_four_layer_compressor_with_protected_context_pinning():
     """Test guaranteed retention of active characters and foreshadowing IDs (Steps 55-57)."""
-    compressor = FourLayerCompressor(
-        config=CompressionConfig(max_tokens=150, cache_enabled=False)
-    )
+    compressor = FourLayerCompressor(config=CompressionConfig(max_tokens=150, cache_enabled=False))
 
     raw_text = """
     決戦の夜。アリスとキャロルは暗黒竜の巣窟に足を踏み入れた。

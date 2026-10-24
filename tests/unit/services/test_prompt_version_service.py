@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.services.prompt_version_service import PromptVersionService
 
+
 @pytest.mark.asyncio
 async def test_prompt_version_registration():
     mock_uow = AsyncMock()

@@ -29,10 +29,13 @@ class RequestAuditUseCase:
             audit = AuditResult.create(
                 novel_id=NovelId.from_string(dto.novel_id),
                 episode_number=0,  # 小説全体監査のためデフォルト0
-                audit_type=AuditType.LOGICAL if dto.audit_type == "logical" else
-                           AuditType.STYLE if dto.audit_type == "style" else
-                           AuditType.COMPREHENSIVE if dto.audit_type == "full" else
-                           AuditType.QUICK,
+                audit_type=AuditType.LOGICAL
+                if dto.audit_type == "logical"
+                else AuditType.STYLE
+                if dto.audit_type == "style"
+                else AuditType.COMPREHENSIVE
+                if dto.audit_type == "full"
+                else AuditType.QUICK,
             )
             # 監査実行は非同期ワーカーに委譲されるため、初期レコードを作成・保存する
             saved = await self.audit_repo.save(audit)
@@ -165,5 +168,6 @@ class CompleteAuditUseCase:
 
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     pass

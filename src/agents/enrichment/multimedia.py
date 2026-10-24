@@ -1,5 +1,6 @@
 # src/agents/enrichment/multimedia.py
 """マルチメディアシナリオ生成モジュール"""
+
 from __future__ import annotations
 
 import json
@@ -10,6 +11,7 @@ from pathlib import Path
 
 try:
     from jinja2 import Environment, FileSystemLoader
+
     JINJA2_AVAILABLE = True
 except ImportError:
     JINJA2_AVAILABLE = False
@@ -29,6 +31,7 @@ else:
 @dataclass
 class SceneSegment:
     """検出されたシーンセグメント"""
+
     scene_type: str
     start: int
     end: int
@@ -82,14 +85,16 @@ def classify_scene_type(text: str, writing_context: dict) -> list[SceneSegment]:
     is_trigger = scene_type in trigger_scenes
 
     if is_trigger:
-        segments.append(SceneSegment(
-            scene_type=scene_type,
-            start=0,
-            end=len(text),
-            text=text[:2000],  # 最初の2000文字を使用
-            characters=characters[:5],
-            tension_level=tension,
-        ))
+        segments.append(
+            SceneSegment(
+                scene_type=scene_type,
+                start=0,
+                end=len(text),
+                text=text[:2000],  # 最初の2000文字を使用
+                characters=characters[:5],
+                tension_level=tension,
+            )
+        )
 
     return segments
 
@@ -97,7 +102,7 @@ def classify_scene_type(text: str, writing_context: dict) -> list[SceneSegment]:
 def render_manga_script(segment: SceneSegment, text: str) -> dict:
     """マンガ台本レンダリング"""
     # 簡易実装: テキストからコマ構成を推定
-    sentences = re.split(r'(?<=[。！？])', text)
+    sentences = re.split(r"(?<=[。！？])", text)
     sentences = [s.strip() for s in sentences if s.strip()]
 
     # 4-6コマ/ページ、2-3ページ想定
@@ -122,28 +127,34 @@ def render_manga_script(segment: SceneSegment, text: str) -> dict:
                     speaker = char
                     break
 
-            page_panels.append({
-                "panel_number": len(page_panels) + 1,
-                "visual": f"コマ{len(page_panels)+1}: {sent[:50]}...",
-                "dialogue": sent if speaker else "",
-                "sfx": "" if not any(kw in sent for kw in ["ドーン", "バーン", "ザッ", "ガッ", "キーン"]) else "効果音",
-                "camera": "ミディアムショット",
-                "character_focus": speaker,
-            })
+            page_panels.append(
+                {
+                    "panel_number": len(page_panels) + 1,
+                    "visual": f"コマ{len(page_panels) + 1}: {sent[:50]}...",
+                    "dialogue": sent if speaker else "",
+                    "sfx": ""
+                    if not any(kw in sent for kw in ["ドーン", "バーン", "ザッ", "ガッ", "キーン"])
+                    else "効果音",
+                    "camera": "ミディアムショット",
+                    "character_focus": speaker,
+                }
+            )
         pages.append({"page_number": page_num + 1, "panels": page_panels})
 
     if _jinja_env:
         try:
             template = _jinja_env.get_template("manga_script.j2")
-            return json.loads(template.render(
-                scene_info={
-                    "title": f"{segment.scene_type}シーン",
-                    "scene_type": segment.scene_type,
-                    "characters": segment.characters,
-                    "tension_level": segment.tension_level,
-                },
-                pages=pages,
-            ))
+            return json.loads(
+                template.render(
+                    scene_info={
+                        "title": f"{segment.scene_type}シーン",
+                        "scene_type": segment.scene_type,
+                        "characters": segment.characters,
+                        "tension_level": segment.tension_level,
+                    },
+                    pages=pages,
+                )
+            )
         except Exception:
             pass
 
@@ -164,7 +175,7 @@ def render_manga_script(segment: SceneSegment, text: str) -> dict:
 
 def render_radio_drama(segment: SceneSegment, text: str) -> dict:
     """ラジオドラマ台本レンダリング"""
-    sentences = re.split(r'(?<=[。！？])', text)
+    sentences = re.split(r"(?<=[。！？])", text)
     sentences = [s.strip() for s in sentences if s.strip()]
 
     cues = []
@@ -178,32 +189,36 @@ def render_radio_drama(segment: SceneSegment, text: str) -> dict:
 
         is_narration = speaker == "ナレーター"
 
-        cues.append({
-            "cue_number": i + 1,
-            "type": "narration" if is_narration else "dialogue",
-            "sfx": "環境音" if i == 0 else "",
-            "bgm": "シーン冒頭BGM" if i == 0 else ("クライマックスBGM" if i == len(sentences)-1 else ""),
-            "narration": sent if is_narration else "",
-            "dialogue": [] if is_narration else [{
-                "character": speaker,
-                "line": sent,
-                "direction": "通常" if segment.tension_level < 6 else "緊迫"
-            }],
-            "duration_estimate_sec": max(5, len(sent) // 3),
-        })
+        cues.append(
+            {
+                "cue_number": i + 1,
+                "type": "narration" if is_narration else "dialogue",
+                "sfx": "環境音" if i == 0 else "",
+                "bgm": "シーン冒頭BGM" if i == 0 else ("クライマックスBGM" if i == len(sentences) - 1 else ""),
+                "narration": sent if is_narration else "",
+                "dialogue": []
+                if is_narration
+                else [
+                    {"character": speaker, "line": sent, "direction": "通常" if segment.tension_level < 6 else "緊迫"}
+                ],
+                "duration_estimate_sec": max(5, len(sent) // 3),
+            }
+        )
 
     if _jinja_env:
         try:
             template = _jinja_env.get_template("radio_drama.j2")
-            return json.loads(template.render(
-                scene_info={
-                    "title": f"{segment.scene_type}シーン",
-                    "scene_type": segment.scene_type,
-                    "characters": segment.characters,
-                    "tension_level": segment.tension_level,
-                },
-                cues=cues,
-            ))
+            return json.loads(
+                template.render(
+                    scene_info={
+                        "title": f"{segment.scene_type}シーン",
+                        "scene_type": segment.scene_type,
+                        "characters": segment.characters,
+                        "tension_level": segment.tension_level,
+                    },
+                    cues=cues,
+                )
+            )
         except Exception:
             pass
 
@@ -223,35 +238,39 @@ def render_radio_drama(segment: SceneSegment, text: str) -> dict:
 
 def render_anime_storyboard(segment: SceneSegment, text: str) -> dict:
     """アニメ絵コンテレンダリング"""
-    sentences = re.split(r'(?<=[。！？])', text)
+    sentences = re.split(r"(?<=[。！？])", text)
     sentences = [s.strip() for s in sentences if s.strip()]
 
     cuts = []
     for i, sent in enumerate(sentences[:15]):  # 最大15カット
-        cuts.append({
-            "cut_number": i + 1,
-            "duration_sec": max(2, len(sent) // 5),
-            "camera": "パン・左から右" if i % 3 == 0 else ("ズームイン" if i % 3 == 1 else "固定"),
-            "action": sent[:80],
-            "dialogue": "",
-            "background": "シーン背景",
-            "animation_note": "標準",
-            "character_layout": "",
-            "effect": "",
-        })
+        cuts.append(
+            {
+                "cut_number": i + 1,
+                "duration_sec": max(2, len(sent) // 5),
+                "camera": "パン・左から右" if i % 3 == 0 else ("ズームイン" if i % 3 == 1 else "固定"),
+                "action": sent[:80],
+                "dialogue": "",
+                "background": "シーン背景",
+                "animation_note": "標準",
+                "character_layout": "",
+                "effect": "",
+            }
+        )
 
     if _jinja_env:
         try:
             template = _jinja_env.get_template("anime_storyboard.j2")
-            return json.loads(template.render(
-                scene_info={
-                    "title": f"{segment.scene_type}シーン",
-                    "scene_type": segment.scene_type,
-                    "characters": segment.characters,
-                    "tension_level": segment.tension_level,
-                },
-                cuts=cuts,
-            ))
+            return json.loads(
+                template.render(
+                    scene_info={
+                        "title": f"{segment.scene_type}シーン",
+                        "scene_type": segment.scene_type,
+                        "characters": segment.characters,
+                        "tension_level": segment.tension_level,
+                    },
+                    cuts=cuts,
+                )
+            )
         except Exception:
             pass
 
@@ -272,41 +291,51 @@ def render_anime_storyboard(segment: SceneSegment, text: str) -> dict:
 
 def render_live_action_shots(segment: SceneSegment, text: str) -> dict:
     """実写ショットリストレンダリング"""
-    sentences = re.split(r'(?<=[。！？])', text)
+    sentences = re.split(r"(?<=[。！？])", text)
     sentences = [s.strip() for s in sentences if s.strip()]
 
     shots = []
     for i, sent in enumerate(sentences[:10]):
-        shot_types = ["ミディアムショット", "クローズアップ", "ワイドショット", "オーバーショルダー", "エクストリームクローズアップ"]
+        shot_types = [
+            "ミディアムショット",
+            "クローズアップ",
+            "ワイドショット",
+            "オーバーショルダー",
+            "エクストリームクローズアップ",
+        ]
         lenses = ["35mm", "50mm", "85mm", "24mm", "135mm"]
         movements = ["固定", "パン", "チルト", "ドリーイン", "ハンドヘルド"]
 
-        shots.append({
-            "shot_number": i + 1,
-            "scene_slug": "INT. シーン - 昼/夜",
-            "shot_type": shot_types[i % len(shot_types)],
-            "lens": lenses[i % len(lenses)],
-            "movement": movements[i % len(movements)],
-            "actors": segment.characters[:3],
-            "vfx": "なし",
-            "dialogue": sent[:60] if any(c in sent for c in segment.characters) else "",
-            "lighting": "自然光" if i % 2 == 0 else "ドラマティック照明",
-            "duration_sec": max(3, len(sent) // 4),
-            "notes": "",
-        })
+        shots.append(
+            {
+                "shot_number": i + 1,
+                "scene_slug": "INT. シーン - 昼/夜",
+                "shot_type": shot_types[i % len(shot_types)],
+                "lens": lenses[i % len(lenses)],
+                "movement": movements[i % len(movements)],
+                "actors": segment.characters[:3],
+                "vfx": "なし",
+                "dialogue": sent[:60] if any(c in sent for c in segment.characters) else "",
+                "lighting": "自然光" if i % 2 == 0 else "ドラマティック照明",
+                "duration_sec": max(3, len(sent) // 4),
+                "notes": "",
+            }
+        )
 
     if _jinja_env:
         try:
             template = _jinja_env.get_template("live_action_shots.j2")
-            return json.loads(template.render(
-                scene_info={
-                    "title": f"{segment.scene_type}シーン",
-                    "scene_type": segment.scene_type,
-                    "characters": segment.characters,
-                    "tension_level": segment.tension_level,
-                },
-                shots=shots,
-            ))
+            return json.loads(
+                template.render(
+                    scene_info={
+                        "title": f"{segment.scene_type}シーン",
+                        "scene_type": segment.scene_type,
+                        "characters": segment.characters,
+                        "tension_level": segment.tension_level,
+                    },
+                    shots=shots,
+                )
+            )
         except Exception:
             pass
 

@@ -1,4 +1,5 @@
 """Branch coverage tests for src/services/book_score_service.py."""
+
 from __future__ import annotations
 
 import json
@@ -485,7 +486,9 @@ class TestFactualScoring:
 
     async def test_empty_glossary(self):
         text = "無関係" * 40
-        repo = make_repo(chapter=chapter_obj(content=text), bible=self.bible(json.dumps({"period": "futuristic", "glossary": {}})))
+        repo = make_repo(
+            chapter=chapter_obj(content=text), bible=self.bible(json.dumps({"period": "futuristic", "glossary": {}}))
+        )
         calc = make_calc(repository=repo)
         assert await calc._score_factual(1, 1, None) == 70.0 * 0.4 + 95.0 * 0.35 + 70.0 * 0.25
 
@@ -657,10 +660,15 @@ class TestCalculate:
 
     async def test_calculate_custom_weights(self):
         calc = make_calc()
-        calc._get_weights = MagicMock(return_value={
-            "structure": 50, "coherency": 20, "factual_grounding": 10,
-            "visual_textual_synergy": 10, "reader_experience": 10,
-        })
+        calc._get_weights = MagicMock(
+            return_value={
+                "structure": 50,
+                "coherency": 20,
+                "factual_grounding": 10,
+                "visual_textual_synergy": 10,
+                "reader_experience": 10,
+            }
+        )
         calc._score_structure = AsyncMock(return_value=100.0)
         calc._score_coherency = AsyncMock(return_value=0.0)
         calc._score_factual = AsyncMock(return_value=0.0)

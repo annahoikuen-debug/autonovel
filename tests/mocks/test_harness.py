@@ -79,9 +79,7 @@ class BackendTestHarness:
         self.llm = MockGeminiApiClient()
         self.uow = MockUnitOfWork()
 
-    async def setup_scenario(
-        self, book_id: int, plot_data: list[dict] = None, chapter_data: list[dict] = None
-    ):
+    async def setup_scenario(self, book_id: int, plot_data: list[dict] = None, chapter_data: list[dict] = None):
         """Pre-populate the mock database with a specific scenario."""
         import os
 

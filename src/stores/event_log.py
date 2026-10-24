@@ -2,6 +2,7 @@
 
 感情シグナルを JSONL (append-only) に永続化し、クエリ・リプレイを提供する。
 """
+
 from __future__ import annotations
 
 import json
@@ -38,7 +39,9 @@ class EventLogStore:
         """シグナルを 1 行追加する。"""
         entry = {
             **asdict(signal),
-            "emotion_type": signal.emotion_type.value if hasattr(signal.emotion_type, "value") else str(signal.emotion_type),
+            "emotion_type": signal.emotion_type.value
+            if hasattr(signal.emotion_type, "value")
+            else str(signal.emotion_type),
         }
         with self.path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -143,7 +146,7 @@ class EventLogStore:
 
     @staticmethod
     def _extract_episode(episode_id: str) -> Optional[int]:
-        """"ep14" 形式の ID からエピソード番号を抽出。"""
+        """ "ep14" 形式の ID からエピソード番号を抽出。"""
         text = str(episode_id).strip().lower()
         if text.startswith("ep"):
             try:

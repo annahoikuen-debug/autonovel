@@ -1,4 +1,5 @@
 """モック画像生成クライアント（Pillow未インストール時もゼロクラッシュで動作）。"""
+
 from __future__ import annotations
 
 from io import BytesIO

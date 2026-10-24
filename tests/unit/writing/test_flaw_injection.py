@@ -2,6 +2,7 @@
 Unit tests for Character Flaw Injection in ContextBuilderAgent.
 PLAN 03 - Step 7: 毒要素注入単体テスト
 """
+
 from __future__ import annotations
 
 from src.agents.context_builder_agent import resolve_character_flaw

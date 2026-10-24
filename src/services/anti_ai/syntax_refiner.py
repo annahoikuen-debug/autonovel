@@ -60,7 +60,7 @@ class SyntaxRefiner:
     #   必ず除去対象外になっていた（例: 「たぶん、彼は…」「彼は、たぶん…」）。
     #   日本語ではフィラーは節頭に置かれることが多いため、機能全体が
     #   ほぼ無効になっていた。
-#   そこで、除去の安全性によってパターンを 3 系統に分ける。
+    #   そこで、除去の安全性によってパターンを 3 系統に分ける。
     #
     #   (1) 単独で出現しても誤爆しないフィラー: 前後を条件にせず除去する。
     #       日本語では語間に空白がないため、空白を要求すると
@@ -88,10 +88,7 @@ class SyntaxRefiner:
         pass
 
     def refine_paragraph(
-        self,
-        paragraph: str,
-        aggressive_used: int = 0,
-        metaphor_used: int = 0
+        self, paragraph: str, aggressive_used: int = 0, metaphor_used: int = 0
     ) -> Tuple[str, int, int]:
         """Refine a paragraph to reduce purple prose elements.
 
@@ -125,12 +122,7 @@ class SyntaxRefiner:
 
         return "".join(refined_sentences), current_aggressive, current_metaphor
 
-    def _refine_sentence(
-        self,
-        sentence: str,
-        aggressive_used: int,
-        metaphor_used: int
-    ) -> Tuple[str, int, int]:
+    def _refine_sentence(self, sentence: str, aggressive_used: int, metaphor_used: int) -> Tuple[str, int, int]:
         """Refine a single sentence.
 
         Args:

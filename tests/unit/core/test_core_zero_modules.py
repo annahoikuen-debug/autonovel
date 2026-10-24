@@ -146,4 +146,3 @@ class TestExceptionsForwarding:
 
         assert hasattr(exc, "HegemonyError")
         assert hasattr(exc, "AppError")
-

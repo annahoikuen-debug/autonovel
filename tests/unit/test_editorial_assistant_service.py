@@ -1,4 +1,5 @@
 """EditorialAssistantService の単体テスト."""
+
 from unittest.mock import AsyncMock, MagicMock
 import pytest
 

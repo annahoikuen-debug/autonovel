@@ -26,7 +26,7 @@ class GrammarRewriter:
             m = len(rule.pattern)
             for i in range(n - m + 1):
                 # Check pattern match
-                if terminals[i:i + m] == rule.pattern:
+                if terminals[i : i + m] == rule.pattern:
                     # Check condition
                     if rule.condition is None or rule.condition(i, n):
                         # Apply replacement
@@ -38,13 +38,15 @@ class GrammarRewriter:
                             new_beats[i + offset] = updated_beat
                             terminals[i + offset] = rep_term
 
-                            actions.append(CorrectionAction(
-                                episode=target_ep,
-                                action_type="GRAMMAR_REWRITE",
-                                target_field="beat_type",
-                                original_value=orig_beat.beat_type.value,
-                                new_value=updated_beat.beat_type.value,
-                                reason=f"Applied rule {rule.name}",
-                            ))
+                            actions.append(
+                                CorrectionAction(
+                                    episode=target_ep,
+                                    action_type="GRAMMAR_REWRITE",
+                                    target_field="beat_type",
+                                    original_value=orig_beat.beat_type.value,
+                                    new_value=updated_beat.beat_type.value,
+                                    reason=f"Applied rule {rule.name}",
+                                )
+                            )
 
         return new_beats, actions

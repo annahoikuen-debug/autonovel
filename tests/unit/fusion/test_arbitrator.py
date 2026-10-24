@@ -1,4 +1,5 @@
 """Unit tests for Arbitrator."""
+
 import pytest
 from src.fusion.arbitrator import Arbitrator
 from src.fusion.config import FusionConfig

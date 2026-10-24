@@ -4,6 +4,7 @@ Uses Hypothesis to verify that isolation properties hold for arbitrary payloads.
 """
 
 import pytest
+
 pytest.importorskip("hypothesis")
 from hypothesis import given, settings, strategies as st
 from src.services.blind_review import (
@@ -15,13 +16,17 @@ from src.services.blind_review import (
 # Strategy for arbitrary JSON-serializable values
 json_value = st.recursive(
     st.none() | st.booleans() | st.integers() | st.floats(allow_nan=False, allow_infinity=False) | st.text(),
-    lambda children: st.lists(children, max_size=5) | st.dictionaries(st.text(min_size=1, max_size=10), children, max_size=5),
+    lambda children: (
+        st.lists(children, max_size=5) | st.dictionaries(st.text(min_size=1, max_size=10), children, max_size=5)
+    ),
     max_leaves=20,
 )
 
 
 # Strategy for forbidden agent names
-agent_name = st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_")).filter(lambda s: len(s) > 0)
+agent_name = st.text(
+    min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("Lu", "Ll", "Nd"), whitelist_characters="_")
+).filter(lambda s: len(s) > 0)
 
 
 @settings(max_examples=200, deadline=None)

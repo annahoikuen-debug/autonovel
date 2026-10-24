@@ -1,4 +1,5 @@
 """pytest 共有フィクスチャ。テスト実行時の sys.path 設定と一時 DB を提供する。"""
+
 from __future__ import annotations
 
 import functools
@@ -42,8 +43,7 @@ os.environ["HUEY_BACKEND"] = "sqlite"
 # プレースホルダーのダミー API キー (.env.example 由来) をクリアする。
 # これが残っていると ImageService などが「キーあり」と誤判定し、
 # テストが実ネットワークやダミーキー前提の挙動を経由して失敗する。
-for _key in ("OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_GENAI_API_KEY",
-             "GOOGLE_API_KEY", "ANTHROPIC_API_KEY"):
+for _key in ("OPENAI_API_KEY", "GEMINI_API_KEY", "GOOGLE_GENAI_API_KEY", "GOOGLE_API_KEY", "ANTHROPIC_API_KEY"):
     _val = os.environ.get(_key, "")
     if not _val or "your_" in _val.lower() or _val.lower() in {"test", "dummy", "changeme"}:
         os.environ.pop(_key, None)
@@ -84,14 +84,18 @@ class MockUnitOfWork:
     async def rollback(self) -> None:
         self._rolled_back = True
 
-    def stage_chroma_add(self, collection: str, doc_id: str, doc_content: str, embedding: list[float], metadata: dict | None = None) -> None:
-        self._staged_chroma_adds.append({
-            "collection": collection,
-            "id": doc_id,
-            "content": doc_content,
-            "embedding": embedding,
-            "metadata": metadata,
-        })
+    def stage_chroma_add(
+        self, collection: str, doc_id: str, doc_content: str, embedding: list[float], metadata: dict | None = None
+    ) -> None:
+        self._staged_chroma_adds.append(
+            {
+                "collection": collection,
+                "id": doc_id,
+                "content": doc_content,
+                "embedding": embedding,
+                "metadata": metadata,
+            }
+        )
 
     def stage_chroma_delete(self, collection: str, ids: list[str]) -> None:
         self._staged_chroma_deletes.append({"collection": collection, "ids": ids})
@@ -113,10 +117,26 @@ class MockUnitOfWork:
     def __getattr__(self, name: str):
         if name in self._repos:
             return self._repos[name]
-        if name.endswith("_repository") or name in ("bible", "books", "branches", "chapters", "characters",
-                                                      "misc", "plots", "rules", "audit", "book_scores",
-                                                      "prompt_versions", "prompt_metrics", "pdca_history",
-                                                      "illustrations", "collab", "cost", "narrative_metrics", "trace"):
+        if name.endswith("_repository") or name in (
+            "bible",
+            "books",
+            "branches",
+            "chapters",
+            "characters",
+            "misc",
+            "plots",
+            "rules",
+            "audit",
+            "book_scores",
+            "prompt_versions",
+            "prompt_metrics",
+            "pdca_history",
+            "illustrations",
+            "collab",
+            "cost",
+            "narrative_metrics",
+            "trace",
+        ):
             mock_repo = MockRepository()
             self._repos[name] = mock_repo
             return mock_repo
@@ -140,6 +160,7 @@ class MockRepository:
             if name.startswith("update_") or name.startswith("delete_") or name.startswith("remove_"):
                 return True
             return None
+
         return mock_method
 
 
@@ -171,7 +192,6 @@ import pytest
 # 実際の生成物を扱うフィクスチャの中で遅延 import する。
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
-
 
 
 # 各種外部サービス利用可能性フラグ（軽量チェック）
@@ -296,9 +316,7 @@ def real_db_manager(monkeypatch) -> Generator[Session, None, None]:
         db_module.engine = engine
         db_module.SessionLocal = SessionLocal  # type: ignore[assignment]
         db_core.DATABASE_URL = previous_url or (
-            db_core.settings.DATABASE_URL
-            if hasattr(db_core, "settings")
-            else "sqlite:///storage/autonovel.db"
+            db_core.settings.DATABASE_URL if hasattr(db_core, "settings") else "sqlite:///storage/autonovel.db"
         )
         db_core._sync_engine = None
         db_core._sync_session_factory = None
@@ -392,9 +410,7 @@ def mock_llm_adapter(request, llm_mocker: LLMMocker, monkeypatch) -> MockLLMAdap
     * マーカー ``@pytest.mark.real_llm``（``pytest.ini`` に marker 登録済み）
     * 環境変数 ``TEST_WITH_REAL_LLM=1``（CI 全体で opt-out）
     """
-    if os.environ.get("TEST_WITH_REAL_LLM") == "1" or (
-        request.node.get_closest_marker("real_llm") is not None
-    ):
+    if os.environ.get("TEST_WITH_REAL_LLM") == "1" or (request.node.get_closest_marker("real_llm") is not None):
         return None
 
     mock_adapter = MockLLMAdapter(llm_mocker)
@@ -495,9 +511,7 @@ def pytest_collection_modifyitems(config, items):
         lowered = str(item.fspath).lower()
         if "age_client" in lowered:
             item.add_marker(
-                pytest.mark.skip(
-                    reason="Legacy age_client tests are deprecated (replaced by Relational Memory)"
-                )
+                pytest.mark.skip(reason="Legacy age_client tests are deprecated (replaced by Relational Memory)")
             )
         # Step 18: Apache AGE / pgvector 依存の perf テストは SQLite 上では
         # 動作しない (AGE は Postgres 拡張、pgvector_store は Postgres コンテナ

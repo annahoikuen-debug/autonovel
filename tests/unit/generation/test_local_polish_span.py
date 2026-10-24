@@ -24,9 +24,7 @@ def _gw(text):
 
 @pytest.mark.asyncio
 async def test_accepts_reasonable_replacement():
-    out, ok = await LocalPolisher().polish_span(
-        LONG, (0, 400), "指示", _gw("A" * 400 + "追記。")
-    )
+    out, ok = await LocalPolisher().polish_span(LONG, (0, 400), "指示", _gw("A" * 400 + "追記。"))
     assert ok is True and "追記。" in out
 
 
@@ -39,9 +37,7 @@ async def test_rejects_catastrophic_shrink():
 @pytest.mark.asyncio
 async def test_rejects_paragraph_loss():
     text = "p1\n\np2\n\np3\n\np4"
-    out, ok = await LocalPolisher().polish_span(
-        text, (0, len(text)), "指示", _gw("全部まとめ")
-    )
+    out, ok = await LocalPolisher().polish_span(text, (0, len(text)), "指示", _gw("全部まとめ"))
     assert ok is False and out == text
 
 

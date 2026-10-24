@@ -1,4 +1,5 @@
 """Tense and Context Analyzer for Japanese prose."""
+
 from __future__ import annotations
 
 import re
@@ -9,10 +10,11 @@ from typing import List
 @dataclass
 class TenseAnalysisResult:
     """Analysis result of tense distribution in a paragraph."""
-    dominant_tense: str                     # "PAST", "PRESENT", "MIXED", "NEUTRAL"
-    past_ratio: float                       # Ratio of past-tense sentences (0.0 to 1.0)
-    present_ratio: float                    # Ratio of present-tense sentences (0.0 to 1.0)
-    is_past_locked: bool                    # True if past tense should be strictly preserved
+
+    dominant_tense: str  # "PAST", "PRESENT", "MIXED", "NEUTRAL"
+    past_ratio: float  # Ratio of past-tense sentences (0.0 to 1.0)
+    present_ratio: float  # Ratio of present-tense sentences (0.0 to 1.0)
+    is_past_locked: bool  # True if past tense should be strictly preserved
     sentence_tenses: List[str] = field(default_factory=list)  # ["PAST", "PRESENT", "OTHER", ...]
 
 
@@ -21,15 +23,36 @@ class TenseContextAnalyzer:
 
     # 過去形・完了文末パターン
     PAST_ENDINGS = (
-        "た。", "いた。", "った。", "れた。", "せた。",
-        "だった。", "であった。", "のだった。", "のだっ[たた]？",
-        "ていた。", "していた。", "きわまった。", "おわった。"
+        "た。",
+        "いた。",
+        "った。",
+        "れた。",
+        "せた。",
+        "だった。",
+        "であった。",
+        "のだった。",
+        "のだっ[たた]？",
+        "ていた。",
+        "していた。",
+        "きわまった。",
+        "おわった。",
     )
 
     # 現在形・動詞終止形文末パターン
     PRESENT_ENDINGS = (
-        "る。", "す。", "く。", "む。", "う。", "つ。", "ぬ。", "ぶ。",
-        "である。", "です。", "ます。", "のだ。", "ことだ。"
+        "る。",
+        "す。",
+        "く。",
+        "む。",
+        "う。",
+        "つ。",
+        "ぬ。",
+        "ぶ。",
+        "である。",
+        "です。",
+        "ます。",
+        "のだ。",
+        "ことだ。",
     )
 
     def __init__(self, past_lock_threshold: float = 0.65) -> None:
@@ -65,11 +88,7 @@ class TenseContextAnalyzer:
         p = paragraph.strip()
         if not p:
             return TenseAnalysisResult(
-                dominant_tense="NEUTRAL",
-                past_ratio=0.0,
-                present_ratio=0.0,
-                is_past_locked=False,
-                sentence_tenses=[]
+                dominant_tense="NEUTRAL", past_ratio=0.0, present_ratio=0.0, is_past_locked=False, sentence_tenses=[]
             )
 
         # 句点で文分割
@@ -78,11 +97,7 @@ class TenseContextAnalyzer:
 
         if not sentences:
             return TenseAnalysisResult(
-                dominant_tense="NEUTRAL",
-                past_ratio=0.0,
-                present_ratio=0.0,
-                is_past_locked=False,
-                sentence_tenses=[]
+                dominant_tense="NEUTRAL", past_ratio=0.0, present_ratio=0.0, is_past_locked=False, sentence_tenses=[]
             )
 
         tenses = [self.analyze_sentence_tense(s) for s in sentences]
@@ -94,7 +109,7 @@ class TenseContextAnalyzer:
                 past_ratio=0.0,
                 present_ratio=0.0,
                 is_past_locked=False,
-                sentence_tenses=tenses
+                sentence_tenses=tenses,
             )
 
         past_count = sum(1 for t in evaluable if t == "PAST")
@@ -118,7 +133,7 @@ class TenseContextAnalyzer:
             past_ratio=past_ratio,
             present_ratio=present_ratio,
             is_past_locked=is_past_locked,
-            sentence_tenses=tenses
+            sentence_tenses=tenses,
         )
 
 
@@ -139,7 +154,4 @@ class TenseAnalyzer:
             Dictionary with past_ratio and present_ratio keys
         """
         result = self._analyzer.analyze_paragraph(text)
-        return {
-            "past_ratio": result.past_ratio,
-            "present_ratio": result.present_ratio
-        }
+        return {"past_ratio": result.past_ratio, "present_ratio": result.present_ratio}

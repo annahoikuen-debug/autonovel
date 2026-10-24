@@ -38,6 +38,7 @@ batch_alter_table で再構築する時は**明示的に OFF にして外す。O
 子テーブルの REFERENCES を検証しないので、batch 再構築による
 「子行が孤立する / FOREIGN KEY constraint failed で落ちる」事故を防ぐ。
 """
+
 from __future__ import annotations
 
 from contextlib import contextmanager
@@ -298,8 +299,7 @@ def _fix_users_tenant_and_check() -> None:
 
     inspector = sa.inspect(_bind())
     has_check = any(
-        (c.get("name") or "") == "chk_user_credits_non_negative"
-        for c in inspector.get_check_constraints("users")
+        (c.get("name") or "") == "chk_user_credits_non_negative" for c in inspector.get_check_constraints("users")
     )
     if has_check:
         return
@@ -384,9 +384,7 @@ def downgrade() -> None:
     if _table_exists("chapters") and _index_exists("chapters", "ix_chapters_branch_id"):
         op.drop_index("ix_chapters_branch_id", table_name="chapters")
 
-    if _table_exists("episode_digests") and _index_exists(
-        "episode_digests", "uq_episode_digests_book_episode"
-    ):
+    if _table_exists("episode_digests") and _index_exists("episode_digests", "uq_episode_digests_book_episode"):
         op.drop_index("uq_episode_digests_book_episode", table_name="episode_digests")
 
     if _table_exists("character_relations"):

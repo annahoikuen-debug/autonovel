@@ -1,5 +1,6 @@
 # tests/mocks/__init__.py
 """テスト用モックヘルパー。"""
+
 from __future__ import annotations
 
 from typing import Any
@@ -123,20 +124,45 @@ class MockBookRepository:
 class MockImageService:
     """ImageService のモック。"""
 
-    async def generate(self, prompt: str, model: str = "", aspect_ratio: str = "16:9", safety_level: str = "general") -> str:
+    async def generate(
+        self, prompt: str, model: str = "", aspect_ratio: str = "16:9", safety_level: str = "general"
+    ) -> str:
         return "https://example.com/mock_image.png"
 
 
 class MockPlotExpander:
     """PlotExpander のモック。"""
 
-    async def expand_plots(self, book_id: int, target_ep_list: list[int], arcs: list, reporter: Any = None, force: bool = False, branch_id: int = 1):
+    async def expand_plots(
+        self,
+        book_id: int,
+        target_ep_list: list[int],
+        arcs: list,
+        reporter: Any = None,
+        force: bool = False,
+        branch_id: int = 1,
+    ):
         # PlotDetail のリストを返す
         from src.models import PlotDetail
-        return [PlotDetail(ep_num=ep, title=f"第{ep}話", one_line_summary="概要", detailed_blueprint="詳細", summary="あらすじ", tension=50, is_catharsis=False, catharsis_type="", next_hook="") for ep in target_ep_list]
+
+        return [
+            PlotDetail(
+                ep_num=ep,
+                title=f"第{ep}話",
+                one_line_summary="概要",
+                detailed_blueprint="詳細",
+                summary="あらすじ",
+                tension=50,
+                is_catharsis=False,
+                catharsis_type="",
+                next_hook="",
+            )
+            for ep in target_ep_list
+        ]
 
     async def expand_single_plot(self, **kwargs):
         from src.models import PlotEpisode
+
         return PlotEpisode(ep_num=1, title="第1話", detailed_blueprint="詳細", summary="概要", tension=50)
 
 
@@ -155,6 +181,7 @@ class MockPlotAgent:
 
     async def run(self, ctx: Any) -> Any:
         from src.agents.orchestrator import AgentResult, AgentName
+
         book_id = ctx.book_id
         branch_id = ctx.branch_id
         ep_num = ctx.ep_num
@@ -191,6 +218,7 @@ class MockWritingAgent:
 
     async def run(self, ctx: Any) -> Any:
         from src.agents.orchestrator import AgentResult, AgentName
+
         writing_context = ctx.artifacts.get("writing_context")
         if not writing_context:
             return AgentResult(
@@ -198,7 +226,6 @@ class MockWritingAgent:
                 artifacts={},
                 error="writing_context is required in artifacts",
             )
-
 
         # モック本文を返す
         drafted_text = "モック生成本文です。" * 50
@@ -218,6 +245,7 @@ class MockAuditAgent:
 
     async def run(self, ctx: Any) -> Any:
         from src.agents.orchestrator import AgentResult, AgentName
+
         writing_context = ctx.artifacts.get("writing_context")
         drafted_text = ctx.artifacts.get("drafted_text")
 
@@ -252,6 +280,7 @@ class MockIllustrationAgent:
 
     async def run(self, ctx: Any) -> Any:
         from src.agents.orchestrator import AgentResult, AgentName
+
         ctx.artifacts.get("drafted_text", "")
         ctx.artifacts.get("book_context", {})
         book_id = ctx.book_id
@@ -274,6 +303,7 @@ class MockMarketingAgent:
 
     async def run(self, ctx: Any) -> Any:
         from src.agents.orchestrator import AgentResult
+
         book_id = ctx.book_id
 
         # モック ZIP データを返す
@@ -315,7 +345,11 @@ def create_mock_context(
     )
 
 
-def create_mock_orchestrator(llm: MockLLMAdapter | None = None, repo: MockBookRepository | None = None, prompt_manager: MockPromptManager | None = None):
+def create_mock_orchestrator(
+    llm: MockLLMAdapter | None = None,
+    repo: MockBookRepository | None = None,
+    prompt_manager: MockPromptManager | None = None,
+):
     """テスト用 Orchestrator を作成（全ノードにモック注入）。"""
     from src.agents import Orchestrator, AgentName
     from src.agents.planning import PlanningAgent

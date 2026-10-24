@@ -47,9 +47,7 @@ class PromptCacheBuilder:
         else:
             characters = await self.character_service.get_all_characters(book_id)
         # Format character data into a string
-        char_text = "\n".join(
-            [f"{char.name}: {char.description}" for char in characters]
-        )
+        char_text = "\n".join([f"{char.name}: {char.description}" for char in characters])
         return {
             "type": "text",
             "text": char_text,

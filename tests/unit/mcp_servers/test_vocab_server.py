@@ -1,4 +1,5 @@
 """Unit tests for VocabMCPServer."""
+
 from __future__ import annotations
 
 from src.mcp_servers.providers.vocab_provider import SensoryVocabProvider
@@ -20,9 +21,9 @@ def test_vocab_mcp_server_json_rpc():
                     "word": "時計の秒針の音",
                     "category": "auditory",
                     "example_sentence": "静寂の中に秒針の音が響く。",
-                    "nuance": "suspense"
+                    "nuance": "suspense",
                 }
-            ]
+            ],
         },
         "id": 1,
     }

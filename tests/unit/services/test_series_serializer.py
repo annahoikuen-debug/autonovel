@@ -1,4 +1,5 @@
 """Tests for src/services/series_serializer.py."""
+
 from __future__ import annotations
 
 from src.easy_mode import EpisodeResult, SeriesResult
@@ -33,6 +34,7 @@ def test_episode_summary_basic():
 def test_series_to_dict_basic():
     """series_to_dict returns correct structure."""
     import datetime
+
     dt = datetime.datetime(2023, 1, 1, 0, 0, 0)
     ep = EpisodeResult(
         episode_num=1,
@@ -73,4 +75,5 @@ def test_series_to_dict_basic():
 
 if __name__ == "__main__":
     import pytest
+
     pytest.main([__file__, "-v"])

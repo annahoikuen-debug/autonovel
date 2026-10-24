@@ -1,5 +1,6 @@
 # src/agents/skills/v1/easy_mode_bible.py
 """easy_mode 専用 BibleSkill - 簡易バイブル生成"""
+
 from __future__ import annotations
 
 import logging
@@ -42,6 +43,7 @@ class EasyModeBibleSkill(SkillAgent):
 
             # 既存の BibleAgent / WorldBibleGenerator ロジックを簡易化して実行
             from src.services.bible_service import WorldBibleGenerator
+
             bible_generator = WorldBibleGenerator(
                 repo=self.repo,
                 llm=self.llm,

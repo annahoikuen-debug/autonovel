@@ -6,6 +6,7 @@ Revises: 0021_publication_schedules
 Phase 1: BookScore/PDCA Dashboard.
 Stores detailed snapshots of each PDCA regeneration cycle for trend analysis and auditing.
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa

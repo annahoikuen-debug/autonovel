@@ -3,6 +3,7 @@
 GET /api/graph で book_id を指定し、PostgreSQL/SQLite 環境でも
 実際の作品伏線・キャラデータから動的グラフが返却されることを検証する。
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from fastapi.testclient import TestClient

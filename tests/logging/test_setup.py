@@ -4,6 +4,7 @@ from unittest.mock import patch
 from loguru import logger
 from src.logging.setup import setup_logging
 
+
 def test_logs_are_json():
     # Capture stdout since setup_logging outputs to stdout
     mock_stdout = StringIO()

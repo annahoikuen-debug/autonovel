@@ -3,6 +3,7 @@
 伏線の設置/回収順序の矛盾や、長期放置された伏線の警告を
 0ms（純粋ロジック）で生成する静的解析オーディター。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -12,6 +13,7 @@ from typing import Any
 @dataclass
 class ForeshadowingAuditResult:
     """伏線監査結果"""
+
     is_valid: bool = True
     order_violations: list[str] = field(default_factory=list)
     stale_warnings: list[str] = field(default_factory=list)
@@ -79,8 +81,7 @@ def audit_foreshadowings(
             age = current_episode - planted_ep
             if age >= stale_threshold:
                 result.stale_warnings.append(
-                    f"【長期未回収】伏線「{title}」: 設置=第{planted_ep}話, "
-                    f"経過={age}話 (閾値: {stale_threshold}話)"
+                    f"【長期未回収】伏線「{title}」: 設置=第{planted_ep}話, 経過={age}話 (閾値: {stale_threshold}話)"
                 )
 
         # 3. 期限超過チェック: target_episode を超えているのに未回収

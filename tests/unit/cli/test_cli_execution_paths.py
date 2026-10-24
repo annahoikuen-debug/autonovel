@@ -1,4 +1,5 @@
 """src/cli/main.py および illustration_cli.py の実行経路テスト。"""
+
 from __future__ import annotations
 
 import sys
@@ -35,11 +36,14 @@ class TestCmdBalance:
         assert cmd_balance(_ns(type="dsp")) == 1
         assert "not available" in capsys.readouterr().err
 
-    @pytest.mark.parametrize("kind,modname", [
-        ("dsp", "src.narrative_balancer.dsp_balancer"),
-        ("csp", "src.narrative_balancer.csp_balancer"),
-        ("grammar", "src.narrative_balancer.grammar_balancer"),
-    ])
+    @pytest.mark.parametrize(
+        "kind,modname",
+        [
+            ("dsp", "src.narrative_balancer.dsp_balancer"),
+            ("csp", "src.narrative_balancer.csp_balancer"),
+            ("grammar", "src.narrative_balancer.grammar_balancer"),
+        ],
+    )
     def test_each_type_runs(self, capsys, monkeypatch, kind, modname):
         created = {}
 

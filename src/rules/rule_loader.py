@@ -3,6 +3,7 @@
 YAML ルールセットファイルをロードし、EmotionalRule のリストを生成する。
 条件関数は文字列式を eval せず、conditions モジュールのレジストリから参照する。
 """
+
 from __future__ import annotations
 
 import logging
@@ -83,7 +84,8 @@ class RuleLoader:
             else:
                 logger.warning(
                     "Rule #%d references unknown condition %r; applying unconditionally",
-                    idx, name,
+                    idx,
+                    name,
                 )
 
         return EmotionalRule(
@@ -139,7 +141,7 @@ def parse_episode_events(path: str = DEFAULT_EVENTS_PATH) -> Dict[int, List[Plot
 
 
 def _extract_episode_number(key: str) -> Optional[int]:
-    """"episode_14" 形式のキーから番号を抽出。"""
+    """ "episode_14" 形式のキーから番号を抽出。"""
     lowered = key.strip().lower()
     if lowered.startswith("episode_"):
         try:

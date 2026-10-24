@@ -49,4 +49,4 @@ def test_measurement_script_exists_and_is_runnable():
 def _section(text: str) -> str:
     marker = "STORY_SPINE 導入の効果測定"
     assert marker in text, "測定セクションが無い"
-    return text[text.index(marker):]
+    return text[text.index(marker) :]

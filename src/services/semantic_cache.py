@@ -180,9 +180,7 @@ class SemanticCacheManager:
         # 1. L1 完全一致インメモリキャッシュチェック
         l1_key = self._get_l1_key(prompt, task_type, genre, temperature, scope or "")
         if l1_key in self._l1_cache:
-            logger.info(
-                f"🧠 [L1 EXACT CACHE HIT] Bypassing Embedding API & ChromaDB! (task_type={task_type})"
-            )
+            logger.info(f"🧠 [L1 EXACT CACHE HIT] Bypassing Embedding API & ChromaDB! (task_type={task_type})")
             return self._l1_cache[l1_key]
 
         if not self.vector_store or not self.client:
@@ -251,9 +249,7 @@ class SemanticCacheManager:
                 name="semantic_cache.touch",
             )
 
-            logger.info(
-                f"🧠 [SEMANTIC CACHE HIT] Similarity: {1.0 - best_distance:.4f} (task_type={task_type})"
-            )
+            logger.info(f"🧠 [SEMANTIC CACHE HIT] Similarity: {1.0 - best_distance:.4f} (task_type={task_type})")
 
             content_str = best_hit["content"]
             if meta.get("is_json"):
@@ -354,9 +350,7 @@ class SemanticCacheManager:
         キャッシュサイズが上限を超えた場合、最も古くアクセスされていない（LRU）キャッシュを自動削除する。
         """
         try:
-            collection = self.vector_store.get_collection(
-                self.COLLECTION_NAME, metadata={"hnsw:space": "cosine"}
-            )
+            collection = self.vector_store.get_collection(self.COLLECTION_NAME, metadata={"hnsw:space": "cosine"})
             if not collection:
                 return
 
@@ -386,9 +380,7 @@ class SemanticCacheManager:
 
             if delete_ids:
                 await self.vector_store.delete_by_id(self.COLLECTION_NAME, delete_ids)
-                logger.info(
-                    f"[SEMANTIC CACHE EVICTION] Evicted {len(delete_ids)} old cache entries."
-                )
+                logger.info(f"[SEMANTIC CACHE EVICTION] Evicted {len(delete_ids)} old cache entries.")
 
         except Exception:
             # exception（トレースバック付き）で記録する。
@@ -447,9 +439,7 @@ class SemanticCacheManager:
                     )
                     prefetch_prompts.append((task_type, prompt))
                 except Exception as e:
-                    logger.debug(
-                        f"[PREFETCH] Could not prefetch drafting prompt for ep{next_ep}: {e}"
-                    )
+                    logger.debug(f"[PREFETCH] Could not prefetch drafting prompt for ep{next_ep}: {e}")
 
             elif task_type == "polishing":
                 # -Polishing プロンプトも先行レンダリング
@@ -463,9 +453,7 @@ class SemanticCacheManager:
                     )
                     prefetch_prompts.append((task_type, prompt))
                 except Exception as e:
-                    logger.debug(
-                        f"[PREFETCH] Could not prefetch polishing prompt for ep{next_ep}: {e}"
-                    )
+                    logger.debug(f"[PREFETCH] Could not prefetch polishing prompt for ep{next_ep}: {e}")
 
         # プリフェッチしたプロンプトをL1キャッシュに Warming として登録
         # (実際のEmbedding計算はバックグラウンドで実行される)
@@ -474,16 +462,12 @@ class SemanticCacheManager:
             l1_key = self._get_l1_key(prompt, task_type, genre, temperature)
             # 実際のEmbedding計算は非同期でバックグラウンド実行
             _spawn_background(
-            self._prefetch_embedding(prompt, task_type, genre, temperature),
-            name="semantic_cache.prefetch",
-        )
-            logger.info(
-                f"[PREFETCH] Queued prefetch for ep{next_ep} task={task_type}, key={l1_key[:16]}..."
+                self._prefetch_embedding(prompt, task_type, genre, temperature),
+                name="semantic_cache.prefetch",
             )
+            logger.info(f"[PREFETCH] Queued prefetch for ep{next_ep} task={task_type}, key={l1_key[:16]}...")
 
-    async def _prefetch_embedding(
-        self, prompt: str, task_type: str, genre: str, temperature: float
-    ) -> None:
+    async def _prefetch_embedding(self, prompt: str, task_type: str, genre: str, temperature: float) -> None:
         """バックグラウンドでEmbeddingを計算し、キャッシュをウォーミングする"""
         try:
             vec = await self._get_embedding(prompt)

@@ -6,12 +6,14 @@
 JWT 鍵 / SQLite の判定に到達しない。
 またローカル .env の影響を受けないよう _env_file=None を渡す。
 """
+
 import pytest
 from pydantic import ValidationError
 
 
 def test_production_rejects_auth_disabled():
     from src.backend.config import Settings
+
     with pytest.raises(ValidationError, match="AUTH_DISABLED"):
         Settings(
             APP_ENV="production",
@@ -24,6 +26,7 @@ def test_production_rejects_auth_disabled():
 
 def test_production_rejects_weak_jwt():
     from src.backend.config import Settings
+
     with pytest.raises(ValidationError, match="JWT_SECRET_KEY"):
         Settings(
             APP_ENV="production",
@@ -36,6 +39,7 @@ def test_production_rejects_weak_jwt():
 
 def test_production_rejects_sqlite():
     from src.backend.config import Settings
+
     with pytest.raises(ValidationError, match="SQLite"):
         Settings(
             APP_ENV="production",
@@ -48,6 +52,7 @@ def test_production_rejects_sqlite():
 
 def test_development_allows_defaults():
     from src.backend.config import Settings
+
     s = Settings(APP_ENV="development", _env_file=None)
     assert s.APP_ENV == "development"
 

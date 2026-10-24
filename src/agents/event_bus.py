@@ -75,13 +75,9 @@ class EventBus:
             return AgentEvent(
                 agent=event,
                 payload=payload or {},
-                correlation_id=(payload or {}).get("correlation_id")
-                or (payload or {}).get("task_id")
-                or event,
+                correlation_id=(payload or {}).get("correlation_id") or (payload or {}).get("task_id") or event,
             )
-        raise TypeError(
-            f"EventBus.publish expects an AgentEvent or (name, payload); got {type(event)!r}"
-        )
+        raise TypeError(f"EventBus.publish expects an AgentEvent or (name, payload); got {type(event)!r}")
 
     async def publish(self, event: AgentEvent, payload: dict[str, Any] | None = None) -> list[asyncio.Task]:
         """ハンドラを fire-and-forget で起動し、タスクを返す（呼び出し側が wait する前提）。"""
@@ -96,9 +92,7 @@ class EventBus:
         return tasks
 
     @staticmethod
-    async def _invoke_handler(
-        handler: Callable[[AgentEvent], Awaitable[None]], ev: AgentEvent
-    ) -> None:
+    async def _invoke_handler(handler: Callable[[AgentEvent], Awaitable[None]], ev: AgentEvent) -> None:
         """ハンドラ例外を握り潰さないラッパー。同期ハンドラも許容する。"""
         result = handler(ev)
         if inspect.isawaitable(result):
@@ -129,9 +123,7 @@ class EventBus:
             return
         results = await asyncio.gather(*tasks, return_exceptions=True)
         for result in results:
-            if isinstance(result, BaseException) and not isinstance(
-                result, asyncio.CancelledError
-            ):
+            if isinstance(result, BaseException) and not isinstance(result, asyncio.CancelledError):
                 logger.warning(
                     "EventBus handler failed for agent=%r correlation_id=%r: %r",
                     self._coerce_event(event, payload).agent,
@@ -156,9 +148,7 @@ class EventBus:
                 self._coerce_event(event, payload).agent,
             )
             return None
-        task = loop.create_task(
-            self.publish_async(event, payload), name="event_bus_emit"
-        )
+        task = loop.create_task(self.publish_async(event, payload), name="event_bus_emit")
         # GC 対策 AND 例外可視化（fire_and_forget 相当.done コールバック）
         self._background_tasks.add(task)
         task.add_done_callback(self._background_tasks.discard)
@@ -193,6 +183,7 @@ class EventBus:
             round_id: 現在のレビューラウンドID（クロスラウンド汚染防止用）
         """
         from src.services.blind_review import BlindReviewGate
+
         if isinstance(gate, BlindReviewGate):
             scrubbed_payload = gate.scrub_payload(event.payload)
 
@@ -203,7 +194,7 @@ class EventBus:
                     "round_id": round_id or event.round_id,
                     "gate_config_hash": getattr(gate, "config_hash", None),
                     "scrubbed_at": __import__("datetime").datetime.now().isoformat(),
-                }
+                },
             }
 
             blind_event = AgentEvent(

@@ -47,8 +47,10 @@ def sanitize_polished_text(raw_text: str) -> str:
     postscript_keywords = ("以上", "ご参考", "お役に", "いかがでしょうか")
 
     # 先頭行が前置きなら除去
-    while lines and any(kw in lines[0] for kw in preamble_keywords) and (
-        "：" in lines[0] or ":" in lines[0] or "。" in lines[0] or len(lines[0]) < 40
+    while (
+        lines
+        and any(kw in lines[0] for kw in preamble_keywords)
+        and ("：" in lines[0] or ":" in lines[0] or "。" in lines[0] or len(lines[0]) < 40)
     ):
         lines.pop(0)
 
@@ -59,8 +61,9 @@ def sanitize_polished_text(raw_text: str) -> str:
     result = "\n".join(lines).strip()
 
     # 全体を囲む余分なクォート（"...", 「...」）を、単一ブロックなら外す
-    if (result.startswith("「") and result.endswith("」") and result.count("「") == 1) or \
-       (result.startswith('"') and result.endswith('"') and result.count('"') == 2):
+    if (result.startswith("「") and result.endswith("」") and result.count("「") == 1) or (
+        result.startswith('"') and result.endswith('"') and result.count('"') == 2
+    ):
         result = result[1:-1].strip()
 
     return result
@@ -90,9 +93,7 @@ class LocalPolisher:
         if start_idx < 0 or end_idx > len(text) or start_idx >= end_idx:
             return text
         try:
-            improved_text = call_llm_api(
-                self._build_prompt(text, target_range, improvement_instruction)
-            )
+            improved_text = call_llm_api(self._build_prompt(text, target_range, improvement_instruction))
         except Exception:
             # LLM呼び出しに失敗した場合は元のテキストを返す
             logger.warning("局所パッチの LLM 呼び出しに失敗しました", exc_info=True)
@@ -146,9 +147,7 @@ class LocalPolisher:
         logger.warning("局所パッチが安全条件を満たさないため不採用としました")
         return text, False
 
-    def _build_prompt(
-        self, text: str, target_range: Tuple[int, int], improvement_instruction: str
-    ) -> str:
+    def _build_prompt(self, text: str, target_range: Tuple[int, int], improvement_instruction: str) -> str:
         """対象範囲・前後文脈・指示からプロンプトを組み立てる。"""
         start_idx, end_idx = target_range
         if start_idx < 0 or end_idx > len(text) or start_idx >= end_idx:
@@ -158,13 +157,9 @@ class LocalPolisher:
         before_context = text[context_start:start_idx]
         context_end = min(len(text), end_idx + 50)
         after_context = text[end_idx:context_end]
-        return self._create_polish_prompt(
-            before_context, target_text, after_context, improvement_instruction
-        )
+        return self._create_polish_prompt(before_context, target_text, after_context, improvement_instruction)
 
-    def _apply(
-        self, text: str, target_range: Tuple[int, int], improved_text: str
-    ) -> str:
+    def _apply(self, text: str, target_range: Tuple[int, int], improved_text: str) -> str:
         """生成結果をサニタイズして原文へ組み込む。失敗時は原文を返す。"""
         start_idx, end_idx = target_range
         if start_idx < 0 or end_idx > len(text) or start_idx >= end_idx:
@@ -178,8 +173,9 @@ class LocalPolisher:
             logger.warning("局所パッチの適用に失敗しました", exc_info=True)
             return text
 
-    def _create_polish_prompt(self, before_context: str, target_text: str,
-                            after_context: str, improvement_instruction: str) -> str:
+    def _create_polish_prompt(
+        self, before_context: str, target_text: str, after_context: str, improvement_instruction: str
+    ) -> str:
         """
         局所パッチ用のプロンプトを構築
         """

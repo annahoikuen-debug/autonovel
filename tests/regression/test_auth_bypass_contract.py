@@ -24,6 +24,7 @@
  後者を緩めると認証バイパスとして機能し、前者を壊すと開発環境以外の便宜
 CI が全て 401 になる。どちらも公開前リリース の品質に直結する。
 """
+
 from __future__ import annotations
 
 import pytest
@@ -33,9 +34,7 @@ import pytest
 class TestAuthBypassIsExplicitAndScoped:
     """`AUTH_DISABLED` の意味が「全局バイパス」に貧化しないことを固定する。"""
 
-    def test_get_current_user_bypasses_only_when_auth_disabled(
-        self, monkeypatch
-    ) -> None:
+    def test_get_current_user_bypasses_only_when_auth_disabled(self, monkeypatch) -> None:
         """AUTH_DISABLED=True のときだけ開発用モックユーザーを返す。"""
         import asyncio
 
@@ -43,14 +42,12 @@ class TestAuthBypassIsExplicitAndScoped:
         from src.backend.config import settings
 
         monkeypatch.setattr(settings, "AUTH_DISABLED", True)
-        user = asyncio.get_event_loop_policy().new_event_loop().run_until_complete(
-            get_current_user(token=None, db=None)
+        user = (
+            asyncio.get_event_loop_policy().new_event_loop().run_until_complete(get_current_user(token=None, db=None))
         )
         assert user.id == _get_dev_mock_user().id
 
-    def test_get_current_user_rejects_missing_token_when_auth_enabled(
-        self, monkeypatch
-    ) -> None:
+    def test_get_current_user_rejects_missing_token_when_auth_enabled(self, monkeypatch) -> None:
         """AUTH_DISABLED=False でトークン無しは必ず 401。"""
         import asyncio
 
@@ -68,9 +65,7 @@ class TestAuthBypassIsExplicitAndScoped:
             asyncio.get_event_loop_policy().new_event_loop().run_until_complete(_run())
         assert exc.value.status_code == 401
 
-    def test_validate_api_key_sync_rejects_invalid_key_when_auth_enabled(
-        self, monkeypatch
-    ) -> None:
+    def test_validate_api_key_sync_rejects_invalid_key_when_auth_enabled(self, monkeypatch) -> None:
         """AUTH_DISABLED=False では無効な API キーを必ず False に返す。"""
         from src.backend.auth import validate_api_key_sync
         from src.backend.config import settings
@@ -79,9 +74,7 @@ class TestAuthBypassIsExplicitAndScoped:
         assert validate_api_key_sync("invalid-key-999") is False
         assert validate_api_key_sync("") is False
 
-    def test_validate_api_key_sync_bypasses_only_when_auth_disabled(
-        self, monkeypatch
-    ) -> None:
+    def test_validate_api_key_sync_bypasses_only_when_auth_disabled(self, monkeypatch) -> None:
         """AUTH_DISABLED=True のときだけ dev-key を返す（意図された開発用挙動）。"""
         from src.backend.auth import validate_api_key_sync
         from src.backend.config import settings

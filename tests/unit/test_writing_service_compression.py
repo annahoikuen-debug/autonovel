@@ -1,4 +1,5 @@
 """WritingService 圧縮経路テスト"""
+
 from __future__ import annotations
 
 import pytest
@@ -48,10 +49,9 @@ class TestWritingServiceCompression:
     @pytest.fixture
     def mock_context_builder_agent(self):
         agent = Mock(spec=ContextBuilderAgent)
-        agent.execute = AsyncMock(return_value=AgentResult(
-            next_agent=None,
-            artifacts={"writing_context": {"test": "context"}}
-        ))
+        agent.execute = AsyncMock(
+            return_value=AgentResult(next_agent=None, artifacts={"writing_context": {"test": "context"}})
+        )
         return agent
 
     @pytest.fixture
@@ -59,8 +59,14 @@ class TestWritingServiceCompression:
         return Mock(spec=IllustrationAgent)
 
     @pytest.fixture
-    def writing_service(self, compressor, mock_writing_agent, mock_book_score_calculator,
-                        mock_context_builder_agent, mock_illustration_agent):
+    def writing_service(
+        self,
+        compressor,
+        mock_writing_agent,
+        mock_book_score_calculator,
+        mock_context_builder_agent,
+        mock_illustration_agent,
+    ):
         return WritingService(
             writing_agent=mock_writing_agent,
             book_score_calculator=mock_book_score_calculator,
@@ -74,12 +80,7 @@ class TestWritingServiceCompression:
 
     @pytest.fixture
     def agent_context(self):
-        return AgentContext(
-            book_id=1,
-            branch_id=1,
-            ep_num=1,
-            artifacts={}
-        )
+        return AgentContext(book_id=1, branch_id=1, ep_num=1, artifacts={})
 
     @pytest.mark.asyncio
     async def test_compressor_set_in_artifacts_before_write(self, writing_service, agent_context, mock_writing_agent):
@@ -99,7 +100,9 @@ class TestWritingServiceCompression:
         assert called_context.artifacts["compressor"] is not None
 
     @pytest.mark.asyncio
-    async def test_compressor_passed_to_context_builder_agent(self, writing_service, agent_context, mock_writing_agent, mock_context_builder_agent):
+    async def test_compressor_passed_to_context_builder_agent(
+        self, writing_service, agent_context, mock_writing_agent, mock_context_builder_agent
+    ):
         """context_builder_agent.execute 呼び出し時に compressor が artifacts に含まれること"""
         mock_result = Mock()
         mock_result.error = None
@@ -151,8 +154,14 @@ class TestWritingServiceCompression:
         assert "compressor" in called_context.artifacts
 
     @pytest.mark.asyncio
-    async def test_compressor_none_does_not_break(self, mock_writing_agent, mock_book_score_calculator,
-                                                  mock_context_builder_agent, mock_illustration_agent, agent_context):
+    async def test_compressor_none_does_not_break(
+        self,
+        mock_writing_agent,
+        mock_book_score_calculator,
+        mock_context_builder_agent,
+        mock_illustration_agent,
+        agent_context,
+    ):
         """compressor=None でもエラーにならないこと（後方互換）"""
         service = WritingService(
             writing_agent=mock_writing_agent,
@@ -176,13 +185,10 @@ class TestWritingServiceCompression:
     @pytest.mark.asyncio
     async def test_build_context_with_compression_method_exists(self, writing_service, agent_context):
         """_build_context_with_compression メソッドが存在し動作すること"""
-        assert hasattr(writing_service, '_build_context_with_compression')
+        assert hasattr(writing_service, "_build_context_with_compression")
 
         # メソッドが呼び出せることを確認（context_builder_agent.execute をモック）
-        mock_result = AgentResult(
-            next_agent=None,
-            artifacts={"writing_context": {"compressed": "test"}}
-        )
+        mock_result = AgentResult(next_agent=None, artifacts={"writing_context": {"compressed": "test"}})
         writing_service.context_builder_agent.execute = AsyncMock(return_value=mock_result)
 
         result = await writing_service._build_context_with_compression(agent_context)

@@ -8,6 +8,7 @@ import shutil
 docker_available = shutil.which("docker") is not None
 pytestmark = pytest.mark.skipif(not docker_available, reason="Docker not available")
 
+
 def compose_up():
     """Start docker compose in detached mode."""
     subprocess.run(
@@ -15,12 +16,14 @@ def compose_up():
         check=True,
     )
 
+
 def compose_down():
     """Stop and remove containers, networks, and volumes."""
     subprocess.run(
         ["docker", "compose", "-f", "docker-compose.prod.yml", "down", "-v"],
         check=True,
     )
+
 
 def wait_for_health(timeout=120):
     """Wait for the API health endpoint to return 200."""
@@ -35,6 +38,7 @@ def wait_for_health(timeout=120):
         time.sleep(5)
     raise TimeoutError("API health check failed")
 
+
 def test_full_generation_flow():
     # Start the containers
     compose_up()
@@ -43,11 +47,7 @@ def test_full_generation_flow():
         wait_for_health()
 
         # Generation request
-        test_payload = {
-            "title": "Test Story",
-            "genre": "fantasy",
-            "length": "short"
-        }
+        test_payload = {"title": "Test Story", "genre": "fantasy", "length": "short"}
         resp = requests.post("http://localhost:8000/api/generate", json=test_payload, timeout=10)
         resp.raise_for_status()
         job_id = resp.json()["job_id"]

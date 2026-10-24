@@ -36,9 +36,7 @@ async def test_helper_is_noop_for_none_book():
 async def test_helper_never_raises():
     from src.backend.routers import episodes
 
-    with patch(
-        "src.services.rag_prefetch_service.RagPrefetchService", side_effect=RuntimeError("x")
-    ):
+    with patch("src.services.rag_prefetch_service.RagPrefetchService", side_effect=RuntimeError("x")):
         assert await episodes._cancel_prefetch_for_book(1) == 0
 
 

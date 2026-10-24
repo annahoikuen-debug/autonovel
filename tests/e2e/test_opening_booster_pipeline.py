@@ -2,6 +2,7 @@
 E2E integration test for Opening Booster Pipeline (Episodes 1 to 3).
 PLAN 02 - Step 12: 序盤3話の通し生成とクリフハンガー基準達成のE2Eテスト
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock

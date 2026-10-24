@@ -1,4 +1,5 @@
 """伏線パッケージのフラグが既定OFFで、環境変数でONにできることの回帰テスト。"""
+
 import sys
 import pathlib
 
@@ -7,14 +8,18 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[4]))
 from src.services.foreshadowing import flags
 
 ALL = [
-    "is_causal_dag_enabled", "is_anchor_snap_enabled",
-    "is_relevance_injection_enabled", "is_cascade_reschedule_enabled",
+    "is_causal_dag_enabled",
+    "is_anchor_snap_enabled",
+    "is_relevance_injection_enabled",
+    "is_cascade_reschedule_enabled",
     "is_short_horizon_enabled",
 ]
 
 ENV_NAMES = [
-    "FORESHADOW_CAUSAL_DAG", "FORESHADOW_ANCHOR_SNAP",
-    "FORESHADOW_RELEVANCE_INJECTION", "FORESHADOW_CASCADE_RESCHEDULE",
+    "FORESHADOW_CAUSAL_DAG",
+    "FORESHADOW_ANCHOR_SNAP",
+    "FORESHADOW_RELEVANCE_INJECTION",
+    "FORESHADOW_CASCADE_RESCHEDULE",
     "FORESHADOW_SHORT_HORIZON",
 ]
 

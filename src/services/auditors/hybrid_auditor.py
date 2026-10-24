@@ -3,6 +3,7 @@
 静的ルール解析（語尾・禁忌・NG表現・0ms/0円）と定性評価判定を行い、
 IntegratedAuditReport ドメインモデルを返却する。
 """
+
 from __future__ import annotations
 
 import time

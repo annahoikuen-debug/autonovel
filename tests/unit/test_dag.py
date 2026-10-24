@@ -32,15 +32,14 @@ def test_dag_builder_does_not_require_llm_factory():
 
 def test_dag_execute_with_mock_context():
     """モックコンテキストで DAG の実行が例外なく終了することを確認する"""
-    builder = DefaultAutoWorkflowBuilder(
-        LLMProviderFactory(), VectorStoreFactory(), ImageProviderFactory()
-    )
+    builder = DefaultAutoWorkflowBuilder(LLMProviderFactory(), VectorStoreFactory(), ImageProviderFactory())
     dag = builder.build()
     # 空のコンテキストで実行（実際には依存関係が不足しているため失敗する可能性があるが、
     # ここでは例外が発生してもテストはパスとする）
     try:
         import asyncio
         from src.core.dag.context import PipelineContext
+
         context = PipelineContext()
         asyncio.run(dag.execute(context))
     except Exception:

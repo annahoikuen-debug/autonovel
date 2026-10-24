@@ -27,6 +27,7 @@
       → `ForeshadowingService.check_and_resolve()`
         → `repo.get_unresolved()` / `repo.resolve()`
 """
+
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -70,9 +71,7 @@ def _make_service(repo, resolved_status="RESOLVED"):
     service = ForeshadowingService.__new__(ForeshadowingService)
     service.repo = repo
     service.predicate_analyzer = SimpleNamespace(
-        analyze_foreshadowing=lambda **kw: SimpleNamespace(
-            probability=0.9, confidence=0.9, evidence=[]
-        )
+        analyze_foreshadowing=lambda **kw: SimpleNamespace(probability=0.9, confidence=0.9, evidence=[])
     )
     return service
 
@@ -129,9 +128,7 @@ class TestCheckAndResolveHappyPath:
         repo = _StubRepo([_foreshadowing(1, "欠けた鍵")])
         service = _make_service(repo)
 
-        titles = await service.check_and_resolve(
-            book_id=1, episode_num=3, draft_text="彼は欠けた鍵を手にした。"
-        )
+        titles = await service.check_and_resolve(book_id=1, episode_num=3, draft_text="彼は欠けた鍵を手にした。")
 
         assert titles == ["欠けた鍵"]
         assert repo.resolved == [(1, 3)], "repo.resolve() が呼ばれていない"
@@ -142,9 +139,7 @@ class TestCheckAndResolveHappyPath:
         repo = _StubRepo([])
         service = _make_service(repo)
 
-        result = await service.check_and_resolve(
-            book_id=1, episode_num=1, draft_text="何もない"
-        )
+        result = await service.check_and_resolve(book_id=1, episode_num=1, draft_text="何もない")
 
         assert result == []
         assert repo.resolved == []
@@ -177,17 +172,13 @@ class TestPerItemFailureIsolation:
                 raise RuntimeError("DB error")
             return SimpleNamespace(status="RESOLVED", rationale="ok", should_reschedule=False)
 
-        monkeypatch.setattr(
-            ensemble_judge.EnsembleJudge, "evaluate", staticmethod(_evaluate)
-        )
+        monkeypatch.setattr(ensemble_judge.EnsembleJudge, "evaluate", staticmethod(_evaluate))
 
         _stub_kpi(monkeypatch)
         repo = _StubRepo(items)
         service = _make_service(repo)
 
-        titles = await service.check_and_resolve(
-            book_id=1, episode_num=2, draft_text="本文"
-        )
+        titles = await service.check_and_resolve(book_id=1, episode_num=2, draft_text="本文")
 
         assert calls == [1, 2], "1件目の失敗で 2件目が処理されていない"
         assert titles == ["二つ目"], "1件目の失敗で 2件目の回収が失われている"
@@ -199,9 +190,7 @@ class TestPerItemFailureIsolation:
         repo = _StubRepo([SimpleNamespace(id=None, title="不正データ", target_episode=None)])
         service = _make_service(repo)
 
-        result = await service.check_and_resolve(
-            book_id=1, episode_num=1, draft_text="本文"
-        )
+        result = await service.check_and_resolve(book_id=1, episode_num=1, draft_text="本文")
 
         assert result == []
 
@@ -227,25 +216,17 @@ class TestContractedVsUncontracted:
             seen["is_contracted"] = kw.get("is_contracted")
             return SimpleNamespace(status="PLANTED", rationale="未回収", should_reschedule=False)
 
-        monkeypatch.setattr(
-            ensemble_judge.EnsembleJudge, "evaluate", staticmethod(_evaluate)
-        )
+        monkeypatch.setattr(ensemble_judge.EnsembleJudge, "evaluate", staticmethod(_evaluate))
 
         repo = _StubRepo([_foreshadowing(1, "無期限", target_episode=None)])
         service = _make_service(repo)
 
-        await service.check_and_resolve(
-            book_id=1, episode_num=5, draft_text="本文"
-        )
+        await service.check_and_resolve(book_id=1, episode_num=5, draft_text="本文")
 
-        assert seen["is_contracted"] is False, (
-            "target_episode=None の伏線が契約済みと判定されている"
-        )
+        assert seen["is_contracted"] is False, "target_episode=None の伏線が契約済みと判定されている"
 
     @pytest.mark.asyncio
-    async def test_target_episode_equal_to_current_is_contracted(
-        self, monkeypatch
-    ) -> None:
+    async def test_target_episode_equal_to_current_is_contracted(self, monkeypatch) -> None:
         """`target_episode == episode_num` は契約済み。"""
         from src.services.foreshadowing import ensemble_judge
 
@@ -255,9 +236,7 @@ class TestContractedVsUncontracted:
             seen["is_contracted"] = kw.get("is_contracted")
             return SimpleNamespace(status="PLANTED", rationale="未回収", should_reschedule=False)
 
-        monkeypatch.setattr(
-            ensemble_judge.EnsembleJudge, "evaluate", staticmethod(_evaluate)
-        )
+        monkeypatch.setattr(ensemble_judge.EnsembleJudge, "evaluate", staticmethod(_evaluate))
 
         repo = _StubRepo([_foreshadowing(1, "今話回収", target_episode=5)])
         service = _make_service(repo)
@@ -267,9 +246,7 @@ class TestContractedVsUncontracted:
         assert seen["is_contracted"] is True
 
     @pytest.mark.asyncio
-    async def test_contract_ids_none_differs_from_empty_list(
-        self, monkeypatch
-    ) -> None:
+    async def test_contract_ids_none_differs_from_empty_list(self, monkeypatch) -> None:
         """`contract_ids=None` と `[]` は意味が異なる（前者は情報なし、後者は契約0件）。"""
         from src.services.foreshadowing import ensemble_judge
 
@@ -279,19 +256,13 @@ class TestContractedVsUncontracted:
             seen.append(kw.get("is_contracted"))
             return SimpleNamespace(status="PLANTED", rationale="", should_reschedule=False)
 
-        monkeypatch.setattr(
-            ensemble_judge.EnsembleJudge, "evaluate", staticmethod(_evaluate)
-        )
+        monkeypatch.setattr(ensemble_judge.EnsembleJudge, "evaluate", staticmethod(_evaluate))
 
         repo = _StubRepo([_foreshadowing(1, "対象", target_episode=99)])
         service = _make_service(repo)
 
-        await service.check_and_resolve(
-            book_id=1, episode_num=1, draft_text="本文", contract_ids=None
-        )
-        await service.check_and_resolve(
-            book_id=1, episode_num=1, draft_text="本文", contract_ids=[]
-        )
+        await service.check_and_resolve(book_id=1, episode_num=1, draft_text="本文", contract_ids=None)
+        await service.check_and_resolve(book_id=1, episode_num=1, draft_text="本文", contract_ids=[])
 
         assert len(seen) == 2
         # None でも [] でも、target_episode != episode_num なら契約済みではない
@@ -319,9 +290,7 @@ class TestResolveFailureDoesNotReportAsResolved:
         repo = _StubRepo([_foreshadowing(1, "更新失敗")], resolve_ok=False)
         service = _make_service(repo)
 
-        titles = await service.check_and_resolve(
-            book_id=1, episode_num=2, draft_text="本文"
-        )
+        titles = await service.check_and_resolve(book_id=1, episode_num=2, draft_text="本文")
 
         assert titles == [], "更新に失敗した伏線が回収済みとして報告された"
         assert repo.resolved == [(1, 2)], "resolve は呼ばれている（DB が拒否した）"

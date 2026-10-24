@@ -27,13 +27,15 @@ async def test_consistency_auditor_windowing_with_bible_keywords():
 
     auditor._judge_with_llm = mock_judge
 
-    result = await auditor.audit({
-        "draft_text": long_draft,
-        "world_bible_snapshot": {
-            "characters": [{"name": "アルトリウス", "role": "賢者"}],
-            "lore": "古代遺跡の魔導書",
-        },
-    })
+    result = await auditor.audit(
+        {
+            "draft_text": long_draft,
+            "world_bible_snapshot": {
+                "characters": [{"name": "アルトリウス", "role": "賢者"}],
+                "lore": "古代遺跡の魔導書",
+            },
+        }
+    )
 
     assert result.score == 90.0
     prompt = captured["prompt"]

@@ -5,6 +5,7 @@ from src.services.pipeline_base import WorkflowContext
 
 class MockStatusReporter:
     """モックの StatusReporter"""
+
     def __init__(self):
         self.reports = []
         self._should_stop = False
@@ -20,11 +21,13 @@ class MockStatusReporter:
         class State:
             def should_stop(self):
                 return self._should_stop
+
         return State()
 
 
 class MockEngine:
     """モックの UltimateHegemonyEngine"""
+
     def __init__(self):
         pass
 
@@ -49,7 +52,7 @@ async def test_hook_generation_step_execute():
         archetype_key="チート主人公",
         target_eps=10,
         initial_limit=3,
-        word_count=2000
+        word_count=2000,
     )
     engine = MockEngine()
     reporter = MockStatusReporter()
@@ -71,14 +74,7 @@ async def test_hook_generation_step_execute_with_none_values():
     step = HookGenerationStep()
 
     # None や空の値でも動作することを確認
-    ctx = WorkflowContext(
-        genre="",
-        keywords="",
-        archetype_key="",
-        target_eps=0,
-        initial_limit=0,
-        word_count=0
-    )
+    ctx = WorkflowContext(genre="", keywords="", archetype_key="", target_eps=0, initial_limit=0, word_count=0)
     engine = MockEngine()
     reporter = MockStatusReporter()
 

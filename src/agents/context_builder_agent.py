@@ -111,7 +111,7 @@ class ContextBuilderAgent(SkillAgent):
 
     def _get_episode_context_builder(self, session: Any) -> EpisodeContextBuilder:
         """EpisodeContextBuilder を取得（セッションが変わるたびに新しいインスタンス）"""
-        if self._episode_context_builder is None or getattr(self._episode_context_builder, 'db', None) != session:
+        if self._episode_context_builder is None or getattr(self._episode_context_builder, "db", None) != session:
             self._episode_context_builder = EpisodeContextBuilder(session)
         return self._episode_context_builder
 
@@ -140,18 +140,24 @@ class ContextBuilderAgent(SkillAgent):
 
     async def execute(self, ctx: AgentContext) -> AgentResult:
         """スキル実行エントリーポイント。"""
-        self.emit_event("context_builder.started", {
-            "book_id": ctx.book_id,
-            "ep_num": ctx.ep_num,
-        })
+        self.emit_event(
+            "context_builder.started",
+            {
+                "book_id": ctx.book_id,
+                "ep_num": ctx.ep_num,
+            },
+        )
 
         repo = ctx.artifacts.get("repo")
         if repo is None:
-            self.emit_event("context_builder.error", {
-                "book_id": ctx.book_id,
-                "ep_num": ctx.ep_num,
-                "error": "repo is required in artifacts",
-            })
+            self.emit_event(
+                "context_builder.error",
+                {
+                    "book_id": ctx.book_id,
+                    "ep_num": ctx.ep_num,
+                    "error": "repo is required in artifacts",
+                },
+            )
             return AgentResult(
                 next_agent=None,
                 artifacts={},
@@ -187,10 +193,13 @@ class ContextBuilderAgent(SkillAgent):
             age_client=age_client,
         )
 
-        self.emit_event("context_builder.completed", {
-            "book_id": book_id,
-            "ep_num": ep_num,
-        })
+        self.emit_event(
+            "context_builder.completed",
+            {
+                "book_id": book_id,
+                "ep_num": ep_num,
+            },
+        )
 
         res_artifacts = dict(ctx.artifacts)
         res_artifacts["writing_context"] = full_context
@@ -277,9 +286,7 @@ class ContextBuilderAgent(SkillAgent):
             )
         else:
             char_static_ctx = self._build_char_static_ctx(active_chars)
-            char_dynamic_ctx = self._build_char_dynamic_ctx(
-                active_chars, prev_chapter, social_context=social_ctx
-            )
+            char_dynamic_ctx = self._build_char_dynamic_ctx(active_chars, prev_chapter, social_context=social_ctx)
 
         # 再生成フォーカスに応じて前話文脈を強化
         if regeneration_focus and "structure" in regeneration_focus:
@@ -307,8 +314,7 @@ class ContextBuilderAgent(SkillAgent):
                         "detailed_blueprint": getattr(plot, "detailed_blueprint", "") or "",
                         "scenes": getattr(plot, "scenes", []) or [],
                         "summary": getattr(plot, "summary", "") or "",
-                        "current_chain_phase": getattr(plot, "current_chain_phase", "Friction")
-                        or "Friction",
+                        "current_chain_phase": getattr(plot, "current_chain_phase", "Friction") or "Friction",
                         "title": getattr(plot, "title", "") or "",
                         "tension": getattr(plot, "tension", 50) or 50,
                     }
@@ -340,14 +346,11 @@ class ContextBuilderAgent(SkillAgent):
         # Step 21 & 62: 反射的検索 (Reflective RAG) の実行（シーン意図の注入）
         rag_context = []
         if reflective_rag is not None:
-            query = (
-                plot_dict.get("summary")
-                or plot_dict.get("title")
-                or f"episode {ep_num} context"
-            )
+            query = plot_dict.get("summary") or plot_dict.get("title") or f"episode {ep_num} context"
             scene_intent = plot_dict.get("summary", "")
             try:
                 import inspect
+
                 res = reflective_rag.retrieve_with_reflection(
                     session=session,
                     query=query,
@@ -358,13 +361,16 @@ class ContextBuilderAgent(SkillAgent):
                     res = await res
                 if res and hasattr(res, "documents"):
                     for doc in res.documents:
-                        rag_context.append({
-                            "content": getattr(doc, "content", str(doc)),
-                            "metadata": getattr(doc, "metadata", {}),
-                            "score": getattr(doc, "score", getattr(doc, "similarity", 0.0)),
-                        })
+                        rag_context.append(
+                            {
+                                "content": getattr(doc, "content", str(doc)),
+                                "metadata": getattr(doc, "metadata", {}),
+                                "score": getattr(doc, "score", getattr(doc, "similarity", 0.0)),
+                            }
+                        )
             except Exception as e:
                 import logging
+
                 logging.getLogger(__name__).warning(f"Reflective RAG retrieval failed: {e}")
 
         # Step 33 & 61: 4階層コンテキスト圧縮 (FourLayerCompressor) の統合（ProtectedContext注入）
@@ -395,11 +401,10 @@ class ContextBuilderAgent(SkillAgent):
                     else:
                         s_type = multi
 
-# Build ProtectedContext for guaranteed retention of active characters & foreshadowings (Step 61)
+        # Build ProtectedContext for guaranteed retention of active characters & foreshadowings (Step 61)
         active_char_names = [getattr(c, "name", str(c)) for c in (active_chars or []) if c]
         foreshadowing_ids = [
-            str(fs.get("id")) for fs in plot_dict.get("foreshadowings", [])
-            if isinstance(fs, dict) and fs.get("id")
+            str(fs.get("id")) for fs in plot_dict.get("foreshadowings", []) if isinstance(fs, dict) and fs.get("id")
         ]
         protected_ctx = ProtectedContext(
             active_characters=active_char_names,
@@ -417,6 +422,7 @@ class ContextBuilderAgent(SkillAgent):
 
         try:
             import inspect
+
             c_res = compressor.compress(
                 raw_corpus,
                 session=session,
@@ -426,7 +432,7 @@ class ContextBuilderAgent(SkillAgent):
                 scene_weights=scene_weights,
                 protected_context=protected_ctx,
                 scene_flow=scene_flow,
-)
+            )
             if inspect.iscoroutine(c_res):
                 c_res = await c_res
             if c_res and hasattr(c_res, "final_context_text"):
@@ -435,20 +441,21 @@ class ContextBuilderAgent(SkillAgent):
                     "reduction_ratio": getattr(c_res, "overall_reduction_ratio", 0.0),
                     "final_tokens": getattr(c_res, "final_token_count", 0),
                     "from_cache": getattr(c_res, "from_cache", False),
-                    "scene_type": getattr(c_res, "layer4", None).scene_type if getattr(c_res, "layer4", None) else s_type,
+                    "scene_type": getattr(c_res, "layer4", None).scene_type
+                    if getattr(c_res, "layer4", None)
+                    else s_type,
                     "scene_weights": scene_weights,
                 }
         except Exception as e:
-                import logging
-                logging.getLogger(__name__).warning(f"Context compression failed: {e}")
+            import logging
+
+            logging.getLogger(__name__).warning(f"Context compression failed: {e}")
 
         # v5.3: 未回収伏線は plot_json ではなく伏線ステートマシン(foreshadowings テーブル)を
         # 正典とする。plot_json 由来のものはフォールバックに留める。
         # これにより プロンプトに必ず ID が付き、LLM が [METADATA_JSON] で
         # 回収を報告でき、check_and_resolve のアンサンブル判定が機能する。
-        db_foreshadowings, contract_foreshadowings = await self._load_db_foreshadowings(
-            session, book_id, ep_num
-        )
+        db_foreshadowings, contract_foreshadowings = await self._load_db_foreshadowings(session, book_id, ep_num)
         if db_foreshadowings:
             foreshadowing_source = db_foreshadowings
         else:
@@ -467,9 +474,7 @@ class ContextBuilderAgent(SkillAgent):
             "rag_context": rag_context,
             "compressed_context": compressed_context,
             "compression_stats": compression_stats,
-            "foreshadowing_ctx": self.format_unresolved_foreshadowings(
-                foreshadowing_source
-            ),
+            "foreshadowing_ctx": self.format_unresolved_foreshadowings(foreshadowing_source),
             # v5.3: 本話で回収すべき契約伏線（プロンプト契約＋メタデータ出力_schema に使用）
             "contract_foreshadowings": contract_foreshadowings,
             # Step 7: 3層ローリング記憶をコンテキストに注入
@@ -501,9 +506,7 @@ class ContextBuilderAgent(SkillAgent):
             return list(unresolved), list(contract)
         except TypeError as e:
             # 同期 session を await した等の型不一致は握り潰さず可視化する。
-            logger.warning(
-                f"Session type mismatch while loading foreshadowings: {e}"
-            )
+            logger.warning(f"Session type mismatch while loading foreshadowings: {e}")
             return [], []
         except Exception as e:  # pragma: no cover - DB 未接続時のフォールバック
             logger.debug(f"Failed to load foreshadowings from DB: {e}")
@@ -565,9 +568,7 @@ class ContextBuilderAgent(SkillAgent):
         try:
             return await repo.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
         except Exception as e:
-            logger.debug(
-                f"Plot not found for book={book_id}, branch={branch_id}, ep={ep_num}: {e}"
-            )
+            logger.debug(f"Plot not found for book={book_id}, branch={branch_id}, ep={ep_num}: {e}")
             return None
 
     async def _get_book(self, repo: Any, book_id: int) -> Any | None:
@@ -590,18 +591,14 @@ class ContextBuilderAgent(SkillAgent):
             logger.debug(f"Characters not found for book_id={book_id}: {e}")
             return []
 
-    async def _get_prev_chapter(
-        self, repo: Any, book_id: int, branch_id: int, ep_num: int
-    ) -> Any | None:
+    async def _get_prev_chapter(self, repo: Any, book_id: int, branch_id: int, ep_num: int) -> Any | None:
         """前話の章データを取得する。"""
         if repo is None or ep_num <= 1:
             return None
         try:
             return await repo.get_chapter(branch_id, ep_num - 1, book_id=book_id)
         except Exception as e:
-            logger.debug(
-                f"Previous chapter not found for book={book_id}, branch={branch_id}, ep={ep_num}: {e}"
-            )
+            logger.debug(f"Previous chapter not found for book={book_id}, branch={branch_id}, ep={ep_num}: {e}")
             return None
 
     async def _get_active_chars(self, chars: list[Any], plot: Any) -> list[Any]:
@@ -709,6 +706,7 @@ class ContextBuilderAgent(SkillAgent):
     ) -> str:
         """Step 53 & Steps 30-36: 直近エピソードのソーシャルジャーナルと動的関係性トレンドを取得・整形する（耐障害・文字数制限付き）。"""
         import logging
+
         logger = logging.getLogger(__name__)
 
         try:
@@ -743,7 +741,9 @@ class ContextBuilderAgent(SkillAgent):
                                     f"- {r['char_a']} ⇔ {r['char_b']} [{r['dynamics_state']}]: "
                                     f"信頼度={r['trust']:.0f}, 緊張度={r['tension']:.0f}, 好感度={r['affection']:.0f}"
                                 )
-                            parts.append("【登場キャラクター間の動的関係性 (Social Dynamics)】\n" + "\n".join(rel_lines))
+                            parts.append(
+                                "【登場キャラクター間の動的関係性 (Social Dynamics)】\n" + "\n".join(rel_lines)
+                            )
                     else:
                         t_sum = await social_repo.get_relationship_trends_summary(book_id=book_id)
                         if t_sum:
@@ -757,6 +757,7 @@ class ContextBuilderAgent(SkillAgent):
                 try:
                     from src.backend.database.models_digest import EpisodeDigestModel
                     from sqlalchemy import select
+
                     prev_ep = ep_num - 1
                     stmt = select(EpisodeDigestModel).where(
                         EpisodeDigestModel.book_id == book_id,
@@ -772,9 +773,7 @@ class ContextBuilderAgent(SkillAgent):
                     if res and res.digest_text:
                         parts.append(f"【直前話(第{prev_ep}話)の確定事実ダイジェスト】\n- {res.digest_text}")
                 except Exception as e:
-                    logger.warning(
-                        "Failed to retrieve digest for prev episode (ep=%s): %s", ep_num, e
-                    )
+                    logger.warning("Failed to retrieve digest for prev episode (ep=%s): %s", ep_num, e)
 
             # 3. フォールバック: SocialInteractionManager からの関係性メトリクス取得 (未取得時)
             if not any("動的関係性" in p or "動的心理関係性" in p for p in parts) and social_manager:
@@ -800,7 +799,7 @@ class ContextBuilderAgent(SkillAgent):
             result_text = "\n\n".join(parts)
             # Step 34: トークン予算（文字数上限）による安全トリミング
             if len(result_text) > max_chars:
-                result_text = result_text[:max_chars - 3] + "..."
+                result_text = result_text[: max_chars - 3] + "..."
 
             return result_text
 
@@ -852,20 +851,12 @@ class ContextBuilderAgent(SkillAgent):
             profiles[name] = "; ".join(parts) if parts else name
         return profiles
 
-    async def _ensure_plot_exists(
-        self, repo: Any, book_id: int, branch_id: int, ep_num: int
-    ) -> Any | None:
+    async def _ensure_plot_exists(self, repo: Any, book_id: int, branch_id: int, ep_num: int) -> Any | None:
         """プロットが存在しない場合、生成を試みる。"""
         plot = await self._get_plot(repo, book_id, branch_id, ep_num)
-        if (
-            plot is None
-            and hasattr(self, "_plot_expander")
-            and getattr(self, "_plot_expander") is not None
-        ):
+        if plot is None and hasattr(self, "_plot_expander") and getattr(self, "_plot_expander") is not None:
             try:
-                logger.info(
-                    f"Plot missing for Ep.{ep_num}, attempting on-demand generation..."
-                )
+                logger.info(f"Plot missing for Ep.{ep_num}, attempting on-demand generation...")
                 arcs: list[Any] = []
                 bible = await self._get_bible(repo, book_id)
                 if bible and hasattr(bible, "arcs"):

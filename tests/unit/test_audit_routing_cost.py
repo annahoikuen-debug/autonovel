@@ -33,8 +33,8 @@ class TestAuditRoutingCostReduction:
         """Verify different providers have different cost structures."""
         # Mock cost data: sonnet is expensive, flash is cheap
         costs = {
-            "sonnet": 3.0,     # expensive model
-            "flash": 0.3,      # cheap model (10x cheaper)
+            "sonnet": 3.0,  # expensive model
+            "flash": 0.3,  # cheap model (10x cheaper)
             "gemini_flash": 0.25,
         }
 
@@ -51,15 +51,13 @@ class TestAuditRoutingCostReduction:
         # Weighted average should be significantly less than all-sonnet
         # This validates Step 47's 70%+ reduction claim
         model_costs = {
-            "gemini": 0.3,     # google/gemini-1.5-flash
-            "claude": 1.0,     # anthropic/claude-3-5-sonnet
-            "openai": 1.5,     # openai/gpt-4o
+            "gemini": 0.3,  # google/gemini-1.5-flash
+            "claude": 1.0,  # anthropic/claude-3-5-sonnet
+            "openai": 1.5,  # openai/gpt-4o
         }
 
         # Simulate 8 auditors: 4 flash, 2 claude, 2 sonnet
-        total_cost = (4 * model_costs["gemini"] +
-                     2 * model_costs["claude"] +
-                     2 * model_costs["openai"])
+        total_cost = 4 * model_costs["gemini"] + 2 * model_costs["claude"] + 2 * model_costs["openai"]
         avg_cost = total_cost / 8
 
         # Baseline if all used sonnet ($3.0)

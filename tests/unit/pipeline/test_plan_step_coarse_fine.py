@@ -107,6 +107,4 @@ async def test_plan_step_legacy_fallback(mock_engine, mock_reporter):
 
     # エラーにならず warning を報告して継続
     assert result is True
-    mock_reporter.report.assert_any_call(
-        "⚠️ 大局骨子生成でエラー (既存プロット継続): LLM一時障害", "warning"
-    )
+    mock_reporter.report.assert_any_call("⚠️ 大局骨子生成でエラー (既存プロット継続): LLM一時障害", "warning")

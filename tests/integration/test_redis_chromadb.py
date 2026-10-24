@@ -1,4 +1,5 @@
 """Test to verify Redis and ChromaDB fixtures work."""
+
 from __future__ import annotations
 
 import redis

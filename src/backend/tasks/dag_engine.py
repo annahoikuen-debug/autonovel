@@ -1,4 +1,5 @@
 """DAG Cycle Detection & Topological Sort Engine (Step 36)."""
+
 from __future__ import annotations
 
 from collections import deque
@@ -8,6 +9,7 @@ from src.backend.tasks.dag_models import DAGGraph
 
 class DAGCycleError(ValueError):
     """Raised when a circular dependency is detected in the DAG."""
+
     pass
 
 
@@ -20,9 +22,7 @@ class DAGEngine:
         for task_id, node in graph.nodes.items():
             for dep_id in node.dependencies:
                 if dep_id not in graph.nodes:
-                    raise KeyError(
-                        f"Task '{task_id}' depends on non-existent task '{dep_id}'"
-                    )
+                    raise KeyError(f"Task '{task_id}' depends on non-existent task '{dep_id}'")
         DAGEngine.topological_sort(graph)
         return True
 
@@ -49,9 +49,7 @@ class DAGEngine:
                     dependents[dep].append(t_id)
 
         # 入次数 0 のノードをキューに追加
-        queue: deque[str] = deque([
-            t_id for t_id, deg in in_degree.items() if deg == 0
-        ])
+        queue: deque[str] = deque([t_id for t_id, deg in in_degree.items() if deg == 0])
         sorted_order: list[str] = []
 
         while queue:
@@ -66,9 +64,7 @@ class DAGEngine:
         # 全ノードが処理されていなければ循環が存在する
         if len(sorted_order) != len(nodes):
             cycle_candidates = [t_id for t_id, deg in in_degree.items() if deg > 0]
-            raise DAGCycleError(
-                f"Circular dependency detected involving tasks: {cycle_candidates}"
-            )
+            raise DAGCycleError(f"Circular dependency detected involving tasks: {cycle_candidates}")
 
         return sorted_order
 
@@ -92,9 +88,7 @@ class DAGEngine:
             if not node.dependencies:
                 task_depth[t_id] = 0
             else:
-                max_parent_depth = max(
-                    task_depth.get(dep, 0) for dep in node.dependencies if dep in task_depth
-                )
+                max_parent_depth = max(task_depth.get(dep, 0) for dep in node.dependencies if dep in task_depth)
                 task_depth[t_id] = max_parent_depth + 1
 
         max_depth = max(task_depth.values()) if task_depth else 0

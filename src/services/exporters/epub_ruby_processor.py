@@ -1,4 +1,5 @@
 """Web小説ルビ・傍点・縦中横をEPUB 3 XHTML準拠タグへ高速変換するプロセッサ (v5.0 Step 16)."""
+
 from __future__ import annotations
 
 import html

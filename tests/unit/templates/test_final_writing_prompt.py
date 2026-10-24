@@ -1,4 +1,5 @@
 """Tests for final_writing_prompt emotional context injection."""
+
 from __future__ import annotations
 
 import pytest

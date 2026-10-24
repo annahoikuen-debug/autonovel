@@ -1,4 +1,5 @@
 """下位互換性維持のためのエイリアス。実体は src.infrastructure.repositories に移動しました。"""
+
 from __future__ import annotations
 import importlib
 import sys

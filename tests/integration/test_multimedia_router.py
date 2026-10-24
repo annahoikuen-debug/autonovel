@@ -1,4 +1,5 @@
 """Multimedia ルータの統合テスト (self-contained FastAPI app)。"""
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
@@ -75,6 +76,7 @@ def mm_client(monkeypatch, tmp_path, mm_auth_user):
     monkeypatch.setattr(multimedia_router, "verify_book_ownership", ownership_stub)
 
     from src.backend.rate_limit import generate_limiter
+
     generate_limiter.reset()
 
     with TestClient(app) as client:
@@ -153,9 +155,7 @@ def test_path_traversal_blocked(monkeypatch, tmp_path, mm_auth_user):
     app.include_router(multimedia_router.router, prefix="/multimedia", tags=["multimedia"])
     app.dependency_overrides[validate_api_key_or_raise] = lambda: "k"
     app.dependency_overrides[get_current_user] = lambda: mm_auth_user
-    monkeypatch.setattr(
-        multimedia_router, "verify_book_ownership", AsyncMock(return_value=MagicMock(id=1))
-    )
+    monkeypatch.setattr(multimedia_router, "verify_book_ownership", AsyncMock(return_value=MagicMock(id=1)))
     with TestClient(app) as c:
         # Starlette/FastAPI の URL バリデーションで `..` は 400 を返す
         res = c.get("/multimedia/files/..%2F..%2Fetc%2Fpasswd", follow_redirects=False)

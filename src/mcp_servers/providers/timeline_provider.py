@@ -1,4 +1,5 @@
 """Timeline Resource Provider for managing timelines and episode digests."""
+
 from __future__ import annotations
 
 from typing import Dict, List

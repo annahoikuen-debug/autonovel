@@ -20,10 +20,7 @@ def long_novel_8000():
     )
 
     # Middle part 1 / Sho (approx 2500 chars)
-    middle_1 = (
-        "探索を続けるうちに、古びた図書館の地下へと足を踏み入れた。" * 100
-        + "\n"
-    )
+    middle_1 = "探索を続けるうちに、古びた図書館の地下へと足を踏み入れた。" * 100 + "\n"
 
     # Middle part 2 / Ten - Climax with illustration scene (approx 2500 chars)
     middle_2 = (
@@ -104,10 +101,12 @@ async def test_structure_auditor_on_8000_chars(long_novel_8000):
         return 89.0, "Good pacing across 8000 words", [], 0.9, "trace", "raw"
 
     auditor._judge_with_llm = mock_judge
-    result = await auditor.audit({
-        "draft_text": long_novel_8000,
-        "plot_tree": "導入→調査→決戦→余韻",
-    })
+    result = await auditor.audit(
+        {
+            "draft_text": long_novel_8000,
+            "plot_tree": "導入→調査→決戦→余韻",
+        }
+    )
 
     assert result.score == 89.0
     prompt = captured["prompt"]
@@ -148,10 +147,12 @@ async def test_multimodal_auditor_matches_scene_in_8000_chars(long_novel_8000):
         return 93.0, "Illustration perfectly matches the deep altar scene", [], 0.92, "trace", "raw", []
 
     auditor._judge_with_llm = mock_judge
-    result = await auditor.audit({
-        "draft_text": long_novel_8000,
-        "illustration_prompts": "白銀の甲冑を纏った騎士エリスが祭壇で聖剣を構えるシーン。蒼い光のエフェクト。",
-    })
+    result = await auditor.audit(
+        {
+            "draft_text": long_novel_8000,
+            "illustration_prompts": "白銀の甲冑を纏った騎士エリスが祭壇で聖剣を構えるシーン。蒼い光のエフェクト。",
+        }
+    )
 
     assert result.score == 93.0
     prompt = captured["prompt"]

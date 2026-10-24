@@ -127,9 +127,7 @@ class NormalizationFlow:
                     try:
                         val = data[alias]
                         data["ep_num"] = (
-                            int(val)
-                            if isinstance(val, (int, float))
-                            else int(re.search(r"\d+", str(val)).group())
+                            int(val) if isinstance(val, (int, float)) else int(re.search(r"\d+", str(val)).group())
                         )
                         break
                     except Exception:
@@ -141,9 +139,7 @@ class NormalizationFlow:
                     try:
                         val = data[alias]
                         data["scene_number"] = (
-                            int(val)
-                            if isinstance(val, (int, float))
-                            else int(re.search(r"-?\d+", str(val)).group())
+                            int(val) if isinstance(val, (int, float)) else int(re.search(r"-?\d+", str(val)).group())
                         )
                         break
                     except Exception:
@@ -188,11 +184,7 @@ class NormalizationFlow:
                 if val is None:
                     data[str_key] = ""
                 elif isinstance(val, list):
-                    sep = (
-                        "\n\n"
-                        if any(x in str_key for x in ["content", "blueprint", "script"])
-                        else ", "
-                    )
+                    sep = "\n\n" if any(x in str_key for x in ["content", "blueprint", "script"]) else ", "
                     data[str_key] = sep.join([str(x) for x in val])
                 elif not isinstance(val, str):
                     data[str_key] = json.dumps(val, ensure_ascii=False)
@@ -238,18 +230,14 @@ class NormalizationFlow:
                                 break
                     for kw_field in ["sensory_keywords", "psychology_keywords"]:
                         if kw_field in item and isinstance(item[kw_field], str):
-                            item[kw_field] = [
-                                x.strip() for x in re.split(r"[,、]", item[kw_field]) if x.strip()
-                            ]
+                            item[kw_field] = [x.strip() for x in re.split(r"[,、]", item[kw_field]) if x.strip()]
         elif key_name == "recovered_items":
             data = [{"foreshadowing_id": x} if isinstance(x, str) else x for x in data]
         elif key_name == "missing_items":
             data = [x.get("description", str(x)) if isinstance(x, dict) else str(x) for x in data]
         elif key_name == "story_threads":
             data = [
-                x
-                if isinstance(x, dict)
-                else {"description": str(x), "status": "Active", "setup_episode": 0}
+                x if isinstance(x, dict) else {"description": str(x), "status": "Active", "setup_episode": 0}
                 for x in data
             ]
 
@@ -274,9 +262,7 @@ class NormalizationFlow:
 
         return data
 
-    def normalize_metadata(
-        self, data: Any, key_name: str | None = None, is_root: bool = True
-    ) -> Any:
+    def normalize_metadata(self, data: Any, key_name: str | None = None, is_root: bool = True) -> Any:
         """AIが生成するメタデータ構造の揺れ（ネスト・キー名）を吸収して正規化する"""
         if data is None or data == "":
             return {} if is_root else data
@@ -337,9 +323,7 @@ class TonePerfector:
                     )
                 # 二人称の強制置換
                 if char.second_person:
-                    dialogue = re.sub(
-                        r"(君|あなた|お前|貴様)(?=[、。！？をにが」])", char.second_person, dialogue
-                    )
+                    dialogue = re.sub(r"(君|あなた|お前|貴様)(?=[、。！？をにが」])", char.second_person, dialogue)
 
                 # 語尾の簡易補正（例：なのだ、だわ、ですわ等）
                 if char.suffix_style:
@@ -454,9 +438,7 @@ class OutputSanitizer:
                 story_content = parts[1].strip()
                 metadata = OutputSanitizer.parse_llm_json(parts[2])
                 if metadata:
-                    return OutputSanitizer.normalize_metadata(
-                        metadata
-                    ), OutputSanitizer._clean_story(story_content)
+                    return OutputSanitizer.normalize_metadata(metadata), OutputSanitizer._clean_story(story_content)
 
         # 2. JSON末尾抽出
         metadata = OutputSanitizer.parse_llm_json(text)
@@ -478,9 +460,7 @@ class OutputSanitizer:
                     flags=re.DOTALL | re.IGNORECASE,
                 ).strip()
                 if len(story_content) < 50:
-                    story_content = (
-                        metadata.get("final_content") or metadata.get("script_content") or ""
-                    )
+                    story_content = metadata.get("final_content") or metadata.get("script_content") or ""
                 if not story_content:
                     # 本文が無いこと自体は異常としてログに残すが、
                     # 「メタデータのみを返す」のはこの関数の正当な契約なので
@@ -489,9 +469,7 @@ class OutputSanitizer:
                         "extract_content_and_metadata: 本文が空。LLM出力がメタデータのみ"
                         "の形式だった可能性。可読本文を生成できていない疑い。"
                     )
-                return OutputSanitizer.normalize_metadata(metadata), OutputSanitizer._clean_story(
-                    story_content
-                )
+                return OutputSanitizer.normalize_metadata(metadata), OutputSanitizer._clean_story(story_content)
 
         # 3. プレーンテキストフォールバック
         return {}, OutputSanitizer._clean_story(text)
@@ -510,9 +488,7 @@ class OutputSanitizer:
             text = re.sub(pat, "", text, flags=re.MULTILINE | re.IGNORECASE)
 
         text = re.sub(
-            r"\[(DIRECTOR_NOTE|thought_process)\].*?(?="
-            + re.escape(CONTENT_SEPARATOR)
-            + r"|\[|\Z)",
+            r"\[(DIRECTOR_NOTE|thought_process)\].*?(?=" + re.escape(CONTENT_SEPARATOR) + r"|\[|\Z)",
             "",
             text,
             flags=re.DOTALL | re.IGNORECASE,
@@ -603,6 +579,7 @@ class OutputSanitizer:
         # Python形式クォートの修正
         text = re.sub(r"([{,]\s*)\'([a-zA-Z0-9_.]+)\'\s*:", r'\1"\2":', text)
         text = re.sub(r"([{,]\s*)([a-zA-Z0-9_]+)\s*:", r'\1"\2":', text)
+
         # 値は貪欲に伸ばさず「クォート/ZIP 終端記号で閉じてる」最短一致にする。
         # 旧実装の DOTALL + 遅延 .*? は終端が見つからない場合に O(n^2) になり、
         # かつ値の中に含まれる " をエスケープせず埋め込んで壊れた JSON を返す。
@@ -670,9 +647,7 @@ class ContentValidator:
         std_dev = (sum((x - avg) ** 2 for x in lengths) / len(lengths)) ** 0.5
 
         if std_dev < 8.0:
-            errors.append(
-                f"リズム警告: 文章の長さが均一すぎます（偏差:{std_dev:.1f}）。長短を混ぜてください。"
-            )
+            errors.append(f"リズム警告: 文章の長さが均一すぎます（偏差:{std_dev:.1f}）。長短を混ぜてください。")
 
         endings = [s[-2:] if len(s) >= 2 else s[-1:] for s in sentences]
         count = 1
@@ -745,9 +720,7 @@ class ContentValidator:
                     i += 1
                 elif i + 1 < len(sentences) and len(s["text"]) < 20 and sentences[i + 1]["text"]:
                     ns = sentences[i + 1]
-                    new_sentences.append(
-                        {"text": s["text"] + "、" + ns["text"], "punct": ns["punct"]}
-                    )
+                    new_sentences.append({"text": s["text"] + "、" + ns["text"], "punct": ns["punct"]})
                     i += 2
                 else:
                     new_sentences.append(s)
@@ -878,9 +851,7 @@ class TextFormatter:
 
         # 「セリフ」または『セリフ』の前に何かがある行を対象
         # DOTALLフラグは不要、MULTILINEで各行の先頭を^でマッチ
-        text = re.sub(
-            r"^([^「『\n]+)([「『].*?[」』])", _process_dialogue_line, text, flags=re.MULTILINE
-        )
+        text = re.sub(r"^([^「『\n]+)([「『].*?[」』])", _process_dialogue_line, text, flags=re.MULTILINE)
 
         # 記号の統一
         text = re.sub(r"\.{3,}", "……", text)

@@ -86,6 +86,7 @@ class WritingCoordinator:
     def audit_generated_text(self, text: str) -> dict[str, Any]:
         """本文生成直後に UnifiedAuditor による定量監査（0ms/0円）を実行しスコアと警告一覧を付与."""
         from src.agents.specialists.unified_auditor import UnifiedAuditor
+
         auditor = UnifiedAuditor()
         score, meta = auditor.audit_quantitative(text)
         warnings = []
@@ -178,7 +179,7 @@ class WritingCoordinator:
                 if reporter:
                     reporter.report(
                         f"Ep.{ep}: BookScore {score_result['overall_score']:.1f} 閾値未満、"
-                        f"再生成 {retry+1}/{max_retries} (低次元: {low_dims})",
+                        f"再生成 {retry + 1}/{max_retries} (低次元: {low_dims})",
                         "warning",
                     )
 
@@ -206,9 +207,7 @@ class WritingCoordinator:
                 )
 
             # 最大リトライ後も閾値未満の場合
-            final_score = await self.calculate_book_score(
-                book_id=book_id, chapter_number=ep, phase="writing"
-            )
+            final_score = await self.calculate_book_score(book_id=book_id, chapter_number=ep, phase="writing")
             if final_score and final_score.get("regeneration_triggered"):
                 if reporter:
                     reporter.report(
@@ -285,6 +284,7 @@ class WritingCoordinator:
             return None
 
         from src.agents.orchestrator import AgentContext
+
         ctx = AgentContext(book_id=book_id, branch_id=1, ep_num=chapter_number, artifacts={})
 
         score = await self.book_score_calculator.calculate(
@@ -443,9 +443,7 @@ class WritingCoordinator:
         if self.repo is None:
             return
 
-        episode = getattr(self.repo, "get_episode_by_number", lambda *args, **kwargs: None)(
-            book_id, ep_num, branch_id
-        )
+        episode = getattr(self.repo, "get_episode_by_number", lambda *args, **kwargs: None)(book_id, ep_num, branch_id)
         if not episode or not getattr(episode, "content", None):
             return
 

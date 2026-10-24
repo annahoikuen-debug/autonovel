@@ -215,9 +215,7 @@ def is_advisory_strict_guard_enabled() -> bool:
 
     ``ENABLE_AUDIT_ADVISORY_STRICT_GUARD=false`` で無効化できる。
     """
-    return _env_flag(
-        "ENABLE_AUDIT_ADVISORY_STRICT_GUARD", DEFAULT_ENABLE_AUDIT_ADVISORY_STRICT_GUARD
-    )
+    return _env_flag("ENABLE_AUDIT_ADVISORY_STRICT_GUARD", DEFAULT_ENABLE_AUDIT_ADVISORY_STRICT_GUARD)
 
 
 def evaluate_gate(outcomes: list[dict[str, Any]]) -> dict[str, Any]:
@@ -280,9 +278,7 @@ def evaluate_gate(outcomes: list[dict[str, Any]]) -> dict[str, Any]:
         and not strict_guard
         and get_advisory_threshold() < threshold
         and aggregate >= get_advisory_threshold()
-        and all(
-            (o.get("effective_severity") in AUDIT_GATE_ADVISORY_SEVERITIES) for o in failed
-        )
+        and all((o.get("effective_severity") in AUDIT_GATE_ADVISORY_SEVERITIES) for o in failed)
     ):
         advisory_threshold = get_advisory_threshold()
         requires_regeneration = False
@@ -334,9 +330,7 @@ class AuditAgent(SkillAgent):
         self.prompt_manager = prompt_manager
 
         # 内部監査コンポーネントを初期化
-        self._logical_auditor = LogicalAuditor(
-            repo=repo, llm=llm, pm=prompt_manager, generate_json=llm
-        )
+        self._logical_auditor = LogicalAuditor(repo=repo, llm=llm, pm=prompt_manager, generate_json=llm)
         self._deai_auditor = DeAIAuditor(
             repo=repo, llm=llm, prompt_manager=prompt_manager, edge_preserver=edge_preserver
         )
@@ -387,9 +381,7 @@ class AuditAgent(SkillAgent):
     # 学習調整
     # ------------------------------------------------------------------
 
-    async def _check_learning_adjustment(
-        self, audit_type: str, field_path: str | None = None
-    ) -> tuple[bool, float]:
+    async def _check_learning_adjustment(self, audit_type: str, field_path: str | None = None) -> tuple[bool, float]:
         """学習データに基づく監査調整をチェック
 
         Returns:
@@ -679,9 +671,7 @@ class AuditAgent(SkillAgent):
         """
         started = time.perf_counter()
 
-        plan = await self._run_core_audits(
-            writing_context, drafted_text, book_id, ep_num, branch_id=branch_id
-        )
+        plan = await self._run_core_audits(writing_context, drafted_text, book_id, ep_num, branch_id=branch_id)
         durations: dict[str, float] = {}
 
         def _timed(criterion: AuditCriterion, factory: Any) -> Any:
@@ -729,9 +719,7 @@ class AuditAgent(SkillAgent):
             outcomes.append(outcome)
 
         # 定性的判断（UnifiedAuditor, v6-A2）は 5監査の入力を再利用するため直列で足す
-        unified_criterion, unified_raw = await self._run_unified_auditor(
-            writing_context, drafted_text
-        )
+        unified_criterion, unified_raw = await self._run_unified_auditor(writing_context, drafted_text)
         unified_started = time.perf_counter()
         self.emit_event(
             "audit.audit.started",
@@ -873,9 +861,7 @@ class AuditAgent(SkillAgent):
 
         mappings = self._build_safe_replacer_mappings(unified_report)
         # W4 Step 8: 三段階トリアージの判定（純関数・LLM 呼び出しなし）
-        plan = plan_repair(
-            drafted_text, failed_outcomes or [], StaticRuleAuditor().audit(drafted_text)
-        )
+        plan = plan_repair(drafted_text, failed_outcomes or [], StaticRuleAuditor().audit(drafted_text))
         plan_level = str(getattr(plan, "level", "") or "rule")
         span_rejected = False
         if mappings:
@@ -1034,9 +1020,7 @@ class AuditAgent(SkillAgent):
             original_content=original_content,
             proposed_content=proposed_content,
             diff_json=diff_json,
-            audit_issue_ids=[
-                issue.get("issue_id", 0) for issue in audit_issues if issue.get("issue_id")
-            ],
+            audit_issue_ids=[issue.get("issue_id", 0) for issue in audit_issues if issue.get("issue_id")],
             learning_metadata=learning_metadata,
         )
 
@@ -1105,10 +1089,13 @@ class AuditAgent(SkillAgent):
 
     async def execute(self, ctx: AgentContext) -> AgentResult:
         """スキル実行エントリーポイント。"""
-        self.emit_event("audit.started", {
-            "book_id": ctx.book_id,
-            "ep_num": ctx.ep_num,
-        })
+        self.emit_event(
+            "audit.started",
+            {
+                "book_id": ctx.book_id,
+                "ep_num": ctx.ep_num,
+            },
+        )
 
         writing_context = ctx.artifacts.get("writing_context")
         # エンリッチメント済みテキストを優先、なければ元のドラフトを使用
@@ -1116,11 +1103,14 @@ class AuditAgent(SkillAgent):
         drafted_text = enriched_text or ctx.artifacts.get("drafted_text")
 
         if not writing_context or not drafted_text:
-            self.emit_event("audit.error", {
-                "book_id": ctx.book_id,
-                "ep_num": ctx.ep_num,
-                "error": "writing_context and drafted_text are required in artifacts",
-            })
+            self.emit_event(
+                "audit.error",
+                {
+                    "book_id": ctx.book_id,
+                    "ep_num": ctx.ep_num,
+                    "error": "writing_context and drafted_text are required in artifacts",
+                },
+            )
             return AgentResult(
                 next_agent=None,
                 artifacts={},
@@ -1139,19 +1129,11 @@ class AuditAgent(SkillAgent):
             failed_outcomes = [o for o in outcomes if not o["passed"] and o["blocking"]]
             failed_audits = [self._to_legacy_failure(o) for o in failed_outcomes]
             # 非ブロッキング（UnifiedAuditor の追加観測）は PatchReview を汚さないよう分離する
-            advisories = [
-                self._to_legacy_failure(o)
-                for o in outcomes
-                if not o["passed"] and not o["blocking"]
-            ]
-            learning_adjusted_audits = [
-                o["audit_id"] for o in outcomes if o["learning_adjusted"]
-            ]
+            advisories = [self._to_legacy_failure(o) for o in outcomes if not o["passed"] and not o["blocking"]]
+            learning_adjusted_audits = [o["audit_id"] for o in outcomes if o["learning_adjusted"]]
 
             if learning_adjusted_audits:
-                logger.info(
-                    f"Learning-adjusted audits for Ep.{ep_num}: {learning_adjusted_audits}"
-                )
+                logger.info(f"Learning-adjusted audits for Ep.{ep_num}: {learning_adjusted_audits}")
 
             audit_metrics = {
                 "latency_seconds": round(latency, 6),
@@ -1169,13 +1151,16 @@ class AuditAgent(SkillAgent):
 
             # 全監査合格
             if not failed_audits:
-                self.emit_event("audit.completed", {
-                    "book_id": book_id,
-                    "ep_num": ep_num,
-                    "result": "passed",
-                    "audit_ids": audit_metrics["audit_ids"],
-                    "latency_seconds": audit_metrics["latency_seconds"],
-                })
+                self.emit_event(
+                    "audit.completed",
+                    {
+                        "book_id": book_id,
+                        "ep_num": ep_num,
+                        "result": "passed",
+                        "audit_ids": audit_metrics["audit_ids"],
+                        "latency_seconds": audit_metrics["latency_seconds"],
+                    },
+                )
                 return AgentResult(
                     next_agent=AgentName.ILLUSTRATION,
                     should_retry=False,
@@ -1213,13 +1198,16 @@ class AuditAgent(SkillAgent):
                     patch_type="local_patch",
                     proposed_content=patch_result["text"],
                 )
-                self.emit_event("audit.completed", {
-                    "book_id": book_id,
-                    "ep_num": ep_num,
-                    "result": "patched",
-                    "patch_strategy": patch_result["strategy"],
-                    "aggregate_score": gate["aggregate_score"],
-                })
+                self.emit_event(
+                    "audit.completed",
+                    {
+                        "book_id": book_id,
+                        "ep_num": ep_num,
+                        "result": "patched",
+                        "patch_strategy": patch_result["strategy"],
+                        "aggregate_score": gate["aggregate_score"],
+                    },
+                )
                 return AgentResult(
                     next_agent=AgentName.ILLUSTRATION,
                     should_retry=False,
@@ -1250,12 +1238,15 @@ class AuditAgent(SkillAgent):
 
             if not gate["requires_regeneration"]:
                 # 軽微な失敗は続行する（ユーザー確認と PatchReview は残す）
-                self.emit_event("audit.completed", {
-                    "book_id": book_id,
-                    "ep_num": ep_num,
-                    "result": "passed_with_warnings",
-                    "aggregate_score": gate["aggregate_score"],
-                })
+                self.emit_event(
+                    "audit.completed",
+                    {
+                        "book_id": book_id,
+                        "ep_num": ep_num,
+                        "result": "passed_with_warnings",
+                        "aggregate_score": gate["aggregate_score"],
+                    },
+                )
                 return AgentResult(
                     next_agent=AgentName.ILLUSTRATION,
                     should_retry=False,
@@ -1278,21 +1269,22 @@ class AuditAgent(SkillAgent):
             # Orchestrator の max_backtracks_per_node=3 だと1話あたり最大4回
             # 全文書きする。1話1回に封じ込める。
             if is_repair_budget_enabled() and not self._repair_budget.should_regenerate_full_text():
-                self.emit_event("audit.completed", {
-                    "book_id": book_id,
-                    "ep_num": ep_num,
-                    "result": "repassed_budget_exhausted",
-                    "aggregate_score": gate["aggregate_score"],
-                })
+                self.emit_event(
+                    "audit.completed",
+                    {
+                        "book_id": book_id,
+                        "ep_num": ep_num,
+                        "result": "repassed_budget_exhausted",
+                        "aggregate_score": gate["aggregate_score"],
+                    },
+                )
                 return AgentResult(
                     next_agent=AgentName.ILLUSTRATION,
                     should_retry=False,
                     is_backtrack=False,
                     error=None,
                     artifacts={
-                        "audit_feedback": (
-                            "Audit failed but full regeneration budget is exhausted"
-                        ),
+                        "audit_feedback": ("Audit failed but full regeneration budget is exhausted"),
                         "requires_user_review": True,
                         "patch_review_id": patch_review_id,
                         "failed_audits": failed_audits,
@@ -1321,12 +1313,15 @@ class AuditAgent(SkillAgent):
                 {"attempt": self._repair_budget.regeneration_count},
             )
 
-            self.emit_event("audit.completed", {
-                "book_id": book_id,
-                "ep_num": ep_num,
-                "result": "rejected",
-                "aggregate_score": gate["aggregate_score"],
-            })
+            self.emit_event(
+                "audit.completed",
+                {
+                    "book_id": book_id,
+                    "ep_num": ep_num,
+                    "result": "rejected",
+                    "aggregate_score": gate["aggregate_score"],
+                },
+            )
             return AgentResult(
                 next_agent=AgentName.WRITING,
                 should_retry=True,
@@ -1337,7 +1332,7 @@ class AuditAgent(SkillAgent):
                     "requires_user_review": True,
                     "patch_review_id": patch_review_id,
                     "failed_audits": failed_audits,
-                        "audit_advisories": advisories,
+                    "audit_advisories": advisories,
                     "learning_adjusted_audits": learning_adjusted_audits,
                     "audit_status": "rejected",
                     "regeneration_directive": regeneration_directive,
@@ -1347,11 +1342,14 @@ class AuditAgent(SkillAgent):
             )
 
         except Exception as e:
-            self.emit_event("audit.error", {
-                "book_id": ctx.book_id,
-                "ep_num": ctx.ep_num,
-                "error": str(e),
-            })
+            self.emit_event(
+                "audit.error",
+                {
+                    "book_id": ctx.book_id,
+                    "ep_num": ctx.ep_num,
+                    "error": str(e),
+                },
+            )
             return AgentResult(
                 next_agent=None,
                 artifacts={},
@@ -1376,6 +1374,7 @@ class AuditAgent(SkillAgent):
             return result.to_dict()
         except Exception as e:
             import logging
+
             logging.getLogger(__name__).warning(f"Specialist audit failed, fallback to empty: {e}")
             return {
                 "overall": 0.0,

@@ -1,4 +1,5 @@
 """Unit tests for EnrichmentAgent with LLM-based Sensory Expansion and Token Budget (Step 61)."""
+
 from __future__ import annotations
 
 import pytest
@@ -54,7 +55,6 @@ async def test_enrichment_agent_sensory_with_llm():
     assert "冷や汗が滲んだ" in sensory_meta["expanded_text"]
 
 
-
 @pytest.mark.asyncio
 async def test_enrichment_agent_trivia_budget_compliance():
     """Step 61: トリビア挿入におけるトークン予算遵守と品質維持の検証."""
@@ -71,7 +71,11 @@ async def test_enrichment_agent_trivia_budget_compliance():
 
     # 大量のトリビア候補（合計文字数が予算を大幅に超過）
     candidates = [
-        {"fact": "王都アルカディアはかつて竜の寝床であったとされる。" * 2, "entity": "王都", "source_type": "world_bible"},
+        {
+            "fact": "王都アルカディアはかつて竜の寝床であったとされる。" * 2,
+            "entity": "王都",
+            "source_type": "world_bible",
+        },
         {"fact": "第二のトリビア: 古代文字の記録。" * 2, "entity": "王都", "source_type": "world_bible"},
         {"fact": "第三のトリビア: 禁忌の秘薬。" * 2, "entity": "王都", "source_type": "world_bible"},
     ]

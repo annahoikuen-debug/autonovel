@@ -116,9 +116,7 @@ def test_aggregator_init_and_registry():
     assert agg.results == {}
     assert isinstance(agg.fast_screener, FastScreener)
 
-    partial = AuditAggregator(
-        specialists=[_Spec("consistency")], weights=_uniform_weights(), calibrator=_NoCal()
-    )
+    partial = AuditAggregator(specialists=[_Spec("consistency")], weights=_uniform_weights(), calibrator=_NoCal())
     assert len(partial.specialists) == 1
 
     from_registry = AuditAggregator.from_registry(
@@ -128,23 +126,17 @@ def test_aggregator_init_and_registry():
 
 
 def test_aggregator_calibrator_default_import(monkeypatch):
-    agg = AuditAggregator(
-        specialists=[], weights=_uniform_weights(), calibrator=None
-    )
+    agg = AuditAggregator(specialists=[], weights=_uniform_weights(), calibrator=None)
     assert agg.calibrator is None or agg.calibrator is not None
 
 
 def test_refresh_model_routing():
     router = MagicMock()
-    agg = AuditAggregator(
-        specialists=[], weights=_uniform_weights(), calibrator=_NoCal(), model_router=router
-    )
+    agg = AuditAggregator(specialists=[], weights=_uniform_weights(), calibrator=_NoCal(), model_router=router)
     agg.refresh_model_routing("x.yaml")
     router.refresh_from_config.assert_called_once_with("x.yaml")
 
-    no_router = AuditAggregator(
-        specialists=[], weights=_uniform_weights(), calibrator=_NoCal()
-    )
+    no_router = AuditAggregator(specialists=[], weights=_uniform_weights(), calibrator=_NoCal())
     no_router.refresh_model_routing()
 
 
@@ -187,9 +179,7 @@ async def test_aggregate_with_calibration_and_penalty():
         "metadata": {"genre": "general"},
         "outliers": ["style"],
     }
-    agg = AuditAggregator(
-        specialists=specs, weights=_uniform_weights(), calibrator=calibrator
-    )
+    agg = AuditAggregator(specialists=specs, weights=_uniform_weights(), calibrator=calibrator)
     await agg.run_all({})
     out = agg.aggregate(genre="fantasy")
     calibrator.calibrate_all.assert_called_once()
@@ -212,9 +202,7 @@ async def test_aggregate_two_present_no_variance_penalty():
 
 async def test_run_batch():
     specs = [_Spec(n) for n in SPECIALIST_NAMES]
-    agg = AuditAggregator(
-        specialists=specs, weights=_uniform_weights(), calibrator=_NoCal(), batch_mode=True
-    )
+    agg = AuditAggregator(specialists=specs, weights=_uniform_weights(), calibrator=_NoCal(), batch_mode=True)
     res = await agg.run_batch({})
     assert set(res) == {"factual", "consistency", "style"}
 
@@ -230,9 +218,7 @@ async def test_event_bus_publishing():
     bus = MagicMock()
     bus.publish_async = AsyncMock()
     specs = [_Spec("consistency", 88.0)]
-    agg = AuditAggregator(
-        specialists=specs, weights=_uniform_weights(), calibrator=_NoCal(), event_bus=bus
-    )
+    agg = AuditAggregator(specialists=specs, weights=_uniform_weights(), calibrator=_NoCal(), event_bus=bus)
     await agg.run_all({"book_id": 3, "chapter_number": 2, "weight_variant": "v"})
     assert bus.publish_async.await_count == 2
 
@@ -247,9 +233,7 @@ async def test_publish_with_broken_bus():
     bus = MagicMock()
     bus.publish_async = AsyncMock(side_effect=RuntimeError("x"))
     specs = [_Spec("consistency", 88.0)]
-    agg = AuditAggregator(
-        specialists=specs, weights=_uniform_weights(), calibrator=_NoCal(), event_bus=bus
-    )
+    agg = AuditAggregator(specialists=specs, weights=_uniform_weights(), calibrator=_NoCal(), event_bus=bus)
     await agg.run_all({})
     await agg.publish_aggregated_metrics(BookScoreResult(overall=1.0, by_specialist={}), {})
 
@@ -263,9 +247,7 @@ async def test_hierarchical_audit_early_exit():
     screener = MagicMock()
     screener.screen = AsyncMock(return_value=(95.0, True))
     specs = [_Spec(n) for n in SPECIALIST_NAMES]
-    agg = AuditAggregator(
-        specialists=specs, weights=_uniform_weights(), calibrator=_NoCal(), fast_screener=screener
-    )
+    agg = AuditAggregator(specialists=specs, weights=_uniform_weights(), calibrator=_NoCal(), fast_screener=screener)
     out = await agg.run_hierarchical_audit({"draft_text": "本文"})
     assert out.calibration_meta["early_exit"] is True
     assert out.overall == 95.0
@@ -276,9 +258,7 @@ async def test_hierarchical_audit_full_run_and_no_text():
     screener = MagicMock()
     screener.screen = AsyncMock(return_value=(50.0, False))
     specs = [_Spec(n) for n in SPECIALIST_NAMES]
-    agg = AuditAggregator(
-        specialists=specs, weights=_uniform_weights(), calibrator=_NoCal(), fast_screener=screener
-    )
+    agg = AuditAggregator(specialists=specs, weights=_uniform_weights(), calibrator=_NoCal(), fast_screener=screener)
     out = await agg.run_hierarchical_audit({"draft_text": "本文"})
     assert out.overall > 0
     assert all(s.calls == 1 for s in specs)
@@ -340,9 +320,11 @@ async def test_fast_screener_with_llm():
 # adapter / targeted diagnostic
 # --------------------------------------------------------------------------
 async def test_audit_adapter_episode_success_and_normalization():
-    engine = SimpleNamespace(auditor=SimpleNamespace(
-        audit=AsyncMock(return_value={"overall_score": 1000, "issues": ["i"], "improvements": ["m"]})
-    ))
+    engine = SimpleNamespace(
+        auditor=SimpleNamespace(
+            audit=AsyncMock(return_value={"overall_score": 1000, "issues": ["i"], "improvements": ["m"]})
+        )
+    )
     adapter = create_audit_adapter(engine)
     assert isinstance(adapter, AuditAdapter)
     out = await adapter.audit_episode("本文", {"target_audit_score": 95.0})
@@ -377,9 +359,9 @@ async def test_audit_adapter_bible():
     assert await AuditAdapter(SimpleNamespace()).audit_bible({}, None) is True
 
     broken = SimpleNamespace(
-        planner=SimpleNamespace(plan_auditor=SimpleNamespace(
-            audit_bible_completeness=AsyncMock(side_effect=RuntimeError("x"))
-        ))
+        planner=SimpleNamespace(
+            plan_auditor=SimpleNamespace(audit_bible_completeness=AsyncMock(side_effect=RuntimeError("x")))
+        )
     )
     assert await AuditAdapter(broken).audit_bible({}, None) is True
 

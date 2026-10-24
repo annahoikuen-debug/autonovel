@@ -1,4 +1,5 @@
 """NarouPublisher coverage: driver fallback, format conversion, status and error paths."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -52,6 +53,7 @@ def test_get_driver_raises_without_selenium(publisher):
     # selenium 未導入環境（try/except ImportError で None が設定済み）では
     # in-function import も失敗する。まず None 状態を確認。
     import src.services.publishers.narou as narou_module
+
     if narou_module.webdriver is None:
         with pytest.raises(RuntimeError, match="Selenium/ChromeDriverが必要です"):
             publisher._get_driver()
@@ -72,6 +74,7 @@ def test_get_driver_and_close(publisher):
     test_get_driver_raises_without_selenium がカバーしている。
     """
     import src.services.publishers.narou as narou_module
+
     if narou_module.webdriver is None:
         pytest.skip("selenium / webdriver-manager not installed")
 
@@ -105,6 +108,7 @@ def test_close_async_and_del(publisher):
     driver = MagicMock()
     publisher._driver = driver
     import asyncio
+
     asyncio.run(publisher.close())
     assert publisher._driver is None
 
@@ -126,6 +130,7 @@ async def test_authenticate_success_extracts_user_id(publisher, credentials):
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
         import src.services.publishers.narou as narou_module
+
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
@@ -147,6 +152,7 @@ async def test_authenticate_login_failure_with_error_element(publisher, credenti
         # quit() が呼ばれるのは _close_driver() が所有 driver を_CLOSE するため。
         publisher._driver = driver
         import src.services.publishers.narou as narou_module
+
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
@@ -195,9 +201,11 @@ async def test_publish_auto_authenticates_first(publisher, credentials):
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
 
-        result = await publisher.publish({"title": "T", "synopsis": "S", "genre": "fantasy",
-                                          "keywords": ["a", "b"], "is_adult": True},
-                                         {"title": "第1話", "content": "本文"}, credentials)
+        result = await publisher.publish(
+            {"title": "T", "synopsis": "S", "genre": "fantasy", "keywords": ["a", "b"], "is_adult": True},
+            {"title": "第1話", "content": "本文"},
+            credentials,
+        )
         publisher.authenticate.assert_awaited_once()
     assert result.success is True
     assert result.post_id == "4242"
@@ -213,6 +221,7 @@ async def test_publish_novel_id_from_mypage_fallback(publisher, credentials):
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
         import src.services.publishers.narou as narou_module
+
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
@@ -229,6 +238,7 @@ async def test_publish_validation_error_when_no_novel_id(publisher, credentials)
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
         import src.services.publishers.narou as narou_module
+
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
@@ -241,6 +251,7 @@ async def test_publish_validation_error_when_no_novel_id(publisher, credentials)
 async def test_publish_rate_limit_error(publisher, credentials):
     """driver.get が「アクセスが集中」エラーを出した場合 RateLimitError に変換。"""
     import src.services.publishers.narou as narou_module
+
     driver = MagicMock()
     driver.get.side_effect = RuntimeError("アクセスが集中しています")
     publisher._logged_in = True
@@ -271,12 +282,14 @@ async def test_update_chapter_success(publisher, credentials):
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
         import src.services.publishers.narou as narou_module
+
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
 
-        result = await publisher.update_chapter("12345", {"title": "第2話", "content": "続き",
-                                                          "ep_num": 2}, credentials)
+        result = await publisher.update_chapter(
+            "12345", {"title": "第2話", "content": "続き", "ep_num": 2}, credentials
+        )
     assert result.success is True
     assert result.post_id == "12345"
     assert result.metadata["episode"] == 2
@@ -286,6 +299,7 @@ async def test_update_chapter_success(publisher, credentials):
 @pytest.mark.asyncio
 async def test_update_chapter_rate_limit_and_network(publisher, credentials):
     import src.services.publishers.narou as narou_module
+
     driver = MagicMock()
     driver.get.side_effect = RuntimeError("アクセスが集中")
     publisher._logged_in = True
@@ -315,6 +329,7 @@ async def test_update_chapter_auto_authenticates(publisher, credentials):
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
         import src.services.publishers.narou as narou_module
+
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
@@ -333,9 +348,13 @@ async def test_get_post_status_success(publisher, credentials):
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
         status = await publisher.get_post_status("12345", credentials)
-    assert status == {"novel_id": "12345", "title": "小説タイトル", "episode_count": 7,
-                      "status": "published",
-                      "url": "https://ncode.syosetu.com/n12345/"}
+    assert status == {
+        "novel_id": "12345",
+        "title": "小説タイトル",
+        "episode_count": 7,
+        "status": "published",
+        "url": "https://ncode.syosetu.com/n12345/",
+    }
 
 
 @pytest.mark.asyncio

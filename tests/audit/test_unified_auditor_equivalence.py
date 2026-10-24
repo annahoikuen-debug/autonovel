@@ -53,5 +53,5 @@ class TestUnifiedAuditorEquivalence(unittest.TestCase):
             self.assertEqual(len(issues), 0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

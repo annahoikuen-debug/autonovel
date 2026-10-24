@@ -138,7 +138,9 @@ class EpisodeContextBuilder:
             "previous_episode": {
                 "summary": layer2_summary.get("last_episode_summary", "") if layer2_summary else "",
                 "ending": layer3_raw[-500:] if layer3_raw else "",
-            } if not is_first else {},
+            }
+            if not is_first
+            else {},
         }
         self._add_to_history(ep_num, context)
         return context
@@ -178,6 +180,7 @@ class EpisodeContextBuilder:
     async def _safe_execute(self, query: Any) -> list[Any]:
         """安全にクエリを実行してエンティティリストを返す（AsyncSession, Sync, Mock両対応）"""
         import inspect
+
         if self.db is None or not hasattr(self.db, "execute"):
             return []
         try:
@@ -194,9 +197,7 @@ class EpisodeContextBuilder:
 
     async def _build_layer1_bible(self, book_id: int) -> dict[str, Any]:
         """Layer 1: バイブル（キャラクター・世界観設定）を構築"""
-        character_list = await self._safe_execute(
-            select(CharacterModel).where(CharacterModel.book_id == book_id)
-        )
+        character_list = await self._safe_execute(select(CharacterModel).where(CharacterModel.book_id == book_id))
 
         character_bible = []
         for char in character_list:
@@ -335,14 +336,10 @@ class EpisodeContextBuilder:
             if omitted:
                 first = getattr(omitted[0], "ep_num", "?")
                 last = getattr(omitted[-1], "ep_num", "?")
-                episode_summaries.append(
-                    f"……（第{first}話〜第{last}話の確定事実は省略）……"
-                )
+                episode_summaries.append(f"……（第{first}話〜第{last}話の確定事実は省略）……")
             episode_summaries += [f"第{getattr(ch, 'ep_num', '?')}話: {_brief(ch)}" for ch in tail]
         else:
-            episode_summaries = [
-                f"第{getattr(ch, 'ep_num', '?')}話: {_brief(ch)}" for ch in chapter_list
-            ]
+            episode_summaries = [f"第{getattr(ch, 'ep_num', '?')}話: {_brief(ch)}" for ch in chapter_list]
 
         foreshadowing_list = await self._safe_execute(
             select(ForeshadowingModel)
@@ -356,11 +353,7 @@ class EpisodeContextBuilder:
             return target if isinstance(target, int) else None
 
         def _fs_line(f: Any) -> str:
-            overdue = (
-                " ⚠期限超過"
-                if _target_of(f) is not None and _target_of(f) < current_ep
-                else ""
-            )
+            overdue = " ⚠期限超過" if _target_of(f) is not None and _target_of(f) < current_ep else ""
             return (
                 f"  - 「{f.title}」（第{f.planted_episode}話設置"
                 f"{f', 第{f.target_episode}話回収目標' if f.target_episode else ''}"
@@ -380,9 +373,7 @@ class EpisodeContextBuilder:
             return _target_of(f) is not None and _target_of(f) < current_ep
 
         # 期限超過を最優先、残りは target_episode 昇順（回収期限が近い順）
-        ordered = sorted(
-            foreshadowing_list, key=lambda f: (0 if _is_overdue(f) else 1, _target_of(f) or 10**9)
-        )
+        ordered = sorted(foreshadowing_list, key=lambda f: (0 if _is_overdue(f) else 1, _target_of(f) or 10**9))
         total_overdue = sum(1 for f in foreshadowing_list if _is_overdue(f))
 
         kept: list[str] = []
@@ -394,9 +385,7 @@ class EpisodeContextBuilder:
                 kept.append(line)
                 used += cost
         omitted_count = len(ordered) - len(kept)
-        omitted_overdue = total_overdue - sum(
-            1 for f in ordered[: len(kept)] if _is_overdue(f)
-        )
+        omitted_overdue = total_overdue - sum(1 for f in ordered[: len(kept)] if _is_overdue(f))
 
         fs_body = "\n".join(kept) if kept else "(なし)"
         if omitted_count:
@@ -440,8 +429,6 @@ class EpisodeContextBuilder:
             "foreshadowing_chars": len(fs_section),
             "foreshadowing_omitted": omitted_count,
             "foreshadowing_overdue": sum(
-                1
-                for f in foreshadowing_list
-                if _target_of(f) is not None and _target_of(f) < current_ep
+                1 for f in foreshadowing_list if _target_of(f) is not None and _target_of(f) < current_ep
             ),
         }

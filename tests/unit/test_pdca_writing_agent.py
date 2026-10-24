@@ -1,4 +1,5 @@
 """Tests for WritingAgent PDCA rewriting and ClosedLoopPDCARunner integration (Steps 10-12)."""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -22,15 +23,16 @@ class DummyRepo:
     async def get_chapter(self, branch_id: int, ep_num: int, book_id: int | None = None):
         return self.chapter
 
-    async def update_chapter_content(
-        self, branch_id: int, ep_num: int, content: str, book_id: int | None = None
-    ):
+    async def update_chapter_content(self, branch_id: int, ep_num: int, content: str, book_id: int | None = None):
         self.updated_content = content
         self.chapter.content = content
 
 
 class DummyLLM:
-    def __init__(self, rewritten_output: str = "【改稿後】アルトは錆びついた古代魔導剣を素早く抜いた。静寂の森に刃鳴りが響き渡る。"):
+    def __init__(
+        self,
+        rewritten_output: str = "【改稿後】アルトは錆びついた古代魔導剣を素早く抜いた。静寂の森に刃鳴りが響き渡る。",
+    ):
         self.rewritten_output = rewritten_output
         self.last_prompt = None
 

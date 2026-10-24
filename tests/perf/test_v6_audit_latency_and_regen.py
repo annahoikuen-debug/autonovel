@@ -219,6 +219,7 @@ def test_regeneration_ratio_is_measured():
 def test_single_minor_failure_uses_local_patch_instead_of_full_rewrite():
     """軽微1件の不合格で全文再生成に落ちていないこと（Step 25 の効果）。"""
     agent = _build_agent()
+
     # deai 以外の監査を「すべて合格」に差し替え、deai だけを不合格にする
     async def _ok_screen(blueprint: str):
         return True, ""
@@ -243,13 +244,8 @@ def test_single_minor_failure_uses_local_patch_instead_of_full_rewrite():
     agent._plot_monitor = _OkMonitor()
 
     result = asyncio.run(agent.execute(_ctx(agent)))
-    print(
-        f"\n[実測] 軽微1件: should_retry={result.should_retry} "
-        f"status={result.artifacts.get('audit_status')}"
-    )
-    assert result.should_retry is False, (
-        "軽微1件の不合格で全文再生成が発生している"
-    )
+    print(f"\n[実測] 軽微1件: should_retry={result.should_retry} status={result.artifacts.get('audit_status')}")
+    assert result.should_retry is False, "軽微1件の不合格で全文再生成が発生している"
 
 
 def test_regeneration_target_measurement_is_reported():
@@ -257,4 +253,3 @@ def test_regeneration_target_measurement_is_reported():
     measured = _measure_regeneration_ratio()
     assert "ratio" in measured and measured["ratio"] is not None
     assert measured["mode"] in ("score_aggregation", "all_or_nothing")
-

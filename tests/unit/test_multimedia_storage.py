@@ -1,4 +1,5 @@
 """`multimedia_storage` の単体テスト。"""
+
 from __future__ import annotations
 
 from src.backend import config

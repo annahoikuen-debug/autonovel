@@ -27,6 +27,7 @@ src/core/llm — LLM 統合インターフェース（公式エントリポイ�
   src.llm.* の元モジュールは後方互換のため当面維持しますが、
   将来のバージョンで削除予定です。
 """
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any

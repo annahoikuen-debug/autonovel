@@ -20,9 +20,7 @@ from src.backend.database.repositories.base import BaseRepository
 class BranchRepository(BaseRepository):
     """Branchesテーブルに関するDB操作をまとめたMixin"""
 
-    async def create_branch(
-        self, book_id: int, name: str, parent_id: int | None = None, fork_ep_num: int = 0
-    ) -> int:
+    async def create_branch(self, book_id: int, name: str, parent_id: int | None = None, fork_ep_num: int = 0) -> int:
         """新しいブランチを作し、必要に応じて親ブランチからデータをコピーする"""
         branch = Branch(
             book_id=book_id,
@@ -48,9 +46,7 @@ class BranchRepository(BaseRepository):
 
             # チャプターのコピー
             chap_result = await self.session.execute(
-                select(Chapter)
-                .where(Chapter.branch_id == parent_id)
-                .where(Chapter.ep_num <= fork_ep_num)
+                select(Chapter).where(Chapter.branch_id == parent_id).where(Chapter.ep_num <= fork_ep_num)
             )
             parent_chaps = chap_result.scalars().all()
             for c in parent_chaps:
@@ -61,18 +57,14 @@ class BranchRepository(BaseRepository):
         return branch_id
 
     async def get_branches(self, book_id: int) -> list[BranchDbModel]:
-        result = await self.session.execute(
-            select(Branch).where(Branch.book_id == book_id).order_by(Branch.created_at)
-        )
+        result = await self.session.execute(select(Branch).where(Branch.book_id == book_id).order_by(Branch.created_at))
         branches = result.scalars().all()
         from src.models import BranchDbModel
 
         return [BranchDbModel(**self._to_dict(b)) for b in branches]
 
     async def update_book_current_branch(self, book_id: int, branch_id: int) -> None:
-        await self.session.execute(
-            update(Book).where(Book.id == book_id).values(current_branch_id=branch_id)
-        )
+        await self.session.execute(update(Book).where(Book.id == book_id).values(current_branch_id=branch_id))
 
     async def get_branch(self, branch_id: int) -> BranchDbModel | None:
         """単一ブランチ取得."""
@@ -87,9 +79,7 @@ class BranchRepository(BaseRepository):
     async def get_branch_tree(self, book_id: int) -> list[BranchDbModel]:
         """書籍の全ブランチをツリー順に取得 (parent_id → child の深さ優先)."""
         result = await self.session.execute(
-            select(Branch)
-            .where(Branch.book_id == book_id)
-            .order_by(Branch.parent_id, Branch.created_at)
+            select(Branch).where(Branch.book_id == book_id).order_by(Branch.parent_id, Branch.created_at)
         )
         branches = result.scalars().all()
         from src.models import BranchDbModel
@@ -98,9 +88,7 @@ class BranchRepository(BaseRepository):
 
     async def save_branch_graph(self, branch_id: int, graph_json: dict) -> None:
         """IF グラフをブランチに保存."""
-        await self.session.execute(
-            update(Branch).where(Branch.id == branch_id).values(graph_json=graph_json)
-        )
+        await self.session.execute(update(Branch).where(Branch.id == branch_id).values(graph_json=graph_json))
 
     async def load_branch_graph(self, branch_id: int) -> dict | None:
         """IF グラフをブランチから読み出し."""
@@ -127,9 +115,7 @@ class BranchRepository(BaseRepository):
         await self.session.flush()
 
     async def get_play_session(self, session_id: str) -> BranchPlaySession | None:
-        result = await self.session.execute(
-            select(BranchPlaySession).where(BranchPlaySession.id == session_id)
-        )
+        result = await self.session.execute(select(BranchPlaySession).where(BranchPlaySession.id == session_id))
         return result.scalar_one_or_none()
 
     async def update_play_session_state(
@@ -151,14 +137,10 @@ class BranchRepository(BaseRepository):
 
     async def end_play_session(self, session_id: str, status: str = "completed") -> None:
         await self.session.execute(
-            update(BranchPlaySession)
-            .where(BranchPlaySession.id == session_id)
-            .values(status=status)
+            update(BranchPlaySession).where(BranchPlaySession.id == session_id).values(status=status)
         )
 
-    async def list_play_sessions(
-        self, book_id: int, branch_id: int | None = None
-    ) -> list[BranchPlaySession]:
+    async def list_play_sessions(self, book_id: int, branch_id: int | None = None) -> list[BranchPlaySession]:
         """書籍配下のセッション一覧. branch_id 指定時はそのブランチのみ."""
         stmt = select(BranchPlaySession).where(BranchPlaySession.book_id == book_id)
         if branch_id is not None:

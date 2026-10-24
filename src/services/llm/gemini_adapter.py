@@ -65,9 +65,7 @@ class GeminiAdapter(BaseLLMAdapter):
         if self._client is None:
             # Gemini API は常にリモートなので、キー未設定はそのまま渡すと
             # 不透明な 400/401 になる。明確な設定エラーに翻訳する。
-            ensure_api_key_configured(
-                self.api_key, provider="Gemini", env_var="GEMINI_API_KEY"
-            )
+            ensure_api_key_configured(self.api_key, provider="Gemini", env_var="GEMINI_API_KEY")
             from google import genai  # 遅延 import（起動時間短縮のため）
 
             self._client = genai.Client(api_key=self.api_key)
@@ -146,7 +144,9 @@ class GeminiAdapter(BaseLLMAdapter):
                             last_err = e2
                             err_str = str(e2)
                     if "429" in err_str or "quota" in err_str.lower() or "503" in err_str:
-                        logger.warning("Model %s returned quota/unavailable (%s). Trying next fallback model...", model_cand, e)
+                        logger.warning(
+                            "Model %s returned quota/unavailable (%s). Trying next fallback model...", model_cand, e
+                        )
                         continue
                     raise
             if last_err:

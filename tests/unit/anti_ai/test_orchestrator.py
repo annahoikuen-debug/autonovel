@@ -71,8 +71,7 @@ class TestOrchestrator:
             triggered = {v.category for v in r.violations}
             missing = expected_cats - triggered
             assert not missing, (
-                f"{sample.label}: missing categories {missing}, "
-                f"got {sorted(c.value for c in triggered)}"
+                f"{sample.label}: missing categories {missing}, got {sorted(c.value for c in triggered)}"
             )
 
     def test_clean_prose_does_not_trigger(self):
@@ -126,6 +125,7 @@ class TestOrchestrator:
 
     def test_to_dict_json_safe(self):
         import json
+
         orch = RuleBasedAntiAIDetector()
         r = orch.detect("しかし、走る。さらに、歩く。また、跳ねる。")
         d = r.to_dict()

@@ -1,4 +1,5 @@
 """LLM アダプタのファクトリモジュール。"""
+
 from __future__ import annotations
 
 import logging
@@ -47,28 +48,20 @@ def get_llm_adapter(
     if p == "gemini":
         resolved_key = api_key or settings.GEMINI_API_KEY
         if not resolved_key:
-            raise RuntimeError(
-                "GEMINI_API_KEY が未設定です。.env を確認してください。"
-            )
+            raise RuntimeError("GEMINI_API_KEY が未設定です。.env を確認してください。")
         return GeminiAdapter(api_key=resolved_key, model_name=model_name)
 
     if p == "openai":
         resolved_key = api_key or settings.OPENAI_API_KEY
         resolved_url = base_url or settings.OPENAI_BASE_URL
         if not resolved_key and not resolved_url:
-            raise RuntimeError(
-                "OPENAI_API_KEY / OPENAI_BASE_URL が未設定です。"
-                ".env を確認してください。"
-            )
+            raise RuntimeError("OPENAI_API_KEY / OPENAI_BASE_URL が未設定です。.env を確認してください。")
         return OpenAIAdapter(api_key=resolved_key, base_url=resolved_url, model=model_name)
 
     if p == "openrouter":
         resolved_key = api_key or settings.OPENROUTER_API_KEY or settings.OPENAI_API_KEY
         if not resolved_key:
-            raise RuntimeError(
-                "OPENROUTER_API_KEY (or OPENAI_API_KEY) が未設定です。"
-                ".env を確認してください。"
-            )
+            raise RuntimeError("OPENROUTER_API_KEY (or OPENAI_API_KEY) が未設定です。.env を確認してください。")
         resolved_model = model_name or settings.OPENROUTER_MODEL
         return OpenAIAdapter(
             api_key=resolved_key,
@@ -79,9 +72,7 @@ def get_llm_adapter(
     if p == "claude":
         resolved_key = api_key or settings.ANTHROPIC_API_KEY
         if not resolved_key:
-            raise RuntimeError(
-                "ANTHROPIC_API_KEY が未設定です。.env を確認してください。"
-            )
+            raise RuntimeError("ANTHROPIC_API_KEY が未設定です。.env を確認してください。")
         return ClaudeAdapter(api_key=resolved_key, model_name=model_name)
 
     if p == "ollama":

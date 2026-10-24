@@ -13,6 +13,7 @@ from typing import Any
 @dataclass
 class FusionResult:
     """Represents a fused retrieval result with individual ranking and combined score."""
+
     doc_id: str
     score: float
     dense_rank: int | None = None
@@ -43,6 +44,7 @@ def compute_rrf_scores(
     Returns:
         List of FusionResult objects sorted by fused score descending.
     """
+
     def _extract_id_content_meta(item: Any) -> tuple[str, str, dict[str, Any]]:
         if isinstance(item, dict):
             return str(item.get("id", "")), str(item.get("content", "")), item.get("metadata", {})
@@ -89,14 +91,16 @@ def compute_rrf_scores(
             score += sparse_weight / (k + sparse_r)
 
         content, meta = items_info[doc_id]
-        results.append(FusionResult(
-            doc_id=doc_id,
-            score=score,
-            dense_rank=dense_r,
-            sparse_rank=sparse_r,
-            content=content,
-            metadata=meta,
-        ))
+        results.append(
+            FusionResult(
+                doc_id=doc_id,
+                score=score,
+                dense_rank=dense_r,
+                sparse_rank=sparse_r,
+                content=content,
+                metadata=meta,
+            )
+        )
 
     # Sort descending by score
     results.sort(key=lambda x: x.score, reverse=True)

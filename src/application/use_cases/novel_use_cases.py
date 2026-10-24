@@ -189,5 +189,6 @@ class GetLatestNovelsUseCase:
 
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from src.domain.value_objects.metadata import NovelStatus, NovelMode

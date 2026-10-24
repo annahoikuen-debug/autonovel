@@ -47,12 +47,7 @@ class GeminiImageClient:
 
     @staticmethod
     def _resolve_api_key() -> str:
-        return (
-            os.getenv("GEMINI_API_KEY")
-            or os.getenv("GOOGLE_GENAI_API_KEY")
-            or os.getenv("NANOBANANA_API_KEY")
-            or ""
-        )
+        return os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_GENAI_API_KEY") or os.getenv("NANOBANANA_API_KEY") or ""
 
     @property
     def client(self) -> Any | None:

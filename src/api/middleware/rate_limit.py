@@ -45,7 +45,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         # Clean old entries (simple cleanup, not production ready)
         self.clients = {
-            ip: data for ip, data in self.clients.items()
+            ip: data
+            for ip, data in self.clients.items()
             if current_time - data["first_request_time"] < self.window_size
         }
 

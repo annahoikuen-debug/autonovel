@@ -1,4 +1,5 @@
 """/api/config/planning_options が 500 でなく 200 を返すことの契約テスト。"""
+
 import asyncio
 from pathlib import Path
 
@@ -40,9 +41,7 @@ def test_new_spine_keys_have_expected_types():
 
     result = asyncio.run(get_planning_options())
     # cards は list（F1 の契約。test_planning_options_contract.py と一致）
-    assert isinstance(result["cards"], list), (
-        "cards は list であるべき（dict だと FE が card_id を取り損なう）"
-    )
+    assert isinstance(result["cards"], list), "cards は list であるべき（dict だと FE が card_id を取り損なう）"
     for item in result["cards"]:
         assert "card_id" in item, f"card_id が無い: {item}"
     # その他のキーは dict

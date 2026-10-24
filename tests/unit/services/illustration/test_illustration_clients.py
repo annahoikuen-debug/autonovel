@@ -1,4 +1,5 @@
 """Unit tests for illustration base/prompt_builder/factory/clients/adapters."""
+
 import base64
 import io
 import sys
@@ -97,9 +98,7 @@ class TestPromptBuilder:
         assert out == "a boy"
 
     def test_positive_prompt_all_parts(self):
-        out = PromptBuilder.build_positive_prompt(
-            "a boy", character_additions="blue hair", custom_positive="cinematic"
-        )
+        out = PromptBuilder.build_positive_prompt("a boy", character_additions="blue hair", custom_positive="cinematic")
         assert out.startswith("a boy")
         assert "blue hair" in out
         assert "masterpiece" in out
@@ -128,9 +127,7 @@ class TestIllustrationPromptGenerator:
 class TestMockImageClient:
     async def test_generates_real_png(self):
         client = MockImageClient(background_color="#123456")
-        res = await client.generate_image(
-            ImageGenerationRequest(prompt="p", width=16, height=20, seed=7)
-        )
+        res = await client.generate_image(ImageGenerationRequest(prompt="p", width=16, height=20, seed=7))
         assert res.image_bytes.startswith(b"\x89PNG")
         assert res.metadata["width"] == 16
         assert res.metadata["height"] == 20
@@ -501,9 +498,7 @@ class TestSDWebUIClient:
         monkeypatch.setattr(httpx, "AsyncClient", _Client2)
         c = SDWebUIClient()
         res = await c.generate_image(
-            ImageGenerationRequest(
-                prompt="p", negative_prompt="neg", seed=11, lora_tags=["anime", "detail"]
-            )
+            ImageGenerationRequest(prompt="p", negative_prompt="neg", seed=11, lora_tags=["anime", "detail"])
         )
         assert res.image_bytes == b"IMG"
         assert res.seed_used == 4242

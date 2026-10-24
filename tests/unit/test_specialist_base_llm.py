@@ -1,4 +1,5 @@
 """Unit test for SpecialistAuditor LLM Judge Foundation (Step 63)."""
+
 from __future__ import annotations
 
 import pytest
@@ -14,8 +15,10 @@ from src.agents.specialist_auditor_base import (
 def _make_llm_mock(json_response: str) -> MagicMock:
     """Create an LLM mock that returns the given JSON response for ainvoke/generate/invoke."""
     mock = MagicMock()
+
     async def _ainvoke(*args, **kwargs):
         return json_response
+
     mock.ainvoke = _ainvoke
     mock.generate = MagicMock(return_value=json_response)
     mock.invoke = MagicMock(return_value=json_response)

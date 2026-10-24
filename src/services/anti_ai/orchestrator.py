@@ -38,13 +38,9 @@ class RuleBasedAntiAIDetector:
     ) -> None:
         self.config = config
         if detectors is not None:
-            self._detectors: dict[AICategory, BaseRuleDetector] = {
-                d.category: d for d in detectors
-            }
+            self._detectors: dict[AICategory, BaseRuleDetector] = {d.category: d for d in detectors}
         else:
-            self._detectors = {
-                cat: cls(config=config) for cat, cls in RULE_DETECTORS.items()
-            }
+            self._detectors = {cat: cls(config=config) for cat, cls in RULE_DETECTORS.items()}
 
     @property
     def detectors(self) -> dict[AICategory, BaseRuleDetector]:

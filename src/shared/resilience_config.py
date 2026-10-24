@@ -29,9 +29,7 @@ class ResilienceConfigLoader:
     def _load_config(self):
         """Loads the YAML configuration file from disk."""
         if not os.path.exists(self._config_path):
-            logger.warning(
-                f"Resilience config file not found at {self._config_path}. Using defaults."
-            )
+            logger.warning(f"Resilience config file not found at {self._config_path}. Using defaults.")
             self._config_data = {}
             return
 

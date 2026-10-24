@@ -2,6 +2,7 @@
 Unit tests for WritingGenerator opening booster routing.
 PLAN 02 - Step 10: WritingGeneratorへのルーティング組み込み検証
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock

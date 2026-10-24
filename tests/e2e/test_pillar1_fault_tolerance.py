@@ -53,7 +53,10 @@ async def test_pillar1_fault_tolerance_with_intermittent_llm_failures():
     enrich_result = await enrichment_agent.execute(ctx)
     assert enrich_result.next_agent == AgentName.AUDIT
     # Should cleanly fall back to rule-based sensory expansion without crashing
-    assert "悲しかった" not in enrich_result.artifacts["enriched_text"] or len(enrich_result.artifacts["enriched_text"]) > 0
+    assert (
+        "悲しかった" not in enrich_result.artifacts["enriched_text"]
+        or len(enrich_result.artifacts["enriched_text"]) > 0
+    )
 
     # 2. Test 8 Specialists under partial outage
     # Some auditors get flaky_llm, some get None (pure rule-based)

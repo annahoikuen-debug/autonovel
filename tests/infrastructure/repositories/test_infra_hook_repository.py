@@ -16,23 +16,11 @@ def test_in_memory_hook_repository_add_and_get():
 
     # フックを作成
     hook1 = Hook(
-        id="H-001",
-        type="mystery",
-        content="謎のフック",
-        target_position="episode_end",
-        volume=1,
-        episode=2,
-        chapter=3
+        id="H-001", type="mystery", content="謎のフック", target_position="episode_end", volume=1, episode=2, chapter=3
     )
 
     hook2 = Hook(
-        id="H-002",
-        type="threat",
-        content="脅威のフック",
-        target_position="volume_end",
-        volume=1,
-        episode=5,
-        chapter=2
+        id="H-002", type="threat", content="脅威のフック", target_position="volume_end", volume=1, episode=5, chapter=2
     )
 
     # フックを追加
@@ -63,23 +51,11 @@ def test_in_memory_hook_repository_get_pending_hooks():
 
     # フックを作成
     hook1 = Hook(
-        id="H-001",
-        type="mystery",
-        content="謎のフック",
-        target_position="episode_end",
-        volume=1,
-        episode=2,
-        chapter=3
+        id="H-001", type="mystery", content="謎のフック", target_position="episode_end", volume=1, episode=2, chapter=3
     )
 
     hook2 = Hook(
-        id="H-002",
-        type="threat",
-        content="脅威のフック",
-        target_position="volume_end",
-        volume=1,
-        episode=5,
-        chapter=2
+        id="H-002", type="threat", content="脅威のフック", target_position="volume_end", volume=1, episode=5, chapter=2
     )
 
     # 両方を追加
@@ -111,20 +87,20 @@ def test_in_memory_hook_repository_thread_safety():
         """複数のフックを追加する"""
         for i in range(count):
             hook = Hook(
-                id=f"H-{start_id+i:03d}",
+                id=f"H-{start_id + i:03d}",
                 type="mystery",
-                content=f"フック{start_id+i}",
+                content=f"フック{start_id + i}",
                 target_position="episode_end",
                 volume=1,
                 episode=1,
-                chapter=1
+                chapter=1,
             )
             repo.add(hook)
 
     # 複数のスレッドで同時にフックを追加
     threads = []
     for i in range(5):
-        thread = threading.Thread(target=add_hooks, args=(i*100, 20))
+        thread = threading.Thread(target=add_hooks, args=(i * 100, 20))
         threads.append(thread)
         thread.start()
 

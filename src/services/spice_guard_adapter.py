@@ -29,7 +29,9 @@ class SpiceElement:
         self.metadata = metadata or {}
 
     def __repr__(self) -> str:
-        return f"SpiceElement(type={self.type}, text={self.text[:20]}..., pos={self.position}, priority={self.priority})"
+        return (
+            f"SpiceElement(type={self.type}, text={self.text[:20]}..., pos={self.position}, priority={self.priority})"
+        )
 
 
 class SpiceGuardAdapter:
@@ -60,9 +62,7 @@ class SpiceGuardAdapter:
         self.genre = genre
         self.preset_name = resolve_preset_key(genre)
         if self.preset_name is None:
-            logger.warning(
-                "GENRE_REGISTRY に %r が無い。既定プリセット 'zarma' を使う", genre
-            )
+            logger.warning("GENRE_REGISTRY に %r が無い。既定プリセット 'zarma' を使う", genre)
             self.preset_name = "zarma"
         self._guard = None
         self._preset = None
@@ -121,9 +121,7 @@ class SpiceGuardAdapter:
 
             return re.sub(r"<<<SPICE:[^>]+>>>|<<</SPICE>>>", "", text)
 
-    def build_rewrite_prompt(
-        self, content: str, improvements: list[str], elements: list[SpiceElement]
-    ) -> str:
+    def build_rewrite_prompt(self, content: str, improvements: list[str], elements: list[SpiceElement]) -> str:
         """SpiceGuard付きリライトプロンプト構築"""
         self._ensure_guard()
         try:

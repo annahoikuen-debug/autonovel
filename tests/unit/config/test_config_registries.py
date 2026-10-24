@@ -1,4 +1,5 @@
 """src/config/ の各種設定ロード模块の単体テスト。"""
+
 from __future__ import annotations
 
 
@@ -69,9 +70,7 @@ class TestFlawPresets:
 
     def test_each_preset_shape(self):
         for name, preset in FLAW_PRESETS.items():
-            assert set(preset) == {
-                "motive_type", "inner_monologue_sample", "physical_trigger"
-            }, name
+            assert set(preset) == {"motive_type", "inner_monologue_sample", "physical_trigger"}, name
             assert all(isinstance(v, str) and v for v in preset.values())
 
 
@@ -137,9 +136,7 @@ class TestCommercialBeatSheet:
 
 class TestPlatformComplianceRules:
     def test_all_platforms_present(self):
-        assert set(PLATFORM_COMPLIANCE_RULES) == {
-            "kakuyomu", "narou", "alphapolis", "kindle"
-        }
+        assert set(PLATFORM_COMPLIANCE_RULES) == {"kakuyomu", "narou", "alphapolis", "kindle"}
 
     def test_get_known_platform(self):
         assert get_platform_rule("NAROU").allowed_ruby_syntax == "kanji(ruby)"

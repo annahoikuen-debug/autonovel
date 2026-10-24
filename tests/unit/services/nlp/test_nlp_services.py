@@ -78,14 +78,16 @@ class _FakeSudachi:
 
 def test_tokenizer_sudachi_path():
     t = JapaneseTokenizer(stopwords={"主人公"})
-    fake = _FakeSudachi([
-        _Morph(("名詞", "一般"), "主人公", "主人公"),
-        _Morph(("名詞", "固有名詞"), "剣", "剣"),
-        _Morph(("動詞", "非自立"), "する", "する"),
-        _Morph(("助詞",), "を", "を"),
-        _Morph(("形容詞",), "静か", "静か"),
-        _Morph(("動詞",), "揺れる", "揺れる", dict_form="揺れる"),
-    ])
+    fake = _FakeSudachi(
+        [
+            _Morph(("名詞", "一般"), "主人公", "主人公"),
+            _Morph(("名詞", "固有名詞"), "剣", "剣"),
+            _Morph(("動詞", "非自立"), "する", "する"),
+            _Morph(("助詞",), "を", "を"),
+            _Morph(("形容詞",), "静か", "静か"),
+            _Morph(("動詞",), "揺れる", "揺れる", dict_form="揺れる"),
+        ]
+    )
     t._sudachi_tokenizer = fake
     assert t.is_sudachi_available is True
     t._split_mode = "MODE"
@@ -101,10 +103,12 @@ def test_tokenizer_sudachi_path():
 
 def test_tokenizer_sudachi_surface_form_and_min_len():
     t = JapaneseTokenizer(use_normalized_form=False, min_len=2, stopwords=set())
-    t._sudachi_tokenizer = _FakeSudachi([
-        _Morph(("名詞",), "あいうえお", "短"),
-        _Morph(("名詞",), "xyz", " longsuf "),
-    ])
+    t._sudachi_tokenizer = _FakeSudachi(
+        [
+            _Morph(("名詞",), "あいうえお", "短"),
+            _Morph(("名詞",), "xyz", " longsuf "),
+        ]
+    )
     out = t.tokenize("hoge")
     assert "あいうえお" not in out
     assert "短" not in out
@@ -128,9 +132,7 @@ def test_tokenizer_init_sudachi_succeeds(monkeypatch):
 
     fake = types.ModuleType("sudachipy")
     fake.dictionary = types.SimpleNamespace(Dictionary=Dict)
-    fake.tokenizer = types.SimpleNamespace(
-        Tokenizer=type("T", (), {"SplitMode": types.SimpleNamespace(A=1, B=2, C=3)})
-    )
+    fake.tokenizer = types.SimpleNamespace(Tokenizer=type("T", (), {"SplitMode": types.SimpleNamespace(A=1, B=2, C=3)}))
     monkeypatch.setitem(sys.modules, "sudachipy", fake)
 
     for mode, expected in (("A", 1), ("B", 2), ("c", 3), ("Z", 3)):
@@ -151,7 +153,10 @@ def test_tokenizer_custom_pos_and_stopwords():
 # --------------------------------------------------------------------------
 def _match(ptype, conf=1.0, sentence="解決した。"):
     return PredicateMatch(
-        keyword="k", predicate="p", predicate_type=ptype, sentence=sentence,
+        keyword="k",
+        predicate="p",
+        predicate_type=ptype,
+        sentence=sentence,
         confidence_score=conf,
     )
 
@@ -164,8 +169,8 @@ def test_predicate_scorer_all_negated():
     r = PredicateAnalysisResult(
         foreshadowing_id=1,
         matches=[
-            _match("resolved", sentence="真破人はいらない。" "それは未来ではない。"),
-            _match("progressed", sentence="真破人はいらない。" "それは未来ではない。"),
+            _match("resolved", sentence="真破人はいらない。それは未来ではない。"),
+            _match("progressed", sentence="真破人はいらない。それは未来ではない。"),
         ],
     )
     assert PredicateScorer.calculate_score(r) == 0
@@ -184,9 +189,7 @@ def test_predicate_scorer_progressed_scaled():
 def test_predicate_scorer_mention_and_mixed():
     r = PredicateAnalysisResult(foreshadowing_id=1, matches=[_match("mention_only")])
     assert PredicateScorer.calculate_score(r) == 5
-    r2 = PredicateAnalysisResult(
-        foreshadowing_id=1, matches=[_match("mention_only"), _match("resolved", 1.0)]
-    )
+    r2 = PredicateAnalysisResult(foreshadowing_id=1, matches=[_match("mention_only"), _match("resolved", 1.0)])
     assert PredicateScorer.calculate_score(r2) == 25
 
 
@@ -282,12 +285,14 @@ def test_predicate_analyzer_stem_variants():
 
 def test_predicate_analyzer_sudachi_path():
     a = ForeshadowingPredicateAnalyzer()
-    a._tokenizer = _FakeSudachi([
-        _Morph(("名詞",), "事件", "事件"),
-        _Morph(("動詞",), "解明", "解明", dict_form="解明する"),
-        _Morph(("形容詞", "非自立"), "x", "x"),
-        _Morph(("動詞",), "見る", "見る", dict_form="見る"),
-    ])
+    a._tokenizer = _FakeSudachi(
+        [
+            _Morph(("名詞",), "事件", "事件"),
+            _Morph(("動詞",), "解明", "解明", dict_form="解明する"),
+            _Morph(("形容詞", "非自立"), "x", "x"),
+            _Morph(("動詞",), "見る", "見る", dict_form="見る"),
+        ]
+    )
     a._split_mode = "C"
     res = a.analyze_sentence("事件が解明された。", "事件")
     assert ("事件解明する", "unknown") in res

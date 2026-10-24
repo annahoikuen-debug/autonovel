@@ -17,9 +17,7 @@ import warnings
 PLACEHOLDER_API_KEY = "__AUTONOVEL_API_KEY_NOT_SET__"
 
 #: 過去のハードコードされたダミー値 (後方互換の判定用)。
-_LEGACY_PLACEHOLDERS = frozenset(
-    {"DUMMY", "dummy", "dummy_key_for_local", "dummy_key_for_testing", "dummy-key"}
-)
+_LEGACY_PLACEHOLDERS = frozenset({"DUMMY", "dummy", "dummy_key_for_local", "dummy_key_for_testing", "dummy-key"})
 
 
 class LLMConfigurationError(RuntimeError):

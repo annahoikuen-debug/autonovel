@@ -43,6 +43,7 @@ def test_context_manager_delegation_to_agent():
 def test_app_container_context_provider():
     """AppContainer should resolve ctx_mgr without errors."""
     from src.core.container.app import AppContainer
+
     container = AppContainer()
     container.init_resources()
     assert container.ctx_mgr is not None

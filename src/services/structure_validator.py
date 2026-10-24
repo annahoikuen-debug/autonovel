@@ -94,9 +94,7 @@ def check_required_beats(
     return results
 
 
-def check_climax_placement(
-    assigned: list[dict[str, Any]], structure: dict[str, Any]
-) -> dict[str, Any]:
+def check_climax_placement(assigned: list[dict[str, Any]], structure: dict[str, Any]) -> dict[str, Any]:
     """後半1/3等にクライマックス相当の章（tension が最大の章）があるかを検証する。"""
     min_phase = structure.get("climax_min_phase", 0.66)
     if not assigned:
@@ -188,24 +186,18 @@ def check_spine_invariants(spine, eps: int) -> list[dict[str, Any]]:
     keys = spine.keys
     problems: list[dict[str, Any]] = []
     if keys[0] not in ("inciting", "humiliation", "cold_open", "revelation"):
-        problems.append(
-            {"key": "hook", "ok": False, "reason": f"最初が {keys[0]!r}（つかみになっていない）"}
-        )
+        problems.append({"key": "hook", "ok": False, "reason": f"最初が {keys[0]!r}（つかみになっていない）"})
     if "midpoint_reversal" not in keys:
         problems.append({"key": "midpoint_reversal", "ok": False, "reason": "中点反転が無い"})
     # 結びは climax でも diminishing/coda 系でもよい。必要なのは「締め」が存在すること。
     last = spine.beats[-1]
     if last.key != "climax" and last.role != "close":
-        problems.append(
-            {"key": "climax", "ok": False, "reason": f"最後が {last.key!r}（締めにならない）"}
-        )
+        problems.append({"key": "climax", "ok": False, "reason": f"最後が {last.key!r}（締めにならない）"})
 
     covered = {ep for b in spine.beats for ep in range(b.ep_start, b.ep_end + 1)}
     missing_eps = [e for e in range(1, eps + 1) if e not in covered]
     if missing_eps:
-        problems.append(
-            {"key": "coverage", "ok": False, "reason": f"beat が無い話がある: {missing_eps[:10]}"}
-        )
+        problems.append({"key": "coverage", "ok": False, "reason": f"beat が無い話がある: {missing_eps[:10]}"})
     return problems
 
 
@@ -263,9 +255,7 @@ def validate(
 
         result["resolved_pattern_key"] = resolved_pattern_key
         result["required_beat_count"] = len(beats)
-        result["alignment"] = (
-            round((len(beats) - len(missing)) / len(beats), 3) if beats else 0.0
-        )
+        result["alignment"] = round((len(beats) - len(missing)) / len(beats), 3) if beats else 0.0
         try:
             result["spine"] = resolve_spine(
                 resolved_pattern_key or "exile_rise",

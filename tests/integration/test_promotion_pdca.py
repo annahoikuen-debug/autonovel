@@ -1,7 +1,8 @@
 # tests/integration/test_promotion_pdca.py
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -42,25 +43,40 @@ class TestPromotionEligibility:
         # 3章分のスコア作成（上昇傾向）
         scores = [
             BookScoreModel(
-                book_id=1, chapter_number=1, overall_score=75.0,
-                structure_score=80.0, coherency_score=70.0,
-                factual_grounding_score=70.0, visual_textual_synergy_score=80.0,
-                reader_experience_score=80.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=1,
+                overall_score=75.0,
+                structure_score=80.0,
+                coherency_score=70.0,
+                factual_grounding_score=70.0,
+                visual_textual_synergy_score=80.0,
+                reader_experience_score=80.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
             BookScoreModel(
-                book_id=1, chapter_number=2, overall_score=82.0,
-                structure_score=85.0, coherency_score=80.0,
-                factual_grounding_score=80.0, visual_textual_synergy_score=85.0,
-                reader_experience_score=85.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=2,
+                overall_score=82.0,
+                structure_score=85.0,
+                coherency_score=80.0,
+                factual_grounding_score=80.0,
+                visual_textual_synergy_score=85.0,
+                reader_experience_score=85.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
             BookScoreModel(
-                book_id=1, chapter_number=3, overall_score=88.0,
-                structure_score=90.0, coherency_score=85.0,
-                factual_grounding_score=85.0, visual_textual_synergy_score=90.0,
-                reader_experience_score=90.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=3,
+                overall_score=88.0,
+                structure_score=90.0,
+                coherency_score=85.0,
+                factual_grounding_score=85.0,
+                visual_textual_synergy_score=90.0,
+                reader_experience_score=90.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
         ]
 
@@ -84,25 +100,40 @@ class TestPromotionEligibility:
         """平均スコア不足で非対象"""
         scores = [
             BookScoreModel(
-                book_id=1, chapter_number=1, overall_score=70.0,
-                structure_score=70.0, coherency_score=70.0,
-                factual_grounding_score=70.0, visual_textual_synergy_score=70.0,
-                reader_experience_score=70.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=1,
+                overall_score=70.0,
+                structure_score=70.0,
+                coherency_score=70.0,
+                factual_grounding_score=70.0,
+                visual_textual_synergy_score=70.0,
+                reader_experience_score=70.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
             BookScoreModel(
-                book_id=1, chapter_number=2, overall_score=72.0,
-                structure_score=72.0, coherency_score=72.0,
-                factual_grounding_score=72.0, visual_textual_synergy_score=72.0,
-                reader_experience_score=72.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=2,
+                overall_score=72.0,
+                structure_score=72.0,
+                coherency_score=72.0,
+                factual_grounding_score=72.0,
+                visual_textual_synergy_score=72.0,
+                reader_experience_score=72.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
             BookScoreModel(
-                book_id=1, chapter_number=3, overall_score=75.0,
-                structure_score=75.0, coherency_score=75.0,
-                factual_grounding_score=75.0, visual_textual_synergy_score=75.0,
-                reader_experience_score=75.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=3,
+                overall_score=75.0,
+                structure_score=75.0,
+                coherency_score=75.0,
+                factual_grounding_score=75.0,
+                visual_textual_synergy_score=75.0,
+                reader_experience_score=75.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
         ]
 
@@ -119,25 +150,40 @@ class TestPromotionEligibility:
         """平均は足りるが下降傾向で非対象"""
         scores = [
             BookScoreModel(
-                book_id=1, chapter_number=1, overall_score=90.0,
-                structure_score=90.0, coherency_score=90.0,
-                factual_grounding_score=90.0, visual_textual_synergy_score=90.0,
-                reader_experience_score=90.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=1,
+                overall_score=90.0,
+                structure_score=90.0,
+                coherency_score=90.0,
+                factual_grounding_score=90.0,
+                visual_textual_synergy_score=90.0,
+                reader_experience_score=90.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
             BookScoreModel(
-                book_id=1, chapter_number=2, overall_score=85.0,
-                structure_score=85.0, coherency_score=85.0,
-                factual_grounding_score=85.0, visual_textual_synergy_score=85.0,
-                reader_experience_score=85.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=2,
+                overall_score=85.0,
+                structure_score=85.0,
+                coherency_score=85.0,
+                factual_grounding_score=85.0,
+                visual_textual_synergy_score=85.0,
+                reader_experience_score=85.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
             BookScoreModel(
-                book_id=1, chapter_number=3, overall_score=80.0,
-                structure_score=80.0, coherency_score=80.0,
-                factual_grounding_score=80.0, visual_textual_synergy_score=80.0,
-                reader_experience_score=80.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=3,
+                overall_score=80.0,
+                structure_score=80.0,
+                coherency_score=80.0,
+                factual_grounding_score=80.0,
+                visual_textual_synergy_score=80.0,
+                reader_experience_score=80.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
         ]
 
@@ -155,18 +201,28 @@ class TestPromotionEligibility:
         """3章未満で非対象"""
         scores = [
             BookScoreModel(
-                book_id=1, chapter_number=1, overall_score=85.0,
-                structure_score=85.0, coherency_score=85.0,
-                factual_grounding_score=85.0, visual_textual_synergy_score=85.0,
-                reader_experience_score=85.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=1,
+                overall_score=85.0,
+                structure_score=85.0,
+                coherency_score=85.0,
+                factual_grounding_score=85.0,
+                visual_textual_synergy_score=85.0,
+                reader_experience_score=85.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
             BookScoreModel(
-                book_id=1, chapter_number=2, overall_score=88.0,
-                structure_score=88.0, coherency_score=88.0,
-                factual_grounding_score=88.0, visual_textual_synergy_score=88.0,
-                reader_experience_score=88.0, evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                book_id=1,
+                chapter_number=2,
+                overall_score=88.0,
+                structure_score=88.0,
+                coherency_score=88.0,
+                factual_grounding_score=88.0,
+                visual_textual_synergy_score=88.0,
+                reader_experience_score=88.0,
+                evaluated_at=datetime.utcnow(),
+                evaluator_version="1.0",
             ),
         ]
 
@@ -185,7 +241,8 @@ class TestImprovementPriorities:
         # 複数章のスコア履歴
         scores = [
             BookScoreModel(
-                book_id=1, chapter_number=i,
+                book_id=1,
+                chapter_number=i,
                 overall_score=70.0,
                 structure_score=50.0,  # 低い
                 coherency_score=70.0,
@@ -193,7 +250,7 @@ class TestImprovementPriorities:
                 visual_textual_synergy_score=70.0,
                 reader_experience_score=70.0,
                 evaluated_at=datetime.utcnow(),
-                evaluator_version="1.0"
+                evaluator_version="1.0",
             )
             for i in range(1, 4)
         ]
@@ -237,11 +294,16 @@ class TestBookScoreAPI:
     async def test_book_score_response_model(self):
         """BookScoreResponse モデル検証"""
         score_model = BookScoreModel(
-            book_id=1, chapter_number=1, overall_score=85.5,
-            structure_score=90.0, coherency_score=85.0,
-            factual_grounding_score=80.0, visual_textual_synergy_score=85.0,
-            reader_experience_score=90.0, evaluated_at=datetime.utcnow(),
-            evaluator_version="1.0"
+            book_id=1,
+            chapter_number=1,
+            overall_score=85.5,
+            structure_score=90.0,
+            coherency_score=85.0,
+            factual_grounding_score=80.0,
+            visual_textual_synergy_score=85.0,
+            reader_experience_score=90.0,
+            evaluated_at=datetime.utcnow(),
+            evaluator_version="1.0",
         )
 
         response = BookScoreResponse(
@@ -265,11 +327,16 @@ class TestBookScoreAPI:
     async def test_book_score_response_with_trend(self):
         """トレンド情報付きレスポンス検証"""
         score_model = BookScoreModel(
-            book_id=1, chapter_number=3, overall_score=85.5,
-            structure_score=90.0, coherency_score=85.0,
-            factual_grounding_score=80.0, visual_textual_synergy_score=85.0,
-            reader_experience_score=90.0, evaluated_at=datetime.utcnow(),
-            evaluator_version="1.0"
+            book_id=1,
+            chapter_number=3,
+            overall_score=85.5,
+            structure_score=90.0,
+            coherency_score=85.0,
+            factual_grounding_score=80.0,
+            visual_textual_synergy_score=85.0,
+            reader_experience_score=90.0,
+            evaluated_at=datetime.utcnow(),
+            evaluator_version="1.0",
         )
 
         trend = {

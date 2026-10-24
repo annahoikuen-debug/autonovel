@@ -10,7 +10,6 @@ if TYPE_CHECKING:
     from src.domain.entities.scene import Scene
 
 
-
 class PromptComposer:
     """プロンプトを構築するユーティリティクラス"""
 
@@ -55,9 +54,7 @@ class PromptComposer:
         layer2 = _text_of(three_layer.get("layer2_summary"))
         if layer2:
             parts.append(f"【Layer2: 過去の確定事実タイムライン】\n{layer2}")
-        layer3 = _text_of(three_layer.get("layer3_previous")) or _text_of(
-            three_layer.get("layer3_raw")
-        )
+        layer3 = _text_of(three_layer.get("layer3_previous")) or _text_of(three_layer.get("layer3_raw"))
         if layer3:
             parts.append(f"【Layer3: 直前エピソードの原文】\n{layer3}")
         return "\n\n".join(parts)
@@ -88,9 +85,7 @@ class PromptComposer:
         plot_data = context.get("plot", {})
         if not plot_data.get("detailed_blueprint"):
             if hasattr(self.agent, "logger"):
-                self.agent.logger.warning(
-                    f"Ep.{ep_num}: detailed_blueprint is empty. Writing may be low quality."
-                )
+                self.agent.logger.warning(f"Ep.{ep_num}: detailed_blueprint is empty. Writing may be low quality.")
 
         script_text = context.get("script", "")
         # v5.3 / Step 30: `foreshadowing_ctx`（伏線ID付き一覧）を第一優先で使う。
@@ -115,18 +110,14 @@ class PromptComposer:
                 foreshadowing_context = context_retriever.format_context_for_prompt(context_dict)
             except Exception as e:
                 if hasattr(self.agent, "logger"):
-                    self.agent.logger.warning(
-                        f"Ep.{ep_num}: Failed to get foreshadowing context: {e}"
-                    )
+                    self.agent.logger.warning(f"Ep.{ep_num}: Failed to get foreshadowing context: {e}")
                 foreshadowing_context = ""
 
         # 提案1: 動的コンテキスト・プルーニング MCP の適用 (30%〜70%トークン削減)
         char_static_ctx = context.get("char_static_ctx", "")
         three_layer_ctx = self._format_three_layer_context(context.get("three_layer_context"))
         contract_foreshadowings = context.get("contract_foreshadowings") or []
-        unresolved_foreshadowings = await self._load_unresolved_foreshadowings(
-            book_id, ep_num, context
-        )
+        unresolved_foreshadowings = await self._load_unresolved_foreshadowings(book_id, ep_num, context)
 
         if context.get("enable_mcp_pruning"):
             try:
@@ -186,8 +177,7 @@ class PromptComposer:
                 f"【最優先・再生成修正ディレクティブ】\n"
                 f"前回の審査で指摘された以下の問題点・Actionable Diffsを最優先で反映して執筆してください:\n\n"
                 f"{regeneration_directive}\n"
-                f"==================================================\n\n"
-                + prompt
+                f"==================================================\n\n" + prompt
             )
 
         # 提案7: 感情曲線・テンションカーブ制御 MCP のディレクション注入
@@ -205,8 +195,7 @@ class PromptComposer:
                     prompt = (
                         f"==================================================\n"
                         f"{curve_data['prompt_directive']}\n"
-                        f"==================================================\n\n"
-                        + prompt
+                        f"==================================================\n\n" + prompt
                     )
             except Exception as e:
                 if hasattr(self.agent, "logger"):
@@ -329,9 +318,7 @@ class PromptComposer:
             records = await DbForeshadowingRepository(session).get_unresolved(book_id)
         except Exception as e:
             if hasattr(self.agent, "logger"):
-                self.agent.logger.warning(
-                    f"Ep.{ep_num}: 未回収伏線（背景）の取得に失敗: {e}"
-                )
+                self.agent.logger.warning(f"Ep.{ep_num}: 未回収伏線（背景）の取得に失敗: {e}")
             return []
         return [
             {
@@ -396,6 +383,7 @@ class PromptComposer:
             char_data = context.get("character") or {"name": context.get("pov_character_name", "主人公")}
             try:
                 from src.agents.context_builder_agent import resolve_character_flaw
+
                 char_flaw = resolve_character_flaw(char_data)
             except Exception:
                 char_flaw = "完璧を求めすぎて動けなくなる"
@@ -404,11 +392,7 @@ class PromptComposer:
         # 従来はシーン分岐に伏線IDも3層記憶も一切届かず、
         # エピソード単位のプロンプトだけが伏線回収の契約を受けていた
         # （Step 8 項目2 が未実装のまま残っていた分）。
-        foreshadowing_hints = (
-            context.get("foreshadowing_hints")
-            or context.get("foreshadowing_ctx")
-            or ""
-        )
+        foreshadowing_hints = context.get("foreshadowing_hints") or context.get("foreshadowing_ctx") or ""
 
         # プロンプトレンダリング
         prompt = tmpl.render(
@@ -419,12 +403,8 @@ class PromptComposer:
             story_arc_summary=context.get("story_arc_summary", ""),
             character_states=context.get("character_states", ""),
             foreshadowing_hints=foreshadowing_hints,
-            contract_foreshadowing_ctx=self._format_contract_foreshadowings(
-                context.get("contract_foreshadowings")
-            ),
-            three_layer_ctx=self._format_three_layer_context(
-                context.get("three_layer_context")
-            ),
+            contract_foreshadowing_ctx=self._format_contract_foreshadowings(context.get("contract_foreshadowings")),
+            three_layer_ctx=self._format_three_layer_context(context.get("three_layer_context")),
             active_conflicts=context.get("active_conflicts", ""),
             cliffhanger_requirements=context.get("cliffhanger_requirements", ""),
             pov_character=context.get("pov_character_name", "主人公"),
@@ -440,8 +420,7 @@ class PromptComposer:
                 f"【最優先・再生成修正ディレクティブ】\n"
                 f"前回の審査で指摘された以下の問題点・Actionable Diffsを最優先で反映して執筆してください:\n\n"
                 f"{regeneration_directive}\n"
-                f"==================================================\n\n"
-                + prompt
+                f"==================================================\n\n" + prompt
             )
 
         return prompt

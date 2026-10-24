@@ -1,4 +1,5 @@
 """Conflict alerting system across log, file and webhook channels."""
+
 from __future__ import annotations
 
 import json
@@ -30,16 +31,15 @@ class ConflictAlerter:
         items = []
         for c in conflicts:
             rec_action = "Review author intention in annotation vs plot rule / pipeline extraction."
-            items.append({
-                "conflict_id": c.conflict_id,
-                "pair": list(c.pair),
-                "emotion": c.emotion.value if hasattr(c.emotion, "value") else str(c.emotion),
-                "sources": [
-                    {"namespace": s[0], "value": s[1], "confidence": s[2]}
-                    for s in c.sources
-                ],
-                "recommended_action": rec_action,
-            })
+            items.append(
+                {
+                    "conflict_id": c.conflict_id,
+                    "pair": list(c.pair),
+                    "emotion": c.emotion.value if hasattr(c.emotion, "value") else str(c.emotion),
+                    "sources": [{"namespace": s[0], "value": s[1], "confidence": s[2]} for s in c.sources],
+                    "recommended_action": rec_action,
+                }
+            )
 
         return {
             "alert_type": "EMOTIONAL_CONFLICT_DETECTED",

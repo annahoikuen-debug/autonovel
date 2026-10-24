@@ -1,4 +1,5 @@
 """下位互換性維持のためのシム。実体は src.services.rag.reflective_rag に移動しました。"""
+
 import warnings
 
 warnings.warn(
@@ -15,4 +16,10 @@ from src.services.rag.reflective_rag import (  # noqa: F401
     ReflectiveDoc,
 )
 
-__all__ = ["ReflectiveRAGService", "ReflectiveRetrievalResult", "ConvergenceConfig", "ContextFitResult", "ReflectiveDoc"]
+__all__ = [
+    "ReflectiveRAGService",
+    "ReflectiveRetrievalResult",
+    "ConvergenceConfig",
+    "ContextFitResult",
+    "ReflectiveDoc",
+]

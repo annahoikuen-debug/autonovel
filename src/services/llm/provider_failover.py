@@ -1,4 +1,5 @@
 """プロバイダーフェイルオーバーマネージャー。"""
+
 from __future__ import annotations
 from typing import Any, Callable, Coroutine
 from src.services.llm.circuit_breaker import CircuitBreaker, CircuitBreakerOpenException

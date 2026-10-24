@@ -76,9 +76,7 @@ class MarketingService:
                     genre = getattr(book, "genre", genre)
                     branch_id = getattr(book, "current_branch_id", 1) or 1
 
-                    db_chapters = self.repo.get_all_non_anchor_chapters(
-                        book_id, branch_id=branch_id, order_by="ep_num"
-                    )
+                    db_chapters = self.repo.get_all_non_anchor_chapters(book_id, branch_id=branch_id, order_by="ep_num")
                     chapters = [
                         {
                             "ep_num": getattr(c, "ep_num", i + 1),
@@ -103,9 +101,7 @@ class MarketingService:
                     if bible and hasattr(bible, "settings"):
                         bible_settings = bible.settings or {}
 
-                    db_plots = self.repo.get_all_plots(
-                        branch_id, branch_id=branch_id, book_id=book_id
-                    )
+                    db_plots = self.repo.get_all_plots(branch_id, branch_id=branch_id, book_id=book_id)
                     plots = [
                         {
                             "ep_num": getattr(p, "ep_num", i + 1),
@@ -153,8 +149,7 @@ class MarketingService:
                 # 01: 本文
                 full_text = f"■ 作品タイトル: {title}\n■ ジャンル・区分: {genre}\n\n"
                 full_text += "".join(
-                    f"第{c.get('ep_num', 1)}話 {c.get('title', '')}\n\n{c.get('content', '')}\n\n"
-                    for c in chapters
+                    f"第{c.get('ep_num', 1)}話 {c.get('title', '')}\n\n{c.get('content', '')}\n\n" for c in chapters
                 )
                 z.writestr("01_本文.txt", _to_win_txt_bytes(full_text))
 
@@ -176,10 +171,7 @@ class MarketingService:
                 # 03: プロット概要
                 plot_text = f"【作品プロット概要】 - {title}\n\n"
                 for p in plots:
-                    plot_text += (
-                        f"第{p.get('ep_num', 1)}話: {p.get('title', '')}\n"
-                        f"{p.get('one_line_summary', '')}\n\n"
-                    )
+                    plot_text += f"第{p.get('ep_num', 1)}話: {p.get('title', '')}\n{p.get('one_line_summary', '')}\n\n"
                 z.writestr("03_プロット概要.txt", _to_win_txt_bytes(plot_text))
 
                 # 04: データダンプ (JSON)

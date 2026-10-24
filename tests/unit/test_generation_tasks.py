@@ -1,4 +1,5 @@
 """Generation tasks ユニットテスト。"""
+
 from __future__ import annotations
 
 from src.backend.tasks.generation_tasks import _run_async, _update_task_in_db

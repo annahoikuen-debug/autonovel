@@ -1,4 +1,5 @@
 """Tests for MCP Proposal 3: Surgical Patch & Local Diff Server."""
+
 from __future__ import annotations
 
 import pytest
@@ -14,11 +15,7 @@ from src.agents.writing.agent import WritingAgent
 def test_surgical_patch_exact_match():
     """完全一致する ActionableDiff が本文に外科的に置換適用されること。"""
     provider = SurgicalPatchProvider()
-    original = (
-        "　エリスは静かに剣を抜いた。\n"
-        "「お前を絶対に許さない」\n"
-        "　冷徹な瞳が敵を射貫く。"
-    )
+    original = "　エリスは静かに剣を抜いた。\n「お前を絶対に許さない」\n　冷徹な瞳が敵を射貫く。"
     diffs = [
         ActionableDiff(
             location="第2行 セリフ",

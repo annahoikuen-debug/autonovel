@@ -1,6 +1,7 @@
 from src.services.compression.layer4_trimming import Layer4SceneTrimmer
 from src.services.compression.models import SceneFlowHistory
 
+
 def test_scene_context_aware_detection_handles_post_combat_meeting():
     trimmer = Layer4SceneTrimmer()
     # テキストには「魔王」「撃破」などの単語が含まれるが、主目的は「作戦会議・方針策定」

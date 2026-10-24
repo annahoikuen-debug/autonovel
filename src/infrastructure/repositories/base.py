@@ -18,9 +18,7 @@ class BaseRepository(Generic[T]):
         raise NotImplementedError
 
     async def get(self, id: int) -> T | None:
-        result = await self.session.execute(
-            select(self.model_class).where(self.model_class.id == id)
-        )  # type: ignore
+        result = await self.session.execute(select(self.model_class).where(self.model_class.id == id))  # type: ignore
         return result.scalar_one_or_none()
 
     async def get_all(self) -> list[T]:

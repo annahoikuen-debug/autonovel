@@ -54,21 +54,16 @@ async def handle_stripe_webhook(
         # オプトインされていない場合は 400 で即時拒否する
         # （200 を返していたため、攻撃者がクレジットを偽装付与できていた）
         if not WEBHOOK_SECRET:
-            logger.error(
-                "STRIPE_WEBHOOK_SECRET is required unless ALLOW_UNSIGNED_WEBHOOKS=true!"
-            )
-            raise HTTPException(
-                status_code=400, detail="Server configuration error: missing webhook secret"
-            )
+            logger.error("STRIPE_WEBHOOK_SECRET is required unless ALLOW_UNSIGNED_WEBHOOKS=true!")
+            raise HTTPException(status_code=400, detail="Server configuration error: missing webhook secret")
 
     try:
         if WEBHOOK_SECRET:
-            event = stripe.Webhook.construct_event(
-                payload, stripe_signature, WEBHOOK_SECRET
-            )
+            event = stripe.Webhook.construct_event(payload, stripe_signature, WEBHOOK_SECRET)
         else:
             # ローカル検証環境のみで、署名検証を省略して JSON を直接解釈する
             import json
+
             event = json.loads(payload)
     except ValueError as e:
         logger.error(f"Invalid webhook payload: {e}")
@@ -93,14 +88,13 @@ async def handle_stripe_webhook(
         elif existing_event.status == "processing":
             # 処理中イベントのタイムアウト判定 (10分以上経過していれば前回の処理クラッシュとみなして再試行)
             from datetime import datetime, timezone, timedelta
+
             now = datetime.now(timezone.utc)
             created = existing_event.created_at
             if created and created.tzinfo is None:
                 created = created.replace(tzinfo=timezone.utc)
             if created and (now - created) > timedelta(minutes=10):
-                logger.warning(
-                    f"Stripe event {event_id} was stuck in processing since {created}. Retrying processing."
-                )
+                logger.warning(f"Stripe event {event_id} was stuck in processing since {created}. Retrying processing.")
                 existing_event.status = "processing"
                 webhook_record = existing_event
             else:
@@ -238,18 +232,14 @@ async def _resolve_user(result) -> Optional[User]:
     return user
 
 
-async def _handle_checkout_session_completed(
-    session: dict, db: AsyncSession, event_id: Optional[str] = None
-):
+async def _handle_checkout_session_completed(session: dict, db: AsyncSession, event_id: Optional[str] = None):
     """Checkout Session完了時に初回クレジットを付与"""
     user_id = int(session.get("metadata", {}).get("user_id", 0))
     user = None
     if user_id == 0:
         stripe_customer_id = session.get("customer")
         if stripe_customer_id:
-            result = await db.execute(
-                select(User).where(User.stripe_customer_id == stripe_customer_id)
-            )
+            result = await db.execute(select(User).where(User.stripe_customer_id == stripe_customer_id))
             user = await _resolve_user(result)
             if user:
                 user_id = user.id
@@ -296,9 +286,7 @@ async def _handle_checkout_session_completed(
     await _create_or_update_subscription_record(user, subscription, db)
 
 
-async def _handle_invoice_payment_succeeded(
-    invoice: dict, db: AsyncSession, event_id: Optional[str] = None
-):
+async def _handle_invoice_payment_succeeded(invoice: dict, db: AsyncSession, event_id: Optional[str] = None):
     """インボイス支払い成功時に月次クレジットを付与"""
     subscription_id = invoice.get("subscription")
     if not subscription_id:
@@ -310,9 +298,7 @@ async def _handle_invoice_payment_succeeded(
     if isinstance(stripe_customer_id, dict):
         stripe_customer_id = stripe_customer_id.get("id")
 
-    result = await db.execute(
-        select(User).where(User.stripe_customer_id == stripe_customer_id)
-    )
+    result = await db.execute(select(User).where(User.stripe_customer_id == stripe_customer_id))
     user = await _resolve_user(result)
     if not user:
         logger.warning(f"User with stripe_customer_id {stripe_customer_id} not found")
@@ -348,9 +334,7 @@ async def _handle_customer_subscription_deleted(subscription, db: AsyncSession):
     if isinstance(stripe_customer_id, dict):
         stripe_customer_id = stripe_customer_id.get("id")
 
-    result = await db.execute(
-        select(User).where(User.stripe_customer_id == stripe_customer_id)
-    )
+    result = await db.execute(select(User).where(User.stripe_customer_id == stripe_customer_id))
     user = await _resolve_user(result)
     if not user:
         return
@@ -365,9 +349,7 @@ async def _handle_customer_subscription_updated(subscription, db: AsyncSession):
     if isinstance(stripe_customer_id, dict):
         stripe_customer_id = stripe_customer_id.get("id")
 
-    result = await db.execute(
-        select(User).where(User.stripe_customer_id == stripe_customer_id)
-    )
+    result = await db.execute(select(User).where(User.stripe_customer_id == stripe_customer_id))
     user = await _resolve_user(result)
     if not user:
         return
@@ -379,9 +361,7 @@ async def _create_or_update_subscription_record(user: User, subscription, db: As
     """サブスクリプションレコードを作成または更新"""
     from src.backend.database.models_billing import Subscription as SubscriptionModel
 
-    result = await db.execute(
-        select(SubscriptionModel).where(SubscriptionModel.user_id == user.id)
-    )
+    result = await db.execute(select(SubscriptionModel).where(SubscriptionModel.user_id == user.id))
     db_subscription = result.scalar_one_or_none()
     if inspect.isawaitable(db_subscription):
         db_subscription = await db_subscription

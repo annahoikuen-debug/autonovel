@@ -1,7 +1,8 @@
 # tests/test_plot_subversion_integration.py
 import pytest
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 
 from src.models.plot import PlotEpisode
 from src.models.subversion import SubversionEngine
@@ -18,8 +19,7 @@ class TestPlotSubversionIntegration:
         ep.subversion.plan_schedule(15)
         dumped = ep.model_dump()
         restored = PlotEpisode.model_validate(dumped)
-        assert [p.trigger_ep for p in ep.subversion.schedule] == \
-               [p.trigger_ep for p in restored.subversion.schedule]
+        assert [p.trigger_ep for p in ep.subversion.schedule] == [p.trigger_ep for p in restored.subversion.schedule]
 
     def test_sub_model_names_includes_subversion(self):
         assert "subversion" in PlotEpisode._get_sub_model_names()
@@ -48,6 +48,7 @@ class TestPlotSubversionIntegration:
         # apply_to_arc が動く
         class MockArc:
             thematic_milestone = ""
+
         arc = MockArc()
         ep.subversion.apply_to_arc(arc, 3)
         assert "裏切り" in arc.thematic_milestone
@@ -57,6 +58,7 @@ class TestPlotSubversionIntegration:
             mission = ""
             visual_scene_focus = ""
             tension_target = 0.5
+
         beat = MockBeat()
         ep.subversion.apply_to_beat(beat, 3)
         assert "裏切り" in beat.mission

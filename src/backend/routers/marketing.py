@@ -102,6 +102,7 @@ async def generate_catchphrases(
 
     # コンテナからMarketingAgentを直接取得
     from src.core.container.app import AppContainer
+
     container = AppContainer(api_key=req.api_key)
     marketing_agent = container.marketing()
 

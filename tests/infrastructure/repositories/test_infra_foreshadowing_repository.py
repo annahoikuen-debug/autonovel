@@ -22,7 +22,7 @@ def test_in_memory_foreshadowing_repository_add_and_get():
         hang_episode=2,
         hang_chapter=3,
         hang_type="implicit",
-        importance="★★"
+        importance="★★",
     )
 
     fs2 = Foreshadowing(
@@ -34,7 +34,7 @@ def test_in_memory_foreshadowing_repository_add_and_get():
         hang_type="explicit",
         importance="★★★",
         resolution_volume=3,
-        resolution_episode=1
+        resolution_episode=1,
     )
 
     # 伏線を追加
@@ -71,7 +71,7 @@ def test_in_memory_foreshadowing_repository_get_unresolved():
         hang_episode=2,
         hang_chapter=3,
         hang_type="implicit",
-        importance="★★"
+        importance="★★",
     )
 
     # 解決済みの伏線
@@ -84,7 +84,7 @@ def test_in_memory_foreshadowing_repository_get_unresolved():
         hang_type="explicit",
         importance="★★★",
         resolution_volume=3,
-        resolution_episode=1
+        resolution_episode=1,
     )
 
     # 両方を追加
@@ -115,7 +115,7 @@ def test_in_memory_foreshadowing_repository_resolve():
         hang_episode=2,
         hang_chapter=3,
         hang_type="implicit",
-        importance="★★"
+        importance="★★",
     )
 
     # 追加
@@ -146,13 +146,7 @@ def test_in_memory_foreshadowing_repository_get_balance():
 
     # 巻1の伏線をいくつか追加
     fs1 = Foreshadowing(
-        id="F-001",
-        content="伏線1",
-        hang_volume=1,
-        hang_episode=1,
-        hang_chapter=1,
-        hang_type="implicit",
-        importance="★"
+        id="F-001", content="伏線1", hang_volume=1, hang_episode=1, hang_chapter=1, hang_type="implicit", importance="★"
     )
 
     fs2 = Foreshadowing(
@@ -164,7 +158,7 @@ def test_in_memory_foreshadowing_repository_get_balance():
         hang_type="explicit",
         importance="★★",
         resolution_volume=1,  # 巻1で解決
-        resolution_episode=3
+        resolution_episode=3,
     )
 
     fs3 = Foreshadowing(
@@ -174,7 +168,7 @@ def test_in_memory_foreshadowing_repository_get_balance():
         hang_episode=3,
         hang_chapter=3,
         hang_type="reader_task",
-        importance="★★★"
+        importance="★★★",
     )
 
     # 巻2の伏線
@@ -185,7 +179,7 @@ def test_in_memory_foreshadowing_repository_get_balance():
         hang_episode=1,
         hang_chapter=1,
         hang_type="implicit",
-        importance="★"
+        importance="★",
     )
 
     repo.add(fs1)
@@ -226,20 +220,20 @@ def test_in_memory_foreshadowing_repository_thread_safety():
         """複数の伏線を追加する"""
         for i in range(count):
             fs = Foreshadowing(
-                id=f"F-{start_id+i:03d}",
-                content=f"伏線{start_id+i}",
+                id=f"F-{start_id + i:03d}",
+                content=f"伏線{start_id + i}",
                 hang_volume=1,
                 hang_episode=1,
                 hang_chapter=1,
                 hang_type="implicit",
-                importance="★"
+                importance="★",
             )
             repo.add(fs)
 
     # 複数のスレッドで同時に伏線を追加
     threads = []
     for i in range(5):
-        thread = threading.Thread(target=add_foreshadowings, args=(i*100, 20))
+        thread = threading.Thread(target=add_foreshadowings, args=(i * 100, 20))
         threads.append(thread)
         thread.start()
 

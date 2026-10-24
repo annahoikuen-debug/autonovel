@@ -41,9 +41,7 @@ class ContextMatcher:
             except Exception as e:
                 logger.warning(f"Failed to load scene context from {self.scene_config_path}: {e}")
 
-    def score_candidate(
-        self, candidate: TemplateCandidate, context: SubtextContext
-    ) -> float:
+    def score_candidate(self, candidate: TemplateCandidate, context: SubtextContext) -> float:
         meta = candidate.metadata
         req_ctx = meta.context or {}
         score = float(meta.weight)
@@ -110,9 +108,7 @@ class ContextMatcher:
 
         for candidate in candidates:
             # Step 16: Check character constraints
-            if context.speaker and not self.constraints.is_template_allowed(
-                context.speaker, candidate.metadata.tags
-            ):
+            if context.speaker and not self.constraints.is_template_allowed(context.speaker, candidate.metadata.tags):
                 continue
 
             score = self.score_candidate(candidate, context)

@@ -1,4 +1,5 @@
 """Step 5: 条件関数レジストリテスト。"""
+
 from __future__ import annotations
 
 import pytest

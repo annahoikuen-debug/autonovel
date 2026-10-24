@@ -2,6 +2,7 @@
 Unit tests for syllogism rewrite directive generator.
 PLAN 03 - Step 11: リライト指示生成器の検証
 """
+
 from __future__ import annotations
 
 from src.services.anti_ai.detectors import EmotionSyllogismDetector

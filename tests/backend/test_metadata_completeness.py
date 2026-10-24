@@ -23,6 +23,7 @@
 このテストは**すべての FK 参照先**について同じ検査を行うため、
 今後，新增されずに漏れたテーブルも検出できる。
 """
+
 from __future__ import annotations
 
 import pytest
@@ -68,13 +69,10 @@ class TestMetadataSelfContained:
                     if len(parts) >= 2:
                         target_table = ".".join(parts[:-1])
                         if target_table not in metadata.tables:
-                            missing.append(
-                                f"{table_name}.{column.name} -> {target_table}"
-                            )
+                            missing.append(f"{table_name}.{column.name} -> {target_table}")
 
-        assert not missing, (
-            "外部キー参照先が Base.metadata に存在しません（create_all が失敗します）:\n"
-            + "\n".join(f"  {m}" for m in missing)
+        assert not missing, "外部キー参照先が Base.metadata に存在しません（create_all が失敗します）:\n" + "\n".join(
+            f"  {m}" for m in missing
         )
 
     def test_create_all_does_not_raise(self, metadata) -> None:

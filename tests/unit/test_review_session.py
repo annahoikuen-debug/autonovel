@@ -108,87 +108,103 @@ class TestReviewSession:
     def test_should_continue_review_max_rounds(self):
         session = ReviewSession(request_id="req_123")
         for i in range(3):
-            session.add_round(ReviewRound(
-                round_number=i,
-                timestamp=datetime.now(),
-                plan_scores={"plan_a": 85.0},
-                plan_critiques={},
-                gate_config_hash="abc123",
-            ))
+            session.add_round(
+                ReviewRound(
+                    round_number=i,
+                    timestamp=datetime.now(),
+                    plan_scores={"plan_a": 85.0},
+                    plan_critiques={},
+                    gate_config_hash="abc123",
+                )
+            )
         # max_rounds=3, 3 rounds -> should NOT continue
         assert session.should_continue_review(max_rounds=3) is False
 
     def test_should_continue_review_converged(self):
         session = ReviewSession(request_id="req_123")
         # Round 0
-        session.add_round(ReviewRound(
-            round_number=0,
-            timestamp=datetime.now(),
-            plan_scores={"plan_a": 85.0, "plan_b": 80.0},
-            plan_critiques={},
-            gate_config_hash="abc123",
-        ))
+        session.add_round(
+            ReviewRound(
+                round_number=0,
+                timestamp=datetime.now(),
+                plan_scores={"plan_a": 85.0, "plan_b": 80.0},
+                plan_critiques={},
+                gate_config_hash="abc123",
+            )
+        )
         # Round 1 - small delta (< 2.0)
-        session.add_round(ReviewRound(
-            round_number=1,
-            timestamp=datetime.now(),
-            plan_scores={"plan_a": 86.0, "plan_b": 81.0},
-            plan_critiques={},
-            gate_config_hash="abc123",
-        ))
+        session.add_round(
+            ReviewRound(
+                round_number=1,
+                timestamp=datetime.now(),
+                plan_scores={"plan_a": 86.0, "plan_b": 81.0},
+                plan_critiques={},
+                gate_config_hash="abc123",
+            )
+        )
         # Should converge (all deltas < 2.0)
         assert session.should_continue_review(max_rounds=3, score_delta_threshold=2.0) is False
 
     def test_should_continue_review_not_converged(self):
         session = ReviewSession(request_id="req_123")
         # Round 0
-        session.add_round(ReviewRound(
-            round_number=0,
-            timestamp=datetime.now(),
-            plan_scores={"plan_a": 85.0, "plan_b": 80.0},
-            plan_critiques={},
-            gate_config_hash="abc123",
-        ))
+        session.add_round(
+            ReviewRound(
+                round_number=0,
+                timestamp=datetime.now(),
+                plan_scores={"plan_a": 85.0, "plan_b": 80.0},
+                plan_critiques={},
+                gate_config_hash="abc123",
+            )
+        )
         # Round 1 - large delta (>= 2.0)
-        session.add_round(ReviewRound(
-            round_number=1,
-            timestamp=datetime.now(),
-            plan_scores={"plan_a": 88.0, "plan_b": 81.0},
-            plan_critiques={},
-            gate_config_hash="abc123",
-        ))
+        session.add_round(
+            ReviewRound(
+                round_number=1,
+                timestamp=datetime.now(),
+                plan_scores={"plan_a": 88.0, "plan_b": 81.0},
+                plan_critiques={},
+                gate_config_hash="abc123",
+            )
+        )
         # Should NOT converge (plan_a delta = 3.0 >= 2.0)
         assert session.should_continue_review(max_rounds=3, score_delta_threshold=2.0) is True
 
     def test_get_convergence_report_insufficient_data(self):
         session = ReviewSession(request_id="req_123")
-        session.add_round(ReviewRound(
-            round_number=0,
-            timestamp=datetime.now(),
-            plan_scores={"plan_a": 85.0},
-            plan_critiques={},
-            gate_config_hash="abc123",
-        ))
+        session.add_round(
+            ReviewRound(
+                round_number=0,
+                timestamp=datetime.now(),
+                plan_scores={"plan_a": 85.0},
+                plan_critiques={},
+                gate_config_hash="abc123",
+            )
+        )
         report = session.get_convergence_report()
         assert report["status"] == "insufficient_data"
         assert report["rounds"] == 1
 
     def test_get_convergence_report(self):
         session = ReviewSession(request_id="req_123")
-        session.add_round(ReviewRound(
-            round_number=0,
-            timestamp=datetime.now(),
-            plan_scores={"plan_a": 85.0, "plan_b": 80.0},
-            plan_critiques={},
-            gate_config_hash="abc123",
-        ))
-        session.add_round(ReviewRound(
-            round_number=1,
-            timestamp=datetime.now(),
-            plan_scores={"plan_a": 88.0, "plan_b": 81.0},
-            plan_critiques={},
-            gate_config_hash="abc123",
-        ))
+        session.add_round(
+            ReviewRound(
+                round_number=0,
+                timestamp=datetime.now(),
+                plan_scores={"plan_a": 85.0, "plan_b": 80.0},
+                plan_critiques={},
+                gate_config_hash="abc123",
+            )
+        )
+        session.add_round(
+            ReviewRound(
+                round_number=1,
+                timestamp=datetime.now(),
+                plan_scores={"plan_a": 88.0, "plan_b": 81.0},
+                plan_critiques={},
+                gate_config_hash="abc123",
+            )
+        )
         report = session.get_convergence_report()
         assert report["total_rounds"] == 2
         assert "plan_a" in report["plan_trajectories"]
@@ -204,15 +220,17 @@ class TestReviewSession:
             gate_mode="hash",
             gate_blocked_keys=["key1", "key2"],
         )
-        session.add_round(ReviewRound(
-            round_number=0,
-            timestamp=datetime.now(),
-            plan_scores={"plan_a": 85.0, "plan_b": 78.0},
-            plan_critiques={"plan_a": {"clarity": "high"}},
-            gate_config_hash="abc123",
-            converged=False,
-            feedback_hash="def456",
-        ))
+        session.add_round(
+            ReviewRound(
+                round_number=0,
+                timestamp=datetime.now(),
+                plan_scores={"plan_a": 85.0, "plan_b": 78.0},
+                plan_critiques={"plan_a": {"clarity": "high"}},
+                gate_config_hash="abc123",
+                converged=False,
+                feedback_hash="def456",
+            )
+        )
 
         data = session.to_dict()
         restored = ReviewSession.from_dict(data)
@@ -229,21 +247,13 @@ class TestReviewSession:
         assert restored.rounds[0].feedback_hash == session.rounds[0].feedback_hash
 
     def test_compute_gate_config_hash_deterministic(self):
-        hash1 = ReviewSession._compute_gate_config_hash(
-            ["agent_b", "agent_a"], "scrub", ["key2", "key1"]
-        )
-        hash2 = ReviewSession._compute_gate_config_hash(
-            ["agent_a", "agent_b"], "scrub", ["key1", "key2"]
-        )
+        hash1 = ReviewSession._compute_gate_config_hash(["agent_b", "agent_a"], "scrub", ["key2", "key1"])
+        hash2 = ReviewSession._compute_gate_config_hash(["agent_a", "agent_b"], "scrub", ["key1", "key2"])
         assert hash1 == hash2  # 順不同でも同じハッシュ
 
     def test_compute_gate_config_hash_different_inputs(self):
-        hash1 = ReviewSession._compute_gate_config_hash(
-            ["agent_a"], "scrub", ["key1"]
-        )
-        hash2 = ReviewSession._compute_gate_config_hash(
-            ["agent_b"], "scrub", ["key1"]
-        )
+        hash1 = ReviewSession._compute_gate_config_hash(["agent_a"], "scrub", ["key1"])
+        hash2 = ReviewSession._compute_gate_config_hash(["agent_b"], "scrub", ["key1"])
         assert hash1 != hash2
 
 

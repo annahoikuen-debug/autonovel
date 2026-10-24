@@ -84,9 +84,7 @@ class TemplateLoader:
             logger.warning(f"Template directory does not exist: {self.template_dir}")
             return {}
 
-        current_mtime = max(
-            [p.stat().st_mtime for p in self.template_dir.rglob("*.j2")] or [0.0]
-        )
+        current_mtime = max([p.stat().st_mtime for p in self.template_dir.rglob("*.j2")] or [0.0])
         if not force_reload and self._cache and current_mtime <= self._last_mtime:
             return self._cache
 

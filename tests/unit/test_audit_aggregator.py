@@ -4,11 +4,13 @@ import pytest
 from unittest.mock import MagicMock, AsyncMock
 
 from src.services.audit_aggregator import (
-    AuditAggregator, BookScoreResult, validate_weights, renormalize, SPECIALIST_NAMES
+    AuditAggregator,
+    BookScoreResult,
+    validate_weights,
+    renormalize,
+    SPECIALIST_NAMES,
 )
-from src.agents.specialist_auditor_base import (
-    SpecialistAuditor, SpecialistAuditResult
-)
+from src.agents.specialist_auditor_base import SpecialistAuditor, SpecialistAuditResult
 
 
 class FakeSpecialist(SpecialistAuditor):

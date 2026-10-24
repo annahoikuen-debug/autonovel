@@ -1,6 +1,6 @@
 """Super simple test to check ChromaDB fixture."""
-from __future__ import annotations
 
+from __future__ import annotations
 
 
 def test_chromadb_fixture(chromadb_container):

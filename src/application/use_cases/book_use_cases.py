@@ -1,4 +1,5 @@
 """Book (作品) に関するアプリケーションユースケース群。"""
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -74,7 +75,10 @@ class BookUseCases:
             other_book = result.scalar_one_or_none()
             if other_book and other_book.user_id != current_user.id and current_user.role != "admin":
                 from fastapi import HTTPException, status
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対するアクセス権限がありません")
+
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対するアクセス権限がありません"
+                )
             raise NotFoundError("Book not found", resource_type="Book", resource_id=str(book_id))
 
         return BookDTO.from_orm(b).to_dict()
@@ -107,7 +111,10 @@ class BookUseCases:
             other_book = result.scalar_one_or_none()
             if other_book and other_book.user_id != current_user.id and current_user.role != "admin":
                 from fastapi import HTTPException, status
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対するアクセス権限がありません")
+
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対するアクセス権限がありません"
+                )
             raise NotFoundError("Book not found", resource_type="Book", resource_id=str(book_id))
 
         await uow.books.delete_book(book_id=book_id, user_id=current_user.id)

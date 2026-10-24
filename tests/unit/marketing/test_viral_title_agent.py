@@ -1,6 +1,7 @@
 """
 PLAN 01 - Step 9: MarketingAgent.generate_viral_title_pack の単体テスト
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
@@ -15,8 +16,14 @@ async def test_generate_viral_title_pack_success():
     mock_llm = MagicMock()
     mock_llm.generate_json = AsyncMock(
         return_value=[
-            {"title": "役立たずと追放された付与術師、実は世界唯一の神級エンチャンターでした", "syntax_type": "追放ざまぁ"},
-            {"title": "ただの田舎貴族ですが、なぜか周囲が世界最強の黒幕だと勘違いして崇めてきます", "syntax_type": "勘違い無双"},
+            {
+                "title": "役立たずと追放された付与術師、実は世界唯一の神級エンチャンターでした",
+                "syntax_type": "追放ざまぁ",
+            },
+            {
+                "title": "ただの田舎貴族ですが、なぜか周囲が世界最強の黒幕だと勘違いして崇めてきます",
+                "syntax_type": "勘違い無双",
+            },
             {"title": "普通の冒険者", "syntax_type": "一般"},
         ]
     )

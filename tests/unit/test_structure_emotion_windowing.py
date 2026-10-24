@@ -28,10 +28,12 @@ async def test_structure_auditor_windowing_long_draft():
 
     auditor._judge_with_llm = mock_judge
 
-    result = await auditor.audit({
-        "draft_text": long_draft,
-        "plot_tree": "村の平和→旅立ちと試練→決戦→勝利と帰還",
-    })
+    result = await auditor.audit(
+        {
+            "draft_text": long_draft,
+            "plot_tree": "村の平和→旅立ちと試練→決戦→勝利と帰還",
+        }
+    )
 
     assert result.score == 92.0
     assert not result.degraded

@@ -2,6 +2,7 @@
 
 全マイグレーションが適用・ロールバック可能か、スキーマが期待通りか検証。
 """
+
 import pytest
 from alembic import command
 from alembic.config import Config
@@ -35,11 +36,22 @@ def test_migrations_up_down(sqlite_db_url):
     tables = inspector.get_table_names()
 
     required_tables = [
-        "books", "chapters", "characters", "plots",
-        "chapter_chunks", "prompt_versions", "bibles", "branches",
-        "patch_reviews", "setting_deltas", "setting_versions",
-        "multimedia_artifacts", "multimedia_tasks",
-        "branch_play_sessions", "publish_records", "book_scores",
+        "books",
+        "chapters",
+        "characters",
+        "plots",
+        "chapter_chunks",
+        "prompt_versions",
+        "bibles",
+        "branches",
+        "patch_reviews",
+        "setting_deltas",
+        "setting_versions",
+        "multimedia_artifacts",
+        "multimedia_tasks",
+        "branch_play_sessions",
+        "publish_records",
+        "book_scores",
     ]
     for table in required_tables:
         assert table in tables, f"Table {table} not found after migration"

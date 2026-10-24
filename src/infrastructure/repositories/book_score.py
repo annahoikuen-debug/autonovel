@@ -24,9 +24,7 @@ class BookScoreRepository(BaseRepository[BookScore]):
 
     async def get_all_for_book(self, book_id: int) -> list[BookScore]:
         result = await self.session.execute(
-            select(BookScore)
-            .where(BookScore.book_id == book_id)
-            .order_by(BookScore.chapter_number)
+            select(BookScore).where(BookScore.book_id == book_id).order_by(BookScore.chapter_number)
         )
         return list(result.scalars().all())
 
@@ -46,8 +44,10 @@ class BookScoreRepository(BaseRepository[BookScore]):
         # サブクエリと結合して、最新のレコードのみを抽出
         query = (
             select(BookScore)
-            .join(subquery, (BookScore.chapter_number == subquery.c.chapter_number) &
-                            (BookScore.evaluated_at == subquery.c.max_at))
+            .join(
+                subquery,
+                (BookScore.chapter_number == subquery.c.chapter_number) & (BookScore.evaluated_at == subquery.c.max_at),
+            )
             .where(BookScore.book_id == book_id)
             .order_by(BookScore.chapter_number)
         )
