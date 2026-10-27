@@ -1,0 +1,457 @@
+"""
+src/backend/routers/novel.py — 小説制作関連APIエンドポイント
+"""
+
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+
+from src.backend.auth import get_current_user, require_api_key
+from src.backend.database.models import User
+from src.backend.database.uow import UnitOfWork
+from src.backend.security.owner_guard import verify_book_ownership
+from src.core.container import AppContainer
+from src.models.api_schemas import (
+    EpisodeListResponse,
+    NovelReportResponse,
+    NovelStatusResponse,
+    ProduceNovelRequest,
+    ProduceNovelResponse,
+)
+from src.services.novel_producer import NovelProducer
+from src.services.report_generator import ReportGenerator
+
+router = APIRouter(
+    prefix="/api/novel",
+    tags=["novel"],
+    # 従来は router に dependencies が無く、GlobalAuthMiddleware を通過した
+    # 任意のテナントが他人の作品を読み書きできていた。認証を必須にする。
+    dependencies=[Depends(get_current_user)],
+)
+
+# シングルトンプロデューサー（簡易実装）
+producer = NovelProducer()
+report_generator = ReportGenerator()
+
+
+class BookScoreResponse(BaseModel):
+    book_id: int
+    chapter_number: int
+    overall_score: float
+    structure_score: float
+    coherency_score: float
+    factual_grounding_score: float
+    visual_textual_synergy_score: float
+    reader_experience_score: float
+    evaluated_at: str | None = None
+    trend_3ch: dict | None = None  # 直近3章のトレンド
+
+
+@router.post("/produce", response_model=ProduceNovelResponse)
+async def produce_novel(
+    req: ProduceNovelRequest,
+    current_user: User = Depends(get_current_user),
+    api_key: str = Depends(require_api_key),
+):
+    """作品全話生成を開始するエンドポイント"""
+    # プロジェクト作成
+    from src.models.production_config import NovelProject
+
+    project = NovelProject(
+        title=req.title,
+        genre=req.genre,
+        synopsis=req.synopsis,
+        keywords=req.keywords,
+        target_episodes=req.target_episodes,
+        target_word_count_per_episode=req.target_word_count,
+        style_key=req.style_key,
+        engine_key=req.engine_key,
+    )
+    producer.create_project(project)
+    # 非同期で全話生成（バックグラウンドタスクは省略）
+    try:
+        await producer.generate_all_episodes(project_id=1)  # 仮にID 1 を使用
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return ProduceNovelResponse(
+        project_id=1,
+        status="completed",
+        message="全話生成が完了しました",
+        token_usage_estimate=None,
+    )
+
+
+@router.get("/{project_id}/status", response_model=NovelStatusResponse)
+async def get_novel_status(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    """作品ステータス取得"""
+    progress = producer.get_progress()
+    if not progress:
+        raise HTTPException(status_code=404, detail="プロジェクトが見つかりません")
+    return NovelStatusResponse(
+        project_id=project_id,
+        status=progress.status,
+        current_episode=progress.current_episode,
+        total_episodes=progress.total_episodes,
+        progress_percent=progress.progress_percent,
+        message=progress.message,
+        completed_episodes=progress.completed_eps,
+    )
+
+
+@router.get("/{project_id}/episodes", response_model=EpisodeListResponse)
+async def list_episodes(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    """エピソード一覧取得"""
+    episodes = producer.get_episodes()
+    data: list[dict[str, Any]] = []
+    for ep in episodes:
+        data.append(
+            {
+                "ep_num": ep.ep_num,
+                "title": ep.title,
+                "word_count": ep.word_count,
+                "quality_score": ep.quality_score,
+            }
+        )
+    return EpisodeListResponse(episodes=data)
+
+
+@router.get("/{project_id}/report", response_model=NovelReportResponse)
+async def get_report(
+    project_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    """制作レポート取得"""
+    try:
+        report = producer.generate_report()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    # Report を dict に変換（簡易）
+    report_dict = report.dict()
+    return NovelReportResponse(report=report_dict)
+
+
+@router.get("/books/{book_id}/chapters/{chapter_number}/score", response_model=BookScoreResponse)
+async def get_chapter_book_score(
+    book_id: int,
+    chapter_number: int,
+    current_user: User = Depends(get_current_user),
+):
+    """指定章の BookScore を取得する"""
+    try:
+        from src.services.book_score_service import BookScoreCalculator
+
+        async with UnitOfWork(AppContainer.db()) as uow:
+            # IDOR 防止: 作品の所有権を検証する
+            await verify_book_ownership(book_id, current_user, uow)
+            calculator = BookScoreCalculator(repository=uow.book_scores)
+            score_model = await calculator.get_latest_score(book_id, chapter_number)
+
+            if score_model is None:
+                raise HTTPException(status_code=404, detail="スコアが見つかりません")
+
+            # トレンド情報取得（直近3章）
+            trend_3ch = None
+            all_scores = await uow.book_scores.get_all_for_book(book_id)
+            if all_scores:
+                # 直近3章
+                recent = all_scores[-3:] if len(all_scores) >= 3 else all_scores
+                if len(recent) >= 2:
+                    avg_overall = sum(float(s.overall_score) for s in recent) / len(recent)
+                    # 傾向: 最新と3章前の差分
+                    trend_slope = float(recent[-1].overall_score) - float(recent[0].overall_score)
+                    trend_3ch = {
+                        "avg_overall_score": round(avg_overall, 2),
+                        "trend_slope": round(trend_slope, 2),  # 正なら向上、負なら低下
+                        "chapters_count": len(recent),
+                        "recent_scores": [{"chapter": int(s.chapter_number), "overall": float(s.overall_score)} for s in recent],
+                    }
+
+            return BookScoreResponse(
+                book_id=int(score_model.book_id),
+                chapter_number=int(score_model.chapter_number),
+                overall_score=float(score_model.overall_score),
+                structure_score=float(score_model.structure_score),
+                coherency_score=float(score_model.coherency_score),
+                factual_grounding_score=float(score_model.factual_grounding_score),
+                visual_textual_synergy_score=float(score_model.visual_textual_synergy_score),
+                reader_experience_score=float(score_model.reader_experience_score),
+                evaluated_at=score_model.evaluated_at.isoformat() if score_model.evaluated_at else None,
+                trend_3ch=trend_3ch,
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class PromotionEligibilityResponse(BaseModel):
+    book_id: int
+    eligible: bool
+    avg_score: float
+    trend_slope: float
+    chapters_evaluated: int
+    reason: str | None = None
+
+
+@router.get("/books/{book_id}/promotion", response_model=PromotionEligibilityResponse)
+async def check_promotion_eligibility(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    """かんたんモードから上級者Studioへの昇格判定を取得する"""
+    try:
+        async with UnitOfWork(AppContainer.db()) as uow:
+            # IDOR 防止: 作品の所有権を検証する
+            await verify_book_ownership(book_id, current_user, uow)
+            all_scores = await uow.book_scores.get_all_for_book(book_id)
+
+            if len(all_scores) < 3:
+                return PromotionEligibilityResponse(
+                    book_id=book_id,
+                    eligible=False,
+                    avg_score=0.0,
+                    trend_slope=0.0,
+                    chapters_evaluated=len(all_scores),
+                    reason="3章以上の評価が必要です",
+                )
+
+            recent = all_scores[-3:]
+            avg_overall = sum(float(s.overall_score) for s in recent) / 3
+            trend_slope = float(recent[-1].overall_score) - float(recent[0].overall_score)
+
+        eligible = avg_overall >= 80.0 and trend_slope > 0
+        reason = None
+        if not eligible:
+            if avg_overall < 80.0:
+                reason = f"平均スコア {avg_overall:.1f} が 80.0 未満です"
+            elif trend_slope <= 0:
+                reason = f"スコア傾向が上昇していません (傾斜: {trend_slope:.1f})"
+
+        # メトリクス記録
+        try:
+            from src.backend.observability.metrics import record_promotion_eligible
+            record_promotion_eligible(book_id, eligible)
+        except Exception:
+            pass  # メトリクス失敗は無視
+
+        return PromotionEligibilityResponse(
+            book_id=book_id,
+            eligible=eligible,
+            avg_score=round(avg_overall, 2),
+            trend_slope=round(trend_slope, 2),
+            chapters_evaluated=3,
+            reason=reason,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class PDCAReportResponse(BaseModel):
+    book_id: int
+    plan: dict[str, Any]
+    do: dict[str, Any]
+    check: dict[str, Any]
+    act: dict[str, Any]
+
+
+@router.get("/books/{book_id}/pdca", response_model=PDCAReportResponse)
+async def get_pdca_report(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    """書籍の PDCA レポートを取得する"""
+    try:
+        from src.backend.database.core import get_db_manager
+        from src.backend.database.repositories.book_score import BookScoreRepository
+        from src.services.book_score_service import BookScoreCalculator
+
+        # IDOR 防止: 作品の所有権を検証する
+        await verify_book_ownership(book_id, current_user, AppContainer.db())
+
+        db_manager = get_db_manager()
+        async with db_manager.get_session() as session:
+            book_score_repo = BookScoreRepository(session)
+            calculator = BookScoreCalculator(repository=book_score_repo)
+            report = await calculator.generate_pdca_report(book_id)
+
+        if "error" in report:
+            raise HTTPException(status_code=404, detail=report["error"])
+
+        return report
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class AlertResponse(BaseModel):
+    book_id: int
+    alerts: list[dict[str, Any]]
+
+
+@router.get("/books/{book_id}/alerts", response_model=AlertResponse)
+async def get_book_alerts(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+):
+    """書籍のスコアアラートを取得する"""
+    try:
+        from src.backend.database.core import get_db_manager
+        from src.backend.database.repositories.book_score import BookScoreRepository
+        from src.services.book_score_service import BookScoreCalculator
+
+        # IDOR 防止: 作品の所有権を検証する
+        await verify_book_ownership(book_id, current_user, AppContainer.db())
+
+        db_manager = get_db_manager()
+        async with db_manager.get_session() as session:
+            book_score_repo = BookScoreRepository(session)
+            calculator = BookScoreCalculator(repository=book_score_repo)
+            trend = await calculator.analyze_trend(book_id)
+
+        if "error" in trend:
+            return {"book_id": book_id, "alerts": []}
+
+        alerts = []
+
+        # スコア急落アラート（直近3章で15点以上低下）
+        if trend.get("changepoints"):
+            for cp in trend["changepoints"]:
+                if cp["change"] < -15:
+                    alerts.append({
+                        "type": "score_drop",
+                        "severity": "high",
+                        "message": f"第{cp['chapter_index']}章でスコアが {abs(cp['change']):.1f} 点急落",
+                        "chapter_index": cp["chapter_index"],
+                        "details": cp,
+                    })
+
+        # 停滞アラート（傾斜がほぼゼロかつ平均70未満）
+        if abs(trend.get("slope", 0)) < 0.5 and trend.get("avg_score", 0) < 70:
+            alerts.append({
+                "type": "stagnation",
+                "severity": "medium",
+                "message": f"スコアが停滞しています（平均: {trend['avg_score']:.1f}、傾斜: {trend['slope']:.2f}）",
+                "avg_score": trend["avg_score"],
+                "slope": trend["slope"],
+            })
+
+        # 異常値アラート（極端に低いスコア）
+        if trend.get("latest_score", 100) < 50:
+            alerts.append({
+                "type": "anomaly",
+                "severity": "critical",
+                "message": f"最新章のスコアが極端に低いです: {trend['latest_score']:.1f}",
+                "latest_score": trend["latest_score"],
+            })
+
+        # 改善停止アラート（5章以上改善なし）
+        if trend.get("slope", 0) <= 0 and trend.get("chapters_evaluated", 0) >= 5:
+            alerts.append({
+                "type": "no_improvement",
+                "severity": "medium",
+                "message": f"{trend['chapters_evaluated']}章以上改善が見られません",
+                "slope": trend["slope"],
+            })
+
+        return {"book_id": book_id, "alerts": alerts}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ==========================================
+# Social Dynamics & Narrative Log Endpoints (Phase 2 Pillar 2 - Step 35)
+# ==========================================
+
+
+@router.get("/{book_id}/social/relationships")
+async def get_novel_social_relationships(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+    api_key: str = Depends(require_api_key),
+):
+    """作品のキャラクター間動的関係性一覧を取得"""
+    from src.backend.database.social_repository import SocialRepository
+
+    # IDOR 防止: 作品の所有権を検証する
+    await verify_book_ownership(book_id, current_user, AppContainer.db())
+
+    # リクエストごとに DatabaseManager(settings.DATABASE_URL) を生成すると
+    # エンジンとコネクションプールが dispose されないまま積み上がり、
+    # ファイルディスクリプタ (SQLite) や max_connections (PostgreSQL) を枯渇させる。
+    # AppContainer.db() はシングルトンの DatabaseManager を返すので使い回す。
+    repo = SocialRepository(AppContainer.db())
+    rels = await repo.get_all_relationships(book_id)
+    return {
+        "book_id": book_id,
+        "relationships": [
+            {
+                "char_a": k[0],
+                "char_b": k[1],
+                "trust_score": v.trust_score,
+                "tension_score": v.tension_score,
+                "affinity_score": v.affinity_score,
+                "last_interaction_ep": v.last_interaction_ep,
+                "dynamics_state": getattr(v, "dynamics_state", "neutral"),
+            }
+            for k, v in rels.items()
+            if k[0] <= k[1]
+        ],
+    }
+
+
+@router.get("/{book_id}/social/journals")
+async def get_novel_social_journals(
+    book_id: int,
+    ep_num: int | None = None,
+    character_name: str | None = None,
+    limit: int = 20,
+    current_user: User = Depends(get_current_user),
+    api_key: str = Depends(require_api_key),
+):
+    """作品の登場人物内面手記・日記一覧を取得"""
+    from src.backend.database.social_repository import SocialRepository
+
+    # IDOR 防止: 作品の所有権を検証する
+    await verify_book_ownership(book_id, current_user, AppContainer.db())
+
+    # AppContainer.db() はシングルトンなので、リクエストごとに engine を生成しない
+    repo = SocialRepository(AppContainer.db())
+    journals = await repo.get_journals(
+        book_id=book_id,
+        episode_num=ep_num,
+        character_name=character_name,
+        limit=limit,
+    )
+    return {"book_id": book_id, "journals": journals}
+
+
+@router.get("/{book_id}/social/trends")
+async def get_novel_social_trends(
+    book_id: int,
+    current_user: User = Depends(get_current_user),
+    api_key: str = Depends(require_api_key),
+):
+    """作品の動的関係性トレンド要約テキストを取得"""
+    from src.backend.database.social_repository import SocialRepository
+
+    # IDOR 防止: 作品の所有権を検証する
+    await verify_book_ownership(book_id, current_user, AppContainer.db())
+
+    # AppContainer.db() はシングルトンなので、リクエストごとに engine を生成しない
+    repo = SocialRepository(AppContainer.db())
+    summary = await repo.get_relationship_trends_summary(book_id)
+    return {"book_id": book_id, "trends_summary": summary}

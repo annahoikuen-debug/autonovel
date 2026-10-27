@@ -1,0 +1,586 @@
+"""Multimedia 機能の FastAPI ルータ。
+
+`/multimedia/...` 配下に Asset Pack / Media Mix / IF Routes / eBook エンドポイント群を公開する。
+`ENABLE_MULTIMEDIA` フラグが無効な場合は 503 を返す。
+"""
+
+from __future__ import annotations
+
+import logging
+import re
+from pathlib import Path
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import Path as PathParam
+from fastapi.responses import FileResponse
+
+from src.backend.auth import get_current_user
+from src.backend.database.models import User
+from src.backend.security.owner_guard import verify_book_ownership
+from src.core.container import AppContainer
+from src.backend.exceptions import NoChaptersFoundError
+from src.backend.feature_flags import is_multimedia_enabled
+from src.backend.multimedia_service import MultimediaService
+from src.backend.multimedia_storage import get_multimedia_dir
+from src.backend.observability.health import metrics
+from src.backend.rate_limit import generate_limiter
+from src.backend.schemas.multimedia import (
+    ArtifactMetaResponse,
+    AssetPackGenerateRequest,
+    AssetPackGenerateResponse,
+    AssetPackRequest,
+    AssetPackResponse,
+    AssetsByBookResponse,
+    EbookExportRequest,
+    EbookExportResponse,
+    IFRouteGenerateRequest,
+    IFRouteResponse,
+    MediaMixRequest,
+    MediaMixResponse,
+    TaskStatusResponse,
+)
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter()
+
+
+def get_multimedia_service() -> MultimediaService:
+    """`Depends` 用のサービスプロバイダ。テストでは `app.dependency_overrides` で差し替える。"""
+    return MultimediaService()
+
+
+def _check_enabled() -> None:
+    """Multimedia フラグが有効か確認 (HTTPException に変換)。"""
+    if not is_multimedia_enabled():
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "error": "MultimediaDisabledError",
+                "detail": "Multimedia features are disabled",
+            },
+        )
+
+
+def _safe_path_under_base(name: str) -> Path:
+    """`MULTIMEDIA_OUTPUT_DIR` 配下に限定した安全なパスを返す。"""
+    base = get_multimedia_dir().resolve()
+    candidate = (base / name).resolve()
+    if base != candidate and base not in candidate.parents:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    return candidate
+
+
+# 成果物は `MULTIMEDIA_OUTPUT_DIR/book_<id>/<kind>/...` レイアウトで出力される
+_BOOK_DIR_RE = re.compile(r"^book_(\d+)$")
+
+
+def _book_id_from_media_path(safe_path: Path) -> int | None:
+    """`MULTIMEDIA_OUTPUT_DIR` 配下のパスから作品 ID を特定する。
+
+    先頭ディレクトリが `book_<id>` 形式でなければ、作品に帰属しないため None を返す。
+    """
+    base = get_multimedia_dir().resolve()
+    try:
+        rel = safe_path.relative_to(base)
+    except ValueError:
+        return None
+    parts = rel.parts
+    if not parts:
+        return None
+    m = _BOOK_DIR_RE.match(parts[0])
+    return int(m.group(1)) if m else None
+
+
+async def _assert_media_path_ownership(safe_path: Path, current_user: User) -> None:
+    """メディア成果物パスへのアクセス権を検証する。"""
+    book_id = _book_id_from_media_path(safe_path)
+    if book_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="file not found",
+        )
+    await verify_book_ownership(book_id, current_user, None)
+
+
+async def _assert_artifact_ownership(
+    service: MultimediaService,
+    asset_id: int,
+    current_user: User,
+) -> dict[str, Any]:
+    """成果物 ``asset_id`` が current_user の作品に属することを検証してメタを返す。
+
+    ``asset_id`` は連番で推測できるため、所有者検証無しで他テナントの
+    eBook / アセットパックをダウンロードできてしまう。
+    """
+    meta = service.get_artifact(asset_id)
+    if meta is None:
+        raise HTTPException(status_code=404, detail="artifact not found")
+    await verify_book_ownership(int(meta["book_id"]), current_user, AppContainer.db())
+    return meta
+
+
+async def _assert_task_ownership(
+    service: MultimediaService,
+    task_id: str,
+    current_user: User,
+) -> dict[str, Any]:
+    """タスク ``task_id`` を作品へ解決して所有者を検証する。
+
+    ``multimedia_tasks`` は ``asset_id`` しか持たないため、
+    ``asset_id`` -> ``multimedia_artifacts`` -> ``book_id`` と辿る。
+    ``asset_id`` が NULL のタスクは作品に紐づかないため管理者に限定する (fail-closed)。
+    """
+    info = service.get_task(task_id)
+    if info is None:
+        raise HTTPException(status_code=404, detail="task not found")
+
+    asset_id = info.get("asset_id")
+    if asset_id is None:
+        if getattr(current_user, "role", None) != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="このタスクは作品に紐づかないため参照できません",
+            )
+        return info
+
+    await _assert_artifact_ownership(service, int(asset_id), current_user)
+    return info
+
+
+def _safe_artifact_file_path(file_path: str) -> Path:
+    """DB に記録された成果物パスが ``MULTIMEDIA_OUTPUT_DIR`` 配下にあることを確認する。
+
+    ``/multimedia/files/{filename:path}`` の `_safe_path_under_base` と同じ厳密さで、
+    DB が改竄された場合에도ベースディレクトリ外を配信しないようにする。
+    """
+    base = get_multimedia_dir().resolve()
+    candidate = Path(file_path).resolve()
+    if base != candidate and base not in candidate.parents:
+        raise HTTPException(status_code=400, detail="Invalid path")
+    return candidate
+
+
+@router.post(
+    "/media-mix",
+    response_model=MediaMixResponse,
+    responses={503: {"description": "Multimedia disabled"}},
+)
+async def generate_media_mix(
+    payload: MediaMixRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    service: MultimediaService = Depends(get_multimedia_service),
+) -> MediaMixResponse:
+    """Media Mix 台本生成。"""
+    _check_enabled()
+    await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
+    await generate_limiter.check(request)
+    metrics.increment("multimedia_requests_total")
+    logger.info("multimedia.media_mix book_id=%s format=%s", payload.book_id, payload.format)
+    try:
+        result = service.generate_media_mix(
+            book_id=payload.book_id,
+            format_name=payload.format,
+            episode_num=payload.episode_num,
+        )
+    except NoChaptersFoundError as e:
+        metrics.increment("multimedia_errors_total")
+        raise HTTPException(status_code=422, detail=str(e))
+    except ValueError as e:
+        metrics.increment("multimedia_errors_total")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception:
+        metrics.increment("multimedia_errors_total")
+        raise
+    return MediaMixResponse(
+        asset_id=result.asset_id or 0,
+        files=result.files,
+        metadata=result.metadata,
+    )
+
+
+@router.post(
+    "/ebook",
+    response_model=EbookExportResponse,
+    responses={503: {"description": "Multimedia disabled"}},
+)
+async def export_ebook(
+    payload: EbookExportRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    service: MultimediaService = Depends(get_multimedia_service),
+) -> EbookExportResponse:
+    """Ebook エクスポート (EPUB/PDF/MOBI)。"""
+    _check_enabled()
+    await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
+    await generate_limiter.check(request)
+    logger.info("multimedia.ebook book_id=%s formats=%s", payload.book_id, payload.formats)
+    try:
+        result = service.export_ebook(book_id=payload.book_id, formats=payload.formats)
+    except NoChaptersFoundError as e:
+        metrics.increment("multimedia_errors_total")
+        raise HTTPException(status_code=422, detail=str(e))
+    except ValueError as e:
+        metrics.increment("multimedia_errors_total")
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception:
+        metrics.increment("multimedia_errors_total")
+        raise
+    return EbookExportResponse(
+        asset_id=result.asset_id or 0,
+        files=result.files,
+        formats=list(result.metadata.get("formats", [])),
+    )
+
+
+@router.post(
+    "/if-routes",
+    response_model=IFRouteResponse,
+    responses={503: {"description": "Multimedia disabled"}},
+)
+async def generate_if_routes(
+    payload: IFRouteGenerateRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    service: MultimediaService = Depends(get_multimedia_service),
+) -> IFRouteResponse:
+    """IF ルートグラフ生成。"""
+    _check_enabled()
+    await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
+    await generate_limiter.check(request)
+    logger.info(
+        "multimedia.if_routes book_id=%s persist=%s (also accessible via /api/branches)",
+        payload.book_id,
+        payload.persist,
+    )
+    try:
+        result, graph = service.generate_if_routes(book_id=payload.book_id, persist=payload.persist)
+    except NoChaptersFoundError as e:
+        metrics.increment("multimedia_errors_total")
+        raise HTTPException(status_code=422, detail=str(e))
+    except ValueError as e:
+        metrics.increment("multimedia_errors_total")
+        raise HTTPException(status_code=404, detail=str(e))
+
+    except Exception:
+        metrics.increment("multimedia_errors_total")
+        raise
+    if graph is None:
+        raise HTTPException(status_code=500, detail="Failed to generate graph")
+    return IFRouteResponse(
+        asset_id=result.asset_id or 0,
+        nodes=len(graph.nodes),
+        entry_node_id=graph.entry_node_id,
+        graph={"nodes": {nid: n.to_dict() for nid, n in graph.nodes.items()}},
+    )
+
+
+@router.post(
+    "/asset-pack",
+    response_model=AssetPackResponse,
+    responses={503: {"description": "Multimedia disabled"}},
+)
+async def generate_asset_pack(
+    payload: AssetPackRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    service: MultimediaService = Depends(get_multimedia_service),
+) -> AssetPackResponse:
+    """統合アセットパック (ZIP) を生成。"""
+    _check_enabled()
+    await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
+    await generate_limiter.check(request)
+    logger.info("multimedia.asset_pack book_id=%s", payload.book_id)
+    try:
+        result, task_id = service.generate_asset_pack(
+            book_id=payload.book_id,
+            include_if_routes=payload.include_if_routes,
+            include_media_mix=payload.include_media_mix,
+            include_ebook=payload.include_ebook,
+            include_audio=getattr(payload, "include_audio", True),
+            ebook_formats=payload.ebook_formats,
+            media_mix_formats=payload.media_mix_formats,
+        )
+    except NoChaptersFoundError as e:
+        metrics.increment("multimedia_errors_total")
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception:
+        metrics.increment("multimedia_errors_total")
+        raise
+    return AssetPackResponse(
+        asset_id=result.asset_id or 0,
+        task_id=task_id,
+        file_count=len(result.files),
+        file_path=result.files[0] if result.files else None,
+    )
+
+
+@router.post(
+    "/generate",
+    response_model=AssetPackGenerateResponse,
+    responses={503: {"description": "Multimedia disabled"}},
+)
+async def generate_asset_pack_alias(
+    payload: AssetPackGenerateRequest,
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    service: MultimediaService = Depends(get_multimedia_service),
+) -> AssetPackGenerateResponse:
+    """README 互換エイリアス: 統合アセットパック (ZIP) を生成 (`/asset-pack` と同等)。"""
+    _check_enabled()
+    await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
+    await generate_limiter.check(request)
+    logger.info("multimedia.generate (alias) book_id=%s", payload.book_id)
+    try:
+        result, task_id = service.generate_asset_pack(
+            book_id=payload.book_id,
+            include_if_routes=payload.include_if_routes,
+            include_media_mix=payload.include_media_mix,
+            include_ebook=payload.include_ebook,
+            ebook_formats=payload.ebook_formats,
+            media_mix_formats=payload.media_mix_formats,
+        )
+    except NoChaptersFoundError as e:
+        metrics.increment("multimedia_errors_total")
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception:
+        metrics.increment("multimedia_errors_total")
+        raise
+    return AssetPackGenerateResponse(
+        asset_id=result.asset_id or 0,
+        task_id=task_id,
+        file_count=len(result.files),
+        file_path=result.files[0] if result.files else None,
+    )
+
+
+@router.get(
+    "/assets/{book_id}",
+    response_model=AssetsByBookResponse,
+    responses={503: {"description": "Multimedia disabled"}},
+)
+async def get_assets_by_book(
+    book_id: int = PathParam(..., ge=1),
+    current_user: User = Depends(get_current_user),
+    service: MultimediaService = Depends(get_multimedia_service),
+) -> AssetsByBookResponse:
+    """README 互換エイリアス: 指定 book_id の全アセットメタデータを取得。"""
+    if not is_multimedia_enabled():
+        raise HTTPException(status_code=503, detail="Multimedia disabled")
+    # IDOR 防止: 作品の所有権を検証する
+    await verify_book_ownership(book_id, current_user, AppContainer.db())
+    assets = service.get_artifacts_by_book(book_id)
+    return AssetsByBookResponse(
+        book_id=book_id,
+        assets=[ArtifactMetaResponse(**a) for a in assets],
+    )
+
+
+@router.get(
+    "/artifacts/{asset_id}",
+    response_model=ArtifactMetaResponse,
+    responses={404: {"description": "Not found"}},
+)
+async def get_artifact(
+    asset_id: int = PathParam(..., ge=1),
+    current_user: User = Depends(get_current_user),
+    service: MultimediaService = Depends(get_multimedia_service),
+) -> ArtifactMetaResponse:
+    """成果物メタデータ取得。"""
+    if not is_multimedia_enabled():
+        raise HTTPException(status_code=503, detail="Multimedia disabled")
+    # IDOR 防止: asset_id から作品を解決して所有者を検証する
+    meta = await _assert_artifact_ownership(service, asset_id, current_user)
+    return ArtifactMetaResponse(
+        asset_id=meta["asset_id"],
+        book_id=meta["book_id"],
+        asset_type=meta["asset_type"],
+        format=meta["format"],
+        file_path=meta["file_path"],
+        metadata=meta["metadata"],
+        created_at=meta["created_at"],
+    )
+
+
+@router.get(
+    "/artifacts/{asset_id}/download",
+    responses={404: {"description": "Not found"}},
+)
+async def download_artifact(
+    asset_id: int = PathParam(..., ge=1),
+    current_user: User = Depends(get_current_user),
+    service: MultimediaService = Depends(get_multimedia_service),
+) -> FileResponse:
+    """成果物ファイル本体をダウンロード。"""
+    if not is_multimedia_enabled():
+        raise HTTPException(status_code=503, detail="Multimedia disabled")
+    # IDOR 防止: 返送バイトを返する前に所有者検証を必ず通す
+    meta = await _assert_artifact_ownership(service, asset_id, current_user)
+    path = _safe_artifact_file_path(meta["file_path"])
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="file missing on disk")
+    media_type = "application/zip" if path.suffix == ".zip" else "application/json"
+    return FileResponse(path, media_type=media_type, filename=path.name)
+
+
+@router.get("/tasks/{task_id}", response_model=TaskStatusResponse)
+async def get_task(
+    task_id: str = PathParam(..., min_length=1),
+    current_user: User = Depends(get_current_user),
+    service: MultimediaService = Depends(get_multimedia_service),
+) -> TaskStatusResponse:
+    """タスクステータス取得。"""
+    if not is_multimedia_enabled():
+        raise HTTPException(status_code=503, detail="Multimedia disabled")
+    # IDOR 防止: task_id -> asset_id -> book_id で所有者を検証する
+    info = await _assert_task_ownership(service, task_id, current_user)
+    return TaskStatusResponse(
+        task_id=info["task_id"],
+        asset_id=info.get("asset_id"),
+        status=info.get("status", "pending"),
+        error=info.get("error"),
+        started_at=info.get("started_at"),
+        finished_at=info.get("finished_at"),
+    )
+
+
+@router.get("/files/{filename:path}")
+async def serve_file(
+    filename: str = PathParam(...),
+    current_user: User = Depends(get_current_user),
+) -> FileResponse:
+    """`MULTIMEDIA_OUTPUT_DIR` 配下の生成済みファイルを配信 (パストラバーサル防止済み)。"""
+    if not is_multimedia_enabled():
+        raise HTTPException(status_code=503, detail="Multimedia disabled")
+    try:
+        safe_path = _safe_path_under_base(filename)
+    except HTTPException:
+        raise
+    if not safe_path.exists() or not safe_path.is_file():
+        raise HTTPException(status_code=404, detail="file not found")
+    # 出力ディレクトリは作品ごとに `book_<id>/` ディレクトリで分離されているため、
+    # パスから作品 ID を取り出して所有者を確認する
+    await _assert_media_path_ownership(safe_path, current_user)
+    media_type = "application/zip" if safe_path.suffix == ".zip" else "application/octet-stream"
+    return FileResponse(safe_path, media_type=media_type, filename=safe_path.name)
+
+
+# ==========================================
+# Audio Endpoints (Steps 19, 20, 21)
+# ==========================================
+
+from pydantic import BaseModel, Field
+
+
+class AudioSynthesizeRequest(BaseModel):
+    book_id: int = Field(..., ge=1)
+    episode_num: int = Field(..., ge=1)
+    chapter_text: str | None = None
+    characters: list[str] | None = None
+
+
+@router.post("/audio/synthesize")
+async def trigger_audio_synthesis(
+    payload: AudioSynthesizeRequest,
+    current_user: User = Depends(get_current_user),
+    service: MultimediaService = Depends(get_multimedia_service),
+) -> dict[str, Any]:
+    """指定章の音声合成ジョブを投入または実行する (Step 19)。"""
+    _check_enabled()
+    await verify_book_ownership(payload.book_id, current_user, AppContainer.db())
+    chapter_text = payload.chapter_text
+    if not chapter_text:
+        # DBからエピソード本文を取得
+        from src.backend.database.core import get_db_manager
+        from src.backend.database.models import Chapter
+        from sqlalchemy import select
+        db_mgr = get_db_manager()
+        # DatabaseManager には session() がなく get_session() のみ存在する
+        async with db_mgr.get_session() as session:
+            result = await session.execute(
+                select(Chapter).where(Chapter.book_id == payload.book_id, Chapter.ep_num == payload.episode_num)
+            )
+            chap = result.scalar_one_or_none()
+            if chap:
+                chapter_text = chap.content or ""
+
+    if not chapter_text:
+        raise HTTPException(status_code=400, detail="Chapter text is empty")
+
+    from src.backend.tasks.multimedia_tasks import synthesize_chapter_audio_task
+    task = synthesize_chapter_audio_task(
+        book_id=payload.book_id,
+        episode_num=payload.episode_num,
+        chapter_text=chapter_text,
+        characters=payload.characters,
+    )
+    task_id = getattr(task, "id", str(payload.episode_num))
+    return {"status": "queued", "task_id": task_id, "book_id": payload.book_id, "episode_num": payload.episode_num}
+
+
+@router.get("/audio/{book_id}/{episode_num}")
+async def get_chapter_audio(
+    book_id: int = PathParam(..., ge=1),
+    episode_num: int = PathParam(..., ge=1),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """作品・章ごとの音声アセット情報を取得する (Step 21)。"""
+    _check_enabled()
+    await verify_book_ownership(book_id, current_user, AppContainer.db())
+    from src.backend.database.core import get_db_manager
+    from src.backend.database.models import AudioAssetModel
+    from sqlalchemy import select
+    db_mgr = get_db_manager()
+    # DatabaseManager には session() がなく get_session() のみ存在する
+    async with db_mgr.get_session() as session:
+        result = await session.execute(
+            select(AudioAssetModel)
+            .where(AudioAssetModel.book_id == book_id, AudioAssetModel.episode_num == episode_num)
+            .order_by(AudioAssetModel.created_at.desc())
+        )
+        # 同一 (book_id, episode_num) に複数行ある可能性があるため先頭 1 件を取得する
+        audio = result.scalars().first()
+        if not audio:
+            raise HTTPException(status_code=404, detail="Audio not found for this chapter")
+
+        return {
+            "audio_id": audio.id,
+            "book_id": audio.book_id,
+            "episode_num": audio.episode_num,
+            "duration_seconds": audio.duration_seconds,
+            "file_size_bytes": audio.file_size_bytes,
+            "stream_url": f"/multimedia/audio/{audio.id}/stream",
+            "created_at": audio.created_at.isoformat() if audio.created_at else None,
+        }
+
+
+@router.get("/audio/{audio_id}/stream")
+async def stream_audio_file(
+    audio_id: int = PathParam(..., ge=1),
+    current_user: User = Depends(get_current_user),
+) -> FileResponse:
+    """音声バイナリ (WAV) を配信する (Step 20)。"""
+    _check_enabled()
+    from src.backend.database.core import get_db_manager
+    from src.backend.database.models import AudioAssetModel
+    from sqlalchemy import select
+    db_mgr = get_db_manager()
+    # DatabaseManager には session() がなく get_session() のみ存在する
+    async with db_mgr.get_session() as session:
+        result = await session.execute(
+            select(AudioAssetModel).where(AudioAssetModel.id == audio_id)
+        )
+        audio = result.scalar_one_or_none()
+        if not audio or not Path(audio.file_path).exists():
+            raise HTTPException(status_code=404, detail="Audio asset file not found")
+
+        # アセットが属する作品の所有者を確認する
+        await verify_book_ownership(audio.book_id, current_user, session)
+
+        return FileResponse(
+            Path(audio.file_path),
+            media_type="audio/wav",
+            filename=Path(audio.file_path).name,
+        )

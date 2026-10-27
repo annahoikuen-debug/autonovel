@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 450" width="1200" height="450" role="img" aria-label="4層圧縮: プロンプト・過去文脈・キャラクター設定を4つの層で圧縮し、重要情報を保ったままトークン使用量を削減する">
+  <title>4層圧縮モジュール</title>
+  <defs>
+    <linearGradient id="cBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#0e1a2c"/>
+    </linearGradient>
+    <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="450" rx="26" fill="url(#cBg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="449" rx="26" fill="none" stroke="#1e293b"/>
+
+  <text x="600" y="42" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="25" font-weight="700" fill="#f8fafc">4層圧縮 ── 「情報を捨てずに、会話量を減らす」</text>
+  <text x="600" y="68" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="13.5" fill="#94a3b8">4 つの層を順に通して、LLM に渡す文脈だけを「小さく・濃く」まとめます。</text>
+
+  <!-- 入力 -->
+  <text x="108" y="104" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="12.5" font-weight="700" fill="#94a3b8">入力</text>
+  <rect x="20" y="116" width="176" height="74" rx="12" fill="#132033" stroke="#334155"/>
+  <text x="36" y="146" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="12.5" font-weight="700" fill="#e2e8f0">LLM プロンプト</text>
+  <text x="36" y="168" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#94a3b8">指示・文体指定・制約</text>
+
+  <rect x="20" y="200" width="176" height="74" rx="12" fill="#132033" stroke="#334155"/>
+  <text x="36" y="230" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="12.5" font-weight="700" fill="#e2e8f0">過去の本文（文脈）</text>
+  <text x="36" y="252" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#94a3b8">これまでの話・要約</text>
+
+  <rect x="20" y="284" width="176" height="74" rx="12" fill="#132033" stroke="#334155"/>
+  <text x="36" y="314" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="12.5" font-weight="700" fill="#e2e8f0">キャラクター・設定</text>
+  <text x="36" y="336" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#94a3b8">人物相・用語・伏線</text>
+
+  <path d="M 198 153 L 254 170" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#a4)"/>
+  <path d="M 198 237 L 254 178" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#a4)"/>
+  <path d="M 198 321 L 254 186" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#a4)"/>
+
+  <!-- ファネル -->
+  <g font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif">
+    <rect x="270" y="120" width="420" height="62" rx="12" fill="#0c2a3f" stroke="#38bdf8" stroke-opacity=".6"/>
+    <text x="294" y="146" font-size="14" font-weight="700" fill="#7dd3fc">Layer 1 ── キーワード抽出</text>
+    <text x="294" y="168" font-size="11.5" fill="#cbd5e1">固有名詞・専門語を重み付きで抜き出す</text>
+
+    <rect x="300" y="192" width="360" height="62" rx="12" fill="#0c2a3f" stroke="#22d3ee" stroke-opacity=".6"/>
+    <text x="324" y="218" font-size="14" font-weight="700" fill="#67e8f9">Layer 2 ── サブグラフ</text>
+    <text x="324" y="240" font-size="11.5" fill="#cbd5e1">共起・依存を辺としたグラフにまとめる</text>
+
+    <rect x="330" y="264" width="300" height="62" rx="12" fill="#1e1b3f" stroke="#a78bfa" stroke-opacity=".6"/>
+    <text x="354" y="290" font-size="14" font-weight="700" fill="#c4b5fd">Layer 3 ── 抽象化</text>
+    <text x="354" y="312" font-size="11.5" fill="#cbd5e1">事実と概念に分け、カテゴリ化</text>
+
+    <rect x="350" y="336" width="250" height="62" rx="12" fill="#2a1f10" stroke="#f59e0b" stroke-opacity=".7"/>
+    <text x="374" y="362" font-size="14" font-weight="700" fill="#fbbf24">Layer 4 ── トリミング</text>
+    <text x="374" y="384" font-size="11.5" fill="#cbd5e1">シーン種別で残す情報を決定</text>
+  </g>
+
+  <path d="M 612 367 L 700 367" stroke="#f59e0b" stroke-width="2" marker-end="url(#a4)"/>
+
+  <!-- 出力 -->
+  <rect x="708" y="116" width="472" height="242" rx="14" fill="#132033" stroke="#34d399" stroke-opacity=".6"/>
+  <text x="732" y="146" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="14" font-weight="700" fill="#6ee7b7">出力 ── 圧縮コンテキスト</text>
+  <rect x="732" y="160" width="424" height="0.8" fill="#1e293b"/>
+
+  <text x="732" y="188" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="12" font-weight="700" fill="#e2e8f0">必ず残すもの</text>
+  <text x="732" y="210" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11.5" fill="#94a3b8">・主要キャラクター</text>
+  <text x="732" y="230" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11.5" fill="#94a3b8">・核心となる設定</text>
+  <text x="732" y="250" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11.5" fill="#94a3b8">・伏線と伏線回収の手がかり</text>
+
+  <text x="732" y="284" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="12" font-weight="700" fill="#e2e8f0">品質メトリクス</text>
+  <text x="732" y="306" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11.5" fill="#94a3b8">圧縮率 ・ 保持率 ・ 意味密度スコア</text>
+  <text x="732" y="326" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11.5" fill="#94a3b8">（既定: 目標圧縮率 0.6 / 上限 1500 トークン）</text>
+  <text x="732" y="348" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#64748b">調整は CompressionConfig で行います</text>
+</svg>

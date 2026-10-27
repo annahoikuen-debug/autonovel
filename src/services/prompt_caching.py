@@ -1,0 +1,285 @@
+"""プロンプトキャッシュ統合モジュール.
+
+Gemini Context Caching (静的コンテンツキャッシュ) と
+分散キャッシュ (Redis + ChromaDB セマンティックキャッシュ) を統合し、
+統一的なインターフェースを提供する。
+"""
+
+import logging
+from typing import Any
+
+try:
+    from cachetools import LRUCache
+except ImportError:
+    from collections import OrderedDict
+
+    class LRUCache(OrderedDict):  # type: ignore[no-redef]
+        def __init__(self, maxsize: int = 1000, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.maxsize = maxsize
+
+        def __setitem__(self, key: Any, value: Any) -> None:
+            if len(self) >= self.maxsize and key not in self:
+                self.popitem(last=False)
+            super().__setitem__(key, value)
+
+        def __getitem__(self, key: Any) -> Any:
+            value = super().__getitem__(key)
+            self.move_to_end(key)
+            return value
+
+        def get(self, key: Any, default: Any = None) -> Any:
+            try:
+                return self[key]
+            except KeyError:
+                return default
+
+
+class ContextCachingNotSupportedError(NotImplementedError):
+    """Gemini Context Caching (L4) がこのビルドでは利用できないことを示す。
+
+    ``CachedContent`` は effectively ``pass`` のスタブであり、
+    ``.create()`` は存在しない。呼び出し側はこれを捕捉し、
+    L4 を使わないものとして L1〜L3 のみで運用できる。
+    """
+
+
+class CachedContent:
+    """Gemini Context Caching のスタブ。実装は存在しない。"""
+
+    @staticmethod
+    def create(*args: Any, **kwargs: Any) -> Any:
+        raise ContextCachingNotSupportedError(
+            "Gemini Context Caching is not implemented in this build. "
+            "Use the L1/L2/L3 caches (UnifiedPromptCache.get_cached_response / "
+            "cache_response) instead, or implement CachedContent.create against "
+            "google.genai's caching API."
+        )
+
+
+class CachingPlaceholder:
+    """L4 キャッシュが未実装であることを示すマーカー。"""
+
+    CachedContent = CachedContent
+    available = False
+
+
+caching = CachingPlaceholder()
+
+
+from src.services.redis_cache import (
+    PromptCacheService,
+    RedisCacheService,
+    close_cache_services,
+    get_prompt_cache,
+    get_redis_cache,
+)
+from src.services.semantic_cache import SemanticCacheManager
+
+logger = logging.getLogger(__name__)
+
+
+class PromptCacheManager:
+    """
+    Gemini Context Caching を管理するクラス。
+    静的なプロンプトコンテンツをキャッシュし、API呼び出し時のコストとレイテンシを削減する。
+    """
+
+    def __init__(self):
+        self._cache_map: dict[str, caching.CachedContent] = {}
+
+    def get_or_create_cache(
+        self,
+        cache_key: str,
+        contents: list,
+        model_name: str = "gemini-3.1-flash-lite",
+        ttl_minutes: int = 60,
+    ) -> Any:
+        """Gemini Context Caching を取得または作成する。
+
+        既にこのプロセスで作成済みのキャッシュがあればそれを返す。
+        未作成の場合は L4 の実体が未実装なので、
+        ``ContextCachingNotSupportedError`` で明示的に失敗させる
+        (AttributeError を握り潰して黙って失敗させないため)。
+
+        Raises:
+            ContextCachingNotSupportedError: キャッシュ未作成かつ L4 が未実装のため。
+                呼び出し側は L1〜L3 にフォールバックすること。
+        """
+        if cache_key in self._cache_map:
+            return self._cache_map[cache_key]
+
+        raise ContextCachingNotSupportedError(
+            "Gemini Context Caching (L4) is not implemented in this build. "
+            "Use UnifiedPromptCache.get_cached_response()/cache_response() "
+            "(L1/L2/L3) instead."
+        )
+
+    def clear_cache(self, cache_key: str):
+        if cache_key in self._cache_map:
+            # API側の削除が必要な場合はここに記述
+            del self._cache_map[cache_key]
+            logger.info(f"Cleared Context Cache: {cache_key}")
+
+
+class UnifiedPromptCache:
+    """統合プロンプトキャッシュ.
+
+    L1: インメモリ LRU (完全一致)
+    L2: Redis 分散キャッシュ (完全一致)
+    L3: ChromaDB セマンティックキャッシュ (類似検索)
+    L4: Gemini Context Caching — **未実装**。`get_or_create_context_cache()` は
+        `ContextCachingNotSupportedError` を送出する (L1〜L3 のみ利用可能)。
+    """
+
+    def __init__(
+        self,
+        vector_store: Any | None = None,
+        llm_client: Any | None = None,
+        redis_url: str | None = None,
+        l1_maxsize: int = 1000,
+    ):
+        # L1 インメモリキャッシュ
+        self._l1_cache = LRUCache(maxsize=l1_maxsize)
+
+        # L3 セマンティックキャッシュ (ChromaDB)
+        self._semantic_cache = None
+        if vector_store and llm_client:
+            self._semantic_cache = SemanticCacheManager(vector_store, llm_client)
+
+        # L2 Redis + 統合サービス (遅延初期化)
+        self._redis_cache: RedisCacheService | None = None
+        self._prompt_cache: PromptCacheService | None = None
+        self._redis_url = redis_url
+
+        # L4 Gemini Context Caching
+        self._context_cache_manager = PromptCacheManager()
+
+    async def _ensure_prompt_cache(self) -> PromptCacheService:
+        """プロンプトキャッシュサービスを遅延初期化."""
+        if self._prompt_cache is None:
+            self._redis_cache = await get_redis_cache()  # シングルトン取得
+            # URLが指定されている場合は再初期化が必要だが、シングルトンパターンでは最初の設定が優先される
+            self._prompt_cache = await get_prompt_cache(
+                semantic_cache=self._semantic_cache,
+                l1_cache=self._l1_cache,
+            )
+        return self._prompt_cache
+
+    async def get_cached_response(
+        self,
+        template_name: str,
+        prompt: str,
+        model_id: str,
+        task_type: str = "generation",
+        genre: str = "general",
+        temperature: float = 0.7,
+        template_version: str = "1.0",
+        **params: Any,
+    ) -> Any | None:
+        """キャッシュから応答を取得 (L1 -> L2 -> L3 の順で検索)."""
+        cache = await self._ensure_prompt_cache()
+        return await cache.get(
+            template_name=template_name,
+            prompt=prompt,
+            model_id=model_id,
+            task_type=task_type,
+            genre=genre,
+            temperature=temperature,
+            template_version=template_version,
+            **params,
+        )
+
+    async def cache_response(
+        self,
+        template_name: str,
+        prompt: str,
+        response: Any,
+        model_id: str,
+        task_type: str = "generation",
+        genre: str = "general",
+        temperature: float = 0.7,
+        template_version: str = "1.0",
+        ttl: int | None = None,
+        **params: Any,
+    ) -> None:
+        """応答をキャッシュに保存 (L1, L2, L3 すべてに保存)."""
+        cache = await self._ensure_prompt_cache()
+        await cache.set(
+            template_name=template_name,
+            prompt=prompt,
+            response=response,
+            model_id=model_id,
+            task_type=task_type,
+            genre=genre,
+            temperature=temperature,
+            template_version=template_version,
+            ttl=ttl,
+            **params,
+        )
+
+    # === Gemini Context Caching (L4) 用メソッド ===
+    # 注意: L4 は未実装。下記はいずれも ContextCachingNotSupportedError を送出する。
+
+    def get_or_create_context_cache(
+        self,
+        cache_key: str,
+        contents: list,
+        model_name: str = "gemini-3.1-flash-lite",
+        ttl_minutes: int = 60,
+    ) -> Any:
+        """Gemini Context Cache を取得または作成する。
+
+        Raises:
+            ContextCachingNotSupportedError: L4 が未実装のため常に送出。
+        """
+        return self._context_cache_manager.get_or_create_cache(
+            cache_key, contents, model_name, ttl_minutes
+        )
+
+    def clear_context_cache(self, cache_key: str):
+        """Gemini Context Cache をクリア."""
+        self._context_cache_manager.clear_cache(cache_key)
+
+    # === 管理用メソッド ===
+
+    async def invalidate_book_cache(self, book_id: int) -> int:
+        """特定書籍のキャッシュを無効化."""
+        cache = await self._ensure_prompt_cache()
+        return await cache.invalidate_book(book_id)
+
+    async def invalidate_template_cache(self, template_name: str) -> int:
+        """特定テンプレートのキャッシュを無効化."""
+        cache = await self._ensure_prompt_cache()
+        return await cache.invalidate_template(template_name)
+
+    async def get_cache_stats(self) -> dict[str, Any]:
+        """キャッシュ統計を取得."""
+        cache = await self._ensure_prompt_cache()
+        return await cache.get_stats()
+
+    async def close(self):
+        """リソースを解放."""
+        await close_cache_services()
+        self._prompt_cache = None
+        self._redis_cache = None
+
+
+# シングルトンインスタンス
+_unified_cache_instance: UnifiedPromptCache | None = None
+
+
+async def get_unified_prompt_cache(
+    vector_store: Any | None = None,
+    llm_client: Any | None = None,
+    redis_url: str | None = None,
+) -> UnifiedPromptCache:
+    """統合プロンプトキャッシュのシングルトンインスタンスを取得."""
+    global _unified_cache_instance
+    if _unified_cache_instance is None:
+        _unified_cache_instance = UnifiedPromptCache(
+            vector_store=vector_store,
+            llm_client=llm_client,
+            redis_url=redis_url,
+        )
+    return _unified_cache_instance

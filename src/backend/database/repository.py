@@ -1,0 +1,560 @@
+"""
+database/repository.py - UoWコンテキストを自動解決する DataRepository ファサード
+"""
+
+from __future__ import annotations
+
+import json
+import logging
+import time
+from typing import Any
+
+from sqlalchemy import desc, select
+
+from src.backend.database.core import DatabaseManager, SessionLocal
+from src.infrastructure.database.models.task import Task
+from .models import Bible, Book, Chapter, Character, Plot
+from .uow_context import current_uow
+
+logger = logging.getLogger(__name__)
+
+
+async def _await_awaitable(awaitable: Any) -> Any:
+    """汎用 awaitable を coroutine に正規化する。
+
+    `asyncio.ensure_future` / `loop.create_task` / `asyncio.run` は
+    いずれも **coroutine 以外を受け付けない**（`ensure_future` は awaitable を受理するが、
+    `create_task` と `asyncio.run` は coroutine 限定）。
+    `inspect.isawaitable()` は coroutine 以外の awaitable も真になるため、
+    判定と実行で前提が食い違い、二段目で `TypeError` / `ValueError` になる。
+    （例: `AsyncMock`、独自 `__await__` を持つオブジェクト）
+
+    coroutine ならそのまま、そうでなければ coroutine に包んで返す。
+    """
+    return await awaitable
+
+
+class DataRepositoryFacade:
+    """
+    既存の engine_agents 等が `self.repo` 経由で各メソッドを呼び出せるようにするための後方互換ファサード。
+    """
+
+    def __init__(self, db: DatabaseManager):
+        self.db = db
+
+    def __getattr__(self, name):
+        async def wrapper(*args, **kwargs):
+            import logging
+
+            log = logging.getLogger("debug.uow_flow")
+            uow = current_uow.get()
+            log.debug(f"Calling {name} - UoW Context: {'Exists' if uow else 'None'}")
+            if uow:
+                for repo_attr in [
+                    "books",
+                    "plots",
+                    "chapters",
+                    "characters",
+                    "branches",
+                    "bible",
+                    "misc",
+                    "rules",
+                    "audit",
+                    "prompt_versions",
+                    "illustrations",
+                ]:
+                    repo = getattr(uow, repo_attr)
+                    if hasattr(repo, name):
+                        log.debug(f"Resolved {name} via UoW {repo_attr}")
+                        return await getattr(repo, name)(*args, **kwargs)
+                raise AttributeError(f"DataRepositoryFacade (UoW mode) has no attribute '{name}'")
+            else:
+                log.warning(
+                    f"No UoW context for {name}. Falling back to Auto mode (New Transaction)."
+                )
+                from .uow import UnitOfWork
+
+                async with UnitOfWork(self.db) as temp_uow:
+                    for repo_attr in [
+                        "books",
+                        "plots",
+                        "chapters",
+                        "characters",
+                        "branches",
+                        "bible",
+                        "misc",
+                        "rules",
+                        "audit",
+                        "prompt_versions",
+                    ]:
+                        repo = getattr(temp_uow, repo_attr)
+                        if hasattr(repo, name):
+                            return await getattr(repo, name)(*args, **kwargs)
+                    raise AttributeError(
+                        f"DataRepositoryFacade (Auto mode) has no attribute '{name}'"
+                    )
+
+        return wrapper
+
+    async def get_state(self, key: str, default: Any = None) -> Any:
+        from src.backend.database.models import InternalState
+
+        async with self.db.get_session() as session:
+            result = await session.execute(select(InternalState).filter_by(key=key))
+            state = result.scalars().one_or_none()
+            if not state:
+                return default
+            try:
+                return json.loads(state.value)
+            except Exception:
+                return state.value
+
+    async def set_state(self, key: str, value: Any) -> None:
+        from datetime import datetime
+        from src.backend.database.models import InternalState
+
+        async with self.db.get_session() as session:
+            result = await session.execute(select(InternalState).filter_by(key=key))
+            state = result.scalars().one_or_none()
+            if not state:
+                state = InternalState(key=key)
+                session.add(state)
+            state.value = (
+                json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value
+            )
+            state.updated_at = datetime.now()
+            await session.commit()
+
+
+# DataRepository をエイリアスとして公開
+DataRepository = DataRepositoryFacade
+
+
+class BookRepository:
+    """
+    作品データおよびタスク管理へのアクセスを抽象化するリポジトリ。
+    同期セッションまたは DatabaseManager を受け付けて操作を行う。
+    """
+
+    def __init__(self, session_or_db: Any = None) -> None:
+        if isinstance(session_or_db, DatabaseManager):
+            self.session = SessionLocal()
+            self._db = session_or_db
+        elif hasattr(session_or_db, "execute") or hasattr(session_or_db, "get"):
+            self.session = session_or_db
+            self._db = None
+        else:
+            self.session = SessionLocal()
+            self._db = None
+
+    @property
+    def is_async(self) -> bool:
+        """セッションが AsyncSession であるかを判定する"""
+        from sqlalchemy.ext.asyncio import AsyncSession
+        return isinstance(self.session, AsyncSession)
+
+    async def commit_async(self) -> None:
+        """非同期セッションで安全かつ確実にコミットを待機する"""
+        if self.is_async:
+            await self.session.commit()
+        else:
+            self.session.commit()
+
+    async def refresh_async(self, instance: Any) -> None:
+        """非同期セッションで安全かつ確実にリフレッシュを待機する"""
+        if self.is_async:
+            await self.session.refresh(instance)
+        else:
+            self.session.refresh(instance)
+
+    def _safe_commit(self) -> None:
+        """同期コミット実行（非同期セッションの場合は警告を出して同期コミットを試みる）"""
+        import inspect
+        res = self.session.commit()
+        if inspect.isawaitable(res):
+            logger.warning(
+                "[BookRepository] commit() returned an awaitable in sync context. "
+                "Use 'await repo.commit_async()' instead."
+            )
+            import asyncio
+            try:
+                # 既にイベントループが実行中の場合はタスクとして待機コールバックを付与
+                loop = asyncio.get_running_loop()
+                task = loop.create_task(_await_awaitable(res))
+                def _on_done(t):
+                    if not t.cancelled() and t.exception():
+                        logger.error(f"[BookRepository] Async commit error: {t.exception()}")
+                task.add_done_callback(_on_done)
+            except RuntimeError:
+                asyncio.run(_await_awaitable(res))
+
+    def _safe_refresh(self, instance: Any) -> None:
+        """同期リフレッシュ実行（非同期セッションの場合は警告）"""
+        import inspect
+        res = self.session.refresh(instance)
+        if inspect.isawaitable(res):
+            logger.warning(
+                "[BookRepository] refresh() returned an awaitable in sync context. "
+                "Use 'await repo.refresh_async()' instead."
+            )
+            import asyncio
+            try:
+                loop = asyncio.get_running_loop()
+                task = loop.create_task(_await_awaitable(res))
+                def _on_done(t):
+                    if not t.cancelled() and t.exception():
+                        logger.error(f"[BookRepository] Async refresh error: {t.exception()}")
+                task.add_done_callback(_on_done)
+            except RuntimeError:
+                asyncio.run(_await_awaitable(res))
+
+    def get_book(self, book_id: int) -> Book | None:
+        """指定した ID の作品情報を取得する（同期）"""
+        return self.session.get(Book, book_id)
+
+    async def get_book_async(self, book_id: int) -> Book | None:
+        """指定した ID の作品情報を取得する（非同期）"""
+        if self.is_async:
+            return await self.session.get(Book, book_id)
+        return self.session.get(Book, book_id)
+
+    def create_task(
+        self,
+        task_id: str | None = None,
+        status: str = "pending",
+        result: str | None = None,
+        user_id: int | None = None,
+    ) -> Task:
+        """Create a new Task record and return it (Sync).
+
+        ``user_id`` は所有ユーザー。渡さない（None）タスクは所有者が不明なので
+        ``_assert_task_ownership`` が拒否する（fail-closed）。
+        """
+        now = int(time.time())
+        if not task_id:
+            import uuid
+            task_id = str(uuid.uuid4())
+        task = Task(
+            id=task_id,
+            user_id=user_id,
+            status=status,
+            result=result,
+            created_at=now,
+            updated_at=now,
+        )
+        self.session.add(task)
+        self._safe_commit()
+        self._safe_refresh(task)
+        return task
+
+    async def create_task_async(
+        self,
+        task_id: str | None = None,
+        status: str = "pending",
+        result: str | None = None,
+        user_id: int | None = None,
+    ) -> Task:
+        """Create a new Task record and return it with guaranteed awaitable commit (Async)."""
+        now = int(time.time())
+        if not task_id:
+            import uuid
+            task_id = str(uuid.uuid4())
+        task = Task(
+            id=task_id,
+            user_id=user_id,
+            status=status,
+            result=result,
+            created_at=now,
+            updated_at=now,
+        )
+        self.session.add(task)
+        await self.commit_async()
+        await self.refresh_async(task)
+        return task
+
+    def get_task(self, task_id: str) -> Task | None:
+        """指定した ID のタスクを取得する（同期）"""
+        return self.session.get(Task, task_id)
+
+    async def get_task_async(self, task_id: str) -> Task | None:
+        """指定した ID のタスクを取得する（非同期）"""
+        if self.is_async:
+            return await self.session.get(Task, task_id)
+        return self.session.get(Task, task_id)
+
+    def update_task_status(self, task_id: str, status: str) -> None:
+        """タスクのステータスを更新する（同期）"""
+        task = self.session.get(Task, task_id)
+        if task:
+            task.status = status
+            task.updated_at = int(time.time())
+            self._safe_commit()
+
+    async def update_task_status_async(self, task_id: str, status: str) -> None:
+        """タスクのステータスを更新する（非同期）"""
+        task = await self.get_task_async(task_id)
+        if task:
+            task.status = status
+            task.updated_at = int(time.time())
+            await self.commit_async()
+
+    def set_task_result(self, task_id: str, result: str) -> None:
+        """タスクの結果を保存し、ステータスを completed に更新する（同期）"""
+        task = self.session.get(Task, task_id)
+        if task:
+            task.result = result
+            task.updated_at = int(time.time())
+            task.status = "completed"
+            self._safe_commit()
+
+    async def set_task_result_async(self, task_id: str, result: str) -> None:
+        """タスクの結果を保存し、ステータスを completed に更新する（非同期）"""
+        task = await self.get_task_async(task_id)
+        if task:
+            task.result = result
+            task.updated_at = int(time.time())
+            task.status = "completed"
+            await self.commit_async()
+
+    def delete_task(self, task_id: str) -> None:
+        """Delete a task record from the database (Sync)."""
+        task = self.session.get(Task, task_id)
+        if task:
+            self.session.delete(task)
+            self._safe_commit()
+
+    async def delete_task_async(self, task_id: str) -> None:
+        """Delete a task record from the database (Async)."""
+        task = await self.get_task_async(task_id)
+        if task:
+            if self.is_async:
+                await self.session.delete(task)
+            else:
+                self.session.delete(task)
+            await self.commit_async()
+
+    def get_all_non_anchor_chapters(
+        self, book_id: int, branch_id: int = 1, order_by: str = "ep_num"
+    ) -> list[Chapter]:
+        """指定した作品・ブランチの、アンカーではない章をすべて取得する。"""
+        stmt = (
+            select(Chapter)
+            .where(Chapter.book_id == book_id)
+            .where(Chapter.is_anchor.is_(False))
+            .order_by(getattr(Chapter, order_by))
+        )
+        result = self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    def get_all_characters(self, book_id: int) -> list[Character]:
+        """指定した作品に紐づくキャラクターをすべて取得する"""
+        stmt = select(Character).where(Character.book_id == book_id)
+        result = self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    def get_latest_bible(self, book_id: int) -> Bible | None:
+        """指定した作品の最新の世界観設定（Bible）を取得する"""
+        stmt = (
+            select(Bible).where(Bible.book_id == book_id).order_by(desc(Bible.created_at)).limit(1)
+        )
+        result = self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    def get_all_plots(self, book_id: int, branch_id: int = 1) -> list[Plot]:
+        """指定した作品・ブランチのプロットをすべて取得する"""
+        stmt = (
+            select(Plot)
+            .where(Plot.book_id == book_id)
+            .where(Plot.branch_id == branch_id)
+            .order_by(Plot.ep_num)
+        )
+        result = self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    def save_or_update_book_with_chapter(
+        self,
+        book_id: int | None,
+        title: str = "R15ファンタジー作品",
+        genre: str = "ファンタジー (R15)",
+        chapter_text: str = "",
+        character_params: dict | None = None,
+        plots: list | None = None,
+    ) -> Book:
+        """かんたんモード等のデータをDBに新規作成または更新保存する"""
+        if book_id is None or book_id == 0:
+            # Create a new book without specifying id (let DB assign)
+            book = Book(
+                title=title,
+                genre=genre,
+                concept="かんたんモード生成作品",
+                synopsis=chapter_text[:200] if chapter_text else "",
+                target_eps=10,
+            )
+            self.session.add(book)
+            self._safe_commit()
+            self._safe_refresh(book)
+        else:
+            book = self.get_book(book_id)
+            if book is None:
+                # If the provided book_id does not exist, create a new book without specifying id
+                book = Book(
+                    title=title,
+                    genre=genre,
+                    concept="かんたんモード生成作品",
+                    synopsis=chapter_text[:200] if chapter_text else "",
+                    target_eps=10,
+                )
+                self.session.add(book)
+                self._safe_commit()
+                self._safe_refresh(book)
+            # else: book exists, we will update it
+
+        # 第1話の更新または作成
+        if chapter_text:
+            stmt = select(Chapter).where(Chapter.book_id == book.id).where(Chapter.ep_num == 1)
+            chapter = self.session.execute(stmt).scalar_one_or_none()
+            if chapter:
+                chapter.content = chapter_text
+                chapter.summary = chapter_text[:100]
+            else:
+                chapter = Chapter(
+                    book_id=book.id,
+                    ep_num=1,
+                    title="第1話 運命の覚醒",
+                    content=chapter_text,
+                    summary=chapter_text[:100],
+                )
+                self.session.add(chapter)
+
+        # キャラクターの登録/更新
+        if character_params and character_params.get("name"):
+            char_name = character_params["name"]
+            stmt = (
+                select(Character)
+                .where(Character.book_id == book.id)
+                .where(Character.name == char_name)
+            )
+            char = self.session.execute(stmt).scalar_one_or_none()
+            if char:
+                char.personality = character_params.get("personality", "")
+                char.ability = character_params.get("ability", "")
+            else:
+                char = Character(
+                    book_id=book.id,
+                    name=char_name,
+                    role="主人公",
+                    personality=character_params.get("personality", ""),
+                    ability=character_params.get("ability", ""),
+                )
+                self.session.add(char)
+
+        self._safe_commit()
+        return book
+
+    async def save_or_update_book_with_chapter_async(
+        self,
+        book_id: int | None,
+        title: str = "R15ファンタジー作品",
+        genre: str = "ファンタジー (R15)",
+        chapter_text: str = "",
+        character_params: dict | None = None,
+        plots: list | None = None,
+    ) -> Book:
+        """かんたんモード等のデータをDBに新規作成または更新保存する（非同期）"""
+        if book_id is None or book_id == 0:
+            book = Book(
+                title=title,
+                genre=genre,
+                concept="かんたんモード生成作品",
+                synopsis=chapter_text[:200] if chapter_text else "",
+                target_eps=10,
+            )
+            self.session.add(book)
+            await self.commit_async()
+            await self.refresh_async(book)
+        else:
+            book = await self.get_book_async(book_id)
+            if book is None:
+                book = Book(
+                    title=title,
+                    genre=genre,
+                    concept="かんたんモード生成作品",
+                    synopsis=chapter_text[:200] if chapter_text else "",
+                    target_eps=10,
+                )
+                self.session.add(book)
+                await self.commit_async()
+                await self.refresh_async(book)
+
+        # 第1話の更新または作成
+        if chapter_text:
+            stmt = select(Chapter).where(Chapter.book_id == book.id).where(Chapter.ep_num == 1)
+            if self.is_async:
+                res = await self.session.execute(stmt)
+            else:
+                res = self.session.execute(stmt)
+            chapter = res.scalar_one_or_none()
+            if chapter:
+                chapter.content = chapter_text
+                chapter.summary = chapter_text[:100]
+            else:
+                chapter = Chapter(
+                    book_id=book.id,
+                    ep_num=1,
+                    title="第1話 運命の覚醒",
+                    content=chapter_text,
+                    summary=chapter_text[:100],
+                )
+                self.session.add(chapter)
+
+        # キャラクターの登録/更新
+        if character_params and character_params.get("name"):
+            char_name = character_params["name"]
+            stmt = (
+                select(Character)
+                .where(Character.book_id == book.id)
+                .where(Character.name == char_name)
+            )
+            if self.is_async:
+                res = await self.session.execute(stmt)
+            else:
+                res = self.session.execute(stmt)
+            char = res.scalar_one_or_none()
+            if char:
+                char.personality = character_params.get("personality", "")
+                char.ability = character_params.get("ability", "")
+            else:
+                char = Character(
+                    book_id=book.id,
+                    name=char_name,
+                    role="主人公",
+                    personality=character_params.get("personality", ""),
+                    ability=character_params.get("ability", ""),
+                )
+                self.session.add(char)
+
+        await self.commit_async()
+        return book
+
+
+# Re-export individual repositories for compatibility
+from .repositories.audit import AuditRepository  # noqa: E402
+from .repositories.bible import BibleRepository  # noqa: E402
+from .repositories.book import BookRepository as AsyncBookRepository  # noqa: E402
+from .repositories.chapter import ChapterRepository  # noqa: E402
+from .repositories.character import CharacterRepository  # noqa: E402
+from .repositories.narrative_metrics_repo import NarrativeMetricRepository  # noqa: E402
+from .repositories.plot import PlotRepository  # noqa: E402
+
+__all__ = [
+    "DataRepositoryFacade",
+    "DataRepository",
+    "BookRepository",
+    "AsyncBookRepository",
+    "ChapterRepository",
+    "CharacterRepository",
+    "PlotRepository",
+    "BibleRepository",
+    "AuditRepository",
+    "NarrativeMetricRepository",
+]

@@ -1,0 +1,513 @@
+import React, { useState, useEffect, useRef } from "react";
+import { AskBibleResponse, ConsistencyIssue, DiffChunk } from "../../types/editor";
+import { askBible, auditConsistency, resolveIssue } from "../../api/editor";
+import { useNovelContext } from "../../context/NovelContext";
+import { DiffViewer } from "./DiffViewer";
+
+interface EditorialSidebarProps {
+   bookId?: number;
+   currentText: string;
+   onToast?: (msg: string, type: "success" | "error" | "info") => void;
+   onOpenAuditReport?: () => void;
+   onRunHybridAudit?: () => void;
+}
+
+interface ChatMessage {
+   /** 安定キー（挿入時に採番する）。Render 内の index キー禁止のため。 */
+   id: string;
+   sender: "user" | "ai";
+   text: string;
+   evidence?: Array<{ id: string; label: string; source_reference: string }>;
+}
+
+const QUICK_QUERIES = [
+   "主人公の能力・制限は？",
+   "これまでの伏線一覧は？",
+   "世界観の魔法・ルールは？",
+   "未回収の課題・対立は？",
+];
+
+export const EditorialSidebar: React.FC<EditorialSidebarProps> = ({
+   bookId = 1,
+   currentText,
+   onToast,
+   onOpenAuditReport,
+   onRunHybridAudit,
+}) => {
+   const {
+     activeHighlight,
+     setActiveHighlight,
+     currentChapterText,
+     setCurrentChapterText,
+     applyDiff,
+     setLineScores,
+   } = useNovelContext();
+
+   const [tab, setTab] = useState<"chat" | "audit">("chat");
+
+   // Q&A 状態
+const [messages, setMessages] = useState<ChatMessage[]>([
+      {
+        id: "msg-0",
+        sender: "ai",
+        text: "こんにちは！作品専属のAI編集者です。世界観設定やキャラクター情報、過去の伏線について何でも質問してください。",
+      },
+    ]);
+   const [inputQuery, setInputQuery] = useState("");
+   const [isQuerying, setIsQuerying] = useState(false);
+   const messagesEndRef = useRef<HTMLDivElement>(null);
+   /** メッセージの安定キーを採番するカウンタ（挿入順と 1:1 で対応する） */
+   const messageIdRef = useRef(1);
+   const nextMessageId = () => `msg-${messageIdRef.current++}`;
+
+   // 矛盾診断状態
+   const [isAuditing, setIsAuditing] = useState(false);
+   const [auditIssues, setAuditIssues] = useState<ConsistencyIssue[]>([]);
+   const [auditDone, setAuditDone] = useState(false);
+   const [resolvingId, setResolvingId] = useState<string | number | null>(null);
+   const [pendingDiff, setPendingDiff] = useState<DiffChunk | null>(null);
+
+   // メッセージ追加時の自動スクロール
+   useEffect(() => {
+     if (tab === "chat" && typeof messagesEndRef.current?.scrollIntoView === "function") {
+       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+     }
+   }, [messages, tab, isQuerying]);
+
+   const executeQuery = async (queryText: string) => {
+     if (!queryText.trim() || isQuerying) return;
+
+setMessages((prev) => [...prev, { id: nextMessageId(), sender: "user", text: queryText }]);
+      setIsQuerying(true);
+
+     try {
+       const res: AskBibleResponse = await askBible({
+         book_id: bookId,
+         query: queryText,
+       });
+
+setMessages((prev) => [
+          ...prev,
+          {
+            id: nextMessageId(),
+            sender: "ai",
+            text: res.answer,
+           evidence: res.evidence_nodes.map((n) => ({
+             id: n.id,
+             label: n.label,
+             source_reference: n.source_reference,
+           })),
+         },
+       ]);
+     } catch (err: any) {
+setMessages((prev) => [
+          ...prev,
+          {
+            id: nextMessageId(),
+            sender: "ai",
+            text: `❌ 検索エラー: ${err.message || err}`,
+         },
+       ]);
+     } finally {
+       setIsQuerying(false);
+     }
+   };
+
+   const handleSendQuery = async (e: React.FormEvent) => {
+     e.preventDefault();
+     if (!inputQuery.trim() || isQuerying) return;
+     const q = inputQuery.trim();
+     setInputQuery("");
+     await executeQuery(q);
+   };
+
+   const handleAudit = async () => {
+     if (!currentText.trim()) {
+       onToast?.("本文を入力してから矛盾診断を実行してください", "info");
+       return;
+     }
+
+     setIsAuditing(true);
+     try {
+       const res = await auditConsistency({
+         book_id: bookId,
+         content: currentText,
+       });
+       setAuditIssues(res.issues);
+       setAuditDone(true);
+
+       // Step 23: Integrate audit results into lineScores
+       const lines = currentText.split('\n');
+       const newScores: Record<number, any> = {};
+
+       res.issues.forEach((issue) => {
+         if (!issue.conflicting_text) return;
+         const lineIdx = lines.findIndex(line => line.includes(issue.conflicting_text));
+         if (lineIdx !== -1) {
+           newScores[lineIdx] = {
+             line: lineIdx + 1,
+             score: issue.severity === 'error' ? 20 : issue.severity === 'warning' ? 50 : 80,
+             level: issue.severity as any,
+             message: issue.description,
+           };
+         }
+       });
+
+       // Update context state (merging with existing if necessary, but usually audit replaces)
+       setLineScores(Object.values(newScores));
+
+       if (res.has_issues) {
+         onToast?.(`⚠️ ${res.issues.length} 件の設定矛盾・懸念を検出しました`, "info");
+       } else {
+         onToast?.("✨ 設定上の矛盾は見つかりませんでした！", "success");
+       }
+     } catch (err: any) {
+       onToast?.(`❌ 診断エラー: ${err.message || err}`, "error");
+     } finally {
+       setIsAuditing(false);
+     }
+   };
+
+   const handleFocusIssue = (issue: ConsistencyIssue, idx: number) => {
+     if (!issue.conflicting_text) {
+       onToast?.("該当箇所のテキストが指定されていません", "info");
+       return;
+     }
+      // ハイライトは表示専用の識別子なので、ID が無くても致命的ではない。
+      // （解決操作の Unlike こちらは idx を使うが、server には送信しない）
+      const issueId = issue.id ? String(issue.id) : `local-${idx}`;
+     setActiveHighlight({
+       issueId,
+       conflictingText: issue.conflicting_text,
+       suggestedFix: issue.suggested_fix,
+       issueType: issue.issue_type,
+     });
+     onToast?.(`🎯 本文の該当箇所をフォーカスしました: 「${issue.conflicting_text}」`, "info");
+   };
+
+   const handleApplyFix = (issue: ConsistencyIssue, idx: number) => {
+     if (!issue.conflicting_text || !issue.suggested_fix) {
+       onToast?.("置換対象または修正案が空です", "info");
+       return;
+     }
+
+     const start = currentChapterText.indexOf(issue.conflicting_text);
+     if (start === -1) {
+       onToast?.("該当文が現在の本文中に見つかりませんでした", "error");
+       return;
+     }
+     const end = start + issue.conflicting_text.length;
+
+     setPendingDiff({
+       original: issue.conflicting_text,
+       replacement: issue.suggested_fix,
+       start,
+       end,
+     });
+   };
+
+   const confirmDiffApply = () => {
+     if (!pendingDiff) return;
+
+     const { original, replacement, start, end } = pendingDiff;
+     applyDiff(start, end, replacement);
+     setActiveHighlight(null);
+
+     // 矛盾診断リストから該当するものを削除（簡易的にテキスト一致で判定）
+     setAuditIssues((prev) => prev.filter(issue => issue.conflicting_text !== original));
+
+     setPendingDiff(null);
+     onToast?.(`✨ 修正案を適用しました`, "success");
+   };
+
+    const handleResolveAction = async (
+      issue: ConsistencyIssue,
+      idx: number,
+      action: "Foreshadowing" | "Ignore"
+    ) => {
+      // ID はサーバ側（ConsistencyIssue.with_stable_id）が決定的に発行する。
+      // ここに無い場合は配列 index などで代用しない。代用すると
+      // 「別の問題を解決した」と誤って報告するため、操作させない。
+      const issueId = issue.id;
+      if (!issueId) {
+        onToast?.(
+          "⚠️ この問題には安定した ID が無いため、解決操作を実行できません。",
+          "error"
+        );
+        return;
+      }
+      setResolvingId(issueId);
+      try {
+        await resolveIssue(issueId, action);
+        setAuditIssues((prev) => prev.filter((_, i) => i !== idx));
+        setActiveHighlight(null);
+        if (action === "Foreshadowing") {
+          onToast?.("📌 世界観バイブルの伏線マップに登録しました！", "success");
+        } else {
+          onToast?.("🛡️ 許容例外ルール (Rule of Cool) に登録しました！", "success");
+        }
+      } catch (err: unknown) {
+        // 失敗を「ローカルで解決済み」に偽らない。SPA 上の取り消しは
+        // server に反映されていないため、UI 側の issue も残す。
+        const msg = err instanceof Error ? err.message : String(err);
+        onToast?.(`❌ 登録に失敗しました: ${msg}`, "error");
+      } finally {
+        setResolvingId(null);
+      }
+    };
+
+   return (
+     <>
+       <div className="editorial-chat-box" data-testid="editorial-sidebar">
+         {/* タブ切り替え */}
+         <div style={{ display: "flex", gap: "8px", marginBottom: "16px", borderBottom: "1px solid var(--border-color)", paddingBottom: "8px" }}>
+           <button
+             type="button"
+             className={`btn-tab ${tab === "chat" ? "btn-tab--active" : ""}`}
+             onClick={() => setTab("chat")}
+             data-testid="tab-ask-bible"
+           >
+             💬 Ask Bible (Q&A)
+           </button>
+           <button
+             type="button"
+             className={`btn-tab ${tab === "audit" ? "btn-tab--active" : ""}`}
+             onClick={() => setTab("audit")}
+             data-testid="tab-audit-consistency"
+           >
+             🔍 矛盾チェック {auditIssues.length > 0 && `(${auditIssues.length})`}
+           </button>
+         </div>
+
+         {tab === "chat" ? (
+           <>
+             <div className="editorial-messages" data-testid="editorial-messages">
+{messages.map((m) => (
+                  <div
+                    key={m.id}
+                    className={`editorial-msg ${m.sender === "user" ? "editorial-msg--user" : "editorial-msg--ai"}`}
+                  >
+                    <div>{m.text}</div>
+                    {m.evidence && m.evidence.length > 0 && (
+                      <div style={{ marginTop: "6px" }}>
+                        {/* evidence はノード ID を本来就持つため、index ではなく本物の ID をキーにする */}
+                        {m.evidence.map((ev) => (
+                          <span key={ev.id} className="evidence-tag" title={`出展: ${ev.source_reference}`}>
+                            📊 [{ev.label}] {ev.id}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+               {isQuerying && (
+                 <div className="editorial-msg editorial-msg--ai" style={{ color: "var(--accent-cyan)", display: "flex", alignItems: "center", gap: "6px" }}>
+                   <span className="spinner" /> <span>GraphRAG ナレッジを探索中...</span>
+                 </div>
+               )}
+               <div ref={messagesEndRef} />
+             </div>
+
+             {/* クイック質問チップ */}
+             <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "8px" }}>
+               {QUICK_QUERIES.map((q, idx) => (
+                 <button
+                   key={idx}
+                   type="button"
+                   className="query-chip"
+                   disabled={isQuerying}
+                   onClick={() => executeQuery(q)}
+                   data-testid={`quick-query-${idx}`}
+                 >
+                   💡 {q}
+                 </button>
+               ))}
+             </div>
+
+             <form onSubmit={handleSendQuery} style={{ display: "flex", gap: "8px" }}>
+               <input
+                 className="input"
+                 style={{ flex: 1, padding: "8px 12px", fontSize: "0.85rem" }}
+                 placeholder="設定や過去の出来事を質問..."
+                 value={inputQuery}
+                 onChange={(e) => setInputQuery(e.target.value)}
+                 disabled={isQuerying}
+                 data-testid="input-ask-bible"
+               />
+               <button
+                 type="submit"
+                 className="btn btn-primary"
+                 style={{ padding: "8px 14px", fontSize: "0.85rem" }}
+                 disabled={isQuerying || !inputQuery.trim()}
+                 data-testid="btn-submit-ask-bible"
+               >
+                 送信
+               </button>
+             </form>
+           </>
+         ) : (
+           /* 矛盾診断タブ */
+           <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
+              <div style={{ marginBottom: "12px" }}>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "12px" }}>
+                  現在の執筆本文を、ナレッジグラフおよび世界観バイブルと照合して設定矛盾を検出します。
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button
+                      type="button"
+                      onClick={() => onOpenAuditReport?.()}
+                      style={{ flex: 1, padding: "8px 12px", backgroundColor: "var(--accent-color)", color: "white", border: "none", borderRadius: "4px", cursor: "pointer", fontSize: "0.85rem" }}
+                      data-testid="btn-open-audit-report"
+                    >
+                      📑 レポートを開く
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      style={{ flex: 1, padding: "8px", fontSize: "0.85rem" }}
+                      onClick={handleAudit}
+                      disabled={isAuditing}
+                      data-testid="btn-run-audit"
+                    >
+                      {isAuditing ? "🔍 設定照合中..." : "🔍 本文の設定矛盾を照合"}
+                    </button>
+                  </div>
+                  {onRunHybridAudit && (
+                    <button
+                      type="button"
+                      className="inline-ai-btn"
+                      style={{ width: "100%", padding: "8px", fontSize: "0.85rem" }}
+                      onClick={() => onRunHybridAudit()}
+                      data-testid="btn-trigger-hybrid-audit-sidebar"
+                    >
+                      🧠 二層ハイブリッド監査を実行
+                    </button>
+                  )}
+                </div>
+              </div>
+
+             <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: "10px" }}>
+               {auditDone && auditIssues.length === 0 && (
+                 <div style={{ padding: "12px", background: "rgba(16, 185, 129, 0.1)", border: "1px solid var(--accent-success)", borderRadius: "8px", color: "#34d399", fontSize: "0.85rem" }}>
+                   ✅ 設定矛盾は見つかりませんでした。整合性は良好です！
+                 </div>
+               )}
+
+               {auditIssues.map((issue, idx) => {
+                 const isHighlighted = activeHighlight?.conflictingText === issue.conflicting_text;
+                 return (
+<div
+                      // サーバー側が決定的に発行する ID をキーにする。
+                      // 無ければ表示専用のフォールバック ID を使う（既存の handleFocusIssue と同じ規則）。
+                      key={issue.id ? String(issue.id) : `local-${idx}`}
+                     style={{
+                       background: isHighlighted
+                         ? "rgba(239, 68, 68, 0.25)"
+                         : issue.severity === "error"
+                           ? "rgba(239, 68, 68, 0.12)"
+                           : "rgba(245, 158, 11, 0.12)",
+                       border: `1px solid ${
+                         isHighlighted
+                           ? "#f87171"
+                           : issue.severity === "error"
+                             ? "rgba(239, 68, 68, 0.4)"
+                             : "rgba(245, 158, 11, 0.4)"
+                       }`,
+                       padding: "12px",
+                       borderRadius: "8px",
+                       fontSize: "0.85rem",
+                       transition: "all 0.2s ease",
+                     }}
+                     data-testid={`audit-issue-card-${idx}`}
+                   >
+                     <div style={{ fontWeight: 700, color: issue.severity === "error" ? "#f87171" : "#fbbf24", marginBottom: "4px" }}>
+                       {issue.severity === "error" ? "🚨 重大矛盾" : "⚠️ 警告"}: {issue.issue_type}
+                     </div>
+                     <div style={{ marginBottom: "6px", lineHeight: "1.4" }}>{issue.description}</div>
+                     {issue.conflicting_text && (
+                       <div style={{ fontStyle: "italic", color: "var(--text-muted)", fontSize: "0.8rem", marginBottom: "6px" }}>
+                         該当文: 「{issue.conflicting_text}」
+                       </div>
+                     )}
+                     {issue.suggested_fix && (
+                       <div style={{ color: "var(--accent-cyan)", fontSize: "0.8rem", marginBottom: "10px" }}>
+                         💡 修正案: {issue.suggested_fix}
+                       </div>
+                     )}
+
+                     {/* アクションボタン群 */}
+                     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
+                       {issue.conflicting_text && (
+                         <button
+                           type="button"
+                           className="btn btn-secondary"
+                           style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                           onClick={() => handleFocusIssue(issue, idx)}
+                           data-testid={`btn-focus-issue-${idx}`}
+                         >
+                           🎯 本文で確認
+                         </button>
+                       )}
+
+                       {issue.suggested_fix && (
+                         <button
+                           type="button"
+                           className="btn btn-primary"
+                           style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                           onClick={() => handleApplyFix(issue, idx)}
+                           data-testid={`btn-apply-fix-${idx}`}
+                         >
+                           💡 修正案を適用
+                         </button>
+                       )}
+
+                        <button
+                          type="button"
+                          className="inline-ai-btn"
+                          style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                          disabled={resolvingId !== null || !issue.id}
+                          onClick={() => handleResolveAction(issue, idx, "Foreshadowing")}
+                          title={
+                            issue.id
+                              ? "世界観バイブルの伏線マップに追加"
+                              : "サーバが問題 ID を返していないため実行できません"
+                          }
+                          data-testid={`btn-foreshadow-${idx}`}
+                        >
+                          📌 伏線化
+                        </button>
+
+                        <button
+                          type="button"
+                          className="inline-ai-btn"
+                          style={{ padding: "4px 8px", fontSize: "0.75rem" }}
+                          disabled={resolvingId !== null || !issue.id}
+                          onClick={() => handleResolveAction(issue, idx, "Ignore")}
+                          title={
+                            issue.id
+                              ? "設定の例外ルール (Rule of Cool) として許容"
+                              : "サーバが問題 ID を返していないため実行できません"
+                          }
+                          data-testid={`btn-rule-of-cool-${idx}`}
+                        >
+                         🛡️ 許容例外
+                       </button>
+                     </div>
+                   </div>
+                 );
+               })}
+             </div>
+           </div>
+         )}
+       </div>
+       {pendingDiff && (
+         <DiffViewer
+           chunk={pendingDiff}
+           onApply={confirmDiffApply}
+           onReject={() => setPendingDiff(null)}
+         />
+       )}
+     </>
+   );
+};

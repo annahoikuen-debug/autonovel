@@ -1,0 +1,497 @@
+import React, { useState, useEffect, useCallback } from "react";
+import { useNovelContext } from "../context/NovelContext";
+import { useUnsavedGenerationGuard } from "../hooks/useUnsavedGenerationGuard";
+import "../components/common/GachaShimmer.css";
+import { useToast } from "../hooks/useToast";
+import { useNovelGeneration } from "../hooks/useNovelGeneration";
+import { useStreamingWriter } from "../hooks/useStreamingWriter";
+import { useSnapshotHistory } from "../hooks/useSnapshotHistory";
+import { useUnifiedStreaming } from "../hooks/useUnifiedStreaming";
+import { ReversePlotBuilder } from "./ReversePlotBuilder";
+import { GeneratedPlotStructure } from "../types/reversePlot";
+import { GachaPlan, GachaResponse, DigestResponse } from "../types/easyMode";
+import { generateGachaPlans, generateDigest } from "../api/easyMode";
+import { fetchChapterBookScore, type BookScore } from "../api/quality";
+import { StylePresetSummary, StyleProfile } from "../types/style";
+import { fetchStylePresets, distillStyleFromText } from "../api/styleApi";
+import { GENRE_OPTIONS } from "../constants/genres";
+import { StyleComparisonModal } from "./style/StyleComparisonModal";
+import { ScoreDiagnostics } from "./generate/ScoreDiagnostics";
+import SimpleModePanel from "./generate/SimpleModePanel";
+import ReverseModePanel from "./generate/ReverseModePanel";
+import OrchestratedModePanel from "./generate/OrchestratedModePanel";
+import { GachaModal } from "./generate/GachaModal";
+import { DigestModal } from "./generate/DigestModal";
+import { PDCALiveMonitor } from "./studio/PDCALiveMonitor";
+import { DAGLiveTracker } from "./studio/DAGLiveTracker";
+
+interface GeneratePanelProps {
+  onGenerated?: (output: string, suggestions: string[]) => void;
+  onMessage?: (message: string) => void;
+}
+
+export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelProps) {
+  const { addToast } = useToast();
+  const {
+    character,
+    setCharacter,
+    currentChapterText,
+    setCurrentChapterText,
+    generationState,
+    setPlotStructure,
+    chapters,
+    setChapters,
+    setCurrentEpNum,
+    syncGenerationToEditor,
+    contentLengthLimit,
+    setContentLengthLimit,
+    targetEpisodes,
+    setTargetEpisodes,
+    llmConfig,
+    setLlmConfig,
+    selectedBookId,
+    currentEpNum,
+  } = useNovelContext();
+
+  const [bookScore, setBookScore] = useState<BookScore | null>(null);
+  const [isScoring, setIsScoring] = useState(false);
+
+  const { takeSnapshot } = useSnapshotHistory(selectedBookId, currentEpNum);
+
+  const chapterScore = bookScore ? bookScore.overall_score : null;
+
+  const fetchScore = useCallback(async () => {
+    if (!selectedBookId) return;
+    setIsScoring(true);
+    try {
+      const scoreData = await fetchChapterBookScore(selectedBookId, currentEpNum);
+      setBookScore(scoreData);
+    } catch (e) {
+      console.error("Failed to fetch chapter score in GeneratePanel", e);
+      setBookScore(null);
+    } finally {
+      setIsScoring(false);
+    }
+  }, [selectedBookId, currentEpNum]);
+
+  useEffect(() => {
+    void fetchScore();
+  }, [fetchScore]);
+  const [showStyleComparison, setShowStyleComparison] = useState(false);
+
+  const { startGeneration, cancelGeneration } = useNovelGeneration(
+    (out, sug) => {
+      takeSnapshot("AI生成前", currentChapterText, "ai_generate");
+      syncGenerationToEditor(out);
+      onGenerated?.(out, sug);
+    },
+    (msg) => onMessage?.(msg),
+    (errMsg) => onMessage?.(errMsg)
+  );
+
+  const {
+    isStreaming,
+    isPaused,
+    streamOutput,
+    startStreaming,
+    pauseStreaming,
+    resumeStreaming,
+    cancelStreaming,
+  } = useStreamingWriter({
+    onSuccess: (finalText) => {
+      takeSnapshot("AI生成前", currentChapterText, "ai_generate");
+      syncGenerationToEditor(finalText);
+      onGenerated?.(finalText, []);
+    },
+    onMessage: onMessage ?? (() => { }),
+    onError: (err) => onMessage?.(`❌ ${err}`),
+  });
+
+  const {
+    isActive,
+    output,
+    agentProgress,
+    error,
+    start: startUnified,
+    cancel: cancelUnified,
+  } = useUnifiedStreaming();
+
+  const [mode, setMode] = useState<'simple' | 'reverse' | 'orchestrated'>('simple');
+  // 段階開示: 「かんたん」を既定にし、上級向けの選択肢は折りたたんで隠す
+  const [showAdvancedModes, setShowAdvancedModes] = useState(false);
+  const [showGachaModal, setShowGachaModal] = useState(false);
+  const [showDigestModal, setShowDigestModal] = useState(false);
+
+  const [gachaLoading, setGachaLoading] = useState(false);
+  const [gachaResult, setGachaResult] = useState<GachaResponse | null>(null);
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [digestLoading, setDigestLoading] = useState(false);
+  const [digestResult, setDigestResult] = useState<DigestResponse | null>(null);
+
+  // 6コマ要約漫画 (yonkoma) のオン/オフ。UI 側で即時プレビューできるよう localStorage に同期。
+  const [yonkomaEnabled, setYonkomaEnabled] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("autonovel.yonkomaEnabled") === "1";
+  });
+  const toggleYonkoma = (next: boolean) => {
+    setYonkomaEnabled(next);
+    try {
+      window.localStorage.setItem("autonovel.yonkomaEnabled", next ? "1" : "0");
+    } catch {
+      // localStorage が使えない環境では無視
+    }
+  };
+
+  // オプトインAPI設定のアコーディオン・キー表示ステート
+  const [showApiSettings, setShowApiSettings] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+
+  /*
+   * 文体（Style DNA）関連のステートはここで持たない。
+   *
+   * かつては `selectedStyleId` / `customStyleProfile` をここで持って
+   * SimpleModePanel へ渡していたが、受け取るだけで誰も読まない props になっていた（R6）。
+   * 文体プリセットの選択は SimpleModePanel の `style-preset-select` が
+   * 生成フックへ直接渡すため、ここでは持たない。
+   */
+  const [styleSampleText, setStyleSampleText] = useState("");
+  const [distillLoading, setDistillLoading] = useState(false);
+  const [distillResult, setDistillResult] = useState<StyleProfile | null>(null);
+  const [showStyleModal, setShowStyleModal] = useState(false);
+
+  // 文体プリセットの選択は SimpleModePanel が `style-preset-select` から
+  // 生成フックへ直接渡すため、ここではハンドラーを持たない。
+
+  const handleReversePlotComplete = (structure: GeneratedPlotStructure) => {
+    setPlotStructure(structure);
+    if (structure.episodes && structure.episodes.length > 0) {
+      // 既存章にユーザーが記述した本文がある場合は警告 (上書き前に確認)
+      const hasUserContent = chapters.some((c) => {
+        const userText = (c.content || "").replace(/^【第\d+話[^\n]*】\n?/, "").trim();
+        return userText.length > 0;
+      });
+
+      if (hasUserContent && typeof window !== "undefined") {
+        const confirmed = window.confirm(
+          "既存の章に記述済みの本文があります。逆算プロットで上書きすると既存本文が消えます。続行しますか？",
+        );
+        if (!confirmed) {
+          onMessage?.("⚠️ 既存本文を保護するため、逆算プロットの適用をキャンセルしました");
+          return;
+        }
+      }
+
+      const mappedChapters = structure.episodes.map((ep) => {
+        const existing = chapters.find((c) => c.ep_num === ep.ep_num);
+        // 既存章があり、ユーザーが何か書いていた場合は保持
+        const preserveExisting = existing && (existing.content || "").trim().length > 0;
+        return {
+          ep_num: ep.ep_num,
+          title: `第${ep.ep_num}話: ${ep.title}`,
+          summary: ep.one_line_summary,
+          content: preserveExisting
+            ? existing!.content
+            : ep.ep_num === 1 && currentChapterText
+              ? currentChapterText
+              : `【第${ep.ep_num}話: ${ep.title}】\n${ep.one_line_summary}\n\n`,
+          is_catharsis: ep.is_catharsis,
+          status: (ep.ep_num === 1 ? "writing" : "draft") as "writing" | "draft",
+        };
+      });
+      setChapters(mappedChapters);
+      setCurrentEpNum(1);
+    }
+    setMode('simple');
+  };
+
+  const handleSelectGachaPlan = (plan: GachaPlan) => {
+    // 1. ガチャの結果をキャラクター設定に反映
+    setCharacter((prev) => ({
+      ...prev,
+      personality: `${prev.personality}\n${plan.protagonist_summary}`.trim(),
+    }));
+
+    // 2. 選択したプランの方向性を本文のシードとして挿入
+    const seedText = `【プラン: ${plan.title}】\n概要: ${plan.logline}\n魅力点: ${plan.charm_point}`;
+    setCurrentChapterText((prev) => (prev ? `${prev}\n\n${seedText}` : seedText));
+
+    // 3. モーダルを閉じる
+    setShowGachaModal(false);
+
+    // 4. ステート反映後に生成を開始 (少しだけ遅延させて context 更新を待つ)
+    setTimeout(() => {
+      startGeneration();
+    }, 100);
+  };
+
+  const handleRunGacha = async () => {
+    setGachaLoading(true);
+    try {
+      const response = await generateGachaPlans({
+        genre: character.genre,
+        keywords: [], // 将来的にキーワード入力欄を追加することを想定
+      });
+      setGachaResult(response);
+      setShowGachaModal(true);
+      addToast("企画ガチャの生成が完了しました。3案から選択してください。", "success");
+    } catch (error) {
+      console.error("Gacha generation failed:", error);
+      addToast("ガチャの生成に失敗しました。しばらくしてから再試行してください。", "error");
+    } finally {
+      setGachaLoading(false);
+    }
+  };
+
+  const handleRunDigest = async () => {
+    if (!gachaResult) {
+      addToast("先にガチャを回してプランを生成してください。", "info");
+      return;
+    }
+
+    const planId = selectedPlanId || gachaResult.plans[0]?.plan_id;
+    if (!planId) {
+      addToast("利用可能なプランが見つかりませんでした。", "error");
+      return;
+    }
+
+    setDigestLoading(true);
+    try {
+      const response = await generateDigest({
+        request_id: gachaResult.request_id,
+        selected_plan_id: planId,
+      });
+      setDigestResult(response);
+      setShowDigestModal(true);
+      addToast("ダイジェストの生成が完了しました。", "success");
+    } catch (error) {
+      console.error("Digest generation failed:", error);
+      addToast("ダイジェストの生成に失敗しました。しばらくしてから再試行してください。", "error");
+    } finally {
+      setDigestLoading(false);
+    }
+  };
+
+  const isBusy = generationState.isGenerating || isStreaming;
+
+  // 提案7: 生成中のページ離脱警告（誤操作による生成中断を防止）
+  useUnsavedGenerationGuard(isBusy);
+
+  // Early return pattern - clean conditional rendering
+  const renderContent = () => {
+    if (mode === 'simple') {
+      return (
+        <SimpleModePanel
+          character={character}
+          setCharacter={setCharacter}
+          llmConfig={llmConfig}
+          setLlmConfig={setLlmConfig}
+          yonkomaEnabled={yonkomaEnabled}
+          setYonkomaEnabled={setYonkomaEnabled}
+          generationState={generationState}
+          startGeneration={startGeneration}
+          cancelGeneration={cancelGeneration}
+          isStreaming={isStreaming}
+          startStreaming={startStreaming}
+          cancelStreaming={cancelStreaming}
+          isPaused={isPaused}
+          resumeStreaming={resumeStreaming}
+          pauseStreaming={pauseStreaming}
+          streamOutput={streamOutput}
+          isBusy={isBusy}
+          targetEpisodes={targetEpisodes}
+          setTargetEpisodes={setTargetEpisodes}
+          contentLengthLimit={contentLengthLimit}
+          setContentLengthLimit={setContentLengthLimit}
+          currentChapterText={currentChapterText}
+          setCurrentChapterText={setCurrentChapterText}
+          onMessage={onMessage ?? (() => { })}
+          onRunGacha={handleRunGacha}
+          onRunDigest={handleRunDigest}
+          isGachaLoading={gachaLoading}
+          isDigestLoading={digestLoading}
+        />
+      );
+    }
+
+    if (mode === 'reverse') {
+      return (
+        <ReverseModePanel
+          targetEpisodes={targetEpisodes}
+          genre={character.genre}
+          llmConfig={llmConfig}
+          onTargetEpisodesChange={setTargetEpisodes}
+          onComplete={handleReversePlotComplete}
+          onCancel={() => setMode('simple')}
+        />
+      );
+    }
+
+    return (
+      <OrchestratedModePanel
+        character={character}
+        setCharacter={setCharacter}
+        llmConfig={llmConfig}
+        setLlmConfig={setLlmConfig}
+        yonkomaEnabled={yonkomaEnabled}
+        setYonkomaEnabled={setYonkomaEnabled}
+        generationState={generationState}
+        startGeneration={startGeneration}
+        cancelGeneration={cancelGeneration}
+        isStreaming={isStreaming}
+        startStreaming={startStreaming}
+        cancelStreaming={cancelStreaming}
+        isPaused={isPaused}
+        resumeStreaming={resumeStreaming}
+        pauseStreaming={pauseStreaming}
+        streamOutput={streamOutput}
+        isBusy={isBusy}
+        targetEpisodes={targetEpisodes}
+        setTargetEpisodes={setTargetEpisodes}
+        contentLengthLimit={contentLengthLimit}
+        setContentLengthLimit={setContentLengthLimit}
+        currentChapterText={currentChapterText}
+        setCurrentChapterText={setCurrentChapterText}
+        agentProgress={agentProgress}
+        output={output}
+        startUnified={() => startUnified('orchestrated')}
+        cancelUnified={cancelUnified}
+        isActive={isActive}
+        selectedBookId={selectedBookId}
+        {...(onMessage ? { onMessage } : {})}
+      />
+    );
+  };
+
+  return (
+    <>
+      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <h2 style={{ fontSize: "1.1rem", fontWeight: 700, margin: 0 }}>⚙️ 制作設定 & プロンプト</h2>
+        {/* 段階開示: 既定は「かんたん」だけ。上級向けの操作は fold に隠す。 */}
+        <button
+          type="button"
+          className={`btn ${mode === "simple" ? "btn-primary" : "btn-secondary"}`}
+          onClick={() => setMode("simple")}
+          disabled={generationState.isGenerating}
+          data-testid="btn-submode-simple"
+        >
+          ⚙️ かんたん執筆（はじめはこれで十分）
+        </button>
+        {showAdvancedModes ? (
+          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className={`btn ${mode === "reverse" ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setMode("reverse")}
+              disabled={generationState.isGenerating}
+              data-testid="btn-submode-reverse"
+            >
+              🔮 逆算プロットビルダー
+            </button>
+            {/*
+              ORCHESTRA（複数エージェント協働執筆）は実装済みだが、
+              setMode('orchestrated') を呼ぶ導線が無くパネルが到達不能だった。
+              ここ generalize して「monitor-fold の進捗表示」と実联系起来ようにする。
+            */}
+            <button
+              type="button"
+              className={`btn ${mode === "orchestrated" ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setMode("orchestrated")}
+              disabled={generationState.isGenerating}
+              data-testid="btn-submode-orchestrated"
+              title="複数のAIが役割分担して長編執筆します（Chest 書きには向きません）"
+            >
+              🧠 マルチエージェント執筆
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setShowAdvancedModes(false)}
+              data-testid="btn-submode-collapse"
+            >
+              閉じる
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setShowAdvancedModes(true)}
+            data-testid="btn-show-advanced-modes"
+          >
+            もっと細かく設定する ▾
+          </button>
+        )}
+        {chapterScore !== null && (
+          <div
+            style={{
+              background: "rgba(255, 255, 255, 0.05)",
+              border: `1px solid ${chapterScore >= 70 ? "rgba(34, 197, 94, 0.3)" : "rgba(239, 68, 68, 0.3)"}`,
+              borderRadius: "12px",
+              padding: "12px 16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "50%",
+                  background: chapterScore >= 70 ? "rgba(34, 197, 94, 0.2)" : "rgba(239, 68, 68, 0.2)",
+                  color: chapterScore >= 70 ? "#4ade80" : "#f87171",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontWeight: "bold",
+                  fontSize: "1.1rem",
+                  border: `1px solid ${chapterScore >= 70 ? "#4ade80" : "#f87171"}`,
+                }}
+              >
+                {chapterScore.toFixed(0)}
+              </div>
+              <div>
+                <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 600 }}>
+                  Current Chapter Quality Score
+                </div>
+                <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--text-main)" }}>
+                  {chapterScore >= 70 ? "✅ High Quality" : "⚠️ Needs Improvement"}
+                </div>
+              </div>
+            </div>
+
+            {chapterScore < 70 && (
+              <ScoreDiagnostics
+                bookScore={bookScore}
+                isScoring={isScoring}
+                onRescore={() => void fetchScore()}
+              />
+            )}
+          </div>
+        )}
+        {renderContent()}
+        {/* 監視パネルは常時表示せず、fold にして必要なときだけ開く */}
+        <details className="monitor-fold mt-4" data-testid="monitor-fold">
+          <summary className="monitor-fold__summary">📡 執筆の進み具合を詳しく見る</summary>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+            <PDCALiveMonitor bookId={selectedBookId} />
+            <DAGLiveTracker bookId={selectedBookId} />
+          </div>
+        </details>
+      </div>
+      <GachaModal
+        isOpen={showGachaModal}
+        onClose={() => setShowGachaModal(false)}
+        plans={gachaResult?.plans || []}
+        onSelectPlan={handleSelectGachaPlan}
+      />
+      <DigestModal
+        isOpen={showDigestModal}
+        onClose={() => setShowDigestModal(false)}
+        digest={digestResult}
+      />
+    </>
+  );
+}

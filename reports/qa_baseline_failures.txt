@@ -1,0 +1,249 @@
+﻿
+    self.agent.logger.error(f"generate_episodes_pipeline failed at ep {ep}: {e}")
+FAILED tests/backend/test_database_core.py::TestWorkspaceManager::test_create_snapshot_creates_backup
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_init_sets_attributes_correctly
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_cursor_property_returns_dbapi_cursor
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_commit_calls_dbapi_commit
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_rollback_calls_dbapi_rollback
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_execute_calls_dbapi_execute
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_setattr_sets_special_attributes_directl
+y
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_setattr_sets_other_attributes_on_dbapi_
+conn
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_fetchone_returns_dbapi_fetchone
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_fetchall_returns_dbapi_fetchall
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_close_calls_rollback_and_close
+FAILED tests/backend/test_database_core.py::TestDatabaseConnectionWrapper::test_close_handles_rollback_exception_gracef
+ully
+FAILED tests/backend/test_database_core.py::TestDatabaseManager::test_init_sets_warned_flag_to_false
+FAILED tests/backend/test_database_core.py::TestDatabaseManager::test_get_conn_creates_connection_wrapper
+FAILED tests/backend/test_database_core.py::TestDatabaseManager::test_execute_with_string_issues_warning_and_converts_t
+o_text
+FAILED tests/backend/test_database_core.py::TestDatabaseManager::test_fetch_one_returns_mapped_result
+FAILED tests/backend/test_database_core.py::TestDatabaseManager::test_fetch_all_returns_list_of_mapped_results
+FAILED tests/backend/test_database_core.py::TestDatabaseManager::test_fetch_lastrowid_returns_lastrowid
+FAILED tests/backend/test_database_core.py::TestDatabaseManager::test_save_internal_state_upserts_record
+FAILED tests/backend/test_database_core.py::TestDatabaseManager::test_set_db_manager_issues_warning_and_tries_override
+FAILED tests/config/test_phase1_coverage.py::test_coverage_threshold_meets_phase1_goal
+FAILED tests/e2e/test_pillar1_pipeline_e2e.py::test_pillar1_full_pipeline_e2e
+FAILED tests/e2e/test_production_e2e.py::test_full_generation_flow - FileNotF...
+FAILED tests/e2e/test_regeneration_loop_e2e.py::test_targeted_regeneration_loop_e2e
+FAILED tests/e2e/test_v53_long_form_wiring_e2e.py::test_foreshadowing_auto_resolve_fires_in_production_path
+FAILED tests/integration/annotations/test_persistence.py::TestBeatsToVector::test_vector_aggregation
+FAILED tests/integration/test_40ep_commercial_lifecycle.py::test_40ep_commercial_lifecycle
+FAILED tests/integration/test_async_generation.py::test_generation_task_saves_to_specified_book_id
+FAILED tests/integration/test_async_generation.py::test_generation_task_creates_new_book_when_book_id_not_provided
+FAILED tests/integration/test_audit_aggregator_pipeline.py::test_audit_aggregator_pipeline_integration
+FAILED tests/integration/test_billing_and_credits.py::test_stripe_webhook_handling
+FAILED tests/integration/test_billing_and_credits.py::test_api_endpoints - sq...
+FAILED tests/integration/test_billing_webhook_idempotency.py::test_webhook_idempotency_prevents_duplicate_credit_grant
+FAILED tests/integration/test_book_score_feedback_loop.py::test_writing_service_regeneration_loop_success
+FAILED tests/integration/test_book_score_feedback_loop.py::test_writing_service_regeneration_max_retries
+FAILED tests/integration/test_commercial_quality_pipeline.py::test_commercial_quality_pipeline_flow
+FAILED tests/integration/test_critical_routers_auth.py::test_unauthenticated_requests_are_rejected
+FAILED tests/integration/test_critical_routers_auth.py::test_cross_tenant_isolation_on_plots_and_trace
+FAILED tests/integration/test_easy_mode_export.py::test_fallback_when_book_data_is_none
+FAILED tests/integration/test_easy_mode_export.py::test_real_db_export_package_via_fixture
+FAILED tests/integration/test_enrichment_e2e.py::TestEnrichmentFallback::test_rag_failure_fallback
+FAILED tests/integration/test_enrichment_e2e.py::TestEnrichmentFallback::test_llm_failure_fallback
+FAILED tests/integration/test_multimedia_e2e.py::test_asset_pack_e2e - ValueE...
+FAILED tests/integration/test_multimedia_e2e.py::test_media_mix_then_artifact_meta
+FAILED tests/integration/test_multimedia_e2e.py::test_if_routes_persist - Ass...
+FAILED tests/integration/test_multitenancy_isolation.py::test_multitenancy_isolation
+FAILED tests/integration/test_orchestrated_api.py::TestOrchestratedAPI::test_cancel_endpoint
+FAILED tests/integration/test_p0_multimedia_merge_e2e.py::test_p0_harness_initialization
+FAILED tests/integration/test_p0_multimedia_merge_e2e.py::test_real_db_multimedia_generation_e2e
+FAILED tests/integration/test_p0_multimedia_merge_e2e.py::test_illustrated_commercial_epub_e2e
+FAILED tests/integration/test_p0_multimedia_merge_e2e.py::test_edge_cases_and_error_handling
+FAILED tests/integration/test_p0_security_idor_full.py::test_unauthenticated_export_blocked
+FAILED tests/integration/test_p0_security_idor_full.py::test_cross_user_book_export_forbidden
+FAILED tests/integration/test_p1_quality_enhancement_e2e.py::test_p1_e2e_pipeline_mocked
+FAILED tests/integration/test_p1_quality_enhancement_e2e.py::test_writing_with_foreshadowing_retrieval_e2e
+FAILED tests/integration/test_p1_quality_enhancement_e2e.py::test_synthesizer_with_detected_emotions_e2e
+FAILED tests/integration/test_p1_quality_enhancement_e2e.py::test_llm_media_scripts_e2e
+FAILED tests/integration/test_p1_quality_enhancement_e2e.py::test_commercial_quality_check_e2e
+FAILED tests/integration/test_phase3_full_regression.py::test_cost_budget_guard_regression
+FAILED tests/integration/test_reflective_rag_context_builder.py::test_context_builder_with_reflective_rag_success
+FAILED tests/integration/test_regression_phase4.py::TestRegressionPhase4::test_enrichment_config_loads
+FAILED tests/integration/test_relational_memory_e2e.py::TestRelationalMemoryE2E::test_foreshadowing_lifecycle_plant_to_
+resolve
+FAILED tests/integration/test_relational_memory_e2e.py::TestRelationalMemoryE2E::test_error_handling_in_pipeline
+FAILED tests/integration/test_wizard_creation_funnel.py::test_wizard_creation_funnel_full_flow
+FAILED tests/integration/test_wizard_creation_funnel.py::test_wizard_creation_funnel_error_cases
+FAILED tests/perf/test_performance_regression.py::test_age_upsert_1000_nodes_performance
+FAILED tests/perf/test_performance_regression.py::test_age_upsert_10000_edges_performance
+FAILED tests/perf/test_performance_regression.py::test_rag_hybrid_search_performance
+FAILED tests/perf/test_performance_regression.py::test_pipeline_single_chapter_performance
+FAILED tests/perf/test_performance_regression.py::test_embedding_generation_1000_texts_performance
+FAILED tests/performance/test_fusion_perf.py::test_fusion_performance_100_pairs
+FAILED tests/regression/test_docs_router_count_matches_reality.py::test_openapi_json_has_no_path_drift_against_the_app
+FAILED tests/regression/test_lint_budget.py::test_whitespace_rules_are_clean
+FAILED tests/regression/test_v53_long_form_integrity.py::TestReschedulerUsesRealApi::test_progressed_to_progressed_is_n
+ormal_not_warning
+FAILED tests/services/anti_ai/test_syntax_refiner.py::TestSyntaxRefiner::test_filler_removal
+FAILED tests/services/test_foreshadowing_resolution_step.py::test_foreshadowing_resolution_step_execute_no_volume_episo
+de
+FAILED tests/services/test_foreshadowing_resolution_step.py::test_foreshadowing_resolution_step_execute_with_repository
+_no_matches
+FAILED tests/services/test_foreshadowing_resolution_step.py::test_foreshadowing_resolution_step_execute_with_repository
+_has_matches
+FAILED tests/services/test_foreshadowing_resolution_step.py::test_foreshadowing_resolution_step_execute_fallback_to_con
+text_no_matches
+FAILED tests/services/test_foreshadowing_resolution_step.py::test_foreshadowing_resolution_step_execute_fallback_to_con
+text_has_matches
+FAILED tests/services/test_foreshadowing_resolution_step.py::test_foreshadowing_resolution_step_execute_exception_handl
+ing
+FAILED tests/test_erotic_integration.py::test_erotic_parameters_propagated_to_planner
+FAILED tests/test_erotic_integration.py::test_erotic_disabled_when_not_requested
+FAILED tests/test_erotic_integration.py::test_full_auto_pipeline_with_erotic
+FAILED tests/test_erotic_workflow.py::test_density_controller_suggest_next - ...
+FAILED tests/test_genre_mapping.py::test_resolve_genre_to_preset_returns_expected_mapping
+FAILED tests/test_illustration_agent.py::test_illustration_agent_cover_generation
+FAILED tests/test_illustration_agent.py::test_illustration_agent_episode_r15_prompt_contains_r15
+FAILED tests/test_illustration_agent.py::test_illustration_agent_auto_model_resolves
+FAILED tests/test_illustration_router.py::test_illustration_router_batch_queues_task
+FAILED tests/test_illustration_router.py::test_illustration_router_generate_validation_error_returns_400
+FAILED tests/test_illustration_router.py::test_illustration_batch_queues_huey_task
+FAILED tests/test_image_service.py::test_image_service_requires_api_key - Fai...
+FAILED tests/test_image_service.py::test_image_service_accepts_api_key - Attr...
+FAILED tests/test_image_service.py::test_image_service_r15_safety_block_most
+FAILED tests/test_image_service.py::test_image_service_block_some_default - A...
+FAILED tests/test_image_service.py::test_image_service_unknown_level_falls_back_to_block_some
+FAILED tests/test_migrations.py::test_migrations_up_down - TypeError: sequenc...
+FAILED tests/test_negative_learning.py::test_should_skip_audit_type_many_negatives
+FAILED tests/test_negative_learning.py::test_should_skip_audit_type_some_negatives
+FAILED tests/test_patch_review_workflow.py::test_audit_agent_creates_patch_review_on_failure
+FAILED tests/test_patch_review_workflow.py::test_audit_agent_passes_when_all_audits_ok
+FAILED tests/test_scene_continuity_tracker.py::TestSceneContinuityTracker::test_perspective_continuity
+FAILED tests/test_setting_delta_merge.py::test_create_setting_snapshot - Type...
+FAILED tests/test_setting_delta_merge.py::test_apply_manual_setting_change - ...
+FAILED tests/test_sharp_edge.py::TestSharpEdgeSpec::test_preserve_false_logs_warning
+FAILED tests/unit/api/test_plots_expand_beats.py::test_expand_commercial_beats_success
+FAILED tests/unit/api/test_plots_expand_beats.py::test_expand_commercial_beats_fallback
+FAILED tests/unit/api/test_plots_expand_beats.py::test_expand_commercial_beats_edge_cases
+FAILED tests/unit/api/test_stream_writing.py::test_stream_writing_endpoint - ...
+FAILED tests/unit/backend/test_auth_real_session.py::test_get_current_user_with_real_session_no_await_error
+FAILED tests/unit/backend/test_backend_background.py::test_module_level_report_exception_helper
+FAILED tests/unit/backend/test_backend_database_core.py::test_get_db_manager_singleton
+FAILED tests/unit/backend/test_backend_database_repository.py::test_safe_commit_with_awaitable
+FAILED tests/unit/backend/test_backend_database_repository.py::test_safe_refresh_with_awaitable
+FAILED tests/unit/backend/test_cors_auth_headers.py::test_unauthorized_response_contains_cors_headers
+FAILED tests/unit/core/test_core_zero_modules.py::TestExecutorManager::test_run_io
+FAILED tests/unit/core/test_core_zero_modules.py::TestExecutorManager::test_run_cpu
+FAILED tests/unit/core/test_core_zero_modules.py::TestExecutorManager::test_run_with_kwargs
+FAILED tests/unit/fusion/test_alerts.py::test_alert_logs_warning - AssertionE...
+FAILED tests/unit/infrastructure/test_api_client_endpoints.py::TestSyncClient::test_close_client_runtime_error
+FAILED tests/unit/nlp/test_predicate_analyzer_fallback.py::test_fallback_when_tokenizer_disabled
+FAILED tests/unit/nlp/test_predicate_analyzer_resolved.py::test_resolved_predicates_detection
+FAILED tests/unit/pipeline/test_nlp_init.py::TestNLPInit::test_get_nlp_for_testing
+FAILED tests/unit/routers/test_auth_jwt_security.py::test_auth_validate_api_key
+FAILED tests/unit/services/compression/test_compression_layers.py::test_trim_all_pinned_cannot_reduce
+FAILED tests/unit/services/llm/test_llm_adapters_extra.py::test_openai_placeholder_key_warns
+FAILED tests/unit/services/nlp/test_nlp_services.py::test_predicate_analyzer_resolved_match
+FAILED tests/unit/services/nlp/test_nlp_services.py::test_predicate_analyzer_mention_match
+FAILED tests/unit/services/nlp/test_nlp_services.py::test_predicate_analyzer_foreshadowing_levels
+FAILED tests/unit/services/vector_store/test_chroma_store.py::TestCollectionLifecycle::test_ensure_warns_on_space_misma
+tch
+FAILED tests/unit/services/vector_store/test_chroma_store.py::TestDocumentOperations::test_add_documents_missing_collec
+tion
+FAILED tests/unit/test_auth_middleware.py::test_protected_path_rejects_unauthenticated
+FAILED tests/unit/test_auth_middleware.py::test_protected_path_rejects_invalid_jwt
+FAILED tests/unit/test_cost_optimization_pricing.py::test_unknown_model_is_reported_by_tracker
+FAILED tests/unit/test_cost_optimization_pricing.py::test_unknown_model_warning_is_not_spammed
+FAILED tests/unit/test_health_endpoints.py::test_liveness_endpoint_returns_200
+FAILED tests/unit/test_huey_queue.py::test_async_wait_huey_result - Failed: D...
+FAILED tests/unit/test_japanese_tokenizer.py::test_japanese_tokenizer_basic
+FAILED tests/unit/test_narrative_spine_enforcement.py::test_narrative_spine_composer
+FAILED tests/unit/test_p1_fixes.py::test_rate_limiter_prunes_inactive_clients
+FAILED tests/unit/test_p4_async_and_db_concurrency.py::TestTasksRouterAsyncRedis::test_get_task_status_uses_async_redis
+FAILED tests/unit/test_pdca_writing_agent.py::test_writing_agent_rewrite_for_dimension_calls_llm_and_updates_chapter
+FAILED tests/unit/test_pdca_writing_agent.py::test_writing_agent_rewrite_for_dimension_all_dimensions
+FAILED tests/unit/test_pdca_writing_agent.py::test_writing_agent_rewrite_with_focus_calls_llm_and_updates_chapter
+FAILED tests/unit/test_prompt_caching_and_router.py::test_model_router - Asse...
+FAILED tests/unit/test_security_patches.py::test_age_client_sanitization_helpers
+FAILED tests/unit/test_semantic_cache.py::TestSemanticCacheManager::test_evict_if_needed
+ERROR tests/integration/agent/test_writer_prompt_injection.py::TestWriterPromptInjection::test_emotional_context_in_pro
+mpt
+ERROR tests/integration/annotations/test_full_flow.py::TestFullAnnotationFlow::test_annotation_persistence
+ERROR tests/integration/annotations/test_full_flow.py::TestFullAnnotationFlow::test_annotation_priority_in_prompt
+ERROR tests/integration/annotations/test_full_flow.py::TestFullAnnotationFlow::test_annotation_only_prompt
+ERROR tests/integration/annotations/test_full_flow.py::TestFullAnnotationFlow::test_rule_engine_fallback
+ERROR tests/integration/annotations/test_full_flow.py::TestFullAnnotationFlow::test_pipeline_last_resort
+ERROR tests/integration/annotations/test_full_flow.py::TestFullAnnotationFlow::test_empty_prompt
+ERROR tests/integration/annotations/test_full_flow.py::TestFullAnnotationFlow::test_graph_log_consistency
+ERROR tests/integration/annotations/test_persistence.py::TestAnnotationPersistence::test_persist_to_vector_store
+ERROR tests/integration/annotations/test_persistence.py::TestAnnotationPersistence::test_persist_to_graph_store
+ERROR tests/integration/annotations/test_persistence.py::TestAnnotationPersistence::test_persist_to_log_store
+ERROR tests/integration/annotations/test_persistence.py::TestAnnotationPersistence::test_persist_empty_list
+ERROR tests/integration/annotations/test_persistence.py::TestAnnotationPersistence::test_persist_updates_existing
+ERROR tests/integration/annotations/test_persistence.py::TestAnnotationPersistence::test_convenience_function
+ERROR tests/integration/annotations/test_persistence.py::TestAnnotationPersistence::test_multiple_episodes_separate
+ERROR tests/integration/pipeline/test_emotional_residue_e2e.py::TestEmotionalResidueE2E::test_pipeline_run_saves_vector
+ERROR tests/integration/pipeline/test_emotional_residue_e2e.py::TestEmotionalResidueE2E::test_multiple_episodes_separat
+e_keys
+ERROR tests/integration/pipeline/test_emotional_residue_e2e.py::TestEmotionalResidueE2E::test_namespace_isolation
+ERROR tests/integration/test_chromadb_fixture.py::test_chromadb_fixture
+ERROR tests/integration/test_example_migration.py::test_example_redis_usage
+ERROR tests/integration/test_example_migration.py::test_example_chromadb_usage
+ERROR tests/integration/test_postgres_via_docker.py::test_postgres_via_docker
+ERROR tests/integration/test_redis_chromadb.py::test_redis_container - TypeEr...
+ERROR tests/integration/test_redis_chromadb.py::test_chromadb_container - Typ...
+ERROR tests/integration/test_redis_fixture.py::test_redis_fixture - TypeError...
+ERROR tests/perf/test_performance_regression.py::test_pgvector_ingest_1000_docs_performance
+ERROR tests/perf/test_performance_regression.py::test_pgvector_search_1000_docs_performance
+ERROR tests/regression/test_emotional_residue_regression.py::TestEmotionalResidueRegression::test_no_regression_basic_e
+xtraction
+ERROR tests/regression/test_emotional_residue_regression.py::TestEmotionalResidueRegression::test_no_regression_prompt_
+injection
+ERROR tests/regression/test_emotional_residue_regression.py::TestEmotionalResidueRegression::test_no_regression_vector_
+persistence
+ERROR tests/regression/test_emotional_residue_regression.py::TestEmotionalResidueRegression::test_no_regression_ttl_exp
+iry
+ERROR tests/unit/pipeline/test_character_extractor.py::TestCharacterExtractor::test_extract_known_characters
+ERROR tests/unit/pipeline/test_character_extractor.py::TestCharacterExtractor::test_extract_with_pronouns
+ERROR tests/unit/pipeline/test_character_extractor.py::TestCharacterExtractor::test_normalized_name_mapping
+ERROR tests/unit/pipeline/test_character_extractor.py::TestCharacterExtractor::test_no_duplicate_spans
+ERROR tests/unit/pipeline/test_character_extractor.py::TestCharacterExtractor::test_empty_dict
+ERROR tests/unit/pipeline/test_compression_pipeline_integration.py::TestCompressionPipelineIntegration::test_emotional_
+stage_runs
+ERROR tests/unit/pipeline/test_emotional_residue_extractor.py::TestEmotionalResidueExtractor::test_extract_and_persist
+ERROR tests/unit/pipeline/test_emotional_residue_extractor.py::TestEmotionalResidueExtractor::test_extractor_initializa
+tion
+ERROR tests/unit/pipeline/test_emotional_residue_extractor.py::TestEmotionalResidueExtractor::test_lazy_initialization
+ERROR tests/unit/pipeline/test_emotional_residue_integration.py::TestEmotionalResidueIntegration::test_full_pipeline_af
+fection
+ERROR tests/unit/pipeline/test_emotional_residue_integration.py::TestEmotionalResidueIntegration::test_full_pipeline_fe
+ar
+ERROR tests/unit/pipeline/test_emotional_residue_integration.py::TestEmotionalResidueIntegration::test_full_pipeline_te
+nsion
+ERROR tests/unit/pipeline/test_emotional_residue_integration.py::TestEmotionalResidueIntegration::test_multiple_pairs
+ERROR tests/unit/pipeline/test_emotional_residue_integration.py::TestEmotionalResidueIntegration::test_top_pairs_rankin
+g
+ERROR tests/unit/pipeline/test_prompt_builder.py::TestPromptBuilder::test_build_prompt
+ERROR tests/unit/pipeline/test_prompt_builder.py::TestPromptBuilder::test_build_prompt_no_prev_episode
+ERROR tests/unit/pipeline/test_prompt_builder.py::TestPromptBuilder::test_build_prompt_no_data
+ERROR tests/unit/pipeline/test_prompt_builder.py::TestPromptBuilder::test_build_fused_prompt_priority
+ERROR tests/unit/pipeline/test_signal_extractor.py::TestPolarityClassification::test_positive_affection
+ERROR tests/unit/pipeline/test_signal_extractor.py::TestPolarityClassification::test_negative_fear
+ERROR tests/unit/pipeline/test_signal_extractor.py::TestPolarityClassification::test_flip_verb_betrayal
+ERROR tests/unit/pipeline/test_signal_extractor.py::TestSignalExtractor::test_extract_affection_signal
+ERROR tests/unit/pipeline/test_signal_extractor.py::TestSignalExtractor::test_extract_fear_signal
+ERROR tests/unit/pipeline/test_signal_extractor.py::TestSignalExtractor::test_no_signal_for_non_emotional
+ERROR tests/unit/pipeline/test_signal_extractor.py::TestSignalExtractor::test_self_emotion_skipped
+ERROR tests/unit/pipeline/test_signal_extractor.py::TestSignalExtractor::test_confidence_calculation
+ERROR tests/unit/pipeline/test_signal_extractor.py::TestSignalExtractor::test_cause_extraction
+ERROR tests/unit/services/test_script_watcher.py::TestScriptWatcher::test_extract_episode_number
+ERROR tests/unit/services/test_script_watcher.py::TestScriptWatcher::test_compute_hash
+ERROR tests/unit/services/test_script_watcher.py::TestScriptWatcher::test_process_file_no_episode
+ERROR tests/unit/services/test_script_watcher.py::TestScriptWatcher::test_process_file_with_annotation
+ERROR tests/unit/services/test_script_watcher.py::TestScriptWatcher::test_hash_change_detection
+ERROR tests/unit/services/test_script_watcher.py::TestScriptWatcher::test_scan_once
+ERROR tests/unit/services/test_script_watcher.py::TestScriptWatcher::test_force_process
+ERROR tests/unit/services/test_script_watcher.py::TestScriptWatcher::test_validation_failure_skips_persist
+ERROR tests/unit/services/test_script_watcher.py::TestCreateScriptWatcher::test_create_script_watcher
+ERROR tests/unit/test_openai_adapter.py::test_openai_generate_text - Attribut...
+ERROR tests/unit/test_openai_adapter.py::test_openai_generate_text_with_system_prompt
+ERROR tests/unit/test_openai_adapter.py::test_openai_stream_text - AttributeE...
+148 failed, 9178 passed, 86 skipped, 403 warnings, 70 errors in 600.47s (0:10:00)
+
+

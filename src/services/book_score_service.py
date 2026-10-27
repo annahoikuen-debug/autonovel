@@ -1,0 +1,1118 @@
+# src/services/book_score_service.py
+"""BookScore 計算サービス"""
+from __future__ import annotations
+
+import logging
+import os
+from datetime import datetime
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
+
+from src.agents.orchestrator import AgentContext
+from src.infrastructure.database.models.book_score import BookScore as BookScoreModel
+from src.services.book_score_models import BookScore, BookScoreRepository  # noqa: F401
+
+logger = logging.getLogger(__name__)
+
+
+class ScoringUnavailableError(RuntimeError):
+    """スコア算出に必要なデータが存在しない、または壊れていることを示す。
+
+    「低いスコア」 (``LowScore``) とは区別される。呼び出し側は
+    この例外を捕捉して当該次元を判定不能として扱うべきで、
+    点数を偽の数値に置き換えてはならない。
+    """
+
+
+#: 判定不能な次元に対して用いる中立スコア。
+#: 閾値を下回らせないため 100.0 (満点) を用い、減点理由には含めない。
+#: 注意: この値は *次元スコア* の表示値にのみ使われる。
+#: 総合スコアへの寄与は :func:`_skip_unavailable_weight` の設定に従う
+#: （既定 ON なら欠測次元は重み付き平均から除外される）。
+NEUTRAL_SCORE = 100.0
+
+#: 5 次元のキーと、_get_weights() がキーを返さなかったときの既定重み。
+DEFAULT_DIMENSION_WEIGHTS: Dict[str, float] = {
+    "structure": 25,
+    "coherency": 25,
+    "factual_grounding": 20,
+    "visual_textual_synergy": 15,
+    "reader_experience": 15,
+}
+
+#: 判定不能（ScoringUnavailableError）な次元を総合スコアの重み付き平均から除外するかの環境変数。
+#: 未設定（既定）または truthy なら除外する。 falsy を渡すと旧挙動
+#: （NEUTRAL_SCORE=100 を重み付きで加算し、障害が「高評価」に化ける）に戻る。
+ENV_SKIP_UNAVAILABLE_WEIGHT = "BOOK_SCORE_SKIP_UNAVAILABLE_WEIGHT"
+_FALSY_VALUES = {"0", "false", "off", "no", ""}
+
+
+def _skip_unavailable_weight() -> bool:
+    """欠測次元を重み付き平均から除外するか（既定 True）。"""
+    raw = os.getenv(ENV_SKIP_UNAVAILABLE_WEIGHT)
+    if raw is None:
+        return True
+    return raw.strip().lower() not in _FALSY_VALUES
+
+
+class BookScoreCalculator:
+    """統一100点尺度の成熟度評価メトリクスを計算する（Phase 4 / UnifiedBookScoreBridge 委譲統合）"""
+
+    def __init__(
+        self,
+        config_path: str = "config/book_score_weights.yaml",
+        repository: Optional[BookScoreRepository] = None,
+        bridge: Optional[Any] = None,
+    ):
+        try:
+            import yaml
+            with open(config_path, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+            self.default_weights = config.get("default", {})
+            self.genre_overrides = config.get("genre_overrides", {})
+            self.phase_overrides = config.get("phase_overrides", {})
+        except Exception:
+            self.default_weights = {"structure": 25, "coherency": 25, "factual_grounding": 20, "visual_textual_synergy": 15, "reader_experience": 15}
+            self.genre_overrides = {}
+            self.phase_overrides = {}
+
+        self._repository = repository
+        if bridge is None:
+            try:
+                from src.services.book_score_mapping import UnifiedBookScoreBridge
+                self.bridge = UnifiedBookScoreBridge()
+            except Exception:
+                self.bridge = None
+        else:
+            self.bridge = bridge
+
+    def _get_weights(self, genre: str = "", phase: str = "") -> Dict[str, float]:
+        """ジャンルとフェーズに基づく重みを取得"""
+        weights = self.default_weights.copy()
+        if genre and genre in self.genre_overrides:
+            weights.update(self.genre_overrides[genre])
+        if phase and phase in self.phase_overrides:
+            weights.update(self.phase_overrides[phase])
+        return weights
+
+    def calculate_from_specialists(
+        self,
+        specialist_scores: Mapping[str, float],
+        genre: str = "general",
+        phase: str = "draft",
+    ) -> BookScore:
+        """8専門家のスコアから UnifiedBookScoreBridge を介して 5次元 BookScore を算出する (Step 31)"""
+        if not self.bridge:
+            from src.services.book_score_mapping import UnifiedBookScoreBridge
+            self.bridge = UnifiedBookScoreBridge()
+
+        u5d = self.bridge.map_to_5d(specialist_scores, genre=genre, phase=phase)
+        return BookScore(
+            overall_score=u5d.overall_score,
+            structure_score=u5d.structure_score,
+            coherency_score=u5d.coherency_score,
+            factual_grounding_score=u5d.factual_grounding_score,
+            visual_textual_synergy_score=u5d.visual_textual_synergy_score,
+            reader_experience_score=u5d.reader_experience_score,
+            specialist_breakdown=u5d.to_dict(),
+        )
+
+    def get_score_contributions(
+        self,
+        specialist_scores: Mapping[str, float],
+        genre: str = "general",
+    ) -> Dict[str, Dict[str, float]]:
+        """5次元スコアに対する各専門家の詳細寄与度（獲得点数）を取得する (Step 32)"""
+        if not self.bridge:
+            from src.services.book_score_mapping import UnifiedBookScoreBridge
+            self.bridge = UnifiedBookScoreBridge()
+        u5d = self.bridge.map_to_5d(specialist_scores, genre=genre)
+        return u5d.contributions
+
+    def get_dimension_to_specialists_mapping(self, genre: str = "general") -> Dict[str, Dict[str, float]]:
+        """5次元から8専門家への依存度マトリクスを取得する (Step 34)"""
+        if not self.bridge:
+            from src.services.book_score_mapping import UnifiedBookScoreBridge
+            self.bridge = UnifiedBookScoreBridge()
+        return self.bridge.get_matrix_for_genre(genre)
+
+    def get_specialist_to_dimensions_mapping(self, genre: str = "general") -> Dict[str, Dict[str, float]]:
+        """8専門家から各5次元への逆引き影響度マトリクスを取得する (Step 34)"""
+        fwd = self.get_dimension_to_specialists_mapping(genre)
+        rev: Dict[str, Dict[str, float]] = {}
+        for dim, specs in fwd.items():
+            for spec, w in specs.items():
+                if spec not in rev:
+                    rev[spec] = {}
+                rev[spec][dim] = w
+        return rev
+
+    def generate_maturity_report(
+        self,
+        score: BookScore,
+        genre: str = "general",
+        phase: str = "draft",
+    ) -> Dict[str, Any]:
+        """統一成熟度評価レポートを生成する (Step 35)"""
+        overall = score.overall_score
+        if overall >= 85.0:
+            rank = "S"
+            assessment = "商業出版水準達成（極めて高い完成度）"
+        elif overall >= 75.0:
+            rank = "A"
+            assessment = "Web連載人気水準達成（商業化候補）"
+        elif overall >= 65.0:
+            rank = "B"
+            assessment = "標準的品質（プロット・表現の調整余地あり）"
+        elif overall >= 50.0:
+            rank = "C"
+            assessment = "要改善（主要な設定・構成に課題あり）"
+        else:
+            rank = "D"
+            assessment = "大幅な再執筆推奨（基礎構造の破綻）"
+
+        lowest_dim = score.lowest_dimension()
+        return {
+            "overall_score": overall,
+            "rank": rank,
+            "assessment": assessment,
+            "is_commercial_ready": overall >= 85.0,
+            "is_web_hit_ready": overall >= 75.0,
+            "dimensions": {
+                "structure_score": score.structure_score,
+                "coherency_score": score.coherency_score,
+                "factual_grounding_score": score.factual_grounding_score,
+                "visual_textual_synergy_score": score.visual_textual_synergy_score,
+                "reader_experience_score": score.reader_experience_score,
+            },
+            "lowest_dimension": lowest_dim,
+            "specialist_breakdown": score.specialist_breakdown,
+            "genre": genre,
+            "phase": phase,
+        }
+
+    async def calculate(
+        self,
+        book_id: int,
+        chapter_number: int,
+        ctx: Optional[AgentContext] = None,
+        genre: str = "",
+        phase: str = "",
+    ) -> BookScore:
+        """BookScore を計算する"""
+        weights = self._get_weights(genre, phase)
+
+        # 各次元スコアを計算（0-100 の範囲で正規化）
+        structure = await self._score_structure(book_id, chapter_number, ctx)
+        coherency = await self._score_coherency(book_id, chapter_number, ctx)
+        unavailable_dims: Set[str] = set()
+        try:
+            factual = await self._score_factual(book_id, chapter_number, ctx)
+        except ScoringUnavailableError as e:
+            # 障害を「低スコア」に偽装しない。neutral(100) として扱い、
+            # 他の次元が評価できるようにはするが、閾値判定で落ちないようにする。
+            logger.warning(
+                "factual dimension unavailable (scored neutral): book=%s ch=%s: %s",
+                book_id, chapter_number, e
+            )
+            factual = NEUTRAL_SCORE
+            unavailable_dims.add("factual_grounding")
+        visual_textual = await self._score_visual_textual(book_id, chapter_number, ctx)
+        reader_exp = await self._score_reader_experience(book_id, chapter_number, ctx)
+
+        # 重み付け合計（各スコアは0-100、重みはパーセント）
+        #
+        # 実バグF: 判定不能な次元を NEUTRAL_SCORE(=100) のまま重み付き合計に足すと、
+        # 「評価できなかった」という障害が「高評価」に化けて総合スコアを持ち上げる。
+        # そこで既定では欠測次元を分子・分母の両方から除外し、
+        # 『評価できた次元の重み付き平均』に再正規化する。
+        # 旧挙動が必要な場合は環境変数 BOOK_SCORE_SKIP_UNAVAILABLE_WEIGHT で戻せる。
+        skip_unavailable = _skip_unavailable_weight()
+        dimensions: List[Tuple[str, float]] = [
+            ("structure", structure),
+            ("coherency", coherency),
+            ("factual_grounding", factual),
+            ("visual_textual_synergy", visual_textual),
+            ("reader_experience", reader_exp),
+        ]
+        weighted_sum = 0.0
+        weight_total = 0.0
+        for dim, value in dimensions:
+            if skip_unavailable and dim in unavailable_dims:
+                continue
+            weight = weights.get(dim, DEFAULT_DIMENSION_WEIGHTS[dim])
+            weighted_sum += value * weight
+            weight_total += weight
+        overall = weighted_sum / weight_total if weight_total > 0 else 0.0
+
+        book_score = BookScore(
+            overall_score=round(overall, 2),
+            structure_score=round(structure, 2),
+            coherency_score=round(coherency, 2),
+            factual_grounding_score=round(factual, 2),
+            visual_textual_synergy_score=round(visual_textual, 2),
+            reader_experience_score=round(reader_exp, 2),
+        )
+
+        # 自動保存
+        if self._repository:
+            await self.save_score(book_id, chapter_number, book_score, evaluator_version="1.0")
+
+        return book_score
+
+    async def save_score(
+        self,
+        book_id: int,
+        chapter_number: int,
+        score: BookScore,
+        evaluator_version: str = "1.0",
+    ) -> None:
+        """スコアをデータベースに保存する"""
+        if not self._repository:
+            logger.warning("Repository not configured, skipping save")
+            return
+        model = BookScoreModel(
+            book_id=book_id,
+            chapter_number=chapter_number,
+            overall_score=score.overall_score,
+            structure_score=score.structure_score,
+            coherency_score=score.coherency_score,
+            factual_grounding_score=score.factual_grounding_score,
+            visual_textual_synergy_score=score.visual_textual_synergy_score,
+            reader_experience_score=score.reader_experience_score,
+            specialist_breakdown=score.specialist_breakdown,
+            evaluated_at=datetime.utcnow(),
+            evaluator_version=evaluator_version,
+        )
+        await self._repository.save(model)
+
+    async def get_latest_score(
+        self, book_id: int, chapter_number: int
+    ) -> Optional[BookScoreModel]:
+        """最新のスコアを取得する"""
+        if not self._repository:
+            return None
+        return await self._repository.get_latest(book_id, chapter_number)
+
+    # ---- データ取得ヘルパー ----
+    async def _fetch_plot(
+        self, book_id: int, chapter_number: int
+    ) -> Optional[Any]:
+        """プロット情報を取得"""
+        if not self._repository or not hasattr(self._repository, 'session'):
+            return None
+        try:
+            from src.backend.database.models import Plot as PlotModel
+            from sqlalchemy import select
+            result = await self._repository.session.execute(
+                select(PlotModel).where(
+                    PlotModel.book_id == book_id,
+                    PlotModel.ep_num == chapter_number
+                ).order_by(PlotModel.id.desc())
+            )
+            return result.scalars().first()
+        except Exception as e:
+            logger.debug(f"Failed to fetch plot: {e}")
+            return None
+
+    async def _fetch_chapter(
+        self, book_id: int, chapter_number: int
+    ) -> Optional[Any]:
+        """章データを取得"""
+        if not self._repository or not hasattr(self._repository, 'session'):
+            return None
+        try:
+            from src.backend.database.models import Chapter as ChapterModel
+            from sqlalchemy import select
+            result = await self._repository.session.execute(
+                select(ChapterModel).where(
+                    ChapterModel.book_id == book_id,
+                    ChapterModel.ep_num == chapter_number
+                )
+            )
+            return result.scalars().first()
+        except Exception as e:
+            logger.debug(f"Failed to fetch chapter: {e}")
+            return None
+
+    async def _fetch_illustration(
+        self, book_id: int, chapter_number: int
+    ) -> Optional[Any]:
+        """挿絵データを取得"""
+        if not self._repository or not hasattr(self._repository, 'session'):
+            return None
+        try:
+            from src.backend.database.models import Illustration as IllustrationModel
+            from sqlalchemy import select
+            result = await self._repository.session.execute(
+                select(IllustrationModel).where(
+                    IllustrationModel.book_id == book_id,
+                    IllustrationModel.episode_number == chapter_number
+                ).order_by(IllustrationModel.id.desc())
+            )
+            return result.scalars().first()
+        except Exception as e:
+            logger.debug(f"Failed to fetch illustration: {e}")
+            return None
+
+    async def _fetch_bible(
+        self, book_id: int
+    ) -> Optional[Any]:
+        """Bible（世界観設定）を取得"""
+        if not self._repository or not hasattr(self._repository, 'session'):
+            return None
+        try:
+            from src.backend.database.models import Bible as BibleModel
+            from sqlalchemy import select
+            result = await self._repository.session.execute(
+                select(BibleModel).where(
+                    BibleModel.book_id == book_id
+                ).order_by(BibleModel.id.desc())
+            )
+            return result.scalars().first()
+        except Exception as e:
+            logger.debug(f"Failed to fetch bible: {e}")
+            return None
+
+    async def _fetch_audit_report(
+        self, book_id: int, chapter_number: int
+    ) -> Optional[Any]:
+        """監査レポートを取得"""
+        if not self._repository or not hasattr(self._repository, 'session'):
+            return None
+        try:
+            from src.backend.database.models import AuditIssue as AuditIssueModel
+            from sqlalchemy import select
+            result = await self._repository.session.execute(
+                select(AuditIssueModel).where(
+                    AuditIssueModel.book_id == book_id,
+                    AuditIssueModel.ep_num == chapter_number
+                ).order_by(AuditIssueModel.id.desc())
+            )
+            return result.scalars().all()
+        except Exception as e:
+            logger.debug(f"Failed to fetch audit report: {e}")
+            return None
+
+    async def _build_text_stats(self, text: str) -> dict:
+        """テキスト統計を計算"""
+        if not text:
+            return {"char_count": 0, "word_count": 0, "sentence_count": 0, "avg_sentence_length": 0.0}
+        import re
+        sentences = re.split(r'[。！？.!?]', text)
+        sentences = [s.strip() for s in sentences if s.strip()]
+        char_count = len(text)
+        word_count = len(text.split())
+        sentence_count = len(sentences)
+        avg_sentence_length = char_count / max(1, sentence_count)
+        return {
+            "char_count": char_count,
+            "word_count": word_count,
+            "sentence_count": sentence_count,
+            "avg_sentence_length": avg_sentence_length,
+        }
+
+    async def _score_structure(
+        self, book_id: int, chapter_number: int, ctx: Optional[AgentContext]
+    ) -> float:
+        """構造スコア (0-25点スケールを0-100に正規化)
+
+        評価項目:
+        1. プロット因果整合性 (0-35点): 論理監査結果から
+        2. 章構成バランス (0-35点): アーク境界と実話数の整合
+        3. テンポ・ペーシング (0-30点): ストレス曲線の適切性
+        """
+        if not self._repository or not hasattr(self._repository, 'session'):
+            return 50.0  # デフォルト値
+
+        try:
+            # 1. プロット因果整合性 (監査レポートから)
+            audit_report = await self._fetch_audit_report(book_id, chapter_number)
+            causal_score = 70.0  # デフォルト
+            if audit_report:
+                # 論理整合性・因果律監査の結果を確認
+                logical_passed = any(
+                    getattr(a, 'category', '') == 'logical_consistency' and
+                    getattr(a, 'severity', '') != 'high'
+                    for a in audit_report
+                )
+                causal_passed = any(
+                    getattr(a, 'category', '') == 'causal_integrity' and
+                    getattr(a, 'severity', '') != 'high'
+                    for a in audit_report
+                )
+                if logical_passed and causal_passed:
+                    causal_score = 95.0
+                elif logical_passed or causal_passed:
+                    causal_score = 75.0
+                else:
+                    causal_score = 40.0
+
+            # 2. 章構成バランス (アーク境界チェック)
+            plot = await self._fetch_plot(book_id, chapter_number)
+            arc_score = 70.0
+            if plot:
+                # アーク終了話数と実話数の比較
+                arc_end = getattr(plot, 'end_ep', None)
+                if arc_end:
+                    # アーク終了話数付近なら高スコア
+                    if abs(chapter_number - arc_end) <= 1:
+                        arc_score = 95.0
+                    elif abs(chapter_number - arc_end) <= 3:
+                        arc_score = 80.0
+                    else:
+                        arc_score = 60.0
+
+            # 3. テンポ・ペーシング (ストレス曲線)
+            chapter = await self._fetch_chapter(book_id, chapter_number)
+            pacing_score = 70.0
+            if chapter and hasattr(chapter, 'tension'):
+                tension = getattr(chapter, 'tension', 50)
+                # 適切なテンション範囲 (40-80) で高スコア
+                if 40 <= tension <= 80:
+                    pacing_score = 90.0
+                elif 20 <= tension <= 90:
+                    pacing_score = 75.0
+                else:
+                    pacing_score = 50.0
+
+            # 重み付け合計 (0-100スケール)
+            total = (
+                causal_score * 0.35 +
+                arc_score * 0.35 +
+                pacing_score * 0.30
+            )
+            return round(min(100.0, max(0.0, total)), 2)
+
+        except Exception as e:
+            logger.debug(f"Structure scoring failed: {e}")
+            return 50.0
+
+    async def _score_coherency(
+        self, book_id: int, chapter_number: int, ctx: Optional[AgentContext]
+    ) -> float:
+        """一貫性スコア (0-25点スケールを0-100に正規化)
+
+        評価項目:
+        1. キャラクター口調一貫性 (0-30点): 監査レポートの口調チェック
+        2. 世界観ルール遵守 (0-30点): 能力整合性監査結果
+        3. タイムライン一貫性 (0-20点): 因果律監査結果
+        4. 固有名詞表記統一 (0-20点): テキスト統計・表記揺れ検出
+        """
+        if not self._repository or not hasattr(self._repository, 'session'):
+            return 50.0
+
+        try:
+            # 1. キャラクター口調一貫性 (監査レポートから)
+            audit_report = await self._fetch_audit_report(book_id, chapter_number)
+            speech_score = 70.0
+            if audit_report:
+                # 口調関連の監査問題をチェック
+                speech_issues = [
+                    a for a in audit_report
+                    if 'speech' in getattr(a, 'category', '').lower() or
+                       'dialogue' in getattr(a, 'category', '').lower() or
+                       '口調' in getattr(a, 'description', '')
+                ]
+                if not speech_issues:
+                    speech_score = 95.0
+                elif len(speech_issues) == 1:
+                    speech_score = 75.0
+                else:
+                    speech_score = 50.0
+
+            # 2. 世界観ルール遵守 (能力整合性監査)
+            world_rule_score = 70.0
+            if audit_report:
+                ability_issues = [
+                    a for a in audit_report
+                    if 'ability' in getattr(a, 'category', '').lower() or
+                       '能力' in getattr(a, 'description', '')
+                ]
+                if not ability_issues:
+                    world_rule_score = 95.0
+                elif len(ability_issues) == 1:
+                    world_rule_score = 75.0
+                else:
+                    world_rule_score = 50.0
+
+            # 3. タイムライン一貫性 (因果律監査)
+            timeline_score = 70.0
+            if audit_report:
+                causal_issues = [
+                    a for a in audit_report
+                    if 'causal' in getattr(a, 'category', '').lower() or
+                       '因果' in getattr(a, 'description', '')
+                ]
+                if not causal_issues:
+                    timeline_score = 95.0
+                elif len(causal_issues) == 1:
+                    timeline_score = 75.0
+                else:
+                    timeline_score = 50.0
+
+            # 4. 固有名詞表記統一 (テキスト統計から簡易チェック)
+            chapter = await self._fetch_chapter(book_id, chapter_number)
+            naming_score = 70.0
+            if chapter and hasattr(chapter, 'content') and chapter.content:
+                text = chapter.content
+                # 簡易的な表記揺れ検出: 同一単語の異なる表記パターン
+                import re
+                # カタカナ・ひらがな・漢字の混在チェック
+                words = re.findall(r'[一-龯ぁ-んァ-ヴー]+', text)
+                if words:
+                    from collections import Counter
+                    word_counts = Counter(words)
+                    # 同一読みで異なる表記があるかチェック（簡易版）
+                    unique_forms = len(word_counts)
+                    total_occurrences = sum(word_counts.values())
+                    if total_occurrences > 0:
+                        consistency_ratio = unique_forms / total_occurrences
+                        if consistency_ratio > 0.9:
+                            naming_score = 95.0
+                        elif consistency_ratio > 0.7:
+                            naming_score = 80.0
+                        elif consistency_ratio > 0.5:
+                            naming_score = 65.0
+                        else:
+                            naming_score = 50.0
+
+            # 重み付け合計 (0-100スケール)
+            total = (
+                speech_score * 0.30 +
+                world_rule_score * 0.30 +
+                timeline_score * 0.20 +
+                naming_score * 0.20
+            )
+            return round(min(100.0, max(0.0, total)), 2)
+
+        except Exception as e:
+            logger.debug(f"Coherency scoring failed: {e}")
+            return 50.0
+
+    async def _score_factual(
+        self, book_id: int, chapter_number: int, ctx: Optional[AgentContext]
+    ) -> float:
+        """事実正確性スコア (0-20点スケールを0-100に正規化)
+
+        評価項目:
+        1. GraphRAG参照情報との整合性 (0-40点): RAG取得エンティティと本文の一致
+        2. 歴史・文化的正確性 (0-35点): 時代考証チェック
+        3. 用語の適切性 (0-25点): 用語集・Wiki照合
+
+        Raises:
+            ScoringUnavailableError: スコア算出に必要なデータ (章/バイブル) に
+                問題がある場合。呼び出し側は本エラーを「低スコア」として
+                扱わず、点数算出をスキップすべき。
+        """
+        if not self._repository or not hasattr(self._repository, 'session'):
+            raise ScoringUnavailableError(
+                "repository is not configured with a session; "
+                "factual scoring unavailable"
+            )
+
+        try:
+            # 1. GraphRAG参照情報との整合性
+            rag_score = 70.0
+            # RAG から関連エンティティを取得して本文と比較（簡易版）
+            chapter = await self._fetch_chapter(book_id, chapter_number)
+            if chapter and hasattr(chapter, 'content') and chapter.content:
+                text = chapter.content
+                # Bible から世界設定を取得してキーワード抽出
+                bible = await self._fetch_bible(book_id)
+                if bible and hasattr(bible, 'settings') and bible.settings:
+                    import json
+                    try:
+                        settings = json.loads(bible.settings) if isinstance(bible.settings, str) else bible.settings
+                        # 設定からキーワード抽出
+                        keywords = set()
+                        if isinstance(settings, dict):
+                            for v in settings.values():
+                                if isinstance(v, str):
+                                    import re
+                                    keywords.update(re.findall(r'[一-龯ァ-ヴー]{2,}', v))
+
+                        if keywords:
+                            # 本文にキーワードが含まれているかチェック
+                            found = sum(1 for k in keywords if k in text)
+                            coverage = found / max(1, len(keywords))
+                            if coverage > 0.7:
+                                rag_score = 95.0
+                            elif coverage > 0.4:
+                                rag_score = 80.0
+                            elif coverage > 0.2:
+                                rag_score = 65.0
+                            else:
+                                rag_score = 50.0
+                    except (TypeError, ValueError) as e:
+                        # バイブルの settings が壊れている = データ不備。
+                        # 黙って既定点のまま進むと「低スコア」に誤解される。
+                        logger.warning(
+                            "bible.settings is not valid JSON; factual scoring cannot "
+                            "evaluate RAG consistency: %s", e
+                        )
+                        raise ScoringUnavailableError(
+                            f"bible.settings is not valid JSON: {e}"
+                        ) from e
+
+            # 2. 歴史・文化的正確性 (HistoricalAccuracyChecker 連携簡易版)
+            history_score = 70.0
+            if bible and hasattr(bible, 'settings') and bible.settings:
+                try:
+                    import json
+                    settings = json.loads(bible.settings) if isinstance(bible.settings, str) else bible.settings
+                    if isinstance(settings, dict):
+                        period = settings.get('period', settings.get('時代', 'medieval'))
+                        # 時代考証: アナクロニズム検出
+                        anachronisms = self._get_anachronisms(period)
+                        found_anachronisms = [a for a in anachronisms if a in text]
+                        if not found_anachronisms:
+                            history_score = 95.0
+                        elif len(found_anachronisms) == 1:
+                            history_score = 75.0
+                        else:
+                            history_score = 50.0
+                except (TypeError, ValueError) as e:
+                    logger.warning(
+                        "bible.settings is not valid JSON; historical accuracy check "
+                        "skipped: %s", e
+                    )
+                    raise ScoringUnavailableError(
+                        f"bible.settings is not valid JSON: {e}"
+                    ) from e
+
+            # 3. 用語の適切性
+            term_score = 70.0
+            if chapter and hasattr(chapter, 'content') and chapter.content:
+                text = chapter.content
+                # 用語集から未定義語をチェック（簡易版）
+                bible = await self._fetch_bible(book_id)
+                if bible and hasattr(bible, 'settings') and bible.settings:
+                    try:
+                        import json
+                        settings = json.loads(bible.settings) if isinstance(bible.settings, str) else bible.settings
+                        if isinstance(settings, dict):
+                            glossary = settings.get('glossary', settings.get('用語集', {}))
+                            if glossary and isinstance(glossary, dict):
+                                # 用語集にある用語が本文で正しく使われているか
+                                used_terms = sum(1 for term in glossary if term in text)
+                                total_terms = len(glossary)
+                                if total_terms > 0:
+                                    usage_ratio = used_terms / total_terms
+                                    if usage_ratio > 0.5:
+                                        term_score = 95.0
+                                    elif usage_ratio > 0.2:
+                                        term_score = 80.0
+                                    else:
+                                        term_score = 60.0
+                    except (TypeError, ValueError) as e:
+                        logger.warning(
+                            "bible.settings is not valid JSON; "
+                            "glossary check skipped: %s",
+                            e,
+                        )
+                        raise ScoringUnavailableError(
+                            f"bible.settings is not valid JSON: {e}"
+                        ) from e
+
+            # 重み付け合計 (0-100スケール)
+            total = (
+                rag_score * 0.40 +
+                history_score * 0.35 +
+                term_score * 0.25
+            )
+            return round(min(100.0, max(0.0, total)), 2)
+
+        except ScoringUnavailableError:
+            raise
+        except Exception as e:
+            # 障害と「低いスコア」を区別できない 50.0 は返さない。
+            logger.warning(
+                "Factual scoring failed for book=%s ch=%s: %s",
+                book_id, chapter_number, e,
+            )
+            raise ScoringUnavailableError(f"factual scoring failed: {e}") from e
+
+    def _get_anachronisms(self, period: str) -> list[str]:
+        """時代に合わない用語リストを返す（簡易版）"""
+        anachronism_db = {
+            "ancient": ["電話", "自動車", "飛行機", "コンピュータ", "プラスチック", "抗生物質"],
+            "medieval": ["電話", "自動車", "飛行機", "コンピュータ", "プラスチック", "抗生物質", "拳銃", "ライフル"],
+            "edo": ["電話", "自動車", "飛行機", "コンピュータ", "プラスチック", "抗生物質", "ライフル", "機関銃"],
+            "modern": ["蒸気機関", "馬車", "提灯", "着物（日常着として）"],
+            "futuristic": [],
+        }
+        return anachronism_db.get(period.lower(), [])
+
+    async def _score_visual_textual(
+        self, book_id: int, chapter_number: int, ctx: Optional[AgentContext]
+    ) -> float:
+        """ビジュアルテキスト相乗効果スコア (0-15点スケールを0-100に正規化)
+
+        評価項目:
+        1. 情報量マッチ度 (0-40点): 挿絵プロンプトと本文のエンティティ一致
+        2. 焦点一致 (0-35点): 本文強調要素とプロンプト強調要素の一致
+        3. 感情トーン整合性 (0-25点): 本文感情値とプロンプト色調指定の一致
+        """
+        if not self._repository or not hasattr(self._repository, 'session'):
+            return 50.0
+
+        try:
+            # 挿絵データ取得
+            illustration = await self._fetch_illustration(book_id, chapter_number)
+            chapter = await self._fetch_chapter(book_id, chapter_number)
+
+            if not illustration or not chapter or not hasattr(chapter, 'content') or not chapter.content:
+                return 50.0  # データ不足時はデフォルト
+
+            text = chapter.content
+            prompt = getattr(illustration, 'prompt', '') or ''
+
+            if not prompt:
+                return 50.0
+
+            # 1. 情報量マッチ度: エンティティ抽出・比較
+            import re
+            text_entities = set(re.findall(r'[一-龯ァ-ヴー]{2,}', text))
+            prompt_entities = set(re.findall(r'[一-龯ァ-ヴー]{2,}', prompt))
+
+            entity_score = 50.0
+            if text_entities and prompt_entities:
+                intersection = text_entities & prompt_entities
+                union = text_entities | prompt_entities
+                jaccard = len(intersection) / max(1, len(union))
+                if jaccard > 0.5:
+                    entity_score = 95.0
+                elif jaccard > 0.3:
+                    entity_score = 80.0
+                elif jaccard > 0.1:
+                    entity_score = 65.0
+                else:
+                    entity_score = 40.0
+
+            # 2. 焦点一致: 本文の強調表現 vs プロンプトの強調キーワード
+            focus_score = 50.0
+            # 本文で強調されている要素（感嘆符、大文字、繰り返し等）
+            emphasis_patterns = [
+                r'！{2,}', r'\!\!{2,}', r'…', r'――',
+                r'「[^」]{1,10}」', r'『[^』]{1,10}』'
+            ]
+            text_focus = set()
+            for pattern in emphasis_patterns:
+                text_focus.update(re.findall(pattern, text))
+
+            # プロンプトの強調キーワード
+            prompt_focus_keywords = [
+                'focus', 'emphasis', 'highlight', 'dramatic', 'intense',
+                '主役', '中心', 'クローズアップ', 'フォーカス', '強調'
+            ]
+            prompt_focus = set(kw for kw in prompt_focus_keywords if kw.lower() in prompt.lower())
+
+            if text_focus and prompt_focus:
+                # 簡易的な一致判定
+                focus_score = 85.0
+            elif text_focus or prompt_focus:
+                focus_score = 65.0
+            else:
+                focus_score = 50.0
+
+            # 3. 感情トーン整合性
+            tone_score = 50.0
+            # 本文の感情トーン推定（簡易版）
+            positive_words = ['喜', '笑', '幸', '楽', '愛', '希望', '輝', '明']
+            negative_words = ['悲', '泣', '苦', '痛', '憎', '絶望', '暗', '闇', '恐']
+
+            text_pos = sum(text.count(w) for w in positive_words)
+            text_neg = sum(text.count(w) for w in negative_words)
+
+            prompt_pos = sum(prompt.lower().count(w.lower()) for w in ['bright', 'happy', 'joy', 'hope', 'warm', 'light'])
+            prompt_neg = sum(prompt.lower().count(w.lower()) for w in ['dark', 'sad', 'gloom', 'fear', 'cold', 'shadow'])
+
+            text_tone = 'positive' if text_pos > text_neg else ('negative' if text_neg > text_pos else 'neutral')
+            prompt_tone = 'positive' if prompt_pos > prompt_neg else ('negative' if prompt_neg > prompt_pos else 'neutral')
+
+            if text_tone == prompt_tone:
+                tone_score = 95.0
+            elif text_tone == 'neutral' or prompt_tone == 'neutral':
+                tone_score = 70.0
+            else:
+                tone_score = 40.0
+
+            # 重み付け合計 (0-100スケール)
+            total = (
+                entity_score * 0.40 +
+                focus_score * 0.35 +
+                tone_score * 0.25
+            )
+            return round(min(100.0, max(0.0, total)), 2)
+
+        except Exception as e:
+            logger.debug(f"Visual-textual scoring failed: {e}")
+            return 50.0
+
+    async def _score_reader_experience(
+        self, book_id: int, chapter_number: int, ctx: Optional[AgentContext]
+    ) -> float:
+        """読者体験スコア (0-15点スケールを0-100に正規化)
+
+        評価項目:
+        1. 冒頭フック強度 (0-40点): 最初の200文字の「謎/違和感/危機」キーワード密度
+        2. 末尾の引き・クリフハンガー (0-35点): 最後の200文字の未解決・示唆キーワード
+        3. 感情曲線適切性 (0-25点): WavePatternAnalyzer スコア活用
+        """
+        if not self._repository or not hasattr(self._repository, 'session'):
+            return 50.0
+
+        try:
+            chapter = await self._fetch_chapter(book_id, chapter_number)
+            if not chapter or not hasattr(chapter, 'content') or not chapter.content:
+                return 50.0
+
+            text = chapter.content
+            text_len = len(text)
+
+            # 1. 冒頭フック強度 (最初の200文字)
+            hook_score = 50.0
+            if text_len >= 50:
+                prefix = text[:min(200, text_len)]
+                hook_keywords = [
+                    'なぜ', 'どうして', '謎', '不思議', '奇妙', '違和感', '危機', 'ピンチ',
+                    '突然', 'まさか', '誰', '何', 'どこ', 'いつ', '秘密', '隠',
+                    '？', '?', '！', '!', '…', '……'
+                ]
+                hook_count = sum(prefix.count(kw) for kw in hook_keywords)
+                hook_density = hook_count / max(1, len(prefix) / 100)
+                if hook_density > 5:
+                    hook_score = 95.0
+                elif hook_density > 3:
+                    hook_score = 80.0
+                elif hook_density > 1:
+                    hook_score = 65.0
+                else:
+                    hook_score = 40.0
+
+            # 2. 末尾の引き・クリフハンガー (最後の200文字)
+            cliffhanger_score = 50.0
+            if text_len >= 50:
+                suffix = text[-min(200, text_len):]
+                cliff_keywords = [
+                    '続', '次', '未', '謎', '秘密', '真実', '衝撃', '驚',
+                    'どうなる', 'どうすれば', '運命', '分岐', '選択', '決断',
+                    '？', '?', '！', '!', '…', '……', '――', '——'
+                ]
+                cliff_count = sum(suffix.count(kw) for kw in cliff_keywords)
+                cliff_density = cliff_count / max(1, len(suffix) / 100)
+                if cliff_density > 5:
+                    cliffhanger_score = 95.0
+                elif cliff_density > 3:
+                    cliffhanger_score = 80.0
+                elif cliff_density > 1:
+                    cliffhanger_score = 65.0
+                else:
+                    cliffhanger_score = 40.0
+
+            # 3. 感情曲線適切性 (WavePatternAnalyzer 簡易版)
+            emotion_score = 50.0
+            if hasattr(chapter, 'tension') and chapter.tension is not None:
+                tension = chapter.tension
+                # 適切なテンション変化を評価
+                # ストレス曲線の波形が健全か
+                # 簡易版: テンションが極端でない、かつ変化がある
+                if 30 <= tension <= 85:
+                    emotion_score = 85.0
+                elif 15 <= tension <= 95:
+                    emotion_score = 70.0
+                else:
+                    emotion_score = 50.0
+            else:
+                # テンションデータがない場合、テキストから簡易推定
+                import re
+                sentences = re.split(r'[。！？.!?]', text)
+                sentences = [s.strip() for s in sentences if s.strip()]
+                if len(sentences) > 3:
+                    # 文長の変化で感情の起伏を推定
+                    lengths = [len(s) for s in sentences]
+                    avg_len = sum(lengths) / len(lengths)
+                    var_len = sum((length - avg_len) ** 2 for length in lengths) / len(lengths)
+                    cv = (var_len ** 0.5) / max(1, avg_len)  # 変動係数
+                    if 0.3 <= cv <= 0.8:
+                        emotion_score = 80.0
+                    elif cv > 0.15:
+                        emotion_score = 65.0
+                    else:
+                        emotion_score = 50.0
+
+            # 重み付け合計 (0-100スケール)
+            total = (
+                hook_score * 0.40 +
+                cliffhanger_score * 0.35 +
+                emotion_score * 0.25
+            )
+            return round(min(100.0, max(0.0, total)), 2)
+
+        except Exception as e:
+            logger.debug(f"Reader experience scoring failed: {e}")
+            return 50.0
+
+    async def analyze_trend(self, book_id: int, window: int = 10) -> dict[str, Any]:
+        """スコアの時系列トレンドを分析する（線形回帰・移動平均・変化点検出）"""
+        if not self._repository:
+            return {"error": "Repository not configured"}
+
+        scores = await self._repository.get_all_for_book(book_id)
+        if len(scores) < 3:
+            return {
+                "book_id": book_id,
+                "error": "Insufficient data for trend analysis (need at least 3 chapters)",
+                "chapters_evaluated": len(scores),
+            }
+
+        # 直近ウィンドウ分のスコアを取得
+        recent = scores[-window:] if len(scores) >= window else scores
+        n = len(recent)
+        x_vals = list(range(n))
+        y_vals = [s.overall_score for s in recent]
+
+        # 線形回帰（最小二乗法）
+        x_mean = sum(x_vals) / n
+        y_mean = sum(y_vals) / n
+
+        numerator = sum((x - x_mean) * (y - y_mean) for x, y in zip(x_vals, y_vals))
+        denominator = sum((x - x_mean) ** 2 for x in x_vals)
+
+        slope = numerator / denominator if denominator != 0 else 0
+        intercept = y_mean - slope * x_mean
+
+        # 決定係数 R^2
+        y_pred = [intercept + slope * x for x in x_vals]
+        ss_res = sum((y - yp) ** 2 for y, yp in zip(y_vals, y_pred))
+        ss_tot = sum((y - y_mean) ** 2 for y in y_vals)
+        r_squared = 1 - (ss_res / ss_tot) if ss_tot > 0 else 0
+
+        # 移動平均（3章）
+        ma_3 = []
+        for i in range(2, n):
+            ma_3.append(sum(y_vals[i-2:i+1]) / 3)
+
+        # 変化点検出（簡易版: スコア差分の閾値）
+        changepoints = []
+        for i in range(1, n):
+            diff = y_vals[i] - y_vals[i-1]
+            if abs(diff) > 10:  # 10点以上の変化
+                changepoints.append({
+                    "chapter_index": i,
+                    "prev_score": y_vals[i-1],
+                    "curr_score": y_vals[i],
+                    "change": diff,
+                })
+
+        # 予測（次章の予測値）
+        next_chapter_pred = intercept + slope * n
+
+        # トレンド判定
+        trend_direction = "improving" if slope > 1 else ("declining" if slope < -1 else "stable")
+
+        return {
+            "book_id": book_id,
+            "chapters_evaluated": n,
+            "slope": round(slope, 4),
+            "intercept": round(intercept, 2),
+            "r_squared": round(r_squared, 4),
+            "trend_direction": trend_direction,
+            "moving_avg_3": [round(v, 2) for v in ma_3],
+            "changepoints": changepoints,
+            "next_chapter_prediction": round(next_chapter_pred, 2),
+            "latest_score": y_vals[-1],
+            "avg_score": round(sum(y_vals) / n, 2),
+        }
+
+    async def generate_pdca_report(self, book_id: int) -> dict[str, Any]:
+        """PDCA レポートを生成する（Plan-Do-Check-Act）"""
+        trend = await self.analyze_trend(book_id)
+
+        if "error" in trend:
+            return {"error": trend["error"], "book_id": book_id}
+
+        # 目標スコア（設定可能にするべきだが、ここでは固定）
+        target_score = 80.0
+        current_avg = trend["avg_score"]
+        gap = target_score - current_avg
+
+        # Plan: 目標設定
+        plan = {
+            "target_score": target_score,
+            "current_average": trend["avg_score"],
+            "gap": round(gap, 2),
+            "priority_dimensions": [],
+        }
+
+        # 直近スコアから低次元を特定
+        if self._repository:
+            scores = await self._repository.get_all_for_book(trend["book_id"])
+            if scores:
+                latest = scores[-1]
+                dims = {
+                    "structure": latest.structure_score,
+                    "coherency": latest.coherency_score,
+                    "factual_grounding": latest.factual_grounding_score,
+                    "visual_textual_synergy": latest.visual_textual_synergy_score,
+                    "reader_experience": latest.reader_experience_score,
+                }
+                # 70点未満を優先順位として抽出
+                plan["priority_dimensions"] = [
+                    {"dimension": k, "score": v, "gap": 70 - v}
+                    for k, v in dims.items() if v < 70
+                ]
+                plan["priority_dimensions"].sort(key=lambda x: x["gap"], reverse=True)
+
+        # Do: 実行状況（直近3章の推移）
+        do = {
+            "recent_scores": trend.get("moving_avg_3", []),
+            "trend_direction": trend["trend_direction"],
+            "slope": trend["slope"],
+        }
+
+        # Check: 評価・検証
+        check = {
+            "target_achieved": trend["avg_score"] >= 80,
+            "trend_improving": trend["slope"] > 0,
+            "r_squared": trend["r_squared"],
+            "changepoints_detected": len(trend.get("changepoints", [])),
+        }
+
+        # Act: 次のアクション
+        act = {
+            "recommended_actions": [],
+            "next_chapter_prediction": trend["next_chapter_prediction"],
+        }
+
+        if trend["trend_direction"] == "declining":
+            act["recommended_actions"].append({
+                "action": "investigate_decline",
+                "reason": "スコアが低下傾向にあります",
+                "priority": "high",
+            })
+        if trend.get("changepoints"):
+            act["recommended_actions"].append({
+                "action": "review_changepoints",
+                "reason": f"{len(trend['changepoints'])}個の変化点が検出されました",
+                "priority": "medium",
+            })
+        for pd in plan.get("priority_dimensions", []):
+            act["recommended_actions"].append({
+                "action": f"improve_{pd['dimension']}",
+                "reason": f"{pd['dimension']}スコアが{pd['score']:.1f}点（目標70点未満）",
+                "priority": "high" if pd["gap"] > 20 else "medium",
+            })
+
+        return {
+            "book_id": trend["book_id"],
+            "generated_at": "now",  # 実装時は datetime.utcnow().isoformat()
+            "plan": plan,
+            "do": do,
+            "check": check,
+            "act": act,
+        }
+
+
+# Phase 1/3 互換エイリアス
+BookScoreService = BookScoreCalculator

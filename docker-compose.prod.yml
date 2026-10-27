@@ -1,0 +1,220 @@
+# AutoNovel 本番構成 docker-compose。
+# 開発向け docker-compose.yml ではなく、別ファイルで本番用サービスを定義。
+# 使い方:
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# 構成:
+#   - backend   : FastAPI (uvicorn, port 8200 内部公開)
+#   - worker    : huey consumer (非同期生成タスク処理)
+#   - frontend  : nginx 配信 + /easy_mode/ リバースプロキシ (port 8080 公開)
+#   - postgres  : 作品/タスク永続化 (sqlite からの昇格)
+#   - redis     : Huey キュー + Result backend
+#
+# 注意: 本番運用にあたり、環境変数は .env またはデプロイ先の secrets から注入してください。
+# uvicorn のワーカー数は環境変数 UVICORN_WORKERS (既定 2) で調整。
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: autonovel-backend:6.0.0
+    environment:
+      # APP_ENV を明示しない場合 Settings.APP_ENV は development にフォールバックし、
+      # validate_production_secrets() が無効化される。その結果 get_jwt_secret_key() が
+      # プロセスごとの secrets.token_hex(32) にフォールバックし、UVICORN_WORKERS > 1 の
+      # とき各ワーカーが別々の鍵で署名するため、発行済みトークンがワーカー間で拒否され、
+      # 再起動のたびに全セッションが無効化される。fail-fast 構文で「未設定なら起動しない」
+      # ようにし、本番での黙示的な既定値を排除する。
+      - APP_ENV=production
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required (openssl rand -hex 32)}
+      - ALLOWED_API_KEYS=${ALLOWED_API_KEYS:?ALLOWED_API_KEYS is required (comma-separated)}
+      - CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS is required (comma-separated origins)}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
+      - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-14}
+      - DATABASE_URL=postgresql+psycopg2://autonovel:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/autonovel
+      # src/backend/alembic/env.py は ALEMBIC_DATABASE_URL を参照する。未設定だと
+      # alembic.ini の sqlite:///./autonovel.db にフォールバックし、昇格した本番 DB に
+      # マイグレーションが一切適用されない。DATABASE_URL と同じ値を渡す。
+      - ALEMBIC_DATABASE_URL=postgresql+psycopg2://autonovel:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/autonovel
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
+      - HUEY_BACKEND=redis
+      - UVICORN_WORKERS=${UVICORN_WORKERS:-1}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:8080}
+      - HOST=0.0.0.0
+      - PORT=8200
+      - PYTHONUNBUFFERED=1
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET は src/backend/config.py の Settings に
+      # 存在するフィールド（billing 系）。未設定なら課金を無効化して起動を続ける。
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Dockerfile:43 がイメージ内に mkdir する /app/storage と /app/logs は
+    # `--build` のたびにイメージへ戻るため、compose 側で永続化する必要がある。
+    # 未マウントだったため、生成済みの章・アップロード画像・エクスポートが
+    # コンテナ再作成ごとに消失していた（開発用 docker-compose.yml は
+    # ./storage を bind mount しており、ここだけ抜けている状態だった）。
+    volumes:
+      - autonovel_storage:/app/storage
+      - autonovel_logs:/app/logs
+    # メモリ上限。開発用 docker-compose.yml の backend (1024M) と同じ
+    # deploy.resources.limits 記法に揃えたもの（Compose V2 は swarm モードでなくても
+    # limits を適用する）。worker は 1 台あたりの割り当てが小さいので 1G。
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8200/health/liveness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    expose:
+      - "8200"
+    networks:
+      - autonovel
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: autonovel-backend:6.0.0
+    command: ["python", "-m", "huey.bin.huey_consumer", "src.backend.tasks.huey.huey", "-w", "2", "-k", "thread"]
+    environment:
+      # backend が唯一のマイグレーション実行者のため、worker はスキップする。
+      - SKIP_ALEMBIC=1
+      - APP_ENV=production
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY is required (openssl rand -hex 32)}
+      - ALLOWED_API_KEYS=${ALLOWED_API_KEYS:?ALLOWED_API_KEYS is required (comma-separated)}
+      - CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS is required (comma-separated origins)}
+      - DATABASE_URL=postgresql+psycopg2://autonovel:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/autonovel
+      - ALEMBIC_DATABASE_URL=postgresql+psycopg2://autonovel:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/autonovel
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
+      - HUEY_BACKEND=redis
+      - USE_REDIS_EVENTS=true
+      - PYTHONUNBUFFERED=1
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      # backend だけが `alembic upgrade head` を実行する（worker は SKIP_ALEMBIC=1）。
+      # ただし migrations には `alembic_version` への INSERT が含まれるため、
+      # backend がマイグレーションを終える前にワーカーが DB に触ると
+      # duplicate key 制約違反になり得る。healthcheck が通るまで待つことで
+      # 依存の順序を確定させる。
+      backend:
+        condition: service_healthy
+    # worker は backend と同一イメージだが、Web ソケットやリクエスト処理は持たない。
+    # backend より小さい上限でよい。
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - autonovel
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: production
+    image: autonovel-frontend:6.0.0
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    networks:
+      - autonovel
+
+  postgres:
+    build:
+      context: ./docker/postgres
+      dockerfile: Dockerfile
+    image: autonovel-db:6.0.0
+    container_name: autonovel_db
+    environment:
+      - POSTGRES_USER=autonovel
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
+      - POSTGRES_DB=autonovel
+    volumes:
+      - autonovel_pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "autonovel", "-d", "autonovel"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    networks:
+      - autonovel
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is required}"]
+    volumes:
+      - autonovel_redis:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "3"
+    networks:
+      - autonovel
+
+volumes:
+  autonovel_pgdata:
+  autonovel_redis:
+  # backend/worker 共有の生成物・ログ用ボリューム（docker-compose.prod.yml の
+  # backend / worker がマウントする。`down -v` で消える点に注意）
+  autonovel_storage:
+  autonovel_logs:
+
+networks:
+  autonovel:
+    driver: bridge

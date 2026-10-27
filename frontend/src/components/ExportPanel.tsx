@@ -1,0 +1,343 @@
+import React, { useState } from "react";
+import { useNovelContext } from "../context/NovelContext";
+import { useNovelExport } from "../hooks/useNovelExport";
+import { useExportConfirm } from "../hooks/useExportConfirm";
+import { Editor } from "./editor/Editor";
+import { AiSuggestions } from "./editor/AiSuggestions";
+import { promoteToStudio } from "../api/easyMode";
+import { BookItem } from "../types";
+import { BookShowcaseModal } from "./showcase/BookShowcaseModal";
+import { PublishExportModal } from "./common/PublishExportModal";
+import { ExportConfirmModal } from "./common/ExportConfirmModal";
+import { ExportHandoffSummary, ExportTarget } from "../types/export";
+import { PlatformCopyButton } from "./common/PlatformCopyButton";
+
+interface ExportPanelProps {
+  output?: string;
+  suggestions?: string[];
+  onExportMessage?: (message: string) => void;
+  onPromoteToStudio?: () => void;
+}
+
+export default function ExportPanel({
+  output,
+  suggestions,
+  onExportMessage,
+  onPromoteToStudio,
+}: ExportPanelProps) {
+  const {
+    character,
+    selectedBookId,
+    setSelectedBookId,
+    selectedBook,
+    currentChapterText,
+    setCurrentChapterText,
+    generationState,
+    applySuggestion,
+    syncGenerationToEditor,
+  } = useNovelContext();
+
+  const [validationError, setValidationError] = useState("");
+  const [promoting, setPromoting] = useState(false);
+  const [showBookShowcase, setShowBookShowcase] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
+  const [exportConfirmTarget, setExportConfirmTarget] = useState<ExportTarget | null>(null);
+  const [confirmedPublishTarget, setConfirmedPublishTarget] = useState<ExportTarget | null>(null);
+
+  const { exporting, downloadExportPackage } = useNovelExport(
+    (msg) => onExportMessage?.(msg),
+    (errMsg) => onExportMessage?.(errMsg)
+  );
+
+  const {
+    isOpen: isExportConfirmOpen,
+    summary: exportConfirmSummary,
+    open: openExportConfirm,
+    confirm: confirmExport,
+    cancel: cancelExport,
+  } = useExportConfirm();
+
+  // 単一本文ソース化: 編集対象は currentChapterText に統一
+  const displayOutput = output !== undefined ? output : currentChapterText;
+  const displaySuggestions = suggestions !== undefined ? suggestions : generationState.suggestions;
+
+  const validateAndExport = async () => {
+    if (!selectedBook) {
+      setValidationError("作品が選択されていません");
+      return;
+    }
+    setValidationError("");
+
+    // エクスポート対象のサマリーを作成
+    const exportTarget: ExportTarget = {
+      bookId: selectedBook.id.toString(),
+      chapterId: "1", // デフォルト第1話（実際の実装では現在編集中のチャプターIDを使用）
+      branchId: "main", // デフォルトブランチ（実際の実装では現在のブランチIDを使用）
+      version: "saved", // デフォルトは保存版
+      destination: "zip",
+      label: `${selectedBook.title} (mainブランチ・保存版)`,
+      wordCount: displayOutput.length,
+      lastSavedAt: new Date().toISOString(),
+    };
+
+    const summary: ExportHandoffSummary = {
+      targets: [exportTarget],
+      primaryTarget: exportTarget,
+      warnings: [], // 実際の実装では保存版と現在編集版の差分などを計算
+    };
+
+    // 確認モーダルを開く
+    openExportConfirm(summary).then((confirmedTarget) => {
+      if (confirmedTarget) {
+        // 確定されたら実際のエクスポートを実行
+        downloadExportPackage(selectedBook.id, {
+          title: selectedBook.title,
+          genre: character.genre,
+          current_text: displayOutput,
+          character: character,
+        });
+      }
+    });
+  };
+
+  const handlePromote = async () => {
+    if (!selectedBookId) {
+      onExportMessage?.("作品が選択されていません。昇格するには作品を選択してください。");
+      return;
+    }
+    setPromoting(true);
+    try {
+      // 画面の最新テキストをエディタ本文にも同期
+      syncGenerationToEditor(displayOutput);
+      const res = await promoteToStudio({ book_id: selectedBookId.toString() });
+      if (res.success) {
+        onExportMessage?.("✨ 上級者 Studio へ昇格しました！世界観設定がナレッジグラフに統合されました。");
+        onPromoteToStudio?.();
+      }
+    } catch (err: any) {
+      onExportMessage?.(`❌ 昇格エラー: ${err.message || err}`);
+    } finally {
+      setPromoting(false);
+    }
+  };
+
+  const handleShowBookShowcase = () => {
+    if (!selectedBook) {
+      onExportMessage?.("作品が選択されていません");
+      return;
+    }
+    setShowBookShowcase(true);
+  };
+
+  return (
+    <section className="card" style={{ display: "flex", flexDirection: "column" }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "16px",
+        }}
+      >
+        <h2 style={{ fontSize: "1.2rem", color: "var(--accent-secondary, #38bdf8)" }}>
+          📖 執筆プレビュー & エディタ
+        </h2>
+      </div>
+
+      {selectedBook ? (
+        <div
+          className="export-panel__book-badge"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "12px",
+            padding: "12px 16px",
+            backgroundColor: "var(--bg-card, #18181b)",
+            border: "1px solid var(--border-color, #27272a)",
+            borderRadius: "12px",
+            marginBottom: "16px",
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "1.25rem", fontWeight: 600, color: "var(--text-main)" }}>
+                {selectedBook.title}
+              </span>
+              <span
+                style={{
+                  fontSize: "0.7rem",
+                  padding: "2px 8px",
+                  borderRadius: "9999px",
+                  backgroundColor: "var(--accent-primary, #a78bfa)",
+                  color: "white",
+                  fontWeight: 600,
+                }}
+              >
+                ID: {selectedBook.id}
+              </span>
+            </div>
+            <div style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>
+              ジャンル: {selectedBook.genre} | 目標: {selectedBook.target_eps}話 | 作成: {new Date(selectedBook.created_at).toLocaleDateString("ja-JP")}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "12px 16px",
+            backgroundColor: "var(--bg-card, #18181b)",
+            border: "1px dashed var(--border-color, #27272a)",
+            borderRadius: "12px",
+            marginBottom: "16px",
+            color: "var(--text-muted)",
+          }}
+        >
+          ⚠️ 作品が選択されていません。ヘッダーの「本棚」から作品を選択または作成してください。
+        </div>
+      )}
+
+      {validationError && (
+        <div style={{ color: "var(--accent-danger, #f43f5e)", fontSize: "0.85rem", marginBottom: "8px" }}>
+          {validationError}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
+        <button
+          type="button"
+          className="btn btn-export"
+          style={{ flex: 1, minWidth: "200px" }}
+          onClick={validateAndExport}
+          disabled={exporting || !selectedBook}
+          data-testid="btn-export-zip"
+        >
+          {exporting ? "📦 パッケージ生成中..." : "📦 納品パッケージ (ZIP) ダウンロード"}
+        </button>
+
+        <PlatformCopyButton
+          title={selectedBook?.title ?? "無題"}
+          body={displayOutput}
+        />
+
+        <button
+          type="button"
+          className="btn btn-secondary"
+          style={{ padding: "8px 14px", fontSize: "0.85rem", whiteSpace: "nowrap" }}
+          onClick={async () => {
+            if (!selectedBook) {
+              setValidationError("作品が選択されていません");
+              return;
+            }
+            setValidationError("");
+
+            // 出版出力用のエクスポート対象サマリーを作成
+            // 実際の実装では、現在編集中のチャプター情報を取得する必要がある
+            const exportTarget: ExportTarget = {
+              bookId: selectedBook.id.toString(),
+              chapterId: "1", // デフォルト第1話
+              branchId: "main", // デフォルトブランチ
+              version: "saved", // デフォルトは保存版
+              destination: "publish",
+              label: `${selectedBook.title} (mainブランチ・保存版)`,
+              wordCount: displayOutput.length,
+              lastSavedAt: new Date().toISOString(),
+            };
+
+            const summary: ExportHandoffSummary = {
+              targets: [exportTarget],
+              primaryTarget: exportTarget,
+              warnings: [],
+            };
+
+            openExportConfirm(summary).then((confirmedTarget) => {
+              if (confirmedTarget) {
+                // 確定されたらPublishExportModalを表示
+                setConfirmedPublishTarget(confirmedTarget);
+                setShowPublishModal(true);
+              }
+            });
+          }}
+          disabled={!selectedBook}
+          data-testid="btn-publish-export"
+        >
+          🌐 投稿サイト形式出力
+        </button>
+
+        <button
+          type="button"
+          className="btn btn-primary"
+          style={{ padding: "8px 14px", fontSize: "0.85rem", whiteSpace: "nowrap" }}
+          onClick={handleShowBookShowcase}
+          disabled={!selectedBook}
+          title="縦書き装丁プレビューと宣伝カードを表示"
+          data-testid="btn-show-book-showcase"
+        >
+          📖 縦書き装丁プレビュー & 宣伝カード
+        </button>
+
+        <button
+          type="button"
+          className="btn btn-primary"
+          style={{ padding: "8px 14px", fontSize: "0.85rem", whiteSpace: "nowrap" }}
+          onClick={handlePromote}
+          disabled={promoting || !selectedBookId}
+          title="設定をGraphRAGナレッジ化し、Studioモードへ引き継ぎます"
+          data-testid="btn-promote-studio"
+        >
+          {promoting ? "⏳ 昇格中..." : "🚀 Studioへ昇格"}
+        </button>
+      </div>
+
+      <div style={{ flex: 1, minHeight: "240px" }}>
+        <Editor
+          content={displayOutput}
+          onChange={setCurrentChapterText}
+        />
+      </div>
+
+      <AiSuggestions
+        suggestions={displaySuggestions}
+        onApplySuggestion={applySuggestion}
+      />
+
+      {/* 書籍ショーケースモーダル */}
+      {showBookShowcase && selectedBook && (
+        <BookShowcaseModal
+          onClose={() => setShowBookShowcase(false)}
+          bookData={{
+            title: selectedBook.title,
+            author: character.name || "不明な作者",
+            content: displayOutput,
+          }}
+        />
+      )}
+
+      {/* Web小説投稿フォーマット出力モーダル (Step 65, 66) */}
+      {showPublishModal && selectedBook && confirmedPublishTarget && (
+        <PublishExportModal
+          isOpen={showPublishModal}
+          onClose={() => {
+            setShowPublishModal(false);
+            setConfirmedPublishTarget(null);
+          }}
+          bookId={selectedBook.id}
+          initialChapterId={parseInt(confirmedPublishTarget.chapterId)}
+          initialBranchId={parseInt(confirmedPublishTarget.branchId)}
+        />
+      )}
+
+      {/* 出力前確認モーダル */}
+      {isExportConfirmOpen && exportConfirmSummary && (
+        <ExportConfirmModal
+          isOpen={isExportConfirmOpen}
+          summary={exportConfirmSummary}
+          onClose={cancelExport}
+          onConfirm={confirmExport}
+        />
+      )}
+    </section>
+  );
+}

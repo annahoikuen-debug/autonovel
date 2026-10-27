@@ -1,0 +1,55 @@
+# Context Compression Configuration
+# 4層コンテキスト圧縮機構の設定パラメータ
+
+compression:
+  enabled: true
+  
+  # 第1層: キーフレーズ抽出
+  layer1_keyphrase:
+    method: "tfidf"  # tfidf | keybert | bm25
+    top_k: 50
+    min_score: 0.01
+    # SudachiPy形態素解析器設定（日本語トークナイズ用）
+    sudachi:
+      split_mode: "C"        # A=短単位, B=中単位, C=長単位（デフォルト推奨）
+      dict_type: "core"      # core | full | small（辞書サイズ: core≒50MB, full≒120MB, small≒15MB）
+      min_length: 2          # 最小トークン長（1以上）
+      include_proper: true   # 固有名詞を含める
+      include_compound: true # 複合名詞を含める
+  
+  # 第2層: エンティティ関係サブグラフ抽出
+  layer2_subgraph:
+    max_hops: 2
+    relevance_threshold: 0.05
+    edge_pruning: true
+    max_nodes: 200
+  
+  # 第3層: 抽象化・カテゴリ化
+  layer3_abstraction:
+    model: "facebook/bart-large-cnn"
+    max_length: 128
+    abstraction_categories:
+      - "武術スキル"
+      - "統治システム"
+      - "魔法システム"
+      - "組織・派閥"
+      - "地理・地形"
+      - "歴史・年表"
+      - "アイテム・装備"
+      - "種族・血統"
+  
+  # 第4層: 重要度ベース動的トリミング
+  layer4_trimming:
+    importance_threshold: 0.4
+    max_tokens: 4000
+    preserve_categories:
+      - "主要キャラ"
+      - "核心設定"
+      - "伏線"
+
+# 感情残基抽出設定 (Week 1)
+emotional_residue:
+  enabled: true
+  vector_namespace: "pipeline"
+  nlp_model: "ja_ginza"
+  character_dict_path: "config/characters.yaml"

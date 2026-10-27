@@ -1,0 +1,147 @@
+# caches
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.kilo/
+
+# environments & secrets
+.env
+.env.local
+.venv*/
+env*/
+venv*/
+
+# storage & local dbs
+storage/
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.bak_*.db
+coverage.xml
+coverage.json
+benchmark_results.json
+
+# build artifacts
+*.egg-info/
+__pycache__/
+*.pyc
+dist/
+build/
+
+# legacy work files
+tmp_replace_normalize.py
+mypy_errors.txt
+mypy_out.txt
+ruff_e722.txt
+ruff_f841_src.txt
+backup/
+temp/
+archive/
+
+# frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+
+# generated migrations (alembic versions are committed, but auto-generated temp files)
+src/backend/alembic/versions/*_auto_*.py
+src/backend/alembic/versions/*_tmp_*.py
+
+# test artifacts
+tests/__pycache__/
+.pytest_cache/
+.coverage.*
+htmlcov/
+
+# Temporary and backup files
+temp_*.py
+*.bak
+*.bak_*
+*.backup*
+autonovel/
+chroma_db/
+*_out.txt
+*.log
+temp.txt
+temp.js
+temp_*.js
+dist_temp/
+error.txt
+test_output*.txt
+legacy_refs.txt
+fix_indent.py
+inspect_schema.py
+fail_*.txt
+full_test_result.txt
+debug_*.py
+manual_verification.py
+final_verification.py
+test_simple.py
+json-report.json
+
+# ============================================================
+# カバレッジ出力（ビルド成果物・追跡すべきでない）
+# ------------------------------------------------------------
+# 2026-09-27 時点で以下 4 ファイル、合計 約 22.5 MB が git に追跡されたまま
+# 残っており、20.92 MiB の pack の中で約 31% を占めていた:
+#     output/coverage-baseline.json   (5,643 KB)
+#     output/coverage-round1.json     (5,627 KB)
+#     output/coverage-round2.json     (5,640 KB)
+#     output/coverage-round3.json     (5,642 KB)
+# これらは `scripts/coverage_summary.py` / `scripts/run_full_coverage.py` の
+# 再生成可能な成果物であり、リポジトリに含める理由がない。
+#
+# .gitignore に追加しても、既に追跡済みのファイルは追跡され続ける。
+# 追跡を外すには下記のコマンドを明示的に実行すること（自動では行わない）:
+#     git rm --cached output/coverage-baseline.json output/coverage-round1.json \
+#                output/coverage-round2.json output/coverage-round3.json
+#     git commit -m "chore: untrack generated coverage artifacts"
+# ============================================================
+output/coverage-*.json
+# output/ 内の生成物（レポート類）。ただし .gitkeep はディレクトリ保持のため追跡を続ける。
+output/branches_missing.txt
+output/failures_analysis.txt
+output/m5.txt
+output/probe_lines.txt
+!output/.gitkeep
+# artifacts/ は「テスト・スキーマの基準値」なので追跡を続ける
+# （合計 約 67 KB。db_schema_baseline.json / test_baseline.json などの
+#   回帰防止テストの入力になる）。
+# 大きな生成カバレッジ成果物のみ個別に無視する。
+artifacts/coverage-*.json
+
+# 6.7 MB の生成カバレッジベースライン。差分計測ツールの入力であって
+# ソースでもテストの基準値でもないので追跡しない。
+#   git rm --cached cov_baseline.json
+cov_baseline.json
+
+# PowerShell の `> $null` リダイレクトで生成された空ファイル（事故ファイル）
+/$null
+
+# Vite の設定一時ファイル（build ごとに生成される）
+frontend/vite.config.ts.timestamp-*.mjs
+
+# 実行時ログ（クラッシュ調査用。コミット対象ではない）
+logs/
+logs/*.jsonl
+# start_local.ps1 が出すサービスログと PID ファイル
+logs/*.log
+logs/*.log.err
+logs/*.pids
+logs/e2e_*.log
+# `python -X importtime` の出力（scripts/debug/analyze_importtime.py の入力だが、
+# 使い捨ての計測ログなので追跡しない）
+logs/importtime*.txt
+
+# --- H1: スクラッチディレクトリ (PLAN_H1_SECURITY_HYGIENE_36STEPS R1) ---
+# カバレッジ計測や調査用の使い捨て JSON が 43 件追跡されていたため外した。
+# 必要なときは .gitignore を一時的に外すのではなく %TEMP% を使うこと。
+tmp/
+# output/ 内の生成物（MULTIMEDIA_OUTPUT_DIR 配下の WAV 等）
+output/multimedia/
+

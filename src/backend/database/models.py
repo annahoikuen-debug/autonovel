@@ -1,0 +1,1086 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    Column,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    UniqueConstraint,
+    event,
+    func,
+    text,
+)
+from sqlalchemy.types import TypeDecorator
+from sqlalchemy.orm import relationship
+
+from src.infrastructure.database.models.base_orm import Base
+from src.backend.database.models_checkpoint import WorkflowCheckpointModel
+
+# 0000_initial_migration の `Base.metadata.create_all` が全テーブルを確実に作るため、
+# 別モジュールに定義されたモデルもここで import して同一の Base に登録する。
+# （未 import のままだと credit_transactions / subscriptions / stripe_webhook_events /
+#   foreshadowings / character_relations / episode_digests が create_all 実行時にも
+#   存在せず、差分が Alembic autogenerate にしか現れない。）
+# 記名学生は未使用だが、import 自体にモデル登録という副作用があるため noqa する。
+from src.backend.database.models_billing import (  # noqa: F401
+    CreditTransaction,
+    StripeWebhookEvent,
+    Subscription,
+)
+from src.backend.database.models_digest import EpisodeDigestModel  # noqa: F401
+from src.backend.database.models_foreshadowing import ForeshadowingModel  # noqa: F401
+from src.backend.database.models_relation import CharacterRelationModel  # noqa: F401
+from src.infrastructure.database.types import CompatibleJSON, CompatibleDateTime, CompatibleVector
+
+"""
+database/models.py - SQLAlchemy ORMモデル定義
+全テーブルの宣言的マッピングを集約。
+"""
+
+
+# Engine event listener for SQLite WAL mode (applied in core.py via DatabaseManager)
+@event.listens_for(Base.metadata, "after_create")
+def on_create(target, connection, **kw):
+    if "sqlite" in str(connection.engine.name):
+        connection.execute(text("PRAGMA journal_mode=WAL;"))
+        connection.execute(text("PRAGMA foreign_keys=ON;"))
+
+
+# ==========================================
+# Core tables
+# ==========================================
+
+
+class User(Base):
+    __tablename__ = "users"
+    __table_args__ = (
+        CheckConstraint("credits >= 0", name="chk_user_credits_non_negative"),
+    )
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    display_name = Column(String(100), nullable=False)
+    role = Column(String(20), default="user", nullable=False)
+    status = Column(String(20), default="active", nullable=False)
+    plan_tier = Column(String(20), default="free", nullable=False)
+    credits = Column(Integer, default=50, nullable=False)
+    stripe_customer_id = Column(String(255), nullable=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=True, index=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+
+    def __contains__(self, item):
+        # Allow checking for 'user_id', 'id', 'sub' as if they were keys
+        if item in ("user_id", "id", "sub"):
+            return True
+        return hasattr(self, item)
+
+    books = relationship("Book", back_populates="owner", cascade="all, delete-orphan")
+
+
+class Book(Base):
+    __tablename__ = "books"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=True, index=True)
+    owner = relationship("User", back_populates="books")
+    title = Column(String(200), nullable=False)
+    genre = Column(String(100), default="")
+    concept = Column(Text, default="")
+    synopsis = Column(Text, default="")
+    catchcopy = Column(String(255), default="")
+    target_eps = Column(Integer, default=50)
+    style_dna = Column(Text, default="")
+    status = Column(String(50), default="draft")
+    mode = Column(String(20), default="easy", nullable=False)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+    marketing_data = Column(Text, default="")
+    cumulative_tension = Column(Integer, default=0)
+    cumulative_qol = Column(Integer, default=0)
+    cumulative_cost = Column(Float, default=0.0)
+    sanctuary_integrity = Column(Integer, default=100)
+    current_branch_id = Column(Integer, nullable=True)
+    # 楽観ロック用バージョン (``BranchPlaySession.version`` と同じ方式)
+    version = Column(Integer, nullable=False, server_default=text("1"), default=1)
+    ai_assistant_config = Column(
+        CompatibleJSON,
+        nullable=False,
+        default={
+            "enabled": False,
+            "auto_suggest": False,
+            "trigger_mode": "manual",
+            "features": {"continue": True, "describe": True, "rewrite": True},
+        },
+    )
+
+
+class UserPreference(Base):
+    """ユーザー単位の AI アシスタント設定（オプトイン管理）"""
+
+    __tablename__ = "user_preferences"
+
+    user_id = Column(Integer, primary_key=True, nullable=False)
+    easy_mode_ai_enabled = Column(Boolean, default=False, nullable=False)
+    ai_features = Column(CompatibleJSON, nullable=False, default={})
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+
+
+class Branch(Base):
+    __tablename__ = "branches"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    name = Column(String(100), nullable=False)
+    parent_id = Column(Integer, nullable=True)
+    fork_ep_num = Column(Integer, default=0)
+    graph_json = Column(CompatibleJSON, nullable=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class BranchPlaySession(Base):
+    """IF ルート分岐のプレイヤーセッション状態."""
+
+    __tablename__ = "branch_play_sessions"
+
+    id = Column(String(36), primary_key=True)
+    book_id = Column(Integer, nullable=False)
+    branch_id = Column(Integer, nullable=False)
+    current_node_id = Column(String(255), nullable=True)
+    context_json = Column(CompatibleJSON, nullable=True)
+    save_points_json = Column(CompatibleJSON, nullable=True)
+    status = Column(String(20), nullable=True, server_default=text("'active'"))
+    version = Column(Integer, nullable=False, server_default=text("1"))
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class SafeDateTime(TypeDecorator):
+    """datetime または unix timestamp (int/float) の両方を受け付けるカラム型"""
+
+    impl = DateTime
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if isinstance(value, (int, float)):
+            return datetime.fromtimestamp(value)
+        return value
+
+
+class Bible(Base):
+    __tablename__ = "bibles"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # 作品単位の圣经参照が hot filter なので index を張る
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True)
+    settings = Column(Text, default="")
+    revealed = Column(Text, default="")
+    version = Column(Integer, default=1)
+    created_at = Column(SafeDateTime, server_default=func.now())
+    last_updated = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+
+class BiblePendingSetting(Base):
+    __tablename__ = "bible_pending_settings"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    field_name = Column(String(100), nullable=False)
+    proposed_value = Column(Text, default="")
+    confidence = Column(Float, default=0.0)
+    status = Column(String(50), default="pending")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class Plot(Base):
+    __tablename__ = "plots"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    target_tension = Column(
+        Float, nullable=True, comment="動的に計算された目標テンション値 (0.0-1.0)"
+    )
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    # 複合一意制約 ``(book_id, branch_id, ep_num)`` の先頭列が ``book_id`` のため、
+    # ``branch_id`` 単独の述語には使えない。branch_id のみによる絞り込み用に index を張る。
+    branch_id = Column(Integer, default=1, nullable=False, index=True)
+    ep_num = Column(Integer, nullable=False)
+    thought_process = Column(Text, default="")
+    title = Column(String(200))
+    summary = Column(Text)
+    one_line_summary = Column(Text, default="")
+    detailed_blueprint = Column(Text, default="")
+    tension = Column(Integer, default=50)
+    tension_delta = Column(Integer, default=0)
+    catharsis = Column(Integer, default=0)
+    status = Column(String(50), default="planned")
+    scenes = Column(Text, default="[]")
+    is_catharsis = Column(Boolean, default=False)
+    catharsis_type = Column(String(50), default="なし")
+    love_meter = Column(Integer, default=0)
+    next_hook = Column(Text, default="{}")
+    misunderstanding_gap = Column(Text, default="")
+    lite_model_director_notes = Column(Text, default="")
+    script_content = Column(Text, default="")
+    current_chain_phase = Column(String(50), default="Friction")
+    resolution_style = Column(String(50), default="Cheat")
+    burned_cost_or_loot = Column(String(100), default="なし")
+    antagonist_status = Column(String(100), default="現状維持")
+    thematic_milestone = Column(String(100), default="なし")
+    state_integrity_score = Column(Integer, default=100)
+    emotional_resonance_score = Column(Integer, default=0)
+    thematic_depth_score = Column(Integer, default=0)
+    literary_beauty_score = Column(Integer, default=0)
+    erotic_intensity = Column(Integer, default=0)
+    healed_fields = Column(Text, default="[]")
+    is_micro_catharsis = Column(Boolean, default=False)
+    information_asymmetry_level = Column(Float, default=0.0)
+    cost_score = Column(Float, default=0.0)
+    qol_delta = Column(Integer, default=0)
+    discovery_item = Column(Text)
+    sanctuary_event = Column(Text)
+    is_locked = Column(Boolean, default=False)
+    is_simulation = Column(Boolean, default=False)
+    simulation_id = Column(String, server_default="", nullable=True)
+    pov_character_id = Column(Integer, nullable=True)
+    # 実使用: routers/plots.py:294 と plot.py:234 から必ず書き込まれるが、
+    # モデルに存在しなかったため SQLAlchemy が黙って捨てていた（無言のデータ消失）。
+    is_plot_twist = Column(Boolean, default=False, nullable=False)
+    candidates = Column(Text, default="[]")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_plots_book_branch_ep"),
+    )
+
+
+class Chapter(Base):
+    __tablename__ = "chapters"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
+    branch_id = Column(Integer, default=1, nullable=False, index=True)
+    ep_num = Column(Integer, nullable=False)
+    title = Column(String(200))
+    content = Column(Text)
+    score_story = Column(Integer)
+    killer_phrase = Column(String(500))
+    summary = Column(Text)
+    world_state = Column(Text)
+    trinity_review_log = Column(Text)
+    ai_insight = Column(Text)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+    tension_delta = Column(Integer, default=0)
+    qol_delta = Column(Integer, default=0)
+    is_anchor = Column(Boolean, default=False)
+    cost_jpy = Column(Float, default=0.0)
+    cache_hit_ratio = Column(Float, default=0.0)
+
+    __table_args__ = (
+        UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_chapters_book_branch_ep"),
+    )
+
+
+class Character(Base):
+    __tablename__ = "characters"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(100))
+    role = Column(String(50))
+    personality = Column(String(500), default="")
+    ability = Column(String(500), default="")
+    registry_data = Column(Text)
+    voice_profile_json = Column(CompatibleJSON, nullable=True)
+
+
+class CharacterArc(Base):
+    __tablename__ = "character_arcs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    character_id = Column(Integer, ForeignKey("characters.id", ondelete="CASCADE"), nullable=False)
+    arc_name = Column(String(100))
+    arc_stages = Column(Text, default="[]")
+    current_stage_index = Column(Integer, default=0)
+    is_completed = Column(Boolean, default=False)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class Foreshadowing(Base):
+    __tablename__ = "foreshadowing"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    branch_id = Column(Integer, default=1, nullable=False)
+    ep_num = Column(Integer, nullable=False)
+    type = Column(String(50), nullable=False)
+    description = Column(Text)
+    location = Column(String(100))
+    payoff_ep = Column(Integer, nullable=True)
+    payoff_location = Column(String(100), nullable=True)
+    strength = Column(Float, default=1.0)
+    fulfilled = Column(Boolean, default=False)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("book_id", "branch_id", "ep_num", "type", name="uq_foreshadowing"),
+    )
+
+
+# ==========================================
+# Outbox / ChromaDB sync
+# ==========================================
+
+
+class Outbox(Base):
+    __tablename__ = "outbox"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    event_type = Column(String(50), nullable=False)
+    payload = Column(Text, nullable=False)
+    status = Column(String(20), default="pending")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+    processed_at = Column(CompatibleDateTime, nullable=True)
+
+
+# ==========================================
+# Prompt management
+# ==========================================
+
+
+class PromptVersion(Base):
+    __tablename__ = "prompt_versions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=True)
+    prompt_key = Column(String(100), nullable=False)
+    version_tag = Column(String(50), nullable=False)
+    content = Column(Text, nullable=False)
+    score_before = Column(Float)
+    score_after = Column(Float)
+    ab_test_metrics = Column(Text, default="{}")
+    rollback_reason = Column(String(255))
+    is_active = Column(Boolean, default=False)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class PromptUsageLog(Base):
+    __tablename__ = "prompt_usage_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    timestamp = Column(DateTime, nullable=False, server_default=func.now(), index=True)
+    template_name = Column(String(255), nullable=False, index=True)
+    hits = Column(Integer, nullable=False, default=0)
+    total_time_ms = Column(Float, nullable=False, default=0.0)
+    avg_time_ms = Column(Float, nullable=False, default=0.0)
+    last_accessed = Column(DateTime, nullable=True)
+    error_count = Column(Integer, nullable=False, default=0)
+
+    __table_args__ = (
+        Index("idx_prompt_usage_timestamp", "timestamp"),
+        Index("idx_prompt_usage_template", "template_name"),
+    )
+
+
+# ==========================================
+# Rules & Mastering
+# ==========================================
+
+
+class Rule(Base):
+    __tablename__ = "rules"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    target_word = Column(String(200), nullable=False)
+    instruction = Column(Text, nullable=False)
+    level = Column(String(50), default="global")
+    domain = Column(String(50), default="all")
+    character_name = Column(String(100))
+    status = Column(String(20), default="active")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+
+
+class Masterpiece(Base):
+    __tablename__ = "masterpieces"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    emotion_or_scene = Column(String(200), nullable=False)
+    content = Column(Text, nullable=False)
+    vector_json = Column(CompatibleVector, nullable=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+# ==========================================
+# Audit
+# ==========================================
+
+
+class AuditIssue(Base):
+    __tablename__ = "audit_issues"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    # 作品単位の監査課題一覧は hot filter
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True)
+    ep_num = Column(Integer, nullable=False)
+    category = Column(String(50), nullable=False)
+    severity = Column(String(20), nullable=False)
+    description = Column(Text, nullable=False)
+    evidence_past = Column(Text, default="")
+    evidence_current = Column(Text, default="")
+    constraint_for_next_ep = Column(Text, default="")
+    status = Column(String(20), default="open")
+    resolved_note = Column(Text, default="")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    # Review linkage fields
+    patch_review_id = Column(Integer, ForeignKey("patch_reviews.id"), nullable=True)
+    user_resolution = Column(
+        String(50), nullable=True
+    )  # USER_ACCEPTED, USER_REJECTED, USER_MODIFIED
+    resolved_at = Column(CompatibleDateTime, nullable=True)
+    resolved_by = Column(String(100), nullable=True)
+
+
+# ==========================================
+# Patch Review Workflow
+# ==========================================
+
+
+class PatchReviewStatus(str):
+    GENERATED = "generated"
+    UNDER_REVIEW = "under_review"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    NEEDS_REVISION = "needs_revision"
+    EXPIRED = "expired"
+
+
+class PatchReview(Base):
+    __tablename__ = "patch_reviews"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    ep_num = Column(Integer, nullable=False)
+    patch_type = Column(String(50), nullable=False)  # config, prompt, setting
+    original_content = Column(Text, nullable=False)
+    proposed_content = Column(Text, nullable=False)
+    diff_json = Column(Text, default="{}")
+    status = Column(String(20), default=PatchReviewStatus.GENERATED, nullable=False)
+    reviewer_id = Column(String(100), nullable=True)
+    reviewed_at = Column(CompatibleDateTime, nullable=True)
+    review_comment = Column(Text, default="")
+    audit_issue_ids = Column(CompatibleJSON, default=[])
+    learning_metadata = Column(CompatibleJSON, default={})
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_patch_reviews_book_ep", "book_id", "ep_num"),
+        Index("idx_patch_reviews_status", "status"),
+    )
+
+
+class SettingDelta(Base):
+    __tablename__ = "setting_deltas"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    field_path = Column(String(500), nullable=False)  # e.g., "world_rules.magic_system.mana_cost"
+    old_value = Column(Text, nullable=True)
+    new_value = Column(Text, nullable=True)
+    delta_type = Column(String(50), nullable=False)  # MANUAL, AUTO_REPAIR, USER_CORRECTION
+    source = Column(String(50), nullable=False)  # user, audit_agent, bible_service
+    merged_to_graphrag = Column(Boolean, default=False, nullable=False)
+    merged_at = Column(CompatibleDateTime, nullable=True)
+    patch_review_id = Column(Integer, ForeignKey("patch_reviews.id"), nullable=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_setting_deltas_book_field", "book_id", "field_path"),
+        Index("idx_setting_deltas_merged", "merged_to_graphrag"),
+    )
+
+
+class SettingVersion(Base):
+    __tablename__ = "setting_versions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    version_number = Column(Integer, nullable=False)
+    snapshot_json = Column(Text, nullable=False)  # Full settings snapshot
+    base_version_id = Column(Integer, ForeignKey("setting_versions.id"), nullable=True)
+    change_summary = Column(Text, default="")
+    created_by = Column(String(100), nullable=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("book_id", "version_number", name="uq_setting_versions_book_ver"),
+        Index("idx_setting_versions_book", "book_id"),
+    )
+
+
+# ==========================================
+# Misc / Utility tables
+# ==========================================
+
+
+class OptimizationHistory(Base):
+    __tablename__ = "optimization_history"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    report_json = Column(Text, default="{}")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class StyleFragment(Base):
+    __tablename__ = "style_fragments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    tag = Column(String(100), nullable=False)
+    content = Column(Text, nullable=False)
+    embedding_json = Column(CompatibleVector, nullable=True)
+    origin = Column(String(50), default="Master")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class CustomStyle(Base):
+    __tablename__ = "custom_styles"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(100), nullable=False, unique=True)
+    instruction = Column(Text)
+    score = Column(Integer, default=0)
+    analysis = Column(Text)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class InternalState(Base):
+    __tablename__ = "internal_state"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    key = Column(String(200), nullable=False, unique=True)
+    value = Column(Text, default="")
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+
+
+class PendingPatch(Base):
+    __tablename__ = "pending_patches"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    patch_type = Column(String(50), nullable=False)
+    patch_content = Column(Text, nullable=False)
+    ab_test_result = Column(Text, default="{}")
+    status = Column(String(20), default="pending")
+    reviewed_at = Column(CompatibleDateTime)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class BackgroundTask(Base):
+    __tablename__ = "background_tasks"
+
+    id = Column(String(64), primary_key=True)
+    status = Column(String(20), default="running")
+    current_step = Column(Integer, default=0)
+    total_steps = Column(Integer, default=0)
+    message = Column(String(500), default="")
+    sub_message = Column(String(500), default="")
+    streaming_text = Column(Text, default="")
+    logs = Column(Text, default="[]")
+    error = Column(Text)
+    result_data = Column(Text)
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+
+
+class NarrativeMetric(Base):
+    __tablename__ = "narrative_metrics"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    chapter_id = Column(Integer, ForeignKey("chapters.id", ondelete="CASCADE"), nullable=True)
+    metric_name = Column(String(100), nullable=False)
+    metric_value = Column(Float, nullable=False)
+    recorded_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_narrative_metrics_book_id", "book_id"),
+        Index("idx_narrative_metrics_chapter_id", "chapter_id"),
+        Index("idx_narrative_metrics_metric_name", "metric_name"),
+    )
+
+
+class EntertainmentCheckLog(Base):
+    __tablename__ = "entertainment_check_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    ep_num = Column(Integer, nullable=False)
+    interest_score = Column(Integer, nullable=True)
+    physiological_reaction = Column(String(255), nullable=True)
+    would_continue_reading = Column(Boolean, nullable=True)
+    feedback = Column(Text, nullable=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (Index("idx_entertainment_check_log_book_ep", "book_id", "ep_num"),)
+
+
+class CostRecord(Base):
+    __tablename__ = "cost_records"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
+    branch_id = Column(Integer, nullable=False, default=1)
+    task_type = Column(String(50), nullable=False)
+    input_tokens = Column(Integer, nullable=False, default=0)
+    output_tokens = Column(Integer, nullable=False, default=0)
+    total_tokens = Column(Integer, nullable=False, default=0)
+    est_cost_usd = Column(Float, nullable=False, default=0.0)
+    ep_num = Column(Integer, nullable=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_cost_record_book_id", "book_id"),
+        Index("idx_cost_record_branch_id", "branch_id"),
+    )
+
+
+class CostLogModel(Base):
+    """個別トークン消費・コスト記録ログ。
+
+    どのエージェントがどのモデルで何トークン消費し、いくら費用が発生したかを記録する。
+    """
+
+    __tablename__ = "cost_consumption_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True)
+    chapter_number = Column(Integer, nullable=True)
+    agent_name = Column(String(100), nullable=False)
+    model_name = Column(String(100), nullable=False)
+    input_tokens = Column(Integer, nullable=False, default=0)
+    output_tokens = Column(Integer, nullable=False, default=0)
+    cost_usd = Column(Float, nullable=False, default=0.0)
+    timestamp = Column(DateTime, server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        Index("idx_cost_log_book_id", "book_id"),
+        Index("idx_cost_log_agent_name", "agent_name"),
+        Index("idx_cost_log_timestamp", "timestamp"),
+    )
+
+
+class GenerationRun(Base):
+    __tablename__ = "generation_runs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
+    chapter_ep = Column(Integer, nullable=True)
+    task_type = Column(String(50), nullable=False, default="writing")
+    prompt_version = Column(String(100), nullable=True)
+    model_name = Column(String(100), nullable=True)
+    params_json = Column(Text, nullable=True)
+    input_hash = Column(String(64), nullable=True)
+    output_preview = Column(Text, nullable=True)
+    trace_id = Column(String(64), nullable=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_generation_run_book_id", "book_id"),
+        Index("idx_generation_run_chapter_ep", "chapter_ep"),
+    )
+
+
+class TaskWALLogModel(Base):
+    __tablename__ = "task_wal_logs"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    task_id = Column(String(64), nullable=False, index=True)
+    dag_id = Column(String(64), nullable=False, index=True)
+    node_id = Column(String(64), nullable=False, index=True)
+    state = Column(String(20), nullable=False)
+    input_json = Column(Text, nullable=True)
+    output_json = Column(Text, nullable=True)
+    heartbeat_at = Column(DateTime, nullable=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_task_wal_logs_dag_id", "dag_id"),
+        Index("idx_task_wal_logs_node_id", "node_id"),
+        Index("idx_task_wal_logs_task_id", "task_id"),
+        Index("idx_task_wal_logs_heartbeat", "heartbeat_at"),
+    )
+
+
+class ProjectMember(Base):
+    __tablename__ = "project_members"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
+    user_name = Column(String(100), nullable=False)
+    role = Column(String(50), nullable=False, default="viewer")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class Comment(Base):
+    __tablename__ = "comments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
+    chapter_ep = Column(Integer, nullable=False)
+    anchor_text = Column(Text, default="")
+    author_name = Column(String(100), nullable=False)
+    content = Column(Text, nullable=False)
+    parent_id = Column(Integer, ForeignKey("comments.id"), nullable=True)
+    resolved = Column(Boolean, default=False)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+
+class ChapterVersion(Base):
+    __tablename__ = "chapter_versions"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=False)
+    chapter_ep = Column(Integer, nullable=False)
+    user_name = Column(String(100), nullable=False)
+    content = Column(Text, nullable=False)
+    vector_clock = Column(CompatibleJSON, nullable=False)
+    base_version_id = Column(Integer, ForeignKey("chapter_versions.id"), nullable=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (Index("idx_chv_book_chap", "book_id", "chapter_ep"),)
+
+
+class Illustration(Base):
+    __tablename__ = "illustrations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    illustration_type = Column(String(50), nullable=False, default="cover")
+    episode_number = Column(Integer, nullable=True)
+    character_id = Column(Integer, nullable=True)
+    model = Column(String(100), default="imagen-4.0-fast-generate-001")
+    safety_level = Column(String(50), default="BLOCK_SOME")
+    prompt = Column(Text, default="")
+    image_url = Column(String(500), nullable=False)
+    generation_time_ms = Column(Integer, default=0)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_illustrations_book_id", "book_id"),
+        Index("idx_illustrations_book_type", "book_id", "illustration_type"),
+    )
+
+
+# ==========================================
+# Easy Mode Suite — Gacha / Digest / Handoff persistence
+# ==========================================
+
+
+class EasyModeDraft(Base):
+    """Gacha Pitch で生成した企画と、Quick Digest で生成した中間成果物を永続化する。
+
+    ``kind`` 区分:
+    - ``gacha``: GachaService.generate_plans() の出力（3 案企画）
+    - ``digest``: DigestService.generate_digest() の出力（第 1 話＋あらすじ等）
+    - ``review_session``: ブラインドピアレビューセッション（複数ラウンド管理）
+
+    ``parent_draft_id``:
+    - ``gacha``  Draft からは未設定
+    - ``digest`` Draft からは対応する ``gacha`` Draft の ``draft_id`` を参照
+    - ``review_session`` からは対応する ``gacha`` Draft の ``draft_id`` を参照
+    """
+
+    __tablename__ = "easy_mode_drafts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    draft_id = Column(String(64), unique=True, nullable=False, index=True)
+    kind = Column(String(20), nullable=False)
+    payload_json = Column(Text, nullable=False, default="{}")
+    review_session_json = Column(Text, nullable=True)  # ReviewSession シリアライズ用
+    parent_draft_id = Column(String(64), nullable=True, index=True)
+    book_id = Column(String(64), nullable=True, index=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        Index("idx_easy_mode_drafts_kind", "kind"),
+        Index("idx_easy_mode_drafts_created", "created_at"),
+    )
+
+
+class MultimediaArtifact(Base):
+    """Multimedia 機能 (Phase 7) で生成された成果物のメタデータ。"""
+
+    __tablename__ = "multimedia_artifacts"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, nullable=False)
+    asset_type = Column(String(50), nullable=False)
+    format = Column(String(50), nullable=False)
+    file_path = Column(String(1024), nullable=False)
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(CompatibleDateTime, server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        Index("ix_multimedia_artifacts_book_id", "book_id"),
+        Index("ix_multimedia_artifacts_asset_type", "asset_type"),
+    )
+
+
+class MultimediaTask(Base):
+    """Multimedia 系の非同期タスク状態。"""
+
+    __tablename__ = "multimedia_tasks"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    task_id = Column(String(64), nullable=False, unique=True)
+    asset_id = Column(Integer, nullable=True)
+    status = Column(String(32), nullable=False, server_default="pending")
+    started_at = Column(CompatibleDateTime, server_default=func.now(), nullable=False)
+    finished_at = Column(CompatibleDateTime, nullable=True)
+    error = Column(Text, nullable=True)
+
+    __table_args__ = (Index("ix_multimedia_tasks_task_id", "task_id"),)
+
+
+# ==========================================
+# Social Simulation tables (Phase 2 Pillar 2)
+# ==========================================
+
+
+class CharacterRelationship(Base):
+    """キャラクター間関係性モデル（永続化対応）"""
+
+    __tablename__ = "character_relationships"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    char_a = Column(String(100), nullable=False)
+    char_b = Column(String(100), nullable=False)
+    affection = Column(Float, default=0.0, nullable=False)
+    trust = Column(Float, default=0.0, nullable=False)
+    tension = Column(Float, default=0.0, nullable=False)
+    depth = Column(Float, default=0.0, nullable=False)
+    dynamics_state = Column(String(50), default="strangers", nullable=False)
+    last_interaction_ep = Column(Integer, default=0, nullable=False)
+    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("book_id", "char_a", "char_b", name="uq_char_rel"),
+        Index("ix_char_rel_book", "book_id"),
+    )
+
+
+class CharacterJournal(Base):
+    """キャラクター日記モデル（多視点ログ永続化対応）"""
+
+    __tablename__ = "character_journals"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    character_name = Column(String(100), nullable=False)
+    episode_num = Column(Integer, nullable=False)
+    entry_text = Column(Text, nullable=False)
+    emotional_state = Column(String(100), default="")
+    secret_thought = Column(Text, default="")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_char_journal_book_char", "book_id", "character_name"),
+        Index("ix_char_journal_ep", "book_id", "episode_num"),
+    )
+
+
+class CharacterComment(Base):
+    """キャラクターコメントモデル（SNS風リアクション永続化対応）"""
+
+    __tablename__ = "character_comments"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    character_name = Column(String(100), nullable=False)
+    episode_num = Column(Integer, nullable=False)
+    comment_text = Column(Text, nullable=False)
+    topic = Column(String(100), default="")
+    sentiment = Column(String(50), default="neutral")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_char_comment_book_char", "book_id", "character_name"),
+        Index("ix_char_comment_ep", "book_id", "episode_num"),
+    )
+
+
+class RelationshipHistory(Base):
+    """キャラクター関係性履歴モデル（時系列推移ログ）"""
+
+    __tablename__ = "relationship_histories"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    relationship_id = Column(
+        Integer,
+        ForeignKey("character_relationships.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    episode_num = Column(Integer, nullable=False)
+    affection = Column(Float, nullable=False)
+    trust = Column(Float, nullable=False)
+    tension = Column(Float, nullable=False)
+    depth = Column(Float, nullable=False)
+    dynamics_state = Column(String(50), nullable=False)
+    trigger_event = Column(String(255), default="")
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("ix_rel_history_rel_id", "relationship_id"),
+        Index("ix_rel_history_ep", "episode_num"),
+    )
+
+
+# 後方互換性用エイリアス
+BibleDbModel = Bible
+BookDbModel = Book
+BranchDbModel = Branch
+ChapterDbModel = Chapter
+CharacterDbModel = Character
+CharacterRelationshipDbModel = CharacterRelationship
+CharacterJournalDbModel = CharacterJournal
+CharacterCommentDbModel = CharacterComment
+RelationshipHistoryDbModel = RelationshipHistory
+
+
+# ==========================================
+# Commercial Publication
+# ==========================================
+
+
+class PublicationScheduleModel(Base):
+    __tablename__ = "publication_schedules"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id"), nullable=False, index=True)
+    platform = Column(String(50), nullable=False)  # "narou", "kakuyomu", "kindle", "kobo"
+    episode_range_start = Column(Integer, nullable=False, default=1)
+    episode_range_end = Column(Integer, nullable=False, default=1)
+    scheduled_at = Column(DateTime, nullable=False)
+    status = Column(String(20), nullable=False, default="pending")  # pending, running, completed, failed, cancelled
+    post_id = Column(String(100), nullable=True)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+PublicationScheduleDbModel = PublicationScheduleModel
+PlotDbModel = Plot
+PromptVersionDbModel = PromptVersion
+WorldBible = Bible
+
+
+class PDCAHistorySnapshot(Base):
+    __tablename__ = "pdca_history_snapshots"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True)
+    chapter_number = Column(Integer, nullable=False)
+    cycle_number = Column(Integer, nullable=False)
+    initial_score = Column(Float, nullable=False)
+    final_score = Column(Float, nullable=False)
+    score_delta = Column(Float, nullable=False)
+    improved_percentage = Column(Float, nullable=False)
+    lowest_dimension = Column(String(100), nullable=False)
+    directives = Column(CompatibleJSON, nullable=False, default=list)
+    history = Column(CompatibleJSON, nullable=False, default=list)
+    converged = Column(Boolean, nullable=False, default=False)
+    created_at = Column(CompatibleDateTime, server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_pdca_history_book_chap", "book_id", "chapter_number"),
+    )
+
+
+PDCAHistorySnapshotDbModel = PDCAHistorySnapshot
+
+
+class AudioAssetModel(Base):
+    __tablename__ = "audio_assets"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True)
+    episode_num = Column(Integer, nullable=False)
+    file_path = Column(String(500), nullable=False)
+    duration_seconds = Column(Float, nullable=False, default=0.0)
+    file_size_bytes = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_audio_assets_book_ep", "book_id", "episode_num"),
+    )
+
+
+AudioAssetDbModel = AudioAssetModel
+
+
+__all__ = [
+    "User",
+    "Book",
+    "UserPreference",
+    "Branch",
+    "BranchPlaySession",
+    "Bible",
+    "BiblePendingSetting",
+    "Plot",
+    "Chapter",
+    "Character",
+    "CharacterArc",
+    "Foreshadowing",
+    "Outbox",
+    "PromptVersion",
+    "PromptUsageLog",
+    "Rule",
+    "Masterpiece",
+    "AuditIssue",
+    "PatchReview",
+    "SettingDelta",
+    "SettingVersion",
+    "OptimizationHistory",
+    "StyleFragment",
+    "CustomStyle",
+    "InternalState",
+    "PendingPatch",
+    "BackgroundTask",
+    "NarrativeMetric",
+    "EntertainmentCheckLog",
+    "CostRecord",
+    "CostLogModel",
+    "GenerationRun",
+    "TaskWALLogModel",
+    "ProjectMember",
+    "Comment",
+    "ChapterVersion",
+    "Illustration",
+    "EasyModeDraft",
+    "MultimediaArtifact",
+    "MultimediaTask",
+    "CharacterRelationship",
+    "CharacterJournal",
+    "CharacterComment",
+    "RelationshipHistory",
+    "PublicationScheduleModel",
+    "PDCAHistorySnapshot",
+    "AudioAssetModel",
+    "WorkflowCheckpointModel",
+]

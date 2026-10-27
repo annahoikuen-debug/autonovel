@@ -1,0 +1,337 @@
+"""Vector store interface and Redis implementation for emotional vectors."""
+from __future__ import annotations
+
+import abc
+import json
+import logging
+from typing import Optional
+
+import redis
+
+from src.pipeline.emotional_residue import EmotionalVector
+
+logger = logging.getLogger(__name__)
+
+
+def _episode_from_id(episode_id: Optional[str]) -> Optional[int]:
+    """"ep14" / "ep014" 形式からエピソード番号を取り出す (失敗時は None)。"""
+    if not episode_id:
+        return None
+    text = str(episode_id).strip().lower()
+    if not text.startswith("ep"):
+        return None
+    try:
+        return int(text[2:])
+    except ValueError:
+        return None
+
+
+class VectorStore(abc.ABC):
+    """感情ベクトルストアの抽象基底クラス"""
+
+    @abc.abstractmethod
+    def upsert(self, namespace: str, key: str, vector: EmotionalVector) -> None:
+        """ベクトルを追加・更新"""
+        ...
+
+    @abc.abstractmethod
+    def get_latest(self, namespace: str, pair: tuple[str, str]) -> Optional[EmotionalVector]:
+        """最新のベクトルを取得（ペア指定）"""
+        ...
+
+    @abc.abstractmethod
+    def get_all(self, namespace: str) -> list[EmotionalVector]:
+        """ネームスペース内の全ベクトル取得"""
+        ...
+
+    @abc.abstractmethod
+    def delete(self, namespace: str, key: str) -> bool:
+        """ベクトル削除"""
+        ...
+
+    @abc.abstractmethod
+    def get_namespace_keys(self, namespace: str) -> list[str]:
+        """ネームスペース内のキー一覧取得"""
+        ...
+
+    def get_by_episode(
+        self,
+        namespace: str,
+        episode: int,
+        pair: tuple[str, str] = ("*", "*"),
+    ) -> Optional[EmotionalVector]:
+        """指定エピソードのベクトルを取得する。
+
+        ``get_latest`` は常に「最新エピソード」を返すため、エピソードをまたぐ
+        処理 (例: 第14話の値と第31話の値を融合する) では別エピソードの値が
+        混線する。本メソッドは ``episode`` に一致するベクトルだけを返す。
+
+        Args:
+            namespace: ネームスペース
+            episode: エピソード番号 (1-based)
+            pair: 対象ペア。``("*", "*")`` で全ペア
+
+        Returns:
+            該当エピソードのベクトル (無ければ None)
+        """
+        for vec in self.get_all(namespace):
+            if _episode_from_id(vec.episode_id) != episode:
+                continue
+            if pair == ("*", "*"):
+                return vec
+            pair_emotions = vec.get_pair_emotions(pair[0], pair[1])
+            if not pair_emotions:
+                continue
+            result = EmotionalVector(episode_id=vec.episode_id)
+            result.metadata = dict(vec.metadata)
+            for emo, val in pair_emotions.items():
+                key = (pair[0], pair[1], emo)
+                result.signals[key] = val
+                result.confidences[key] = vec.confidences.get(key, 0.5)
+                result.causes[key] = vec.causes.get(key)
+            return result
+        return None
+
+
+class RedisVectorStore(VectorStore):
+    """Redis実装のベクトルストア"""
+
+    def __init__(
+        self,
+        host: str = "localhost",
+        port: int = 6379,
+        db: int = 0,
+        password: Optional[str] = None,
+        default_ttl: int = 864000,  # 10日
+        namespace_ttls: Optional[dict[str, int]] = None,
+        skip_connection_check: bool = False,
+        **kwargs,
+    ):
+        self.client = redis.Redis(
+            host=host,
+            port=port,
+            db=db,
+            password=password,
+            decode_responses=True,
+            **kwargs,
+        )
+        self.default_ttl = default_ttl
+        self.namespace_ttls = namespace_ttls or {}
+
+        # 接続テスト（スキップ可能）
+        if not skip_connection_check:
+            try:
+                self.client.ping()
+            except redis.ConnectionError as e:
+                logger.warning(f"Redis connection failed: {e}. Store will not be functional.")
+
+    def _make_key(self, namespace: str, key: str) -> str:
+        """Redisキー生成"""
+        return f"emotional:{namespace}:{key}"
+
+    def _get_ttl(self, namespace: str) -> int:
+        """ネームスペース別TTL取得"""
+        return self.namespace_ttls.get(namespace, self.default_ttl)
+
+    def upsert(self, namespace: str, key: str, vector: EmotionalVector) -> None:
+        """ベクトルをRedisに保存（JSONシリアライズ）"""
+        redis_key = self._make_key(namespace, key)
+        data = json.dumps(vector.to_dict(), ensure_ascii=False)
+        ttl = self._get_ttl(namespace)
+
+        try:
+            if ttl > 0:
+                self.client.set(redis_key, data, ex=ttl)
+            else:
+                self.client.set(redis_key, data)
+            logger.debug(f"Stored vector: {redis_key}")
+        except redis.RedisError as e:
+            logger.error(f"Failed to store vector {redis_key}: {e}")
+            raise
+
+    def get_latest(self, namespace: str, pair: tuple[str, str]) -> Optional[EmotionalVector]:
+        """指定ペアの最新ベクトルを取得
+
+        キー形式:
+        - ep{episode}:{source}->{target} (ペア別)
+        - ep{episode} (エピソード全体のベクトル、複数ペア含む)
+
+        ``pair`` に ``("*", "*")`` を渡すと全ペアを対象とする。
+        """
+        keys = self.get_namespace_keys(namespace)
+        if not keys:
+            return None
+
+        # ペア接頭辞でフィルタ
+        # 旧実装は `pair_prefix in k or k.startswith("ep")` を使っていたが、
+        # 全キーが "ep{N}" 形式で始まるため startswith("ep") が常に真となり、
+        # フィルタが事実上無効化されていた。その結果 max() が要求ペアと無関係な
+        # エピソードのベクトル (別エピソードの fused_payload) を返していた。
+        wildcard = pair == ("*", "*")
+        pair_prefix = f"{pair[0]}->{pair[1]}"
+
+        if wildcard:
+            matching_keys = list(keys)
+        else:
+            matching_keys = [
+                k
+                for k in keys
+                # ペア専用キー、またはエピソード全体の集約キー
+                if pair_prefix in k or "->" not in k
+            ]
+
+        if not matching_keys:
+            return None
+
+        # エピソード番号でソートして最新を取得
+        def extract_ep_num(key: str) -> int:
+            parts = key.split(":")[0] if ":" in key else key
+            if parts.startswith("ep"):
+                try:
+                    return int(parts[2:])
+                except ValueError:
+                    return -1
+            return -1
+
+        parseable = [k for k in matching_keys if extract_ep_num(k) >= 0]
+        if not parseable:
+            return None
+
+        latest_key = max(parseable, key=extract_ep_num)
+        vector = self._get_by_key(namespace, latest_key)
+
+        if vector:
+            # 指定ペアの感情のみを含む新しいベクトルを返す
+            pair_emotions = vector.get_pair_emotions(pair[0], pair[1])
+            if pair_emotions:
+                result = EmotionalVector(episode_id=vector.episode_id)
+                for emo, val in pair_emotions.items():
+                    result.signals[(pair[0], pair[1], emo)] = val
+                    result.confidences[(pair[0], pair[1], emo)] = vector.confidences.get((pair[0], pair[1], emo), 0.5)
+                    result.causes[(pair[0], pair[1], emo)] = vector.causes.get((pair[0], pair[1], emo))
+                return result
+        return None
+
+    def get_all(self, namespace: str) -> list[EmotionalVector]:
+        """ネームスペース内の全ベクトル取得"""
+        keys = self.get_namespace_keys(namespace)
+        vectors = []
+        for key in keys:
+            vec = self._get_by_key(namespace, key)
+            if vec:
+                vectors.append(vec)
+        return vectors
+
+    def _get_by_key(self, namespace: str, key: str) -> Optional[EmotionalVector]:
+        """キー指定でベクトル取得"""
+        redis_key = self._make_key(namespace, key)
+        try:
+            data = self.client.get(redis_key)
+            if data:
+                return EmotionalVector.from_dict(json.loads(data))
+        except (redis.RedisError, json.JSONDecodeError) as e:
+            logger.error(f"Failed to load vector {redis_key}: {e}")
+        return None
+
+    def delete(self, namespace: str, key: str) -> bool:
+        """ベクトル削除"""
+        redis_key = self._make_key(namespace, key)
+        try:
+            result = self.client.delete(redis_key)
+            return result > 0
+        except redis.RedisError as e:
+            logger.error(f"Failed to delete vector {redis_key}: {e}")
+            return False
+
+    def get_namespace_keys(self, namespace: str) -> list[str]:
+        """ネームスペース内のキー一覧取得（SCAN使用）"""
+        pattern = self._make_key(namespace, "*")
+        keys = []
+        try:
+            cursor = 0
+            while True:
+                cursor, batch = self.client.scan(cursor, match=pattern, count=100)
+                # プレフィックスを除去してキー名のみ抽出
+                prefix = f"emotional:{namespace}:"
+                for k in batch:
+                    if k.startswith(prefix):
+                        keys.append(k[len(prefix):])
+                if cursor == 0:
+                    break
+        except redis.RedisError as e:
+            logger.error(f"Failed to scan keys for namespace {namespace}: {e}")
+        return keys
+
+    def close(self) -> None:
+        """接続クローズ"""
+        self.client.close()
+
+    def __enter__(self) -> RedisVectorStore:
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.close()
+
+    def get_all_namespaces(self) -> list[str]:
+        """登録されているネームスペース一覧取得"""
+        return ["pipeline", "rule_engine", "annotation", "fused"]
+
+
+class InMemoryVectorStore(VectorStore):
+    """インメモリ実装のベクトルストア（テスト・軽量実行用）"""
+
+    def __init__(self):
+        self._store: dict[str, dict[str, str]] = {}
+
+    def upsert(self, namespace: str, key: str, vector: EmotionalVector) -> None:
+        if namespace not in self._store:
+            self._store[namespace] = {}
+        self._store[namespace][key] = json.dumps(vector.to_dict())
+
+    def get_latest(self, namespace: str, pair: tuple[str, str]) -> Optional[EmotionalVector]:
+        if namespace not in self._store:
+            return None
+        src, tgt = pair
+        target_pair = f"{src}->{tgt}"
+        latest_vec: Optional[EmotionalVector] = None
+        max_ep = -1
+
+        for key, data in self._store[namespace].items():
+            if target_pair in key:
+                vec = EmotionalVector.from_dict(json.loads(data))
+                import re
+                ep_match = re.search(r'ep(\d+)', vec.episode_id)
+                ep_num = int(ep_match.group(1)) if ep_match else 0
+                if ep_num >= max_ep:
+                    max_ep = ep_num
+                    latest_vec = vec
+        return latest_vec
+
+    def get_all(self, namespace: str) -> list[EmotionalVector]:
+        if namespace not in self._store:
+            return []
+        return [EmotionalVector.from_dict(json.loads(data)) for data in self._store[namespace].values()]
+
+    def delete(self, namespace: str, key: str) -> bool:
+        if namespace in self._store and key in self._store[namespace]:
+            del self._store[namespace][key]
+            return True
+        return False
+
+    def get_namespace_keys(self, namespace: str) -> list[str]:
+        if namespace not in self._store:
+            return []
+        return list(self._store[namespace].keys())
+
+    def get_all_namespaces(self) -> list[str]:
+        return list(self._store.keys())
+
+    def close(self) -> None:
+        pass
+
+
+# 後方互換性のためのエイリアス
+VectorStore = VectorStore
+RedisVectorStore = RedisVectorStore
+
+__all__ = ["VectorStore", "RedisVectorStore", "InMemoryVectorStore"]

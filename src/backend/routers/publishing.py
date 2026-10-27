@@ -1,0 +1,160 @@
+"""Novel Publishing Platform Export and Preview Endpoints (Steps 61, 62)."""
+
+from __future__ import annotations
+
+import io
+import urllib.parse
+from typing import Optional
+from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.backend.auth import get_current_user
+from src.backend.database import get_async_db
+from src.backend.database.models import User, Book
+from src.services.formatters.ruby_transpiler import PublishPlatform
+from src.services.formatters.platform_formatter import PlatformFormatter
+from src.backend.database.series_loader import SeriesDataLoader, SeriesDataLoaderConfig
+
+router = APIRouter(prefix="/publish", tags=["publishing"])
+
+
+class PublishExportRequest(BaseModel):
+    book_id: int
+    branch_id: Optional[int] = None
+
+
+async def _verify_publish_access(db: AsyncSession, book_id: int, current_user: User) -> None:
+    """リクエストユーザーがブックの所有者または管理者であることを検証する。"""
+    book = await db.get(Book, book_id)
+    if not book:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="指定された作品が存在しません")
+    if current_user.role != "admin" and getattr(book, "user_id", None) is not None:
+        if book.user_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="この作品の出版データを操作する権限がありません",
+            )
+
+
+@router.post("/{platform}")
+async def export_for_publishing(
+    platform: PublishPlatform,
+    req: PublishExportRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_db),
+):
+    """Export formatted novel package as a ZIP archive for the specified platform (Step 61)."""
+    await _verify_publish_access(db, req.book_id, current_user)
+
+    loader = SeriesDataLoader()
+    try:
+        config = SeriesDataLoaderConfig(
+            book_id=req.book_id,
+            branch_id=req.branch_id,
+            fallback_to_minimal=True,
+        )
+        series = loader.load_series(config)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to load book data: {e}"
+        )
+
+    episodes_data = [
+        {
+            "title": ep.title,
+            "content": ep.content,
+            "foreword": ep.metadata.get("foreword", ""),
+            "afterword": ep.metadata.get("afterword", ""),
+        }
+        for ep in series.episodes
+    ]
+
+    zip_bytes = PlatformFormatter.package_for_platform(
+        title=series.title or f"Book_{req.book_id}",
+        synopsis=series.synopsis or "",
+        episodes=episodes_data,
+        platform=platform,
+    )
+
+    filename = f"{series.title or 'novel'}_{platform.value}.zip"
+    encoded_filename = urllib.parse.quote(filename)
+
+    return StreamingResponse(
+        io.BytesIO(zip_bytes),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{encoded_filename}",
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        },
+    )
+
+
+@router.get("/{platform}/preview")
+async def preview_for_publishing(
+    platform: PublishPlatform,
+    book_id: int = Query(..., description="Target Book ID"),
+    chapter_number: int = Query(1, description="Episode/Chapter number to preview"),
+    branch_id: Optional[int] = Query(None, description="Optional branch ID"),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_async_db),
+):
+    """Preview formatted episode text and check platform limit warnings (Step 62)."""
+    await _verify_publish_access(db, book_id, current_user)
+
+    loader = SeriesDataLoader()
+    try:
+        config = SeriesDataLoaderConfig(
+            book_id=book_id,
+            branch_id=branch_id,
+            fallback_to_minimal=True,
+        )
+        series = loader.load_series(config)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Failed to load book data: {e}"
+        )
+
+    # Find requested episode
+    ep = None
+    for item in series.episodes:
+        if item.episode_num == chapter_number:
+            ep = item
+            break
+    if not ep and series.episodes:
+        ep = series.episodes[0]
+
+    if not ep:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Chapter {chapter_number} not found"
+        )
+
+    formatted = PlatformFormatter.format_episode_with_author_notes(
+        title=ep.title,
+        content=ep.content,
+        platform=platform,
+        foreword=ep.metadata.get("foreword", ""),
+        afterword=ep.metadata.get("afterword", ""),
+    )
+
+    warnings = PlatformFormatter.validate_limits(
+        title=series.title or "",
+        synopsis=series.synopsis or "",
+        platform=platform,
+    )
+
+    return {
+        "book_id": book_id,
+        "platform": platform.value,
+        "chapter_number": ep.episode_num,
+        "title": ep.title,
+        "formatted_content": formatted["full_text"],
+        "content_body_only": formatted["content"],
+        "foreword": formatted["foreword"],
+        "afterword": formatted["afterword"],
+        "warnings": warnings,
+    }

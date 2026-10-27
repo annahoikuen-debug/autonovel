@@ -1,0 +1,358 @@
+import asyncio
+import json
+import logging
+import uuid
+from datetime import datetime, timezone
+from typing import Any
+
+from pydantic import ValidationError
+
+from src.domain.entities.easy_mode import (
+    GachaPlan,
+    GachaPlanType,
+    GachaRequest,
+    GachaResponse,
+)
+from src.domain.entities.review_session import ReviewRound, ReviewSession
+from src.services.blind_review import BlindReviewGate
+from src.services.llm_service import LLMService
+
+logger = logging.getLogger("gacha_pitch")
+
+
+class GachaService:
+    """3案ガチャ企画生成サービス [Gacha Pitch]。
+
+    永続化対応: ``db`` に DatabaseManager を渡して DB に保存する。
+    ブラインドピアレビュー対応: ``blind_gate`` を用いて他案の情報を遮断した独立評価を実施。
+    """
+
+    def __init__(
+        self,
+        llm_service: LLMService | None = None,
+        db: Any = None,
+        blind_gate: BlindReviewGate | None = None,
+        event_bus: Any | None = None,
+    ):
+        if db is None:
+            raise ValueError(
+                "GachaService requires db=DatabaseManager (in-memory cache removed in v2)."
+            )
+        self.llm_service = llm_service or LLMService()
+        self._db = db
+        self.blind_gate = blind_gate or BlindReviewGate(
+            forbidden_agents=["proposal_other", "plan_other", "gacha_competitor"],
+            mode="scrub",
+        )
+        self.event_bus = event_bus
+
+    async def _save_gacha_plans_db(self, request_id: str, plans_json: dict) -> None:
+        if self._db is None:
+            return
+        from src.backend.database.repositories import EasyModeDraftRepository
+
+        async with self._db.get_session() as session:
+            repo = EasyModeDraftRepository(session)
+            await repo.save_gacha_plans(request_id, plans_json)
+            await session.commit()
+
+    async def _save_review_session(self, review_session: ReviewSession) -> None:
+        """ReviewSession を DB に保存。"""
+        if self._db is None:
+            return
+        from src.backend.database.repositories import EasyModeDraftRepository
+
+        async with self._db.get_session() as session:
+            repo = EasyModeDraftRepository(session)
+            await repo.save_review_session(review_session)
+            await session.commit()
+
+    def _create_isolated_plan_payload(
+        self, plan: GachaPlan, all_plans: list[GachaPlan], gate: BlindReviewGate
+    ) -> dict[str, Any]:
+        """他案の情報をマスクした単一案の評価ペイロードを作成（Step 11 & 12）"""
+        other_plans = [p for p in all_plans if p.plan_id != plan.plan_id]
+        raw_payload = {
+            "target_plan": plan.model_dump(),
+            "proposal_other": [p.model_dump() for p in other_plans],
+        }
+        # BlindReviewGate で他案情報を強制スクラブ
+        return gate.scrub_payload(raw_payload)
+
+    async def _evaluate_single_plan_blind(
+        self, plan: GachaPlan, all_plans: list[GachaPlan], genre: str, gate: BlindReviewGate
+    ) -> tuple[float, dict[str, Any], str]:
+        """単一案を他案から隔離して独立採点（Step 13）"""
+        isolated_data = self._create_isolated_plan_payload(plan, all_plans, gate)
+
+        target = isolated_data.get("target_plan", {})
+        title = target.get("title", "")
+        logline = target.get("logline", "")
+        charm = target.get("charm_point", "")
+
+        score = 75.0
+        if len(title) >= 5:
+            score += 5.0
+        if len(logline) >= 20:
+            score += 8.0
+        if len(charm) >= 15:
+            score += 7.0
+
+        if plan.plan_type == GachaPlanType.ROYAL:
+            reason = "王道のカタルシスと読者エンゲージメントが高く、商業展開に最適です。"
+            score += 3.0
+        elif plan.plan_type == GachaPlanType.CURVEBALL:
+            reason = "予想外のギャップ設定があり、SNS拡散やフック強度に優れています。"
+            score += 2.0
+        else:
+            reason = "重厚な世界観とサスペンスがあり、固定ファンの獲得に適しています。"
+            score += 1.0
+
+        critique = {
+            "clarity": "high" if len(logline) >= 20 else "medium",
+            "uniqueness": "high" if plan.plan_type != GachaPlanType.ROYAL else "standard",
+            "marketability": "high",
+        }
+        return min(100.0, score), critique, reason
+
+    async def _run_review_round(
+        self,
+        plans: list[GachaPlan],
+        round_number: int,
+        review_session: ReviewSession,
+        request_id: str,
+        genre: str,
+    ) -> ReviewRound:
+        """指定ラウンドのブラインド評価を実行。
+
+        各プランを独立したゲート（current_round_id付き）で評価し、
+        ラウンド完了イベントを発行する。
+        """
+        round_id = f"{review_session.session_id}_r{round_number}"
+
+        # ラウンドごとに新しいゲートインスタンス（current_round_id付き）を作成
+        round_gate = BlindReviewGate(
+            forbidden_agents=self.blind_gate.forbidden_agents,
+            mode=self.blind_gate.mode,
+            blocked_keys=list(self.blind_gate.blocked_keys),
+            deterministic=self.blind_gate.deterministic,
+            schema=self.blind_gate.schema,
+            current_round_id=round_id,
+        )
+
+        evaluated_plans: list[GachaPlan] = []
+        for p in plans:
+            score, critique, reason = await self._evaluate_single_plan_blind(
+                p, plans, genre, round_gate
+            )
+            p.audit_score = score
+            p.critique = critique
+            p.recommendation_reason = reason
+            evaluated_plans.append(p)
+
+        # ReviewRound を構築
+        round_obj = self._build_review_round(evaluated_plans, round_number, round_gate)
+
+        # ラウンド完了イベント発行（round_id 付き）
+        if self.event_bus:
+            from src.agents.event_bus import BLIND_REVIEW_ROUND_COMPLETED, AgentEvent
+
+            round_event = AgentEvent(
+                agent="GachaService",
+                payload={
+                    "event_type": BLIND_REVIEW_ROUND_COMPLETED,
+                    "session_id": review_session.session_id,
+                    "request_id": request_id,
+                    "round_number": round_number,
+                    "round_id": round_id,
+                    "plan_scores": round_obj.plan_scores,
+                    "gate_config_hash": round_obj.gate_config_hash,
+                },
+                correlation_id=request_id,
+                round_id=round_id,
+                metadata={"blind_review": True},
+            )
+            try:
+                await self.event_bus.publish(round_event)
+            except BaseException as e:
+                logger.debug(f"Failed to publish blind review round event: {e}")
+
+        return round_obj
+
+    def _build_review_round(
+        self, plans: list[GachaPlan], round_number: int, gate: BlindReviewGate
+    ) -> ReviewRound:
+        """評価済みプランから ReviewRound を構築。"""
+        plan_scores = {p.plan_id: p.audit_score or 0.0 for p in plans}
+        plan_critiques = {p.plan_id: p.critique or {} for p in plans}
+        gate_config_hash = gate.config_hash
+        return ReviewRound(
+            round_number=round_number,
+            timestamp=datetime.now(timezone.utc),
+            plan_scores=plan_scores,
+            plan_critiques=plan_critiques,
+            gate_config_hash=gate_config_hash,
+        )
+
+    async def generate_plans(self, request: GachaRequest) -> GachaResponse:
+        """王道・変化球・ダークの3案企画を並列生成し、ブラインド独立採点を行う"""
+        if not request.genre or not request.keywords:
+            raise ValueError("ジャンルとキーワードは必須です")
+
+        request_id = f"gacha_{uuid.uuid4().hex[:8]}"
+
+        # ReviewSession の初期化（再開時は既存をロード）
+        if request.review_session_id and self._db is not None:
+            from src.backend.database.repositories import EasyModeDraftRepository
+            async with self._db.get_session() as session:
+                repo = EasyModeDraftRepository(session)
+                review_session = await repo.load_review_session(request.review_session_id)
+        else:
+            review_session = None
+
+        if review_session is None:
+            review_session = ReviewSession(
+                request_id=request_id,
+                gate_forbidden_agents=self.blind_gate.forbidden_agents,
+                gate_mode=self.blind_gate.mode,
+                gate_blocked_keys=list(self.blind_gate.blocked_keys),
+            )
+
+        types = [
+            (GachaPlanType.ROYAL, "王道展開：読者の期待に100%応える爽快な展開"),
+            (GachaPlanType.CURVEBALL, "変化球展開：予想外のギャップや設定で魅せる奇抜な展開"),
+            (GachaPlanType.DARK, "ダーク展開：シリアスで深みのある重厚な展開"),
+        ]
+
+        async def _generate_single_plan(plan_type: GachaPlanType, direction: str) -> GachaPlan:
+            prompt = f"""
+ジャンル: {request.genre}
+キーワード: {", ".join(request.keywords)}
+方針: {direction}
+
+以下のJSON形式でWeb小説の企画案を1つ作成してください。
+JSONキー:
+- "title": 作品タイトル
+- "logline": 1行あらすじ（50文字程度）
+- "protagonist_summary": 主人公の属性・特徴（50文字程度）
+- "charm_point": この案の最大の魅力（50文字程度）
+
+必ずJSONフォーマットのみを出力してください。
+"""
+            max_retries = 2
+            for attempt in range(max_retries + 1):
+                try:
+                    res = await self.llm_service.generate_json(
+                        purpose="planning",
+                        prompt=prompt,
+                        temp=request.temperature,
+                    )
+                    content = res.get("story_content", {})
+                    if isinstance(content, str):
+                        content = json.loads(content)
+
+                    plan_id = f"plan_{uuid.uuid4().hex[:6]}"
+                    return GachaPlan(
+                        plan_id=plan_id,
+                        plan_type=plan_type,
+                        title=content.get("title", f"{request.genre}【{plan_type.value}案】"),
+                        logline=content.get("logline", "あらすじ準備中"),
+                        protagonist_summary=content.get("protagonist_summary", "主人公詳細準備中"),
+                        charm_point=content.get("charm_point", "魅力ポイント準備中"),
+                    )
+                except (ValidationError, json.JSONDecodeError, BaseException) as e:
+                    logger.warning(
+                        f"[gacha-pitch] Plan generation failed (attempt {attempt + 1}/{max_retries + 1}): {e}"
+                    )
+                    if attempt == max_retries:
+                        plan_id = f"plan_{uuid.uuid4().hex[:6]}"
+                        return GachaPlan(
+                            plan_id=plan_id,
+                            plan_type=plan_type,
+                            title=f"{request.genre}：{plan_type.value}の物語",
+                            logline=f"{', '.join(request.keywords)}をモチーフにした{direction}",
+                            protagonist_summary="個性的で魅力的な主人公",
+                            charm_point=f"{plan_type.value}の怒涛の展開",
+                        )
+
+        try:
+            tasks = [_generate_single_plan(pt, direction) for pt, direction in types]
+            # return_exceptions=True: 1案の失敗で他案の生成結果まで破棄されないようにする。
+            plans_raw = await asyncio.wait_for(
+                asyncio.gather(*tasks, return_exceptions=True), timeout=30.0
+            )
+            failures = [r for r in plans_raw if isinstance(r, BaseException)]
+            if failures:
+                logger.error(
+                    "[gacha-pitch] %d/%d plan generations failed: %s",
+                    len(failures),
+                    len(tasks),
+                    failures[0],
+                )
+            succeeded = [r for r in plans_raw if not isinstance(r, BaseException)]
+            if not succeeded:
+                first_error = str(failures[0]) if failures else ""
+                raise RuntimeError(
+                    f"企画の生成がすべて失敗しました "
+                    f"({len(failures)} 件): {first_error}"
+                )
+            plans = list(succeeded)
+        except TimeoutError:
+            logger.error("[gacha-pitch] Gacha generation timed out (30s)")
+            raise TimeoutError("企画の生成処理がタイムアウトしました")
+
+        # ラウンド0: 初回生成時のブラインド評価を実行
+        round_0 = await self._run_review_round(
+            plans=plans,
+            round_number=0,
+            review_session=review_session,
+            request_id=request_id,
+            genre=request.genre,
+        )
+        review_session.add_round(round_0)
+
+        # 最もスコアの高い案を推奨案とする
+        best_plan = max(plans, key=lambda x: x.audit_score or 0.0)
+        best_plan.is_recommended = True
+        recommended_plan_id = best_plan.plan_id
+        review_session.final_recommendation = recommended_plan_id
+        review_session.status = "completed"
+
+        # ReviewSession を永続化
+        await self._save_review_session(review_session)
+
+        response = GachaResponse(
+            request_id=request_id,
+            plans=plans,
+            recommended_plan_id=recommended_plan_id,
+            review_session_id=review_session.session_id,
+        )
+
+        plans_json = {
+            "request": request.model_dump(),
+            "response": response.model_dump(),
+        }
+
+        # EventBus への publish_blind 発行 (Step 14) - round_id 付きで発行
+        if self.event_bus and hasattr(self.event_bus, "publish_blind"):
+            from src.agents.orchestrator import AgentEvent
+
+            event = AgentEvent(
+                agent="GachaService",
+                payload={"request_id": request_id, "response": response.model_dump()},
+                correlation_id=request_id,
+                round_id=review_session.session_id + "_r0",
+            )
+            try:
+                await self.event_bus.publish_blind(
+                    event, self.blind_gate, round_id=review_session.session_id + "_r0"
+                )
+            except BaseException as e:
+                logger.debug(f"Failed to publish blind gacha event: {e}")
+
+        if self._db is not None:
+            await self._save_gacha_plans_db(request_id, plans_json)
+        else:
+            raise RuntimeError("GachaService._db is None; this should be unreachable.")
+
+        return response

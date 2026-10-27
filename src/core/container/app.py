@@ -1,0 +1,276 @@
+"""
+AppContainer - アプリケーション層のDIコンテナ
+InfraContainer を継承し、エージェント・サービス・エンジンを定義する。
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import TYPE_CHECKING
+
+from dependency_injector import containers, providers
+
+from src.backend.database import DataRepository, UnitOfWork
+from src.backend.engine_config import EngineConfig
+try:
+    from src.agents.context_builder_agent import ContextBuilderAgent as ContextManager
+except ImportError:
+    from src.backend.engine_context import ContextManager
+from src.core.container.infra import InfraContainer
+from src.services.llm.base import PLACEHOLDER_API_KEY
+
+if TYPE_CHECKING:
+    pass
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
+
+
+class AppContainer(InfraContainer):
+    wiring_config = containers.WiringConfiguration(
+        modules=[
+            "src.services.prompt_version_service",
+            "src.services.state_manager",
+            "src.backend.database.uow",
+        ]
+    )
+
+    # 未設定時はプレースホルダを入れ、LLM レイヤーが明確な設定エラーを出すようにする
+    # (旧: 実キーなしでも "DUMMY" が実キーとして流通し、不透明な 401 になっていた)
+    api_key: providers.Object = providers.Object(PLACEHOLDER_API_KEY)
+
+    genai_client: providers.Singleton = providers.Singleton(
+        "src.core.llm_gateway.create_genai_client",
+        api_key=api_key,
+    )
+    llm_factory: providers.Singleton = providers.Singleton(
+        "src.core.llm_gateway.LLMProviderFactory",
+        genai_client=genai_client,
+        cooldown=InfraContainer.cooldown,
+    )
+    semantic_cache: providers.Singleton = providers.Singleton(
+        "src.core.llm_gateway.SemanticCacheManager",
+        vector_store=InfraContainer.vector_store,
+    )
+    edge_preserver: providers.Singleton = providers.Singleton(
+        "src.backend.sharp_edge_preserver.SemanticEdgePreserver",
+        semantic_cache=semantic_cache,
+        similarity_threshold=0.75,
+        use_semantic=True,
+    )
+    llm: providers.Singleton = providers.Singleton(
+        "src.core.llm_gateway.LLMGenerateResultProxy",
+        llm_factory=llm_factory,
+    )
+    connection_pipeline: providers.Singleton = providers.Singleton(lambda: None)
+
+    # 4層圧縮プロバイダー
+    compression_config: providers.Singleton = providers.Singleton(
+        "src.services.compression.models.CompressionConfig",
+    )
+    compressor: providers.Singleton = providers.Singleton(
+        "src.services.compression.compressor.FourLayerCompressor",
+        config=compression_config,
+    )
+
+    repo: providers.Singleton = providers.Singleton(
+        DataRepository,
+        db=InfraContainer.db,
+    )
+    uow: providers.Factory = providers.Factory(
+        UnitOfWork,
+        db=InfraContainer.db,
+    )
+
+    plot_service: providers.Factory = providers.Factory(
+        "src.services.plot_service.PlotService",
+        repo=repo,
+    )
+
+    pm: providers.Singleton = providers.Singleton(
+        "prompts.manager.PromptManager",
+    )
+
+    ctx_mgr: providers.Singleton = providers.Singleton(
+        ContextManager,
+        repo=repo,
+    )
+
+    auditor: providers.Singleton = providers.Singleton(
+        "src.agents.audit.LogicalAuditor",
+        repo=repo,
+        pm=pm,
+        llm=llm,
+    )
+    marketing: providers.Singleton = providers.Singleton(
+        "src.agents.MarketingAgent",
+        repo=repo,
+        prompt_manager=pm,
+        llm=llm,
+    )
+    bible_generator: providers.Singleton = providers.Singleton(
+        "src.services.bible_service.WorldBibleGenerator",
+        repo=repo,
+        llm=llm,
+        pm=pm,
+        debate=None,
+        marketing=marketing,
+        auditor=auditor,
+    )
+    plot_expander: providers.Singleton = providers.Singleton(
+        "src.agents.plot.PlotAgent",
+        repo=repo,
+        pm=pm,
+        generate_json=llm.provided.generate_json,
+        plot_expander=providers.Singleton(
+            "src.services.default_plot_expander.DefaultPlotExpander",
+            repo=repo,
+            pm=pm,
+            llm=llm,
+        ),
+    )
+    planner: providers.Singleton = providers.Singleton(
+        "src.agents.PlanningAgent",
+        repo=repo,
+        llm=llm,
+        prompt_manager=pm,
+    )
+    validator = auditor
+    narrative: providers.Singleton = providers.Singleton(
+        "src.backend.engine_narrative.NarrativeController",
+        repo=repo,
+        pm=pm,
+        ctx_mgr=ctx_mgr,
+        generate_json=llm.provided.generate_json,
+        logic_validator=validator,
+        auditor=auditor,
+    )
+    critique: providers.Singleton = providers.Singleton(
+        "src.backend.engine_critique.CritiqueAgent",
+        repo=repo,
+        pm=pm,
+        generate_json=llm.provided.generate_json,
+    )
+    style_rag: providers.Singleton = providers.Singleton(
+        "src.backend.engine_style_rag.StyleRagManager",
+        client=genai_client,
+        repo=repo,
+    )
+    writer: providers.Singleton = providers.Singleton(
+        "src.agents.WritingAgent",
+        repo=repo,
+        llm=llm,
+        style_rag=style_rag,
+        pm=pm,
+        ctx_mgr=ctx_mgr,
+    )
+    formatter: providers.Singleton = providers.Singleton(
+        "src.backend.sanitizer.TextFormatter",
+    )
+    context_builder_agent: providers.Singleton = providers.Singleton(
+        "src.agents.context_builder_agent.ContextBuilderAgent",
+        repo=repo,
+        llm=llm,
+        style_rag=style_rag,
+        # 旧実装は providers.Self() でコンテナ自身をこれらの引数に注入していた。
+        # AppContainer は truthy なので `if self.event_bus:` を素通りし、
+        # skill_base.emit_event() の `self.event_bus.emit(...)` が
+        # AttributeError になっていた。 canonical EventBus は
+        # src.agents.event_bus.EventBus (プロセスグローバルに get_event_bus() あり)。
+        # このエージェントには意図的に何も渡さない (emit_event は no-op になる)。
+        rag_prefetch=None,
+        event_bus=None,
+        compressor=compressor,
+    )
+    image_service: providers.Factory = providers.Factory(
+        "src.services.image_service.ImageService",
+        api_key=api_key,
+    )
+    illustration_agent: providers.Factory = providers.Factory(
+        "src.agents.illustration_agent.IllustrationAgent",
+        image_service=image_service,
+    )
+    engine: providers.Factory = providers.Factory(
+        "src.backend.orchestrator_engine_adapter.OrchestratorEngineAdapter",
+        api_key=api_key,
+        repo=repo,
+        db=InfraContainer.db,
+        llm=llm,
+        cooldown=InfraContainer.cooldown,
+        plot_service=plot_service,
+        illustration_agent=illustration_agent,
+    )
+    engine_facade: providers.Factory = providers.Factory(
+        "src.backend.engine_facade.EngineFacade",
+        config=providers.Factory(
+            EngineConfig.create,
+            api_key=api_key,
+            cooldown=InfraContainer.cooldown,
+        ),
+        engine=engine,
+    )
+    redis_cache: providers.Singleton = providers.Singleton(
+        "src.services.redis_cache.RedisCacheService"
+    )
+    prompt_cache: providers.Factory = providers.Factory(
+        "src.services.redis_cache.PromptCacheService",
+        redis_cache=redis_cache,
+        semantic_cache=None,
+        l1_cache=None,
+    )
+
+    illustration_workflow: providers.Factory = providers.Factory(
+        "src.backend.workflows.illustration_workflow.IllustrationWorkflow",
+        illustration_agent=illustration_agent,
+    )
+
+    # BookScore & WritingService
+    # ※ repository / reporter_factory はどちらも __init__ で未使用の任意引数であり、
+    #   providers.Self()（コンテナ自身）を渡しても機能しない。意図的に未指定のままにする。
+    book_score_calculator: providers.Singleton = providers.Singleton(
+        "src.services.book_score_service.BookScoreCalculator",
+    )
+    writing_service: providers.Singleton = providers.Singleton(
+        "src.domain.writing.WritingService",
+        writer=writer,
+        repo=repo,
+        pm=pm,
+        style_rag=style_rag,
+        ctx_mgr=ctx_mgr,
+        book_score_calculator=book_score_calculator,
+        score_threshold=70.0,
+        writing_agent=writer,
+        context_builder_agent=context_builder_agent,
+        illustration_agent=illustration_agent,
+        compressor=compressor,
+        max_retries=3,
+        backoff_base=2.0,
+    )
+
+    # Consolidated Services (Part 4)
+    audit_aggregator_service: providers.Singleton = providers.Singleton(
+        "src.services.audit.AuditAggregatorService",
+    )
+    marketing_service: providers.Singleton = providers.Singleton(
+        "src.services.marketing.MarketingService",
+    )
+    # 3.6: RAG サービス (単一インスタンスを共有)
+    rag_service: providers.Singleton = providers.Singleton(
+        "src.services.rag.GraphRAGService",
+    )
+    #: 後方互換エイリアス。旧 `rag_pipeline_service` 名で参照するコードのため、
+    #: 別インスタンスではなく `rag_service` と同じものを返す。
+    rag_pipeline_service = rag_service
+
+    # DAG パイプラインのプロバイダー
+    # 削除済み: 元の `dag_pipeline` は `InfraContainer.llm_provider_factory`
+    # (フェイクのGemini実装) を注入し、かつ `DefaultAutoWorkflowBuilder.build()` は
+    # ハンドラ無しのノードのみを追加するため何も実行しないスタブだった。
+    # フェイク経路をDIグラフに残さないため、プロバイダー登録ごと削除する。
+    # 本番の生成フローは `src/backend/tasks/generation_tasks.py` の Huey タスクで実行される。
+    # DAG を実際に使用する場合は、接続可能な LLM ファクトリーを
+    # 明示的に渡す実装を再導入すること。
+
+
+# 後方互換エイリアス
+AppContainer2 = AppContainer

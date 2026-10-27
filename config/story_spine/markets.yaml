@@ -1,0 +1,34 @@
+# STORY_SPINE: 媒体規格 4 種（契約凍結 2026-09-29）。
+# これは「構造」ではなく「提出物の契約」。同じパターンでも締め方と伏線管理が変わる。
+web:
+  label: Web連載（なろう/カクヨム）
+  hook_position: 冒頭3行
+  per_ep_hook: true
+  act_requirement: 0
+  foreshadow_policy: short_only
+  ending_contract: next_volume_hook
+  hook_window_eps: 3
+light_novel:
+  label: ライトノベル単行本
+  hook_position: 第1話冒頭
+  per_ep_hook: false
+  act_requirement: 4
+  foreshadow_policy: within_volume
+  ending_contract: next_volume_hook
+  hook_window_eps: 1
+single_shot:
+  label: 単発・投稿（新人賞/雑誌）
+  hook_position: 冒頭1,000字
+  per_ep_hook: false
+  act_requirement: 4
+  foreshadow_policy: short_only
+  ending_contract: closed
+  hook_window_eps: 1
+general:
+  label: 一般文芸・長編
+  hook_position: 序盤1章
+  per_ep_hook: false
+  act_requirement: 4
+  foreshadow_policy: long_allowed
+  ending_contract: closed
+  hook_window_eps: 1

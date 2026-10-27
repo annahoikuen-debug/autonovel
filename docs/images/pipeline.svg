@@ -1,0 +1,123 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 660" width="1200" height="660" role="img" aria-label="AutoNovel の執筆パイプライン: コンテキスト準備から二段階プロット展開、8専門家の監査、出力まで">
+  <title>執筆パイプライン</title>
+  <defs>
+    <linearGradient id="pBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b1220"/>
+      <stop offset="100%" stop-color="#0e1a2c"/>
+    </linearGradient>
+    <linearGradient id="coarse" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1e3a8a"/>
+      <stop offset="100%" stop-color="#155e75"/>
+    </linearGradient>
+    <linearGradient id="fine" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9a3412"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="660" rx="26" fill="url(#pBg)"/>
+  <rect x="0.5" y="0.5" width="1199" height="659" rx="26" fill="none" stroke="#1e293b"/>
+
+  <text x="600" y="44" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="26" font-weight="700" fill="#f8fafc">AutoWorkflowPipeline ── 一つの原稿ができるまで</text>
+  <text x="600" y="70" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="13.5" fill="#94a3b8">1 話ぶんの原稿生成が、この 4 段のステップで完結します。段階をまたいで状態を保存するので、中断からの再開もできます。</text>
+
+  <!-- ============ STAGE 1 : コンテキスト準備 ============ -->
+  <rect x="20" y="94" width="1160" height="118" rx="16" fill="#0f1a2e" stroke="#38bdf8" stroke-opacity=".35"/>
+  <rect x="20" y="94" width="118" height="118" rx="16" fill="#38bdf8" fill-opacity=".16"/>
+  <rect x="120" y="94" width="18" height="118" fill="#38bdf8" fill-opacity=".16"/>
+  <text x="79" y="140" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#7dd3fc">1</text>
+  <text x="79" y="166" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="13" font-weight="700" fill="#e0f2fe">準備</text>
+  <text x="79" y="186" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="10.5" fill="#7dd3fc">context</text>
+
+  <rect x="162" y="120" width="196" height="66" rx="12" fill="#132033" stroke="#334155"/>
+  <text x="260" y="145" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="13" font-weight="700" fill="#e2e8f0">材料を集める</text>
+  <text x="260" y="166" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#94a3b8">設定・過去話・</text>
+  <text x="260" y="180" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#94a3b8">キャラクター・世界観</text>
+
+  <path d="M 366 153 L 400 153" stroke="#64748b" stroke-width="2" marker-end="url(#a3)"/>
+
+  <rect x="406" y="120" width="230" height="66" rx="12" fill="#132033" stroke="#a78bfa" stroke-opacity=".6"/>
+  <text x="521" y="145" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="13" font-weight="700" fill="#c4b5fd">Reflective RAG</text>
+  <text x="521" y="166" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#94a3b8">BM25 キーワード抽出</text>
+  <text x="521" y="180" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#94a3b8">＋ GraphRAG 文脈適合性</text>
+
+  <path d="M 644 153 L 678 153" stroke="#64748b" stroke-width="2" marker-end="url(#a3)"/>
+
+  <rect x="684" y="112" width="256" height="82" rx="12" fill="#132033" stroke="#f59e0b" stroke-opacity=".6"/>
+  <text x="812" y="137" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="13" font-weight="700" fill="#fbbf24">4層圧縮</text>
+  <text x="812" y="157" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="10.5" fill="#cbd5e1">キーワード → サブグラフ → 抽象化 → トリミング</text>
+  <text x="812" y="178" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#a16207">重要情報は保持したままトークン使用量を削減</text>
+
+  <path d="M 948 153 L 982 153" stroke="#64748b" stroke-width="2" marker-end="url(#a3)"/>
+
+  <rect x="988" y="120" width="168" height="66" rx="12" fill="#132033" stroke="#34d399" stroke-opacity=".6"/>
+  <text x="1072" y="145" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="13" font-weight="700" fill="#6ee7b7">圧縮コンテキスト</text>
+  <text x="1072" y="166" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#94a3b8">伏線・主要キャラクター</text>
+  <text x="1072" y="180" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#94a3b8">を必ず残す</text>
+
+  <path d="M 600 212 L 600 236" stroke="#64748b" stroke-width="2" marker-end="url(#a3)"/>
+
+  <!-- ============ STAGE 2 : 執筆 ============ -->
+  <rect x="20" y="240" width="1160" height="130" rx="16" fill="#0f1a2e" stroke="#f59e0b" stroke-opacity=".35"/>
+  <rect x="20" y="240" width="118" height="130" rx="16" fill="#f59e0b" fill-opacity=".16"/>
+  <rect x="120" y="240" width="18" height="130" fill="#f59e0b" fill-opacity=".16"/>
+  <text x="79" y="286" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#fbbf24">2</text>
+  <text x="79" y="312" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="13" font-weight="700" fill="#fef3c7">執筆</text>
+  <text x="79" y="332" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="10.5" fill="#fbbf24">writing</text>
+
+  <rect x="162" y="266" width="300" height="80" rx="12" fill="url(#coarse)" stroke="#60a5fa" stroke-opacity=".6"/>
+  <text x="312" y="292" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="14" font-weight="700" fill="#ffffff">Coarse ── 大局骨子</text>
+  <text x="312" y="314" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11.5" fill="#dbeafe">テンション・事件・引き（フック）</text>
+  <text x="312" y="332" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#93c5fd">まず「何が起きるか」を決める</text>
+
+  <path d="M 470 306 L 506 306" stroke="#64748b" stroke-width="2" marker-end="url(#a3)"/>
+
+  <rect x="512" y="266" width="300" height="80" rx="12" fill="url(#fine)" stroke="#fbbf24" stroke-opacity=".6"/>
+  <text x="662" y="292" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="14" font-weight="700" fill="#ffffff">Fine ── 執筆直前の演出</text>
+  <text x="662" y="314" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11.5" fill="#ffedd5">五感・心理・ビート詳細</text>
+  <text x="662" y="332" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#fcd34d">「どう描くか」を最後に決定</text>
+
+  <path d="M 820 306 L 856 306" stroke="#64748b" stroke-width="2" marker-end="url(#a3)"/>
+
+  <rect x="862" y="266" width="294" height="80" rx="12" fill="#132033" stroke="#34d399" stroke-opacity=".6"/>
+  <text x="1009" y="292" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="14" font-weight="700" fill="#6ee7b7">本文（1話分）</text>
+  <text x="1009" y="314" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11.5" fill="#cbd5e1">画面へストリーミングしながら生成</text>
+  <text x="1009" y="332" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="10.5" fill="#64748b">生成しながら読める</text>
+
+  <path d="M 662 350 L 662 368" stroke="#38bdf8" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a3)"/>
+  <rect x="700" y="352" width="456" height="0" fill="none"/>
+  <text x="1160" y="364" text-anchor="end" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="11" fill="#38bdf8">↳ 投機的プリフェッチ：執筆中に次話のビートを裏で展開（待ち時間ゼロ）</text>
+
+  <path d="M 600 370 L 600 394" stroke="#64748b" stroke-width="2" marker-end="url(#a3)"/>
+
+  <!-- ============ STAGE 3 : 監査 ============ -->
+  <rect x="20" y="398" width="1160" height="150" rx="16" fill="#0f1a2e" stroke="#a78bfa" stroke-opacity=".35"/>
+  <rect x="20" y="398" width="118" height="150" rx="16" fill="#a78bfa" fill-opacity=".16"/>
+  <rect x="120" y="398" width="18" height="150" fill="#a78bfa" fill-opacity=".16"/>
+  <text x="79" y="444" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="700" fill="#c4b5fd">3</text>
+  <text x="79" y="470" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="13" font-weight="700" fill="#ede9fe">監査</text>
+  <text x="79" y="490" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="10.5" fill="#c4b5fd">audit</text>
+
+  <text x="162" y="428" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="12" fill="#94a3b8">8 人の専門オーディターが並列で読み、スコアを統合します</text>
+
+  <g font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="12" fill="#e2e8f0">
+    <rect x="162" y="440" width="230" height="42" rx="10" fill="#132033" stroke="#334155"/><text x="180" y="466">一貫性Auditor</text>
+    <rect x="404" y="440" width="230" height="42" rx="10" fill="#132033" stroke="#334155"/><text x="422" y="466">創造性Auditor</text>
+    <rect x="646" y="440" width="230" height="42" rx="10" fill="#132033" stroke="#334155"/><text x="664" y="466">読者フックAuditor</text>
+    <rect x="888" y="440" width="268" height="42" rx="10" fill="#132033" stroke="#334155"/><text x="906" y="466">感情曲線Auditor</text>
+    <rect x="162" y="490" width="230" height="42" rx="10" fill="#132033" stroke="#334155"/><text x="180" y="516">文体Auditor</text>
+    <rect x="404" y="490" width="230" height="42" rx="10" fill="#132033" stroke="#334155"/><text x="422" y="516">事実性Auditor</text>
+    <rect x="646" y="490" width="230" height="42" rx="10" fill="#132033" stroke="#334155"/><text x="664" y="516">構造Auditor</text>
+    <rect x="888" y="490" width="268" height="42" rx="10" fill="#132033" stroke="#334155"/><text x="906" y="516">マルチメディアAuditor</text>
+  </g>
+
+  <path d="M 600 548 L 600 572" stroke="#64748b" stroke-width="2" marker-end="url(#a3)"/>
+
+  <!-- ============ STAGE 4 : 出力 ============ -->
+  <rect x="20" y="576" width="1160" height="72" rx="16" fill="#132033" stroke="#f59e0b" stroke-opacity=".5"/>
+  <text x="600" y="604" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="14" font-weight="700" fill="#fbbf24">4  書き出し ── 1 つの ZIP にまとめる</text>
+  <text x="600" y="630" text-anchor="middle" font-family="'Hiragino Sans','Yu Gothic','Noto Sans JP',sans-serif" font-size="12" fill="#cbd5e1">本文テキスト ・ キャラクター／世界観設定集 ・ プロット概要（伏線つき） ・ データダンプ JSON ／ なろう・カクヨム・EPUB にも変換</text>
+</svg>

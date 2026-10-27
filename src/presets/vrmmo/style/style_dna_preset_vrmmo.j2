@@ -1,0 +1,77 @@
+{
+  "genre": "vrmmo",
+  "preset_code": "vrmmo_standard_v1.1",
+  "description": "VRMMO・ゲーム世界・チート・配信者ジャンルの文体DNA。ゲーマー配信者の効率厨思考と世界初達成の喜びを、IT比喩とUI風描写で演出する。",
+  "sentence_length": {
+    "avg": 38,
+    "std_dev": 11,
+    "min": 12,
+    "max": 80,
+    "description": "平均38字。システム表示・ステータス・ログ・チャットは超短文、戦闘・攻略・心理戦は中長文で濃密に。"
+  },
+  "vocab_diversity": {
+    "type_token_ratio": 0.45,
+    "rare_word_ratio": 0.10,
+    "description": "ゲーム用語と配信用語を高頻度融合。略語・スラング・略称も適度に。"
+  },
+  "sentence_end_distribution": {
+    "desu_masu": 0.40,
+    "da_dearu": 0.35,
+    "nominal": 0.15,
+    "exclamatory": 0.07,
+    "interrogative": 0.03,
+    "description": "配信・チャット・会話は『です・ます』、地の文・システム・戦闘・思考は『だ・である』、体言止めでステータス・ログ・UIテキスト風。"
+  },
+  "metaphor_frequency": {
+    "per_1000_chars": 3.5,
+    "types": {
+      "visual": 0.35,
+      "digital": 0.30,
+      "auditory": 0.15,
+      "kinesthetic": 0.10,
+      "abstract": 0.10
+    },
+    "description": "スキル発動・エフェクト・UI・コード・ログ・アルゴリズム・バグ・パッチ・チートをIT用語でメタファー化。"
+  },
+  "pov_distance": {
+    "level": "close_third",
+    "modifier": "gamer_streamer",
+    "internal_monologue_ratio": 0.35,
+    "free_indirect_discourse": true,
+    "description": "密接三人称ゲーマー視点。ビルド考察・効率計算・視聴者数・収益・パッチノート妄想の独白35%、配信時は視聴者視点へ自在切替。"
+  },
+  "narration_tone": {
+    "base": "efficient_gamer",
+    "emotional_peaks": "clear_joy",
+    "catharsis_mode": "admin_god",
+    "description": "平常は効率厨・ビルド考察・コスパ重視、クリア時は最適解発見の知的愉悦、管理者時はコード書き換え・世界パッチの神視点の余裕。"
+  },
+  "dialogue_style": {
+    "protagonist": "gamer_streamer",
+    "viewers": "chaotic_raw",
+    "guildmates": "competitive_friendly",
+    "rivals": "competitive_respectful",
+    "admins": "bureaucratic_threatening",
+    "npcs": "scripted_then_aware",
+    "description": "主人公はゲーマー・配信者・略語・スラング・皮肉、視聴者はカオス・ミーム・応援とアンチ・考察、ギルメンは競争的・友好的、ライバルは切磋琢磨、運営は官僚的・脅迫的・隠蔽、NPCはスクリプト的→自我芽生え。"
+  },
+  "pacing": {
+    "scene_transition_speed": "very_fast",
+    "time_skip_frequency": "very_high",
+    "chapter_hook_density": 1.0,
+    "description": "配信・クエスト・ダンジョン・レイド・アップデート・メンテ・パッチ・ホットフィックスを高速切替、各話・各イベントに大型フック。"
+  },
+  "forbidden_patterns": [
+    "主人公が『初心者・下手・弱い』振る舞い（チート前提では即最適解）",
+    "ゲームシステムの説明を長々と（UI・ログ・システム表示・チャットで自然提示）",
+    "現実世界の常識・法律・物理法則に縛られる（ゲーム内のバグ・チート・管理者権限で突破）",
+    "視点漏れ（主人公が知り得ぬ運営内部・他プレイヤーの思考・サーバーログ・管理者コンソールを地の文で）"
+  ],
+  "required_patterns": [
+    "システム表示・ステータス画面・スキルツリー・装備画面・クエストログ・パッチノート等の『UIテキスト』を毎話大量配置する。",
+    "チート/バグ/管理者権限の発動を『コマンド実行・パッチ適用・メモリ書き換え・コードインジェクション・特権昇格』のIT・セキュリティ用語でメタファー化する。",
+    "『世界初・サーバー初・最速・最短・最高効率・全累計解除』等の『記録・達成・初モノ』を毎話複数提示する。",
+    "現実世界への影響・侵食・統合・シミュレーション論を『ゲーム・現実・境界・溶解』文脈で活用する。",
+    "配信チャット・視聴者コメントをUIテキストとして散在させ、ライブ感を演出する。"
+  ]
+}

@@ -1,0 +1,120 @@
+from typing import Any
+
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import Response
+
+from src.backend.auth import get_current_user, get_prompt_manager, validate_api_key_or_raise
+from src.backend.database.models import User
+from src.backend.engine_helpers import get_engine
+from src.backend.rate_limit import generate_limiter
+from src.backend.security.owner_guard import verify_book_ownership
+from src.backend.task_helpers import create_task
+from src.backend.tasks import execute_service_workflow
+from src.core.observability import TraceContext
+from src.models.api_schemas import MarketingExportRequest, MarketingGenerateRequest, CatchphraseGenerateRequest
+
+router = APIRouter(tags=["marketing"])
+
+
+@router.post("/api/marketing/generate")
+async def generate_marketing(
+    req: MarketingGenerateRequest,
+    request: Request,
+    prompt_manager: Any = Depends(get_prompt_manager),
+    current_user: User = Depends(get_current_user),
+):
+    await generate_limiter.check(request)
+    await validate_api_key_or_raise(req.api_key)
+    import time
+
+    task_id = f"marketing_{int(time.time())}"
+    await create_task(
+        task_id,
+        "マーケティング情報の生成を開始中...",
+        total_steps=1,
+        user_id=getattr(current_user, "id", None),
+    )
+
+    execute_service_workflow(
+        task_id=task_id,
+        api_key=req.api_key,
+        config_dict={},
+        method_name="marketing_generation_workflow",
+        kwargs={
+            "book_id": req.book_id,
+            "latest_ep": req.latest_ep,
+            "prompt_manager": prompt_manager,
+        },
+        trace_id=TraceContext.get_trace_id(),
+    )
+    return {"task_id": task_id}
+
+
+@router.post("/api/marketing/export_package/{book_id}")
+async def export_package_post(
+    book_id: int,
+    req: MarketingExportRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """作品データ一式 (本文 / 設定 / プロット / JSON) を ZIP で返す (POST)。
+
+    所有権検証は GET 版 (`export_package_get`) と同一で**必須**。
+    認証は `GlobalAuthMiddleware` (default-deny) が担保するが、
+    「任意の認証済みユーザーが任意の book_id を走査して
+    他人の作品 ZIP を一括取得できる」水平権限昇格 (IDOR) になるため、
+    `verify_book_ownership` を通さないと公開阻害となる。
+    """
+    await validate_api_key_or_raise(req.api_key)
+    await verify_book_ownership(book_id, current_user)
+    engine = get_engine(req.api_key)
+    zip_data, zip_filename = await engine.marketing.create_export_package(book_id)
+    return Response(
+        content=zip_data,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{zip_filename}"'},
+    )
+
+
+@router.get("/api/marketing/export_package/{book_id}")
+async def export_package_get(
+    book_id: int,
+    api_key: str = Depends(validate_api_key_or_raise),
+    current_user: User = Depends(get_current_user),
+):
+    """作品データ一式 (本文 / 設定 / プロット / JSON) を ZIP で返す (GET)。
+
+    プロバイダ API キーはクエリ文字列ではなく `Authorization` ヘッダーから受け取る。
+    クエリ文字列に出すと nginx 等のアクセスログやブラウザ履歴に平文で残るため。
+    """
+    await verify_book_ownership(book_id, current_user)
+    engine = get_engine(api_key)
+    zip_data, zip_filename = await engine.marketing.create_export_package(book_id)
+    return Response(
+        content=zip_data,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{zip_filename}"'},
+    )
+
+
+@router.post("/api/marketing/catchphrases")
+async def generate_catchphrases(
+    req: CatchphraseGenerateRequest,
+    request: Request,
+):
+    """カクヨム用キャッチコピーを生成するエンドポイント"""
+    await generate_limiter.check(request)
+    await validate_api_key_or_raise(req.api_key)
+
+    # コンテナからMarketingAgentを直接取得
+    from src.core.container.app import AppContainer
+    container = AppContainer(api_key=req.api_key)
+    marketing_agent = container.marketing()
+
+    # キャッチコピーを生成
+    catchphrases = await marketing_agent.generate_viral_catchphrases(
+        project_settings=req.project_settings,
+        candidate_count=req.candidate_count,
+    )
+
+    # 結果を返す
+    return catchphrases

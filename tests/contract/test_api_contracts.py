@@ -1,0 +1,292 @@
+"""API エンドポイント契約テスト.
+
+レスポンス形状の不変性を確認し、破壊的変更を検知する。
+
+認証について:
+``/api/*`` は AuthMiddleware の default-deny 網に入っており、
+トークン無しでは 401 になる。ここでは**レスポンス形状**を契約化したい
+ので、fixture で AUTH_DISABLED を有効にして素通しする。
+認証そのものの検証は test_auth_jwt_security.py / router 側テストに委ね、
+ここでは 200 にならない原因にしない。
+"""
+
+import pytest
+from fastapi.testclient import TestClient
+
+from src.backend.server import app
+
+
+@pytest.fixture(autouse=True)
+def _bypass_auth(monkeypatch):
+    """契約テストでは認証をバイパスする（形状検証が目的のため）。
+
+    `GlobalAuthMiddleware` に加えて、ルートが直接 `Depends(get_current_user)`
+    を持つようになったため、依存性オーバーライドも併せて差し替える。
+    所有権ガードは `AppContainer.db()`（本番セッション）を参照するため、
+    契約テストでは形状検証が本命なのでスタブする
+    （認可そのものは tests/security/ で検証している）。
+    """
+    from unittest.mock import AsyncMock
+
+    from src.backend.auth import get_current_user
+    from src.backend.database.models import User
+    from src.backend.middleware import auth_middleware
+    from src.backend.routers import graph as graph_router
+
+    monkeypatch.setattr(auth_middleware.settings, "AUTH_DISABLED", True, raising=False)
+
+    app.dependency_overrides[get_current_user] = lambda: User(
+        id=1, email="contract@example.com", role="admin", status="active"
+    )
+    monkeypatch.setattr(
+        graph_router, "verify_book_ownership", AsyncMock(return_value=object())
+    )
+    # `/pipeline/process` と `/pipeline/batch` は `_assert_chapter_ownership` 経由で
+    # 章 → 作品 の所有者を辿るため、まず章テーブルの SELECT を行う。
+    # 契約テストが契約化しているのはレスポンス形状であって事前データ整備では
+    # ないので、この解決のみスタブする（パイプライン本体の処理はそのまま走る）。
+    monkeypatch.setattr(
+        graph_router, "_assert_chapter_ownership", AsyncMock(return_value=None)
+    )
+    yield
+    app.dependency_overrides.pop(get_current_user, None)
+
+
+client = TestClient(app)
+
+
+def test_graph_endpoint_response_shape():
+    """/api/graph レスポンス形状の不変性
+
+    注意: book_id は必須クエリパラメータになった（ノード/エッジ取得は
+    作品単位で行う方針への変更）。指定しない限り 422 になる。
+    """
+    resp = client.get("/api/graph", params={"book_id": 1})
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # 必須トップレベルフィールド
+    assert "graph_name" in data
+    assert "nodes" in data
+    assert "edges" in data
+
+    # 型確認
+    assert isinstance(data["graph_name"], str)
+    assert isinstance(data["nodes"], list)
+    assert isinstance(data["edges"], list)
+
+    # ノード構造（存在する場合）
+    if data["nodes"]:
+        node = data["nodes"][0]
+        assert "id" in node
+        assert "label" in node
+        assert "properties" in node
+        assert isinstance(node["id"], str)
+        assert isinstance(node["label"], str)
+        assert isinstance(node["properties"], dict)
+
+    # エッジ構造（存在する場合）
+    if data["edges"]:
+        edge = data["edges"][0]
+        assert "source" in edge
+        assert "target" in edge
+        assert "type" in edge
+        assert "properties" in edge
+        assert isinstance(edge["source"], str)
+        assert isinstance(edge["target"], str)
+        assert isinstance(edge["type"], str)
+        assert isinstance(edge["properties"], dict)
+
+
+def test_graph_chunks_endpoint(client):
+    """/api/graph/chunks レスポンス形状"""
+    resp = client.get("/api/graph/chunks")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert isinstance(data, list)
+
+    if data:
+        chunk = data[0]
+        required_fields = ["id", "chapter_id", "chunk_index", "content", "has_embedding", "created_at"]
+        for field in required_fields:
+            assert field in chunk
+        assert isinstance(chunk["chapter_id"], int)
+        assert isinstance(chunk["chunk_index"], int)
+        assert isinstance(chunk["has_embedding"], bool)
+
+
+def test_rag_context_endpoint_response_shape():
+    """POST /api/graph/rag/context レスポンス形状"""
+    resp = client.post(
+        "/api/graph/rag/context",
+        json={
+            "current_prompt": "テストプロンプト",
+            "character_name": "主人公",
+            "additional_entities": ["聖剣"]
+        }
+    )
+# GraphRAG 無劫環境でも 200 返却
+    assert resp.status_code == 200
+    data = resp.json()
+
+    required_fields = ["graph_context", "vector_context", "stats", "token_estimate"]
+    for field in required_fields:
+        assert field in data
+
+    assert isinstance(data["graph_context"], str)
+    assert isinstance(data["vector_context"], str)
+    assert isinstance(data["stats"], dict)
+    assert isinstance(data["token_estimate"], int)
+
+
+def test_rag_hybrid_search_endpoint():
+    """POST /api/graph/rag/hybrid-search レスポンス形状"""
+    resp = client.post(
+        "/api/graph/rag/hybrid-search",
+        json={
+            "query": "テストクエリ",
+            "core_entities": ["主人公"],
+            "top_k": 5,
+            "alpha": 0.5,
+            "beta": 0.3,
+            "gamma": 0.2
+        }
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert "query" in data
+    assert "results" in data
+    assert "count" in data
+    assert "elapsed_ms" in data
+
+    assert isinstance(data["results"], list)
+    assert isinstance(data["count"], int)
+    assert isinstance(data["elapsed_ms"], int)
+
+    if data["results"]:
+        result = data["results"][0]
+        required_fields = ["id", "content", "metadata", "source", "score", "similarity"]
+        for field in required_fields:
+            assert field in result
+
+
+def test_rag_episode_endpoint():
+    """POST /api/graph/rag/episode レスポンス形状"""
+    resp = client.post(
+        "/api/graph/rag/episode",
+        params={
+            "character_name": "主人公",
+            "additional_entities": ["聖剣"],
+            "top_k": 3
+        }
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+
+    required_fields = ["graph", "vector", "stats", "token_estimate", "top_k"]
+    for field in required_fields:
+        assert field in data
+
+
+def test_rag_stats_endpoint():
+    """GET /api/graph/rag/stats レスポンス形状"""
+    resp = client.get("/api/graph/rag/stats")
+    assert resp.status_code == 200
+    data = resp.json()
+
+    # stats は dict
+    assert isinstance(data, dict)
+
+
+def test_graph_stats_endpoint():
+    """GET /api/graph/stats レスポンス形状"""
+    resp = client.get("/api/graph/stats")
+    # GraphRAG 無効環境では 400 または 200（エラー情報含む）
+    assert resp.status_code in (200, 400)
+
+    if resp.status_code == 200:
+        data = resp.json()
+        required = ["node_count", "edge_count", "labels", "relationship_types"]
+        for field in required:
+            assert field in data
+
+
+def test_graph_neighbors_endpoint():
+    """POST /api/graph/search/neighbors レスポンス形状"""
+    resp = client.post(
+        "/api/graph/search/neighbors",
+        json={
+            "node_name": "主人公",
+            "max_depth": 2,
+            "limit": 10
+        }
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+
+    assert "node_name" in data
+    assert "neighbors" in data
+    assert "count" in data
+    assert isinstance(data["neighbors"], list)
+    assert isinstance(data["count"], int)
+
+
+def test_pipeline_process_endpoint():
+    """POST /api/graph/pipeline/process レスポンス形状"""
+    resp = client.post(
+        "/api/graph/pipeline/process",
+        json={
+            "chapter_id": 1,
+            "chapter_text": "テスト本文",
+            "idempotency_key": "test_key_1"
+        }
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+
+    required = ["chapter_id", "success", "chunks_created", "entities_created", "relationships_created"]
+    for field in required:
+        assert field in data
+
+
+def test_pipeline_batch_endpoint():
+    """POST /api/graph/pipeline/batch レスポンス形状"""
+    resp = client.post(
+        "/api/graph/pipeline/batch",
+        json={
+            "chapters": [
+                {"chapter_id": 1, "chapter_text": "第1話", "idempotency_key": "k1"},
+                {"chapter_id": 2, "chapter_text": "第2話", "idempotency_key": "k2"}
+            ],
+            "continue_on_error": True
+        }
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+
+    required = ["chapters_processed", "chunks_created", "entities_created", "relationships_created", "errors", "elapsed_ms"]
+    for field in required:
+        assert field in data
+
+
+def test_health_endpoint():
+    """/health エンドポイント"""
+    resp = client.get("/health")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "status" in data
+    assert data["status"] in ("healthy", "ok")
+
+
+def test_openapi_schema_available():
+    """OpenAPI スキーマが取得可能"""
+    resp = client.get("/openapi.json")
+    assert resp.status_code == 200
+    schema = resp.json()
+    assert "openapi" in schema
+    assert "paths" in schema
+    # Graph 関連エンドポイント存在確認
+    assert "/api/graph" in schema["paths"]
+    assert "/api/graph/rag/context" in schema["paths"]

@@ -1,0 +1,76 @@
+{
+  "genre": "zarma",
+  "preset_code": "zarma_standard_v1.1",
+  "description": "ざまぁ・追放・無双（なろう系・カクヨム系）の黄金標準文体。短文主体に二峰性の長文で爽快感と実力差を演出する。",
+  "sentence_length": {
+    "avg": 42,
+    "std_dev": 12,
+    "min": 15,
+    "max": 80,
+    "description": "短文15〜25字でテンポ、長文60〜80字で描写・心理を深める二峰性。"
+  },
+  "vocab_diversity": {
+    "type_token_ratio": 0.42,
+    "rare_word_ratio": 0.08,
+    "description": "読みやすさ最優先。難解語は避け、ジャンル定型語を高頻度使用。"
+  },
+  "sentence_end_distribution": {
+    "desu_masu": 0.55,
+    "da_dearu": 0.25,
+    "nominal": 0.10,
+    "exclamatory": 0.07,
+    "interrogative": 0.03,
+    "description": "会話・親しみは『です・ます』、地の文は『だ・である』、体言止めで爽快感。"
+  },
+  "metaphor_frequency": {
+    "per_1000_chars": 3.5,
+    "types": {
+      "visual": 0.40,
+      "tactile": 0.25,
+      "auditory": 0.15,
+      "kinesthetic": 0.10,
+      "abstract": 0.10
+    },
+    "description": "1000字あたり3〜4個。視覚・触覚優位で『見える・感じる』描写、抽象比喩は感情表現に限定。"
+  },
+  "pov_distance": {
+    "level": "close_third",
+    "modifier": null,
+    "internal_monologue_ratio": 0.35,
+    "free_indirect_discourse": true,
+    "description": "密接三人称。主人公内心独白35%、自由間接話法で思考と感覚を融合。POV漏れ厳禁。"
+  },
+  "narration_tone": {
+    "base": "clinical_cool",
+    "emotional_peaks": "visceral_raw",
+    "catharsis_mode": "explosive_triumphant",
+    "description": "平常はクール客観で実力差を強調。感情ピークで生々しく、カタルシス時は爆発的勝利で畳み掛ける。"
+  },
+  "dialogue_style": {
+    "protagonist": "calm_condescending",
+    "heroine": "devoted_awestruck",
+    "antagonist": "arrogant_then_desperate",
+    "mob": "fearful_gossipy",
+    "description": "主人公は冷静で見下ろし気味。ヒロインは献身的・畏敬。敵は傲慢→焦り→哀願へ崩落。モブは恐怖と噂話と讃美。"
+  },
+  "pacing": {
+    "scene_transition_speed": "fast",
+    "time_skip_frequency": "high",
+    "chapter_hook_density": 1.0,
+    "description": "シーン転換は高速、数日〜数週間を一文で。各話末尾に必ずフック、章単位でも大型フック。"
+  },
+  "forbidden_patterns": [
+    "過度な心理描写の連発（テンポ殺し）",
+    "説明的な地の文（Show, Don't Tell徹底）",
+    "主人公の迷い・弱音（無双ジャンルでは原則NG）",
+    "難解な漢字・文学的表現（読みやすさ最優先）",
+    "視点漏れ（主人公が知り得ぬ情報の地の文記述）"
+  ],
+  "required_patterns": [
+    "ステータス・スキル・数値を明示し、実力差を定量で見せる。",
+    "『〜していた』『〜ことになる』等の結果先行構文でテンポを作る。",
+    "読者の予想を裏切る『実は〜だった』展開を定期的に挿入する。",
+    "圧倒的優位は数値・描写・相手の反応の三段で証明する。",
+    "ざまぁ対象の心理（焦り・恐怖・絶望・後悔）を丁寧に一段落で見せる。"
+  ]
+}
