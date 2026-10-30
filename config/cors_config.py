@@ -2,7 +2,7 @@ import json
 import os
 from typing import List
 
-from config.settings import Settings
+from src.backend.config import settings
 
 
 def get_allowed_origins() -> List[str]:
@@ -10,7 +10,8 @@ def get_allowed_origins() -> List[str]:
     origins_env = os.getenv("CORS_ALLOWED_ORIGINS", "")
     if not origins_env:
         # デフォルトは開発用。環境の変更を反映させるため都度 Settings を構築する
-        return [o.strip() for o in Settings().cors_allowed_origins.split(",") if o.strip()]
+        # (SSOT: src.backend.config.settings.CORS_ORIGINS)
+        return [o.strip() for o in settings.CORS_ORIGINS.split(",") if o.strip()]
     # Attempt to parse JSON array first (e.g., '["http://example.com"]')
     try:
         parsed = json.loads(origins_env)

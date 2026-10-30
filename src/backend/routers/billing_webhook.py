@@ -32,9 +32,12 @@ ALLOW_UNSIGNED_WEBHOOKS: bool = bool(getattr(settings, "ALLOW_UNSIGNED_WEBHOOKS"
 def _signature_verification_optional() -> bool:
     """署名検証を省略してよいかどうかを返す。
 
-    省略を許すのは `ALLOW_UNSIGNED_WEBHOOKS=true` が明示的に設定され、
-    かつ Webhook シークレットが未設定のときのみ。
+    省略を許すのはローカル検証環境のみ。本番 (APP_ENV=production) では
+    いかなる場合も署名検証を省略しない（Settings の起動時バリデーションでも
+    ALLOW_UNSIGNED_WEBHOOKS=true は拒否されるが、二重防御としてここでも遮断する）。
     """
+    if getattr(settings, "APP_ENV", "development") == "production":
+        return False
     if WEBHOOK_SECRET:
         return False
     return ALLOW_UNSIGNED_WEBHOOKS

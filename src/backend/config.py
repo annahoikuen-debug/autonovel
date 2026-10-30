@@ -24,6 +24,32 @@ _ephemeral_dev_jwt_secret: str | None = None
 # `.env.example` に記載されたシークレット値のキャッシュ
 _example_secret_keys: frozenset[str] | None = None
 
+# 既知の「本番で使ってはならない」JWT 署名鍵。
+# validate_production_secrets (起動時) と get_jwt_secret_key (鍵取得時) の
+# 両方で参照する共有集合。片方にしか置かないと、経路によって判定が食い違う。
+_INSECURE_JWT_SECRETS: frozenset[str] = frozenset(
+    {
+        "",
+        "autonovel-super-secret-key-32bytes-minimum-change-in-prod",
+        "autonovel-dev-secret-key-minimum-32-bytes-long",
+        "your-secret-key-here",
+        "change-me",
+        "change_me_generate_with_openssl_rand_hex_32",
+        "secret",
+    }
+)
+
+# 本番 (APP_ENV=production) で JWT 署名鍵に課す最小長（バイト）。
+# 32 バイト以上ないとソーススロッフィングの耐性が確保できない。
+_MIN_PROD_JWT_SECRET_LEN = 32
+
+
+def _is_insecure_jwt_secret(key: str | None) -> bool:
+    """渡された鍵が既知の不安全鍵（空・例示・プレースホルダ）かどうか判定する。"""
+    if not key:
+        return True
+    return key in _INSECURE_JWT_SECRETS or key in _load_example_secret_keys()
+
 
 def _load_example_secret_keys() -> frozenset[str]:
     """`.env.example` に書かれた `JWT_SECRET_KEY` / `SECRET_KEY` の値を収集する。
@@ -93,6 +119,12 @@ class Settings(BaseSettings):
 
     # データベース設定
     DATABASE_URL: str = Field(default_factory=lambda: f"sqlite:///{STORAGE_DIR / 'autonovel.db'}")
+    # Docker Compose が `${POSTGRES_*}` 置換のために `.env` から読む値。
+    # アプリ本体は DATABASE_URL を使うが、`.env.example` をそのまま `.env` に
+    # コピーしたときに `extra="forbid"` で起動が失敗しないようここで受け止める。
+    POSTGRES_USER: str | None = None
+    POSTGRES_PASSWORD: str | None = Field(default=None, repr=False)
+    POSTGRES_DB: str | None = None
 
     # Redis/キュー設定
     HUEY_BACKEND: Literal["sqlite", "redis"] = "sqlite"
@@ -121,26 +153,53 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> Settings:
-        """本番環境でデフォルト値や空シークレットが使用されるのを防止する。"""
+        """本番環境でデフォルト値や空シークレットが使用されるのを防止する。
+
+        起動時点で fail-fast させるため、後段の get_jwt_secret_key() でも検証される
+        既知の不安全鍵をここでも拒否する（経路間で判定が食い違うのを防ぐ）。
+        """
         if self.APP_ENV == "production":
             if self.AUTH_DISABLED:
                 raise ValueError("本番環境 (APP_ENV=production) では AUTH_DISABLED=True は許可されません。")
-            if not self.JWT_SECRET_KEY or "change-in-prod" in self.JWT_SECRET_KEY:
-                raise ValueError("本番環境 (APP_ENV=production) では安全な JWT_SECRET_KEY の設定が必須です。")
-            # `.env.example` の例示値をそのまま流用した設定も拒否する。
-            # 公開リポジトリに載っている値は「秘密」ではないが、
-            # 本番判断を素通りして管理者トークンの偽造を許してしまうため。
-            if self.JWT_SECRET_KEY in _load_example_secret_keys():
+            # 既知の不安全鍵（空・例示値・プレースホルダ）は起動時に拒否する。
+            if _is_insecure_jwt_secret(self.JWT_SECRET_KEY):
                 raise ValueError(
-                    "本番環境 (APP_ENV=production) では .env.example に記載された例示の "
-                    "JWT_SECRET_KEY / SECRET_KEY を使用できません。"
+                    "本番環境 (APP_ENV=production) では .env.example の例示値・"
+                    "プレースホルダ・空の JWT_SECRET_KEY を使用できません。"
+                    "`openssl rand -hex 32` で生成した 32 バイト以上の鍵を設定してください。"
+                )
+            # 「change-in-prod を含む」鍵は部分一致でも拒否する（設定し忘れた検知）。
+            if self.JWT_SECRET_KEY and "change-in-prod" in self.JWT_SECRET_KEY:
+                raise ValueError(
+                    "本番環境 (APP_ENV=production) では 'change-in-prod' を含む "
+                    "JWT_SECRET_KEY を使用できません。"
+                )
+            if self.JWT_SECRET_KEY and len(self.JWT_SECRET_KEY) < _MIN_PROD_JWT_SECRET_LEN:
+                raise ValueError(
+                    f"本番環境 (APP_ENV=production) では JWT_SECRET_KEY は "
+                    f"{_MIN_PROD_JWT_SECRET_LEN} バイト以上必要です（現在 {len(self.JWT_SECRET_KEY)} バイト）。"
                 )
             if "sqlite" in self.DATABASE_URL:
                 raise ValueError("本番環境では SQLite ではなく PostgreSQL の設定が必要です。")
-            if not self.STRIPE_WEBHOOK_SECRET and not self.ALLOW_UNSIGNED_WEBHOOKS:
+            # 本番では署名検証の省略 (ALLOW_UNSIGNED_WEBHOOKS) を一切許可しない。
+            # 署名を検証しない Webhook は偽装されるとクレジットの不正付与に直結するため、
+            # 「明示オプトイン」であっても本番起動を拒否する（ローカル検証専用フラグ）。
+            if self.ALLOW_UNSIGNED_WEBHOOKS:
+                raise ValueError(
+                    "本番環境 (APP_ENV=production) では ALLOW_UNSIGNED_WEBHOOKS=True は"
+                    "許可されません。STRIPE_WEBHOOK_SECRET を設定し、署名検証を必須にしてください。"
+                )
+            if not self.STRIPE_WEBHOOK_SECRET:
                 raise ValueError(
                     "本番環境 (APP_ENV=production) では STRIPE_WEBHOOK_SECRET の設定が必須です"
                     "（未設定のまま運用すると署名検証を省略できず、クレジットの偽装付与を受けます）。"
+                )
+            # CORS ヘッダー許可リストにワイルドカード `*` が含まれると、
+            # 任意 Origin からのクロスサイトアクセスを許してしまう。
+            if "*" in [h.strip() for h in self.CORS_ALLOW_HEADERS.split(",")]:
+                raise ValueError(
+                    "本番環境 (APP_ENV=production) では CORS_ALLOW_HEADERS にワイルドカード "
+                    "`*` を指定できません。必要なヘッダー名を明示してください。"
                 )
         return self
 
@@ -158,30 +217,16 @@ class Settings(BaseSettings):
         import os
         import logging
         key = self.JWT_SECRET_KEY or os.environ.get("JWT_SECRET_KEY") or os.environ.get("SECRET_KEY")
-        insecure_keys = {
-            "",
-            "autonovel-super-secret-key-32bytes-minimum-change-in-prod",
-            "autonovel-dev-secret-key-minimum-32-bytes-long",
-            "your-secret-key-here",
-            "change-me",
-            "change_me_generate_with_openssl_rand_hex_32",
-            "secret",
-        }
         if self.APP_ENV == "production":
-            if (
-                not key
-                or key in insecure_keys
-                or key in _load_example_secret_keys()
-                or len(key) < 32
-            ):
+            if _is_insecure_jwt_secret(key) or (key is not None and len(key) < _MIN_PROD_JWT_SECRET_LEN):
                 raise ValueError(
                     "CRITICAL SECURITY RISK: In production, JWT_SECRET_KEY must be set to a secure string of at least 32 bytes. "
                     "Current key is missing, default, or too short."
                 )
-            return key
+            return key  # type: ignore[return-value]
 
         # 開発・テスト環境
-        if key and key not in insecure_keys:
+        if key and key not in _INSECURE_JWT_SECRETS:
             return key
 
         # 開発環境用フォールバック (固定文字列ではなくプロセス毎のエフェメラルキー)
@@ -269,6 +314,8 @@ class Settings(BaseSettings):
     # マルチメディア展開 (Phase 7: Asset Pack / Media Mix / IF Routes / eBook)
     ENABLE_MULTIMEDIA: bool = False
     ENABLE_AUDIO_SYNTH: bool = False
+    # 外部投稿プラグイン。`.env` に書かれた値を PluginRegistry が参照する。
+    ENABLE_SOCIAL_POSTING: bool = False
     VOICEVOX_URL: str = "http://localhost:50021"
     VOICEVOX_DEFAULT_SPEAKER_ID: int = 3
     VOICEVOX_TIMEOUT_SECONDS: float = 30.0

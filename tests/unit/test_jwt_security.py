@@ -39,17 +39,18 @@ def test_production_fails_fast_with_default_or_missing_secret():
             _env_file=None,
         )
 
-    # 短すぎる鍵 → get_jwt_secret_key() 呼び出し時の ValueError (実装は起動時にのみ検証)
-    short_settings = Settings(
-        APP_ENV="production",
-        AUTH_DISABLED=False,
-        JWT_SECRET_KEY="short-key",
-        DATABASE_URL="postgresql://user:pass@localhost:5432/testdb",
-        STRIPE_WEBHOOK_SECRET=VALID_WEBHOOK_SECRET,
-        _env_file=None,
-    )
-    with pytest.raises(ValueError):
-        short_settings.get_jwt_secret_key()
+    # 短すぎる鍵 → 起動時 (Settings 構築) に ValidationError（fail-fast）。
+    # 以前は get_jwt_secret_key() 呼び出し時まで検知が遅延していたが、
+    # 本番起動時点で不安全な鍵を検知して止めるのが望ましい。
+    with pytest.raises(ValidationError, match="JWT_SECRET_KEY"):
+        Settings(
+            APP_ENV="production",
+            AUTH_DISABLED=False,
+            JWT_SECRET_KEY="short-key",
+            DATABASE_URL="postgresql://user:pass@localhost:5432/testdb",
+            STRIPE_WEBHOOK_SECRET=VALID_WEBHOOK_SECRET,
+            _env_file=None,
+        )
 
 
 def test_production_accepts_valid_strong_secret():
@@ -67,8 +68,7 @@ def test_production_accepts_valid_strong_secret():
 
 
 def test_production_requires_stripe_webhook_secret():
-    """本番環境で STRIPE_WEBHOOK_SECRET も ALLOW_UNSIGNED_WEBHOOKS も
-    未設定なら起動阻止 ValidationError となることを検証
+    """本番環境で STRIPE_WEBHOOK_SECRET が未設定なら起動阻止 ValidationError となることを検証
 
     署名検証を省略したままだと、Webhook を偽装してクレジットを
     不正に付与できてしまうため、本番では Secret の設定が必須。
@@ -85,32 +85,40 @@ def test_production_requires_stripe_webhook_secret():
             _env_file=None,
         )
 
-    # 明示的に署名検証の省略を許可した場合のみ通る
-    allowed = Settings(
-        APP_ENV="production",
-        AUTH_DISABLED=False,
-        JWT_SECRET_KEY="b" * 32,
-        DATABASE_URL="postgresql://user:pass@localhost:5432/testdb",
-        STRIPE_WEBHOOK_SECRET="",
-        ALLOW_UNSIGNED_WEBHOOKS=True,
-        _env_file=None,
-    )
-    assert allowed.ALLOW_UNSIGNED_WEBHOOKS is True
+
+def test_production_rejects_unsigned_webhooks_opt_in():
+    """本番環境では ALLOW_UNSIGNED_WEBHOOKS=true（署名検証省略のオプトイン）も
+    起動阻止 ValidationError となることを検証。
+
+    このフラグはローカル検証専用。本番で署名検証を省略できる余地を残すと、
+    偽装 Webhook によるクレジット不正付与に直結するため、本番では
+    いかなる場合も拒否する。
+    """
+    with pytest.raises(ValidationError, match="ALLOW_UNSIGNED_WEBHOOKS"):
+        Settings(
+            APP_ENV="production",
+            AUTH_DISABLED=False,
+            JWT_SECRET_KEY="b" * 32,
+            DATABASE_URL="postgresql://user:pass@localhost:5432/testdb",
+            STRIPE_WEBHOOK_SECRET="",
+            ALLOW_UNSIGNED_WEBHOOKS=True,
+            _env_file=None,
+        )
 
 
 def test_jwt_token_generation_and_type_enforcement():
     """アクセストークンとリフレッシュトークンの発行および型検証
 
-    create_access_token / create_refresh_token は data dict を受け取る。
+    create_access_token / create_refresh_token は user_id を受け取る。
     """
-    token = create_access_token(data={"sub": "42", "role": "user"})
+    token = create_access_token(user_id="42", role="user")
     payload = decode_token(token, expected_type="access")
     assert payload["sub"] == "42"
     assert payload["role"] == "user"
     assert payload["type"] == "access"
 
     # リフレッシュトークンをアクセストークンとして復号しようとすると None になる
-    refresh_token = create_refresh_token(data={"sub": "42"})
+    refresh_token = create_refresh_token(user_id="42")
     assert decode_token(refresh_token, expected_type="access") is None
     # 正しい型であれば復号できる
     refresh_payload = decode_token(refresh_token, expected_type="refresh")

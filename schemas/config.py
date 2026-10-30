@@ -1,10 +1,15 @@
 """
 schemas/config.py — SSOT: グローバル設定モデル
 
-このファイルが設定モデルの単一真実源（SSOT）です。
-以下のファイルに重複定義されていた GlobalConfigModel をここに統合しました：
-  - config/settings.py (削除済み)
-  - config/project_context.py (削除済み)
+このファイルが `GlobalConfigModel` 定義の単一真実源（SSOT）です。
+`config/models.py` はこのモジュールから再エクスポートする互換シムであり、
+重複定義はここにのみ存在します。
+
+補足（設定系の入口の整理 / 改善案2）:
+  - 環境変数ベースの設定 SSOT は `src.backend.config.Settings`（.env / env var）。
+  - ランタイムで可変な設定モデル SSOT が本ファイルの `GlobalConfigModel`
+    （settings.toml → Pydantic）。`config.settings.ConfigManager` がロードする。
+  - 旧 `config/settings.py`・`config/project_context.py` は後方互換レイヤとして残存。
 
 デフォルト値は本番運用値（旧 project_context.py 由来）を採用しています。
 """
