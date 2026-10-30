@@ -426,31 +426,10 @@ def init_db(db_path: str = ""):
         # BackendBase と InfraBase は同一の基底メタデータを共有しているため 1 回で同期
         InfraBase.metadata.create_all(engine_obj)
 
-    # 初回起動時に作品が存在しない場合は初期作品を自動シード
-    try:
-        from sqlalchemy import create_engine as _create_engine
-        from sqlalchemy.orm import Session
-        from src.backend.database.models import Book
-
-        with Session(_create_engine(sync_url)) as session:
-            existing_count = session.query(Book).count()
-            if existing_count == 0:
-                default_book = Book(
-                    id=1,
-                    title="はじめての物語",
-                    genre="ハイファンタジー (R15)",
-                    concept="古代魔導剣術を受け継いだ少年の冒険譚",
-                    synopsis="薄暗いダンジョンの中、15歳の青年アルトは古代の剣を手にした。",
-                    catchcopy="運命の剣が、少年の世界を変える。",
-                    target_eps=10,
-                    mode="studio",
-                    status="draft",
-                )
-                session.add(default_book)
-                session.commit()
-                logger.info("[init_db] Seeded initial default book (id=1)")
-    except Exception as e:
-        logger.warning("[init_db] Failed to seed default book: %s", e)
+    # 初期作品の自動シードは行わない。
+    # 以前は所有者 NULL の Book(id=1) を投入していたが、所有権ガードが
+    # NULL 所有者を拒否するため、どのユーザーからも開けないゴースト行になっていた。
+    # 作品はユーザー登録後に UI から作成する。
 
 
 _async_db_manager: DatabaseManager | None = None
