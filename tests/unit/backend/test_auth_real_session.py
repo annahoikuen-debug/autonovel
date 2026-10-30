@@ -46,7 +46,7 @@ async def test_get_current_user_with_real_session_no_await_error(real_db_session
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False)
 
-    token = create_access_token(data={"sub": "101", "role": "user"})
+    token = create_access_token(user_id=101, role="user")
     user = await get_current_user(token=token, db=real_db_session)
     assert user.id == 101
     assert user.email == "test_real@example.com"
