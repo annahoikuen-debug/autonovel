@@ -132,7 +132,7 @@ def test_token_minting_path_stays_authenticated(monkeypatch):
     assert client.get("/api/stream/token/42").status_code == 401
 
     # access JWT なら通る
-    access = create_access_token(data={"sub": "1"})
+    access = create_access_token(user_id="1")
     ok = client.get(
         "/api/stream/token/42", headers={"Authorization": f"Bearer {access}"}
     )
@@ -185,7 +185,7 @@ def test_stream_token_is_not_accepted_without_book_check_but_is_valid():
 
 def test_access_token_is_rejected_as_stream_token():
     """通常の access JWT をストリーム用途に使い回せないこと。"""
-    access = create_access_token(data={"sub": "123"})
+    access = create_access_token(user_id="123")
     assert verify_stream_token(access, 42) is None
 
 
@@ -246,7 +246,7 @@ async def test_resolve_stream_identity_prefers_headers_over_query(monkeypatch):
     from src.backend.routers import pipeline_stream as ps
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False)
-    header_token = create_access_token(data={"sub": "1"})
+    header_token = create_access_token(user_id="1")
     query_stream = create_stream_token(user_id=2, book_id=42)
 
     resolved = await ps.resolve_stream_identity(
@@ -262,7 +262,7 @@ async def test_resolve_stream_identity_ignores_access_token_in_query(monkeypatch
     from src.backend.routers import pipeline_stream as ps
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False)
-    access = create_access_token(data={"sub": "1"})
+    access = create_access_token(user_id="1")
 
     resolved = await ps.resolve_stream_identity(query_token=access, book_id=42)
     assert resolved is None
@@ -291,7 +291,7 @@ async def test_resolve_stream_identity_rejects_revoked_token(monkeypatch):
     from src.backend.security import token_denylist
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False)
-    token = create_access_token(data={"sub": "1"})
+    token = create_access_token(user_id="1")
     payload = decode_token(token, expected_type="access")
     assert payload is not None
 

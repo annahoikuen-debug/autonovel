@@ -69,11 +69,19 @@ def test_old_tokens_without_jti_still_decode():
     """
     import jwt as pyjwt
 
-    from src.backend.security.jwt import get_secret_key
+    from src.backend.security.jwt import JWT_AUDIENCE, JWT_ISSUER, get_secret_key
 
     now = int(time.time())
     legacy = pyjwt.encode(
-        {"sub": "1", "role": "user", "type": "access", "exp": now + 3600},
+        {
+            "sub": "1",
+            "role": "user",
+            "type": "access",
+            "iss": JWT_ISSUER,
+            "aud": JWT_AUDIENCE,
+            "iat": now,
+            "exp": now + 3600,
+        },
         get_secret_key(),
         algorithm=settings.JWT_ALGORITHM,
     )

@@ -9,6 +9,10 @@ from src.backend.config import settings
 
 logger = logging.getLogger(__name__)
 
+# トークンの発行者・対象者。`decode_token` で必ず検証する。
+JWT_ISSUER = "autonovel"
+JWT_AUDIENCE = "autonovel-api"
+
 
 def get_secret_key() -> str:
     """現在の環境に応じた安全なJWT秘密鍵を取得する。"""
@@ -35,6 +39,9 @@ def create_access_token(
         "sub": sub,
         "role": role,
         "type": "access",
+        "iss": JWT_ISSUER,
+        "aud": JWT_AUDIENCE,
+        "iat": datetime.now(timezone.utc),
         "jti": str(uuid.uuid4()),
     }
     if extra_claims:
@@ -61,6 +68,9 @@ def create_refresh_token(
     to_encode: dict[str, Any] = {
         "sub": sub,
         "type": "refresh",
+        "iss": JWT_ISSUER,
+        "aud": JWT_AUDIENCE,
+        "iat": datetime.now(timezone.utc),
         "jti": str(uuid.uuid4()),
     }
     if extra_claims:
@@ -78,7 +88,14 @@ def decode_token(token: str, expected_type: str | None = None) -> Optional[dict[
     ログを出力したうえで None を返す。想定外の例外はスタックトレースを記録する。
     """
     try:
-        payload = jwt.decode(token, get_secret_key(), algorithms=[settings.JWT_ALGORITHM])
+        payload = jwt.decode(
+            token,
+            get_secret_key(),
+            algorithms=[settings.JWT_ALGORITHM],
+            issuer=JWT_ISSUER,
+            audience=JWT_AUDIENCE,
+            options={"require": ["exp", "iat", "sub", "iss", "aud"]},
+        )
     except jwt.ExpiredSignatureError as exc:
         logger.warning("JWT token has expired: %s", exc)
         return None
