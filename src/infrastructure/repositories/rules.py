@@ -9,13 +9,13 @@ from datetime import datetime
 
 from sqlalchemy import delete, or_, select, update
 
-from src.backend.database.models import Masterpiece, Rule
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.models import Masterpiece, Rule
+from src.infrastructure.database.errors import retry_on_lock
 
 logger = logging.getLogger(__name__)
 
 
-from src.backend.database.repositories.base import BaseRepository
+from .base import BaseRepository
 
 
 class RulesRepository(BaseRepository):

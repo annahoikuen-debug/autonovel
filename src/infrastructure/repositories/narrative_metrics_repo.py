@@ -3,8 +3,8 @@ from typing import Any
 
 from sqlalchemy import desc, select
 
-from src.backend.database.models import NarrativeMetric
-from src.backend.database.repositories.base import BaseRepository
+from src.infrastructure.database.models import NarrativeMetric
+from .base import BaseRepository
 
 
 class NarrativeMetricRepository(BaseRepository[NarrativeMetric]):

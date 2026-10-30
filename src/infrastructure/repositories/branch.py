@@ -8,13 +8,13 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import select, update
 
-from src.backend.database.models import Book, Branch, BranchPlaySession, Chapter, Plot
+from src.infrastructure.database.models import Book, Branch, BranchPlaySession, Chapter, Plot
 
 if TYPE_CHECKING:
     from src.models import BranchDbModel
 
 
-from src.backend.database.repositories.base import BaseRepository
+from .base import BaseRepository
 
 
 class BranchRepository(BaseRepository):

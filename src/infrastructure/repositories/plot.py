@@ -8,14 +8,14 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, select, update
 
-from src.backend.database.models import Book, Branch, CharacterArc, Foreshadowing, Plot
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.models import Book, Branch, CharacterArc, Foreshadowing, Plot
+from src.infrastructure.database.errors import retry_on_lock
 
 if TYPE_CHECKING:
     from src.models import PlotDbModel
 
 
-from src.backend.database.repositories.base import BaseRepository
+from .base import BaseRepository
 
 
 class PlotRepository(BaseRepository):

@@ -7,8 +7,8 @@ import logging
 
 from sqlalchemy import select, update
 
-from src.backend.database.models import AuditIssue
-from src.backend.database.repositories.base import BaseRepository
+from src.infrastructure.database.models import AuditIssue
+from .base import BaseRepository
 
 logger = logging.getLogger(__name__)
 

@@ -3,8 +3,8 @@ from typing import Generic, TypeVar
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.database.models import Base
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.models.base_orm import Base
+from src.infrastructure.database.errors import retry_on_lock
 
 T = TypeVar("T", bound=Base)
 

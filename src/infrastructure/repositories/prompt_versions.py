@@ -4,13 +4,13 @@ from typing import Any
 
 from sqlalchemy import select, update
 
-from src.backend.database.models import PromptVersion
-from src.backend.database.repositories.base import BaseRepository
+from src.infrastructure.database.models import PromptVersion
+from .base import BaseRepository
 from src.domain.interfaces.prompt_repository import (
     PromptVersionRepository as PromptVersionRepositoryInterface,
 )
 from src.domain.models.prompt_version import PromptVersionDbModel
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.errors import retry_on_lock
 
 
 class PromptVersionRepository(PromptVersionRepositoryInterface, BaseRepository):

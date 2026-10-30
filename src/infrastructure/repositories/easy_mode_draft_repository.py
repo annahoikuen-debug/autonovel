@@ -8,10 +8,10 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from src.backend.database.models import EasyModeDraft
-from src.backend.database.repositories.base import BaseRepository
+from src.infrastructure.database.models import EasyModeDraft
+from .base import BaseRepository
 from src.domain.entities.review_session import ReviewSession
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.errors import retry_on_lock
 
 logger = logging.getLogger("easy_mode_draft_repo")
 

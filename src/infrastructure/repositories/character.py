@@ -8,14 +8,14 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select, update
 
-from src.backend.database.models import Character
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.models import Character
+from src.infrastructure.database.errors import retry_on_lock
 
 if TYPE_CHECKING:
     pass
 
 
-from src.backend.database.repositories.base import BaseRepository
+from .base import BaseRepository
 
 
 class CharacterRepository(BaseRepository):

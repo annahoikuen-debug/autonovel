@@ -10,9 +10,9 @@ from typing import Any
 
 from sqlalchemy import delete, desc, select
 
-from src.backend.database.models import PromptUsageLog
-from src.backend.database.repositories.base import BaseRepository
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.models import PromptUsageLog
+from .base import BaseRepository
+from src.infrastructure.database.errors import retry_on_lock
 
 logger = logging.getLogger(__name__)
 

@@ -6,8 +6,8 @@ from __future__ import annotations
 
 from sqlalchemy import select
 
-from src.backend.database.models import CostRecord
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.models import CostRecord
+from src.infrastructure.database.errors import retry_on_lock
 
 
 class CostRepository:

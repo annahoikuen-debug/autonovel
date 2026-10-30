@@ -10,7 +10,7 @@ from typing import Any
 
 from sqlalchemy import delete, func, select, update
 
-from src.backend.database.models import (
+from src.infrastructure.database.models import (
     BackgroundTask,
     CustomStyle,
     InternalState,
@@ -20,12 +20,12 @@ from src.backend.database.models import (
     SettingVersion,
     StyleFragment,
 )
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.errors import retry_on_lock
 
 logger = logging.getLogger(__name__)
 
 
-from src.backend.database.repositories.base import BaseRepository
+from .base import BaseRepository
 
 
 class MiscRepository(BaseRepository):

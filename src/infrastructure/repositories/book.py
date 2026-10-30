@@ -10,15 +10,15 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, select, update
 
-from src.backend.database.models import Book, Chapter, Plot
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.models import Book, Chapter, Plot
+from src.infrastructure.database.errors import retry_on_lock
 
 if TYPE_CHECKING:
     from src.models import BookDbModel
 
 logger = logging.getLogger(__name__)
 
-from src.backend.database.repositories.base import BaseRepository
+from .base import BaseRepository
 
 
 class BookRepository(BaseRepository):

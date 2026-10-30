@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy import select
-from src.backend.database.repositories.base import BaseRepository
-from src.backend.database.models import PDCAHistorySnapshot
+from .base import BaseRepository
+from src.infrastructure.database.models import PDCAHistorySnapshot
 
 class PDCAHistoryRepository(BaseRepository[PDCAHistorySnapshot]):
     @property

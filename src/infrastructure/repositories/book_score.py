@@ -1,7 +1,7 @@
 from typing import Optional
 from sqlalchemy import select, func
 
-from src.backend.database.repositories.base import BaseRepository
+from .base import BaseRepository
 from src.infrastructure.database.models.book_score import BookScore
 
 
@@ -59,7 +59,7 @@ class BookScoreRepository(BaseRepository[BookScore]):
         """
         ジャンルごとの5次元スコアの平均値を算出する。
         """
-        from src.backend.database.models import Book
+        from src.infrastructure.database.models import Book
         from sqlalchemy import func
 
         query = (

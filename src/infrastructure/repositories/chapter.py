@@ -10,14 +10,14 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import delete, or_, select, update
 
-from src.backend.database.models import Chapter
-from src.services.errors import retry_on_lock
+from src.infrastructure.database.models import Chapter
+from src.infrastructure.database.errors import retry_on_lock
 
 if TYPE_CHECKING:
     from src.models import ChapterDbModel
 
 
-from src.backend.database.repositories.base import BaseRepository
+from .base import BaseRepository
 
 
 class _Unset:

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy import select
 
-from src.backend.database.models import Bible, BiblePendingSetting, Book, Branch, Character, Plot
+from src.infrastructure.database.models import Bible, BiblePendingSetting, Book, Branch, Character, Plot
 
 if TYPE_CHECKING:
     from src.models import BibleDbModel, WorldBible
@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-from src.backend.database.repositories.base import BaseRepository
+from .base import BaseRepository
 
 
 class BibleRepository(BaseRepository):
