@@ -12,16 +12,15 @@ concurrency:
 
 jobs:
   # ==========================================================================
-  # 静的解析ゲート（現状は記録のみ / ratchet）
+  # 静的解析ゲート（劣化のみ検出する ratchet）
   # ==========================================================================
-  # 現状のベースライン（2026-09-27 時点）:
-  #   ruff check src tests  -> 2489 errors（ただし 1705 件は W293/W292/W291 = CRLF 由来）
-  #                            実質的なコード違反は 784 件
-  #   mypy src             -> 1164 errors in 270 files
-  # これらを一度にゲート化すると CI が恒久的に red になり、減少傾向を追う ratchet として
-  # 機能しなくなるため、当面 continue-on-error: true で「記録のみ」とする。
-  # エラー数は CI ログに --statistics で出力し、減少傾向を追えるようにする。
-  # エラー数が 0 のルールセットが確定した時点で、そのルールだけを hard gate に格上げする。
+  # 現状のベースラインは config/ci_lint_baseline.json:
+  #   ruff check src tests config scripts -> 163 errors
+  #   mypy src                            -> 1164 errors in 270 files
+  #   ruff format --check src             -> 748 files would be reformatted
+  # いずれも「ベースラインより増えたら fail」で運用する。件数が減った場合は
+  # scripts/ci_lint_ratchet.py が自動でベースラインを下げる。
+  # 全エラー 0 化は目的とせず、退行の防止を目的とする。
   static-analysis:
     runs-on: ubuntu-latest
     steps:
@@ -35,13 +34,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install "ruff==0.16.5" "mypy==2.3.1"
       - name: ruff ratchet (hard gate)
-        run: python scripts/ci_lint_ratchet.py
+        run: python scripts/ci_lint_ratchet.py --tool ruff
+      - name: mypy ratchet (hard gate / 現状の件数を超えたら fail)
+        run: python scripts/ci_lint_ratchet.py --tool mypy
+      - name: ruff format ratchet (hard gate / 現状の件数を超えたら fail)
+        run: python scripts/ci_lint_ratchet.py --tool format
       - name: ruff (statistics for trend)
         run: ruff check src tests config scripts --statistics --output-format=concise || true
-      - name: mypy (record-only for now)
-        run: mypy src || true
-      - name: ruff format check (record-only for now)
-        run: ruff format --check src || true
 
   # ==========================================================================
   # リリース整合性ゲート（ continue-on-error: false = 本当の gate ）
@@ -124,7 +123,13 @@ jobs:
           pip install pytest-timeout
           pip install -e ".[dev]"
       - name: Run unit test suite
-        run: pytest -q -m "not integration and not perf and not slow" --timeout=120 --continue-on-collection-errors
+        run: pytest -q -m "not integration and not perf and not slow" --timeout=120
+      - name: Security tests with authentication enabled
+        # conftest.py は既定で AUTH_DISABLED=true にするため、認証ミドルウェアの
+        # 実経路はこのステップで明示的に有効化して検証する。
+        env:
+          AUTH_DISABLED: "false"
+        run: pytest tests/security -q --timeout=120
       - name: Run v5 regression guardrails
         run: pytest tests/regression/ -v --timeout=120
 

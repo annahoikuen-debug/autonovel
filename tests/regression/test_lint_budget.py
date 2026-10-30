@@ -20,9 +20,9 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 
-#: T6 Step 10 完了時点の実測残存数。これを超えたら fail。
+#: 実測残存数（ruff 0.16.5 / `src tests` のみ）。これを超えたら fail。
 #: 減少 には LintBudgetError として明示的にこの値を下げる。
-LINT_ERROR_BUDGET = 700
+LINT_ERROR_BUDGET = 122
 
 #: 機械削除が**必ず壊す**ことが確認済みのリグレッション。
 #: このモジュールの import が壊れていたら F401 除去を再開してはならない。

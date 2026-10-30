@@ -1,3 +1,5 @@
 {
-  "ruff_errors": 941
+  "ruff_errors": 163,
+  "mypy_errors": 1164,
+  "format_files": 748
 }
