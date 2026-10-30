@@ -3,6 +3,6 @@
     "domain": 0,
     "application": 0,
     "infrastructure": 2,
-    "interfaces": 3
+    "interfaces": 5
   }
 }
