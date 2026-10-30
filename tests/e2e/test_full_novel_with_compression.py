@@ -93,7 +93,7 @@ class TestFullNovelWithCompression:
 
     @pytest.fixture
     def episode_writer(self, compressor, context_builder_agent):
-        llm = Mock()
+        _llm = Mock()
         return EpisodeWriter(
             llm=Mock(),
             context_builder=context_builder_agent,
@@ -226,7 +226,7 @@ class TestEpisodeWriterCompressionE2E:
 
     @pytest.fixture
     def episode_writer(self, compressor, context_builder_agent):
-        llm = Mock()
+        _llm = Mock()
         return EpisodeWriter(
             llm=Mock(),
             context_builder=context_builder_agent,

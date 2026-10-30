@@ -8,7 +8,6 @@ import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { AppLayout } from "./components/layout/AppLayout";
 import { GlobalModals } from "./components/modals/GlobalModals";
 import { routes } from "./routes";
-import { isOnboardingCompleted } from "./pages/WelcomePage";
 
 /**
  *  TanStack Query v5 のクライアント。
@@ -64,16 +63,10 @@ export function AppRoutes() {
 /**
  * 初回起動時のオンボーディング判定。
  *
- * ルート `/` への着地時に、まだ入口を選んでいなければ `/welcome` へ誘導する。
- * 入口を選んだら localStorage に記録されるので、以降はそのまま着地する。
+ * ルート `/` は商業LP（認証不要）のため、オンボーディングゲートは適用しない。
+ * /welcome は既存のオンボーディングページとして維持する。
  */
 function OnboardingGate({ children }: { children: React.ReactNode }) {
-  const location = useLocation();
-
-  if (location.pathname === "/" && !isOnboardingCompleted()) {
-    return <Navigate to="/welcome" replace />;
-  }
-
   return <>{children}</>;
 }
 
@@ -105,10 +98,14 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 
 function AppShell() {
   const location = useLocation();
-  const isAuthRoute =
-    location.pathname === "/login" || location.pathname === "/register";
+  const isPublicRoute =
+    location.pathname === "/login" ||
+    location.pathname === "/register" ||
+    location.pathname === "/" ||
+    location.pathname === "/lp" ||
+    location.pathname === "/welcome";
 
-  if (isAuthRoute) {
+  if (isPublicRoute) {
     return <AppRoutes />;
   }
 

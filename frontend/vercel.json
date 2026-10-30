@@ -1,0 +1,21 @@
+{
+  "version": 2,
+  "name": "autonovel-lp",
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/(.*)", "dest": "frontend/index.html" }
+  ],
+  "env": {
+    "VITE_API_BASE_URL": "@autonovel_api_base_url",
+    "VITE_GA4_MEASUREMENT_ID": "@ga4_measurement_id",
+    "VITE_SENTRY_DSN": "@sentry_dsn"
+  }
+}

@@ -100,7 +100,7 @@ class TestDatabaseConcurrency:
                 async with UnitOfWork(db_manager) as uow:
                     # Read internal state
                     for i in range(5):  # 5 reads per worker
-                        state = await uow.misc.get_internal_state("counter")
+                        _state = await uow.misc.get_internal_state("counter")
                         await asyncio.sleep(0.001)  # Small delay
 
                     # Occasionally write

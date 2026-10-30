@@ -104,7 +104,7 @@ beats:
 [beat:fear+0.5 cause="inline scene2"]"""
 
         parser = BeatParser(char_dict)
-        result = parser.parse_script(text, episode=15, scene=1)
+        _result = parser.parse_script(text, episode=15, scene=1)
 
         # sceneが異なるので両方保持（inlineはscene=1でパースされるが、frontmatterはscene=1指定）
         # 実際にはinlineはscene=1, frontmatterもscene=1なので衝突

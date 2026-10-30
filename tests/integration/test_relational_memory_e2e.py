@@ -448,7 +448,7 @@ class TestRegressionPrevention:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             # 新しいインスタンスを作成（警告が出るはず）
-            client = AgeClient()
+            _client = AgeClient()
             # DeprecationWarning が出ていることを確認
             deprecation_warnings = [x for x in w if issubclass(x.category, DeprecationWarning)]
             # 警告が出ない環境でもテストが通るように、警告の有無をチェック

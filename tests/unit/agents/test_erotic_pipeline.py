@@ -784,9 +784,9 @@ class TestEroticPipelineIntegration:
     def test_pipeline_rejects_coercive_content(self):
         """強制的コンテンツを拒否 (実装の検出仕様に合わせる)"""
         text = "「嫌だ、やめて」と懇願した。そのまま無理やり続けられた。痛みと恐怖。"
-        scene_type = self.detector.detect(text)
+        _scene_type = self.detector.detect(text)
 
-        report = self.scorer.score_quality(text)
+        _report = self.scorer.score_quality(text)
         # 品質スコアは出るが...
 
         coercion_passed, issues = self.checker.check_coercive_context(text)

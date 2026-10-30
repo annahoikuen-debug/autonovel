@@ -12,7 +12,6 @@ def parse_forest_to_dot(forest: ParseForest) -> str:
     ]
 
     for k, item_set in enumerate(forest.chart):
-        col_id = f"col_{k}"
         lines.append(f"  subgraph cluster_{k} {{")
         lines.append(f"    label=\"Position {k}\";")
         lines.append("    style=dashed; color=gray;")

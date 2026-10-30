@@ -87,7 +87,7 @@ def test_get_snapshot_db_errors_and_corrupt_flags(tmp_path):
 
     import sqlite3 as sqlite3_module
 
-    original_connect = sqlite3_module.connect
+    _original_connect = sqlite3_module.connect
 
     def broken_connect(*args, **kwargs):
         raise RuntimeError("db down")

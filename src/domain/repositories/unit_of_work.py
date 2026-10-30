@@ -73,6 +73,19 @@ class IUnitOfWork(Protocol):
         ...
 
     # Context manager support
+    async def __aenter__(self) -> IUnitOfWork:
+        """Enter the async context (delegates to the transaction context manager)."""
+        ...
+
+    async def __aexit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: object | None,
+    ) -> bool | None:
+        """Exit the async context (delegates to the transaction context manager)."""
+        ...
+
     @asynccontextmanager
     async def transaction(self) -> AsyncGenerator[IUnitOfWork, None]:
         """Context manager for transaction."""

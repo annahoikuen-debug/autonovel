@@ -104,7 +104,7 @@ class TestPlanningSubversion:
                 "proposal_b": {"proposal_id": "proposal_b", "title": "Test (Variant B)", "arcs": {"arcs": []}},
                 "proposal_c": {"proposal_id": "proposal_c", "title": "Test (Variant C)", "arcs": {"arcs": []}},
             }
-            result = await agent.execute(ctx)
+            _result = await agent.execute(ctx)
             mock_proposals.assert_called_once()
             # Check that subversion_seed was passed
             call_kwargs = mock_proposals.call_args.kwargs

@@ -109,7 +109,7 @@ class TestP1FullFlow:
 
     def test_end_to_end_kakuyomu_flow(self) -> None:
         # --- 1. 企画情報入力 ---
-        project_settings = "ジャンル: 異世界ファンタジー、追放ざまぁ、実は神鑑定士"
+        _project_settings = "ジャンル: 異世界ファンタジー、追放ざまぁ、実は神鑑定士"
         work_id = "123456"
 
         # --- 2. 35文字キャッチコピー生成＆スコアリング ---

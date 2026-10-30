@@ -19,7 +19,6 @@ class QuarterBalanceConstraintBuilder(ConstraintBuilder):
         q_size = max(3, n // 4)
 
         daily_idx = BEAT_TYPE_MAP[BeatType.DAILY]
-        battle_idx = BEAT_TYPE_MAP[BeatType.BATTLE]
 
         for q in range(4):
             q_start = q * q_size

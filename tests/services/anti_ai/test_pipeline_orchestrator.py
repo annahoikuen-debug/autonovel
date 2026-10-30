@@ -112,12 +112,12 @@ class TestProseDetoxPipeline:
         # First episode - use up aggressive limit
         text1 = "彼は歯を食いしばった。さらに舌打ちした。"  # 2 aggressive
         result1, metrics1 = pipeline.process(text1, episode_id="episode_A")
-        stats1_after = metrics1["stream_guard"]["stats"]
+        _stats1_after = metrics1["stream_guard"]["stats"]
 
         # Second episode - should allow aggressive again
         text2 = "彼は拳を握りしめた。さらに奥歯を軋ませた。"  # 2 more aggressive
         result2, metrics2 = pipeline.process(text2, episode_id="episode_B")
-        stats2_after = metrics2["stream_guard"]["stats"]
+        _stats2_after = metrics2["stream_guard"]["stats"]
 
         # Each episode should have its own count
         # The exact counts depend on implementation, but they should be tracked separately

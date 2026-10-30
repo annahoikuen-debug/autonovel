@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, AsyncIterator
 
 import aiosqlite
-from sqlalchemy import create_engine, event
+from sqlalchemy import create_engine, event, text
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
@@ -36,8 +36,47 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseConnectionWrapper:
-    """Compatibility shim for legacy database connection wrapper."""
-    pass
+    """Compatibility shim for legacy database connection wrapper.
+
+    ``sql_conn`` / ``dbapi_conn`` はラッパー自身に保持し、それ以外の属性設定は
+    ``dbapi_conn`` 側に委譲する（後方互換のため）。
+    """
+
+    def __init__(self, sql_conn, dbapi_conn):
+        self.sql_conn = sql_conn
+        self.dbapi_conn = dbapi_conn
+
+    @property
+    def cursor(self):
+        return self.dbapi_conn.cursor()
+
+    def commit(self):
+        return self.dbapi_conn.commit()
+
+    def rollback(self):
+        return self.dbapi_conn.rollback()
+
+    def execute(self, sql, params=None):
+        return self.dbapi_conn.execute(sql, params)
+
+    def fetchone(self):
+        return self.dbapi_conn.fetchone()
+
+    def fetchall(self):
+        return self.dbapi_conn.fetchall()
+
+    async def close(self):
+        try:
+            await self.dbapi_conn.rollback()
+        except Exception:
+            pass
+        await self.sql_conn.close()
+
+    def __setattr__(self, name, value):
+        if name in ("sql_conn", "dbapi_conn"):
+            super().__setattr__(name, value)
+        else:
+            setattr(self.dbapi_conn, name, value)
 
 
 # ==========================================
@@ -86,7 +125,7 @@ class WorkspaceManager:
         """DBのスナップショット（バックアップ）を作成"""
         src = Path(db_path)
         if src.exists():
-            dst = src.with_suffix(f".bak_{int(time.time())}.db")
+            dst = src.with_name(f"{src.name}.bak_{int(time.time())}.db")
             shutil.copy2(src, dst)
             logger.info(f"Snapshot created: {dst.name}")
             return str(dst)
@@ -102,6 +141,7 @@ class DatabaseManager:
     def __init__(self, db_url: str, pool_size: int = 10):
         self.db_path = db_url  # 後方互換のため db_path に接続URLを保持
         self._pool_size = pool_size
+        self._warned_about_str_sql = False
 
         is_sqlite = "sqlite" in db_url
         connect_args = {}
@@ -208,39 +248,7 @@ class DatabaseManager:
         raw_conn = await sql_conn.get_raw_connection()
         dbapi_conn = raw_conn._connection
 
-        # 簡易ラッパー（最小限の互換性のみ）
-        class _CompatWrapper:
-            def __init__(self, dbapi_conn, sql_conn):
-                self.dbapi_conn = dbapi_conn
-                self.sql_conn = sql_conn
-
-            @property
-            def cursor(self):
-                return self.dbapi_conn.cursor()
-
-            def commit(self):
-                return self.dbapi_conn.commit()
-
-            def rollback(self):
-                return self.dbapi_conn.rollback()
-
-            def execute(self, sql, params=()):
-                return self.dbapi_conn.execute(sql, params)
-
-            def fetchone(self):
-                return self.dbapi_conn.fetchone()
-
-            def fetchall(self):
-                return self.dbapi_conn.fetchall()
-
-            async def close(self):
-                try:
-                    await self.dbapi_conn.rollback()
-                except Exception:
-                    pass
-                await self.sql_conn.close()
-
-        return _CompatWrapper(dbapi_conn, sql_conn)
+        return DatabaseConnectionWrapper(sql_conn, dbapi_conn)
 
     async def get_read_conn(self):
         """非推奨: 読み取り専用接続（プールから再利用）"""
@@ -271,13 +279,20 @@ class DatabaseManager:
         """後方互換用: ダミー"""
         pass
 
+    def _ensure_text_sql(self, sql: Any) -> Any:
+        """生文字列 SQL を非推奨警告と共に sqlalchemy.text() に変換する。"""
+        if isinstance(sql, str):
+            if not self._warned_about_str_sql:
+                logger.warning(
+                    "DatabaseManager に生の文字列 SQL が渡されました。sqlalchemy.text() でラップしてください。"
+                )
+                self._warned_about_str_sql = True
+            return text(sql)
+        return sql
+
     async def execute(self, sql: Any, params: Any = ()) -> None:
         """SQLを実行する。sqlalchemy.text() でラップされたクエリのみ受け付ける。"""
-        if isinstance(sql, str):
-            raise TypeError(
-                "DatabaseManager.execute() no longer accepts raw strings. "
-                "Please use sqlalchemy.text() for SQL queries."
-            )
+        sql = self._ensure_text_sql(sql)
 
         logger.debug("DatabaseManager.execute called: %s", sql)
         async with self.engine.begin() as conn:
@@ -285,11 +300,7 @@ class DatabaseManager:
 
     async def fetch_one(self, sql: Any, params: Any = ()) -> Any | None:
         """単一行を取得する。sqlalchemy.text() でラップされたクエリのみ受け付ける。"""
-        if isinstance(sql, str):
-            raise TypeError(
-                "DatabaseManager.fetch_one() no longer accepts raw strings. "
-                "Please use sqlalchemy.text() for SQL queries."
-            )
+        sql = self._ensure_text_sql(sql)
 
         logger.debug("DatabaseManager.fetch_one called: %s", sql)
         async with self.engine.connect() as conn:
@@ -298,11 +309,7 @@ class DatabaseManager:
 
     async def fetch_all(self, sql: Any, params: Any = ()) -> list[Any]:
         """複数行を取得する。sqlalchemy.text() でラップされたクエリのみ受け付ける。"""
-        if isinstance(sql, str):
-            raise TypeError(
-                "DatabaseManager.fetch_all() no longer accepts raw strings. "
-                "Please use sqlalchemy.text() for SQL queries."
-            )
+        sql = self._ensure_text_sql(sql)
 
         logger.debug("DatabaseManager.fetch_all called: %s", sql)
         async with self.engine.connect() as conn:

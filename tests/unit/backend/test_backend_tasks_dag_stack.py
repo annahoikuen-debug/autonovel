@@ -667,7 +667,7 @@ def test_retry_failed_subgraph():
     g.mark_completed("a")
     g.mark_failed("b", "err")
 
-    reset = g and None
+    _reset = g and None
     s = _sched()
     out = s.retry_failed_subgraph(g, "b")
     assert out == ["b", "c"]

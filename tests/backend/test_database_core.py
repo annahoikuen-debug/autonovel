@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import ANY, AsyncMock, Mock, patch
 import asyncio
 from pathlib import Path
 
@@ -129,7 +129,10 @@ class TestWorkspaceManager:
                                     result = WorkspaceManager.create_snapshot("/tmp/test.db")
 
                                     assert result == "/tmp/test.db.bak_1234567890.db"
-                                    mock_copy.assert_called_once_with(mock_src, mock_dst)
+                                    mock_copy.assert_called_once_with(
+                                        Path("/tmp/test.db"),
+                                        Path("/tmp/test.db.bak_1234567890.db"),
+                                    )
                                     mock_logger.info.assert_called_once_with(
                                         "Snapshot created: test.db.bak_1234567890.db"
                                     )
@@ -380,8 +383,8 @@ class TestDatabaseManager:
         db_manager._warned_about_str_sql = False  # Reset warning flag
 
         mock_conn = Mock()
-        mock_conn.__enter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__exit__ = AsyncMock()
+        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_conn.__aexit__ = AsyncMock()
         mock_conn.execute = AsyncMock()
 
         with patch.object(db_manager, 'engine') as mock_engine:
@@ -406,8 +409,8 @@ class TestDatabaseManager:
         mock_result.mappings.return_value = mock_mappings
 
         mock_conn = Mock()
-        mock_conn.__enter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__exit__ = AsyncMock()
+        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_conn.__aexit__ = AsyncMock()
         mock_conn.execute = AsyncMock(return_value=mock_result)
 
         with patch.object(db_manager, 'engine') as mock_engine:
@@ -432,8 +435,8 @@ class TestDatabaseManager:
         mock_result.mappings.return_value = mock_mappings
 
         mock_conn = Mock()
-        mock_conn.__enter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__exit__ = AsyncMock()
+        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_conn.__aexit__ = AsyncMock()
         mock_conn.execute = AsyncMock(return_value=mock_result)
 
         with patch.object(db_manager, 'engine') as mock_engine:
@@ -453,8 +456,8 @@ class TestDatabaseManager:
         mock_result.lastrowid = 42
 
         mock_conn = Mock()
-        mock_conn.__enter__ = AsyncMock(return_value=mock_conn)
-        mock_conn.__exit__ = AsyncMock()
+        mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)
+        mock_conn.__aexit__ = AsyncMock()
         mock_conn.exec_driver_sql = AsyncMock(return_value=mock_result)
 
         with patch.object(db_manager, 'engine') as mock_engine:
@@ -471,17 +474,19 @@ class TestDatabaseManager:
         db_manager = DatabaseManager("sqlite:///test.db")
 
         mock_session = Mock()
-        mock_session.begin = Mock(return_value=Mock())
-        mock_session.begin.__enter__ = AsyncMock()
-        mock_session.begin.__exit__ = AsyncMock()
+        mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session.__aexit__ = AsyncMock()
+        mock_session.begin = Mock()
+        mock_session.begin.return_value.__aenter__ = AsyncMock()
+        mock_session.begin.return_value.__aexit__ = AsyncMock()
 
         mock_stmt = Mock()
         mock_result = Mock()
         mock_scalar_result = Mock()
 
-        with patch('src.backend.database.core.select', return_value=mock_stmt):
+        with patch('sqlalchemy.select', return_value=mock_stmt):
             with patch.object(db_manager, 'get_session', return_value=mock_session):
-                with patch.object(mock_session, 'execute', return_value=mock_result):
+                with patch.object(mock_session, 'execute', new_callable=AsyncMock, return_value=mock_result):
                     with patch.object(mock_result, 'scalar_one_or_none', return_value=mock_scalar_result):
 
                         # Test UPDATE case (record exists)
@@ -495,7 +500,7 @@ class TestDatabaseManager:
                         mock_result.scalar_one_or_none.return_value = None
                         mock_new_state = Mock()
 
-                        with patch('src.backend.database.core.InternalState', return_value=mock_new_state):
+                        with patch('src.backend.database.models.InternalState', return_value=mock_new_state):
                             await db_manager.save_internal_state("test_key", "new_value")
 
                             mock_session.add.assert_called_once_with(mock_new_state)
@@ -505,7 +510,7 @@ class TestDatabaseManager:
         with patch('os.environ.get', return_value=""):
             with patch('src.backend.database.core.DATABASE_URL', "sqlite:///test.db"):
                 with patch('src.backend.database.core._run_alembic_upgrade') as mock_alembic:
-                    with patch('src.backend.database.core.create_engine') as mock_create_engine:
+                    with patch('src.backend.database.core.create_engine') as _mock_create_engine:
                         with patch('src.infrastructure.database.models.Base') as mock_infra_base:
                             with patch('src.backend.database.models.Base') as mock_backend_base:
                                 init_db()
@@ -541,7 +546,7 @@ class TestDatabaseManager:
             with patch('src.backend.database.core.DATABASE_URL', "postgresql+psycopg2://u:p@db/x"):
                 with patch.object(settings, "APP_ENV", "production"):
                     with patch('src.backend.database.core._run_alembic_upgrade', side_effect=RuntimeError("boom")):
-                        with patch('src.backend.database.core.create_engine') as mock_create_engine:
+                        with patch('src.backend.database.core.create_engine') as _mock_create_engine:
                             with patch('src.infrastructure.database.models.Base') as mock_infra_base:
                                 with pytest.raises(RuntimeError, match="Alembic"):
                                     init_db()
@@ -562,12 +567,12 @@ class TestDatabaseManager:
 
         with patch('src.backend.database.core.logger') as mock_logger:
             with patch('src.core.container.AppContainer') as mock_app_container:
-                mock_app_container.db.override = Mock()
+                mock_app_container.db.override = Mock(side_effect=Exception("boom"))
 
                 set_db_manager(mock_manager)
 
                 mock_logger.warning.assert_any_call("set_db_manager is deprecated. Use DI container instead.")
-                mock_logger.warning.assert_any_call("AppContainer.db.override に失敗: %s", mock.ANY)
+                mock_logger.warning.assert_any_call("AppContainer.db.override に失敗: %s", ANY, exc_info=True)
                 mock_app_container.db.override.assert_called_once_with(mock_manager)
 
 

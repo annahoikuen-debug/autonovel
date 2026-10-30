@@ -14,6 +14,30 @@ export default {
     ],
     theme: {
         extend: {
+            colors: {
+                brand: {
+                    dark: '#020617',
+                    surface: '#0f172a',
+                    surfaceHover: '#1e293b',
+                    text: '#f8fafc',
+                    textMuted: '#94a3b8',
+                    accent: '#22d3ee',
+                    accentHover: '#06b6d4',
+                    accentSecondary: '#a855f7',
+                    accentSecondaryHover: '#9333ea',
+                    success: '#34d399',
+                    warning: '#fbbf24',
+                    error: '#f87171',
+                    border: '#334155',
+                },
+            },
+            fontFamily: {
+                sans: [
+                    'system-ui', '-apple-system', 'BlinkMacSystemFont',
+                    '"Segoe UI"', 'Roboto', '"Hiragino Kaku Gothic ProN"',
+                    '"Hiragino Sans"', 'Meiryo', 'sans-serif',
+                ],
+            },
             animation: {
                 "fade-in": "fadeIn 0.5s ease-in-out",
                 "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
@@ -21,6 +45,9 @@ export default {
                 "slide-up": "slideUp 0.3s ease-out",
                 "wizard-fade-in": "wizard-fade-in 0.3s ease-in-out",
                 "overlay-fade-in": "overlay-fade-in 0.2s ease-in-out",
+                "fade-in-up": "fadeInUp 0.6s ease-out",
+                "scale-in": "scaleIn 0.3s ease-out",
+                "pulse-glow": "pulseGlow 3s infinite",
             },
             keyframes: {
                 fadeIn: {
@@ -46,6 +73,18 @@ export default {
                 "overlay-fade-in": {
                     "0%": { opacity: "0" },
                     "100%": { opacity: "1" },
+                },
+                fadeInUp: {
+                    "0%": { opacity: "0", transform: "translateY(24px)" },
+                    "100%": { opacity: "1", transform: "translateY(0)" },
+                },
+                scaleIn: {
+                    "0%": { transform: "scale(0.95)", opacity: "0" },
+                    "100%": { transform: "scale(1)", opacity: "1" },
+                },
+                pulseGlow: {
+                    "0%, 100%": { boxShadow: "0 0 0 0 rgb(34 211 238 / 0.4)" },
+                    "50%": { boxShadow: "0 0 0 12px rgb(34 211 238 / 0)" },
                 },
             },
         },

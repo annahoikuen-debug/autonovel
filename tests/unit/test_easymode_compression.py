@@ -99,14 +99,14 @@ class TestEpisodeWriterCompression:
             compressor=compressor,
         )
 
-        ctx = AgentContext(
+        _ctx = AgentContext(
             book_id=1,
             branch_id=1,
             ep_num=1,
             artifacts={}
         )
 
-        result = await writer.build_context(1, 1, 1, 3000)
+        _result = await writer.build_context(1, 1, 1, 3000)
 
         # context_builder.execute が呼ばれる際に compressor が artifacts に含まれること
         call_args = mock_context_builder.execute.call_args
@@ -124,7 +124,7 @@ class TestEpisodeWriterCompression:
             compressor=None,
         )
 
-        result = await writer.build_context(1, 1, 1, 3000)
+        _result = await writer.build_context(1, 1, 1, 3000)
 
         call_args = mock_context_builder.execute.call_args
         called_ctx = call_args[0][0]

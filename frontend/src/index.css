@@ -1,5 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700&family=Shippori+Mincho:wght@400;500;600;700&display=swap');
 
+/* AutoNovel 商業LP デザイントークン */
+@import './assets/lp-tokens.css';
+
 :root {
   --bg-primary: #0a0e17;
   --bg-secondary: #121826;

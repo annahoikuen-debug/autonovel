@@ -10,7 +10,6 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    Text,
     func,
     text,
 )

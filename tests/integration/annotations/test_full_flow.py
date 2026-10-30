@@ -189,7 +189,7 @@ A goes to B.
 
         # 永続化
         persistence = AnnotationPersistence(vector_store, graph_store, log_store)
-        count = persistence.persist_beats(beats, 15)
+        _count = persistence.persist_beats(beats, 15)
 
         # Graph確認
         edge_ab = graph_store.get_latest_edge("A", "B")

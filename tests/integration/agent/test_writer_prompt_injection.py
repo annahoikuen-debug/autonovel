@@ -45,7 +45,7 @@ class TestWriterPromptInjection:
                     pm.registry = AsyncMock()
                     pm.registry.render_async = AsyncMock(return_value="RENDERED_PROMPT")
 
-                    result = await pm.build_final_writing_prompt(
+                    _result = await pm.build_final_writing_prompt(
                         ep_num=15,
                         plot_data={},
                         script_text="テスト脚本",
@@ -78,7 +78,7 @@ class TestWriterPromptInjection:
             pm.registry = AsyncMock()
             pm.registry.render_async = AsyncMock(return_value="RENDERED_PROMPT")
 
-            result = await pm.build_final_writing_prompt(
+            _result = await pm.build_final_writing_prompt(
                 ep_num=15,
                 plot_data={},
                 script_text="テスト",

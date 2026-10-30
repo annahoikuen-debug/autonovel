@@ -21,8 +21,8 @@ class TestNLPInit:
     def test_init_nlp_clears_cache(self):
         """init_nlp でキャッシュがクリアされること"""
         try:
-            nlp1 = get_nlp("ja_ginza")
-            nlp2 = init_nlp("ja_ginza")
+            _nlp1 = get_nlp("ja_ginza")
+            _nlp2 = init_nlp("ja_ginza")
             # 同じモデルでもキャッシュクリア後は新しいインスタンス
             # （実際の実装では同一オブジェクトが返る可能性もあるが、キャッシュはクリアされる）
         except OSError:

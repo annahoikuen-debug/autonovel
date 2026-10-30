@@ -11,14 +11,12 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Integer,
-    String,
     Text,
     func,
 )
 
 from src.infrastructure.database.models.base_orm import Base
 from src.infrastructure.database.models.safe_datetime import SafeDateTime
-from src.infrastructure.database.types import CompatibleDateTime
 
 
 class Bible(Base):

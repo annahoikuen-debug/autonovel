@@ -4,7 +4,7 @@ from datetime import datetime
 
 """出版スケジュールモデル定義。"""
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, func, Index
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from src.infrastructure.database.models.base_orm import Base
 
 

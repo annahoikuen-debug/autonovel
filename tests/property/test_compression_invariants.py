@@ -310,7 +310,7 @@ class TestBypassCache:
             preserve_categories=config.preserve_categories,
         )
         compressor = FourLayerCompressor(config=config_test)
-        result1 = compressor.compress(text, bypass_cache=False)
+        _result1 = compressor.compress(text, bypass_cache=False)
         result2 = compressor.compress(text, bypass_cache=False)
         assert result2.from_cache is True
 

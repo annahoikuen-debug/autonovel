@@ -9,7 +9,7 @@ from sqlalchemy import (
 )
 
 from src.infrastructure.database.models.base_orm import Base
-from src.infrastructure.database.types import CompatibleDateTime, CompatibleJSON
+from src.infrastructure.database.types import CompatibleJSON
 
 
 """Character ORM モデル定義。

@@ -216,7 +216,6 @@ async def rollback_annotation(
         # 簡易実装: InMemoryGraphStoreではbeat_idでフィルタ削除可能
         if hasattr(graph_store, '_edges'):
             for (src, tgt), edges in list(graph_store._edges.items()):
-                original_len = len(edges)
                 graph_store._edges[(src, tgt)] = [e for e in edges if e.get("beat_id") != req.beat_id]
                 if len(graph_store._edges.get((src, tgt), [])) == 0:
                     del graph_store._edges[(src, tgt)]

@@ -33,7 +33,7 @@ async def test_40ep_commercial_lifecycle():
 
     # 2. 伏線サービスのモック
     mock_foreshadowing_repo = AsyncMock()
-    mock_foreshadowing_service = ForeshadowingService(mock_foreshadowing_repo)
+    _mock_foreshadowing_service = ForeshadowingService(mock_foreshadowing_repo)
 
     # 短期伏線と長期伏線のモックデータ
     short_term_foreshadowing = [
@@ -69,9 +69,9 @@ async def test_40ep_commercial_lifecycle():
     epub_builder = PureCommercialEpubBuilder()
 
     # EPUBビルダーの入力データ準備
-    title = "テスト小説"
-    author = "テスト作者"
-    chapters = [
+    _title = "テスト小説"
+    _author = "テスト作者"
+    _chapters = [
         {"title": ep["title"], "body": ep["content"]}
         for ep in episodes_content
     ]

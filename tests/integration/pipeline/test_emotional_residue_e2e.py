@@ -46,7 +46,7 @@ class TestEmotionalResidueE2E:
         assert isinstance(vector.signals, dict)
 
         # Redisに保存確認 (キー形式: ep{episode_id})
-        stored = vector_store.get_latest("pipeline", ("A", "B"))
+        _stored = vector_store.get_latest("pipeline", ("A", "B"))
         # 空白モデルでは依存構造解析不可のためシグナルなしの可能性
         # 少なくともエラーなく実行完了すること
 

@@ -106,7 +106,7 @@ class TestSyntaxRefiner:
 
         # Test with newlines
         text2 = "第一段落\n第二段落\n第三段落"
-        sentences2 = refiner._split_sentences_keep_delimiters(text2)
+        _sentences2 = refiner._split_sentences_keep_delimiters(text2)
         # Should handle newlines as delimiters
 
 

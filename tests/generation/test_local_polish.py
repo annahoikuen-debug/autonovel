@@ -51,7 +51,7 @@ def test_polish_calls_llm_with_correct_prompt(mock_call_llm):
     # モックの設定
     mock_call_llm.return_value = "改善されたテキスト"
 
-    original = "前文脈。対象テキスト。後文脈。"
+    _original = "前文脈。対象テキスト。後文脈。"
     polisher = LocalPolisher()
 
     # 対象範囲を指定（ここでは「対象テキスト」の部分）

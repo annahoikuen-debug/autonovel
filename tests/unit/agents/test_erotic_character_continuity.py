@@ -50,7 +50,7 @@ def test_save_and_get_snapshot_memory_and_db(tracker):
 def test_save_snapshot_db_failure_is_logged(tracker, monkeypatch):
     import sqlite3
 
-    real_connect = sqlite3.connect
+    _real_connect = sqlite3.connect
 
     def boom(*a, **k):
         raise RuntimeError("no db")

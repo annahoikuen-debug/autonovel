@@ -489,7 +489,7 @@ class TestGenerateRoadmap:
         gen = make_generator(llm=llm)
         core = WorldBibleCore()
         core.synopsis = "s"
-        roadmap = await gen._generate_roadmap(core, 9, "f", "e", None)
+        _roadmap = await gen._generate_roadmap(core, 9, "f", "e", None)
         assert len(core.arcs) == 1
 
     async def test_arc_generation_failure(self):

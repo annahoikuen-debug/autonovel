@@ -1,10 +1,17 @@
 import React from "react";
-import { RouteObject, isRouteErrorResponse, useNavigate, useRouteError } from "react-router-dom";
+import {
+  RouteObject,
+  isRouteErrorResponse,
+  useNavigate,
+  useRouteError,
+  Navigate,
+} from "react-router-dom";
 import { EasyModePage } from "./pages/EasyModePage";
 import { StudioWorkspacePage } from "./pages/StudioWorkspacePage";
 import { WizardWorkflowPage } from "./pages/WizardWorkflowPage";
 import { WelcomePage } from "./pages/WelcomePage";
 import { LoginPage, RegisterPage } from "./pages/AuthPage";
+import { LpPage } from "./pages/lp/LpPage";
 
 /**
  * ルート単位のエラー表示（react-router v7 の `errorElement`）。
@@ -58,20 +65,27 @@ export function RouteErrorView() {
  * すべてのルート定義はここに集約し、App.tsx は {@link useRoutes} を通じて
  * この配列だけを参照する。ルートを追加・変更するときはここだけを編集すること。
  *
- * 3 つの入口:
- *   - `/`        かんたん執筆（Easy Mode）
- *   - `/wizard`  共創ウィザード（3 ステップ）
- *   - `/studio`  Studio（上級者向け）
+ * 公開 LP:
+ *   - `/`        ランディングページ（商業LP、認証不要）
+ *   - `/lp`      LP エイリアス（`/` へリダイレクト）
+ *
+ * 既存アプリ（認証必須）は /app 配下に移行:
+ *   - `/app/easy`        かんたん執筆（Easy Mode）
+ *   - `/app/wizard`      共創ウィザード（3 ステップ）
+ *   - `/app/studio`      Studio（上級者向け）
+ *   - `/app/studio/:bookId` Studio（作品指定）
  * ＋ 初回起動時の入口選択 `/welcome`
  * ＋ 認証 `/login` `/register`（未ログイン時はここへ誘導される）
  */
 export const routes: RouteObject[] = [
   { path: "/login", element: <LoginPage />, errorElement: <RouteErrorView /> },
   { path: "/register", element: <RegisterPage />, errorElement: <RouteErrorView /> },
-  { path: "/", element: <EasyModePage />, errorElement: <RouteErrorView /> },
-  { path: "/studio", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },
-  { path: "/studio/:bookId", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },
-  { path: "/wizard", element: <WizardWorkflowPage />, errorElement: <RouteErrorView /> },
+  { path: "/", element: <LpPage />, errorElement: <RouteErrorView /> },
+  { path: "/lp", element: <Navigate to="/" replace /> },
+  { path: "/app/easy", element: <EasyModePage />, errorElement: <RouteErrorView /> },
+  { path: "/app/wizard", element: <WizardWorkflowPage />, errorElement: <RouteErrorView /> },
+  { path: "/app/studio", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },
+  { path: "/app/studio/:bookId", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },
   { path: "/welcome", element: <WelcomePage />, errorElement: <RouteErrorView /> },
 ];
 
@@ -91,8 +105,8 @@ export interface EntryMeta {
 export const ENTRY_POINTS: EntryMeta[] = [
   {
     id: "easy",
-    path: "/",
-    matchPrefix: "/",
+    path: "/app/easy",
+    matchPrefix: "/app/easy",
     emoji: "⚡",
     label: "かんたん",
     description: "書きたい内容を入れるだけ",
@@ -100,8 +114,8 @@ export const ENTRY_POINTS: EntryMeta[] = [
   },
   {
     id: "wizard",
-    path: "/wizard",
-    matchPrefix: "/wizard",
+    path: "/app/wizard",
+    matchPrefix: "/app/wizard",
     emoji: "✨",
     label: "共創ウィザード",
     description: "骨組みを決めてから書く",
@@ -109,8 +123,8 @@ export const ENTRY_POINTS: EntryMeta[] = [
   },
   {
     id: "studio",
-    path: "/studio",
-    matchPrefix: "/studio",
+    path: "/app/studio",
+    matchPrefix: "/app/studio",
     emoji: "🚀",
     label: "Studio",
     description: "仕上げと詳細設定",

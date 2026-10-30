@@ -4,7 +4,7 @@ from datetime import datetime
 
 """オーディオアセットモデル定義。"""
 
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, func, Index
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, Index
 from src.infrastructure.database.models.base_orm import Base
 
 

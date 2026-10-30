@@ -129,9 +129,8 @@ class TestAnnotationPersistence:
         persistence.persist_beats(sample_beats, 14)
         persistence.persist_beats(sample_beats, 15)
 
-        ep14 = vector_store.get_latest("annotation", ("A", "B"))
-        ep15 = vector_store.get_latest("annotation", ("A", "B"))
-
+        _ep14 = vector_store.get_latest("annotation", ("A", "B"))
+        _ep15 = vector_store.get_latest("annotation", ("A", "B"))
         # 同じキーだが異なるエピソードとして保存される（キー形式: ep{num}）
         # 実装ではキーは "ep{episode}" なので上書きされる
         # これは仕様としてOK

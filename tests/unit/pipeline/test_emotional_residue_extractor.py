@@ -45,7 +45,7 @@ class TestEmotionalResidueExtractor:
         assert vector.episode_id == "ep01"
 
         # Redisに保存されたか確認
-        stored = vector_store.get_latest("pipeline", ("A", "B"))
+        _stored = vector_store.get_latest("pipeline", ("A", "B"))
         # 空白モデルでは依存構造がないためシグナルが出ない可能性がある
         # 実行エラーにならないことのみ確認
 

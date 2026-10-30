@@ -31,7 +31,7 @@ def test_genres_do_not_all_collapse_to_one_pattern():
 def test_resolve_pattern_key_returns_distinct_values_for_distinct_genres():
     a = resolve_pattern_key("ミステリー")
     b = resolve_pattern_key("ホラー")
-    c = resolve_pattern_key("ZFantasy")
+    _c = resolve_pattern_key("ZFantasy")
     assert a != b, f"ミステリーとホラーが同じパターン {a} になった"
 
 

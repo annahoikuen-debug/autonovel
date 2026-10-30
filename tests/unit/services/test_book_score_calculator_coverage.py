@@ -138,7 +138,7 @@ def test_calculate_from_specialists_with_bridge():
 def test_calculate_from_specialists_lazy_bridge_init():
     calc = make_calc()
     assert calc.bridge is None
-    score = calc.calculate_from_specialists({"logic": 50.0})
+    _score = calc.calculate_from_specialists({"logic": 50.0})
     assert calc.bridge is not None
 
 

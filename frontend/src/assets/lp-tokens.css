@@ -1,0 +1,72 @@
+/**
+ * AutoNovel 商業LP デザイントークン
+ *
+ * Tailwind の arbitrary values (var(--lp-*)) と JS から参照可能な
+ * デザイントークンを一元管理する。
+ */
+
+/* ルート変数（ダークテーマ基調） */
+:root {
+  /* 背景 */
+  --lp-bg-base: #020617;
+  --lp-bg-surface: #0f172a;
+  --lp-bg-surface-hover: #1e293b;
+
+  /* テキスト */
+  --lp-text-primary: #f8fafc;
+  --lp-text-secondary: #94a3b8;
+
+  /* アクセント */
+  --lp-accent-primary: #22d3ee;
+  --lp-accent-primary-hover: #06b6d4;
+  --lp-accent-secondary: #a855f7;
+  --lp-accent-secondary-hover: #9333ea;
+
+  /* セマンティック */
+  --lp-border: #334155;
+  --lp-success: #34d399;
+  --lp-warning: #fbbf24;
+  --lp-error: #f87171;
+
+  /* シャドウ */
+  --lp-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --lp-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  --lp-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --lp-shadow-accent: 0 0 20px -4px rgb(34 211 238 / 0.25);
+
+  /* ボーダーラジオ */
+  --lp-radius-sm: 4px;
+  --lp-radius-md: 8px;
+  --lp-radius-lg: 12px;
+  --lp-radius-xl: 16px;
+  --lp-radius-full: 9999px;
+
+  /* スペーシング（8px グリッド） */
+  --lp-space-1: 0.25rem;   /* 4px */
+  --lp-space-2: 0.5rem;    /* 8px */
+  --lp-space-4: 1rem;      /* 16px */
+  --lp-space-6: 1.5rem;    /* 24px */
+  --lp-space-8: 2rem;      /* 32px */
+  --lp-space-16: 4rem;     /* 64px */
+
+  /* 遷移 */
+  --lp-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --lp-transition-base: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --lp-transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ダークモード固定（LP はダークテーマ専用） */
+[data-theme="lp-dark"],
+body.lp-dark {
+  --lp-bg-base: #020617;
+  --lp-bg-surface: #0f172a;
+}
+
+/* 減動設定対応 */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --lp-transition-fast: 0ms;
+    --lp-transition-base: 0ms;
+    --lp-transition-slow: 0ms;
+  }
+}
