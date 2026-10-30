@@ -115,13 +115,16 @@ make lint-layers                                           # Makefile ターゲ�
 
 ## 6. 現状の境界違反（移行 TODO スナップショット）
 
-境界チェック実行時点の計 **44 件**（`--report` で常に最新を取得可能）。
+境界チェック実行時点の計 **7 件**（`--report` で常に最新を取得可能）。
+`config/layer_boundaries_baseline.json` は total=7 に記録済み（TRACK-A1〜A9 完了時点）。
+目標値 ≤10 を達成済み。
 
 | レイヤー | 件数 | 主な内容 |
 |---:|---:|---|
-| domain | 4 | `domain/writing/{coordinator,quality_loop}.py` が `agents`/`services` を依存（F1） |
-| application | 1 | `use_cases/book_use_cases.py` が `backend` を依存（F1） |
-| infrastructure | 39 | `repositories/*` が `backend`(DB) / `services` を依存（F2） |
-| interfaces | 0 | — |
+| domain | 0 | —（TRACK-A1/A2 で `coordinator.py`, `quality_loop.py` を port 経由 DI に置換し解消） |
+| application | 0 | —（TRACK-A3 で `book_use_cases.py` を port 化し解消） |
+| infrastructure | 2 | `repositories/foreshadowing_repo.py` が `backend`(observability) / `services` を依存（残） |
+| interfaces | 5 | `interfaces/api/` に移設した 3 ルーター（`metrics`, `platform_export`, `styles`）が `backend`/`services` を直接 import（TRACK-A8 で旧パス shim 化済み。F3 フェーズでポート化予定） |
 
 > 契約1（正規レイヤー間の逆方向依存）は **0 件**で維持されている。4層の骨格は既に保たれており、残は「レガシー接続の断線」である。
+> 契約2 は 44 件 → 7 件へ削減（目標 ≤10 達成済み）。残 2 件（infrastructure）は F2 フェーズで対応予定。
