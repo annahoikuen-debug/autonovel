@@ -38,6 +38,9 @@ from src.backend.database.models_billing import (  # noqa: F401
 from src.backend.database.models_digest import EpisodeDigestModel  # noqa: F401
 from src.backend.database.models_foreshadowing import ForeshadowingModel  # noqa: F401
 from src.backend.database.models_relation import CharacterRelationModel  # noqa: F401
+# users.tenant_id / books.tenant_id が FK 参照する `tenants` テーブルを
+# metadata に登録する。未 import だと NoReferencedTableError になる。
+from src.backend.database.models_tenant import Tenant, TenantMember  # noqa: F401
 from src.infrastructure.database.types import CompatibleJSON, CompatibleDateTime, CompatibleVector
 
 """

@@ -19,6 +19,19 @@ def _is_admin(current_user: Any) -> bool:
     return getattr(current_user, "role", "user") == "admin"
 
 
+def _tenant_mismatch(book: Any, current_user: Any) -> bool:
+    """作品とユーザーのテナント境界が食い違っていないかを判定する。
+
+    どちらかが NULL の場合は「テナント未所属」として従来どおり user_id のみで
+    判定する。作品にテナントが設定されているのに、別テナントのユーザーが
+    アクセスしようとした場合だけ拒否する。
+    """
+    book_tenant = getattr(book, "tenant_id", None)
+    if book_tenant is None:
+        return False
+    return getattr(current_user, "tenant_id", None) != book_tenant
+
+
 async def verify_book_ownership(
     book_id: int,
     current_user: User,
@@ -49,7 +62,12 @@ async def verify_book_ownership(
 
         current_user_id = getattr(current_user, "id", None)
         # 所有者が NULL / 呼び出し側 ID が NULL の場合はいずれも拒否する
-        if book.user_id is None or current_user_id is None or book.user_id != current_user_id:
+        if (
+            book.user_id is None
+            or current_user_id is None
+            or book.user_id != current_user_id
+            or _tenant_mismatch(book, current_user)
+        ):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="この作品に対するアクセス権限がありません",
@@ -85,7 +103,12 @@ def verify_book_ownership_sync(book_id: int, current_user: User, db: Any) -> Boo
         return book
 
     current_user_id = getattr(current_user, "id", None)
-    if book.user_id is None or current_user_id is None or book.user_id != current_user_id:
+    if (
+        book.user_id is None
+        or current_user_id is None
+        or book.user_id != current_user_id
+        or _tenant_mismatch(book, current_user)
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="この作品に対するアクセス権限がありません",
