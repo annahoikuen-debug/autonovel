@@ -1,12 +1,11 @@
 """Book (作品) に関するアプリケーションユースケース群。"""
+
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Any, Optional
-from sqlalchemy import select
+from typing import Any
 
-from src.backend.database.models import Book, User
-from src.backend.database.uow import UnitOfWork
-from src.core.container import AppContainer
+from src.application.ports.book_repository import IBookRepository
+from src.application.ports.unit_of_work import IUnitOfWork
 from src.core.exceptions import NotFoundError
 
 
@@ -22,7 +21,7 @@ class BookDTO:
     created_at: Any
 
     @classmethod
-    def from_orm(cls, b: Book) -> BookDTO:
+    def from_orm(cls, b: Any) -> BookDTO:
         return cls(
             id=b.id,
             title=b.title,
@@ -50,28 +49,35 @@ class BookDTO:
 class BookUseCases:
     """書籍関連のオーケストレーションを行うユースケース集約。"""
 
-    def __init__(self, db_manager: Any = None, uow: Optional[Any] = None):
-        self.db_manager = db_manager or AppContainer.db()
+    def __init__(
+        self,
+        uow: IUnitOfWork | None = None,
+        book_repository: IBookRepository | None = None,
+    ):
         self._uow = uow
+        self.book_repository = book_repository
 
-    async def _get_uow(self) -> Any:
+    async def _get_uow(self) -> IUnitOfWork:
         if self._uow is not None:
             return self._uow
-        return UnitOfWork(self.db_manager)
+        raise RuntimeError(
+            "uow が未設定です。BookUseCases に uow を渡してください。"
+        )
 
     async def list_books(self, user_id: int) -> list[dict[str, Any]]:
         """ユーザーの作品一覧を取得"""
-        uow = self._uow or UnitOfWork(self.db_manager)
-        books = await uow.books.get_all_books(user_id=user_id)
+        uow = self._get_uow()
+        _ = uow  # トランザクションコンテキスト確保のため取得
+        books = await self.book_repository.get_all_books(user_id=user_id)
         return [BookDTO.from_orm(b).to_dict() for b in books]
 
-    async def get_book(self, book_id: int, current_user: User) -> dict[str, Any]:
+    async def get_book(self, book_id: int, current_user: Any) -> dict[str, Any]:
         """指定されたIDの作品を取得（所有権または管理者権限を検証）"""
-        uow = self._uow or UnitOfWork(self.db_manager)
-        b = await uow.books.get_book(book_id=book_id, user_id=current_user.id)
+        uow = self._get_uow()
+        _ = uow
+        b = await self.book_repository.get_book(book_id=book_id, user_id=current_user.id)
         if not b:
-            result = await uow.session.execute(select(Book).where(Book.id == book_id))
-            other_book = result.scalar_one_or_none()
+            other_book = await self.book_repository.get_book_by_id(book_id)
             if other_book and other_book.user_id != current_user.id and current_user.role != "admin":
                 from fastapi import HTTPException, status
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対するアクセス権限がありません")
@@ -79,10 +85,11 @@ class BookUseCases:
 
         return BookDTO.from_orm(b).to_dict()
 
-    async def create_book(self, payload: Any, current_user: User) -> dict[str, Any]:
+    async def create_book(self, payload: Any, current_user: Any) -> dict[str, Any]:
         """新規作品を作成"""
-        uow = self._uow or UnitOfWork(self.db_manager)
-        book_id = await uow.books.create_book(
+        uow = self._get_uow()
+        _ = uow
+        book_id = await self.book_repository.create_book(
             user_id=current_user.id,
             title=payload.title,
             genre=payload.genre or "ファンタジー",
@@ -92,30 +99,30 @@ class BookUseCases:
             style_dna={},
             marketing_data={},
         )
-        b = await uow.books.get_book(book_id=book_id, user_id=current_user.id)
+        b = await self.book_repository.get_book(book_id=book_id, user_id=current_user.id)
         if not b:
             raise NotFoundError("Book not found after creation", resource_type="Book", resource_id=str(book_id))
 
         return BookDTO.from_orm(b).to_dict()
 
-    async def delete_book(self, book_id: int, current_user: User) -> None:
+    async def delete_book(self, book_id: int, current_user: Any) -> None:
         """作品を削除"""
-        uow = self._uow or UnitOfWork(self.db_manager)
-        b = await uow.books.get_book(book_id=book_id, user_id=current_user.id)
+        uow = self._get_uow()
+        _ = uow
+        b = await self.book_repository.get_book(book_id=book_id, user_id=current_user.id)
         if not b:
-            result = await uow.session.execute(select(Book).where(Book.id == book_id))
-            other_book = result.scalar_one_or_none()
+            other_book = await self.book_repository.get_book_by_id(book_id)
             if other_book and other_book.user_id != current_user.id and current_user.role != "admin":
                 from fastapi import HTTPException, status
                 raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対するアクセス権限がありません")
             raise NotFoundError("Book not found", resource_type="Book", resource_id=str(book_id))
 
-        await uow.books.delete_book(book_id=book_id, user_id=current_user.id)
+        await self.book_repository.delete_book(book_id=book_id, user_id=current_user.id)
 
     async def get_book_score_history(self, book_id: int) -> dict[str, Any]:
         """スコア履歴を取得"""
-        uow = self._uow or UnitOfWork(self.db_manager)
-        book = await uow.books.get_book(book_id)
+        uow = self._get_uow()
+        book = await self.book_repository.get_book(book_id)
         if not book:
             raise NotFoundError("Book not found", resource_type="Book", resource_id=str(book_id))
 
@@ -145,7 +152,7 @@ class BookUseCases:
 
     async def get_pdca_cycles(self, book_id: int, chapter_number: int) -> list[dict[str, Any]]:
         """PDCA履歴を取得"""
-        uow = self._uow or UnitOfWork(self.db_manager)
+        uow = self._get_uow()
         snapshots = await uow.pdca_history.get_by_chapter(book_id, chapter_number)
 
         return [
