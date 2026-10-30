@@ -95,34 +95,13 @@ def test_openapi_json_is_not_missing_the_orchestrated_routes():
     )
 
 
-def _iter_api_routes(routes) -> list:
-    """FastAPI の routes リストから全 APIRoute を再帰的に収集する。
-
-    FastAPI 0.141 以降、``include_router`` は遅延展開の ``_IncludedRouter``
-    オブジェクトを返すため、``app.routes`` そのままでは ``.path`` を持たない
-    エントリが混じる。``_IncludedRouter.original_router`` を辿って実体の
-    ``APIRoute`` を取り出す。
-    """
-    collected: list = []
-    for r in routes:
-        type_name = type(r).__name__
-        # 遅延展開ルーターを再帰的に辿る
-        if type_name == "_IncludedRouter":
-            original = getattr(r, "original_router", None)
-            if original is not None:
-                collected.extend(_iter_api_routes(getattr(original, "routes", [])))
-            continue
-        collected.append(r)
-    return collected
-
-
 def test_openapi_json_has_no_path_drift_against_the_app():
     """``docs/api.md:209`` が（約束していた）OpenAPI drift 検出を実際に行う。
 
     仕様書の path 集合が app の route 集合と乖離していれば CI を落とす。
     WebSocket ルートは OpenAPI 仕様書を持たない（HTTP 仕様ではない）ため対象外。
-    FastAPI 0.141 以降の ``_IncludedRouter`` 遅延展開に対応するため、
-    ``original_router`` を再帰的に辿って全 route を収集する。
+    FastAPI 0.141 以降の ``_IncludedRouter`` 遅延展開に依存せず、
+    ``app.openapi()``（prefix 適用済み）を正とする。
     """
     import json
 
@@ -132,23 +111,16 @@ def test_openapi_json_has_no_path_drift_against_the_app():
     documented = {
         p for p in spec["paths"] if not p.startswith(("/openapi", "/docs", "/redoc"))
     }
-    live = set()
-    for r in _iter_api_routes(app.routes):
-        path = getattr(r, "path", None)
-        if not isinstance(path, str) or not path.startswith("/"):
-            continue
-        if path.startswith(("/openapi", "/docs", "/redoc")):
-            continue
-        if "WebSocket" in type(r).__name__:
-            continue  # WebSocket は OpenAPI 仕様に現れない
-        if getattr(r, "include_in_schema", True) is False:
-            continue  # include_in_schema=False のエイリアスは仕様書に出さない
-        live.add(path)
+    live = {
+        p
+        for p in app.openapi()["paths"]
+        if not p.startswith(("/openapi", "/docs", "/redoc"))
+    }
     missing = sorted(live - documented)
     extra = sorted(documented - live)
     assert not missing and not extra, (
         "docs/openapi.json と app の route が drift している。\n"
         f"  app にあるが仕様に無い: {missing}\n"
         f"  仕様にあるが app に無い: {extra}\n"
-        "  `py scripts/generate_openapi.py` で再生成してコミットすること"
+        "  `python scripts/generate_openapi.py` で再生成してコミットすること"
     )

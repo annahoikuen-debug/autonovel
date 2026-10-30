@@ -30,12 +30,14 @@ def _vite_prefixes() -> set[str]:
 
 
 def _server_paths() -> set[str]:
-    """app に実際に載っているルートパス（include_router 後の実測値）。"""
+    """OpenAPI に載る実パス集合（include_router 後の prefix 適用済み）。
+
+    FastAPI 0.141 以降 ``app.routes`` は ``_IncludedRouter`` を含み、
+    ``.path`` を素朴に読むと prefix が落ちる。``app.openapi()`` を正とする。
+    """
     from src.backend.server import app
 
-    return {
-        r.path for r in app.routes if isinstance(getattr(r, "path", None), str) and r.path.startswith("/")
-    }
+    return set(app.openapi()["paths"])
 
 
 def _root_prefixes(paths: set[str]) -> set[str]:

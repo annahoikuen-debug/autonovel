@@ -433,7 +433,13 @@ def execute_cypher(
     if not settings.ENABLE_GRAPHRAG or not settings.DATABASE_URL.startswith("postgresql"):
         raise HTTPException(status_code=400, detail="GraphRAG is not enabled or not on PostgreSQL")
 
-    return CypherQueryResponse(records=[], summary="Cypher execution is deprecated/disabled in Relational Memory mode", execution_time_ms=0.0)
+    # 以前は空の records を 200 で返しており、呼び出し側が「成功したが結果なし」と
+    # 誤解していた。Relational Memory モードでは Cypher 実行自体が提供されないため、
+    # 明示的に 410 Gone を返す。
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Cypher execution is deprecated/disabled in Relational Memory mode",
+    )
 
 
 # ============================================================
