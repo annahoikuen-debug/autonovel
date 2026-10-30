@@ -18,6 +18,25 @@ class TestWritingCoordinator:
         return writer
 
     @pytest.fixture
+    def mock_auditor(self):
+        auditor = MagicMock()
+        auditor.audit_quantitative.return_value = (
+            80.0,
+            {"cliches": [], "dialogue_ratio": 0.3, "rhythm_score": 70.0},
+        )
+        return auditor
+
+    @pytest.fixture
+    def mock_pdca_runner(self):
+        runner = AsyncMock()
+        pdca_result = MagicMock()
+        pdca_result.initial_score = 50.0
+        pdca_result.final_score = 75.0
+        pdca_result.converged = True
+        runner.run_pdca_cycle = AsyncMock(return_value=("draft", pdca_result))
+        return runner
+
+    @pytest.fixture
     def mock_book_score_calculator(self):
         calculator = AsyncMock()
         score_obj = MagicMock()
@@ -31,11 +50,13 @@ class TestWritingCoordinator:
         return calculator
 
     @pytest.fixture
-    def coordinator(self, mock_writer, mock_book_score_calculator):
+    def coordinator(self, mock_writer, mock_book_score_calculator, mock_auditor, mock_pdca_runner):
         return WritingCoordinator(
             writer=mock_writer,
             book_score_calculator=mock_book_score_calculator,
             score_threshold=70.0,
+            auditor=mock_auditor,
+            pdca_runner=mock_pdca_runner,
         )
 
     def test_coordinator_initialization(self, coordinator):
@@ -43,6 +64,8 @@ class TestWritingCoordinator:
         assert coordinator.writer is not None
         assert coordinator.book_score_calculator is not None
         assert coordinator.score_threshold == 70.0
+        assert coordinator._auditor is not None
+        assert coordinator._pdca_runner is not None
 
     @pytest.mark.asyncio
     async def test_generate_episodes_pipeline_delegates_to_writer(self, coordinator, mock_writer):
@@ -77,15 +100,28 @@ class TestWritingCoordinator:
         assert result == 1000
         mock_writer.generate_episodes.assert_called_once()
 
-    def test_audit_generated_text(self, coordinator):
-        """Test audit_generated_text executes UnifiedAuditor."""
+    def test_audit_generated_text(self, coordinator, mock_auditor):
+        """Test audit_generated_text executes injected auditor port."""
         text = "「行くぞ！」アルトは叫び、剣を抜いた。夜の風が冷たく吹き抜ける。"
         result = coordinator.audit_generated_text(text)
+        mock_auditor.audit_quantitative.assert_called_once_with(text)
         assert "quantitative_score" in result
         assert "is_acceptable" in result
         assert "warnings" in result
         assert isinstance(result["warnings"], list)
         assert result["quantitative_score"] > 0
+
+    def test_audit_generated_text_raises_without_auditor(
+        self, mock_writer, mock_book_score_calculator
+    ):
+        """auditor 未注入時に audit_generated_text が RuntimeError を送出する."""
+        coordinator = WritingCoordinator(
+            writer=mock_writer,
+            book_score_calculator=mock_book_score_calculator,
+            score_threshold=70.0,
+        )
+        with pytest.raises(RuntimeError, match="auditor ポートが未注入"):
+            coordinator.audit_generated_text("テキスト")
 
     @pytest.mark.asyncio
     async def test_calculate_book_score_returns_dict(self, coordinator, mock_book_score_calculator):

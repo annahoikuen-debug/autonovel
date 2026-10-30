@@ -6,6 +6,8 @@ import logging
 from typing import Any
 
 from src.audit.pipeline import AuditPipeline
+from src.domain.ports.auditor import IAuditor
+from src.domain.ports.pdca_runner import IPDCARunner
 from src.domain.interfaces.metrics import NOOP_METRICS_RECORDER
 from src.generation.local_polish import LocalPolisher
 from src.generation.pdca_controller import PDCAController
@@ -39,6 +41,8 @@ class WritingCoordinator:
         audit_pipeline: Any = None,
         local_polisher: Any = None,
         metrics: Any = None,
+        auditor: IAuditor | None = None,
+        pdca_runner: IPDCARunner | None = None,
     ) -> None:
         self.writer = writer
         self.repo = repo
@@ -52,8 +56,12 @@ class WritingCoordinator:
         self.pdca_controller = pdca_controller or PDCAController()
         self.audit_pipeline = audit_pipeline or AuditPipeline()
         self.local_polisher = local_polisher or LocalPolisher()
-        # メトリクスはポート経由。未注入なら no-op (旧: backend を直接 import していた)
+        # ポート経由で注入。未注入時は None で、該当メソッド呼び出し時に
+        # 明確なエラーを返す（旧: ドメイン層から src.agents / src.services を
+        # 直接 import して層境界を破っていた）。
         self._metrics = metrics or NOOP_METRICS_RECORDER
+        self._auditor = auditor
+        self._pdca_runner = pdca_runner
 
     async def generate_episodes_pipeline(
         self,
@@ -84,10 +92,13 @@ class WritingCoordinator:
         )
 
     def audit_generated_text(self, text: str) -> dict[str, Any]:
-        """本文生成直後に UnifiedAuditor による定量監査（0ms/0円）を実行しスコアと警告一覧を付与."""
-        from src.agents.specialists.unified_auditor import UnifiedAuditor
-        auditor = UnifiedAuditor()
-        score, meta = auditor.audit_quantitative(text)
+        """本文生成直後に定量監査を実行しスコアと警告一覧を付与."""
+        if self._auditor is None:
+            raise RuntimeError(
+                "auditor ポートが未注入です。WritingCoordinator に IAuditor を"
+                "渡してください。"
+            )
+        score, meta = self._auditor.audit_quantitative(text)
         warnings = []
         if meta.get("cliches"):
             warnings.append(f"AI定型表現が検出されました: {', '.join(meta['cliches'])}")
@@ -226,51 +237,40 @@ class WritingCoordinator:
         actions: list[dict[str, Any]],
         reporter: Any = None,
     ) -> None:
-        """BookScore < 閾値時に ClosedLoopPDCARunner を自動起動するフック."""
-        try:
-            from src.services.audit_aggregator import AuditAggregator
-            from src.services.pdca_cycle import ClosedLoopPDCARunner
-            from src.agents.orchestrator import AgentContext
-
-            aggregator = AuditAggregator(book_id=book_id)
-            runner = ClosedLoopPDCARunner(
-                aggregator=aggregator,
-                writer=self.writer,
-                target_score=self.score_threshold,
-                max_cycles=2,
-            )
-
-            initial_context = {
-                "draft_text": "",
-                "book_id": book_id,
-                "ep_num": ep_num,
-                "low_dimensions": low_dimensions,
-                "regeneration_actions": actions,
-            }
-
+        """BookScore < 閾値時に PDCA 閉ループ再執筆を起動するフック."""
+        if self._pdca_runner is None:
             if reporter:
                 reporter.report(
-                    f"Ep.{ep_num}: PDCA 閉ループ再執筆ループを起動 (低次元: {low_dimensions})",
-                    "warning",
-                )
-
-            best_draft, pdca_result = await runner.run_pdca_cycle(
-                initial_context=initial_context,
-                phase="writing",
-            )
-
-            if reporter:
-                reporter.report(
-                    f"Ep.{ep_num}: PDCA 完了 (スコア {pdca_result.initial_score:.1f} → "
-                    f"{pdca_result.final_score:.1f}, 収束={pdca_result.converged})",
-                    "info",
-                )
-        except Exception as e:
-            if reporter:
-                reporter.report(
-                    f"Ep.{ep_num}: PDCA 自動再執筆の起動に失敗: {e}",
+                    f"Ep.{ep_num}: pdca_runner ポートが未注入のため再執筆をスキップ",
                     "error",
                 )
+            return
+
+        initial_context = {
+            "draft_text": "",
+            "book_id": book_id,
+            "ep_num": ep_num,
+            "low_dimensions": low_dimensions,
+            "regeneration_actions": actions,
+        }
+
+        if reporter:
+            reporter.report(
+                f"Ep.{ep_num}: PDCA 閉ループ再執筆ループを起動 (低次元: {low_dimensions})",
+                "warning",
+            )
+
+        best_draft, pdca_result = await self._pdca_runner.run_pdca_cycle(
+            initial_context=initial_context,
+            phase="writing",
+        )
+
+        if reporter:
+            reporter.report(
+                f"Ep.{ep_num}: PDCA 完了 (スコア {pdca_result.initial_score:.1f} → "
+                f"{pdca_result.final_score:.1f}, 収束={pdca_result.converged})",
+                "info",
+            )
 
     async def calculate_book_score(
         self,
@@ -283,13 +283,12 @@ class WritingCoordinator:
         if self.book_score_calculator is None:
             return None
 
-        from src.agents.orchestrator import AgentContext
-        ctx = AgentContext(book_id=book_id, branch_id=1, ep_num=chapter_number, artifacts={})
-
+        # AgentContext は book_score_calculator.calculate の Optional 引数なので
+        # None を渡す。src.agents.orchestrator を import しないよう層境界を保つ。
         score = await self.book_score_calculator.calculate(
             book_id=book_id,
             chapter_number=chapter_number,
-            ctx=ctx,
+            ctx=None,
             genre=genre,
             phase=phase,
         )
