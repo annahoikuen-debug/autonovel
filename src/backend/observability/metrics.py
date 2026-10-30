@@ -259,6 +259,20 @@ def record_llm_call(model: str, status: str, prompt_tokens: int = 0, completion_
         llm_api_tokens_total.labels(model=model, token_type="completion").inc(completion_tokens)
 
 
+def record_llm_call_per_episode(episode_id: str, model: str, tier: str):
+    """1話あたりの LLM 呼出回数を記録（TRACK-C C1）."""
+    llm_calls_per_episode.labels(
+        episode_id=episode_id, model=model, tier=tier
+    ).inc()
+
+
+def record_audit_call(episode_id: str, specialist: str, provider: str):
+    """監査フェーズの LLM 呼出回数を記録（TRACK-C C1）."""
+    llm_calls_audit_phase.labels(
+        episode_id=episode_id, specialist=specialist, provider=provider
+    ).inc()
+
+
 def update_db_pool_metrics(active: int, idle: int):
     db_pool_connections_active.set(active)
     db_pool_connections_idle.set(idle)
@@ -501,6 +515,22 @@ reflective_rag_query_refinements_total = Counter(
     "reflective_rag_query_refinements_total",
     "Total query refinements performed in Reflective RAG",
     ["book_id"],
+)
+
+# ===================== TRACK-C C1: LLM コスト最適化メトリクス =====================
+# 1話あたり・監査フェーズあたりの LLM 呼出回数を可視化し、
+# 監査モデルの階層化・キャッシュ効果を KPI として追跡する。
+
+llm_calls_per_episode = Counter(
+    "llm_calls_per_episode",
+    "Total LLM calls per episode",
+    ["episode_id", "model", "tier"],
+)
+
+llm_calls_audit_phase = Counter(
+    "llm_calls_audit_phase",
+    "Total LLM calls in audit phase",
+    ["episode_id", "specialist", "provider"],
 )
 
 

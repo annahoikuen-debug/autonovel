@@ -14,6 +14,7 @@ from src.services.audit.service import AuditService
 from src.services.audit.adapter import AuditAdapter, create_audit_adapter
 from src.services.audit.fast_screener import FastScreener
 from src.services.audit.targeted_diagnostic import TargetedDiagnostic
+from src.services.audit.audit_cache import AuditCache, compute_manuscript_hash
 
 # 公開ファサード
 AuditAggregatorService = AuditAggregator
@@ -28,4 +29,6 @@ __all__ = [
     "create_audit_adapter",
     "FastScreener",
     "TargetedDiagnostic",
+    "AuditCache",
+    "compute_manuscript_hash",
 ]
