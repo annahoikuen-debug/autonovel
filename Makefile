@@ -55,7 +55,7 @@ prod-down:  ## docker compose 本番環境を停止
 
 clean:  ## 生成物・キャッシュを削除
 	-rm -rf .pytest_cache .ruff_cache .mypy_cache
-	-rm -f autonovel.db huey.db test_migration.db docs/openapi.json
+	-rm -f autonovel.db huey.db test_migration.db a.db test.db docs/openapi.json
 	-find . -type d -name __pycache__ -prune -exec rm -rf {} +
 
 test-unit:  ## ユニットテスト (coverage gate 60% で開始、段階引き上げ)
