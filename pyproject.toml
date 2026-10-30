@@ -14,6 +14,11 @@ dependencies = [
     "huey>=2.5",
     "httpx>=0.27",
     "psycopg2-binary>=2.9",
+    # psycopg3 (psycopg) は src/backend/database/core.py:135-136 の URL 正規化で
+    # `postgresql+psycopg://` を参照し、SQLAlchemy の psycopg ダイアレクトが
+    # モジュール直下で import する。欠けると test_backend_database_core.py が
+    # ModuleNotFoundError で失敗するため main 依存に含める。
+    "psycopg[binary]>=3.1",
     "asyncpg>=0.30.0",
     "redis>=5.0",
     "python-json-logger>=2.0",
