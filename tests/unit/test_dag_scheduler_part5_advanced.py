@@ -9,6 +9,7 @@ from src.backend.tasks.dag_models import DAGGraph, DAGTaskNode
 from src.backend.tasks.dag_scheduler import DAGScheduler
 from src.backend.tasks.generation_tasks import build_novel_generation_dag, run_novel_dag_pipeline_async
 from src.backend.server import app
+from tests.helpers.dag_resources import patch_available_ram
 
 
 @pytest.mark.asyncio
@@ -84,8 +85,14 @@ def test_build_novel_generation_dag_structure():
 
 
 @pytest.mark.asyncio
-async def test_run_novel_dag_pipeline_async():
+async def test_run_novel_dag_pipeline_async(monkeypatch):
     """Test executing the novel DAG pipeline with mock tasks."""
+    # マシンの空き RAM 実測値に依存させない（ram_slots が1だと write 以降が
+    # 発行されず run_dag が無限ポーリングでハングする。PLAN_J1 W6 参照）。
+    # run_novel_dag_pipeline_async は内部で DAGScheduler() を生成するため、
+    # ResourceManager のクラスメソッドを差し替えて全経路に効かせる。
+    patch_available_ram(monkeypatch)
+
     mock_registry = {
         "generate_plot_task": lambda **kwargs: {"plot": "epic outline"},
         "build_context_task": lambda **kwargs: {"context": "world details"},

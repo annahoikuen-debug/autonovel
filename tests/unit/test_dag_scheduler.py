@@ -10,6 +10,7 @@ from src.backend.tasks.dag_models import (
 )
 from src.backend.tasks.dag_scheduler import DAGScheduler, _ResourceSemaphores
 from src.backend.tasks.generation_tasks import build_novel_generation_dag
+from tests.helpers.dag_resources import patch_available_ram
 
 
 @pytest.mark.asyncio
@@ -132,8 +133,12 @@ async def test_scheduler_fine_grained_recovery():
 
 
 @pytest.mark.asyncio
-async def test_build_novel_generation_dag_pipeline():
+async def test_build_novel_generation_dag_pipeline(monkeypatch):
     """generation_tasks.py の 6ノード章生成DAGが完全実行されることの検証 (Step 43)."""
+    # マシンの空き RAM 実測値に依存させない（ram_slots が1だと write 以降が
+    # 発行されず run_dag が無限ポーリングでハングする。PLAN_J1 W6 参照）。
+    patch_available_ram(monkeypatch)
+
     scheduler = DAGScheduler()
 
     def make_handler(name: str):

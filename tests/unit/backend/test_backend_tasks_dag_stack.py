@@ -787,11 +787,28 @@ async def test_allocate_and_release_resources():
 
 
 async def test_acquire_resources_rolls_back_on_cancel():
+    """gpu 獲得がキャンセルされた場合、cpu/ram を解放してロールバックすること。"""
     s = _sched()
     s._init_semaphores()
+    # セマフォ容量を明示的に十分にしておく。素の容量はマシンの空き RAM から
+    # 算出され、ram_slots=1 の環境では後段の2回目獲得が永久ブロックして
+    # ハングする（PLAN_J1 W6 で特定した環境依存ハング）。
+    s._semaphores.cpu = asyncio.Semaphore(4)
+    s._semaphores.ram = asyncio.Semaphore(4)
+    s._semaphores.gpu = asyncio.Semaphore(1)
+
+    cpu_full, ram_full = s._semaphores.cpu._value, s._semaphores.ram._value
+
+    # 正常系: cpu 1・ram 1（ram_mb=512 → 1スロット）が消費されること。
     req = TaskResourceRequirement(cpu_cores=1.0, ram_mb=512, gpu_mem_mb=0)
     await s._acquire_resources(req)
-    assert s._semaphores.cpu._value == s._semaphores.cpu._value
+    assert s._semaphores.cpu._value == cpu_full - 1
+    assert s._semaphores.ram._value == ram_full - 1
+
+    # テストがセマフォを漏らさないよう、先に戻しておく。
+    # （ここで解放しないと ram_slots=1 の環境で2回目がブロックする）
+    s._semaphores.cpu.release()
+    s._semaphores.ram.release()
 
     class _Boom:
         async def acquire(self):
@@ -801,6 +818,12 @@ async def test_acquire_resources_rolls_back_on_cancel():
     req_gpu = TaskResourceRequirement(cpu_cores=1.0, ram_mb=512, gpu_mem_mb=1)
     with pytest.raises(asyncio.CancelledError):
         await s._acquire_resources(req_gpu)
+
+    # ロールバック: 途中まで獲得した cpu/ram がすべて解放されていること。
+    # これが無いと GPU 要求のタスクが失敗するたびにスロットが漏れ、
+    # やがてスケジューラ全体が詰まる。
+    assert s._semaphores.cpu._value == cpu_full, "キャンセル時に cpu をロールバックすること"
+    assert s._semaphores.ram._value == ram_full, "キャンセル時に ram をロールバックすること"
 
 
 async def test_can_schedule_approx():
