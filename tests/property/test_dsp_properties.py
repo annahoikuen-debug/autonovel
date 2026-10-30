@@ -1,6 +1,10 @@
 """Property-based tests for DSP balancer components using Hypothesis."""
 
 import numpy as np
+import pytest
+
+pytest.importorskip("hypothesis")
+
 from hypothesis import given, strategies as st
 from src.narrative_balancer.dsp.spectral import spectral_flatness, low_freq_energy_ratio
 

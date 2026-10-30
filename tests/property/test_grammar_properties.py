@@ -1,5 +1,9 @@
 """Property-based tests for Grammar Balancer using Hypothesis."""
 
+import pytest
+
+pytest.importorskip("hypothesis")
+
 from hypothesis import given, strategies as st
 from src.narrative_balancer.grammar.balancer import GrammarNarrativeBalancer
 from src.narrative_balancer.models import Beat, BeatType

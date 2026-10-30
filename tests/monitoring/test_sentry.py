@@ -1,5 +1,8 @@
 import os
 import pytest
+
+pytest.importorskip("sentry_sdk")
+
 from unittest.mock import patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient

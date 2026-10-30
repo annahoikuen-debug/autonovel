@@ -2,6 +2,9 @@
 from __future__ import annotations
 
 import pytest
+
+pytest.importorskip("hypothesis")
+
 from hypothesis import given, strategies as st, settings, assume
 from hypothesis.strategies import text, lists, integers, floats, sampled_from, sets
 

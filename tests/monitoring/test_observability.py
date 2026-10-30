@@ -1,6 +1,9 @@
 """Sentry と OpenTelemetry が例外を正しく捕捉することをテスト"""
 from unittest.mock import patch, MagicMock
 import pytest
+
+pytest.importorskip("sentry_sdk")
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from src.monitoring.sentry import init_sentry

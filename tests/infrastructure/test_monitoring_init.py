@@ -9,6 +9,11 @@ Verifies that:
 import os
 import time
 from unittest.mock import patch, MagicMock
+
+import pytest
+
+pytest.importorskip("sentry_sdk")
+
 from src.monitoring.sentry import init_sentry
 from src.monitoring.otel import init_otel
 

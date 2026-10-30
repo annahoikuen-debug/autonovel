@@ -4,6 +4,7 @@ from __future__ import annotations
 import pytest
 
 pytest.importorskip("spacy", reason="spaCy is required for emotional residue NLP pipeline tests")
+pytest.importorskip("fakeredis", reason="fakeredis is required for the vector store fixture")
 
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 from src.stores.vector_store import RedisVectorStore
