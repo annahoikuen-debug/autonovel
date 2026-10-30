@@ -1,7 +1,7 @@
 """Book (ORM) と Novel (Domain Entity) の双方向マッパー。"""
 from __future__ import annotations
 
-from src.backend.database.models import Book
+from src.infrastructure.database.models.book import Book
 from src.domain.entities.novel import Novel
 from src.domain.value_objects.ids import NovelId, UserId
 from src.domain.value_objects.metadata import NovelMode, NovelStatus

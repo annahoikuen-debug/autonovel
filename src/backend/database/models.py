@@ -90,42 +90,9 @@ class User(Base):
     books = relationship("Book", back_populates="owner", cascade="all, delete-orphan")
 
 
-class Book(Base):
-    __tablename__ = "books"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True, index=True)
-    tenant_id = Column(Integer, ForeignKey("tenants.id"), nullable=True, index=True)
-    owner = relationship("User", back_populates="books")
-    title = Column(String(200), nullable=False)
-    genre = Column(String(100), default="")
-    concept = Column(Text, default="")
-    synopsis = Column(Text, default="")
-    catchcopy = Column(String(255), default="")
-    target_eps = Column(Integer, default=50)
-    style_dna = Column(Text, default="")
-    status = Column(String(50), default="draft")
-    mode = Column(String(20), default="easy", nullable=False)
-    created_at = Column(CompatibleDateTime, server_default=func.now())
-    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
-    marketing_data = Column(Text, default="")
-    cumulative_tension = Column(Integer, default=0)
-    cumulative_qol = Column(Integer, default=0)
-    cumulative_cost = Column(Float, default=0.0)
-    sanctuary_integrity = Column(Integer, default=100)
-    current_branch_id = Column(Integer, nullable=True)
-    # 楽観ロック用バージョン (``BranchPlaySession.version`` と同じ方式)
-    version = Column(Integer, nullable=False, server_default=text("1"), default=1)
-    ai_assistant_config = Column(
-        CompatibleJSON,
-        nullable=False,
-        default={
-            "enabled": False,
-            "auto_suggest": False,
-            "trigger_mode": "manual",
-            "features": {"continue": True, "describe": True, "rewrite": True},
-        },
-    )
+# Book ORM モデルは src/infrastructure/database/models/book.py に実体を移動（TRACK-A4）。
+# ここでの import は後方互換のためのエイリアス。
+from src.infrastructure.database.models.book import Book  # noqa: F401
 
 
 class UserPreference(Base):

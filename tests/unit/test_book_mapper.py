@@ -1,11 +1,11 @@
 """BookMapper の単体テスト。"""
 from datetime import datetime
-from src.backend.database.models import Book
 from src.domain.entities.novel import Novel
 from src.domain.value_objects.ids import NovelId, UserId
 from src.domain.value_objects.text import Title, Genre, Catchcopy, Summary
 from src.domain.value_objects.metadata import NovelStatus, NovelMode
 from src.infrastructure.database.mappers.book_mapper import BookMapper
+from src.infrastructure.database.models.book import Book
 
 
 def test_book_mapper_to_domain():
