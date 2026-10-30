@@ -4,19 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Optional
+from typing import Any
 
-from src.agents.context_builder_agent import ContextBuilderAgent
-from src.agents.illustration_agent import IllustrationAgent
-from src.agents.orchestrator import AgentContext, AgentResult
-from src.agents.writing import WritingAgent
-from src.services.book_score_service import BookScoreCalculator
-
-try:
-    from src.services.anti_ai.loop_controller import AntiAILoopController
-except ImportError:
-    AntiAILoopController: type[Any] | None = None
-
+from src.domain.ports.anti_ai_loop_controller import IAntiAILoopController
+from src.domain.ports.book_score_calculator import IBookScoreCalculator
+from src.domain.ports.skill_agent import ISkillAgent
 from src.domain.writing.models import DIMENSION_ACTIONS, RegenerationAction
 
 logger = logging.getLogger(__name__)
@@ -27,15 +19,15 @@ class QualityLoop:
 
     def __init__(
         self,
-        writing_agent: WritingAgent,
-        book_score_calculator: BookScoreCalculator,
-        context_builder_agent: ContextBuilderAgent,
-        illustration_agent: IllustrationAgent,
+        writing_agent: ISkillAgent,
+        book_score_calculator: IBookScoreCalculator,
+        context_builder_agent: ISkillAgent,
+        illustration_agent: ISkillAgent,
         compressor: Any = None,
         max_retries: int = 3,
         score_threshold: float = 70.0,
         backoff_base: float = 2.0,
-        anti_ai_controller: Optional[Any] = None,
+        anti_ai_controller: IAntiAILoopController | None = None,
         enable_anti_ai_loop: bool = True,
         anti_ai_threshold: float = 85.0,
     ):
@@ -48,10 +40,13 @@ class QualityLoop:
         self.score_threshold = score_threshold
         self.backoff_base = backoff_base
         self._anti_ai_controller = anti_ai_controller
-        self._enable_anti_ai_loop = enable_anti_ai_loop and AntiAILoopController is not None
+        # Anti-AI コントローラーが注入されている場合のみ有効化。
+        # 旧実装は src.services.anti_ai.loop_controller を直接 import していたが、
+        # ポート経由の DI に置換し、ドメイン層から旧レイアウトを除去した。
+        self._enable_anti_ai_loop = enable_anti_ai_loop and anti_ai_controller is not None
         self._anti_ai_threshold = anti_ai_threshold
 
-    async def _build_context_with_compression(self, ctx: AgentContext) -> dict:
+    async def _build_context_with_compression(self, ctx: Any) -> dict:
         """compressor 付きでコンテキスト構築"""
         # ContextBuilderAgent が compressor を使うよう artifacts に設定
         ctx.artifacts["compressor"] = self.compressor
@@ -60,9 +55,9 @@ class QualityLoop:
 
     async def evaluate_and_regenerate(
         self,
-        ctx: AgentContext,
+        ctx: Any,
         reporter: Any = None,
-    ) -> AgentResult:
+    ) -> Any:
         """
         品質保証付き執筆実行
         BookScore が閾値未満の場合、自動的に再生成を試行
@@ -89,10 +84,7 @@ class QualityLoop:
                 if reporter:
                     reporter.report("Anti-AI 修正実行中...", "info")
 
-                controller = self._anti_ai_controller or AntiAILoopController(
-                    max_loops=3,
-                    score_threshold=self._anti_ai_threshold,
-                )
+                controller = self._anti_ai_controller
                 anti_ai_result = await controller.run(result.draft_text)
                 result.draft_text = anti_ai_result.text
 

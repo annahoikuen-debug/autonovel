@@ -1,6 +1,6 @@
 {
   "legacy_monolith_imports": {
-    "domain": 2,
+    "domain": 0,
     "application": 1,
     "infrastructure": 39,
     "interfaces": 0
