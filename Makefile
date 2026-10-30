@@ -58,8 +58,8 @@ clean:  ## 生成物・キャッシュを削除
 	-rm -f autonovel.db huey.db test_migration.db docs/openapi.json
 	-find . -type d -name __pycache__ -prune -exec rm -rf {} +
 
-test-unit:  ## ユニットテスト (coverage gate 40% で開始、段階引き上げ)
-	$(PYTHON) -m pytest tests/unit -q --tb=short --cov=src --cov-report=term-missing --cov-fail-under=40
+test-unit:  ## ユニットテスト (coverage gate 50% で開始、段階引き上げ)
+	$(PYTHON) -m pytest tests/unit -q --tb=short --cov=src --cov-report=term-missing --cov-fail-under=50
 
 test-integration:  ## 統合テスト (PG+Redis サービス必須)
 	$(PYTHON) -m pytest tests/integration -v --tb=short

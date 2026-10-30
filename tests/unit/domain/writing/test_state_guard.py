@@ -28,8 +28,10 @@ class TestStateGuard:
 
     def test_validate_project_context_missing_fields(self, state_guard):
         """Test validate_project_context with missing required fields."""
+
         class EmptyContext:
             pass
+
         ctx = EmptyContext()
         result = state_guard.validate_project_context(ctx)
         assert result.is_valid is False
@@ -128,3 +130,33 @@ class TestStateGuard:
         assert result.is_valid is True
         assert len(result.warnings) > 0
         assert "空" in result.warnings[0]
+
+    def test_validate_writing_context_empty_plot_string_warning(self, state_guard):
+        """Test validate_writing_context warns on empty plot string."""
+        ctx = {"book_id": 1, "ep_num": 1, "plot": ""}
+        result = state_guard.validate_writing_context(ctx)
+        assert result.is_valid is True
+        assert any("空文字列" in w for w in result.warnings)
+
+    @pytest.mark.asyncio
+    async def test_ensure_chapter_sequence_overlap_warning(self, state_guard, mock_repo):
+        """Test ensure_chapter_sequence warns when episode already exists."""
+        existing = [MagicMock(episode_number=2)]
+        mock_repo.get_chapters = AsyncMock(return_value=existing)
+        result = await state_guard.ensure_chapter_sequence(1, 2, 3)
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_ensure_chapter_sequence_no_gap(self, state_guard, mock_repo):
+        """Test ensure_chapter_sequence does not warn when sequence is contiguous."""
+        existing = [MagicMock(episode_number=5)]
+        mock_repo.get_chapters = AsyncMock(return_value=existing)
+        result = await state_guard.ensure_chapter_sequence(1, 1, 3)
+        assert result is True
+
+    @pytest.mark.asyncio
+    async def test_ensure_chapter_sequence_repo_error(self, state_guard, mock_repo):
+        """Test ensure_chapter_sequence returns False on repository error."""
+        mock_repo.get_chapters = AsyncMock(side_effect=Exception("db connection lost"))
+        result = await state_guard.ensure_chapter_sequence(1, 1, 3)
+        assert result is False

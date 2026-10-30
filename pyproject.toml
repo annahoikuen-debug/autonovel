@@ -189,8 +189,6 @@ omit = [
 
     # 非推奨スタブモジュール
     "src/services/age_client.py",
-    "src/services/llm/provider_failover.py",
-    "src/services/state_manager.py",
 ]
 branch = true
 concurrency = ["multiprocessing", "thread"]
@@ -207,6 +205,7 @@ exclude_lines = [
 precision = 2
 show_missing = true
 skip_covered = false
+fail_under = 50
 
 [tool.coverage.html]
 directory = "htmlcov"

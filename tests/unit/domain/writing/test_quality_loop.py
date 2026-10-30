@@ -14,11 +14,7 @@ class TestQualityLoop:
     @pytest.fixture
     def mock_writing_agent(self):
         agent = AsyncMock()
-        result = AgentResult(
-            next_agent=None,
-            artifacts={},
-            error=None
-        )
+        result = AgentResult(next_agent=None, artifacts={}, error=None)
         result.draft_text = "Test draft"
         agent.execute = AsyncMock(return_value=result)
         return agent
@@ -39,11 +35,7 @@ class TestQualityLoop:
     @pytest.fixture
     def mock_context_builder_agent(self):
         agent = AsyncMock()
-        result = AgentResult(
-            next_agent=None,
-            artifacts={"writing_context": {}},
-            error=None
-        )
+        result = AgentResult(next_agent=None, artifacts={"writing_context": {}}, error=None)
         agent.execute = AsyncMock(return_value=result)
         return agent
 
@@ -52,8 +44,9 @@ class TestQualityLoop:
         return AsyncMock()
 
     @pytest.fixture
-    def quality_loop(self, mock_writing_agent, mock_book_score_calculator,
-                     mock_context_builder_agent, mock_illustration_agent):
+    def quality_loop(
+        self, mock_writing_agent, mock_book_score_calculator, mock_context_builder_agent, mock_illustration_agent
+    ):
         return QualityLoop(
             writing_agent=mock_writing_agent,
             book_score_calculator=mock_book_score_calculator,
@@ -75,8 +68,9 @@ class TestQualityLoop:
         assert quality_loop._enable_anti_ai_loop is False
 
     @pytest.mark.asyncio
-    async def test_evaluate_and_regenerate_returns_on_success(self, quality_loop, mock_writing_agent,
-                                                              mock_book_score_calculator):
+    async def test_evaluate_and_regenerate_returns_on_success(
+        self, quality_loop, mock_writing_agent, mock_book_score_calculator
+    ):
         """Test evaluate_and_regenerate returns when score meets threshold."""
         ctx = AgentContext(book_id=1, branch_id=1, ep_num=1, artifacts={})
         reporter = MagicMock()
@@ -117,3 +111,89 @@ class TestQualityLoop:
         assert isinstance(action, RegenerationAction)
         assert action.focus_dimensions == ["reader_experience"]
         assert action.priority == 5
+
+    def test_determine_regeneration_action_fallback_anti_ai(self, quality_loop):
+        """Test _determine_regeneration_action falls back to anti_ai_correction for unknown dims."""
+        action = quality_loop._determine_regeneration_action(["unknown_dimension"])
+        assert isinstance(action, RegenerationAction)
+        assert action.focus_dimensions == ["anti_ai_correction"]
+        assert action.priority == 0
+
+    @pytest.mark.asyncio
+    async def test_build_context_with_compression(self, quality_loop, mock_context_builder_agent):
+        """Test _build_context_with_compression sets compressor and delegates."""
+        ctx = MagicMock()
+        ctx.artifacts = {}
+        result = await quality_loop._build_context_with_compression(ctx)
+        assert ctx.artifacts["compressor"] is None
+        mock_context_builder_agent.execute.assert_called_once_with(ctx)
+        assert result == {}
+
+    @pytest.mark.asyncio
+    async def test_evaluate_and_regenerate_anti_ai_loop(
+        self, mock_writing_agent, mock_book_score_calculator, mock_context_builder_agent, mock_illustration_agent
+    ):
+        """Test evaluate_and_regenerate runs anti-AI loop when enabled."""
+        controller = AsyncMock()
+        ai_result = MagicMock()
+        ai_result.text = "revised draft"
+        ai_result.final_score = 90.0
+        ai_result.iterations = 1
+        controller.run = AsyncMock(return_value=ai_result)
+
+        ql = QualityLoop(
+            writing_agent=mock_writing_agent,
+            book_score_calculator=mock_book_score_calculator,
+            context_builder_agent=mock_context_builder_agent,
+            illustration_agent=mock_illustration_agent,
+            compressor=None,
+            max_retries=3,
+            score_threshold=70.0,
+            backoff_base=2.0,
+            enable_anti_ai_loop=True,
+            anti_ai_controller=controller,
+        )
+        ctx = AgentContext(book_id=1, branch_id=1, ep_num=1, artifacts={})
+        reporter = MagicMock()
+
+        result = await ql.evaluate_and_regenerate(ctx, reporter)
+
+        controller.run.assert_called_once_with("Test draft")
+        assert result.draft_text == "revised draft"
+        assert result.error is None
+
+    @pytest.mark.asyncio
+    async def test_evaluate_and_regenerate_max_retries_exceeded(
+        self, quality_loop, mock_writing_agent, mock_book_score_calculator, monkeypatch
+    ):
+        """Test evaluate_and_regenerate returns after max retries without reaching threshold."""
+        monkeypatch.setattr("src.domain.writing.quality_loop.asyncio.sleep", AsyncMock())
+        low_score = MagicMock()
+        low_score.overall_score = 50.0
+        low_score.structure_score = 50.0
+        low_score.coherency_score = 50.0
+        low_score.factual_grounding_score = 50.0
+        low_score.visual_textual_synergy_score = 50.0
+        low_score.reader_experience_score = 50.0
+        mock_book_score_calculator.calculate = AsyncMock(return_value=low_score)
+
+        ctx = AgentContext(book_id=1, branch_id=1, ep_num=1, artifacts={})
+        reporter = MagicMock()
+
+        result = await quality_loop.evaluate_and_regenerate(ctx, reporter)
+
+        assert result.error is None
+        assert quality_loop._enable_anti_ai_loop is False
+
+    @pytest.mark.asyncio
+    async def test_evaluate_and_regenerate_reporter_calls(
+        self, quality_loop, mock_writing_agent, mock_book_score_calculator
+    ):
+        """Test evaluate_and_regenerate invokes reporter at each stage."""
+        ctx = AgentContext(book_id=1, branch_id=1, ep_num=1, artifacts={})
+        reporter = MagicMock()
+
+        result = await quality_loop.evaluate_and_regenerate(ctx, reporter)
+
+        assert result.error is None
+        assert reporter.report.call_count >= 3
