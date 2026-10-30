@@ -271,7 +271,7 @@ flowchart TB
 
 ### ② Windows ワンクリック起動（正式対応）
 
-1. **`アプリ起動_ローカル.bat`** をダブルクリック（軽量 / ローカル Python + SQLite 構成）
+1. **`scripts\start_local.ps1`** を PowerShell で実行（軽量 / ローカル Python + SQLite 構成）
    - Docker を使わず、ローカル Python と SQLite で起動します
    - 内部で `scripts\start_local.ps1` が呼ばれ、以下を自動実行します
      1. **起動に使う Python の自動判定**（実際に `fastapi` / `uvicorn` / `huey` … を import できるものを選ぶ。空の `.venv` を優先してしまう事故を防ぐ）
@@ -281,7 +281,7 @@ flowchart TB
      5. Backend（Uvicorn `:8200`）+ Huey Worker + Frontend（Vite `:5173`）の協調起動
      6. **ヘルスチェックが通るまで待ってから**ブラウザを開く
 2. ブラウザで **<http://localhost:5173>** が開きます
-3. 停止するときは **`アプリ停止.bat`** をダブルクリック（PID ファイル → ポート → コマンドラインの 3 段構えで安全に解放）
+3. 停止するときは **`scripts\stop_local.ps1`** を PowerShell で実行（PID ファイル → ポート → コマンドラインの 3 段構えで安全に解放）
 
 > **起動しないときは [`起動診断.bat`](起動診断.bat) を先に実行してください。**
 > Python・依存関係・`.env`・DB・ポート・メモリ・import 時間を一括で診断し、
