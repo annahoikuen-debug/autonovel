@@ -4,6 +4,7 @@ import { EasyModePage } from "./pages/EasyModePage";
 import { StudioWorkspacePage } from "./pages/StudioWorkspacePage";
 import { WizardWorkflowPage } from "./pages/WizardWorkflowPage";
 import { WelcomePage } from "./pages/WelcomePage";
+import { LoginPage, RegisterPage } from "./pages/AuthPage";
 
 /**
  * ルート単位のエラー表示（react-router v7 の `errorElement`）。
@@ -62,8 +63,11 @@ export function RouteErrorView() {
  *   - `/wizard`  共創ウィザード（3 ステップ）
  *   - `/studio`  Studio（上級者向け）
  * ＋ 初回起動時の入口選択 `/welcome`
+ * ＋ 認証 `/login` `/register`（未ログイン時はここへ誘導される）
  */
 export const routes: RouteObject[] = [
+  { path: "/login", element: <LoginPage />, errorElement: <RouteErrorView /> },
+  { path: "/register", element: <RegisterPage />, errorElement: <RouteErrorView /> },
   { path: "/", element: <EasyModePage />, errorElement: <RouteErrorView /> },
   { path: "/studio", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },
   { path: "/studio/:bookId", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },

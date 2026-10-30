@@ -19,6 +19,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
+/** バックエンドの `detail` を優先してユーザー向けメッセージを作る。 */
+async function readErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const data = await response.json();
+    if (data && typeof data.detail === "string") {
+      return data.detail;
+    }
+  } catch {
+    // JSON でないレスポンスは fallback を使う
+  }
+  return fallback;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // トークンは api/client.ts と **同じキー** に置く。以前はここが `token` に
   // 書いていたため apiFetch が読めず、ログインしても全リクエストが 401 になっていた。
@@ -75,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       body: JSON.stringify({ email, password })
     });
     if (!response.ok) {
-      throw new Error('Login failed');
+      throw new Error(await readErrorMessage(response, "ログインに失敗しました"));
     }
     const data = await response.json();
     const { access_token } = data;
@@ -92,21 +105,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       body: JSON.stringify({ email, password, display_name })
     });
     if (!response.ok) {
-      throw new Error('Registration failed');
+      throw new Error(await readErrorMessage(response, "登録に失敗しました"));
     }
-    const data = await response.json();
-    // 登録直後のユーザー情報をコンテキストに反映する。
-    // バックエンドの register エンドポイントは UserProfileResponse を返すため、
-    // id / email / display_name / role / credits を含む。
-    if (data && typeof data === "object") {
-      setUser({
-        id: data.id ?? 0,
-        email: data.email ?? email,
-        display_name: data.display_name ?? display_name,
-        role: data.role ?? "user",
-        credits: data.credits ?? 0,
-      });
-    }
+    // 登録エンドポイントはプロフィールのみを返す（トークンは返さない）。
+    // 登録直後から使えるよう、同じ資格情報でログインしてトークンを保存する。
+    await login(email, password);
   };
 
   return (

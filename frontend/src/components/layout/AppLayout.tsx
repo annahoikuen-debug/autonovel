@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useLocation, useNavigate, Outlet } from "react-router-dom";
 import { useNovelContext } from "../../context/NovelContext";
+import { useAuth } from "../../context/AuthContext";
 import { useModal } from "../../context/ModalContext";
 import { useAppTheme, AppTheme } from "../../hooks/useAppTheme";
 import { useToast } from "../../hooks/useToast";
@@ -43,6 +44,7 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
 
   const { theme, setTheme } = useAppTheme();
   const { toasts, addToast, removeToast } = useToast();
+  const { user, logout } = useAuth();
   const [mobileTab, setMobileTab] = useState<"books" | "plots" | "writing" | "settings">("writing");
 
   const isStudio = location.pathname.startsWith("/studio");
@@ -198,6 +200,25 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
               </span>
             );
           })()}
+
+          {user && (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                {user.display_name || user.email}
+              </span>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  logout();
+                  navigate("/login");
+                }}
+                data-testid="logout-btn"
+              >
+                ログアウト
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
