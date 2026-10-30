@@ -15,8 +15,22 @@ from pathlib import Path
 from typing import Any
 
 from src.easy_mode import SeriesResult
+from formatters.erotic_censor import check_content_policy
 
 logger = logging.getLogger(__name__)
+
+
+def _collect_series_text(series: SeriesResult) -> str:
+    """シリーズの書き出し対象本文（プロローグ・各話・エピローグ）を連結して返す。"""
+    parts: list[str] = []
+    metadata = series.metadata or {}
+    if metadata.get("prologue"):
+        parts.append(str(metadata["prologue"]))
+    for episode in series.episodes or []:
+        parts.append(getattr(episode, "content", "") or "")
+    if metadata.get("epilogue"):
+        parts.append(str(metadata["epilogue"]))
+    return "\n".join(parts)
 
 
 # オプショナル依存チェック
@@ -249,7 +263,9 @@ class EpubGenerator:
                 "ebooklib is required for EPUB generation. Install with: pip install ebooklib"
             )
 
-    def generate(self, series: SeriesResult, output_path: Path) -> Path:
+    def generate(
+        self, series: SeriesResult, output_path: Path, preset_name: str = "kakuyomu_romance"
+    ) -> Path:
         """EPUB生成"""
         import ebooklib.epub as epub
 
@@ -313,6 +329,10 @@ class EpubGenerator:
         # スパイン（読み順）
         book.spine = ["nav"] + epub_chapters
 
+        # 書き出し直前にコンテンツポリシーチェック（違反時は ValueError が propagate する）
+        full_text = _collect_series_text(series)
+        check_content_policy(full_text, preset_name)
+
         # 保存
         output_path = Path(output_path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -361,7 +381,9 @@ class PdfGenerator:
                 "reportlab is required for PDF generation. Install with: pip install reportlab"
             )
 
-    def generate(self, series: SeriesResult, output_path: Path) -> Path:
+    def generate(
+        self, series: SeriesResult, output_path: Path, preset_name: str = "kakuyomu_romance"
+    ) -> Path:
         """PDF生成"""
         from reportlab.lib.pagesizes import A4
         from reportlab.lib.units import mm
@@ -406,6 +428,10 @@ class PdfGenerator:
 
         # 奥付
         story.extend(self._build_colophon(series, styles))
+
+        # 書き出し直前にコンテンツポリシーチェック（違反時は ValueError が propagate する）
+        full_text = _collect_series_text(series)
+        check_content_policy(full_text, preset_name)
 
         # ビルド
         doc.build(story)
@@ -676,12 +702,18 @@ class MobiGenerator:
         self.metadata = metadata
         self.processor = processor
 
-    def generate(self, series: SeriesResult, output_path: Path) -> Path:
+    def generate(
+        self, series: SeriesResult, output_path: Path, preset_name: str = "kakuyomu_romance"
+    ) -> Path:
         """MOBI生成（EPUB→MOBI変換）"""
-        # まずEPUB生成
+        # まずEPUB生成（EpubGenerator.generate 内でもポリシーチェックを実施済み）
         epub_path = output_path.with_suffix(".epub")
         epub_gen = EpubGenerator(self.metadata, self.processor)
-        epub_gen.generate(series, epub_path)
+        epub_gen.generate(series, epub_path, preset_name=preset_name)
+
+        # MOBIへの変換/書き出し直前にコンテンツポリシーチェック（違反時は ValueError が propagate する）
+        full_text = _collect_series_text(series)
+        check_content_policy(full_text, preset_name)
 
         # kindlegenまたはebook-convertで変換
         import shutil
@@ -755,23 +787,29 @@ class EbookExporter:
             cover_image_path=cover_image_path,
         )
 
-    def export_epub(self, series: SeriesResult, output_path: Path, **kwargs) -> Path:
+    def export_epub(
+        self, series: SeriesResult, output_path: Path, preset_name: str = "kakuyomu_romance", **kwargs
+    ) -> Path:
         """EPUB出力"""
         metadata = self.create_metadata(series, **kwargs)
         generator = EpubGenerator(metadata, self.processor)
-        return generator.generate(series, output_path)
+        return generator.generate(series, output_path, preset_name=preset_name)
 
-    def export_pdf(self, series: SeriesResult, output_path: Path, **kwargs) -> Path:
+    def export_pdf(
+        self, series: SeriesResult, output_path: Path, preset_name: str = "kakuyomu_romance", **kwargs
+    ) -> Path:
         """PDF出力"""
         metadata = self.create_metadata(series, **kwargs)
         generator = PdfGenerator(metadata, self.processor)
-        return generator.generate(series, output_path)
+        return generator.generate(series, output_path, preset_name=preset_name)
 
-    def export_mobi(self, series: SeriesResult, output_path: Path, **kwargs) -> Path:
+    def export_mobi(
+        self, series: SeriesResult, output_path: Path, preset_name: str = "kakuyomu_romance", **kwargs
+    ) -> Path:
         """MOBI出力"""
         metadata = self.create_metadata(series, **kwargs)
         generator = MobiGenerator(metadata, self.processor)
-        return generator.generate(series, output_path)
+        return generator.generate(series, output_path, preset_name=preset_name)
 
     def export_all(
         self, series: SeriesResult, output_dir: Path, formats: list[str] | None = None, **kwargs

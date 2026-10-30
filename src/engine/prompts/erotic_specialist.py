@@ -68,6 +68,16 @@ class EroticSpecialist:
         yaml_preset = context.get("erotic_rules_yaml")
         preset_name = yaml_preset.get("platform") if yaml_preset else context.get("platform_preset", "kakuyomu_romance")
         preset = get_preset(preset_name) if not yaml_preset else None
+        # NSFW ガードレール: 官能生成は明示オプトイン (ENABLE_NSFW=true) のみ許可する。
+        # 経路の入口で拒否し、デフォルトでは官能生成を行わない。
+        from src.backend.config import settings
+
+        if not settings.is_nsfw_enabled():
+            raise RuntimeError(
+                "官能生成はオプトインされていません。"
+                "`ENABLE_NSFW=true` を設定してから再実行してください。"
+            )
+
         # Use YAML preset values with fallback to preset file values
         allowed_vocabulary_tier = yaml_preset.get("allowed_vocabulary_tier") if yaml_preset and yaml_preset.get("allowed_vocabulary_tier") else preset.get("allowed_vocabulary_tier", "mild") if preset else "mild"
         vocab = get_vocabulary_for_tier(allowed_vocabulary_tier)

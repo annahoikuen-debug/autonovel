@@ -335,6 +335,10 @@ class Settings(BaseSettings):
     # Phase 4: Enrichment Agent
     ENRICHMENT_ENABLED: bool = False
 
+    # 官能生成オプトイン (NSFW ガードレール)。
+    # 明示的に True にしない限り官能生成経路は全拒否する（デフォルト拒否）。
+    ENABLE_NSFW: bool = False
+
     # プロセ精練設定 (Step 9)
     PROSE_REFINER_ENABLED: bool = True
     PROSE_REFINER_MODEL: str = "gemini-2.0-flash"
@@ -371,6 +375,14 @@ class Settings(BaseSettings):
         import os
         return self.GEMINI_API_KEY or os.environ.get("GOOGLE_GENAI_API_KEY") or os.environ.get("GEMINI_API_KEY") or ""
 
+    def is_nsfw_enabled(self) -> bool:
+        """官能生成が明示的にオプトインされているかを返す。
+
+        `ENABLE_NSFW` が真の場合のみ官能生成経路を通す。既定は False で、
+        官能生成はオプトアウト（デフォルト拒否）とする。
+        """
+        return bool(self.ENABLE_NSFW)
+
 
 # グローバルな設定インスタンス
 settings = Settings()
@@ -403,7 +415,7 @@ def is_auth_bypass_enabled(cfg: Settings) -> bool:
     return getattr(cfg, "APP_ENV", "") != "production"
 
 
-__all__ = ["Settings", "settings", "is_auth_bypass_enabled", "STORAGE_DIR", "ROOT_DIR"]
+__all__ = ["Settings", "settings", "is_auth_bypass_enabled", "is_nsfw_enabled", "STORAGE_DIR", "ROOT_DIR"]
 
 
 
