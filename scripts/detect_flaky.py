@@ -78,8 +78,9 @@ def main():
 
     # Optionally, skip known problematic tests that always hang
     # List of tests known to cause issues (from previous runs)
+    # tests/unit/test_marketing_agent.py は pytest.mark.flaky(reruns=3, reruns_delay=2)
+    # で隔離済みのため、flaky 検出の対象に含める。
     known_problematic = {
-        "tests/unit/test_marketing_agent.py",
         # Add more as needed
     }
     # Filter out known problematic tests to avoid hanging the entire script

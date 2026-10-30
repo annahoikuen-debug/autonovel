@@ -139,6 +139,8 @@ pytest-cov==7.1.0
 pytest-benchmark>=4.0.0
 # --- ハングしたテストの停止防止 (pytest.ini の --timeout=120 がこれを必要とする) ---
 pytest-timeout>=2.3.0
+# --- テスト失敗時の自動リトライ (flaky テスト対策。pytest-rerunfailures プラグイン) ---
+pytest-rerunfailures>=1.2.0
 # --- tests/property/test_{compression_invariants,dsp_properties,grammar_properties}.py が
 #     hypothesis を import する (未宣言だと収集時に ModuleNotFoundError で TestCollectionError) ---
 hypothesis>=6.100.0
