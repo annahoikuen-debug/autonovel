@@ -66,6 +66,8 @@ from src.infrastructure.database.models.pdca_history_snapshot import (
     PDCAHistorySnapshot,
 )
 from src.infrastructure.database.models.audio_asset_model import AudioAssetModel
+from src.infrastructure.database.models.foreshadowing_model import ForeshadowingModel
+from src.infrastructure.database.models.workflow_checkpoint import WorkflowCheckpointModel
 
 __all__ = [
     "Base",
@@ -123,4 +125,6 @@ __all__ = [
     "PublicationScheduleModel",
     "PDCAHistorySnapshot",
     "AudioAssetModel",
+    "ForeshadowingModel",
+    "WorkflowCheckpointModel",
 ]

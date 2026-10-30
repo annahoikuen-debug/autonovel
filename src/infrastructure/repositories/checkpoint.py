@@ -2,7 +2,7 @@
 from __future__ import annotations
 from typing import Optional
 from sqlalchemy.orm import Session
-from src.backend.database.models_checkpoint import WorkflowCheckpointModel
+from src.infrastructure.database.models.workflow_checkpoint import WorkflowCheckpointModel
 from src.domain.entities.checkpoint import WorkflowCheckpoint, CheckpointStatus
 
 

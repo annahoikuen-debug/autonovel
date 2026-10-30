@@ -13,7 +13,7 @@ from typing import Any, List, Optional
 from sqlalchemy import and_, func, not_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.database.models_foreshadowing import ForeshadowingModel
+from src.infrastructure.database.models.foreshadowing_model import ForeshadowingModel
 from src.models.foreshadowing_status import ForeshadowingScope, ForeshadowingStatus
 
 logger = logging.getLogger(__name__)
