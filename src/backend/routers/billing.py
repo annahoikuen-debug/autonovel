@@ -14,6 +14,30 @@ from src.config.billing_plans import PLAN_CONFIG
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/billing", tags=["billing"])
 
+
+def _safe_redirect_url(candidate: str | None, default_path: str) -> str:
+    """クライアント指定のリダイレクト先を FRONTEND_URL 配下に制限する。
+
+    Stripe Checkout の success/cancel URL を任意に指定できると、決済後に
+    攻撃者のフィッシングサイトへ飛ばす導線を作れる。絶対 URL は
+    ``FRONTEND_URL`` と同一オリジンのみ許可し、相対パスは FRONTEND_URL で
+    結合する。それ以外は既定パスへフォールバックする。
+    """
+    base = settings.FRONTEND_URL.rstrip("/")
+    default = f"{base}{default_path}"
+    if not candidate:
+        return default
+    candidate = candidate.strip()
+    if not candidate:
+        return default
+    # 相対パス（"/billing/success" 等）はフロントエンド配下に結合する。
+    if candidate.startswith("/") and not candidate.startswith("//"):
+        return f"{base}{candidate}"
+    if candidate == base or candidate.startswith(base + "/"):
+        return candidate
+    logger.warning("Rejected non-frontend redirect URL for Stripe session: %s", candidate)
+    return default
+
 @router.get("/plans", response_model=Dict[str, Any])
 async def get_plans():
     """
@@ -65,9 +89,8 @@ async def create_checkout_session(
             detail="price_id is required"
         )
 
-    base_frontend = settings.FRONTEND_URL.rstrip("/")
-    success_url = request.get("success_url", f"{base_frontend}/billing/success")
-    cancel_url = request.get("cancel_url", f"{base_frontend}/billing/cancel")
+    success_url = _safe_redirect_url(request.get("success_url"), "/billing/success")
+    cancel_url = _safe_redirect_url(request.get("cancel_url"), "/billing/cancel")
 
     try:
         checkout_url = StripeClient.create_checkout_session(
@@ -101,8 +124,7 @@ async def create_portal_session(
             detail="Stripe customer ID not found for user"
         )
 
-    base_frontend = settings.FRONTEND_URL.rstrip("/")
-    return_url = request.get("return_url", f"{base_frontend}/billing")
+    return_url = _safe_redirect_url(request.get("return_url"), "/billing")
 
     try:
         portal_url = StripeClient.create_customer_portal_session(
