@@ -338,7 +338,20 @@ class TestReschedulerUsesRealApi:
         assert resolved == []
         messages = " ".join(r.getMessage() for r in caplog.records)
         assert "既に PROGRESSED（変化なし）" in messages
-        assert not [r for r in caplog.records if r.levelname == "WARNING"]
+        # 任意依存（SudachiPy）が無い環境ではフォールバック警告が出る。
+        # 本テストの関心は「progressed→progressed が WARNING を出さないこと」なので、
+        # 環境依存のフォールバック警告だけ除外する。
+        unrelated = (
+            "SudachiPy not available",
+            "rank_bm25",
+            "chromadb",
+        )
+        assert not [
+            r
+            for r in caplog.records
+            if r.levelname == "WARNING"
+            and not any(token in r.getMessage() for token in unrelated)
+        ]
 
     @pytest.mark.asyncio
     async def test_progressed_success_logs_update(self, caplog):

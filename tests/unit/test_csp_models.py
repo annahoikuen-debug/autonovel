@@ -2,11 +2,11 @@
 
 from ortools.sat.python import cp_model
 from src.narrative_balancer.csp.models import (
-    BeatType,
     CharRole,
     ConflictClause,
     ConstraintPriority,
 )
+from src.narrative_balancer.models import BeatType
 from src.narrative_balancer.csp.variables import CSPVariables
 
 

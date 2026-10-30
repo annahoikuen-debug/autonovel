@@ -343,8 +343,18 @@ docker compose up --build
 > **開発環境でも認証が必要です。**
 > `docker-compose.yml` は `AUTH_DISABLED=true` を設定せず、バックエンドの
 > ポートを `127.0.0.1:8200:8200`（Loopback 限定）にバインドするようになりました。
-> そのため API を叩く前に以下でユーザーを作成し、`Authorization: Bearer <token>`
+> そのため API を叩く前にユーザーを作成し、`Authorization: Bearer <token>`
 > を各リクエストに付けてください。トークンなしのリクエストは `401` になります。
+
+**ブラウザから使う場合（推奨）**
+
+1. <http://localhost:5173/register> を開く
+2. 表示名・メールアドレス・パスワード（8文字以上）を入力して登録
+3. 登録直後に自動ログインし、そのまま執筆を開始できます
+
+2回目以降は <http://localhost:5173/login> からログインしてください。
+
+**API を直接叩く場合**
 
 ```bash
 # 1. ユーザーを登録する（初回のみ。email / password は任意）
