@@ -29,10 +29,13 @@ def _fresh_server_module(monkeypatch, enable_multimedia: bool | None):
 
 
 def _has_multimedia_route(app: FastAPI) -> bool:
-    """/multimedia プレフィックスのルートが存在するか。"""
-    return any(
-        getattr(route, "path", "").startswith("/multimedia") for route in app.routes
-    )
+    """/multimedia プレフィックスのルートが存在するか。
+
+    FastAPI 0.141 以降 ``app.routes`` は遅延展開の ``_IncludedRouter`` を含み、
+    ``route.path`` では prefix 適用後のパスを確認できない。``app.openapi()``
+    （prefix 適用済み）を正とする。
+    """
+    return any(path.startswith("/multimedia") for path in app.openapi()["paths"])
 
 
 class TestConditionalRouting:
@@ -49,8 +52,7 @@ class TestConditionalRouting:
     def test_core_routes_mounted_regardless(self, monkeypatch):
         """コアルーター (/health) はフラグに関係なくマウントされること。"""
         server, _ = _fresh_server_module(monkeypatch, enable_multimedia=None)
-        paths = [getattr(route, "path", "") for route in server.app.routes]
-        assert "/health" in paths
+        assert "/health" in server.app.openapi()["paths"]
 
     def test_explicit_false_disables(self, monkeypatch):
         server, _ = _fresh_server_module(monkeypatch, enable_multimedia=False)

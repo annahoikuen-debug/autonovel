@@ -12,6 +12,7 @@ import os
 from dataclasses import dataclass, field
 from typing import Any
 
+from src.backend.config import settings
 from src.interfaces.plugin import PluginProtocol
 
 logger = logging.getLogger(__name__)
@@ -63,7 +64,15 @@ class PluginRegistry:
         未設定 / "false" は無効（コアから分離された状態）。
         """
         for name, (module_path, class_name, flag_env) in _BUILTIN_PLUGINS.items():
-            flag_value = os.getenv(flag_env, "").strip().lower()
+            # `.env` は pydantic-settings が Settings に読み込むだけで os.environ には
+            # 反映されないため、Settings 側も見る必要がある。
+            # 優先順位は pydantic-settings と同じく「実環境変数 > `.env`」:
+            # 実行時に os.environ を書き換えるテストやコンテナの上書きを尊重し、
+            # 未設定のときだけ Settings（`.env` 由来）へフォールバックする。
+            raw_flag = os.getenv(flag_env)
+            if raw_flag is None:
+                raw_flag = getattr(settings, flag_env, "")
+            flag_value = str(raw_flag).strip().lower()
             enabled = flag_value in ("1", "true", "yes", "on")
             self._entries[name] = PluginEntry(
                 name=name,

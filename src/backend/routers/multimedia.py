@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import re
 from pathlib import Path
@@ -180,7 +181,8 @@ async def generate_media_mix(
     metrics.increment("multimedia_requests_total")
     logger.info("multimedia.media_mix book_id=%s format=%s", payload.book_id, payload.format)
     try:
-        result = service.generate_media_mix(
+        result = await asyncio.to_thread(
+            service.generate_media_mix,
             book_id=payload.book_id,
             format_name=payload.format,
             episode_num=payload.episode_num,
@@ -218,7 +220,11 @@ async def export_ebook(
     await generate_limiter.check(request)
     logger.info("multimedia.ebook book_id=%s formats=%s", payload.book_id, payload.formats)
     try:
-        result = service.export_ebook(book_id=payload.book_id, formats=payload.formats)
+        result = await asyncio.to_thread(
+            service.export_ebook,
+            book_id=payload.book_id,
+            formats=payload.formats,
+        )
     except NoChaptersFoundError as e:
         metrics.increment("multimedia_errors_total")
         raise HTTPException(status_code=422, detail=str(e))
@@ -256,7 +262,11 @@ async def generate_if_routes(
         payload.persist,
     )
     try:
-        result, graph = service.generate_if_routes(book_id=payload.book_id, persist=payload.persist)
+        result, graph = await asyncio.to_thread(
+            service.generate_if_routes,
+            book_id=payload.book_id,
+            persist=payload.persist,
+        )
     except NoChaptersFoundError as e:
         metrics.increment("multimedia_errors_total")
         raise HTTPException(status_code=422, detail=str(e))
@@ -294,7 +304,8 @@ async def generate_asset_pack(
     await generate_limiter.check(request)
     logger.info("multimedia.asset_pack book_id=%s", payload.book_id)
     try:
-        result, task_id = service.generate_asset_pack(
+        result, task_id = await asyncio.to_thread(
+            service.generate_asset_pack,
             book_id=payload.book_id,
             include_if_routes=payload.include_if_routes,
             include_media_mix=payload.include_media_mix,
@@ -334,7 +345,8 @@ async def generate_asset_pack_alias(
     await generate_limiter.check(request)
     logger.info("multimedia.generate (alias) book_id=%s", payload.book_id)
     try:
-        result, task_id = service.generate_asset_pack(
+        result, task_id = await asyncio.to_thread(
+            service.generate_asset_pack,
             book_id=payload.book_id,
             include_if_routes=payload.include_if_routes,
             include_media_mix=payload.include_media_mix,

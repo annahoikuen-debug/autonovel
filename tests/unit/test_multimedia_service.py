@@ -10,8 +10,8 @@ from src.backend.exceptions import MultimediaDisabledError
 from src.backend.multimedia_service import (
     MultimediaResult,
     MultimediaService,
-    make_minimal_series,
 )
+from tests.helpers.multimedia_fixtures import make_minimal_series
 
 
 @pytest.fixture

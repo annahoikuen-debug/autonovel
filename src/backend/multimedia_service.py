@@ -74,15 +74,9 @@ def _extract_preset(series: SeriesResult) -> dict[str, Any]:
     }
 
 
-# 後方互換性のためテストフィクスチャからエイリアス提供 (Step 21)
-try:
-    from tests.helpers.multimedia_fixtures import (
-        make_minimal_episode as _make_minimal_episode,
-        make_minimal_preset as _make_minimal_preset,
-        make_minimal_series,
-    )
-except ImportError:
-    pass
+# 後方互換のためのテストフィクスチャ再エクスポートは行わない。
+# 本番モジュールが `tests` パッケージへ依存すると、テストを含まない配布形態で
+# ImportError を握りつぶす形になり、テスト時と本番時で挙動が変わる。
 
 
 @dataclass
