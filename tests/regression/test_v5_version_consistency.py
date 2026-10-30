@@ -142,6 +142,22 @@ def test_documents_referenced_by_readme_exist() -> None:
     assert not missing, f"README.md が参照しているが存在しないファイル: {missing}"
 
 
+def test_env_example_version_matches_pyproject(authoritative_version: str) -> None:
+    """.env.example のヘッダーに pyproject.toml と矛盾するバージョンリテラルが含まれないこと."""
+    env_example_path = ROOT_DIR / ".env.example"
+    assert env_example_path.exists(), ".env.example が存在しません"
+    content = env_example_path.read_text(encoding="utf-8")
+
+    # ヘッダー行に古いバージョンリテラル（vX.Y.Z 形式）が含まれていないこと
+    old_version_pattern = re.compile(r"v\d+\.\d+\.\d+")
+    matches = old_version_pattern.findall(content)
+    assert not matches, (
+        f".env.example に古いバージョンリテラルが含まれています: {matches}\n"
+        "バージョンは pyproject.toml の project.version に追随してください。"
+    )
+
+
+
 if __name__ == "__main__":
     _v = str(_read_pyproject().get("project", {}).get("version"))
     test_pyproject_declares_authoritative_version(_v)
