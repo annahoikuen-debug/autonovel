@@ -35,6 +35,18 @@ const server = setupServer(
   })
 );
 
+
+/**
+ * realm 非依存の Blob 判定。
+ *
+ * jsdom 環境の `new Blob()` と msw/fetch 経由で返る Blob はプロトタイプ連鎖が
+ * 異なるため `instanceof Blob` が false になる（realm 不一致の典型的ハズレ）。
+ * `Object.prototype.toString` なら realm をまたいで正しく判定できる。
+ */
+function isBlob(value: unknown): boolean {
+  return Object.prototype.toString.call(value) === "[object Blob]";
+}
+
 describe("easyMode API client", () => {
   beforeAll(() => server.listen({ onUnhandledRequest: "bypass" }));
 
@@ -90,7 +102,8 @@ describe("easyMode API client", () => {
 
   it("exportPackage returns blob + filename", async () => {
     const result = await exportPackage(1);
-    expect(result.zipBlob).toBeInstanceOf(Blob);
+    expect(isBlob(result.zipBlob)).toBe(true);
+    expect(result.zipBlob.size).toBeGreaterThan(0);
     expect(result.filename).toBe("export_1.zip");
   });
 
@@ -119,7 +132,8 @@ describe("easyMode API client", () => {
       title: "テスト作品",
       current_text: "最新の本文",
     });
-    expect(result.zipBlob).toBeInstanceOf(Blob);
+    expect(isBlob(result.zipBlob)).toBe(true);
+    expect(result.zipBlob.size).toBeGreaterThan(0);
     expect(result.filename).toBe("export_custom.zip");
   });
 

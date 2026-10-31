@@ -24,7 +24,10 @@ if config is not None:
     if config.config_file_name is not None:
         import logging.config
 
-        logging.config.fileConfig(config.config_file_name)
+        # disable_existing_loggers=False: 既定 (True) だとマイグレーション実行時に
+        # アプリ側の既存ロガー (src.*) が無効化され、以降のログが消える。
+        # プログラムから alembic を呼ぶサーバープロセスでもログを殺さないため明示。
+        logging.config.fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 target_metadata = Base.metadata
 
