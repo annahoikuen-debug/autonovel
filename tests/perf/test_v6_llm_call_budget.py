@@ -64,6 +64,8 @@ class _DeterministicLLM:
 #: 値が常に 10 になるため効果測定に使えなかった。
 #: 実際の計測は `measure_real_audit_calls()`（本物の `AuditAgent` を走らせる）と
 #: `measure_calls_per_episode()`（トラッカーの実カウンタ）で行う。
+#:
+#: WS-A（監査集約）適用後: AuditSkill は 5 回 → 1 回（UnifiedAuditor 集約）。
 STRUCTURAL_SKILL_LLM_CALLS: dict[str, int] = {
     "PlanningSkill": 1,
     "BibleSkill": 1,
@@ -71,7 +73,7 @@ STRUCTURAL_SKILL_LLM_CALLS: dict[str, int] = {
     "HistoricalAccuracyChecker": 0,
     "WritingSkill": 1,
     "EnrichmentSkill": 1,
-    "AuditSkill": 5,  # ← WS-A の並列化でレイテンシだけ短縮（回数は減らない）
+    "AuditSkill": 1,  # WS-A: 5監査 → UnifiedAuditor 集約で 1 回に削減
     "CulturalComplianceChecker": 0,
     "IllustrationSkill": 0,  # K4/T6 Step 4: no-op 化（request 供給元が無い）
     "MarketingCopySkill": 0,
@@ -272,27 +274,34 @@ class TestLlmCallsPerEpisode:
 
         assert breakdown["planning"]["calls"] == 3, "構成系3スキルの_calls が正しくない"
         assert breakdown["writing"]["calls"] == 2, "執筆系2スキルの_calls が正しくない"
-        assert breakdown["audit"]["calls"] == 5, "監査5件の_calls が正しくない"
+        assert breakdown["audit"]["calls"] == 1, "監査（UnifiedAuditor集約後）1件の_calls が正しくない"
 
     def test_audit_calls_are_counted(self) -> None:
-        """監査フェーズの呼び出し回数を記録する（Step 21 並列化の before 値）。"""
+        """監査フェーズの呼び出し回数を記録する（Step 21 並列化の after 値）。
+
+        WS-A 適用後、監査は UnifiedAuditor 集約で 1 回に削減されている。
+        """
         tracker = TokenTracker()
         result = _simulate_one_episode(tracker)
         audit_calls = result["breakdown"]["audit"]["calls"]
-        assert audit_calls == 5
+        assert audit_calls == 1
         print(f"\n[実測] 監査LLM呼び出し回数: {audit_calls}")
 
     def test_audit_calls_dominate_the_budget(self) -> None:
-        """監査が全体の半分以上を占めることの確認（WS-A の最適化余地）。"""
+        """WS-A 適用後、監査が全体の過半数を占めなくなったことを確認。
+
+        従前は監査が 5/10 = 50% を占めていたが、UnifiedAuditor 集約で
+        1/6 ≈ 17% に削減され、WS-A の削減効果を検証する。
+        """
         tracker = TokenTracker()
         result = _simulate_one_episode(tracker)
         breakdown = result["breakdown"]
         total = result["total_calls"]
         audit_ratio = breakdown["audit"]["calls"] / total
-        assert audit_ratio > 0.4, (
-            f"監査占比が想定より低い: {audit_ratio:.1%}（WS-A の前提が崩れる）"
+        assert audit_ratio < 0.4, (
+            f"WS-A 適用後も監査占有率が高い: {audit_ratio:.1%}（期待: <40%）"
         )
-        print(f"\n[実測] 監査が全体の {audit_ratio:.1%} を占める")
+        print(f"\n[実測] 監査が全体の {audit_ratio:.1%} を占める（WS-A 適用後）")
 
     def test_cost_per_episode_is_reported(self) -> None:
         """1話あたりの推定USDコストを算出・報告する。"""
@@ -326,9 +335,10 @@ class TestBudgetGuard:
         )
 
     def test_target_budget_is_not_yet_met(self) -> None:
-        """v6 の目標（<=6回）が現状未達であることを明示する。
+        """v6 の目標（<=6回）が WS-A 適用後で達成されていることを確認。
 
-        Step 21-27（WS-A / WS-B）の完了時にこのテストの判定を反転させる。
+        Step 21-27（WS-A / WS-B）の完了に合わせて判定を反転させた。
+        AuditSkill を 5 回 → 1 回に集約し、合計 6 回で目標を達成。
         """
         tracker = TokenTracker()
         result = _simulate_one_episode(tracker)
@@ -337,21 +347,19 @@ class TestBudgetGuard:
             print(
                 f"\n[未達] 1話 {result['total_calls']} 回 > 目標 "
                 f"{TARGET_MAX_LLM_CALLS_PER_EPISODE} 回。"
-                "WS-A（監査集約）＋WS-B（軽量監査モード）で削減予定"
             )
-        assert meets_target is False, (
-            "目標に到達した場合、WS-A/WS-B の完了に合わせてこの判定を反転させること"
+        assert meets_target is True, (
+            "WS-A 適用後も目標未達。WS-B（軽量監査モード）等の追加削減が必要。"
         )
 
     def test_parallelization_does_not_reduce_call_count(self) -> None:
-        """監査並列化（WS-A-1）はレイテンシを縮めるが回数は変えない。
+        """WS-A-3（ゲート集約）で監査の呼び出し回数は 1 回に削減される。
 
-        これは Step 22 の契約テストが保証すべき前提であり、
-        「並列化＝コスト削減」という誤解を排除する。
+        並列化（WS-A-1）はレイテンシを縮めるが、回数削減はゲート集約
+        で行う。これは Step 22 の契約テストが保証すべき前提。
         """
         tracker = TokenTracker()
         result = _simulate_one_episode(tracker)
         assert result["breakdown"]["audit"]["calls"] == STRUCTURAL_SKILL_LLM_CALLS["AuditSkill"], (
-            "並列化で監査の呼び出し回数が変わるようなら、回数を削減する"
-            "最適化が別途必要（WS-A-3 のゲート集約）"
+            "WS-A-3 のゲート集約により監査呼び出し回数が 1 回に削減されていることを確認"
         )

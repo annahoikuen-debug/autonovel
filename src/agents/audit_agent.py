@@ -104,6 +104,12 @@ AUDIT_CRITERIA: tuple[AuditCriterion, ...] = CORE_AUDIT_CRITERIA + (UNIFIED_AUDI
 #: 従来の「1件でも失敗したら全文再執筆」にロールバックできる。
 DEFAULT_ENABLE_AUDIT_SCORE_GATE = True
 
+#: 従来の 5 監査（fast_screen / logical_consistency / deai / ability_consistency /
+#: causal_integrity）を有効にするか。False の場合は UnifiedAuditor のみ
+#: （1 LLM コール）を実行し、LLM 呼び出し回数を削減する。
+#: ロールバック時は ``ENABLE_AUDIT_LEGACY_CORE=true`` とする。
+DEFAULT_ENABLE_AUDIT_LEGACY_CORE = False
+
 #: 総合スコアの下限閾値（0-100）。この値を下回只有在とき再執筆する。
 #: ``UnifiedAuditor.audit`` の合否ライン（70.0）と揃えている。
 DEFAULT_AUDIT_GATE_THRESHOLD = 70.0
@@ -168,6 +174,15 @@ def _env_float(name: str, default: float) -> float:
 def is_score_gate_enabled() -> bool:
     """スコア集約ゲートが有効か（``ENABLE_AUDIT_SCORE_GATE``、既定 ON）。"""
     return _env_flag("ENABLE_AUDIT_SCORE_GATE", DEFAULT_ENABLE_AUDIT_SCORE_GATE)
+
+
+def is_audit_legacy_core_enabled() -> bool:
+    """従来の 5 監査を有効にするか（ロールバック用、既定 False）。
+
+    False の場合は UnifiedAuditor のみ（1 LLM コール）を実行し、
+    LLM 呼び出し回数を削減する。
+    """
+    return _env_flag("ENABLE_AUDIT_LEGACY_CORE", DEFAULT_ENABLE_AUDIT_LEGACY_CORE)
 
 
 def get_gate_threshold() -> float:
@@ -334,15 +349,26 @@ class AuditAgent(SkillAgent):
         self.prompt_manager = prompt_manager
 
         # 内部監査コンポーネントを初期化
-        self._logical_auditor = LogicalAuditor(
-            repo=repo, llm=llm, pm=prompt_manager, generate_json=llm
-        )
-        self._deai_auditor = DeAIAuditor(
-            repo=repo, llm=llm, prompt_manager=prompt_manager, edge_preserver=edge_preserver
-        )
-        self._fast_screener = FastPlotScreener(llm=llm, prompt_manager=prompt_manager)
-        self._ability_checker = AbilityConsistencyChecker(llm=llm, prompt_manager=prompt_manager)
-        self._plot_monitor = PlotIntegrityMonitor()
+        # 従来の 5 監査は ENABLE_AUDIT_LEGACY_CORE=true のときのみ初期化し、
+        # デフォルトは UnifiedAuditor のみ（1 LLM コール）とする。
+        self._logical_auditor: Any = None
+        self._deai_auditor: Any = None
+        self._fast_screener: Any = None
+        self._ability_checker: Any = None
+        self._plot_monitor: Any = None
+
+        if is_audit_legacy_core_enabled():
+            self._logical_auditor = LogicalAuditor(
+                repo=repo, llm=llm, pm=prompt_manager, generate_json=llm
+            )
+            self._deai_auditor = DeAIAuditor(
+                repo=repo, llm=llm, prompt_manager=prompt_manager, edge_preserver=edge_preserver
+            )
+            self._fast_screener = FastPlotScreener(llm=llm, prompt_manager=prompt_manager)
+            self._ability_checker = AbilityConsistencyChecker(
+                llm=llm, prompt_manager=prompt_manager
+            )
+            self._plot_monitor = PlotIntegrityMonitor()
 
         # 学習データサービス
         self._learning_service = LearningDataService(repo=repo)
@@ -418,61 +444,88 @@ class AuditAgent(SkillAgent):
         ep_num: int,
         branch_id: int | None = None,
     ) -> list[tuple[AuditCriterion, Any]]:
-        """既存5監査を投入し、``(criterion, 結果)`` のリストを返す。
+        """監査フェーズの準備。
+
+        デフォルト (ENABLE_AUDIT_LEGACY_CORE=false): UnifiedAuditor のみ
+        （1 LLM コール）を実行し、LLM 呼び出し回数を削減する。
+
+        ロールバック (ENABLE_AUDIT_LEGACY_CORE=true): 従来の 5 監査を
+        ``(criterion, 結果)`` のリストとして返す。
 
         各要素は coroutine_factory（呼び出すと coroutine を返す）。
         入力は互いに独立しているため Step 21 で ``asyncio.gather`` に並列化できる。
         """
         blueprint = writing_context.get("plot", {}).get("detailed_blueprint", "")
-        edges = writing_context.get("sharp_edges", [])
-        emotional_hook = writing_context.get("emotional_hook")
-        settings_json = writing_context.get("world_settings", "{}")
-        chars_json = writing_context.get("characters_json", "[]")
 
-        criteria = list(CORE_AUDIT_CRITERIA)
+        # --- 従来の 5 監査（ロールバック用） ---
+        if is_audit_legacy_core_enabled():
+            criteria = list(CORE_AUDIT_CRITERIA)
 
-        if not blueprint:
-            # fast_screen は blueprint が無いと判定できない（従来どおりスキップ＝合格扱い）
-            criteria = [c for c in criteria if c.audit_id != "fast_screen"]
+            if not blueprint:
+                # fast_screen は blueprint が無いと判定できない（従来どおりスキップ＝合格扱い）
+                criteria = [c for c in criteria if c.audit_id != "fast_screen"]
 
-        async def _fast_screen() -> tuple[bool, str]:
-            return await self._fast_screener.screen_plot(blueprint)
+            edges = writing_context.get("sharp_edges", [])
+            emotional_hook = writing_context.get("emotional_hook")
+            settings_json = writing_context.get("world_settings", "{}")
+            chars_json = writing_context.get("characters_json", "[]")
 
-        async def _logical() -> tuple[bool, str, float]:
-            return await self._logical_auditor.audit_logical_consistency(
-                book_id=book_id, ep_num=ep_num, blueprint=blueprint, branch_id=branch_id
+            async def _fast_screen() -> tuple[bool, str]:
+                assert self._fast_screener is not None
+                return await self._fast_screener.screen_plot(blueprint)
+
+            async def _logical() -> tuple[bool, str, float]:
+                assert self._logical_auditor is not None
+                return await self._logical_auditor.audit_logical_consistency(
+                    book_id=book_id, ep_num=ep_num, blueprint=blueprint, branch_id=branch_id
+                )
+
+            async def _deai() -> tuple[bool, str]:
+                assert self._deai_auditor is not None
+                return await self._deai_auditor.audit(
+                    content=drafted_text,
+                    before_content=writing_context.get("prev_ctx", ""),
+                    edges=edges,
+                    emotional_hook=emotional_hook,
+                )
+
+            async def _ability() -> tuple[bool, str, str]:
+                assert self._ability_checker is not None
+                return await self._ability_checker.audit_ability_consistency(
+                    blueprint=drafted_text, settings_json=settings_json, characters_json=chars_json
+                )
+
+            async def _causal() -> tuple[bool, float, Any]:
+                assert self._plot_monitor is not None
+                keywords = await self._plot_monitor.extract_keywords(drafted_text)
+                return await self._plot_monitor.check_integrity(
+                    keywords=keywords,
+                    blueprint=blueprint,
+                    content=drafted_text,
+                    threshold=0.7,
+                )
+
+            factories = {
+                "fast_screen": _fast_screen,
+                "logical_consistency": _logical,
+                "deai": _deai,
+                "ability_consistency": _ability,
+                "causal_integrity": _causal,
+            }
+            return [(c, factories[c.audit_id]) for c in criteria]
+
+        # --- UnifiedAuditor のみ（デフォルト: 1 LLM コール） ---
+        async def _unified() -> Any:
+            auditor = self._resolve_unified_auditor()
+            if auditor is None:
+                return ("degraded", "UnifiedAuditor に LLM が設定されていません")
+            return await auditor.audit(
+                text=drafted_text,
+                character_profiles=str(writing_context.get("characters_json", "")),
+                plot_spec=str(writing_context.get("plot", {}).get("detailed_blueprint", "")),
             )
 
-        async def _deai() -> tuple[bool, str]:
-            return await self._deai_auditor.audit(
-                content=drafted_text,
-                before_content=writing_context.get("prev_ctx", ""),
-                edges=edges,
-                emotional_hook=emotional_hook,
-            )
-
-        async def _ability() -> tuple[bool, str, str]:
-            return await self._ability_checker.audit_ability_consistency(
-                blueprint=drafted_text, settings_json=settings_json, characters_json=chars_json
-            )
-
-        async def _causal() -> tuple[bool, float, Any]:
-            keywords = await self._plot_monitor.extract_keywords(drafted_text)
-            return await self._plot_monitor.check_integrity(
-                keywords=keywords,
-                blueprint=blueprint,
-                content=drafted_text,
-                threshold=0.7,
-            )
-
-        factories = {
-            "fast_screen": _fast_screen,
-            "logical_consistency": _logical,
-            "deai": _deai,
-            "ability_consistency": _ability,
-            "causal_integrity": _causal,
-        }
-        return [(c, factories[c.audit_id]) for c in criteria]
+        return [(UNIFIED_AUDIT_CRITERION, _unified)]
 
     async def _run_unified_auditor(
         self, writing_context: dict[str, Any], drafted_text: str
@@ -727,23 +780,6 @@ class AuditAgent(SkillAgent):
             else:
                 outcome = await self._to_outcome(criterion, raw)
             outcomes.append(outcome)
-
-        # 定性的判断（UnifiedAuditor, v6-A2）は 5監査の入力を再利用するため直列で足す
-        unified_criterion, unified_raw = await self._run_unified_auditor(
-            writing_context, drafted_text
-        )
-        unified_started = time.perf_counter()
-        self.emit_event(
-            "audit.audit.started",
-            {
-                "book_id": book_id,
-                "ep_num": ep_num,
-                "audit_id": unified_criterion.audit_id,
-            },
-        )
-        unified_outcome = await self._to_outcome(unified_criterion, unified_raw)
-        durations[unified_criterion.audit_id] = time.perf_counter() - unified_started
-        outcomes.append(unified_outcome)
 
         for outcome in outcomes:
             self.emit_event(
@@ -1182,10 +1218,9 @@ class AuditAgent(SkillAgent):
                     is_backtrack=False,
                     artifacts={
                         "audit_report": {
-                            "logical": "passed",
-                            "deai": "passed",
-                            "ability": "passed",
-                            "causal": "passed",
+                            "unified": "passed",
+                            "final_score": gate["aggregate_score"],
+                            "audit_ids": audit_metrics["audit_ids"],
                         },
                         "audit_status": "passed",
                         "audit_advisories": advisories,
