@@ -222,8 +222,7 @@ async def test_database_manager_converts_raw_strings_with_warning(async_db, meth
     await async_db.execute(text("INSERT INTO raw_smoke VALUES (7)"))
 
     with caplog.at_level(logging.WARNING, logger="src.backend.database.core"):
-        # 警告は初回のみ発行されるため、確実に発火させるようフラグをリセット
-        async_db._warned_about_str_sql = False
+        # 警告は毎回発行されるため、生文字列 SQL を渡すと必ず発火する
         row = await getattr(async_db, method)("SELECT a FROM raw_smoke WHERE a = 7")
 
     assert any("生の文字列 SQL" in r.message for r in caplog.records)

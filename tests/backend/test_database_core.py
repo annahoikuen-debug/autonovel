@@ -298,11 +298,6 @@ class TestDatabaseManager:
         assert hasattr(db_manager, 'engine')
         assert hasattr(db_manager, 'session_factory')
 
-    def test_init_sets_warned_flag_to_false(self):
-        """_warned_about_str_sql フラグが False で初期化されることを確認"""
-        db_manager = DatabaseManager("sqlite:///test.db")
-        assert db_manager._warned_about_str_sql is False
-
     def test_get_session_returns_async_session(self):
         """get_session メソッドが AsyncSession を返すことを確認"""
         db_manager = DatabaseManager("sqlite:///test.db")
@@ -380,7 +375,6 @@ class TestDatabaseManager:
     async def test_execute_with_string_issues_warning_and_converts_to_text(self):
         """execute メソッドが文字列 SQL に対して警告を出し text() に変換することを確認"""
         db_manager = DatabaseManager("sqlite:///test.db")
-        db_manager._warned_about_str_sql = False  # Reset warning flag
 
         mock_conn = Mock()
         mock_conn.__aenter__ = AsyncMock(return_value=mock_conn)

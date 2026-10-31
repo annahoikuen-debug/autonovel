@@ -149,7 +149,6 @@ class DatabaseManager:
     def __init__(self, db_url: str, pool_size: int = 10):
         self.db_path = db_url  # 後方互換のため db_path に接続URLを保持
         self._pool_size = pool_size
-        self._warned_about_str_sql = False
 
         is_sqlite = "sqlite" in db_url
         connect_args = {}
@@ -288,18 +287,17 @@ class DatabaseManager:
         pass
 
     def _ensure_text_sql(self, sql: Any) -> Any:
-        """生文字列 SQL を非推奨警告（初回のみ）と共に sqlalchemy.text() に変換する。
+        """生文字列 SQL を非推奨警告と共に sqlalchemy.text() に変換する。
 
         Note:
             生文字列は後方互換のため受け付けるが非推奨。新規コードは必ず
             sqlalchemy.text() でラップすること。``TextClause`` はそのまま通す。
+            警告は毎回出力し、生文字列 SQL の使用を可視化する。
         """
         if isinstance(sql, str):
-            if not self._warned_about_str_sql:
-                logger.warning(
-                    "DatabaseManager に生の文字列 SQL が渡されました。sqlalchemy.text() でラップしてください。"
-                )
-                self._warned_about_str_sql = True
+            logger.warning(
+                "DatabaseManager に生の文字列 SQL が渡されました。sqlalchemy.text() でラップしてください。"
+            )
             return text(sql)
         return sql
 
