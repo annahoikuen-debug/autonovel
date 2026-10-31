@@ -24,6 +24,9 @@ AutoNovel ローカルの起動手順・起動できないときの対処・起�
 
 起動が完了するとブラウザが自動で `http://localhost:5173` を開きます。
 
+> `src/backend/server.py` は `src/interfaces/api/app_factory` への後方互換シムです。
+> 新規コードは `src.interfaces.api.app_factory` を直接インポートしてください。
+
 ---
 
 ## 2. 起動できないときはまずこれ
