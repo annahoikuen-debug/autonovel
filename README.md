@@ -18,12 +18,15 @@
 [![Type Checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue)](https://mypy-lang.org/)
 [![Vitest](https://img.shields.io/badge/tested_with-vitest-729B1B?logo=vitest&logoColor=white)](https://vitest.dev/)
 
-> **静的解析ゲートの実態（2026-10-01 時点 / PLAN_H1）**
-> `ruff` は **劣化検出 ratchet 化済み**（`scripts/ci_lint_ratchet.py` が
+> **静的解析ゲートの実態（2026-11-01 時点）**
+> `ruff` / `mypy` / `ruff format` は **劣化検出 ratchet 化済み**（`scripts/ci_lint_ratchet.py` が
 > `config/ci_lint_baseline.json` を超えたら CI を落とす hard gate）。
-> `mypy` と `ruff format --check` は **記録のみ（record-only）**。
+> 現在のベースライン値：`ruff=100` / `mypy=1122` / `format=759`（`config/ci_lint_baseline.json`）。
 > エラー数 0 化は別計画（PLAN_H1 §9 N1）の対象外であり、
 > 上記バッジは「エラーがない」ではなく「ゲートが機能している」ことを意味しない。
+>
+> **テストカバレッジゲート**: `pyproject.toml` の `[tool.coverage.report] fail_under = 60`。
+> CI（`pytest --cov`）で全体カバレッジが 60% を下回ると失敗します。
 
 </div>
 
@@ -57,11 +60,14 @@
 
 | 入口 | URL | 向いている人 | 手順 |
 |---|---|---|---|
-| ⚡ かんたん執筆 | `/` | はじめて書きたい人 | 2 手順（約 1 分） |
-| ✨ 共創ウィザード | `/wizard` | 物語の骨組みから作りたい人 | 3 手順（方針 → 構成 → 執筆） |
-| 🚀 Studio | `/studio` | 仕上げや設定を担う人 | 既存作品からすぐ |
+| 🏢 商業LP | `/` | 製品概要・料金プランを確認したい人 | 1 ページ |
+| ⚡ かんたん執筆 | `/app/easy` | はじめて書きたい人 | 2 手順（約 1 分） |
+| ✨ 共創ウィザード | `/app/wizard` | 物語の骨組みから作りたい人 | 3 手順（方針 → 構成 → 執筆） |
+| 🚀 Studio | `/app/studio` | 仕上げや設定を担う人 | 既存作品からすぐ |
 
-- **初回アクセス** すると `/welcome`（入口選択）が自動で表示されます。「あとで決める」を押すと かんたん執筆 へ直行します。
+- **初回アクセス** (`/`) は商業LP が表示されます。ヘッダーの「かんたん執筆」等の CTA から各入口へ移動できます。
+- **旧 URL からのリダイレクト** — `/easy` → `/app/easy`、`/wizard` → `/app/wizard`、`/studio` → `/app/studio`、`/studio/:bookId` → `/app/studio/:bookId`（bookId を保持）。ブックマークや既存リンクが壊れません。
+- **入口選択ページ** (`/welcome`) は初回オンボーディングで表示されます。「あとで決める」を押すと かんたん執筆 へ直行します。
 - **ヘッダーのメニュー** からいつでも 3 つの入口へ移動でき、いまいる入口がハイライトされます。
 - **入口のつなぎ方**
   - かんたん執筆 → 「Studio へ昇格」でそのまま Studio へ
@@ -317,6 +323,8 @@ cd frontend; npm install; cd ..
 $env:HUEY_BACKEND = "sqlite"
 $env:DATABASE_URL = "sqlite:///./autonovel.db"
 py -m uvicorn src.backend.server:app --reload --port 8200
+#   ※ `src/backend/server.py` は `src/interfaces/api/app_factory` への後方互換シムです。
+#     新規コードは `src.interfaces.api.app_factory` を直接インポートしてください。
 
 # 4. ターミナル 2 : Huey ワーカー
 $env:HUEY_BACKEND = "sqlite"
@@ -531,11 +539,16 @@ export_1.zip
 | `TTS_PROVIDER` | 音声合成（`mock` / `elevenlabs`） | `mock` |
 | `ENABLE_MULTIMEDIA` | マルチメディア生成の有効化（`true` / `false`） | `false` |
 | `ENABLE_AUDIO_SYNTH` | 音声合成の有効化（`true` / `false`） | `false` |
+| `ENABLE_NSFW` | 官能コンテンツ生成の明示オプトイン（`true` / `false`） | `false` |
 | `HUEY_BACKEND` | タスクキュー（`sqlite` / `redis`） | `sqlite` |
 | `JWT_SECRET_KEY` | 本番必須。JWT の署名キー | ─ |
 | `CORS_ORIGINS` | 本番必須。許可オリジン | ─ |
 
 > `LLM_PROVIDER=mock` のままでも全画面を操作できます（生成結果はダミー）。実モデルを扱うときは `.env` に API キーを設定し、**API と Huey ワーカーの両方**を再起動してください。
+
+> **官能コンテンツ（NSFW）のオプトイン** — `ENABLE_NSFW` は既定 `false`（デフォルト拒否）です。
+> `true` にしない限り官能シーン生成・官能強化は一切動作しません（`src/backend/config.py: is_nsfw_enabled()` で全経路を遮断）。
+> 有効化する場合は `full` / `intense` 語彙ティアが露骨な表現を含む点に注意してください。
 
 ---
 
