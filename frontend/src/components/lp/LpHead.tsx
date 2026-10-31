@@ -12,15 +12,14 @@ import React, { useEffect } from 'react';
 /**
  * サイトのオリジン。
  *
- * 1. `VITE_SITE_URL`（本番ドメイン）が指定されていればそれを使用
- * 2. 未指定なら実行時の `window.location.origin`（プレビュー/ステージングでも
- *    canonical が placeholder のまま検索エンジンに渡るのを防ぐ）
- * 3. それも無い環境（SSR 等）のみフォールバック
+ * `VITE_SITE_URL`（本番ドメイン）が指定されていればそれを使用。
+ * 未指定時は空文字とし、canonical / OGP は相対パス（`/`、`/ogp.png`）となる。
+ * `window.location.origin` へフォールバックしないことで、プレビュー/ステージング
+ * 環境で開発サーバーの origin が検索エンジンに渡るのを防ぐ。
  */
 const siteOrigin = (
-  (import.meta.env.VITE_SITE_URL as string | undefined) ??
-  (typeof window !== 'undefined' ? window.location.origin : '')
-).replace(/\/$/, '');
+  import.meta.env.VITE_SITE_URL as string | undefined
+)?.replace(/\/$/, '') ?? '';
 
 interface LpHeadProps {
   title?: string;
