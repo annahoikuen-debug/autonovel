@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import ANY, AsyncMock, Mock, patch
 import asyncio
 from pathlib import Path
+from sqlalchemy import text
 
 from src.backend.database.core import (
     retry_with_logging,
@@ -373,7 +374,7 @@ class TestDatabaseManager:
 
     @pytest.mark.asyncio
     async def test_execute_with_string_issues_warning_and_converts_to_text(self):
-        """execute メソッドが文字列 SQL に対して警告を出し text() に変換することを確認"""
+        """execute メソッドが text() ラップ済みクエリを受け付けることを確認"""
         db_manager = DatabaseManager("sqlite:///test.db")
 
         mock_conn = Mock()
@@ -384,13 +385,9 @@ class TestDatabaseManager:
         with patch.object(db_manager, 'engine') as mock_engine:
             mock_engine.begin = Mock(return_value=mock_conn)
 
-            await db_manager.execute("SELECT * FROM test WHERE id = :id", {"id": 1})
+            await db_manager.execute(text("SELECT * FROM test WHERE id = :id"), {"id": 1})
 
-            # Warning が発行されることを確認（実際のテストでは警告キャプチャが必要だが、ここでは省略）
-            # text() に変換されていることを確認するため、execute の呼び出しをチェック
             mock_conn.execute.assert_called_once()
-            # ここで実際に text() オブジェクトが渡されているかを確認する必要があるが、
-            # 簡略化のために呼び出しが発生したことを確認
 
     @pytest.mark.asyncio
     async def test_fetch_one_returns_mapped_result(self):
@@ -410,7 +407,7 @@ class TestDatabaseManager:
         with patch.object(db_manager, 'engine') as mock_engine:
             mock_engine.connect = Mock(return_value=mock_conn)
 
-            result = await db_manager.fetch_one("SELECT * FROM test", (1,))
+            result = await db_manager.fetch_one(text("SELECT * FROM test"), (1,))
 
             assert result == {"col1": "val1", "col2": "val2"}
             mock_conn.execute.assert_called_once()
@@ -436,7 +433,7 @@ class TestDatabaseManager:
         with patch.object(db_manager, 'engine') as mock_engine:
             mock_engine.connect = Mock(return_value=mock_conn)
 
-            result = await db_manager.fetch_all("SELECT * FROM test", (1,))
+            result = await db_manager.fetch_all(text("SELECT * FROM test"), (1,))
 
             assert result == [mock_result1, mock_result2]
             mock_conn.execute.assert_called_once()

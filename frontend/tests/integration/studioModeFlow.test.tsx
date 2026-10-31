@@ -3,6 +3,37 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import App from "../../src/App";
 
+vi.mock("../../src/context/AuthContext", () => {
+  const AuthContext = React.createContext({
+    user: null,
+    token: "fake-test-token",
+    login: vi.fn(),
+    logout: vi.fn(),
+    register: vi.fn(),
+  });
+  return {
+    AuthContext,
+    AuthProvider: ({ children }: { children: React.ReactNode }) => (
+      <AuthContext.Provider value={{
+        user: { id: 1, email: "test@test.com", display_name: "Test", role: "user", credits: 0 },
+        token: "fake-test-token",
+        login: vi.fn(),
+        logout: vi.fn(),
+        register: vi.fn(),
+      }}>
+        {children}
+      </AuthContext.Provider>
+    ),
+    useAuth: () => ({
+      user: { id: 1, email: "test@test.com", display_name: "Test", role: "user", credits: 0 },
+      token: "fake-test-token",
+      login: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
+    }),
+  };
+});
+
 describe("Studio Mode Flow Integration Test", () => {
   beforeEach(() => {
     vi.restoreAllMocks();

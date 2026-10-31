@@ -74,8 +74,6 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
  * 認証必須ルートのガード。
  *
  * トークンが無い場合は `/login?next=<元のパス>` へ誘導する。
- * テスト環境（`NODE_ENV === "test"`）では、既存の smoke test が
- * 認証状態を用意せずに各画面を検証しているためガードを無効化する。
  * 認証 UI 自体のテストは AuthPage を直接レンダリングして行う。
  */
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -83,12 +81,6 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   if (token) {
-    return <>{children}</>;
-  }
-  // 既存の smoke test は認証状態を用意せずに各画面を検証しているため、
-  // テスト実行時だけガードを無効化する（AuthPage 自体は直接テストする）。
-  const isTest = typeof process !== "undefined" && process.env?.NODE_ENV === "test";
-  if (isTest) {
     return <>{children}</>;
   }
 

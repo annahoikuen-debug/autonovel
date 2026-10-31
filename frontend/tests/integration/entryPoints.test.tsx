@@ -7,6 +7,37 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import App from "../../src/App";
 
+vi.mock("../../src/context/AuthContext", () => {
+  const AuthContext = React.createContext({
+    user: null,
+    token: "fake-test-token",
+    login: vi.fn(),
+    logout: vi.fn(),
+    register: vi.fn(),
+  });
+  return {
+    AuthContext,
+    AuthProvider: ({ children }: { children: React.ReactNode }) => (
+      <AuthContext.Provider value={{
+        user: { id: 1, email: "test@test.com", display_name: "Test", role: "user", credits: 0 },
+        token: "fake-test-token",
+        login: vi.fn(),
+        logout: vi.fn(),
+        register: vi.fn(),
+      }}>
+        {children}
+      </AuthContext.Provider>
+    ),
+    useAuth: () => ({
+      user: { id: 1, email: "test@test.com", display_name: "Test", role: "user", credits: 0 },
+      token: "fake-test-token",
+      login: vi.fn(),
+      logout: vi.fn(),
+      register: vi.fn(),
+    }),
+  };
+});
+
 /**
  * 3 つの入口の導線（切れていないこと）を担保する smoke test。
  *

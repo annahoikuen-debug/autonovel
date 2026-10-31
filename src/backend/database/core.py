@@ -287,18 +287,19 @@ class DatabaseManager:
         pass
 
     def _ensure_text_sql(self, sql: Any) -> Any:
-        """生文字列 SQL を非推奨警告と共に sqlalchemy.text() に変換する。
+        """生文字列 SQL を拒否し、sqlalchemy.text() でラップされたクエリのみを受け付ける。
 
         Note:
-            生文字列は後方互換のため受け付けるが非推奨。新規コードは必ず
-            sqlalchemy.text() でラップすること。``TextClause`` はそのまま通す。
-            警告は毎回出力し、生文字列 SQL の使用を可視化する。
+            生文字列 SQL は SQL インジェクションのリスクがあるため、
+            後方互換のために受け付けず TypeError を投げる。新規コードは必ず
+            sqlalchemy.text(sql, bindparams) でバインドパラメータを明示すること。
+            ``TextClause`` はそのまま通す。
         """
         if isinstance(sql, str):
-            logger.warning(
-                "DatabaseManager に生の文字列 SQL が渡されました。sqlalchemy.text() でラップしてください。"
+            raise TypeError(
+                "DatabaseManager は生の文字列 SQL を受け付けません。"
+                " sqlalchemy.text() でラップしてください。"
             )
-            return text(sql)
         return sql
 
     async def execute(self, sql: Any, params: Any = ()) -> None:
