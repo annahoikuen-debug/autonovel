@@ -35,7 +35,6 @@ const server = setupServer(
   })
 );
 
-
 /**
  * realm 非依存の Blob 判定。
  *

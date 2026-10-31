@@ -1,6 +1,6 @@
 import React from "react";
 import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
 import { routes } from "../routes";
 import { NovelProvider } from "../context/NovelContext";
@@ -58,5 +58,22 @@ describe("Declarative Routes", () => {
   it("redirects '/lp' alias to '/'", () => {
     renderWithProviders("/lp");
     expect(screen.getByTestId("lp-page")).toBeInTheDocument();
+  });
+
+  it("keeps bookId when redirecting legacy '/studio/:bookId'", async () => {
+    const router = createMemoryRouter(routes, {
+      initialEntries: ["/studio/42"],
+    });
+    render(
+      <NovelProvider>
+        <ModalProvider>
+          <RouterProvider router={router} />
+        </ModalProvider>
+      </NovelProvider>
+    );
+    // 旧パスの :bookId を落とさず /app/studio/:bookId へ遷移すること
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/app/studio/42");
+    });
   });
 });

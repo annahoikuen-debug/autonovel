@@ -3,6 +3,7 @@ import {
   RouteObject,
   isRouteErrorResponse,
   useNavigate,
+  useParams,
   useRouteError,
   Navigate,
 } from "react-router-dom";
@@ -77,6 +78,13 @@ export function RouteErrorView() {
  * ＋ 初回起動時の入口選択 `/welcome`
  * ＋ 認証 `/login` `/register`（未ログイン時はここへ誘導される）
  */
+
+/** 旧 `/studio/:bookId` から新 `/app/studio/:bookId` へ bookId を保持して移行する。 */
+function RedirectStudioBook() {
+  const { bookId } = useParams();
+  return <Navigate to={`/app/studio/${bookId}`} replace />;
+}
+
 export const routes: RouteObject[] = [
   { path: "/login", element: <LoginPage />, errorElement: <RouteErrorView /> },
   { path: "/register", element: <RegisterPage />, errorElement: <RouteErrorView /> },
@@ -91,7 +99,7 @@ export const routes: RouteObject[] = [
   { path: "/easy", element: <Navigate to="/app/easy" replace /> },
   { path: "/wizard", element: <Navigate to="/app/wizard" replace /> },
   { path: "/studio", element: <Navigate to="/app/studio" replace /> },
-  { path: "/studio/:bookId", element: <Navigate to="/app/studio" replace /> },
+  { path: "/studio/:bookId", element: <RedirectStudioBook /> },
   { path: "/app", element: <Navigate to="/app/easy" replace /> },
 ];
 

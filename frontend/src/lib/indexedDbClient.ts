@@ -4,7 +4,7 @@
  * useIndexedDbAutosave / useCrashRecovery から利用されるシングルトン。
  *
  * 設計方針:
- * - DB オープンは初回アクセス時に遅延実行する（jsom 等の indexedDB 非存在環境でも
+ * - DB オープンは初回アクセス時に遅延実行する（jsdom 等の indexedDB 非存在環境でも
  *   import 時に落ちず、呼び出し側の try/catch で握りつぶせる）。
  * - 失敗時は Promise を reject する。オートセーブはあくまで「ベストエフォート」であり、
  *   呼び出し元（useIndexedDbAutosave）が失敗を警告ログに落として継続する契約。

@@ -3,9 +3,9 @@ import { apiFetch, handleResponse } from "../client";
 import type { BookItem } from "../../types";
 
 // /api/books のレスポンスは作品リスト。
-// 生成物 (api.generated) は openapi-typescript 由来の flat 型で `paths` を
-// 持たないため、同一エンドポイントを型付けしている src/api/books.ts と同じ
-// BookItem[] を利用する。
+// 生成物 (api.generated) は scripts/generate_ts_types.py が OpenAPI 仕様から
+// 生成する flat 型で `paths` を持たないため、同一エンドポイントを型付けしている
+// src/api/books.ts と同じ BookItem[] を利用する。
 type BooksResponse = BookItem[];
 
 export function useBooks() {

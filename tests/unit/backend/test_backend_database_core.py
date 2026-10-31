@@ -48,11 +48,12 @@ def test_database_connection_wrapper_shim():
     assert wrapper.sql_conn is sql_conn
     assert wrapper.dbapi_conn is dbapi_conn
 
-    # 未知の属性書き込みは dbapi_conn に委譲され、読み返しもできること
+    # 未知の属性書き込みは dbapi_conn へ委譲されること（wrapper.__dict__ には入らない）。
+    # 直後の読み取りは __getattr__ 経由で dbapi_conn から解決される。
     wrapper.legacy_attr = "legacy-value"
-    dbapi_conn.legacy_attr = "legacy-value"
-    assert wrapper.legacy_attr == "legacy-value"
+    assert "legacy_attr" not in wrapper.__dict__
     assert dbapi_conn.legacy_attr == "legacy-value"
+    assert wrapper.legacy_attr == "legacy-value"
 
 
 def test_retry_with_logging_retries_then_succeeds(monkeypatch):
