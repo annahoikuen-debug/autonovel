@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { EditorSnapshot } from "../types/editorSnapshot";
-import { indexedDbClient } from "../lib/storage/indexedDbClient";
+import { indexedDbClient } from "../lib/indexedDbClient";
 
 export function useCrashRecovery(
   bookId: string | number,

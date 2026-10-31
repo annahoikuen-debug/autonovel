@@ -5,7 +5,8 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, test, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { EntryPointsSection } from './EntryPointsSection';
 
@@ -44,25 +45,30 @@ describe('EntryPointsSection', () => {
     expect(screen.getByTestId('lp-entry-studio-cta')).toBeInTheDocument();
   });
 
-  test('かんたん執筆 CTA クリックで /welcome へ遷移する', () => {
-    const { navigate } = render(
+  test('かんたん執筆 CTA は /welcome へのリンク', () => {
+    render(
       <MemoryRouter initialEntries={['/']}>
         <EntryPointsSection />
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByTestId('lp-entry-easy-cta'));
-    expect(navigate).toHaveBeenCalledWith('/welcome');
+    // NavLink（a 要素）の遷移先を検証する
+    const cta = screen.getByTestId('lp-entry-easy-cta');
+    const link = cta.closest('a');
+    expect(link).not.toBeNull();
+    expect(link).toHaveAttribute('href', '/welcome');
   });
 
-  test('Studio CTA クリックで /studio へ遷移する', () => {
-    const { navigate } = render(
+  test('Studio CTA は /app/studio へのリンク', () => {
+    render(
       <MemoryRouter initialEntries={['/']}>
         <EntryPointsSection />
       </MemoryRouter>
     );
 
-    fireEvent.click(screen.getByTestId('lp-entry-studio-cta'));
-    expect(navigate).toHaveBeenCalledWith('/studio');
+    const cta = screen.getByTestId('lp-entry-studio-cta');
+    const link = cta.closest('a');
+    expect(link).not.toBeNull();
+    expect(link).toHaveAttribute('href', '/app/studio');
   });
 });

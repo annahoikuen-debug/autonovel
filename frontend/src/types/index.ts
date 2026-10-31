@@ -50,13 +50,29 @@ export interface UnifiedStreamingState {
 
 export type GenerationMode = "standard" | "orchestrated" | "reverse" | "simple" | "easy";
 
-export * from "./editor";
+// --- API 型の再エクスポート ---
+// OpenAPI 自動生成（api.generated）を API 契約の単一情報源とし、手書き
+// モジュール（editor / orchestrated）と同名の型は生成物を優先する。
+// （`export *` を並べると同名エクスポートで TS2308 エラーになるため、
+//  重複しない型のみを明示的に再エクスポートする）
 export * from "./api.generated";
+export type {
+  ActiveAuditHighlight,
+  ResolveIssueResponse,
+  DiffChunk,
+  ConflictItem,
+} from "./editor";
 export * from "./history";
 export * from "./graphInspector";
 export * from "./styleComparison";
 export * from "./marketingShowcase";
 export * from "./books";
 export * from "./editorSettings";
-export * from "./orchestrated";
-export * from "./marketing";
+export type {
+  OrchestratedTaskStatus,
+  AgentName,
+  AgentEvent,
+  AgentProgress,
+} from "./orchestrated";
+// marketing.ts の型 (TitleCandidate / ViralTitleRequest / ViralTitleResponse) は
+// api.generated と同名のため、再エクスポートは生成物側に一本化している。

@@ -415,6 +415,16 @@ def is_auth_bypass_enabled(cfg: Settings) -> bool:
     return getattr(cfg, "APP_ENV", "") != "production"
 
 
+def is_nsfw_enabled() -> bool:
+    """官能生成が明示オプトインされているかを返す（モジュールレベルの省略形）。
+
+    ``settings.is_nsfw_enabled()`` と同じ判定。`__all__` から見える名前として
+    実在させるためのラッパー（存在しない名前を `__all__` に書くと
+    `from ... import *` が実行時 AttributeError になるため）。
+    """
+    return settings.is_nsfw_enabled()
+
+
 __all__ = ["Settings", "settings", "is_auth_bypass_enabled", "is_nsfw_enabled", "STORAGE_DIR", "ROOT_DIR"]
 
 

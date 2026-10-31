@@ -9,6 +9,19 @@
 
 import React, { useEffect } from 'react';
 
+/**
+ * サイトのオリジン。
+ *
+ * 1. `VITE_SITE_URL`（本番ドメイン）が指定されていればそれを使用
+ * 2. 未指定なら実行時の `window.location.origin`（プレビュー/ステージングでも
+ *    canonical が placeholder のまま検索エンジンに渡るのを防ぐ）
+ * 3. それも無い環境（SSR 等）のみフォールバック
+ */
+const siteOrigin = (
+  (import.meta.env.VITE_SITE_URL as string | undefined) ??
+  (typeof window !== 'undefined' ? window.location.origin : '')
+).replace(/\/$/, '');
+
 interface LpHeadProps {
   title?: string;
   description?: string;
@@ -20,8 +33,8 @@ export const LpHead: React.FC<LpHeadProps> = ({
   title = 'AutoNovel | 条件を入れたら、小説が届く AI 小説執筆プラットフォーム',
   description =
     '企画から執筆、矛盾診断、納品まで。AI と共に創作する小説制作プラットフォーム。8 専門オーディター監査。無料で始められます。',
-  canonicalUrl = 'https://autonovel.example.com/',
-  ogImage = 'https://autonovel.example.com/ogp.png',
+  canonicalUrl = `${siteOrigin}/`,
+  ogImage = `${siteOrigin}/ogp.png`,
 }) => {
   useEffect(() => {
     // タイトル

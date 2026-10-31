@@ -139,17 +139,12 @@ class EroticCurve:
 
         """
         if not HAS_EROTIC_PARAMETERS:
-            return EroticCurve.create_default(
-                params.base_intensity if hasattr(params, "base_intensity") else 2
-            )
+            return EroticCurve.create_default(params.base_intensity if hasattr(params, "base_intensity") else 2)
 
         if not params.enabled or params.base_intensity == 0:
             return EroticCurve.create_default(0)
 
         intensity = params.base_intensity
-        build_ratio = params.pace_ratios.get("build", 3)
-        peak_ratio = params.pace_ratios.get("peak", 2)
-        afterglow_ratio = params.pace_ratios.get("afterglow", 2)
 
         sorted_senses = params.get_sorted_sensory_priority()
 

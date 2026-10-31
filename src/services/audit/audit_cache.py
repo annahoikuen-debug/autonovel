@@ -100,18 +100,14 @@ class AuditCache:
         self._cache[key] = result
         return result
 
-    async def audit_ability(
-        self, blueprint: str, settings_json: str, characters_json: str
-    ) -> Tuple[bool, str, str]:
+    async def audit_ability(self, blueprint: str, settings_json: str, characters_json: str) -> Tuple[bool, str, str]:
         key = self._make_key("audit_ability", blueprint, settings_json, characters_json)
         if key in self._cache:
             self._hits += 1
             logger.debug("[AUDIT CACHE] HIT audit_ability key=%s", key[:16])
             return self._cache[key]  # type: ignore[return-value]
         self._misses += 1
-        result = await self._service.audit_ability(
-            blueprint, settings_json, characters_json
-        )
+        result = await self._service.audit_ability(blueprint, settings_json, characters_json)
         self._cache[key] = result
         return result
 

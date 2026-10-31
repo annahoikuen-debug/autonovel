@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { describe, test, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { FaqItem } from './FaqItem';
 
@@ -15,20 +16,22 @@ describe('FaqItem', () => {
     expect(screen.getByTestId('lp-faq-question-0')).toHaveTextContent(
       'テスト質問'
     );
-    expect(screen.queryByTestId('lp-faq-answer-0')).not.toBeInTheDocument();
+    // 回答パネルは DOM に存在するが hidden 属性で非表示
+    const answer = screen.getByTestId('lp-faq-answer-0');
+    expect(answer).toHaveAttribute('hidden');
   });
 
   test('質問クリックで回答が表示・非表示に切り替わる', () => {
     render(<FaqItem index={0} question="テスト質問" answer="テスト回答" />);
 
     fireEvent.click(screen.getByTestId('lp-faq-question-0'));
-    expect(screen.getByTestId('lp-faq-answer-0')).toBeInTheDocument();
+    expect(screen.getByTestId('lp-faq-answer-0')).not.toHaveAttribute('hidden');
     expect(screen.getByTestId('lp-faq-answer-0')).toHaveTextContent(
       'テスト回答'
     );
 
     fireEvent.click(screen.getByTestId('lp-faq-question-0'));
-    expect(screen.queryByTestId('lp-faq-answer-0')).not.toBeInTheDocument();
+    expect(screen.getByTestId('lp-faq-answer-0')).toHaveAttribute('hidden');
   });
 
   test('Enter キーでアコーディオンが開く', () => {

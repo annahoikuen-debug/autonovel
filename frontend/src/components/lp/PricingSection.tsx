@@ -8,9 +8,15 @@
  */
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PricingCard } from './PricingCard';
 
 export const PricingSection: React.FC = () => {
+  const navigate = useNavigate();
+  const handlePlanSelect = () => {
+    // TODO: プラン選択フロー確定後、/register?plan=xxx 等へ変更する
+    navigate('/register');
+  };
   const plans = [
     {
       plan: 'free' as const,
@@ -24,10 +30,7 @@ export const PricingSection: React.FC = () => {
         'コミュニティサポート',
       ],
       ctaLabel: 'はじめる',
-      onCtaClick: () => {
-        // eslint-disable-next-line no-console
-        console.log('Free plan CTA clicked');
-      },
+      onCtaClick: handlePlanSelect,
     },
     {
       plan: 'standard' as const,
@@ -43,10 +46,7 @@ export const PricingSection: React.FC = () => {
       ],
       isPopular: true,
       ctaLabel: 'はじめる',
-      onCtaClick: () => {
-        // eslint-disable-next-line no-console
-        console.log('Standard plan CTA clicked');
-      },
+      onCtaClick: handlePlanSelect,
     },
     {
       plan: 'pro' as const,
@@ -61,10 +61,7 @@ export const PricingSection: React.FC = () => {
         'マーケティング支援',
       ],
       ctaLabel: 'はじめる',
-      onCtaClick: () => {
-        // eslint-disable-next-line no-console
-        console.log('Pro plan CTA clicked');
-      },
+      onCtaClick: handlePlanSelect,
     },
   ];
 

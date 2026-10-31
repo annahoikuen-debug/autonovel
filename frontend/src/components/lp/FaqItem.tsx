@@ -42,6 +42,7 @@ export const FaqItem: React.FC<FaqItemProps> = ({
     >
       <button
         type="button"
+        id={buttonId}
         onClick={handleClick}
         onKeyDown={handleKeyDown}
         className="w-full flex items-center justify-between px-5 py-4 text-left bg-brand-surface hover:bg-brand-surfaceHover transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-accent focus-visible:ring-offset-2 focus-visible:ring-offset-brand-dark"
@@ -69,6 +70,8 @@ export const FaqItem: React.FC<FaqItemProps> = ({
 
       <div
         id={panelId}
+        role="region"
+        aria-labelledby={buttonId}
         className="px-5 pb-4 border-t border-brand-border bg-brand-surface/50"
         hidden={!isOpen}
         data-testid={`lp-faq-answer-${index}`}

@@ -98,12 +98,16 @@ def _format_changelog_entry(version: str, grouped: dict[str, list[tuple[str, str
     return "\n".join(lines)
 
 
-def _get_latest_tag() -> str | None:
-    """最新のタグを取得する."""
-    try:
-        return _run(["git", "describe", "--tags", "--abbrev=0"]).strip()
-    except subprocess.CalledProcessError:
-        return None
+def _split_off_unreleased(existing: str) -> tuple[str, str]:
+    """既存 CHANGELOG から [Unreleased] セクションを除去して (ヘッダー, 残り) を返す。"""
+    if "## [Unreleased]" not in existing:
+        return existing, ""
+    before, rest = existing.split("## [Unreleased]", 1)
+    # 旧 Unreleased の中身は次のバージョン見出し（## [xxx]）まで破棄する（重複挿入防止）
+    next_section = re.search(r"^## \[", rest, flags=re.MULTILINE)
+    if next_section:
+        return before, rest[next_section.start():]
+    return before, ""
 
 
 def generate_changelog(version: str = "Unreleased", from_ref: str | None = None) -> str:
@@ -129,17 +133,9 @@ def main() -> int:
     changelog_entry = generate_changelog(version, from_ref)
 
     if args.write:
-        # 既存の CHANGELOG.md を読み込み、先頭に新規エントリを挿入
         existing = CHANGELOG_PATH.read_text(encoding="utf-8") if CHANGELOG_PATH.exists() else ""
-        # 既存の [Unreleased] セクションがあれば置き換え
-        if "## [Unreleased]" in existing:
-            parts = existing.split("## [Unreleased]", 1)
-            header = parts[0]
-            rest = parts[1] if len(parts) > 1 else ""
-            # 次の ## [バージョン] または ## [Unreleased] までを旧エントリとして扱う
-            new_content = header + changelog_entry + "\n" + rest
-        else:
-            new_content = existing + "\n" + changelog_entry + "\n"
+        header, rest = _split_off_unreleased(existing)
+        new_content = header + changelog_entry + "\n" + rest
         CHANGELOG_PATH.write_text(new_content, encoding="utf-8")
         print(f"CHANGELOG.md を更新しました（バージョン: {version}）")
     else:

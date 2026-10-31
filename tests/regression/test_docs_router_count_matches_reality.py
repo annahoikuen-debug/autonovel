@@ -34,12 +34,29 @@ def test_readme_router_module_count_matches_reality():
     )
 
 
+def _include_router_count() -> int:
+    """ルーター登録（``include_router``）が書かれている組み立て箇所の呼び出し数。
+
+    TRACK-A9 で起動ロジックが ``src/interfaces/api/app_factory.py`` へ移動し、
+    ``src/backend/server.py`` は後方互換 shim になったため、両方を見る。
+    """
+    total = 0
+    for path in ("src/backend/server.py", "src/interfaces/api/app_factory.py"):
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as f:
+            total += len(re.findall(r"\.include_router\(", f.read()))
+    return total
+
+
 def test_readme_routes_are_wired_to_the_registry():
-    """include_router が 1 つも無い_router を作っていないことの簡易確認。"""
-    server = open("src/backend/server.py", encoding="utf-8").read()
-    n_include = len(re.findall(r"app\.include_router\(", server))
+    """アプリ組み立て箇所に include_router が実在し、ルーター数と釣り合うこと。"""
+    n_include = _include_router_count()
     n_files = _router_file_count()
-    assert n_include >= 1, "server.py に include_router が無い"
+    assert n_include >= 1, (
+        "include_router がどこにも無い（server.py / app_factory.py の"
+        "いずれにもルーター登録が存在しない）"
+    )
     # routers ディレクトリには __init__.py があるので必ず 1 以上少ない。
     assert n_include <= n_files + 10, (
         f"include_router が {n_include} 回あるが router モジュールは {n_files} 個"

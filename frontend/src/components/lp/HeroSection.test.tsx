@@ -5,11 +5,27 @@
  */
 
 import React from 'react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { HeroSection } from './HeroSection';
 
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual =
+    await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 describe('HeroSection', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+  });
+
   test('H1 メイン見出し、サブ見出し、CTA 2 つがレンダリングされる', () => {
     render(
       <MemoryRouter>
@@ -26,31 +42,39 @@ describe('HeroSection', () => {
   });
 
   test('プライマリ CTA クリックで /register へ遷移する', () => {
-    const { navigate } = render(
+    render(
       <MemoryRouter initialEntries={['/']}>
         <HeroSection />
       </MemoryRouter>
     );
 
     fireEvent.click(screen.getByTestId('lp-hero-cta-primary'));
-    expect(navigate).toHaveBeenCalledWith('/register');
+    expect(mockNavigate).toHaveBeenCalledWith('/register');
   });
 
   test('セカンダリ CTA クリックで #features セクションへスクロールする', () => {
-    const scrollIntoViewMock = jest.fn();
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
+    const scrollIntoViewMock = vi.fn();
     const originalScrollIntoView = Element.prototype.scrollIntoView;
-    Element.prototype.scrollIntoView = scrollIntoViewMock as any;
+    // ハンドラは document.getElementById('lp-features-section') を参照するため
+    // テスト用のターゲット要素を用意する
+    const target = document.createElement('section');
+    target.id = 'lp-features-section';
 
-    render(
-      <MemoryRouter>
-        <HeroSection />
-      </MemoryRouter>
-    );
+    try {
+      Element.prototype.scrollIntoView = scrollIntoViewMock;
+      document.body.appendChild(target);
 
-    fireEvent.click(screen.getByTestId('lp-hero-cta-secondary'));
+      render(
+        <MemoryRouter>
+          <HeroSection />
+        </MemoryRouter>
+      );
 
-    Element.prototype.scrollIntoView = originalScrollIntoView;
-    expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' });
+      fireEvent.click(screen.getByTestId('lp-hero-cta-secondary'));
+      expect(scrollIntoViewMock).toHaveBeenCalledWith({ behavior: 'smooth' });
+    } finally {
+      Element.prototype.scrollIntoView = originalScrollIntoView;
+      target.remove();
+    }
   });
 });

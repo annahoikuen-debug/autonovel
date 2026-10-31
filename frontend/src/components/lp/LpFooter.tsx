@@ -63,7 +63,7 @@ export const LpFooter: React.FC = () => {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="#features"
+                  href="#lp-features-section"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
                   機能
@@ -71,7 +71,7 @@ export const LpFooter: React.FC = () => {
               </li>
               <li>
                 <a
-                  href="#pricing"
+                  href="#lp-pricing-section"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
                   料金
@@ -79,7 +79,7 @@ export const LpFooter: React.FC = () => {
               </li>
               <li>
                 <a
-                  href="#faq"
+                  href="#lp-faq-section"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
                   FAQ
@@ -102,7 +102,7 @@ export const LpFooter: React.FC = () => {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="https://github.com/herbmatsui-spec/autonovel/docs/"
+                  href="https://github.com/herbmatsui-spec/autonovel/tree/main/docs"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"

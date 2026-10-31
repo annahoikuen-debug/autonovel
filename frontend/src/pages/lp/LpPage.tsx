@@ -20,7 +20,7 @@ import { FinalCtaSection } from '../../components/lp/FinalCtaSection';
 
 export const LpPage: React.FC = () => {
   return (
-    <>
+    <div data-testid="lp-page">
       <LpHead />
       <LpLayout>
         <HeroSection />
@@ -31,7 +31,7 @@ export const LpPage: React.FC = () => {
         <FaqSection />
         <FinalCtaSection />
       </LpLayout>
-    </>
+    </div>
   );
 };
 

@@ -1,16 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, handleResponse } from "../client";
-import type { paths } from "../../types/api.generated";
+import type { BookItem } from "../../types";
 
-// /api/books のレスポンス型を自動生成型から抽出
-type BooksResponse = paths["/api/books"]["get"]["responses"]["200"]["content"]["application/json"];
+// /api/books のレスポンスは作品リスト。
+// 生成物 (api.generated) は openapi-typescript 由来の flat 型で `paths` を
+// 持たないため、同一エンドポイントを型付けしている src/api/books.ts と同じ
+// BookItem[] を利用する。
+type BooksResponse = BookItem[];
 
 export function useBooks() {
   return useQuery<BooksResponse>({
     queryKey: ["books"],
     queryFn: async () => {
       const res = await apiFetch("/api/books");
-      return handleResponse<BooksResponse>(res);
+      return handleResponse<BooksResponse>(res, "Failed to fetch books");
     },
   });
 }

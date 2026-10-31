@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { AutoSaveStatus, EditorSnapshot } from "../types/editorSnapshot";
-import { indexedDbClient } from "../lib/storage/indexedDbClient";
+import { indexedDbClient } from "../lib/indexedDbClient";
 import { useNetworkStatus } from "./useNetworkStatus";
 
 export function useIndexedDbAutosave(

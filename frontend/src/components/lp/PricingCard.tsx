@@ -117,6 +117,7 @@ export const PricingCard: React.FC<PricingCardProps> = ({
           ${isPopular
             ? 'bg-brand-accent text-white hover:bg-brand-accent-hover shadow-lg shadow-cyan-500/25'
             : 'bg-brand-surface text-brand-text border border-brand-border hover:border-brand-accent/50'
+          }
         `}
         data-testid={`lp-pricing-cta-${plan}`}
       >

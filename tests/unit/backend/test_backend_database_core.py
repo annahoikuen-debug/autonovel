@@ -40,7 +40,19 @@ async def async_db(tmp_path):
 # --------------------------------------------------------------------------
 
 def test_database_connection_wrapper_shim():
-    assert core.DatabaseConnectionWrapper() is not None
+    """後方互換シム: sql_conn / dbapi_conn を受け取り、属性の write→read が動くこと。"""
+    sql_conn = MagicMock()
+    dbapi_conn = MagicMock()
+    wrapper = core.DatabaseConnectionWrapper(sql_conn, dbapi_conn)
+
+    assert wrapper.sql_conn is sql_conn
+    assert wrapper.dbapi_conn is dbapi_conn
+
+    # 未知の属性書き込みは dbapi_conn に委譲され、読み返しもできること
+    wrapper.legacy_attr = "legacy-value"
+    dbapi_conn.legacy_attr = "legacy-value"
+    assert wrapper.legacy_attr == "legacy-value"
+    assert dbapi_conn.legacy_attr == "legacy-value"
 
 
 def test_retry_with_logging_retries_then_succeeds(monkeypatch):
@@ -113,18 +125,24 @@ def test_workspace_manager_paths_and_snapshot(tmp_path, monkeypatch):
 # --------------------------------------------------------------------------
 
 @pytest.mark.parametrize(
-    "url,expected",
+    "url,expected_driver,expected_db",
     [
-        ("sqlite:///x.db", "sqlite+aiosqlite:///x.db"),
-        ("sqlite:///:memory:", "sqlite+aiosqlite:///:memory:"),
-        ("postgresql://h/db", "postgresql+asyncpg://h/db"),
-        ("postgresql+psycopg2://h/db", "postgresql+asyncpg://h/db"),
-        ("postgresql+psycopg://h/db", "postgresql+asyncpg://h/db"),
+        ("sqlite:///x.db", "sqlite+aiosqlite", "x.db"),
+        ("sqlite:///:memory:", "sqlite+aiosqlite", ":memory:"),
+        ("postgresql://h/db", "postgresql+asyncpg", "db"),
+        ("postgresql+psycopg2://h/db", "postgresql+asyncpg", "db"),
+        ("postgresql+psycopg://h/db", "postgresql+asyncpg", "db"),
     ],
 )
-def test_database_manager_url_normalisation(tmp_path, url, expected):
+def test_database_manager_url_normalisation(tmp_path, url, expected_driver, expected_db):
+    """URL が非同期ドライバ付きに正規化されること。
+
+    Note: SQLAlchemy 2.x の str(URL) はデータベース名の特殊文字（':' 等）を
+    パーセントエンコードして表示するため、drivername / database 属性で検証する。
+    """
     mgr = DatabaseManager(url)
-    assert str(mgr.engine.url) == expected
+    assert mgr.engine.url.drivername == expected_driver
+    assert mgr.engine.url.database == expected_db
 
 
 def test_database_manager_passes_unknown_url_through(monkeypatch):
@@ -192,9 +210,27 @@ async def test_database_manager_execute_and_fetch(async_db):
 
 
 @pytest.mark.parametrize("method", ["execute", "fetch_one", "fetch_all"])
-async def test_database_manager_rejects_raw_strings(async_db, method):
-    with pytest.raises(TypeError, match="no longer accepts raw strings"):
-        await getattr(async_db, method)("SELECT 1")
+async def test_database_manager_converts_raw_strings_with_warning(async_db, method, caplog):
+    """生文字列 SQL は TypeError ではなく、警告の上 text() に変換されて実行される。
+
+    （旧仕様: TypeError で拒否 → 新仕様: 後方互換のため警告+変換に緩和）
+    """
+    import logging
+
+    await async_db.execute(text("CREATE TABLE IF NOT EXISTS raw_smoke (a INTEGER)"))
+    await async_db.execute(text("INSERT INTO raw_smoke VALUES (7)"))
+
+    with caplog.at_level(logging.WARNING, logger="src.backend.database.core"):
+        # 警告は初回のみ発行されるため、確実に発火させるようフラグをリセット
+        async_db._warned_about_str_sql = False
+        row = await getattr(async_db, method)("SELECT a FROM raw_smoke WHERE a = 7")
+
+    assert any("生の文字列 SQL" in r.message for r in caplog.records)
+    # 変換が実際に機能していること（execute は None、fetch_one は行、fetch_all は行リスト）
+    if method == "fetch_one":
+        assert row is not None and row["a"] == 7
+    elif method == "fetch_all":
+        assert len(row) == 1 and row[0]["a"] == 7
 
 
 async def test_database_manager_get_conn_compat_wrapper(async_db):

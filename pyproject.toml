@@ -215,6 +215,9 @@ python_version = "3.12"
 ignore_missing_imports = true
 warn_unused_configs = true
 show_error_codes = true
+# .gitignore に含まれるローカル専用スクリプト（debug_*.py 等）は追跡対象外のため、
+# チェック対象からも外して CI（クリーンチェックアウト）とローカルの件数を一致させる。
+exclude = ["debug_.*\\.py$"]
 
 [tool.ruff]
 line-length = 120
@@ -232,6 +235,10 @@ ignore = ["E501", "E402"]
 "**/__init__.py" = ["E402", "F401"]
 # `__all__` に列挙済みの import は ruff が再エクスポートと判定できない。
 "**/api.py" = ["E402", "F401"]
+# TRACK-N N2: config/erotic_*.py は src/nsfw/ への移設に伴う後方互換 shim。
+# `from src.nsfw.xxx import *` による再エクスポートが主目的のため、
+# star import 由来の F403/F405 は意図的（実体は src/nsfw/ 側で管理する）。
+"config/erotic_*.py" = ["F403", "F405"]
 
 # T6 Step 10 の残存（2026-09-29 時点、652件 → W系1646件は解消済み）:
 #   F401 483 / F841 59 / F811 36 / E741 21 / F821 19 / E712 17

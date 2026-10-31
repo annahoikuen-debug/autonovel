@@ -14,7 +14,7 @@ import {
   ShieldCheck,
   Zap,
   Package,
-  FileTypeEpub,
+  FileType2,
   Share2,
   Megaphone,
   Palette,
@@ -47,7 +47,7 @@ const FEATURES = [
       '本文・設定集・プロット・データを 1 つの ZIP でダウンロード。',
   },
   {
-    icon: <FileTypeEpub size={24} />,
+    icon: <FileType2 size={24} />,
     title: 'EPUB / なろう形式出力',
     description:
       '投稿サイト向けに自動整形。なろう・カクヨム形式に対応。',

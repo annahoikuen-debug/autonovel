@@ -58,6 +58,14 @@ class EroticEnhancer:
         Returns:
             強化された結果文字列
         """
+        # === NSFW ガードレール (TRACK-N N3) ===
+        # 官能強化は明示オプトイン (ENABLE_NSFW=true) のみ許可する。
+        # EroticGate が有効でも設定でオプトインされていなければ何もしない。
+        from src.backend.config import settings
+
+        if not settings.is_nsfw_enabled():
+            return result
+
         # === Step 10 追加: ゲート判定を EroticGate に委譲 ===
         gate = EroticGate.from_context(context)
         if not gate.is_active():

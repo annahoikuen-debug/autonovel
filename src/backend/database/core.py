@@ -40,11 +40,19 @@ class DatabaseConnectionWrapper:
 
     ``sql_conn`` / ``dbapi_conn`` はラッパー自身に保持し、それ以外の属性設定は
     ``dbapi_conn`` 側に委譲する（後方互換のため）。
+    読み取りも ``dbapi_conn`` に委譲するため、レガシーコードの
+    「wrapper.attr = x; wrapper.attr」という write→read パターンも動作する。
     """
 
-    def __init__(self, sql_conn, dbapi_conn):
+    def __init__(self, sql_conn: Any, dbapi_conn: Any) -> None:
         self.sql_conn = sql_conn
         self.dbapi_conn = dbapi_conn
+
+    def __getattr__(self, name: str) -> Any:
+        # ``sql_conn`` / ``dbapi_conn`` は通常のインスタンス属性として解決済みのため
+        # ここには到達しない。未定義属性のみ dbapi_conn へ委譲する。
+        dbapi_conn = object.__getattribute__(self, "dbapi_conn")
+        return getattr(dbapi_conn, name)
 
     @property
     def cursor(self):
@@ -280,7 +288,12 @@ class DatabaseManager:
         pass
 
     def _ensure_text_sql(self, sql: Any) -> Any:
-        """生文字列 SQL を非推奨警告と共に sqlalchemy.text() に変換する。"""
+        """生文字列 SQL を非推奨警告（初回のみ）と共に sqlalchemy.text() に変換する。
+
+        Note:
+            生文字列は後方互換のため受け付けるが非推奨。新規コードは必ず
+            sqlalchemy.text() でラップすること。``TextClause`` はそのまま通す。
+        """
         if isinstance(sql, str):
             if not self._warned_about_str_sql:
                 logger.warning(
@@ -291,7 +304,7 @@ class DatabaseManager:
         return sql
 
     async def execute(self, sql: Any, params: Any = ()) -> None:
-        """SQLを実行する。sqlalchemy.text() でラップされたクエリのみ受け付ける。"""
+        """SQLを実行する。生文字列は警告の上 sqlalchemy.text() に変換される。"""
         sql = self._ensure_text_sql(sql)
 
         logger.debug("DatabaseManager.execute called: %s", sql)
@@ -299,7 +312,7 @@ class DatabaseManager:
             await conn.execute(sql, params)
 
     async def fetch_one(self, sql: Any, params: Any = ()) -> Any | None:
-        """単一行を取得する。sqlalchemy.text() でラップされたクエリのみ受け付ける。"""
+        """単一行を取得する。生文字列は警告の上 sqlalchemy.text() に変換される。"""
         sql = self._ensure_text_sql(sql)
 
         logger.debug("DatabaseManager.fetch_one called: %s", sql)
@@ -308,7 +321,7 @@ class DatabaseManager:
             return result.mappings().fetchone()
 
     async def fetch_all(self, sql: Any, params: Any = ()) -> list[Any]:
-        """複数行を取得する。sqlalchemy.text() でラップされたクエリのみ受け付ける。"""
+        """複数行を取得する。生文字列は警告の上 sqlalchemy.text() に変換される。"""
         sql = self._ensure_text_sql(sql)
 
         logger.debug("DatabaseManager.fetch_all called: %s", sql)

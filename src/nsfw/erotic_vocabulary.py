@@ -392,5 +392,15 @@ def get_vocabulary_for_tier(tier: str) -> dict:
 
     Returns:
         dict: "metaphors", "onomatopoeia", "psychology" のリストを含む辞書
+
+    Note:
+        ティアによって語彙の露骨さが異なる:
+
+        - ``mild`` / ``moderate``: 比喩・間接表現のみ（全年齢相当）
+        - ``full`` / ``intense``: ``INTENSE_*`` バンクを含むため直喩・露骨な
+          表現が混入する。これらは官能シーン生成経路
+          （``EroticSpecialist.build_scene_prompt`` の ``ENABLE_NSFW``
+          ガードレール通過後）でのみ使用すること。無効なティア名は
+          黙って ``mild`` にフォールバックするため、タイポは安全側に倒れる。
     """
     return VOCABULARY_TIERS.get(tier, VOCABULARY_TIERS["mild"])

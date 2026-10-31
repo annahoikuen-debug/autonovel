@@ -8,7 +8,7 @@
  */
 
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 interface LpHeaderProps {
   onRegisterClick?: () => void;
@@ -27,18 +27,21 @@ export const LpHeader: React.FC<LpHeaderProps> = ({
     navigate('/register');
   };
 
-  const handleFeatures = () => {
-    onFeaturesClick?.();
-    // ページ内スクロール（#features セクションへ）
-    // DOM がまだマウントされていない可能性があるため null チェックを行う。
-    // 失敗時は React Router で #features 付きURL へ遷移し、
-    // LpPage 側でスクロール処理を行う。
-    const el = document.getElementById('lp-features-section');
+  /**
+   * ページ内スクロール（セクション id へ）。
+   * セクションは lp-features-section / lp-pricing-section / lp-faq-section。
+   * DOM がまだマウントされていない可能性があるため null チェックを行う。
+   */
+  const scrollToSection = (sectionId: string) => {
+    const el = document.getElementById(sectionId);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      navigate('/#features');
     }
+  };
+
+  const handleFeatures = () => {
+    onFeaturesClick?.();
+    scrollToSection('lp-features-section');
   };
 
   const handleMobileMenu = () => {
@@ -53,49 +56,53 @@ export const LpHeader: React.FC<LpHeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* ロゴ */}
-          <div
+          <button
+            type="button"
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => navigate('/')}
+            aria-label="AutoNovel ホームへ"
             data-testid="lp-header-logo"
           >
             <span className="text-brand-accent font-bold text-xl tracking-tight">
               AutoNovel
             </span>
-          </div>
+          </button>
 
-          {/* デスクトップナビゲーション */}
+          {/* デスクトップナビゲーション（ページ内スクロール） */}
           <nav className="hidden md:flex items-center gap-8" data-testid="lp-header-nav">
-            <NavLink
-              to="#features"
+            <button
+              type="button"
               onClick={handleFeatures}
               className="text-sm font-medium text-brand-textMuted hover:text-brand-text transition-colors"
               data-testid="lp-header-nav-features"
             >
               機能
-            </NavLink>
-            <NavLink
-              to="#pricing"
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('lp-pricing-section')}
               className="text-sm font-medium text-brand-textMuted hover:text-brand-text transition-colors"
               data-testid="lp-header-nav-pricing"
             >
               料金
-            </NavLink>
-            <NavLink
-              to="#faq"
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection('lp-faq-section')}
               className="text-sm font-medium text-brand-textMuted hover:text-brand-text transition-colors"
               data-testid="lp-header-nav-faq"
             >
               FAQ
-            </NavLink>
-            <NavLink
-              to="https://github.com/herbmatsui-spec/autonovel/docs/"
+            </button>
+            <a
+              href="https://github.com/herbmatsui-spec/autonovel"
               target="_blank"
               rel="noopener noreferrer"
               className="text-sm font-medium text-brand-textMuted hover:text-brand-text transition-colors"
               data-testid="lp-header-nav-docs"
             >
               ドキュメント
-            </NavLink>
+            </a>
           </nav>
 
           {/* CTA ボタン（デスクトップ） */}
@@ -124,6 +131,8 @@ export const LpHeader: React.FC<LpHeaderProps> = ({
             onClick={handleMobileMenu}
             className="md:hidden p-2 text-brand-textMuted hover:text-brand-text"
             aria-label="メニューを開閉"
+            aria-expanded={isMenuOpen}
+            aria-controls="lp-mobile-menu"
             data-testid="lp-header-mobile-menu"
           >
             <svg
@@ -145,30 +154,41 @@ export const LpHeader: React.FC<LpHeaderProps> = ({
 
       {/* モバイルメニュードロワー */}
       {isMenuOpen && (
-        <div className="md:hidden bg-brand-surface border-b border-brand-border">
+        <div className="md:hidden bg-brand-surface border-b border-brand-border" id="lp-mobile-menu">
           <div className="max-w-7xl mx-auto px-4 py-4 space-y-3">
-            <NavLink
-              to="#features"
-              onClick={handleFeatures}
-              className="block px-4 py-3 text-sm font-medium text-brand-textMuted hover:text-brand-text hover:bg-brand-surfaceHover rounded-lg"
+            <button
+              type="button"
+              onClick={() => {
+                handleFeatures();
+                setIsMenuOpen(false);
+              }}
+              className="block w-full text-left px-4 py-3 text-sm font-medium text-brand-textMuted hover:text-brand-text hover:bg-brand-surfaceHover rounded-lg"
               data-testid="lp-mobile-nav-features"
             >
               機能
-            </NavLink>
-            <NavLink
-              to="#pricing"
-              className="block px-4 py-3 text-sm font-medium text-brand-textMuted hover:text-brand-text hover:bg-brand-surfaceHover rounded-lg"
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                scrollToSection('lp-pricing-section');
+                setIsMenuOpen(false);
+              }}
+              className="block w-full text-left px-4 py-3 text-sm font-medium text-brand-textMuted hover:text-brand-text hover:bg-brand-surfaceHover rounded-lg"
               data-testid="lp-mobile-nav-pricing"
             >
               料金
-            </NavLink>
-            <NavLink
-              to="#faq"
-              className="block px-4 py-3 text-sm font-medium text-brand-textMuted hover:text-brand-text hover:bg-brand-surfaceHover rounded-lg"
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                scrollToSection('lp-faq-section');
+                setIsMenuOpen(false);
+              }}
+              className="block w-full text-left px-4 py-3 text-sm font-medium text-brand-textMuted hover:text-brand-text hover:bg-brand-surfaceHover rounded-lg"
               data-testid="lp-mobile-nav-faq"
             >
               FAQ
-            </NavLink>
+            </button>
             <div className="pt-4 border-t border-brand-border">
               <button
                 type="button"

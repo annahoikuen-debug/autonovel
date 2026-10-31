@@ -82,7 +82,7 @@ jobs:
         working-directory: ./frontend
         run: npm run build
       - name: Run Lighthouse CI
-        run: lhci autorun --config=.lighthouserc.json || true
+        run: lhci autorun --config=.lighthouserc.json
 
   e2e-test:
     name: E2E Tests (Playwright)
@@ -100,7 +100,11 @@ jobs:
         working-directory: ./frontend
         run: npm ci
       - name: Install Playwright browsers
+        working-directory: ./frontend
         run: npx playwright install --with-deps
+      - name: Build (preview サーバー用の dist を生成)
+        working-directory: ./frontend
+        run: npm run build
       - name: Run E2E tests
         working-directory: ./frontend
         run: npx playwright test

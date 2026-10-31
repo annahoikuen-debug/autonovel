@@ -75,9 +75,9 @@ export const TestimonialsSection: React.FC = () => {
           </p>
         </div>
 
-        {/* ソーシャルプルーフ */}
+        {/* ソーシャルプルーフ（※仮の数値。免責はセクション末尾） */}
         <div
-          className="flex items-center justify-center gap-6 text-sm text-brand-textMuted mb-16"
+          className="flex items-center justify-center gap-6 text-sm text-brand-textMuted mb-2"
           data-testid="lp-social-proof"
         >
           <span data-testid="lp-social-proof-novels">
@@ -88,6 +88,12 @@ export const TestimonialsSection: React.FC = () => {
             登録ユーザー数: 5,000 名以上
           </span>
         </div>
+        <p
+          className="text-xs text-brand-textMuted text-center mb-14"
+          data-testid="lp-social-proof-disclaimer"
+        >
+          ※上記の数値はダミーです（実績値確定後に差し替え）。
+        </p>
 
         {/* 事例カードグリッド */}
         <div
@@ -169,7 +175,7 @@ export const TestimonialsSection: React.FC = () => {
           className="text-xs text-brand-textMuted text-center mt-8"
           data-testid="lp-testimonials-disclaimer"
         >
-          ※事例は仮の内容です。実際のユーザーの声に差し替えます。
+          ※事例・数値はすべて仮の内容です。実際のユーザーの声・実績に差し替えます。
         </p>
       </div>
     </section>

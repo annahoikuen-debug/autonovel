@@ -5,11 +5,27 @@
  */
 
 import React from 'react';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { LpHeader } from './LpHeader';
 
+const mockNavigate = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual =
+    await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 describe('LpHeader', () => {
+  beforeEach(() => {
+    mockNavigate.mockClear();
+  });
+
   test('ロゴ、ナビゲーション、CTA ボタンがレンダリングされる', () => {
     render(
       <MemoryRouter>
@@ -27,14 +43,14 @@ describe('LpHeader', () => {
   });
 
   test('プライマリ CTA クリックで /register へ遷移する', () => {
-    const { navigate } = render(
+    render(
       <MemoryRouter initialEntries={['/']}>
         <LpHeader />
       </MemoryRouter>
     );
 
     fireEvent.click(screen.getByTestId('lp-header-cta-primary'));
-    expect(navigate).toHaveBeenCalledWith('/register');
+    expect(mockNavigate).toHaveBeenCalledWith('/register');
   });
 
   test('モバイルメニューボタンでドロワーが開閉する', () => {

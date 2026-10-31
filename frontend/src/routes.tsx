@@ -87,6 +87,12 @@ export const routes: RouteObject[] = [
   { path: "/app/studio", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },
   { path: "/app/studio/:bookId", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },
   { path: "/welcome", element: <WelcomePage />, errorElement: <RouteErrorView /> },
+  // --- 旧パスからの後方互換リダイレクト（ブックマーク・既存コードの遷移先を救済） ---
+  { path: "/easy", element: <Navigate to="/app/easy" replace /> },
+  { path: "/wizard", element: <Navigate to="/app/wizard" replace /> },
+  { path: "/studio", element: <Navigate to="/app/studio" replace /> },
+  { path: "/studio/:bookId", element: <Navigate to="/app/studio" replace /> },
+  { path: "/app", element: <Navigate to="/app/easy" replace /> },
 ];
 
 /** 3 つの入口のメタデータ（ヘッダーナビゲーションの導線定義と共有） */

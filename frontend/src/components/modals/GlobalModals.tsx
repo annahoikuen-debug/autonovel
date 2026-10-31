@@ -91,13 +91,13 @@ export function GlobalModals() {
         <div style={{ display: "flex", justifyContent: "center", gap: "16px" }}>
           <Button variant="primary" onClick={() => {
             setShowTransitionOverlay(false);
-            navigate("/studio");
+            navigate("/app/studio");
           }}>
             今すぐ体験する
           </Button>
           <Button variant="secondary" onClick={() => {
             setShowTransitionOverlay(false);
-            navigate("/");
+            navigate("/app/easy");
           }}>
             今はEasyモードで
           </Button>

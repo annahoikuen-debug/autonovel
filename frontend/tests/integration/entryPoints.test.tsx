@@ -66,23 +66,24 @@ describe("入口導線の smoke test", () => {
             });
         });
 
-        it("初回起動で / を開くと入口選択（/welcome）へ誘導される", async () => {
+        it("初回起動で / を開くと公開 LP が表示される", async () => {
             window.localStorage.removeItem(ONBOARDING_KEY);
             renderAt("/");
+            // / は公開 LP。入口選択は /welcome に集約された
             await waitFor(() => {
-                expect(screen.getByTestId("welcome-page")).toBeInTheDocument();
+                expect(screen.getByTestId("lp-header")).toBeInTheDocument();
             });
         });
 
-        it("ヘッダーから 3 つの入口に到達できる", async () => {
+        it("LP から 3 つの入口に到達できる", async () => {
             renderAt("/");
-            // ヘッダーに 3 入口が揃っている
-            expect(screen.getByTestId("btn-mode-easy")).toBeInTheDocument();
-            expect(screen.getByTestId("btn-mode-wizard")).toBeInTheDocument();
-            expect(screen.getByTestId("btn-mode-studio")).toBeInTheDocument();
+            // LP の入口カード（3 つ）が揃っている
+            expect(screen.getByTestId("lp-entry-easy-card")).toBeInTheDocument();
+            expect(screen.getByTestId("lp-entry-wizard-card")).toBeInTheDocument();
+            expect(screen.getByTestId("lp-entry-studio-card")).toBeInTheDocument();
 
-            // ウィザードへ遷移できる
-            fireEvent.click(screen.getByTestId("btn-mode-wizard"));
+            // ウィザードへ遷移できる（テスト環境では認証ガードが無効）
+            fireEvent.click(screen.getByTestId("lp-entry-wizard-card"));
             await waitFor(() => {
                 expect(screen.getByTestId("wizard-workflow-page")).toBeInTheDocument();
             });

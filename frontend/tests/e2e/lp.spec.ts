@@ -34,21 +34,21 @@ test.describe('LP トップページ', () => {
     await expect(page.getByTestId('lp-entry-wizard-card')).toBeVisible();
     await expect(page.getByTestId('lp-entry-studio-card')).toBeVisible();
 
-    // かんたん執筆
+    // かんたん執筆（/welcome は認証不要）
     await page.getByTestId('lp-entry-easy-cta').click();
     await expect(page).toHaveURL(/\/welcome/);
 
     await page.goto('/');
 
-    // 共創ウィザード
+    // 共創ウィザード（未認証のため RequireAuth が /login へリダイレクトする）
     await page.getByTestId('lp-entry-wizard-cta').click();
-    await expect(page).toHaveURL(/\/app\/wizard/);
+    await expect(page).toHaveURL(/\/login/);
 
     await page.goto('/');
 
-    // Studio
+    // Studio（同上）
     await page.getByTestId('lp-entry-studio-cta').click();
-    await expect(page).toHaveURL(/\/app\/studio/);
+    await expect(page).toHaveURL(/\/login/);
   });
 
   test('FAQ アコーディオンが開閉する', async ({ page }) => {
@@ -71,9 +71,10 @@ test.describe('LP トップページ', () => {
     await page.goto('/');
 
     await expect(page.getByTestId('lp-hero-headline')).toBeVisible();
-    await expect(page.getByTestId('lp-header-cta-primary')).toBeVisible();
+    // デスクトップ CTA は hidden md:flex のためモバイルでは非表示
+    await expect(page.getByTestId('lp-header-cta-primary')).toBeHidden();
 
-    // モバイルメニューを開く
+    // モバイルメニューを開くと CTA（登録導線）が使える
     await page.getByTestId('lp-header-mobile-menu').click();
     await expect(page.getByTestId('lp-mobile-nav-register')).toBeVisible();
   });
