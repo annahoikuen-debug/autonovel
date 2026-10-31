@@ -2,29 +2,10 @@
 
 from __future__ import annotations
 
-import asyncio
-from unittest.mock import AsyncMock
-
 import pytest
 
 from src.services.llm.circuit_breaker import CircuitBreakerOpenException
 from src.services.llm.provider_failover import ProviderFailoverManager
-
-
-class _Ctx:
-    """async 関数の戻り値を await 可能にする簡易ラッパー。"""
-
-    def __init__(self, value):
-        self._value = value
-
-    def __await__(self):
-        return asyncio.sleep(0).__await__() and self._value  # type: ignore[return-value]
-
-
-async def _make_primary(return_value, should_fail=False):
-    if should_fail:
-        raise RuntimeError("primary failed")
-    return return_value
 
 
 @pytest.mark.asyncio

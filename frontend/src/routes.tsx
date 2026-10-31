@@ -82,6 +82,9 @@ export function RouteErrorView() {
 /** 旧 `/studio/:bookId` から新 `/app/studio/:bookId` へ bookId を保持して移行する。 */
 function RedirectStudioBook() {
   const { bookId } = useParams();
+  if (!bookId) {
+    return <Navigate to="/app/studio" replace />;
+  }
   return <Navigate to={`/app/studio/${bookId}`} replace />;
 }
 
