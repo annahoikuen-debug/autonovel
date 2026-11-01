@@ -189,6 +189,11 @@ omit = [
 
     # 非推奨スタブモジュール
     "src/services/age_client.py",
+
+    # 再エクスポート専用 / シムモジュール（テスト不要・カバレッジ除外）
+    "src/core/exceptions.py",
+    "src/schemas/easy_mode.py",
+    "src/services/marketing.py",
 ]
 branch = true
 concurrency = ["multiprocessing", "thread"]
