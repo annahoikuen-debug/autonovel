@@ -149,6 +149,12 @@ services:
     image: autonovel-frontend:6.0.0
     ports:
       - "8080:80"
+    environment:
+      # VITE_* は Vite ビルド時にクライアントコードに埋め込まれる。
+      # LpHead.tsx の siteOrigin は VITE_SITE_URL を参照し、未設定時は空文字（相対パス）になる。
+      # 本番ドメイン（例: https://novel.example.com）を設定すること。
+      - VITE_SITE_URL=${VITE_SITE_URL:-}
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8200}
     depends_on:
       backend:
         condition: service_healthy
@@ -210,9 +216,10 @@ services:
 volumes:
   autonovel_pgdata:
   autonovel_redis:
-  # backend/worker 共有の生成物・ログ用ボリューム（docker-compose.prod.yml の
-  # backend / worker がマウントする。`down -v` で消える点に注意）
+  # backend/worker 共有の生成物・アップロード画像・エクスポートファイル用ボリューム。
+  # `down -v` で消える点に注意。
   autonovel_storage:
+  # backend/worker のアプリケーションログ用ボリューム。
   autonovel_logs:
 
 networks:

@@ -123,7 +123,9 @@ jobs:
           pip install pytest-timeout
           pip install -e ".[dev]"
       - name: Run unit test suite
-        run: pytest -q -m "not integration and not perf and not slow" --timeout=120
+        run: pytest -q -m "not integration and not perf and not slow" --cov=src --cov-fail-under=60 --timeout=120
+      - name: Run long-form durability benchmark (CI gate)
+        run: python -m tests.benchmarks.long_form --eps 200 --check
       - name: Security tests with authentication enabled
         # conftest.py は既定で AUTH_DISABLED=true にするため、認証ミドルウェアの
         # 実経路はこのステップで明示的に有効化して検証する。

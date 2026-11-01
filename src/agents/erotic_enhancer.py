@@ -4,10 +4,13 @@ erotic_enhancer.py - 官能強化ユーティリティ (GraphRAG 心理・関係
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from src.agents.base import BaseAgent
 from src.domain.value_objects.erotic_gate import EroticGate
+
+logger = logging.getLogger(__name__)
 
 
 class EroticEnhancer:
@@ -66,11 +69,27 @@ class EroticEnhancer:
         if not settings.is_nsfw_enabled():
             return result
 
-        # === Step 10 追加: ゲート判定を EroticGate に委譲 ===
+        # === 官能生成の監査ログ出力 (運用可視性確保) ===
+        # 誰が、いつ、どの作品のどのエピソードで官能生成を利用したかを記録する。
+        book_id = context.get("book_id") or context.get("bookId")
+        ep_num = context.get("ep_num") or context.get("episode_num")
+        user_id = context.get("user_id") or context.get("userId")
         gate = EroticGate.from_context(context)
         if not gate.is_active():
             return result
         erotic_intensity = gate.intensity
+
+        logger.info(
+            "NSFW generation triggered",
+            extra={
+                "event": "nsfw_generation",
+                "book_id": book_id,
+                "ep_num": ep_num,
+                "user_id": user_id,
+                "erotic_intensity": erotic_intensity,
+                "generator": "erotic_enhancer",
+            },
+        )
 
         specialist = None
         params = None

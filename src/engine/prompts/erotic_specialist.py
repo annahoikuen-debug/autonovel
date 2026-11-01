@@ -78,6 +78,27 @@ class EroticSpecialist:
                 "`ENABLE_NSFW=true` を設定してから再実行してください。"
             )
 
+        # === 官能生成の監査ログ出力 (運用可視性確保) ===
+        # 誰が、いつ、どの作品のどのエピソードで官能生成を利用したかを記録する。
+        book_id = context.get("book_id") or context.get("bookId")
+        ep_num = context.get("ep_num") or context.get("episode_num")
+        user_id = context.get("user_id") or context.get("userId")
+        intensity = getattr(curve, "target_intensity", 2)
+        if params is not None and getattr(params, "base_intensity", None) is not None:
+            intensity = params.base_intensity
+
+        logger.info(
+            "NSFW scene prompt generation triggered",
+            extra={
+                "event": "nsfw_generation",
+                "book_id": book_id,
+                "ep_num": ep_num,
+                "user_id": user_id,
+                "erotic_intensity": intensity,
+                "generator": "erotic_specialist",
+            },
+        )
+
         # Use YAML preset values with fallback to preset file values
         allowed_vocabulary_tier = yaml_preset.get("allowed_vocabulary_tier") if yaml_preset and yaml_preset.get("allowed_vocabulary_tier") else preset.get("allowed_vocabulary_tier", "mild") if preset else "mild"
         vocab = get_vocabulary_for_tier(allowed_vocabulary_tier)
