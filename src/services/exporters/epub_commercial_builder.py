@@ -37,8 +37,9 @@ class CommercialEpubBuilder:
 
         # 2. 表紙 (存在する場合)
         cover_image_bytes = novel_meta.get("cover_image_bytes")
-        has_cover = bool(cover_image_bytes)
+        has_cover = cover_image_bytes is not None
         if has_cover:
+            assert cover_image_bytes is not None
             packer.add_file("item/images/cover.jpg", cover_image_bytes)
             manifest_items.append({
                 "id": "cover-image",
@@ -89,6 +90,7 @@ class CommercialEpubBuilder:
             used_ids = set()
             used_filenames = set()
             for i, img in enumerate(images):
+                item: EpubIllustrationItem
                 if isinstance(img, EpubIllustrationItem):
                     item = img
                 elif isinstance(img, dict):

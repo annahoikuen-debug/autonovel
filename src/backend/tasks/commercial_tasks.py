@@ -73,7 +73,7 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
 
                 # 認証情報の準備 (DBに保存されていない場合は環境変数等から取得される想定)
                 # ここでは簡易的に空の辞書を渡し、pipeline側でデフォルトを処理させる
-                credentials = {}
+                credentials: dict[str, Any] = {}
 
                 # 3. 投稿実行
                 novel_data = await _get_novel_data(book_id)

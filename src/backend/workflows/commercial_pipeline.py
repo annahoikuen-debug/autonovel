@@ -99,8 +99,8 @@ class CommercialPipeline:
         }
 
         # 空のサンプルリストとプラットフォームリストを準備
-        samples = []
-        platforms = ["kakuyomu"]
+        samples: list[dict[str, Any]] = []
+        platforms: list[str] = ["kakuyomu"]
 
         # 既存のrunメソッドを呼び出し（投稿はしない）
         result = await self.run(
