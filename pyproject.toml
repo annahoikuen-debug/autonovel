@@ -92,6 +92,12 @@ dev = [
     # 未宣言のままだとクリーン環境ではこのリグレッションゲートが
     # ModuleNotFoundError で setup ERROR になり、サイレントに無効化される。
     "fakeredis>=2.21.0",
+    # W1: テスト環境の DB ドライバ。dependencies には既にあるが venv に未投入のため dev へも追加。
+    "asyncpg>=0.30.0",
+    "psycopg[binary]>=3.1",
+    # W1: SQLAlchemy asyncio / embedding キャッシュ用。テスト venv に未投入のため dev へ追加。
+    "greenlet>=3.0",
+    "cachetools>=5.0",
 ]
 rag = [
     "chromadb>=1.5.0,<2.0.0",

@@ -12,11 +12,11 @@
 
 | 分類 | 件数 | 扱い（W4/W5 での処置案） |
 |---|---:|---|
-| **A. 改善案と関連** | 5 | 改善案5（静的解析ゲート）／改善案2（設定SSOT）の未コミット分。TRACK-A/S の基盤として commit 候補 |
-| **B. 無関係の機能 WIP（自己完結）** | 38 | 個別の機能・セキュリティ改善。テストが緑のものを中心に commit 候補。連動ファイルはセットで扱う |
+| **A. 改善案と関連** | 6 | 改善案5（静的解析ゲート）／改善案2（設定SSOT）の未コミット分。TRACK-A/S の基盤として commit 候補 |
+| **B. 無関係の機能 WIP（自己完結）** | 42 | 個別の機能・セキュリティ改善。テストが緑のものを中心に commit 候補。連動ファイルはセットで扱う |
 | **C. 削除予定** | 1 | `credit_guard.py` 削除。残存参照なしを確認済み。W5 で commit（削除の確定） |
 | **うち W2 で処理済み** | 1 | `jwt.py`（W2 `e9e743d` でテスト側を新シグネチャへ統一済み。ソースは WIP のまま正しい） |
-| **合計** | **47** | — |
+| **合計** | **49** | — |
 
 ### 分類の決め手（実測）
 - 47 件すべての diff を確認し、`git status --short` の全件を下表に列挙（過不足なし）。
@@ -39,7 +39,7 @@
 
 ---
 
-## 分類 A: 改善案と関連（5件）
+## 分類 A: 改善案と関連（6件）
 
 改善案5（静的解析ゲート強化・TRACK-S）と改善案2（設定 SSOT）に対応する未コミット分。
 CI を「記録のみ」から「ratchet hard gate」へ引き上げる一連の変更で、**3 ファイルはセット**。
@@ -48,12 +48,13 @@ CI を「記録のみ」から「ratchet hard gate」へ引き上げる一連の
 |---|---|---|---|
 | `.github/workflows/ci.yml` | lint ratchet を hard gate 化（ruff / mypy / format の 3 段を追加） | — (CI設定) | commit（TRACK-S S4 と整合） |
 | `scripts/ci_lint_ratchet.py` | `--tool mypy` / `--tool format` / `--update` 対応を拡張（+149） | — (スクリプト) | commit（上とセット） |
-| `config/ci_lint_baseline.json` | ratchet ベースライン更新（ruff 163 等） | — (データ) | commit（上とセット） |
+| `config/ci_lint_baseline.json` | ratchet ベースライン更新（ruff 100→90） | — (データ) | commit（上とセット） |
 | `tests/unit/backend/test_env_example_loads.py` *(untracked)* | `.env.example` が `Settings` でロードできることの回帰（改善案2 SSOT 関連） | 🟢 1 passed | commit |
 | `tests/regression/test_lint_budget.py` | lint 予算の上限固定（A/B 両義・改善案5 関連） | 🟢 7 passed | commit（A として扱う） |
 
 > A の 3 ファイル（ci.yml / ratchet.py / baseline.json）は **不可分の1単位** としてコミットすること。
 > 片方だけ入れると CI の ratchet が壊れる。
+> **2026-10-30 以降に `config/ci_lint_baseline.json` のみ先行変更済み**。ci.yml / ci_lint_ratchet.py もセットで変更すること。
 
 ---
 
@@ -97,6 +98,10 @@ commit 候補。連動ファイル（ソース＋対応テスト＋再生成成�
 | `tests/regression/test_v53_long_form_integrity.py` | 長編整合性リグレッション | 🟢 52 passed | commit |
 | `tests/unit/api/test_plugin_conditional_routing.py` | プラグイン条件分岐ルーティング | 🟢 5 passed | commit（plugin_registry とセット） |
 | `tests/unit/test_csp_models.py` | CSP モデルテスト更新 | 🟢 2 passed | commit |
+| `config/streamlit_adapter.py` | 125行削除（`_get_widget_value` 等、未使用コードの除去） | - (未測定) | commit（W4 でテスト確認後） |
+| `src/backend/tasks/commercial_tasks.py` | 型アノテーション追加（`credentials: dict[str, Any] = {}`） | - (未測定) | commit（W4 でテスト確認後） |
+| `src/backend/workflows/commercial_pipeline.py` | 型アノテーション追加（`samples: list[...]`, `platforms: list[str]`） | - (未測定) | commit（W4 でテスト確認後） |
+| `src/services/exporters/epub_commercial_builder.py` | `bool()`→`is not None`、カバー assert 追加 | - (未測定) | commit（W4 でテスト確認後） |
 
 ### B-3. フロントエンド（認証 UI feature・一連）
 
