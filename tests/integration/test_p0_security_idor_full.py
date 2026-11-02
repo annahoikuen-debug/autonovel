@@ -58,7 +58,7 @@ def test_cross_user_book_export_forbidden():
             await session.refresh(book)
     asyncio.run(create_data())
 
-    token_b = create_access_token(data={"sub": "202", "role": "user"})
+    token_b = create_access_token(user_id="202", role="user")
     with TestClient(app) as client:
         resp = client.get(
             "/api/export/books/1",

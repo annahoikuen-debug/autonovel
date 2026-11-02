@@ -87,7 +87,7 @@ def test_ws_flow(client):
 
     # WebSocket は dependency_overrides が効かないため、
     # `_authenticate_websocket` が `Authorization` ヘッダから読む JWT を渡す。
-    token = create_access_token(data={"sub": "1", "role": "admin"})
+    token = create_access_token(user_id="1", role="admin")
     ws_headers = {"Authorization": f"Bearer {token}"}
 
     r = client.post("/api/branches/", json={"book_id": 1, "name": "main"})
