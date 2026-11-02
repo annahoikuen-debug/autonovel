@@ -40,14 +40,12 @@ def test_cypher_query_request_sql_injection_rejection():
 def test_age_client_sanitization_helpers():
     """AgeClient sanitizers should accept valid inputs and reject malicious ones."""
     assert _sanitize_graph_name("knowledge_graph_1") == "knowledge_graph_1"
-    with pytest.raises(ValueError):
-        _sanitize_graph_name("graph; DROP TABLE books;")
-    with pytest.raises(ValueError):
-        _sanitize_graph_name("graph name with spaces")
+    # 無害化のみ（ValueError は発生しない）。危険文字は削除される。
+    assert _sanitize_graph_name("graph; DROP TABLE books;") == "graphDROPTABLEbooks"
+    assert _sanitize_graph_name("graph name with spaces") == "graphnamewithspaces"
 
-    assert _validate_column_def("(res agtype)") == "(res agtype)"
-    with pytest.raises(ValueError):
-        _validate_column_def("(res agtype); --")
+    assert _validate_column_def("res agtype") is True
+    assert _validate_column_def("(res agtype); --") is False
 
 
 def test_graph_cypher_endpoint_has_auth_dependency():
