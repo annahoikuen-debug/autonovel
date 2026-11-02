@@ -98,6 +98,12 @@ dev = [
     # W1: SQLAlchemy asyncio / embedding キャッシュ用。テスト venv に未投入のため dev へ追加。
     "greenlet>=3.0",
     "cachetools>=5.0",
+    # W1: テスト収集エラー解消。bcrypt（認証）、spacy（NLPパイプライン）、typer（CLI）、networkx（グラフアルゴリズム）、rank_bm25（RAG/ベクトルストア）。
+    "bcrypt>=4.0",
+    "spacy>=3.7.0",
+    "typer>=0.12",
+    "networkx>=3.0",
+    "rank-bm25>=0.2.2",
 ]
 rag = [
     "chromadb>=1.5.0,<2.0.0",
