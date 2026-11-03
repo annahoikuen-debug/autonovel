@@ -28,10 +28,9 @@ const server = setupServer(
     });
   }),
   http.get("/easy_mode/export/:id", () => {
-    return new HttpResponse(
-      new Blob(["zip"]),
-      { headers: { "Content-Disposition": 'attachment; filename="export_1.zip"' } }
-    );
+    return HttpResponse.text("zip", {
+      headers: { "Content-Disposition": 'attachment; filename="export_1.zip"' },
+    });
   })
 );
 
@@ -109,7 +108,7 @@ describe("easyMode API client", () => {
   it("exportPackage falls back to default filename when header missing", async () => {
     server.use(
       http.get("/easy_mode/export/:id", () => {
-        return new HttpResponse(new Blob(["zip"]));
+        return HttpResponse.text("zip");
       })
     );
 
@@ -120,10 +119,9 @@ describe("easyMode API client", () => {
   it("exportPackageWithData sends payload and returns blob + filename", async () => {
     server.use(
       http.post("/easy_mode/export-with-data", () => {
-        return new HttpResponse(
-          new Blob(["zip_with_data"]),
-          { headers: { "Content-Disposition": 'attachment; filename="export_custom.zip"' } }
-        );
+        return HttpResponse.text("zip_with_data", {
+          headers: { "Content-Disposition": 'attachment; filename="export_custom.zip"' },
+        });
       })
     );
 

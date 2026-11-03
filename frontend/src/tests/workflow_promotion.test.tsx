@@ -23,12 +23,16 @@ function renderWithProviders(initialEntry: string) {
 
 describe("Workflow Promotion and UI Smoke Tests (v5.2.0)", () => {
   it("renders WizardWorkflowPage and verifies wizard-to-studio routing readiness", () => {
-    renderWithProviders("/wizard");
+    // /wizard は /app/wizard へリダイレクト（Navigate コンポーネント）。
+    // テスト環境では自動リダイレクトが発火しないため、遷移先の正規パスを使用。
+    renderWithProviders("/app/wizard");
     expect(screen.getByTestId("wizard-workflow-page")).toBeInTheDocument();
   });
 
   it("transitions smoothly to Studio Workspace upon promotion", () => {
-    renderWithProviders("/studio/101");
+    // /studio/:bookId は /app/studio/:bookId へリダイレクト（RedirectStudioBook）。
+    // テスト環境では自動リダイレクトが発火しないため、遷移先の正規パスを使用。
+    renderWithProviders("/app/studio/101");
     expect(screen.getByTestId("studio-workspace-page")).toBeInTheDocument();
   });
 

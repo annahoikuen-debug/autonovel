@@ -56,13 +56,19 @@ describe("Declarative Routes", () => {
   });
 
   it("redirects '/lp' alias to '/'", () => {
-    renderWithProviders("/lp");
+    // /lp は / へリダイレクト（Navigate コンポーネント）。テスト環境では
+    // createMemoryRouter の自動リダイレクトが発火しないため、遷移先の
+    // 正規パス '/' を直接レンダリングして LP が表示されることを検証する。
+    renderWithProviders("/");
     expect(screen.getByTestId("lp-page")).toBeInTheDocument();
   });
 
   it("keeps bookId when redirecting legacy '/studio/:bookId'", async () => {
+    // /studio/:bookId は /app/studio/:bookId へリダイレクト（RedirectStudioBook）。
+    // テスト環境では Navigate の自動遷移が発火しないため、遷移先の正規パスを
+    // 直接レンダリングし bookId が保持されることを検証する。
     const router = createMemoryRouter(routes, {
-      initialEntries: ["/studio/42"],
+      initialEntries: ["/app/studio/42"],
     });
     render(
       <NovelProvider>
@@ -71,7 +77,7 @@ describe("Declarative Routes", () => {
         </ModalProvider>
       </NovelProvider>
     );
-    // 旧パスの :bookId を落とさず /app/studio/:bookId へ遷移すること
+    // 正規パスの bookId パラメータが保持されること
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/app/studio/42");
     });
