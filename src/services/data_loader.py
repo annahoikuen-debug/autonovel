@@ -1,21 +1,11 @@
-import json
-from pathlib import Path
-from typing import Any
+"""JSON 設定ローダー - 後方互換 shim。
 
+F4 フェーズ: 実装は src/domain/services/data_loader.py に移設。
+このモジュールは re-export 用 shim として残す。
+"""
 
-class DataLoader:
-    """Loads and caches JSON configurations for rule externalization."""
+from __future__ import annotations
 
-    def __init__(self, data_dir: str | Path):
-        self.data_dir = Path(data_dir)
-        self._cache: dict[str, Any] = {}
-
-    def load(self, filename: str) -> Any:
-        if filename not in self._cache:
-            filepath = self.data_dir / filename
-            if filepath.exists():
-                with open(filepath, encoding="utf-8") as f:
-                    self._cache[filename] = json.load(f)
-            else:
-                self._cache[filename] = {}
-        return self._cache[filename]
+from src.domain.services.data_loader import (  # noqa: F401
+    DataLoader,
+)
