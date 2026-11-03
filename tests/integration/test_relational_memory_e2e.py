@@ -6,11 +6,23 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
+from src.backend.observability.foreshadowing_ports import (
+    BackendForeshadowingKpiPort,
+    BackendForeshadowingMetricsPort,
+)
 from src.services.episode_context import EpisodeContextBuilder
 from src.services.foreshadowing_service import ForeshadowingService
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
 from src.backend.database.models_foreshadowing import ForeshadowingModel
 from src.backend.database.models import Character as CharacterModel
+
+
+def _make_repo(db) -> DbForeshadowingRepository:
+    return DbForeshadowingRepository(
+        db,
+        metrics_port=BackendForeshadowingMetricsPort(),
+        kpi_port=BackendForeshadowingKpiPort(),
+    )
 
 
 class TestRelationalMemoryE2E:
@@ -28,7 +40,7 @@ class TestRelationalMemoryE2E:
     @pytest.fixture
     def mock_foreshadowing_repo(self, mock_session):
         """DbForeshadowingRepository モック"""
-        return DbForeshadowingRepository(mock_session)
+        return _make_repo(mock_session)
 
     @pytest.fixture
     def foreshadowing_service(self, mock_foreshadowing_repo):

@@ -13,20 +13,26 @@ from typing import Any, List, Optional
 from sqlalchemy import and_, func, not_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.domain.ports.foreshadowing_kpi import ForeshadowingKpiPort
+from src.domain.ports.foreshadowing_metrics import ForeshadowingMetricsPort
 from src.infrastructure.database.models.foreshadowing_model import ForeshadowingModel
 from src.models.foreshadowing_status import ForeshadowingScope, ForeshadowingStatus
 
 logger = logging.getLogger(__name__)
 
 
-def _record_rejection(reason: str) -> None:
-    """遷移拒否を Prometheus メトリクスに記録する（失敗しても本体処理は継続）"""
-    try:
-        from src.backend.observability import metrics as m
+class _NoOpMetricsPort:
+    """メトリクス記録を無効化するデフォルト実装。"""
 
-        m.foreshadowing_transitions_rejected_total.labels(reason=reason).inc()
-    except Exception as e:  # pragma: no cover - メトリクス非対応環境
-        logger.debug(f"Failed to record rejected foreshadowing transition: {e}")
+    def record_rejection(self, reason: str) -> None:
+        ...
+
+
+class _NoOpKpiPort:
+    """KPI 記録を無効化するデフォルト実装。"""
+
+    def report_planted(self, book_id: int, scope: str) -> None:
+        ...
 
 
 def _allowed_predecessors(target_status: ForeshadowingStatus) -> list[str]:
@@ -57,8 +63,15 @@ class DbForeshadowingRepository:
     既存の ForeshadowingRepository インターフェースを async 拡張して実装する。
     """
 
-    def __init__(self, db: AsyncSession):
+    def __init__(
+        self,
+        db: AsyncSession,
+        metrics_port: ForeshadowingMetricsPort | None = None,
+        kpi_port: ForeshadowingKpiPort | None = None,
+    ):
         self.db = db
+        self._metrics_port = metrics_port or _NoOpMetricsPort()
+        self._kpi_port = kpi_port or _NoOpKpiPort()
         # W5 Step 8: 直近1件の CAS 拒否理由。呼び出し側から
         # 「どの理由が何回起きたか」を外から取れるようにする。
         # スレッドセーフではない（Lock はあえて付けない。既存 InMemory 版との
@@ -94,10 +107,8 @@ class DbForeshadowingRepository:
     async def _report_planted(self, record: ForeshadowingModel) -> None:
         """設置メトリクスを記録する（失敗しても設置処理は継続する）"""
         try:
-            from src.services.foreshadowing.kpi import ForeshadowingKpiService
-
             scope = getattr(record, "scope", None) or ForeshadowingScope.SHORT_TERM.value
-            await ForeshadowingKpiService(self).report_planted(
+            self._kpi_port.report_planted(
                 book_id=record.book_id, scope=str(scope)
             )
         except Exception as e:  # pragma: no cover - メトリクス非対応環境
@@ -290,7 +301,7 @@ class DbForeshadowingRepository:
                 target_status.value,
                 reason,
             )
-        _record_rejection(reason)
+        self._metrics_port.record_rejection(reason)
         self.last_rejection.setdefault("op", "transition")
         return False
 
@@ -355,7 +366,7 @@ class DbForeshadowingRepository:
             target_episode,
             reason,
         )
-        _record_rejection(reason)
+        self._metrics_port.record_rejection(reason)
         self._store_rejection(foreshadowing_id, None, reason)
         self.last_rejection.setdefault("op", "update_target")
         return False

@@ -17,8 +17,21 @@ from sqlalchemy import insert
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.backend.database.models_foreshadowing import ForeshadowingModel
+from src.backend.observability.foreshadowing_ports import (
+    BackendForeshadowingKpiPort,
+    BackendForeshadowingMetricsPort,
+)
 from src.infrastructure.database.models.base_orm import Base
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
+
+
+def _make_repo(db) -> DbForeshadowingRepository:
+    """DbForeshadowingRepository を本番ポート付きで生成する。"""
+    return DbForeshadowingRepository(
+        db,
+        metrics_port=BackendForeshadowingMetricsPort(),
+        kpi_port=BackendForeshadowingKpiPort(),
+    )
 
 
 def _tables_with_fk_closure(table) -> list:
@@ -90,7 +103,7 @@ async def _plant(session_factory, **kwargs) -> int:
     }
     params.update(kwargs)
     async with session_factory() as session:
-        record = await DbForeshadowingRepository(session).add(**params)
+        record = await _make_repo(session).add(**params)
         await session.commit()
         return record.id
 
@@ -106,18 +119,18 @@ async def test_concurrent_resolve_and_progress_does_not_rollback(tmp_path):
 
         # セッションA: 回収する
         async with sf() as session_a:
-            repo_a = DbForeshadowingRepository(session_a)
+            repo_a = _make_repo(session_a)
             assert await repo_a.resolve(f_id, 10) is True
             await session_a.commit()
 
         # セッションB: 別セッションから進捗更新を試みる（CAS により拒否される）
         async with sf() as session_b:
-            repo_b = DbForeshadowingRepository(session_b)
+            repo_b = _make_repo(session_b)
             assert await repo_b.progress(f_id) is False
             await session_b.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.status == "resolved", "解決済み伏線が progressed へ巻き戻った"
             assert row.resolved_episode == 10
 
@@ -130,13 +143,13 @@ async def test_concurrent_resolve_and_progress_gathered(tmp_path):
 
         async def _resolve() -> bool:
             async with sf() as session:
-                ok = await DbForeshadowingRepository(session).resolve(f_id, 12)
+                ok = await _make_repo(session).resolve(f_id, 12)
                 await session.commit()
                 return ok
 
         async def _progress() -> bool:
             async with sf() as session:
-                ok = await DbForeshadowingRepository(session).progress(f_id)
+                ok = await _make_repo(session).progress(f_id)
                 await session.commit()
                 return ok
 
@@ -146,7 +159,7 @@ async def test_concurrent_resolve_and_progress_gathered(tmp_path):
         assert sorted(results) == [False, True], f"CAS が機能していない: {results}"
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.status == "resolved"
             assert row.resolved_episode == 12
 
@@ -159,7 +172,7 @@ async def test_concurrent_double_progress_second_is_rejected(tmp_path):
 
         async def _progress() -> bool:
             async with sf() as session:
-                ok = await DbForeshadowingRepository(session).progress(f_id)
+                ok = await _make_repo(session).progress(f_id)
                 await session.commit()
                 return ok
 
@@ -179,20 +192,20 @@ async def test_resolved_row_never_reenters_get_unresolved(tmp_path):
 
         async def _resolve() -> bool:
             async with sf() as session:
-                ok = await DbForeshadowingRepository(session).resolve(done_id, 9)
+                ok = await _make_repo(session).resolve(done_id, 9)
                 await session.commit()
                 return ok
 
         async def _progress() -> bool:
             async with sf() as session:
-                ok = await DbForeshadowingRepository(session).progress(active_id)
+                ok = await _make_repo(session).progress(active_id)
                 await session.commit()
                 return ok
 
         await asyncio.gather(_resolve(), _progress())
 
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             unresolved = await repo.get_unresolved(1)
             ids = [f.id for f in unresolved]
             assert done_id not in ids, "回収済み行が get_unresolved に混ざった"
@@ -207,7 +220,7 @@ async def test_resolved_row_is_excluded_even_after_rollback_attempt(tmp_path):
         f_id = await _plant(sf)
 
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.resolve(f_id, 9) is True
             await session.commit()
             assert await repo.progress(f_id) is False
@@ -215,7 +228,7 @@ async def test_resolved_row_is_excluded_even_after_rollback_attempt(tmp_path):
             await session.commit()
 
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.get_unresolved(1) == []
             assert await repo.update_target_episode(f_id, 20) is False
             await session.commit()
@@ -236,7 +249,7 @@ async def test_transition_rejection_is_counted(tmp_path):
         f_id = await _plant(sf, planted_episode=8)
 
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             # 回収済みへの巻き戻し（terminal）→ 拒否
             assert await repo.resolve(f_id, 10) is True
             await session.commit()
@@ -258,19 +271,19 @@ async def test_concurrent_reschedule_and_resolve_does_not_reopen(tmp_path):
 
         async def _resolve() -> bool:
             async with sf() as session:
-                ok = await DbForeshadowingRepository(session).resolve(f_id, 20)
+                ok = await _make_repo(session).resolve(f_id, 20)
                 await session.commit()
                 return ok
 
         async def _reschedule() -> bool:
             async with sf() as session:
-                ok = await DbForeshadowingRepository(session).update_target_episode(f_id, 25)
+                ok = await _make_repo(session).update_target_episode(f_id, 25)
                 await session.commit()
                 return ok
 
         await asyncio.gather(_resolve(), _reschedule())
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.status == "resolved", "終端状態の伏線が active へ戻された"
-            assert await DbForeshadowingRepository(session).get_unresolved(1) == []
+            assert await _make_repo(session).get_unresolved(1) == []

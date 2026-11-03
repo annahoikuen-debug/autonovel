@@ -12,6 +12,10 @@ from src.agents.writing.prose_refiner_agent import ProseRefinerAgent
 from src.agents.writing.scene_writer import SceneWriter, SceneWriterOrchestrator
 from src.domain.entities.scene import SceneRole
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
+from src.backend.observability.foreshadowing_ports import (
+    BackendForeshadowingKpiPort,
+    BackendForeshadowingMetricsPort,
+)
 from src.services.llm_service import LLMService
 from src.services.rag.context_retriever import ForeshadowingEntity
 from src.services.foreshadowing_service import ForeshadowingService
@@ -369,7 +373,11 @@ class EpisodeWriter(BaseAgent):
                     resolved_session, book_id, (writing_context or {})
                 )
 
-                foreshadowing_repo = DbForeshadowingRepository(resolved_session)
+                foreshadowing_repo = DbForeshadowingRepository(
+                    resolved_session,
+                    metrics_port=BackendForeshadowingMetricsPort(),
+                    kpi_port=BackendForeshadowingKpiPort(),
+                )
                 foreshadowing_service = ForeshadowingService(foreshadowing_repo)
                 resolved_titles = await foreshadowing_service.check_and_resolve(
                     book_id=book_id,

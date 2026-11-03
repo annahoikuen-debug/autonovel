@@ -27,9 +27,18 @@ from src.domain.schemas.foreshadowing import (
 )
 from src.infrastructure.database.models.chunk import ChapterChunk
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
+from src.backend.observability.foreshadowing_ports import (
+    BackendForeshadowingKpiPort,
+    BackendForeshadowingMetricsPort,
+)
 from src.services.foreshadowing_service import ForeshadowingService
 from src.services.graph_pipeline import graph_pipeline_service
 from src.services.rag_service import rag_service
+
+# 伏線ポートの本番実装（src.backend.observability.metrics をバックエンドとする）。
+# 各リクエストでインスタンス生成するコストを避けるためモジュールレベルで保持する。
+_foreshadowing_metrics_port = BackendForeshadowingMetricsPort()
+_foreshadowing_kpi_port = BackendForeshadowingKpiPort()
 
 router = APIRouter(
     prefix="/api/graph",
@@ -259,7 +268,11 @@ async def get_graph_data(
     gname = graph_name or settings.AGE_GRAPH_NAME
 
     # RDBMSベースの伏線グラフ生成
-    foreshadowing_repo = DbForeshadowingRepository(session)
+    foreshadowing_repo = DbForeshadowingRepository(
+        session,
+        metrics_port=_foreshadowing_metrics_port,
+        kpi_port=_foreshadowing_kpi_port,
+    )
     foreshadowing_service = ForeshadowingService(foreshadowing_repo)
 
     try:
@@ -356,7 +369,11 @@ async def get_foreshadowing_kpi(
     # IDOR 防止: 作品の所有権を検証する
     await verify_book_ownership(book_id, current_user, session)
     try:
-        repo = DbForeshadowingRepository(session)
+        repo = DbForeshadowingRepository(
+            session,
+            metrics_port=_foreshadowing_metrics_port,
+            kpi_port=_foreshadowing_kpi_port,
+        )
         kpi = await ForeshadowingKpiService(repo).compute(
             book_id=book_id, current_episode=current_episode
         )

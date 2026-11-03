@@ -489,12 +489,20 @@ class ContextBuilderAgent(SkillAgent):
         if session is None or book_id is None:
             return [], []
         try:
+            from src.backend.observability.foreshadowing_ports import (
+                BackendForeshadowingKpiPort,
+                BackendForeshadowingMetricsPort,
+            )
             from src.infrastructure.repositories.foreshadowing_repo import (
                 DbForeshadowingRepository,
             )
             from src.services.foreshadowing_service import ForeshadowingService
 
-            repo = DbForeshadowingRepository(session)
+            repo = DbForeshadowingRepository(
+                session,
+                metrics_port=BackendForeshadowingMetricsPort(),
+                kpi_port=BackendForeshadowingKpiPort(),
+            )
             service = ForeshadowingService(repo)
             unresolved = await repo.get_unresolved(book_id)
             contract = await service.get_contract_foreshadowings(book_id, ep_num)

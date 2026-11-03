@@ -105,7 +105,7 @@ make lint-layers                                           # Makefile ターゲ�
 |---|---|---|
 | **F0** | 設計＋境界チェック導入（本書・本スクリプト） | ✅ 完了 |
 | **F1** | 契約2 の 0 件化: `domain/writing` の `agents/services` 依存を port 経由に置換 | domain 4件・application 1件 |
-| **F2** | `src/backend/database` + `src/infrastructure` を統合（ORM/mapper を infrastructure に一元） | infrastructure 39件の大半 |
+| **F2** | `src/backend/database` + `src/infrastructure` を統合（ORM/mapper を infrastructure に一元）、`foreshadowing_repo.py` の `backend`/`services` 依存を port 経由に置換し契約2 0 件化 | infrastructure 0件（F2 foreshadowing_repo.py ポート化完了） |
 | **F3** | `src/backend/routers` → `src/interfaces/api`、`server.py` → bootstrap（interfaces 契約2 0件化＋server 配線化は完了、routers 移設は残） | backend の routers 部分 |
 | **F4** | `src/services` のロジックを domain/application へ分割（最大工事） | services 278件 |
 | **F5** | `src/agents` を application(use_case)＋domain(rule) へ | agents 122件 |
@@ -115,16 +115,16 @@ make lint-layers                                           # Makefile ターゲ�
 
 ## 6. 現状の境界違反（移行 TODO スナップショット）
 
-境界チェック実行時点の計 **2 件**（`--report` で常に最新を取得可能）。
-`config/layer_boundaries_baseline.json` は total=2 に記録済み（F3 interfaces ポート化完了時点）。
+境界チェック実行時点の計 **0 件**（`--report` で常に最新を取得可能）。
+`config/layer_boundaries_baseline.json` は total=0 に記録済み（F2 foreshadowing_repo.py ポート化完了時点）。
 目標値 ≤10 を達成済み。
 
 | レイヤー | 件数 | 主な内容 |
 |---:|---:|---|
 | domain | 0 | —（TRACK-A1/A2 で `coordinator.py`, `quality_loop.py` を port 経由 DI に置換し解消） |
 | application | 0 | —（TRACK-A3 で `book_use_cases.py` を port 化し解消） |
-| infrastructure | 2 | `repositories/foreshadowing_repo.py` が `backend`(observability) / `services` を依存（残） |
+| infrastructure | 0 | —（F2: `repositories/foreshadowing_repo.py` を `domain/ports` 経由 DI に置換し `backend`/`services` 依存を断線し解消） |
 | interfaces | 0 | —（F3: `config`/`logging_config` を infrastructure へ移設＋shim、formatters/`style_distiller` を application へ port 化、`app_factory` を `AppWiring` DI 化して解消） |
 
 > 契約1（正規レイヤー間の逆方向依存）は **0 件**で維持されている。4層の骨格は既に保たれており、残は「レガシー接続の断線」である。
-> 契約2 は 44 件 → 2 件へ削減（目標 ≤10 達成済み）。残 2 件（infrastructure）は F2 フェーズで対応予定。
+> 契約2 は 44 件 → **0 件**へ削減（目標 ≤10 達成済み）。全正規レイヤーで旧モノリス依存を解消。

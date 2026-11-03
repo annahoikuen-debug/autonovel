@@ -16,8 +16,26 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from unittest.mock import AsyncMock, MagicMock
 
 from src.backend.database.models_foreshadowing import ForeshadowingModel
+from src.backend.observability.foreshadowing_ports import (
+    BackendForeshadowingKpiPort,
+    BackendForeshadowingMetricsPort,
+)
 from src.infrastructure.database.models.base_orm import Base
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
+
+
+def _make_repo(db) -> DbForeshadowingRepository:
+    """DbForeshadowingRepository を本番ポート付きで生成する。
+
+    テストがメトリクス値（foreshadowing_transitions_rejected_total 等）を
+    直接観測するため、src.backend.observability.metrics をバックエンドとする
+    実ポートを渡す。
+    """
+    return DbForeshadowingRepository(
+        db,
+        metrics_port=BackendForeshadowingMetricsPort(),
+        kpi_port=BackendForeshadowingKpiPort(),
+    )
 
 
 def _tables_with_fk_closure(table) -> list:
@@ -85,7 +103,7 @@ async def _plant(session_factory, **kwargs):
     }
     params.update(kwargs)
     async with session_factory() as session:
-        record = await DbForeshadowingRepository(session).add(**params)
+        record = await _make_repo(session).add(**params)
         await session.commit()
         return record.id
 
@@ -99,7 +117,7 @@ async def test_foreshadowing_repo_get_unresolved():
     mock_result.scalars.return_value.all.return_value = [mock_foreshadowing]
     mock_db.execute.return_value = mock_result
 
-    repo = DbForeshadowingRepository(mock_db)
+    repo = _make_repo(mock_db)
     items = await repo.get_unresolved(book_id=1)
 
     assert len(items) == 1
@@ -114,7 +132,7 @@ async def test_foreshadowing_repo_add():
     mock_db = AsyncMock()
     mock_db.flush = AsyncMock()
 
-    repo = DbForeshadowingRepository(mock_db)
+    repo = _make_repo(mock_db)
     result = await repo.add(
         book_id=1,
         title="消えた手紙",
@@ -136,12 +154,12 @@ async def test_foreshadowing_repo_resolve():
     async with create_test_db() as sf:
         f_id = await _plant(sf)
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.resolve(foreshadowing_id=f_id, episode_num=10) is True
             await session.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.status == "resolved"
             assert row.resolved_episode == 10
 
@@ -151,7 +169,7 @@ async def test_foreshadowing_repo_resolve_not_found():
     """存在しない伏線の回収は False を返す"""
     async with create_test_db() as sf:
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.resolve(foreshadowing_id=9999, episode_num=10) is False
 
 
@@ -161,7 +179,7 @@ async def test_foreshadowing_repo_resolve_rejects_terminal_rollback():
     async with create_test_db() as sf:
         f_id = await _plant(sf)
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.resolve(f_id, 10) is True
             await session.commit()
             # resolved は終端状態（sink）なので resolved へも遷移できない
@@ -169,7 +187,7 @@ async def test_foreshadowing_repo_resolve_rejects_terminal_rollback():
             await session.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.resolved_episode == 10, "終端状態から巻き戻っている"
 
 
@@ -179,12 +197,12 @@ async def test_foreshadowing_repo_resolve_rejects_before_plant_episode():
     async with create_test_db() as sf:
         f_id = await _plant(sf, planted_episode=5)
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.resolve(foreshadowing_id=f_id, episode_num=3) is False
             await session.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.status == "planted"
             assert row.resolved_episode is None
 
@@ -195,7 +213,7 @@ async def test_foreshadowing_repo_resolve_allows_same_episode_as_plant():
     async with create_test_db() as sf:
         f_id = await _plant(sf, planted_episode=5)
         async with sf() as session:
-            assert await DbForeshadowingRepository(session).resolve(f_id, 5) is True
+            assert await _make_repo(session).resolve(f_id, 5) is True
 
 
 @pytest.mark.asyncio
@@ -204,7 +222,7 @@ async def test_foreshadowing_repo_progress_allows_from_planted():
     async with create_test_db() as sf:
         f_id = await _plant(sf)
         async with sf() as session:
-            assert await DbForeshadowingRepository(session).progress(foreshadowing_id=f_id) is True
+            assert await _make_repo(session).progress(foreshadowing_id=f_id) is True
 
 
 @pytest.mark.asyncio
@@ -213,7 +231,7 @@ async def test_foreshadowing_repo_progress_rejects_self_transition():
     async with create_test_db() as sf:
         f_id = await _plant(sf)
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.progress(f_id) is True
             assert await repo.progress(f_id) is False
 
@@ -224,14 +242,14 @@ async def test_foreshadowing_repo_progress_rejects_after_resolve():
     async with create_test_db() as sf:
         f_id = await _plant(sf)
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.resolve(f_id, 10) is True
             await session.commit()
             assert await repo.progress(f_id) is False
             await session.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.status == "resolved"
 
 
@@ -241,13 +259,13 @@ async def test_foreshadowing_repo_abandon_from_progressed():
     async with create_test_db() as sf:
         f_id = await _plant(sf)
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.progress(f_id) is True
             assert await repo.abandon(f_id) is True
             await session.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.status == "abandoned"
 
 
@@ -265,11 +283,11 @@ async def test_foreshadowing_repo_unknown_status_passes_through():
             await session.commit()
 
         async with sf() as session:
-            assert await DbForeshadowingRepository(session).progress(f_id) is True
+            assert await _make_repo(session).progress(f_id) is True
             await session.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.status == "progressed"
 
 
@@ -279,12 +297,12 @@ async def test_foreshadowing_repo_update_target_episode():
     async with create_test_db() as sf:
         f_id = await _plant(sf, planted_episode=3)
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.update_target_episode(foreshadowing_id=f_id, target_episode=12) is True
             await session.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.target_episode == 12
 
 
@@ -294,14 +312,14 @@ async def test_foreshadowing_repo_update_target_episode_rejects_terminal():
     async with create_test_db() as sf:
         f_id = await _plant(sf, planted_episode=3)
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.resolve(f_id, 10) is True
             await session.commit()
             assert await repo.update_target_episode(f_id, 12) is False
             await session.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.target_episode == 8, "終端状態の伏線が延期された"
 
 
@@ -311,12 +329,12 @@ async def test_foreshadowing_repo_update_target_episode_rejects_before_plant():
     async with create_test_db() as sf:
         f_id = await _plant(sf, planted_episode=8)
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.update_target_episode(foreshadowing_id=f_id, target_episode=4) is False
             await session.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.target_episode == 8
 
 
@@ -326,14 +344,14 @@ async def test_foreshadowing_repo_update_target_episode_rejects_horizon_zero():
     async with create_test_db() as sf:
         f_id = await _plant(sf, planted_episode=8)
         async with sf() as session:
-            repo = DbForeshadowingRepository(session)
+            repo = _make_repo(session)
             assert await repo.update_target_episode(foreshadowing_id=f_id, target_episode=8) is False
             # 1话後なら許可される
             assert await repo.update_target_episode(foreshadowing_id=f_id, target_episode=9) is True
             await session.commit()
 
         async with sf() as session:
-            row = await DbForeshadowingRepository(session).get_by_id(f_id)
+            row = await _make_repo(session).get_by_id(f_id)
             assert row.target_episode == 9
 
 
@@ -346,7 +364,7 @@ async def test_foreshadowing_repo_horizon_zero_rejection_is_counted():
     async with create_test_db() as sf:
         f_id = await _plant(sf, planted_episode=8)
         async with sf() as session:
-            assert await DbForeshadowingRepository(session).update_target_episode(f_id, 8) is False
+            assert await _make_repo(session).update_target_episode(f_id, 8) is False
     after = m.foreshadowing_transitions_rejected_total.labels(reason="horizon_zero")._value.get()
     assert after == before + 1
 
@@ -363,7 +381,7 @@ async def test_foreshadowing_repo_get_balance():
     ]
     mock_db.execute.return_value = mock_result
 
-    repo = DbForeshadowingRepository(mock_db)
+    repo = _make_repo(mock_db)
     balance = await repo.get_balance(book_id=1)
 
     assert balance["planted"] == 5
@@ -382,7 +400,7 @@ async def test_foreshadowing_repo_get_overdue():
     mock_result.scalars.return_value.all.return_value = [overdue]
     mock_db.execute.return_value = mock_result
 
-    repo = DbForeshadowingRepository(mock_db)
+    repo = _make_repo(mock_db)
     items = await repo.get_overdue(book_id=1, current_episode=12)
 
     assert len(items) == 1

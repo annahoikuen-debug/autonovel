@@ -265,11 +265,20 @@ class PromptComposer:
         if session is None:
             return []
         try:
+            from src.backend.observability.foreshadowing_ports import (
+                BackendForeshadowingKpiPort,
+                BackendForeshadowingMetricsPort,
+            )
             from src.infrastructure.repositories.foreshadowing_repo import (
                 DbForeshadowingRepository,
             )
 
-            records = await DbForeshadowingRepository(session).get_unresolved(book_id)
+            repo = DbForeshadowingRepository(
+                session,
+                metrics_port=BackendForeshadowingMetricsPort(),
+                kpi_port=BackendForeshadowingKpiPort(),
+            )
+            records = await repo.get_unresolved(book_id)
         except Exception as e:
             if hasattr(self.agent, "logger"):
                 self.agent.logger.warning(
