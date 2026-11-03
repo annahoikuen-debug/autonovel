@@ -18,7 +18,7 @@ export default defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
 
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:5173',
     // バックエンド API エンドポイント（E2E 用バックエンドは localhost:8000）
     // フロントエンドは VITE_BACKEND_URL 経由でバックエンド API にアクセスする
     env: {
@@ -52,10 +52,12 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
-    command: 'npm run preview --port 3000',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
-  },
+  // webServer: {
+  //   command: 'npm run preview --port 3000',
+  //   url: 'http://localhost:3000',
+  //   reuseExistingServer: !process.env.CI,
+  //   timeout: 120 * 1000,
+  // },
+  // E2E 実行時はフロントエンド preview サーバーを別途起動しておくこと
+  // (例: VITE_BACKEND_URL=http://localhost:8000 npm run preview --port 3000)
 });
