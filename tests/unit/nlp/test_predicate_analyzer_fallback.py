@@ -13,7 +13,7 @@ def test_fallback_when_tokenizer_disabled():
     res1 = analyzer.analyze_foreshadowing(1, ["真相"], text_res)
     assert res1.highest_action == "resolved"
     assert res1.syntax_score == 25
-    assert res1.matches[0].confidence_score == 0.7  # Fallback confidence
+    assert res1.matches[0].confidence_score == 0.85  # Fallback confidence for resolved type
 
     # Test mention only with fallback
     text_mention = "彼らは机の上の地図を見た。"
