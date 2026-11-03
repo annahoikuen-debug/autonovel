@@ -33,7 +33,7 @@ export const LpHead: React.FC<LpHeadProps> = ({
   description =
     '企画から執筆、矛盾診断、納品まで。AI と共に創作する小説制作プラットフォーム。8 専門オーディター監査。無料で始められます。',
   canonicalUrl = `${siteOrigin}/`,
-  ogImage = `${siteOrigin}/ogp.png`,
+  ogImage = `${siteOrigin}/ogp.svg`,
 }) => {
   useEffect(() => {
     // タイトル
@@ -129,9 +129,17 @@ export const LpHead: React.FC<LpHeadProps> = ({
         {
           '@type': 'Organization',
           '@id': `${canonicalUrl}#organization`,
-          name: 'HerbMatsui-spec',
-          url: 'https://github.com/herbmatsui-spec/autonovel',
+          name: 'AutoNovel 運営',
+          url: 'https://github.com/annahoikuen-debug/autonovel',
           logo: `${canonicalUrl}logo.png`,
+        },
+        {
+          '@type': 'FAQPage',
+          '@id': `${canonicalUrl}#faqpage`,
+          url: `${canonicalUrl}faq`,
+          name: 'AutoNovel よくある質問（FAQ）',
+          description:
+            '著作権・料金プラン・投稿サイト・R18・データ保存・解約など、AutoNovel のよくある質問と回答を掲載しています。',
         },
       ],
     };

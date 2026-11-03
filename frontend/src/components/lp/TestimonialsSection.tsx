@@ -75,24 +75,24 @@ export const TestimonialsSection: React.FC = () => {
           </p>
         </div>
 
-        {/* ソーシャルプルーフ（※仮の数値。免責はセクション末尾） */}
+        {/* ソーシャルプルーフ（※準備中。実績値確定後に差し替え） */}
         <div
           className="flex items-center justify-center gap-6 text-sm text-brand-textMuted mb-2"
           data-testid="lp-social-proof"
         >
           <span data-testid="lp-social-proof-novels">
-            累計生成小説数: 10,000 件以上
+            累計生成小説数: 準備中
           </span>
           <span aria-hidden="true">·</span>
           <span data-testid="lp-social-proof-users">
-            登録ユーザー数: 5,000 名以上
+            登録ユーザー数: 準備中
           </span>
         </div>
         <p
           className="text-xs text-brand-textMuted text-center mb-14"
           data-testid="lp-social-proof-disclaimer"
         >
-          ※上記の数値はダミーです（実績値確定後に差し替え）。
+          ※上記の数値および導入事例は準備中です（実績値確定後に差し替え）。
         </p>
 
         {/* 事例カードグリッド */}

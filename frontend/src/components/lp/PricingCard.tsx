@@ -9,7 +9,7 @@
 
 import React from 'react';
 
-type PlanKey = 'free' | 'standard' | 'pro';
+type PlanKey = 'free' | 'starter' | 'pro' | 'enterprise';
 
 interface PricingCardProps {
   plan: PlanKey;
@@ -17,6 +17,7 @@ interface PricingCardProps {
   pricePeriod: string;
   title: string;
   description: string;
+  credits?: string;
   features: string[];
   isPopular?: boolean;
   ctaLabel: string;
@@ -29,6 +30,7 @@ export const PricingCard: React.FC<PricingCardProps> = ({
   pricePeriod,
   title,
   description,
+  credits,
   features,
   isPopular = false,
   ctaLabel,
@@ -36,11 +38,12 @@ export const PricingCard: React.FC<PricingCardProps> = ({
 }) => {
   const planConfigs: Record<PlanKey, { accent: string; bg?: string }> = {
     free: { accent: 'brand-textMuted' },
-    standard: {
+    starter: {
       accent: 'brand-accent',
       bg: 'bg-brand-surfaceHover',
     },
     pro: { accent: 'brand-accentSecondary' },
+    enterprise: { accent: 'brand-accentSecondary', bg: 'bg-brand-surfaceHover' },
   };
 
   const config = planConfigs[plan];
@@ -90,6 +93,13 @@ export const PricingCard: React.FC<PricingCardProps> = ({
         </span>
         <span className="text-sm text-brand-textMuted">{pricePeriod}</span>
       </div>
+
+      {/* クレジット */}
+      {credits && (
+        <p className="text-sm text-brand-textMuted mb-6" data-testid={`lp-pricing-credits-${plan}`}>
+          {credits}
+        </p>
+      )}
 
       {/* 説明 */}
       <p className="text-sm text-brand-textMuted mb-6 leading-relaxed">

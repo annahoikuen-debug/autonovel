@@ -95,9 +95,7 @@ export const LpHeader: React.FC<LpHeaderProps> = ({
               FAQ
             </button>
             <a
-              href="https://github.com/herbmatsui-spec/autonovel"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="/docs"
               className="text-sm font-medium text-brand-textMuted hover:text-brand-text transition-colors"
               data-testid="lp-header-nav-docs"
             >

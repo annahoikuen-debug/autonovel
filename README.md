@@ -6,7 +6,7 @@
 
 <img src="docs/images/hero.svg" alt="AutoNovel の全体像: 設定を入れる → AI が執筆する → 納品物を受け取る" width="100%">
 
-[![Version](https://img.shields.io/badge/version-6.0.0-brightgreen?logo=semver)](https://github.com/herbmatsui-spec/autonovel/releases/tag/v6.0.0)
+[![Version](https://img.shields.io/badge/version-6.0.0-brightgreen?logo=semver)](https://github.com/annahoikuen-debug/autonovel/releases/tag/v6.0.0)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![React 18](https://img.shields.io/badge/react-18.3-61dafb?logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.141-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -684,14 +684,18 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 | [CHANGELOG.md](CHANGELOG.md) | 変更履歴（Semantic Versioning 準拠） |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | コントリビューション手順 |
 | [SECURITY.md](SECURITY.md) | 脆弱性の報告手順 |
-| [docs/architecture.md](docs/architecture.md) | 4層圧縮モジュールの詳細設計 |
-| [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md) | テスト戦略・網羅率方針 |
+| [docs/README.md](docs/README.md) | ドキュメントインデックス（78ファイルの入口） |
+| [docs/FAQ.md](docs/FAQ.md) | よくある質問（Q&A）— 著作権・料金・投稿・R18・データ保存・解約 |
+| [docs/architecture.md](docs/architecture.md) | 4層アーキテクチャ設計（domain/application/infrastructure/interfaces） |
+| [docs/compression_module.md](docs/compression_module.md) | 4層圧縮モジュール（FourLayerCompressor）の詳細設計 |
 | [docs/development_guide.md](docs/development_guide.md) | 開発ガイド |
+| [docs/easy_mode_guide.md](docs/easy_mode_guide.md) | ユーザーガイド（3つの入口の歩き方） |
+| [docs/easy_mode_api.md](docs/easy_mode_api.md) | Easy Mode API仕様書 |
 | [docs/STARTUP_TROUBLESHOOTING.md](docs/STARTUP_TROUBLESHOOTING.md) | 起動手順・起動できないときの対処・起動速度の最適化 |
-| [docs/rag_setup.md](docs/rag_setup.md) | RAG / ナレッジグラフのセットアップ |
-| [docs/publishing_guide.md](docs/publishing_guide.md) | 投稿サイト向けの書き出しガイド |
+| [docs/legal/PRIVACY_POLICY.md](docs/legal/PRIVACY_POLICY.md) | プライバシーポリシー |
+| [docs/legal/TERMS_OF_SERVICE.md](docs/legal/TERMS_OF_SERVICE.md) | 利用規約 |
 | [docs/openapi.json](docs/openapi.json) | OpenAPI 仕様（自動生成） |
-| [plans/](plans/) | 設計・ロードマップ（`PLAN_*_36STEPS.md` ほか） |
+| [plans/PLAN_J1_REMAINING_36STEPS.md](plans/PLAN_J1_REMAINING_36STEPS.md) | 設計・ロードマップ（36ステップ計画書） |
 
 > **バージョンの正となるのは 1 か所だけ**です：`pyproject.toml` の `project.version`。
 > `frontend/package.json`・`docker-compose.prod.yml`・`src/cli/main.py`・`src/backend/__init__.py` はすべてそれに追随し、
@@ -710,5 +714,5 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 ---
 
 <div align="center">
-  <sub>© 2026 HerbMatsui-spec. All rights reserved. — Built with ❤️ for Novelists, Creators, and AI Engineers Worldwide.</sub>
+  <sub>© 2026 AutoNovel 運営. All rights reserved. — Built with ❤️ for Novelists, Creators, and AI Engineers Worldwide.</sub>
 </div>

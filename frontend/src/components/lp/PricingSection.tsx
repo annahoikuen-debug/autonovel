@@ -4,7 +4,8 @@
  * ファイル: frontend/src/components/lp/PricingSection.tsx
  *
  * 役割: シンプルで透明な料金体系を提示し、有料プランへのコンバージョンを促す。
- * 料金は仮設定。実際の課金体系と連携して差し替えること。
+ * 料金はバックエンド SSOT の src/config/billing_plans.py (PLAN_CONFIG) と整合する。
+ * プラン: free / starter / pro / enterprise
  */
 
 import React from 'react';
@@ -14,7 +15,7 @@ import { PricingCard } from './PricingCard';
 export const PricingSection: React.FC = () => {
   const navigate = useNavigate();
   const handlePlanSelect = () => {
-    // TODO: プラン選択フロー確定後、/register?plan=xxx 等へ変更する
+    // プラン選択フロー確定後、/register?plan=xxx 等へ変更する
     navigate('/register');
   };
   const plans = [
@@ -24,6 +25,7 @@ export const PricingSection: React.FC = () => {
       pricePeriod: '/ 月',
       title: 'フリー',
       description: '試し利用。基本機能を体験できます。',
+      credits: '50クレジット/月',
       features: [
         'かんたん執筆 月 5 本まで',
         '基本機能（AI 本文生成）',
@@ -33,13 +35,14 @@ export const PricingSection: React.FC = () => {
       onCtaClick: handlePlanSelect,
     },
     {
-      plan: 'standard' as const,
+      plan: 'starter' as const,
       price: '¥980',
       pricePeriod: '/ 月',
-      title: 'スタンダード',
+      title: 'スターター',
       description: '本格利用。無制限執筆と監査機能を利用。',
+      credits: '300クレジット/月',
       features: [
-        '無制限執筆',
+        '無制限執筆（クレジット範囲内）',
         '8 専門オーディター監査',
         'ZIP 納品パッケージ',
         'メールサポート',
@@ -54,6 +57,7 @@ export const PricingSection: React.FC = () => {
       pricePeriod: '/ 月',
       title: 'プロ',
       description: 'プロ・上級者。Studio 全機能と優先サポート。',
+      credits: '1,200クレジット/月',
       features: [
         'Studio 全機能',
         'EPUB / なろう形式出力',
@@ -61,6 +65,22 @@ export const PricingSection: React.FC = () => {
         'マーケティング支援',
       ],
       ctaLabel: 'はじめる',
+      onCtaClick: handlePlanSelect,
+    },
+    {
+      plan: 'enterprise' as const,
+      price: '¥9,800',
+      pricePeriod: '/ 月',
+      title: 'エンタープライズ',
+      description: '法人向け。最大並列数と専用サポート。',
+      credits: '5,000クレジット/月',
+      features: [
+        'すべての機能（使い放題）',
+        '並列ジョブ 10 件',
+        '専用サポート・SLA',
+        'API 優先アクセス',
+      ],
+      ctaLabel: 'お問い合わせ',
       onCtaClick: handlePlanSelect,
     },
   ];

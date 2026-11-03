@@ -40,7 +40,7 @@ export const LpFooter: React.FC = () => {
               </svg>
             </a>
             <a
-              href="https://github.com/herbmatsui-spec/autonovel"
+              href="https://github.com/annahoikuen-debug/autonovel"
               target="_blank"
               rel="noopener noreferrer"
               className="text-brand-textMuted hover:text-brand-text transition-colors"
@@ -102,9 +102,7 @@ export const LpFooter: React.FC = () => {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="https://github.com/herbmatsui-spec/autonovel/tree/main/docs"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/docs"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
                   ドキュメント
@@ -112,7 +110,7 @@ export const LpFooter: React.FC = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="/faq"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
                   ヘルプセンター
@@ -123,7 +121,7 @@ export const LpFooter: React.FC = () => {
                   href="#"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
-                  ブログ
+                  ブログ（準備中）
                 </a>
               </li>
               <li>
@@ -131,7 +129,7 @@ export const LpFooter: React.FC = () => {
                   href="#"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
-                  コミュニティ
+                  コミュニティ（準備中）
                 </a>
               </li>
             </ul>
@@ -146,7 +144,7 @@ export const LpFooter: React.FC = () => {
                   href="#"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
-                  企業情報
+                  企業情報（準備中）
                 </a>
               </li>
               <li>
@@ -154,7 +152,7 @@ export const LpFooter: React.FC = () => {
                   href="#"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
-                  採用情報
+                  採用情報（準備中）
                 </a>
               </li>
               <li>
@@ -162,7 +160,7 @@ export const LpFooter: React.FC = () => {
                   href="#"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
-                  プレスリリース
+                  プレスリリース（準備中）
                 </a>
               </li>
               <li>
@@ -170,7 +168,7 @@ export const LpFooter: React.FC = () => {
                   href="#"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
-                  投資家関係
+                  投資家関係（準備中）
                 </a>
               </li>
             </ul>
@@ -182,7 +180,7 @@ export const LpFooter: React.FC = () => {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="#"
+                  href="/legal/terms"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
                   利用規約
@@ -190,7 +188,7 @@ export const LpFooter: React.FC = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="/legal/privacy"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
                   プライバシーポリシー
@@ -198,7 +196,7 @@ export const LpFooter: React.FC = () => {
               </li>
               <li>
                 <a
-                  href="#"
+                  href="/legal/spec-commercial"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
                   特定商取引法に基づく表記
@@ -209,7 +207,7 @@ export const LpFooter: React.FC = () => {
                   href="#"
                   className="text-sm text-brand-textMuted hover:text-brand-text transition-colors"
                 >
-                  Cookie ポリシー
+                  Cookie ポリシー（準備中）
                 </a>
               </li>
             </ul>
@@ -219,7 +217,7 @@ export const LpFooter: React.FC = () => {
         {/* 下部: 著作権 */}
         <div className="mt-12 md:mt-16 pt-8 border-t border-brand-border flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <p className="text-xs text-brand-textMuted">
-            © 2026 HerbMatsui-spec. All rights reserved.
+            © 2026 AutoNovel 運営. All rights reserved.
           </p>
         </div>
       </div>

@@ -13,6 +13,12 @@ import { WizardWorkflowPage } from "./pages/WizardWorkflowPage";
 import { WelcomePage } from "./pages/WelcomePage";
 import { LoginPage, RegisterPage } from "./pages/AuthPage";
 import { LpPage } from "./pages/lp/LpPage";
+import { LpLayout } from "./components/lp/LpLayout";
+import { DocsPage } from "./pages/lp/DocsPage";
+import { FaqPage } from "./pages/lp/FaqPage";
+import { LegalPrivacyPage } from "./pages/lp/LegalPrivacyPage";
+import { LegalTermsPage } from "./pages/lp/LegalTermsPage";
+import { LegalSpecCommercialPage } from "./pages/lp/LegalSpecCommercialPage";
 
 /**
  * ルート単位のエラー表示（react-router v7 の `errorElement`）。
@@ -93,6 +99,11 @@ export const routes: RouteObject[] = [
   { path: "/register", element: <RegisterPage />, errorElement: <RouteErrorView /> },
   { path: "/", element: <LpPage />, errorElement: <RouteErrorView /> },
   { path: "/lp", element: <Navigate to="/" replace /> },
+  { path: "/docs", element: (<LpLayout><DocsPage /></LpLayout>), errorElement: <RouteErrorView /> },
+  { path: "/faq", element: (<LpLayout><FaqPage /></LpLayout>), errorElement: <RouteErrorView /> },
+  { path: "/legal/privacy", element: (<LpLayout><LegalPrivacyPage /></LpLayout>), errorElement: <RouteErrorView /> },
+  { path: "/legal/terms", element: (<LpLayout><LegalTermsPage /></LpLayout>), errorElement: <RouteErrorView /> },
+  { path: "/legal/spec-commercial", element: (<LpLayout><LegalSpecCommercialPage /></LpLayout>), errorElement: <RouteErrorView /> },
   { path: "/app/easy", element: <EasyModePage />, errorElement: <RouteErrorView /> },
   { path: "/app/wizard", element: <WizardWorkflowPage />, errorElement: <RouteErrorView /> },
   { path: "/app/studio", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },
