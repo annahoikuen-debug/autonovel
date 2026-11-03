@@ -155,7 +155,7 @@ async def test_writing_service_regeneration_trigger(
 
     assert result["regeneration_triggered"] is True
     assert "structure" in result["low_dimensions"]
+    assert "coherency" in result["low_dimensions"]  # 65.0 < 70.0 (score_threshold)
     assert "visual_textual_synergy" in result["low_dimensions"]
     assert "reader_experience" in result["low_dimensions"]
-    assert "factual_grounding" not in result["low_dimensions"]  # 70.0 >= 60
-    assert "coherency" not in result["low_dimensions"]  # 65.0 >= 60
+    assert "factual_grounding" not in result["low_dimensions"]  # 70.0 >= 70.0

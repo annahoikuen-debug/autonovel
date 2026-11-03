@@ -19,18 +19,27 @@ class DummyRepo:
         self.chapter = DummyChapter(1, 1, content)
         self.updated_content = None
 
-    async def get_chapter(self, branch_id: int, ep_num: int):
+    async def get_chapter(self, branch_id: int, ep_num: int, book_id: int | None = None):
         return self.chapter
 
-    async def update_chapter_content(self, chapter_id: int, new_content: str):
-        self.updated_content = new_content
-        self.chapter.content = new_content
+    async def update_chapter_content(self, chapter_id: int, new_content: str, rewritten_text: str | None = None, book_id: int | None = None):
+        # new_content はコード側から ep_num（int）が渡されることがあるため、
+        # 実際の本文は rewritten_text を優先する。
+        content = rewritten_text or new_content
+        self.updated_content = content
+        self.chapter.content = content
 
 
 class DummyLLM:
     def __init__(self, rewritten_output: str = "【改稿後】アルトは錆びついた古代魔導剣を素早く抜いた。静寂の森に刃鳴りが響き渡る。"):
         self.rewritten_output = rewritten_output
         self.last_prompt = None
+
+    async def agenerate(self, request, **kwargs):
+        self.last_prompt = getattr(request, "prompt", None)
+        class Resp:
+            content = self.rewritten_output
+        return Resp()
 
     async def generate_text(self, prompt: str, system_prompt: str = None, max_tokens: int = 2000, **kwargs):
         self.last_prompt = prompt

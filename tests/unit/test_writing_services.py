@@ -115,6 +115,9 @@ def test_writing_service_audit_generated_text():
     from src.backend.writing_service import WritingService
 
     service = WritingService(writer=MagicMock())
+    # auditor ポートをモックで注入（WritingCoordinator は auditor 未注入時に RuntimeError を投げる）
+    service._coordinator._auditor = MagicMock()
+    service._coordinator._auditor.audit_quantitative = MagicMock(return_value=(85.0, {"cliches": [], "dialogue_ratio": 0.5}))
     sample_text = "「行くぞ！」アルトは叫び、剣を抜いた。夜の風が冷たく吹き抜ける。"
     result = service.audit_generated_text(sample_text)
 
