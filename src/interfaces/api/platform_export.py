@@ -8,7 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, field_validator
 
-from src.services.formatters.platform_copy_formatter import PlatformCopyFormatter
+from src.application.formatters.platform_copy_formatter import PlatformCopyFormatter
 
 router = APIRouter(prefix="/api/export/copy", tags=["export-copy"])
 

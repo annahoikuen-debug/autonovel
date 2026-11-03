@@ -8,10 +8,10 @@ import logging
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
+from src.application.formatters.cadence_reformatter import CadenceStats, cadence_reformatter
+from src.application.ports.style_distiller import IStyleDistiller
 from src.models.style_profile import StyleProfile
 from src.presets.loader import SUPPORTED_GENRES, load_preset
-from src.services.cadence_reformatter import CadenceStats, cadence_reformatter
-from src.services.style_distiller import style_distiller_service
 
 logger = logging.getLogger(__name__)
 
@@ -239,18 +239,29 @@ async def get_style_presets() -> list[StylePresetSummary]:
     return presets
 
 
-@router.post("/distill", response_model=DistillResponse)
-async def distill_style(request: DistillRequest) -> DistillResponse:
-    """提供されたサンプル文章から作家性DNA（StyleProfile）を自動抽出"""
-    try:
-        profile = await style_distiller_service.distill_from_text(
-            sample_text=request.sample_text,
-            name_hint=request.name_hint,
-        )
-        return DistillResponse(success=True, profile=profile)
-    except Exception as e:
-        logger.error(f"Style distillation failed: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=f"文体抽出エラー: {str(e)}")
+def build_distill_router(*, distiller: IStyleDistiller) -> APIRouter:
+    """文体蒸留ルーターを構築する（具象サービスは配線側から注入）。
+
+    実体 ``StyleDistillerService`` は旧レイヤーにあり、interfaces からは
+    直接 import できないため、コンポジションルート（旧 shim 経由）が
+    ここへ渡す。
+    """
+    distill_router = APIRouter(prefix="/api/styles", tags=["styles"])
+
+    @distill_router.post("/distill", response_model=DistillResponse)
+    async def distill_style(request: DistillRequest) -> DistillResponse:
+        """提供されたサンプル文章から作家性DNA（StyleProfile）を自動抽出"""
+        try:
+            profile = await distiller.distill_from_text(
+                sample_text=request.sample_text,
+                name_hint=request.name_hint,
+            )
+            return DistillResponse(success=True, profile=profile)
+        except Exception as e:
+            logger.error(f"Style distillation failed: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=f"文体抽出エラー: {str(e)}")
+
+    return distill_router
 
 
 @router.post("/reformat", response_model=ReformatResponse)
