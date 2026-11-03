@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 from src.backend.auth import get_current_user, require_valid_api_key
 from src.backend.database.models import User
 from src.backend.database.uow import UnitOfWork
+from src.backend.observability.metrics import generation_failure_total, generation_success_total
 from src.backend.rate_limit import generate_limiter
 from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.security.branch_guard import verify_branch_belongs_to_book
@@ -194,24 +195,29 @@ async def generate_episodes(
         total_steps=req.write_to - req.write_from + 1,
         user_id=getattr(current_user, "id", None),
     )
-    execute_service_workflow(
-        task_id=task_id,
-        api_key=req.api_key,
-        config_dict=req.config,
-        method_name="episode_writing_workflow",
-        kwargs={
-            "book_id": req.book_id,
-            "write_from": req.write_from,
-            "write_to": req.write_to,
-            "passion": req.passion,
-            "word_count": req.word_count,
-            "do_refine": req.do_refine,
-            "env_state": req.env_state,
-            "pipeline_mode": req.pipeline_mode,
-            "mode": "final",
-        },
-        trace_id=TraceContext.get_trace_id(),
-    )
+    try:
+        execute_service_workflow(
+            task_id=task_id,
+            api_key=req.api_key,
+            config_dict=req.config,
+            method_name="episode_writing_workflow",
+            kwargs={
+                "book_id": req.book_id,
+                "write_from": req.write_from,
+                "write_to": req.write_to,
+                "passion": req.passion,
+                "word_count": req.word_count,
+                "do_refine": req.do_refine,
+                "env_state": req.env_state,
+                "pipeline_mode": req.pipeline_mode,
+                "mode": "final",
+            },
+            trace_id=TraceContext.get_trace_id(),
+        )
+    except Exception:
+        generation_failure_total.labels(workflow_type="episode_writing").inc()
+        raise
+    generation_success_total.labels(workflow_type="episode_writing").inc()
     return {"task_id": task_id}
 
 
@@ -234,24 +240,29 @@ async def generate_episodes_candidates(
         total_steps=req.write_to - req.write_from + 1,
         user_id=getattr(current_user, "id", None),
     )
-    execute_service_workflow(
-        task_id=task_id,
-        api_key=req.api_key,
-        config_dict=req.config,
-        method_name="episode_writing_workflow",
-        kwargs={
-            "book_id": req.book_id,
-            "write_from": req.write_from,
-            "write_to": req.write_to,
-            "passion": req.passion,
-            "word_count": req.word_count,
-            "do_refine": req.do_refine,
-            "env_state": req.env_state,
-            "pipeline_mode": req.pipeline_mode,
-            "mode": "candidates",
-        },
-        trace_id=TraceContext.get_trace_id(),
-    )
+    try:
+        execute_service_workflow(
+            task_id=task_id,
+            api_key=req.api_key,
+            config_dict=req.config,
+            method_name="episode_writing_workflow",
+            kwargs={
+                "book_id": req.book_id,
+                "write_from": req.write_from,
+                "write_to": req.write_to,
+                "passion": req.passion,
+                "word_count": req.word_count,
+                "do_refine": req.do_refine,
+                "env_state": req.env_state,
+                "pipeline_mode": req.pipeline_mode,
+                "mode": "candidates",
+            },
+            trace_id=TraceContext.get_trace_id(),
+        )
+    except Exception:
+        generation_failure_total.labels(workflow_type="episode_writing").inc()
+        raise
+    generation_success_total.labels(workflow_type="episode_writing").inc()
     return {"task_id": task_id}
 
 

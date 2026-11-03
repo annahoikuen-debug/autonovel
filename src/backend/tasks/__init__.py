@@ -138,6 +138,10 @@ def execute_service_workflow(
 
     async def _run():
         try:
+            from src.backend.observability.metrics import (
+                generation_failure_total,
+                generation_success_total,
+            )
             from src.core.container import AppContainer
 
             _apply_config_overrides(config_dict)
@@ -157,12 +161,14 @@ def execute_service_workflow(
             state.is_running = False
             state.message = "処理が完了しました。"
             state._save_to_db()
+            generation_success_total.labels(workflow_type=method_name).inc()
 
         except Exception as e:
             logger.error(f"Workflow error: {e}", exc_info=True)
             state.is_running = False
             state.error = str(e)
             state._save_to_db()
+            generation_failure_total.labels(workflow_type=method_name).inc()
 
     try:
         asyncio.run(_run())
