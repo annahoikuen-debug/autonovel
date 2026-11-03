@@ -177,7 +177,7 @@ class TestTasksRouterAsyncRedis:
 
             from src.backend.routers.tasks import get_task_status
 
-            await get_task_status("test_task")
+            await get_task_status("test_task", current_user=MagicMock(role="admin"))
 
             mock_get.assert_called_once()
             mock_redis.get.assert_called_once_with("task_status:test_task")

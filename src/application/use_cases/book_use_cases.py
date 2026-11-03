@@ -56,6 +56,8 @@ class BookUseCases:
     ):
         self._uow = uow
         self.book_repository = book_repository
+        if self.book_repository is None and self._uow is not None:
+            self.book_repository = getattr(self._uow, "books", None)
 
     async def _get_uow(self) -> IUnitOfWork:
         if self._uow is not None:
@@ -121,7 +123,7 @@ class BookUseCases:
 
     async def get_book_score_history(self, book_id: int) -> dict[str, Any]:
         """スコア履歴を取得"""
-        uow = self._get_uow()
+        uow = await self._get_uow()
         book = await self.book_repository.get_book(book_id)
         if not book:
             raise NotFoundError("Book not found", resource_type="Book", resource_id=str(book_id))
@@ -152,7 +154,7 @@ class BookUseCases:
 
     async def get_pdca_cycles(self, book_id: int, chapter_number: int) -> list[dict[str, Any]]:
         """PDCA履歴を取得"""
-        uow = self._get_uow()
+        uow = await self._get_uow()
         snapshots = await uow.pdca_history.get_by_chapter(book_id, chapter_number)
 
         return [

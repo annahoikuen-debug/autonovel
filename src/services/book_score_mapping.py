@@ -191,6 +191,34 @@ class Unified5DScore:
         return min(dims, key=dims.get)
 
 
+@dataclass
+class BookScoreResult:
+    """後方互換のためのブックスコア結果コンテナ。
+
+    8 specialist auditor のスコアを by_specialist に保持し、
+    overall スコアと raw 診断結果を含む。
+    """
+
+    overall: float
+    by_specialist: dict[str, float]
+    missing: list[str]
+    raw: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "overall": self.overall,
+            "by_specialist": dict(self.by_specialist),
+            "missing": list(self.missing),
+            "raw": dict(self.raw),
+        }
+
+    def lowest_dimension(self) -> str | None:
+        """by_specialist で最もスコアが低い dimension を返す。"""
+        if not self.by_specialist:
+            return None
+        return min(self.by_specialist, key=self.by_specialist.get)
+
+
 class UnifiedBookScoreBridge:
     """Bridges 8 specialist auditor scores into 5D BookScore with genre and phase tuning."""
 
@@ -288,6 +316,7 @@ class UnifiedBookScoreBridge:
 
 
 __all__ = [
+    "BookScoreResult",
     "UnifiedBookScoreBridge",
     "Unified5DScore",
     "BOOK_SCORE_DIMENSIONS",

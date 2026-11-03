@@ -40,12 +40,19 @@ def client(monkeypatch, auth_user):
 @pytest.fixture
 def mock_uow():
     """UnitOfWorkをモックし、内部のリポジトリもモックする"""
-    with patch("src.backend.routers.books.UnitOfWork") as mock_uow_books, \
-         patch("src.backend.routers.novel.UnitOfWork") as mock_uow_novel:
-
+    with patch("src.backend.routers.novel.UnitOfWork") as mock_uow_books, patch(
+        "src.backend.routers.books.UnitOfWork"
+    ) as mock_uow_books2:
         mock_uow_instance = AsyncMock()
         mock_uow_books.return_value.__aenter__.return_value = mock_uow_instance
-        mock_uow_novel.return_value.__aenter__.return_value = mock_uow_instance
+        mock_uow_books2.return_value.__aenter__.return_value = mock_uow_instance
+
+        # verify_book_ownership が uow.session を使うため、session モックを設定
+        mock_session = AsyncMock()
+        mock_result = AsyncMock()
+        mock_result.scalar_one_or_none.return_value = MagicMock(id=1, user_id=1)
+        mock_session.execute.return_value = mock_result
+        mock_uow_instance.session = mock_session
 
         mock_uow_instance.books = AsyncMock()
         mock_uow_instance.book_scores = AsyncMock()

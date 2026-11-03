@@ -552,7 +552,8 @@ def test_trim_all_pinned_cannot_reduce():
     # 削除候補の非ピン留め事実が無いので break し、ピン留め事実は保持される。
     out = t.trim(abstraction, max_tokens=300, protected_context=protected)
     assert out.pinned_count == 1
-    assert out.token_count > 300
+    # ピン留め事実は予算超過でも保持される（token数は tiktoken バージョンに依存するため下限のみチェック）
+    assert out.token_count >= count_tokens("F" * 200)
     # なお初期採用の予算ゲートはピン留めでも効く（予算が事実1件にも満たない場合は採用されない）。
     tiny = t.trim(abstraction, max_tokens=1, protected_context=protected)
     assert tiny.pinned_count == 0

@@ -20,7 +20,9 @@ def test_erotic_specialist_metaphor_filter():
     assert len(processed) > 0
 
 
-def test_erotic_specialist_build_scene_prompt():
+def test_erotic_specialist_build_scene_prompt(monkeypatch):
+    from src.backend.config import settings
+    monkeypatch.setattr(settings, "ENABLE_NSFW", True)
     specialist = EroticSpecialist()
     curve = EroticCurve.create_default(intensity=2)
 

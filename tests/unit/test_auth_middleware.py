@@ -38,14 +38,16 @@ def test_public_path_allows_unauthenticated(test_app):
     assert res.json() == {"status": "ok"}
 
 
-def test_protected_path_rejects_unauthenticated(test_app):
+def test_protected_path_rejects_unauthenticated(test_app, monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_DISABLED", False)
     client = TestClient(test_app)
     res = client.get("/api/protected-resource")
     assert res.status_code == 401
     assert res.json() == {"detail": "認証が必要です"}
 
 
-def test_protected_path_allows_valid_jwt(test_app):
+def test_protected_path_allows_valid_jwt(test_app, monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_DISABLED", False)
     client = TestClient(test_app)
     token = create_access_token(user_id=1, role="user")
     res = client.get("/api/protected-resource", headers={"Authorization": f"Bearer {token}"})
@@ -53,7 +55,8 @@ def test_protected_path_allows_valid_jwt(test_app):
     assert res.json() == {"data": "secret"}
 
 
-def test_protected_path_rejects_invalid_jwt(test_app):
+def test_protected_path_rejects_invalid_jwt(test_app, monkeypatch):
+    monkeypatch.setattr(settings, "AUTH_DISABLED", False)
     client = TestClient(test_app)
     res = client.get("/api/protected-resource", headers={"Authorization": "Bearer invalid.token.payload"})
     assert res.status_code == 401

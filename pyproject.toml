@@ -104,6 +104,13 @@ dev = [
     "typer>=0.12",
     "networkx>=3.0",
     "rank-bm25>=0.2.2",
+    # W1: テスト収集エラー解消。ebooklib/reportlab（EPUB/PDFエクスポートテスト）、sudachi 系（日本語NLPテスト）。
+    "ebooklib>=0.18",
+    "reportlab>=5.0",
+    "sudachipy>=0.6.0,<0.7",
+    "sudachidict-core>=20230109",
+    "sudachidict-full>=20230109",
+    "sudachidict-small>=20230109",
 ]
 rag = [
     "chromadb>=1.5.0,<2.0.0",

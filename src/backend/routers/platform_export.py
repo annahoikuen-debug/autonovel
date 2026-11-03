@@ -6,6 +6,11 @@ TRACK-A8: ルーター実体は src/interfaces/api/platform_export.py に移設�
 
 from __future__ import annotations
 
-from src.interfaces.api.platform_export import router  # noqa: F401
+from src.interfaces.api.platform_export import (
+    CopyFormatRequest,
+    CopyFormatResponse,
+    format_chapter_for_copy,
+    router,  # noqa: F401
+)
 
-__all__ = ["router"]
+__all__ = ["router", "CopyFormatRequest", "CopyFormatResponse", "format_chapter_for_copy"]

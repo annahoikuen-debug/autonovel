@@ -6,8 +6,8 @@ from src.backend.server import app
 async def test_rfc7807_error_response_format():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
-        # 存在しないパスへのアクセスで 404 (認証 401 の場合もある)
-        res = await ac.get("/api/books/9999999")
+        # どのルートにもマッチしないパスへのアクセスで 404
+        res = await ac.get("/api/nonexistent-path-for-test")
         assert res.status_code in (401, 403, 404)
         data = res.json()
 

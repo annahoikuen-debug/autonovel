@@ -117,7 +117,7 @@ class TestSyncClient:
     def test_close_client_runtime_error(self, caplog):
         # 実行中のループがあるため close_async_client の asyncio.run が RuntimeError になる
         ac._resilient_client = None
-        ac._async_client = None
+        ac._async_client = MagicMock()  # None 以外でないと close_async_client が呼ばれない
         real_run = ac.asyncio.run
 
         def boom(coro):

@@ -1,12 +1,21 @@
 """Unit tests for Japanese morphological tokenizer & BM25 integration (Steps 13-18)."""
 
+import pytest
 from unittest.mock import MagicMock
+
+try:
+    import sudachipy  # noqa: F401
+
+    _SUDACHI_AVAILABLE = True
+except ImportError:  # pragma: no cover - environment without sudachipy
+    _SUDACHI_AVAILABLE = False
 
 from src.services.nlp.japanese_tokenizer import JapaneseTokenizer
 from src.services.reflective_rag import ReflectiveRAGService
 from src.services.rag_service import SearchResult
 
 
+@pytest.mark.skipif(not _SUDACHI_AVAILABLE, reason="sudachipy not installed")
 def test_japanese_tokenizer_basic():
     """Test basic morphological tokenization and NFKC normalization (Step 13)."""
     tokenizer = JapaneseTokenizer()

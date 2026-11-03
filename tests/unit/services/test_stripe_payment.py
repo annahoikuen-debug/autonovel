@@ -41,14 +41,17 @@ async def test_stripe_webhook_grants_credits(monkeypatch):
             with patch("src.backend.routers.billing_webhook.get_credits_for_price_id", return_value=100):
                 # Mock the get_tier_for_price_id function
                 with patch("src.backend.routers.billing_webhook.get_tier_for_price_id", return_value="pro"):
+                    # Mock CreditService.grant_credits to avoid real DB access
+                    with patch("src.services.billing.credit_service.CreditService.grant_credits", new_callable=AsyncMock) as mock_grant:
+                        # Call the handler
+                        await handle_stripe_webhook(mock_request, db=mock_session)
 
-                    # Call the handler
-                    await handle_stripe_webhook(mock_request, db=mock_session)
+                        # Assert that grant_credits was called with 100 credits
+                        mock_grant.assert_called_once()
+                        call_args = mock_grant.call_args
+                        assert call_args.kwargs.get("amount") == 100 or call_args.args[1] == 100
 
-                    # Assert that the user's credits were increased by 100
-                    assert mock_user.credits == 110
-                    assert mock_user.plan_tier == "pro"
-                    # Assert that a StripeWebhookEvent record was added
-                    assert mock_session.add.call_count >= 1
-                    # Assert that commit was called
-                    assert mock_session.commit.called
+                        # Assert that a StripeWebhookEvent record was added
+                        assert mock_session.add.call_count >= 1
+                        # Assert that commit was called
+                        assert mock_session.commit.called

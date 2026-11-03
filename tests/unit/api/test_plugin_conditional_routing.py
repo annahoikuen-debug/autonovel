@@ -22,6 +22,7 @@ def _fresh_server_module(monkeypatch, enable_multimedia: bool | None):
         monkeypatch.setenv("ENABLE_MULTIMEDIA", str(enable_multimedia).lower())
     # モジュールキャッシュから除外して再評価
     sys.modules.pop("src.backend.server", None)
+    sys.modules.pop("src.interfaces.api.app_factory", None)
     sys.modules.pop("src.core.plugin_registry", None)
     server = importlib.import_module("src.backend.server")
     registry = importlib.import_module("src.core.plugin_registry")

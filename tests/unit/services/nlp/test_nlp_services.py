@@ -5,6 +5,8 @@ from __future__ import annotations
 import sys
 import types
 
+import pytest
+
 
 from src.models.predicate_match import PredicateAnalysisResult, PredicateMatch
 from src.services.nlp.foreshadowing_predicate_analyzer import (
@@ -13,6 +15,13 @@ from src.services.nlp.foreshadowing_predicate_analyzer import (
 from src.services.nlp.japanese_tokenizer import NOVEL_STOPWORDS, JapaneseTokenizer
 from src.services.nlp.predicate_scorer import PredicateScorer
 from src.services.nlp.tense_analyzer import TenseAnalyzer, TenseContextAnalyzer
+
+try:
+    import sudachipy  # noqa: F401
+
+    _SUDACHI_AVAILABLE = True
+except ImportError:  # pragma: no cover - environment without sudachipy
+    _SUDACHI_AVAILABLE = False
 
 
 # --------------------------------------------------------------------------
@@ -249,12 +258,14 @@ def test_predicate_analyzer_split_sentences():
     assert out == ["これは事実だ。", "次に炒飯！", "そして終わり？"]
 
 
+@pytest.mark.skipif(not _SUDACHI_AVAILABLE, reason="sudachipy not installed")
 def test_predicate_analyzer_resolved_match():
     a = ForeshadowingPredicateAnalyzer()
     res = a.analyze_sentence("彼は敵を見破った。", "敵")
     assert ("見破る", "resolved") in res
 
 
+@pytest.mark.skipif(not _SUDACHI_AVAILABLE, reason="sudachipy not installed")
 def test_predicate_analyzer_mention_match():
     a = ForeshadowingPredicateAnalyzer()
     res = a.analyze_sentence("彼は刀を持った。", "刀")
@@ -300,6 +311,7 @@ def test_predicate_analyzer_sudachi_error():
     assert a.analyze_sentence("何も", "kw") == []
 
 
+@pytest.mark.skipif(not _SUDACHI_AVAILABLE, reason="sudachipy not installed")
 def test_predicate_analyzer_foreshadowing_levels():
     a = ForeshadowingPredicateAnalyzer()
     none = a.analyze_foreshadowing(1, ["kw"], "まったく無関係な文章。")

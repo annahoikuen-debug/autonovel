@@ -116,22 +116,24 @@ async def test_create_export_package_zip():
         assert any("設定" in n for n in names)
 
 
-def test_post_export_package_endpoint(client):
+def test_post_export_package_endpoint(client, monkeypatch):
     """POST /api/marketing/export_package/{id} が 200 + application/zip を返す."""
     import os
 
     from fastapi.testclient import TestClient
 
-
     os.environ["AUTH_DISABLED"] = "true"
+
+    from src.backend.routers import marketing as marketing_router
+
+    # 所有権検証をスキップ（DB に book_id=1 が存在しないため）
+    monkeypatch.setattr(marketing_router, "verify_book_ownership", AsyncMock(return_value=MagicMock(id=1)))
 
     fake_zip = b"PK\x03\x04fake_zip_bytes"
     fake_engine = MagicMock()
     fake_engine.marketing.create_export_package = AsyncMock(
         return_value=(fake_zip, "export_1.zip")
     )
-
-    from src.backend.routers import marketing as marketing_router
 
     original_get_engine = marketing_router.get_engine
     marketing_router.get_engine = MagicMock(return_value=fake_engine)
