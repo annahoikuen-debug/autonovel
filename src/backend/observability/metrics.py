@@ -40,6 +40,18 @@ novel_generation_duration_seconds = Histogram(
     buckets=[10, 30, 60, 120, 300, 600, 1800, 3600],
 )
 
+generation_success_total = Counter(
+    "generation_success_total",
+    "Total successful novel generation tasks",
+    ["workflow_type"],
+)
+
+generation_failure_total = Counter(
+    "generation_failure_total",
+    "Total failed novel generation tasks",
+    ["workflow_type"],
+)
+
 llm_api_calls_total = Counter(
     "llm_api_calls_total",
     "Total LLM API calls",
