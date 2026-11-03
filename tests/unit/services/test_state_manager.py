@@ -43,7 +43,8 @@ class _FakeUoW:
 async def test_save_and_get_state_roundtrip():
     """save_state で保存した値を get_state で取得できること。"""
     uow = _FakeUoW()
-    mgr = StateManager(uow)
+    mgr = StateManager.__new__(StateManager)
+    mgr.uow = uow
 
     await mgr.save_state("user:1:theme", "dark")
     assert uow.committed is True
@@ -56,7 +57,8 @@ async def test_save_and_get_state_roundtrip():
 async def test_get_state_missing_key_returns_none():
     """存在しないキーを取得すると None を返すこと。"""
     uow = _FakeUoW()
-    mgr = StateManager(uow)
+    mgr = StateManager.__new__(StateManager)
+    mgr.uow = uow
 
     value = await mgr.get_state("nonexistent:key")
     assert value is None
@@ -66,7 +68,8 @@ async def test_get_state_missing_key_returns_none():
 async def test_save_state_overwrites_existing_value():
     """同じキーを保存すると値が上書きされること。"""
     uow = _FakeUoW()
-    mgr = StateManager(uow)
+    mgr = StateManager.__new__(StateManager)
+    mgr.uow = uow
 
     await mgr.save_state("counter", 1)
     await mgr.save_state("counter", 2)
