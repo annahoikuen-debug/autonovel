@@ -145,3 +145,4 @@ tmp/
 # output/ 内の生成物（MULTIMEDIA_OUTPUT_DIR 配下の WAV 等）
 output/multimedia/
 
+frontend/test-results/
