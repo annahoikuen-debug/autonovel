@@ -120,6 +120,10 @@ protobuf==5.29.6
 #     torch は数 GB あるため、この必須ブロックには psutil のみ入れる ---
 psutil>=5.9.0
 psycopg2-binary==2.9.12
+# psycopg3 (psycopg) は pyproject.toml [project.dependencies] に宣言済み。
+# src/backend/database/core.py の `postgresql+psycopg://` URL 正規化で
+# SQLAlchemy の psycopg ダイアレクトがモジュール直下 import するため必須。
+psycopg[binary]>=3.1
 pyasn1==0.6.4
 pyasn1_modules==0.4.2
 pybase64==1.5.0
