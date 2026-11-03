@@ -331,6 +331,22 @@ def _optional_module_available(name: str) -> bool:
 
 _ORTOOLS_AVAILABLE = _optional_module_available("ortools")
 
+# sudachi / spacy 日本語トークナイザはオプショナル依存。
+# 未インストール環境では spacy.blank("ja") が ImportError を起こし、
+# 該当テストファイルの collection error になるため、収集を見送る。
+_SUDACHI_AVAILABLE = _optional_module_available("sudachipy") and _optional_module_available("sudachidict.core")
+
+# sudachi/spacy を実際に import するテストファイル（collection エラー回避のためスキップ）
+_SUDACHI_REQUIRED_TESTS = frozenset(
+    {
+        "tests/unit/pipeline/test_compression_pipeline_integration.py",
+        "tests/unit/pipeline/test_emotional_residue_extractor.py",
+        "tests/unit/nlp/test_predicate_analyzer_fallback.py",
+        "tests/unit/nlp/test_predicate_analyzer_resolved.py",
+        "tests/unit/pipeline/test_nlp_init.py",
+    }
+)
+
 # reportlab は PDF 書き出し専用の任意依存。
 # src/easy_mode/phase3/ebook_export.py:27 は `find_spec("reportlab")` で可用性を判定し、
 # 無い環境では PDF 出力だけを RuntimeError で拒否する（epub / mobi は動く）。
@@ -388,6 +404,11 @@ def pytest_ignore_collect(collection_path, config):  # noqa: ANN001, ARG001
     # ortools 依存テストの収集回避（実際に ortools を import するものだけ）
     if not _ORTOOLS_AVAILABLE and _rel_path(collection_path) in _ORTOOLS_REQUIRED_TESTS:
         return True
+
+    # sudachi/spacy 未インストール環境では spacy.blank("ja") が ImportError になるため、
+    # 日本語トークナイザ依存テストファイルの収集を見送る。
+    if not _SUDACHI_AVAILABLE and _rel_path(collection_path) in _SUDACHI_REQUIRED_TESTS:
+        return True
     return None
 
 
@@ -403,6 +424,9 @@ def pytest_collection_modifyitems(config, items):
             )
         if not _ORTOOLS_AVAILABLE and _rel_path(item.fspath) in _ORTOOLS_REQUIRED_TESTS:
             item.add_marker(pytest.mark.skip(reason="ortools is not installed in environment"))
+        # sudachi/spacy 未インストール環境では日本語トークナイザ依存テストをスキップ
+        if not _SUDACHI_AVAILABLE and _rel_path(item.fspath) in _SUDACHI_REQUIRED_TESTS:
+            item.add_marker(pytest.mark.skip(reason="sudachi/spacy Japanese tokenizer is not installed"))
         # reportlab は任意依存。PDF 出力を行うテストだけを対象外にする
         # （_rel_path は "tests/unit/...::test_name" 形式をパス文字列として扱う）。
         if not _REPORTLAB_AVAILABLE and f"{_rel_path(item.fspath)}::{item.name}" in _REPORTLAB_REQUIRED_TESTS:
