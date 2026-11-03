@@ -13,8 +13,6 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from src.backend.server import app
-
 
 @pytest.fixture(autouse=True)
 def _bypass_auth(monkeypatch):
@@ -32,6 +30,7 @@ def _bypass_auth(monkeypatch):
     from src.backend.database.models import User
     from src.backend.middleware import auth_middleware
     from src.backend.routers import graph as graph_router
+    from src.backend.server import app
 
     monkeypatch.setattr(auth_middleware.settings, "AUTH_DISABLED", True, raising=False)
 
@@ -52,7 +51,28 @@ def _bypass_auth(monkeypatch):
     app.dependency_overrides.pop(get_current_user, None)
 
 
-client = TestClient(app)
+class _LazyClient:
+    """``app`` の import を初回アクセスまで遅延する TestClient プロキシ.
+
+    ``tests/contract/conftest.py`` と同様に、モジュール直下で
+    ``src.backend.server`` を import して ``Settings`` を早期生成しない
+    （生成順序に依存した 401 回帰を防ぐ）。
+    """
+
+    _client: TestClient | None = None
+
+    def _resolve(self) -> TestClient:
+        if _LazyClient._client is None:
+            from src.backend.server import app
+
+            _LazyClient._client = TestClient(app)
+        return _LazyClient._client
+
+    def __getattr__(self, name: str):
+        return getattr(self._resolve(), name)
+
+
+client = _LazyClient()
 
 
 def test_graph_endpoint_response_shape():
