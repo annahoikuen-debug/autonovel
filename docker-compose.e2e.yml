@@ -1,0 +1,38 @@
+# AutoNovel docker-compose (E2E test) - Step 1.1
+# フロントエンド E2E テスト用のバックエンド起動基盤。
+# 軽量化のため SQLite / Huey sqlite / AUTH_DISABLED=true / モック LLM を使用し、
+# Postgres / Redis / ChromaDB / ワーカーは起動しない。
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: autonovel-backend:e2e
+    container_name: autonovel_backend_e2e
+    ports:
+      # ホスト側 8000 で公開し、Playwright / フロントエンドからアクセスする
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=sqlite+aiosqlite:///./e2e.db
+      - AUTH_DISABLED=true
+      - AUTONOVEL_RAG_MODE=memory
+      - HUEY_BACKEND=sqlite
+      - LOG_LEVEL=INFO
+      - UVICORN_WORKERS=1
+      # LLM はモックを使用（実プロバイダは呼び出さない）
+      - TEST_WITH_REAL_LLM=0
+      - LLM_PROVIDER=mock
+    # 開発用 entrypoint はマイグレーション等を実行するため、E2E では直接 uvicorn を起動
+    command: sh -c "exec uvicorn src.backend.server:app --host 0.0.0.0 --port 8000 --workers 1"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/health/liveness || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

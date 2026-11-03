@@ -1829,48 +1829,6 @@
         }
       }
     },
-    "/api/styles/distill": {
-      "post": {
-        "tags": [
-          "styles"
-        ],
-        "summary": "Distill Style",
-        "description": "提供されたサンプル文章から作家性DNA（StyleProfile）を自動抽出",
-        "operationId": "distill_style_api_styles_distill_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/DistillRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DistillResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/styles/reformat": {
       "post": {
         "tags": [
@@ -1896,6 +1854,48 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ReformatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/styles/distill": {
+      "post": {
+        "tags": [
+          "styles"
+        ],
+        "summary": "Distill Style",
+        "description": "提供されたサンプル文章から作家性DNA（StyleProfile）を自動抽出",
+        "operationId": "distill_style_api_styles_distill_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DistillRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistillResponse"
                 }
               }
             }

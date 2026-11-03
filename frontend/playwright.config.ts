@@ -19,6 +19,11 @@ export default defineConfig({
 
   use: {
     baseURL: 'http://localhost:3000',
+    // バックエンド API エンドポイント（E2E 用バックエンドは localhost:8000）
+    // フロントエンドは VITE_BACKEND_URL 経由でバックエンド API にアクセスする
+    env: {
+      VITE_BACKEND_URL: 'http://localhost:8000',
+    },
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     viewport: { width: 1280, height: 800 },
