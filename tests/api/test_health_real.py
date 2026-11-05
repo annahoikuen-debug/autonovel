@@ -20,7 +20,10 @@ client = TestClient(app)
 def test_health_live_endpoint():
     response = client.get("/health/live")
     assert response.status_code == 200
-    assert response.json() == {"status": "alive"}
+    data = response.json()
+    assert data["status"] == "alive"
+    # timestamp 欄は実行時動的生成のため存在のみを検証（exact match は非決定的）
+    assert "timestamp" in data
 
 
 @pytest.mark.asyncio

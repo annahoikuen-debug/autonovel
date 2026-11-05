@@ -378,6 +378,17 @@ class AuditAgent(SkillAgent):
         self._unified_auditor = unified_auditor
         self._unified_auditor_resolved = unified_auditor is not None
 
+        # デフォルト（UnifiedAuditor のみ）でもレガシーコア監査コンポーネントへの
+        # 属性アクセスを安全にするため、ダミーオブジェクトで初期化する。
+        # テストが `agent._fast_screener.screen_plot = ...` と直接代入するケースに対応。
+        if not is_audit_legacy_core_enabled():
+            from types import SimpleNamespace
+
+            self._fast_screener = SimpleNamespace()
+            self._logical_auditor = SimpleNamespace()
+            self._deai_auditor = SimpleNamespace()
+            self._ability_checker = SimpleNamespace()
+
         #: 直近1回の監査フェーズレイテンシ（秒, time.perf_counter 基準）
         self.last_audit_latency_seconds: float | None = None
         #: 直近1回の監査フェーズのうち、各 audit_id の所要時間（秒）

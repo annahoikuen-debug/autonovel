@@ -67,6 +67,17 @@ def build_lifespan(wiring: AppWiring) -> Callable[[FastAPI], AbstractAsyncContex
         """アプリケーション起動時にログ設定と DB 初期化を行う lifespan ハンドラ。"""
         configure_logging()
         wiring.init_db()
+        # AUTH_DISABLED による認証バイパスの起動時警告（縦深防御：発生検知）
+        # 本番環境では Settings バリデータで AUTH_DISABLED=True を拒否するが、
+        # 設定構築後の環境変数変更や開発環境での戻し忘れに備え、
+        # アプリ側でもう一度環境を参照して警告を出す。
+        if settings.AUTH_DISABLED and settings.APP_ENV != "production":
+            logger.warning(
+                "[AUTH WARNING] AUTH_DISABLED=true が有効です（APP_ENV=%s）。"
+                "認証がバイパスされ、全エンドポイントが無認証で開かれます。"
+                "開発完了後は必ず AUTH_DISABLED=false に戻してください。",
+                settings.APP_ENV,
+            )
         # Step 46: Huey タスクキュー接続確認
         if wiring.huey_check is not None:
             try:

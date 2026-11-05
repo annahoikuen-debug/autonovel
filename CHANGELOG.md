@@ -79,6 +79,44 @@
     `RateLimitMiddleware` が 429 ではなく 500 を返していた問題、
     非同期関数の未 await によるグラフ無音更新、SSE ストリームの所有者検証漏れ。
 
+## [v6.1.3] - 2026-10-03 - 公開前最終監査修正（セキュリティ・データ整合性・テスト基盤）
+
+QA 公開前監査（3サイクル）で見つかった本番阻害バグとセキュリティ脆弱性を修正。
+
+### セキュリティ（High）
+
+- IDOR 封止：`POST /api/marketing/export_package/{book_id}` に `verify_book_ownership` を追加（GET 版と同等の所有権検証）
+- IDOR 封止：`PATCH/DELETE /api/collab/comments/{comment_id}` で `comment_id` から `book_id` を辿り `_verify_book_access` を通すよう所有権検証を追加
+- `tests/security/test_idor_regression.py` を追加し、4件の IDOR パターンを恒久的にガード
+
+### データ整合性（Critical）
+
+- `src/backend/routers/episodes.py:80` の未定義名 `_verify_branch_belongs_to_book` typo を修正（チャ保存 API が NameError で 500 だった）
+- `src/backend/routers/stream_writing.py:39` の存在しない `uow.books.get_by_id` を `uow.books.get_book` に修正（SSE 執筆 API が全リクエストで即エラーだった）
+- `src/backend/database/repository.py` の coroutine/汎用 awaitable 取り違えを `_await_awaitable()` ヘルパーで正規化（TypeError/ValueError を防止）
+
+### テスト基盤
+
+- `tests/conftest.py` の `AUTH_DISABLED=true` グローバル設定と衝突する認証テスト3件を局所修正（実装は変更なし）
+- OpenAPI 仕様書を `APP_ENV=testing` で再生成（`/api/auth/refresh` 追加・security 宣言 462行分是正）
+- Windows CP932 エンコーディングで計数ゲートが黙って無効化されるのを修正（`encoding="utf-8"` 明示）
+- 未宣言テスト依存 `fakeredis` を `pyproject.toml [dev]` に追加
+- 回帰テスト3ゲートを新規追加：`test_no_undefined_names.py`、`test_auth_bypass_contract.py`、`test_subprocess_encoding_gate.py`
+- `pytest.ini` から `--reruns=3` を削減（フレーキーな再試行を廃止し確実な失敗検出を優先）
+
+### テンプレート・アセット
+
+- `templates/subtext/index.yaml` の Windows パス（`E:\...`）を Linux 相対パスに修正
+
+## [v6.1.0] - 2026-09-30 - V6.1 インフラ強化と API 契約安定化
+
+- CI needs の重複排除と SLO メトリクス連携を実装
+- `docker-compose` エントリポイントを修正しコンテナ起動を安定化
+- フェーズ1 Week2–Week4 の E2E テストシナリオを追加（分岐 fork/merge、書き出し、SLO 定義）
+- フロントエンド vitest 失敗を修正（7テスト→0失敗）
+- `requirements.txt` に `psycopg3` を追加し `pyproject.toml` と整合
+- 残りのバックエンドテスト失敗を20ファイル修正
+
 ## [6.0.0] - 2026-09-28 - V6 コスト・レイテンシ最適化＋v5.3 配線の是正
 
 「v5.3 で計画した長編機構が、実際には配線が未接続だった」という欠陥を是正し、

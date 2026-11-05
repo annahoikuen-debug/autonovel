@@ -28,6 +28,12 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+# 本契約テストはレガシーコア監査（_fast_screener / _logical_auditor / _deai_auditor /
+# _ability_checker / _plot_monitor）をモックで差し替えて挙動を検証するため、
+# ENABLE_AUDIT_LEGACY_CORE=true を必須とする。デフォルトは UnifiedAuditor のみ
+# 初期化され、レガシーコア属性が None のまま AttributeError になるため。
+os.environ["ENABLE_AUDIT_LEGACY_CORE"] = "true"
+
 from src.agents.audit_agent import (  # noqa: E402
     AUDIT_GATE_PENALTY_SCORE,
     AUDIT_GATE_SEVERITY_WEIGHTS,
