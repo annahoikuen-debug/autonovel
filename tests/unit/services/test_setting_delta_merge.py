@@ -63,7 +63,13 @@ async def test_create_setting_snapshot(bible_generator, mock_repo):
     mock_bible.model_dump.return_value = {"title": "Test", "world_rules": {}}
     mock_repo.bible.get_bible = AsyncMock(return_value=mock_bible)
     mock_repo.misc.create_setting_version = AsyncMock(return_value=3)
-    mock_repo.session.execute = AsyncMock()
+    # NOTE: 実装は ``await session.execute(...)`` → ``result.scalar()`` (同期的) の
+    # 順で呼ぶため、execute の戻り値は scalar() が同期的に int を返す MagicMock。
+    # (AsyncMock の子は AsyncMock になり scalar() が coroutine を返すため明示的に
+    #  MagicMock を渡す必要がある)
+    mock_scalar_result = MagicMock()
+    mock_scalar_result.scalar.return_value = 0
+    mock_repo.session.execute = AsyncMock(return_value=mock_scalar_result)
 
     version_id = await bible_generator.create_setting_snapshot(
         book_id=1,
@@ -85,6 +91,10 @@ async def test_apply_manual_setting_change(bible_generator, mock_repo):
     mock_repo.save_full_world_bible = AsyncMock()
     mock_repo.misc.create_setting_delta = AsyncMock(return_value=7)
     mock_repo.misc.create_setting_version = AsyncMock(return_value=4)
+    # create_setting_snapshot が内部で session.execute を使うため設定
+    mock_scalar_result = MagicMock()
+    mock_scalar_result.scalar.return_value = 0
+    mock_repo.session.execute = AsyncMock(return_value=mock_scalar_result)
 
     success = await bible_generator.apply_manual_setting_change(
         book_id=1,

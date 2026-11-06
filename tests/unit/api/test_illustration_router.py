@@ -7,7 +7,7 @@ Step 32: R15 safety の検証 (test_image_service.py に集約済み)。
 from __future__ import annotations
 
 import os
-from unittest.mock import MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -82,7 +82,11 @@ def test_illustration_router_batch_queues_task():
     app.include_router(router, prefix="/api/illustrations")
     app.dependency_overrides[get_illustration_workflow] = _override_workflow
 
-    with TestClient(app) as client:
+    # 実装は book 所有権を検証する (IDOR 対策)。テスト環境に book はないためパッチ
+    with patch(
+        "src.backend.routers.illustrations.verify_book_ownership",
+        new=AsyncMock(return_value=None),
+    ), TestClient(app) as client:
         resp = client.post(
             "/api/illustrations/batch",
             json={"book_id": 1, "settings": {"enableIllustration": True}},
@@ -94,7 +98,7 @@ def test_illustration_router_batch_queues_task():
 
 
 def test_illustration_router_generate_validation_error_returns_400():
-    """generate エンドポイント: 不正リクエストで 400。"""
+    """generate エンドポイント: 不正リクエストで Pydantic 検証エラー (422)。"""
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
@@ -116,12 +120,12 @@ def test_illustration_router_generate_validation_error_returns_400():
     app.include_router(ill_module.router, prefix="/api/illustrations")
 
     with TestClient(app) as client:
-        # book_id 欠落で 400
+        # book_id 欠落は Pydantic 検証エラー → FastAPI 標準の 422
         resp = client.post(
             "/api/illustrations/generate",
             json={"illustration_type": "cover"},
         )
-    assert resp.status_code == 400
+    assert resp.status_code == 422
 
 
 def test_illustration_batch_queues_huey_task():
@@ -146,7 +150,11 @@ def test_illustration_batch_queues_huey_task():
 
         app.include_router(router, prefix="/api/illustrations")
 
-        with TestClient(app) as client:
+        # 実装は book 所有権を検証する (IDOR 対策)。テスト環境に book はないためパッチ
+        with patch(
+            "src.backend.routers.illustrations.verify_book_ownership",
+            new=AsyncMock(return_value=None),
+        ), TestClient(app) as client:
             resp = client.post(
                 "/api/illustrations/batch",
                 json={"book_id": 1, "settings": {"enableIllustration": True}},

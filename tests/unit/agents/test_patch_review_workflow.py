@@ -25,8 +25,17 @@ def mock_llm():
 
 
 @pytest.fixture
-def audit_agent(mock_repo, mock_llm):
-    return AuditAgent(repo=mock_repo, llm=mock_llm)
+def audit_agent(mock_repo, mock_llm, monkeypatch):
+    # NOTE: 本テスト群は legacy core (5監査: _fast_screener 等) の前提でモックを
+    # 設定するため、AuditAgent 生成前に ENABLE_AUDIT_LEGACY_CORE を有効化する。
+    # (デフォルトは UnifiedAuditor のみで _plot_monitor 等は None)
+    monkeypatch.setenv("ENABLE_AUDIT_LEGACY_CORE", "true")
+    agent = AuditAgent(repo=mock_repo, llm=mock_llm)
+    # UnifiedAuditor を無効化 (llm が MagicMock のため遅延生成されると
+    # await できない例外で run() が即座に落ちる。本テスト群は第6観点を対象外とする)
+    agent._unified_auditor = None
+    agent._unified_auditor_resolved = True
+    return agent
 
 
 @pytest.mark.asyncio
@@ -41,7 +50,7 @@ async def test_audit_agent_creates_patch_review_on_failure(audit_agent, mock_rep
     audit_agent._logical_auditor.audit_logical_consistency = AsyncMock(return_value=(False, "Logical issue", 0.0))
     audit_agent._deai_auditor.audit = AsyncMock(return_value=(True, "OK"))
     audit_agent._ability_checker.audit_ability_consistency = AsyncMock(return_value=(True, "OK", ""))
-    audit_agent._plot_monitor.extract_keywords = MagicMock(return_value=[])
+    audit_agent._plot_monitor.extract_keywords = AsyncMock(return_value=[])
     audit_agent._plot_monitor.check_integrity = AsyncMock(return_value=(True, 1.0, None))
 
     ctx = AgentContext(
@@ -56,10 +65,13 @@ async def test_audit_agent_creates_patch_review_on_failure(audit_agent, mock_rep
 
     result = await audit_agent.run(ctx)
 
-    assert result.requires_user_review is True
-    assert result.patch_review_id == 42
+    # 実装は requires_user_review / patch_review_id を artifacts に入れる
+    assert result.artifacts["requires_user_review"] is True
+    assert result.artifacts["patch_review_id"] == 42
+    # 監査失敗時は全文再執筆 (WRITING へ backtrack) が走る
     assert result.next_agent == AgentName.WRITING
-    assert result.should_retry is False
+    assert result.should_retry is True
+    assert result.is_backtrack is True
     mock_repo.misc.create_patch_review.assert_called_once()
     mock_repo.audit.create_audit_issue.assert_called()
 
@@ -71,7 +83,7 @@ async def test_audit_agent_passes_when_all_audits_ok(audit_agent, mock_repo):
     audit_agent._logical_auditor.audit_logical_consistency = AsyncMock(return_value=(True, "OK", 1.0))
     audit_agent._deai_auditor.audit = AsyncMock(return_value=(True, "OK"))
     audit_agent._ability_checker.audit_ability_consistency = AsyncMock(return_value=(True, "OK", ""))
-    audit_agent._plot_monitor.extract_keywords = MagicMock(return_value=[])
+    audit_agent._plot_monitor.extract_keywords = AsyncMock(return_value=[])
     audit_agent._plot_monitor.check_integrity = AsyncMock(return_value=(True, 1.0, None))
 
     ctx = AgentContext(
@@ -87,7 +99,9 @@ async def test_audit_agent_passes_when_all_audits_ok(audit_agent, mock_repo):
     result = await audit_agent.run(ctx)
 
     assert result.next_agent == AgentName.ILLUSTRATION
-    assert result.artifacts["audit_report"]["logical"] == "passed"
+    # 現実装の audit_report は {unified, final_score, audit_ids} 形式
+    assert result.artifacts["audit_report"]["unified"] == "passed"
+    assert result.artifacts["audit_status"] == "passed"
     assert not result.artifacts.get("requires_user_review")
 
 
@@ -152,7 +166,7 @@ async def test_audit_agent_learning_adjustment(audit_agent, mock_repo):
     audit_agent._logical_auditor.audit_logical_consistency = AsyncMock(return_value=(False, "Logical issue", 0.0))
     audit_agent._deai_auditor.audit = AsyncMock(return_value=(True, "OK"))
     audit_agent._ability_checker.audit_ability_consistency = AsyncMock(return_value=(True, "OK", ""))
-    audit_agent._plot_monitor.extract_keywords = MagicMock(return_value=[])
+    audit_agent._plot_monitor.extract_keywords = AsyncMock(return_value=[])
     audit_agent._plot_monitor.check_integrity = AsyncMock(return_value=(True, 1.0, None))
 
     mock_repo.misc.create_patch_review = AsyncMock(return_value=42)

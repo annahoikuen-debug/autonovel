@@ -14,9 +14,10 @@ CASES = [
     ("現代チート", "modern_cheat"),
     ("異世界転生・バトル (R15)", "cheat_tensei"),
     ("ダークファンタジー (R15)", "cheat_tensei"),
+    # GENRE_REGISTRY の HighFantasy エイリアス (config/story_spine/genre_registry.py が SSOT)
+    ("ハイファンタジー (R15)", "cheat_tensei"),
     # マッピングなしのジャンル → None
-    ("ハイファンタジー (R15)", None),
-    ("未知ジャンル", None),
+    ("絶対にマッピングされない未知ジャンルXYZ", None),
     ("", None),
 ]
 
