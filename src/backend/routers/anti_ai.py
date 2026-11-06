@@ -9,12 +9,12 @@ from pydantic import BaseModel
 
 from src.backend.auth import get_current_user
 from src.backend.security.roles import require_admin
-from src.services.anti_ai import (
+from src.engine.anti_ai import (
     RuleBasedAntiAIDetector,
     AntiAICorrector,
     AntiAILoopController,
 )
-from src.services.anti_ai.models import AICategory
+from src.engine.anti_ai.models import AICategory
 
 router = APIRouter(
     prefix="/admin/anti_ai",

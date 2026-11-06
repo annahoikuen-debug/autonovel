@@ -4,7 +4,7 @@ import jinja2
 import pytest
 
 from src.models.foreshadowing_status import ForeshadowingStatus
-from src.services.foreshadowing_service import ForeshadowingService
+from src.engine.foreshadowing.service import ForeshadowingService
 
 
 def create_mock_repo():

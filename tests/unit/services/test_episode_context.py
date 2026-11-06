@@ -1,6 +1,6 @@
 import pytest
 
-from src.services.episode_context import EpisodeContextBuilder
+from src.engine.episode_context import EpisodeContextBuilder
 
 def test_init():
     builder = EpisodeContextBuilder()

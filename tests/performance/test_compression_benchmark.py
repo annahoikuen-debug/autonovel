@@ -7,8 +7,8 @@ import pytest
 import statistics
 from pathlib import Path
 
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import CompressionConfig
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import CompressionConfig
 
 
 SAMPLE_TEXTS = {

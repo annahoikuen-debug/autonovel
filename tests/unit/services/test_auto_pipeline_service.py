@@ -3,14 +3,14 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.services.auto_workflow_pipeline import (
+from src.engine.auto_workflow_pipeline import (
     AutoWorkflowPipeline,
     InferenceStep,
     create_custom_pipeline,
     create_easy_mode_pipeline,
     create_full_auto_pipeline,
 )
-from src.services.pipeline_base import WorkflowContext, WorkflowStep
+from src.engine.pipeline_base import WorkflowContext, WorkflowStep
 from src.services.pipeline_steps import (
     AuditRewriteStep,
     CatharsisAnalysisStep,

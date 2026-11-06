@@ -1,4 +1,4 @@
-"""下位互換性維持のためのシム。実体は src.services.audit.aggregator に移動しました。"""
+"""下位互換性維持のためのシム。実体は src.engine.audit.aggregator に移動しました。"""
 import importlib
 import sys
 import types
@@ -10,9 +10,9 @@ warnings.warn(
     stacklevel=2,
 )
 
-_TARGET_MODULE = "src.services.audit.aggregator"
+_TARGET_MODULE = "src.engine.audit.aggregator"
 
-from src.services.audit.aggregator import (  # noqa: F401
+from src.engine.audit.aggregator import (  # noqa: F401
     AuditAggregator,
     BookScoreResult,
     SPECIALIST_NAMES,

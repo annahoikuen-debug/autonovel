@@ -10,11 +10,11 @@ from src.models.illustration import (
     IllustrationType,
     SafetyLevel,
 )
-from src.services.illustration.prompts import (
+from src.publishing.illustration.prompts import (
     apply_yonkoma_safety_modifier,
     build_yonkoma_prompt,
 )
-from src.services.illustration.scene_service import YonkomaPlanner
+from src.publishing.illustration.scene_service import YonkomaPlanner
 
 SAMPLE_TEXT = (
     "古城の門前で主人公アルトは師匠の遺品を受け取る。\n\n"

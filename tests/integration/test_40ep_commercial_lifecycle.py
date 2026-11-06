@@ -5,9 +5,9 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.agents.planning import PlanningAgent
-from src.services.foreshadowing_service import ForeshadowingService
-from src.services.exporters.commercial_manuscript_exporter import CommercialManuscriptExporter
-from src.services.exporters.commercial_epub_builder import PureCommercialEpubBuilder
+from src.engine.foreshadowing.service import ForeshadowingService
+from src.publishing.exporters.commercial_manuscript_exporter import CommercialManuscriptExporter
+from src.publishing.exporters.commercial_epub_builder import PureCommercialEpubBuilder
 from src.models.foreshadowing_status import ForeshadowingScope
 from src.models.beat_sheet import EpisodeBeat
 from src.models.visual_key_scene import VisualKeyScene

@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock
 from src.agents.orchestrator import AgentContext, AgentName
 from src.agents.enrichment_agent import EnrichmentAgent
-from src.services.audit_aggregator import AuditAggregator
+from src.engine.audit.aggregator import AuditAggregator
 from src.config.audit_weights import load_weights
 from src.agents.specialists import (
     ConsistencyAuditor,

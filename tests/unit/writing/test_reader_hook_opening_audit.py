@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock
 import pytest
 
 from src.agents.specialists.reader_hook_auditor import ReaderHookAuditor
-from src.core.llm.types import LLMResponse
+from src.llm.unified.types import LLMResponse
 
 
 @pytest.mark.asyncio

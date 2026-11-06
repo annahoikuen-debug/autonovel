@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock, patch
 from sqlalchemy.exc import ProgrammingError, OperationalError
 
-from src.services.age_client import (
+from src.integrations.age_client import (
     AgeClient,
     CypherResult,
     _parse_agtype,
@@ -330,7 +330,7 @@ def test_safe_retry_mechanism():
     # We want to test that @_safe_retry actually retries on specific exceptions
     # Since _safe_retry is a decorator, we can test it by applying it to a dummy function
 
-    from src.services.age_client import _safe_retry
+    from src.integrations.age_client import _safe_retry
 
     call_count = 0
     @_safe_retry(max_attempts=3)
@@ -346,7 +346,7 @@ def test_safe_retry_mechanism():
     assert call_count == 3
 
 def test_safe_retry_failure():
-    from src.services.age_client import _safe_retry
+    from src.integrations.age_client import _safe_retry
 
     call_count = 0
     @_safe_retry(max_attempts=2)

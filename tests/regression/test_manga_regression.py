@@ -8,10 +8,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.services.manga.config import MangaPipelineConfig
-from src.services.manga.models import MangaEpisodeInput, SpeechBubble
-from src.services.manga.pipeline import MangaPipeline
-from src.services.manga.prompt_generator import MangaPromptGenerator
+from src.publishing.manga.config import MangaPipelineConfig
+from src.publishing.manga.models import MangaEpisodeInput, SpeechBubble
+from src.publishing.manga.pipeline import MangaPipeline
+from src.publishing.manga.prompt_generator import MangaPromptGenerator
 
 
 def test_regression_api_call_count_must_be_single_per_episode(tmp_path: Path):

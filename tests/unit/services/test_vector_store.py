@@ -1,5 +1,5 @@
 import pytest
-from src.services.vector_store import InMemoryFallbackStore
+from src.integrations.vector_store import InMemoryFallbackStore
 
 @pytest.mark.asyncio
 async def test_vector_store_add_and_search():

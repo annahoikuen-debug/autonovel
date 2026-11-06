@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from src.services.rag.relational_memory import RelationalMemoryService
+from src.integrations.rag.relational_memory import RelationalMemoryService
 
 
 @pytest.mark.asyncio

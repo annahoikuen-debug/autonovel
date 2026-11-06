@@ -192,7 +192,7 @@ class EventBus:
             gate: BlindReviewGate インスタンス
             round_id: 現在のレビューラウンドID（クロスラウンド汚染防止用）
         """
-        from src.services.blind_review import BlindReviewGate
+        from src.engine.blind_review import BlindReviewGate
         if isinstance(gate, BlindReviewGate):
             scrubbed_payload = gate.scrub_payload(event.payload)
 

@@ -1,8 +1,8 @@
 import pytest
 from src.config.cost_optimization import MODEL_PRICING, ROUTING_TIERS
 from src.services.llm.prompt_cache_builder import PromptCacheBuilder
-from src.services.narrative.scene_tier_evaluator import SceneTierEvaluator
-from src.services.observability.token_cost_tracker import TokenCostTracker
+from src.engine.narrative.scene_tier_evaluator import SceneTierEvaluator
+from src.integrations.observability.token_cost_tracker import TokenCostTracker
 from src.llm.model_router import resolve_optimized_model
 
 def test_cost_optimization_config():

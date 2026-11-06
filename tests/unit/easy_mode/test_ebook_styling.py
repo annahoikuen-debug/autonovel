@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from src.services.exporters.base import escape_ruby_markup, process_ruby_markup
+from src.publishing.exporters.base import escape_ruby_markup, process_ruby_markup
 
 
 def test_ebook_ruby_markup_narou():

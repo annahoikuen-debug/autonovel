@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.services.pipeline_base import WorkflowContext
+from src.engine.pipeline_base import WorkflowContext
 from src.services.pipeline_steps import (
     AuditRewriteStep,
     CatharsisAnalysisStep,
@@ -606,7 +606,7 @@ class TestIllustrationStep:
         wf = MagicMock()
         wf.execute = AsyncMock(return_value={"status": "success", "illustrations": []})
         with patch("src.backend.workflows.illustration_workflow.IllustrationWorkflow", return_value=wf), \
-             patch("src.services.image_service.ImageService") as image_service, \
+             patch("src.publishing.illustration.image_service.ImageService") as image_service, \
              patch("src.backend.config.settings") as settings:
             settings.get_gemini_api_key.return_value = "key"
             assert await IllustrationStep().execute(ctx, engine, make_reporter()) is True

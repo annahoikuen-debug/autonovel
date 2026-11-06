@@ -4,7 +4,7 @@
 
 def _ctx():
     """WorkflowContext の必須引数をすべて満たす（既存テストと同じ最小構成）。"""
-    from src.services.pipeline_base import WorkflowContext
+    from src.engine.pipeline_base import WorkflowContext
 
     return WorkflowContext(
         genre="g", keywords="", archetype_key="exile_rise",

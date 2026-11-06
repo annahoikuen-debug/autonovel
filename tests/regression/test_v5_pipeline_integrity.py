@@ -21,7 +21,7 @@ from src.models.plot import (
     PlotMicroBlueprint,
     merge_macro_and_micro,
 )
-from src.services.compression import FourLayerCompressor
+from src.engine.compression import FourLayerCompressor
 
 
 def test_coarse_fine_skeleton_and_blueprint():

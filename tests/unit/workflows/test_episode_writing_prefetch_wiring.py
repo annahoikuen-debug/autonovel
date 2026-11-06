@@ -48,7 +48,7 @@ async def test_manager_is_reused_not_recreated():
     wf = _wf()
     wf.reporter = MagicMock()
     wf.reporter.report = MagicMock()
-    with patch("src.services.semantic_cache.SemanticCacheManager") as SC:
+    with patch("src.integrations.semantic_cache.SemanticCacheManager") as SC:
         await wf._trigger_prefetch(1, 1, wf.reporter)
         first = wf._semantic_cache
         assert first is not None, "1 回目は生成される"

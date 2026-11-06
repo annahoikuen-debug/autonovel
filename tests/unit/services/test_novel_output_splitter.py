@@ -1,6 +1,6 @@
 """Unit tests for NovelOutputSplitter."""
 
-from src.services.prose.novel_output_splitter import NovelOutputSplitter
+from src.engine.prose.novel_output_splitter import NovelOutputSplitter
 
 
 def test_split_standard_metadata():

@@ -442,7 +442,7 @@ async def patch_paragraph(
         # 所有権を確認
         await verify_book_ownership(book_id, current_user, uow)
 
-    from src.services.prose.paragraph_indexer import ParagraphIndexer
+    from src.engine.prose.paragraph_indexer import ParagraphIndexer
     from src.agents.writing.paragraph_patch_agent import ParagraphPatchAgent
     from src.models.patch_pdca import ParagraphTarget
 

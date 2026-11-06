@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.services.pipeline_base import WorkflowContext
+from src.engine.pipeline_base import WorkflowContext
 from src.backend.background import StatusReporter
 from src.services.pipeline_steps import WriteStep
 

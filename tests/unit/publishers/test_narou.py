@@ -7,8 +7,8 @@ from __future__ import annotations
 import pytest
 from unittest.mock import MagicMock, patch
 
-from src.services.publishers.narou import NarouPublisher, NarouCredentials
-from src.services.publishers.base import AuthError
+from src.publishing.publishers.narou import NarouPublisher, NarouCredentials
+from src.publishing.publishers.base import AuthError
 
 
 class TestNarouPublisher:
@@ -18,11 +18,11 @@ class TestNarouPublisher:
     def publisher(self):
         """Publisherフィクスチャ"""
         # 依存関係を完全にモック化
-        with patch("src.services.publishers.narou.webdriver", create=True), \
-             patch("src.services.publishers.narou.ChromeDriverManager", create=True), \
-             patch("src.services.publishers.narou.Options", create=True), \
-             patch("src.services.publishers.narou.Service", create=True), \
-             patch("src.services.publishers.narou.WebDriverWait", create=True), \
+        with patch("src.publishing.publishers.narou.webdriver", create=True), \
+             patch("src.publishing.publishers.narou.ChromeDriverManager", create=True), \
+             patch("src.publishing.publishers.narou.Options", create=True), \
+             patch("src.publishing.publishers.narou.Service", create=True), \
+             patch("src.publishing.publishers.narou.WebDriverWait", create=True), \
              patch("time.sleep"), \
              patch("asyncio.sleep"):
             pub = NarouPublisher(headless=True)
@@ -49,7 +49,7 @@ class TestNarouPublisher:
 
         # WebDriver関連をモック
         with patch.object(publisher, "_get_driver", return_value=mock_driver):
-            with patch("src.services.publishers.narou.WebDriverWait") as mock_wait:
+            with patch("src.publishing.publishers.narou.WebDriverWait") as mock_wait:
                 mock_email = MagicMock()
                 mock_password = MagicMock()
                 mock_btn = MagicMock()
@@ -81,7 +81,7 @@ class TestNarouPublisher:
         mock_driver.current_url = "https://ssl.syosetu.com/login/"  # ログインページのまま
 
         with patch.object(publisher, "_get_driver", return_value=mock_driver):
-            with patch("src.services.publishers.narou.WebDriverWait") as mock_wait:
+            with patch("src.publishing.publishers.narou.WebDriverWait") as mock_wait:
                 mock_email = MagicMock()
                 mock_password = MagicMock()
                 mock_btn = MagicMock()
@@ -115,7 +115,7 @@ class TestNarouPublisher:
         chapter = {"ep_num": 1, "title": "第1話", "content": "本文テスト"}
 
         with patch.object(publisher, "_get_driver", return_value=mock_driver):
-            with patch("src.services.publishers.narou.WebDriverWait") as mock_wait:
+            with patch("src.publishing.publishers.narou.WebDriverWait") as mock_wait:
                 # 各要素のモック
                 mock_elements = {
                     "title": MagicMock(),
@@ -156,7 +156,7 @@ class TestNarouPublisher:
         chapter = {"ep_num": 2, "title": "第2話", "content": "第2話本文"}
 
         with patch.object(publisher, "_get_driver", return_value=mock_driver):
-            with patch("src.services.publishers.narou.WebDriverWait") as mock_wait:
+            with patch("src.publishing.publishers.narou.WebDriverWait") as mock_wait:
                 mock_elements = {
                     "add_btn": MagicMock(),
                     "episodetitle2": MagicMock(),

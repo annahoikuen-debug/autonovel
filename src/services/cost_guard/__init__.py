@@ -1,2 +1,20 @@
-"""Cost guard and token circuit breaker package (v5.0 Step 19-21)."""
+"""後方互換 shim: 実体は src/integrations/cost_guard/ に移設済み。"""
 from __future__ import annotations
+
+import importlib
+import sys
+
+from src.integrations.cost_guard import *  # noqa: F401, F403
+
+__all__ = [name for name in dir() if not name.startswith("_")]
+
+
+def __getattr__(name: str):
+    """サブモジュールを src.integrations.cost_guard にリダイレクト (PEP 562)。"""
+    target = f"src.integrations.cost_guard.{name}"
+    try:
+        module = importlib.import_module(target)
+    except ModuleNotFoundError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    sys.modules[f"{__name__}.{name}"] = module
+    return module

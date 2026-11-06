@@ -150,7 +150,7 @@ class CommercialBenchmarkJudge:
 
         # 3. Unified 5D Bridge
         try:
-            from src.services.book_score_mapping import UnifiedBookScoreBridge
+            from src.engine.book_score.mapping import UnifiedBookScoreBridge
             bridge = UnifiedBookScoreBridge()
             u5d = bridge.map_to_5d({n: 70.0 for n in ANCHOR_PRESETS})
             checks["3_unified_5d_bridge_valid"] = u5d.overall_score == 70.0
@@ -169,7 +169,7 @@ class CommercialBenchmarkJudge:
 
         # 5. Closed-Loop PDCA Runner
         try:
-            from src.services.pdca_cycle import ClosedLoopPDCARunner
+            from src.engine.pdca_cycle import ClosedLoopPDCARunner
             checks["5_pdca_runner_valid"] = hasattr(ClosedLoopPDCARunner, "run_pdca_cycle")
         except Exception:
             checks["5_pdca_runner_valid"] = False

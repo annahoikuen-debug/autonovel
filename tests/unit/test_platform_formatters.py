@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 
-from src.services.publishers.formatters import PlatformFormatter, PublishPlatform
-from src.services.ebook.epub_generator import EpubGenerator
+from src.publishing.publishers.formatters import PlatformFormatter, PublishPlatform
+from src.publishing.ebook.epub_generator import EpubGenerator
 
 
 def test_platform_typography_normalization():

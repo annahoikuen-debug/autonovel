@@ -8,8 +8,8 @@ import httpx
 import pytest
 
 from src.core.exceptions import APIError as APIException
-from src.infrastructure.api import api_client as ac
-import src.infrastructure.api.api_client as api_client
+from src.infrastructure.external import api_client as ac
+import src.infrastructure.external.api_client as api_client
 
 
 @pytest.fixture(autouse=True)

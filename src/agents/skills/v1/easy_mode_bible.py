@@ -41,7 +41,7 @@ class EasyModeBibleSkill(SkillAgent):
                 )
 
             # 既存の BibleAgent / WorldBibleGenerator ロジックを簡易化して実行
-            from src.services.bible_service import WorldBibleGenerator
+            from src.engine.bible_service import WorldBibleGenerator
             bible_generator = WorldBibleGenerator(
                 repo=self.repo,
                 llm=self.llm,

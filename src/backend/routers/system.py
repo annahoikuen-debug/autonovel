@@ -168,7 +168,7 @@ async def recalc_all_book_scores() -> dict[str, Any]:
     from src.backend.database.models import Book as BookModel
     from src.infrastructure.database.models.book_score import BookScore as BookScoreModel
     from src.backend.database.models import Chapter as ChapterModel
-    from src.services.book_score_service import BookScoreCalculator
+    from src.engine.book_score.service import BookScoreCalculator
 
     # 対象的作品と章を先に列挙する（読み取り専用のセッションで終える）
     # get_db_manager() 自体の失敗も拾うため、中に含める。
@@ -261,7 +261,7 @@ async def get_improvement_priorities(book_id: int) -> dict[str, Any]:
 
         from src.backend.database.core import get_db_manager
         from src.backend.database.repositories.book_score import BookScoreRepository
-        from src.services.book_score_service import BookScoreCalculator
+        from src.engine.book_score.service import BookScoreCalculator
 
         db_manager = get_db_manager()
         async with db_manager.get_session() as session:

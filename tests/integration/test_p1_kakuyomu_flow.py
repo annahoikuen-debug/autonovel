@@ -13,9 +13,9 @@ from src.config.kakuyomu_syntax_patterns import (
     CATCHPHRASE_MAX_LENGTH,
     CATCHPHRASE_POWER_WORDS,
 )
-from src.services.marketing.catchphrase_scorer import score_catchphrase_ctr
-from src.services.formatters.platform_copy_formatter import PlatformCopyFormatter
-from src.services.publishers.kakuyomu import (
+from src.integrations.marketing.catchphrase_scorer import score_catchphrase_ctr
+from src.publishing.formatters.platform_copy_formatter import PlatformCopyFormatter
+from src.publishing.publishers.kakuyomu import (
     KakuyomuCredentials,
     KakuyomuPublisher,
 )
@@ -80,7 +80,7 @@ class TestStep16To17PublisherLayer:
 
     def test_no_fake_api_requests(self) -> None:
         """架空API（api.kakuyomu.jp）へのHTTPリクエスト処理が撤廃されている。"""
-        import src.services.publishers.kakuyomu as kakuyomu_module
+        import src.publishing.publishers.kakuyomu as kakuyomu_module
 
         source = inspect.getsource(kakuyomu_module)
         assert "api.kakuyomu.jp" not in source

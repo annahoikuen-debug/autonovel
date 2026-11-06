@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from src.services.audit_service import AuditService
+from src.engine.audit.service import AuditService
 
 @pytest.fixture
 def mock_fast_screener():
@@ -23,10 +23,10 @@ def mock_deai_auditor():
 @pytest.fixture
 def audit_service(mock_fast_screener, mock_ability_checker, mock_deai_auditor):
     # We need to patch the imports in the module to return our mocks
-    with patch('src.services.audit_service.FastPlotScreener', return_value=mock_fast_screener), \
-         patch('src.services.audit_service.AbilityConsistencyChecker', return_value=mock_ability_checker), \
-         patch('src.services.audit_service.DeAIAuditor', return_value=mock_deai_auditor), \
-         patch('src.services.audit_service.MAX_CONSECUTIVE_PEAK_EPISODES', 3):
+    with patch('src.engine.audit.service.FastPlotScreener', return_value=mock_fast_screener), \
+         patch('src.engine.audit.service.AbilityConsistencyChecker', return_value=mock_ability_checker), \
+         patch('src.engine.audit.service.DeAIAuditor', return_value=mock_deai_auditor), \
+         patch('src.engine.audit.service.MAX_CONSECUTIVE_PEAK_EPISODES', 3):
         service = AuditService(llm=MagicMock(), prompt_manager=MagicMock())
         # Replace the internal mocks with our fixtures so we can assert on them
         service.fast_screener = mock_fast_screener
@@ -59,7 +59,7 @@ async def test_audit_deai(audit_service, mock_deai_auditor):
 
 def test_get_erotic_advice(audit_service):
     # Patch MAX_CONSECUTIVE_PEAK_EPISODES to 3 for this test
-    with patch('src.services.audit_service.MAX_CONSECUTIVE_PEAK_EPISODES', 3):
+    with patch('src.engine.audit.service.MAX_CONSECUTIVE_PEAK_EPISODES', 3):
         # Case 1: enough consecutive peaks >=4
         intensities = [1,1,5,5,5]
         advice = audit_service.get_erotic_advice(intensities, current_ep=5, total_eps=10)

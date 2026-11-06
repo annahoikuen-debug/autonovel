@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.compression.layer1_keywords import (
+from src.engine.compression.layer1_keywords import (
     TFIDFExtractor,
     KeyBERTExtractor,
     BM25Extractor,

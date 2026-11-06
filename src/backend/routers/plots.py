@@ -298,7 +298,7 @@ async def wizard_save(
         # ビートシートをPlotとして保存
         beats = req.beats if req.beats else []
         from src.backend.database.models_foreshadowing import ForeshadowingModel
-        from src.services.foreshadowing.planner import plan_foreshadowing
+        from src.engine.foreshadowing.planner import plan_foreshadowing
 
         # v5.3: 回収予定話数の決定に作品全体の話数を使う
         total_eps = len(beats) or req.target_chapters or None

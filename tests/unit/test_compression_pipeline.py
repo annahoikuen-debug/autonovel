@@ -1,8 +1,8 @@
 """Unit tests for FourLayerCompressor end-to-end pipeline and ProtectedContext pinning (Part 5 / Steps 55-60)."""
 
 
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import (
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import (
     CompressionConfig,
     CompressedContextResult,
     ProtectedContext,

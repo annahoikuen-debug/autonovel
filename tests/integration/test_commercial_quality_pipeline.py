@@ -9,10 +9,10 @@ import pytest
 
 from src.models.emotional_hook import EmotionalHookSpec
 from src.models.sharp_edge import SharpEdgeSpec
-from src.services.audit_aggregator import AuditAggregator
-from src.services.narrative.narrative_spine_composer import NarrativeSpineComposer
-from src.services.narrative.opening_booster_service import OpeningBoosterService
-from src.services.pdca_cycle import ClosedLoopPDCARunner
+from src.engine.audit.aggregator import AuditAggregator
+from src.engine.narrative.narrative_spine_composer import NarrativeSpineComposer
+from src.engine.narrative.opening_booster_service import OpeningBoosterService
+from src.engine.pdca_cycle import ClosedLoopPDCARunner
 
 
 @pytest.mark.asyncio

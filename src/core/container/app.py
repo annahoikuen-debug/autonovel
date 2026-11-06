@@ -17,7 +17,7 @@ try:
 except ImportError:
     from src.backend.engine_context import ContextManager
 from src.core.container.infra import InfraContainer
-from src.services.llm.base import PLACEHOLDER_API_KEY
+from src.llm.adapters.base import PLACEHOLDER_API_KEY
 
 if TYPE_CHECKING:
     pass
@@ -66,10 +66,10 @@ class AppContainer(InfraContainer):
 
     # 4層圧縮プロバイダー
     compression_config: providers.Singleton = providers.Singleton(
-        "src.services.compression.models.CompressionConfig",
+        "src.engine.compression.models.CompressionConfig",
     )
     compressor: providers.Singleton = providers.Singleton(
-        "src.services.compression.compressor.FourLayerCompressor",
+        "src.engine.compression.compressor.FourLayerCompressor",
         config=compression_config,
     )
 
@@ -109,7 +109,7 @@ class AppContainer(InfraContainer):
         llm=llm,
     )
     bible_generator: providers.Singleton = providers.Singleton(
-        "src.services.bible_service.WorldBibleGenerator",
+        "src.engine.bible_service.WorldBibleGenerator",
         repo=repo,
         llm=llm,
         pm=pm,
@@ -123,7 +123,7 @@ class AppContainer(InfraContainer):
         pm=pm,
         generate_json=llm.provided.generate_json,
         plot_expander=providers.Singleton(
-            "src.services.default_plot_expander.DefaultPlotExpander",
+            "src.engine.default_plot_expander.DefaultPlotExpander",
             repo=repo,
             pm=pm,
             llm=llm,
@@ -183,7 +183,7 @@ class AppContainer(InfraContainer):
         compressor=compressor,
     )
     image_service: providers.Factory = providers.Factory(
-        "src.services.image_service.ImageService",
+        "src.publishing.illustration.image_service.ImageService",
         api_key=api_key,
     )
     illustration_agent: providers.Factory = providers.Factory(
@@ -228,7 +228,7 @@ class AppContainer(InfraContainer):
     # ※ repository / reporter_factory はどちらも __init__ で未使用の任意引数であり、
     #   providers.Self()（コンテナ自身）を渡しても機能しない。意図的に未指定のままにする。
     book_score_calculator: providers.Singleton = providers.Singleton(
-        "src.services.book_score_service.BookScoreCalculator",
+        "src.engine.book_score.service.BookScoreCalculator",
     )
     writing_service: providers.Singleton = providers.Singleton(
         "src.domain.writing.WritingService",
@@ -249,14 +249,14 @@ class AppContainer(InfraContainer):
 
     # Consolidated Services (Part 4)
     audit_aggregator_service: providers.Singleton = providers.Singleton(
-        "src.services.audit.AuditAggregatorService",
+        "src.engine.audit.AuditAggregatorService",
     )
     marketing_service: providers.Singleton = providers.Singleton(
-        "src.services.marketing.MarketingService",
+        "src.integrations.marketing.MarketingService",
     )
     # 3.6: RAG サービス (単一インスタンスを共有)
     rag_service: providers.Singleton = providers.Singleton(
-        "src.services.rag.GraphRAGService",
+        "src.integrations.rag.GraphRAGService",
     )
     #: 後方互換エイリアス。旧 `rag_pipeline_service` 名で参照するコードのため、
     #: 別インスタンスではなく `rag_service` と同じものを返す。

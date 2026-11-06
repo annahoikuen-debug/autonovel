@@ -1,4 +1,4 @@
-from src.services.marketing import MarketingService as MarketingAgent
+from src.integrations.marketing.marketing import MarketingService as MarketingAgent
 
 import pytest
 from unittest.mock import MagicMock

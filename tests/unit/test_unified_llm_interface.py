@@ -1,6 +1,6 @@
 import asyncio
-from src.core.llm.types import LLMRequest
-from src.core.llm.adapters.mock_unified_client import UnifiedMockLLMClient
+from src.llm.unified.types import LLMRequest
+from src.llm.unified.adapters.mock import UnifiedMockLLMClient
 
 def test_mock_client():
     client = UnifiedMockLLMClient("Hello")

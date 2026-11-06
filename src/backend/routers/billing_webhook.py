@@ -14,7 +14,7 @@ from src.backend.database import get_async_db
 from src.backend.database.models import User
 from src.backend.database.models_billing import StripeWebhookEvent
 from src.config.billing_plans import get_credits_for_price_id, get_tier_for_price_id
-from src.services.billing.credit_service import CreditService
+from src.integrations.billing.credit_service import CreditService
 
 logger = logging.getLogger(__name__)
 

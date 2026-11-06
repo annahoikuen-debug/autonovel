@@ -8,12 +8,12 @@ import asyncio
 
 import pytest
 
-from src.services.publishers.kakuyomu import (
+from src.publishing.publishers.kakuyomu import (
     KakuyomuCredentials,
     KakuyomuPublisher,
     create_kakuyomu_publisher,
 )
-from src.services.publishers.base import ValidationError
+from src.publishing.publishers.base import ValidationError
 
 
 class TestKakuyomuPublisherNoExternalApi:
@@ -28,7 +28,7 @@ class TestKakuyomuPublisherNoExternalApi:
         """モジュール内にhttpxリクエスト処理が残っていない。"""
         import inspect
 
-        import src.services.publishers.kakuyomu as kakuyomu_module
+        import src.publishing.publishers.kakuyomu as kakuyomu_module
 
         source = inspect.getsource(kakuyomu_module)
         assert "api.kakuyomu.jp" not in source

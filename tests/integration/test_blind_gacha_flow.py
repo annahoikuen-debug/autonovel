@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.domain.entities.easy_mode import GachaPlanType, GachaRequest
-from src.services.blind_review import BlindReviewGate
+from src.engine.blind_review import BlindReviewGate
 from src.services.gacha_service import GachaService
 
 

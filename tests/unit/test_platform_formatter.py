@@ -3,8 +3,8 @@
 import io
 import zipfile
 
-from src.services.formatters.ruby_transpiler import PublishPlatform, RubyTranspiler
-from src.services.formatters.platform_formatter import PlatformFormatter
+from src.publishing.formatters.ruby_transpiler import PublishPlatform, RubyTranspiler
+from src.publishing.formatters.platform_formatter import PlatformFormatter
 
 
 def test_ruby_transpiler_narou():

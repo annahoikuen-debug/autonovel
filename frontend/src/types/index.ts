@@ -74,5 +74,15 @@ export type {
   AgentEvent,
   AgentProgress,
 } from "./orchestrated";
+export type {
+  OrchestratedTaskStatus,
+  AgentName,
+  AgentEvent,
+  AgentProgress,
+} from "./orchestrated";
+
 // marketing.ts の型 (TitleCandidate / ViralTitleRequest / ViralTitleResponse) は
 // api.generated と同名のため、再エクスポートは生成物側に一本化している。
+
+// --- インライン修正型 ---
+export * from "./inlineRevision";

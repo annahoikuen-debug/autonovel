@@ -3,8 +3,8 @@
 from __future__ import annotations
 
 
-from src.services.anti_ai.correction_pipeline import AntiAICorrector
-from src.services.anti_ai.correctors import (
+from src.engine.anti_ai.correction_pipeline import AntiAICorrector
+from src.engine.anti_ai.correctors import (
     DirectEmotionCorrector,
     GenericVocabularyCorrector,
     HedgingPatternsCorrector,
@@ -13,7 +13,7 @@ from src.services.anti_ai.correctors import (
     TransitionOveruseCorrector,
     UniformParagraphCorrector,
 )
-from src.services.anti_ai.models import AICategory, Severity, ViolationSpan
+from src.engine.anti_ai.models import AICategory, Severity, ViolationSpan
 
 
 class TestTransitionOveruseCorrector:

@@ -10,7 +10,7 @@ import os
 from typing import Any
 
 from src.backend.workflows.base_workflow import BaseWorkflow
-from src.services.auto_workflow_pipeline import create_full_auto_pipeline
+from src.engine.auto_workflow_pipeline import create_full_auto_pipeline
 from src.services.pipeline_param_mapper import (
     map_context_to_fullauto_result,
     map_fullauto_kwargs_to_context,

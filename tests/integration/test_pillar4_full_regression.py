@@ -26,16 +26,16 @@ from src.agents.specialist_auditor_base import (
 
 # 2. Calibration & Aggregator
 from src.services.score_calibrator import ScoreCalibrator
-from src.services.audit_aggregator import AuditAggregator, SPECIALIST_NAMES
+from src.engine.audit.aggregator import AuditAggregator, SPECIALIST_NAMES
 
 # 3. 5D Mapping & BookScore
-from src.services.book_score_mapping import UnifiedBookScoreBridge
+from src.engine.book_score.mapping import UnifiedBookScoreBridge
 
 # 4. Directives & PDCA
 from src.services.pdca_directive import (
     PDCADirectiveGenerator,
 )
-from src.services.pdca_cycle import ClosedLoopPDCARunner
+from src.engine.pdca_cycle import ClosedLoopPDCARunner
 
 # 5. DAG Replanning
 from src.backend.tasks.dag_models import DAGGraph, DAGTaskNode

@@ -5,7 +5,7 @@ from __future__ import annotations
 
 
 from src.models.opening_booster import CliffhangerType
-from src.services.narrative.opening_booster_service import OpeningBoosterService
+from src.engine.narrative.opening_booster_service import OpeningBoosterService
 
 
 def test_opening_booster_peaceful_tail() -> None:

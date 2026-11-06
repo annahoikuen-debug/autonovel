@@ -1,7 +1,7 @@
 """Unit tests for PredicateScorer."""
 
 from src.models.predicate_match import PredicateAnalysisResult, PredicateMatch
-from src.services.nlp.predicate_scorer import PredicateScorer
+from src.engine.nlp.predicate_scorer import PredicateScorer
 
 
 def test_scorer_resolved_full_score():

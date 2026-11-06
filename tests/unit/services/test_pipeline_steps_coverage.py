@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.services.pipeline_base import WorkflowContext
+from src.engine.pipeline_base import WorkflowContext
 from src.services.pipeline_steps import (
     AuditRewriteStep,
     CatharsisAnalysisStep,
@@ -567,7 +567,7 @@ async def test_illustration_step_fallback_agent_creation():
     with pytest.MonkeyPatch.context() as m:
         m.setattr("src.agents.illustration_agent.IllustrationAgent",
                   lambda **kwargs: agent)
-        m.setattr("src.services.image_service.ImageService", lambda **kwargs: MagicMock())
+        m.setattr("src.publishing.illustration.image_service.ImageService", lambda **kwargs: MagicMock())
         patch_illustration_workflow(
             m, {"status": "success", "illustrations": [{"url": "y"}]}
         )

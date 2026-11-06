@@ -224,7 +224,7 @@ class PromptComposer:
         シーンとの関連度上位 `FORESHADOW_RELEVANCE_TOP_K` 件に絞る。
         **既定 OFF なので現挙動は完全に維持される**。契約鉤子には触らない。
         """
-        from src.services.foreshadowing import flags as _fs_flags
+        from src.engine.foreshadowing import flags as _fs_flags
 
         normalized = await self._collect_unresolved(book_id, ep_num, context, rows)
         if not _fs_flags.is_relevance_injection_enabled():
@@ -232,7 +232,7 @@ class PromptComposer:
         if not normalized:
             return normalized
 
-        from src.services.foreshadowing.relevance import score_and_select
+        from src.engine.foreshadowing.relevance import score_and_select
 
         scene_text = f"{context.get('phase', '')} {context.get('scene_summary', '')}"
         selected = score_and_select(

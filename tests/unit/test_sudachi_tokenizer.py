@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import patch
 
-from src.services.compression.japanese_tokenizer import (
+from src.engine.compression.japanese_tokenizer import (
     SudachiTokenizer,
     RegexJapaneseTokenizer,
     HybridJapaneseTokenizer,
@@ -12,7 +12,7 @@ from src.services.compression.japanese_tokenizer import (
     create_japanese_tokenizer,
     SUDACHI_AVAILABLE,
 )
-from src.services.compression.layer1_keywords import Layer1KeywordExtractor
+from src.engine.compression.layer1_keywords import Layer1KeywordExtractor
 
 
 class TestSudachiConfig:
@@ -167,7 +167,7 @@ class TestCreateJapaneseTokenizer:
 
     def test_fallback_when_sudachi_unavailable(self):
         """Test fallback to regex when Sudachi fails."""
-        with patch('src.services.compression.japanese_tokenizer.SUDACHI_AVAILABLE', False):
+        with patch('src.engine.compression.japanese_tokenizer.SUDACHI_AVAILABLE', False):
             tokenizer = create_japanese_tokenizer()
             assert isinstance(tokenizer, RegexJapaneseTokenizer)
 
@@ -185,7 +185,7 @@ class TestLayer1KeywordExtractorIntegration:
         assert "エクスカリバー" in result.extracted_keywords
 
     def test_extract_with_custom_config(self):
-        from src.services.compression.models import SudachiConfig
+        from src.engine.compression.models import SudachiConfig
         config = SudachiConfig(min_length=3)
         extractor = Layer1KeywordExtractor(top_n=10, tokenizer_config=config)
         text = "勇者アルカディアが聖剣エクスカリバーを抜く"
@@ -201,7 +201,7 @@ class TestLayer1KeywordExtractorIntegration:
         assert result.original_char_count == 0
 
     def test_module_level_tokenize_function(self):
-        from src.services.compression.layer1_keywords import tokenize_japanese_words
+        from src.engine.compression.layer1_keywords import tokenize_japanese_words
         text = "勇者アルカディア"
         nouns = tokenize_japanese_words(text)
         assert isinstance(nouns, list)

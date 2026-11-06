@@ -3,8 +3,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.services.audit_service import AuditService
-from src.services.hook_diagnoser import HookDiagnoser, HOOK_THRESHOLD
+from src.engine.audit.service import AuditService
+from src.engine.hook_diagnoser import HookDiagnoser, HOOK_THRESHOLD
 
 
 class TestAuditService:

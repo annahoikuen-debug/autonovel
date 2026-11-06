@@ -41,7 +41,7 @@ def _apply_config_overrides(config_dict: dict | None) -> None:
 def process_vector_event(event_type: str, payload: dict, trace_id: str | None = None):
     """非同期でChromaDBへの操作を実行するタスク"""
     logger.info(f"Processing vector event: {event_type}")
-    from src.services.vector_store import DefaultVectorStore
+    from src.integrations.vector_store import DefaultVectorStore
 
     store = DefaultVectorStore()
 

@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.services.age_client import AgeClient, GraphStats, _parse_agtype
+from src.integrations.age_client import AgeClient, GraphStats, _parse_agtype
 
 
 def make_client(default_graph="novel_graph"):

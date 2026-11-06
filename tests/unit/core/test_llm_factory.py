@@ -21,7 +21,7 @@ for _mod in (
     if _mod not in sys.modules:
         sys.modules[_mod] = MagicMock()
 
-from src.core.llm.factory import create_unified_llm_client
+from src.llm.unified.factory import create_unified_llm_client
 
 
 class TestCreateUnifiedLLMClient:
@@ -31,7 +31,7 @@ class TestCreateUnifiedLLMClient:
         """'mock' プロバイダで UnifiedMockLLMClient が生成されること。"""
         client = create_unified_llm_client("mock")
         assert client is not None
-        from src.core.llm.adapters.mock_unified_client import (
+        from src.llm.unified.adapters.mock import (
             UnifiedMockLLMClient,
         )
 
@@ -46,7 +46,7 @@ class TestCreateUnifiedLLMClient:
         ):
             client = create_unified_llm_client("openai")
             assert client is not None
-            from src.core.llm.adapters.openai_unified_client import (
+            from src.llm.unified.adapters.openai import (
                 OpenAIUnifiedClient,
             )
 
@@ -61,7 +61,7 @@ class TestCreateUnifiedLLMClient:
         ):
             client = create_unified_llm_client("claude")
             assert client is not None
-            from src.core.llm.adapters.claude_unified_client import (
+            from src.llm.unified.adapters.claude import (
                 ClaudeUnifiedClient,
             )
 
@@ -76,7 +76,7 @@ class TestCreateUnifiedLLMClient:
         ):
             client = create_unified_llm_client("gemini")
             assert client is not None
-            from src.core.llm.adapters.gemini_unified_client import (
+            from src.llm.unified.adapters.gemini import (
                 GeminiUnifiedClient,
             )
 
@@ -86,7 +86,7 @@ class TestCreateUnifiedLLMClient:
         """'ollama' プロバイダで OllamaUnifiedClient が生成されること。"""
         client = create_unified_llm_client("ollama")
         assert client is not None
-        from src.core.llm.adapters.ollama_unified_client import (
+        from src.llm.unified.adapters.ollama import (
             OllamaUnifiedClient,
         )
 
@@ -96,7 +96,7 @@ class TestCreateUnifiedLLMClient:
         """'vllm' プロバイダで OllamaUnifiedClient が生成されること。"""
         client = create_unified_llm_client("vllm")
         assert client is not None
-        from src.core.llm.adapters.ollama_unified_client import (
+        from src.llm.unified.adapters.ollama import (
             OllamaUnifiedClient,
         )
 
@@ -110,7 +110,7 @@ class TestCreateUnifiedLLMClient:
     def test_provider_name_is_case_insensitive(self):
         """プロバイダ名は大文字小文字を区別しないこと。"""
         client = create_unified_llm_client("MOCK")
-        from src.core.llm.adapters.mock_unified_client import (
+        from src.llm.unified.adapters.mock import (
             UnifiedMockLLMClient,
         )
 

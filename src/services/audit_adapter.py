@@ -1,4 +1,4 @@
-"""下位互換性維持のためのシム。実体は src.services.audit.adapter に移動しました。"""
+"""下位互換性維持のためのシム。実体は src.engine.audit.adapter に移動しました。"""
 import warnings
 
 warnings.warn(
@@ -7,6 +7,6 @@ warnings.warn(
     stacklevel=2,
 )
 
-from src.services.audit.adapter import AuditAdapter, create_audit_adapter  # noqa: F401
+from src.engine.audit.adapter import AuditAdapter, create_audit_adapter  # noqa: F401
 
 __all__ = ["AuditAdapter", "create_audit_adapter"]

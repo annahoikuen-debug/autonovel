@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.services.reflective_rag import ReflectiveRAGService, ReflectiveRetrievalResult, ReflectiveDoc
-from src.services.rag_service import SearchResult
+from src.integrations.rag.rag_service import SearchResult
 
 
 @pytest.fixture

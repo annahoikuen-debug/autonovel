@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from src.backend.routers.graph import CypherQueryRequest, router as graph_router
 from src.backend.routers.system import router as system_router
 from src.backend.auth import require_api_key
-from src.services.age_client import _sanitize_graph_name, _validate_column_def
+from src.integrations.age_client import _sanitize_graph_name, _validate_column_def
 
 
 def test_cypher_query_request_valid():

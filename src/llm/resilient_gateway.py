@@ -14,7 +14,7 @@ from prometheus_client import Counter
 
 from .circuit_breaker import LLMCircuitBreaker
 from .fallback_policy import ALLOW_MOCK_ENV, FallbackPolicy, _mock_allowed
-from src.services.llm.provider_failover import ProviderFailoverManager
+from src.llm.adapters.failover import ProviderFailoverManager
 
 logger = logging.getLogger(__name__)
 

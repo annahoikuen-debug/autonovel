@@ -4,8 +4,8 @@ from __future__ import annotations
 import pytest
 
 from src.backend.config import settings
-from src.services.llm.factory import get_llm_adapter
-from src.services.llm.mock_adapter import MockLLMAdapter
+from src.llm.adapters.factory import get_llm_adapter
+from src.llm.adapters.mock import MockLLMAdapter
 
 
 @pytest.fixture(autouse=True)

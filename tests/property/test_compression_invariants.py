@@ -8,8 +8,8 @@ pytest.importorskip("hypothesis")
 from hypothesis import given, strategies as st, settings, assume
 from hypothesis.strategies import text, lists, integers, floats, sampled_from, sets
 
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import (
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import (
     CompressionConfig,
     ProtectedContext,
 )

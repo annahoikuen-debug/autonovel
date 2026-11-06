@@ -120,7 +120,7 @@ class EpisodeWritingWorkflow(BaseWorkflow):
             logger.debug("[PREFETCH] Speculative prefetch is not allowed; skipping")
             return
         try:
-            from src.services.semantic_cache import SemanticCacheManager
+            from src.integrations.semantic_cache import SemanticCacheManager
 
             # SemanticCacheManager のインスタンスを取得
             # (Container 等でインジェクションされている場合はそれを使用)

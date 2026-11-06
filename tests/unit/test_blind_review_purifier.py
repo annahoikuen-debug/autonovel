@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock
 
-from src.services.blind_review import (
+from src.engine.blind_review import (
     detect_proposal_leaks,
     BlindFeedbackPurifier,
     BlindReviewGate,

@@ -7,7 +7,7 @@
 """
 import time
 
-from src.services.context_compression.rolling_memory import RollingMemoryBuilder
+from src.engine.context_compression.rolling_memory import RollingMemoryBuilder
 
 
 def test_rolling_memory_token_stability_20_episodes():

@@ -1,4 +1,4 @@
-from src.services.text_chunker import split_into_paragraphs
+from src.engine.text_chunker import split_into_paragraphs
 
 
 def test_split_into_paragraphs_empty():

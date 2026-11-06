@@ -5,7 +5,7 @@ import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
-from src.services.prose.paragraph_indexer import ParagraphIndexer
+from src.engine.prose.paragraph_indexer import ParagraphIndexer
 
 
 def test_offsets_point_at_actual_text():

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 
-from src.services.anti_ai.loop_controller import AntiAILoopController
+from src.engine.anti_ai.loop_controller import AntiAILoopController
 
 
 AI_TEXT = """しかし、朝が来た。しかし、昼が来た。しかし、夜が来た。

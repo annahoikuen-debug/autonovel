@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
-from src.services.compression import FourLayerCompressor, CompressionConfig
-from src.services.compression.models import SceneType
+from src.engine.compression import FourLayerCompressor, CompressionConfig
+from src.engine.compression.models import SceneType
 
 
 class CompressorWrapper:

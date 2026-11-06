@@ -1,7 +1,7 @@
 """src/services/conflict_report_service.py の単体テスト."""
 
 
-from src.services.conflict_report_service import (
+from src.engine.conflict_report_service import (
     ConflictReportService, ConflictItem, ConflictReport,
 )
 

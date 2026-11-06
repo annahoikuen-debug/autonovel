@@ -6,10 +6,10 @@ from io import BytesIO
 
 import pytest
 
-from src.services.audio.chapter_synthesizer import ChapterAudioSynthesizer
-from src.services.audio.dialogue_extractor import DialogueExtractor, DialogueLine, split_long_sentence
-from src.services.audio.emotion_classifier import AcousticParameters, SpeechEmotion
-from src.services.audio.base import AudioSynthesisClient, AudioSynthesisRequest, AudioSynthesisResult
+from src.integrations.audio.chapter_synthesizer import ChapterAudioSynthesizer
+from src.integrations.audio.dialogue_extractor import DialogueExtractor, DialogueLine, split_long_sentence
+from src.integrations.audio.emotion_classifier import AcousticParameters, SpeechEmotion
+from src.integrations.audio.base import AudioSynthesisClient, AudioSynthesisRequest, AudioSynthesisResult
 
 
 class MockAudioClient(AudioSynthesisClient):
@@ -188,7 +188,7 @@ def test_audio_synthesis_request_volume_scale():
 
 def test_voicevox_client_volume_scale():
     """Test VoicevoxClient applies volume_scale"""
-    from src.services.audio.voicevox_client import VoicevoxClient
+    from src.integrations.audio.voicevox_client import VoicevoxClient
 
     # Check that the code includes volumeScale
     import inspect
@@ -198,7 +198,7 @@ def test_voicevox_client_volume_scale():
 
 def test_variable_pause_combine_wav():
     """Test AudioCombiner.combine_wav_clips with variable pauses"""
-    from src.services.audio.audio_combiner import AudioCombiner
+    from src.integrations.audio.audio_combiner import AudioCombiner
 
     # Generate test WAV clips
     import struct
@@ -306,7 +306,7 @@ def test_dialogue_extractor_long_sentence_split():
 
 def test_audio_combiner_empty_clips():
     """Test AudioCombiner with empty clips"""
-    from src.services.audio.audio_combiner import AudioCombiner
+    from src.integrations.audio.audio_combiner import AudioCombiner
 
     result = AudioCombiner.combine_wav_clips([])
     assert result == b""

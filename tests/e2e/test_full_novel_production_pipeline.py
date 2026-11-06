@@ -17,7 +17,7 @@ import zipfile
 import pytest
 
 from src.easy_mode.pipeline import EasyModePipeline
-from src.services.auto_workflow_pipeline import (
+from src.engine.auto_workflow_pipeline import (
     AutoWorkflowPipeline,
     create_easy_mode_pipeline,
 )
@@ -173,7 +173,7 @@ class TestCoreFastPath:
 
     def test_package_step_importable(self, plugin_free_env):
         """納品 (PackageStep) がプラグインなしでインポート可能なこと。"""
-        from src.services.auto_workflow_pipeline import PackageStep
+        from src.engine.auto_workflow_pipeline import PackageStep
 
         assert PackageStep is not None
 

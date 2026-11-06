@@ -4,8 +4,8 @@ import pytest
 pytest.importorskip("google.genai")
 
 from unittest.mock import MagicMock, patch
-from src.core.llm.adapters.gemini_unified_client import GeminiUnifiedClient
-from src.core.llm.types import LLMRequest
+from src.llm.unified.adapters.gemini import GeminiUnifiedClient
+from src.llm.unified.types import LLMRequest
 
 @pytest.fixture
 def mock_genai():

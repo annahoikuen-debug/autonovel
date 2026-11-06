@@ -1,6 +1,20 @@
-"""Novel publishing platform formatters."""
+"""後方互換 shim: 実体は src/publishing/formatters/ に移設済み。"""
+from __future__ import annotations
 
-from src.services.formatters.ruby_transpiler import PublishPlatform, RubyTranspiler
-from src.services.formatters.platform_formatter import PlatformFormatter
+import importlib
+import sys
 
-__all__ = ["PublishPlatform", "RubyTranspiler", "PlatformFormatter"]
+from src.publishing.formatters import *  # noqa: F401, F403
+
+__all__ = [name for name in dir() if not name.startswith("_")]
+
+
+def __getattr__(name: str):
+    """サブモジュールを src.publishing.formatters にリダイレクト (PEP 562)。"""
+    target = f"src.publishing.formatters.{name}"
+    try:
+        module = importlib.import_module(target)
+    except ModuleNotFoundError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    sys.modules[f"{__name__}.{name}"] = module
+    return module

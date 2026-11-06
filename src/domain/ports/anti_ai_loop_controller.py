@@ -1,6 +1,6 @@
 """Anti-AI ループコントローラーアプリケーションポート（ドメイン層定義）。
 
-``src.services.anti_ai.loop_controller.AntiAILoopController`` を抽象化したポート。
+``src.engine.anti_ai.loop_controller.AntiAILoopController`` を抽象化したポート。
 ドメイン層はこのポート経由で Anti-AI 修正ループを利用し、旧レイアウトに
 直接依存しない。
 

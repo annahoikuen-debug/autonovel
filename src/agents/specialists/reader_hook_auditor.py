@@ -117,7 +117,7 @@ class ReaderHookAuditor(SpecialistAuditor):
         # 序盤3話特化: クリフハンガー強制（合格ライン 80点）
         ep_num = ctx.get("ep_num")
         if ep_num is not None and ep_num <= 3:
-            from src.services.auditors.cliffhanger_scorer import score_cliffhanger
+            from src.engine.auditors.cliffhanger_scorer import score_cliffhanger
             cliff_eval = score_cliffhanger(draft)
             feedback["opening_cliffhanger"] = cliff_eval.model_dump()
             if cliff_eval.requires_rewrite or cliff_eval.score < 80.0:
@@ -183,7 +183,7 @@ class ReaderHookAuditor(SpecialistAuditor):
         # 序盤3話特化: クリフハンガー強制
         ep_num = ctx.get("ep_num")
         if ep_num is not None and ep_num <= 3:
-            from src.services.auditors.cliffhanger_scorer import score_cliffhanger
+            from src.engine.auditors.cliffhanger_scorer import score_cliffhanger
             cliff_eval = score_cliffhanger(draft)
             feedback_data["opening_cliffhanger"] = cliff_eval.model_dump()
             if cliff_eval.requires_rewrite or cliff_eval.score < 80.0:

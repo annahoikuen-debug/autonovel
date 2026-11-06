@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.cadence.compound_merger import CompoundSentenceMerger
-from src.services.cadence.models import (
+from src.engine.cadence.compound_merger import CompoundSentenceMerger
+from src.engine.cadence.models import (
     CadenceIntelligentConfig,
     CadenceMode,
 )
-from src.services.cadence.span_extractor import (
+from src.engine.cadence.span_extractor import (
     TargetSpan,
     ViolationSpanExtractor,
 )

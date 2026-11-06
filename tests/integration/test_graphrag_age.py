@@ -105,7 +105,7 @@ def age_session(age_container):
 
 def test_age_init_graph_idempotent(age_session):
     """init_graph を 2 回呼んでも両方 True でグラフ重複作成エラーにならない."""
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="test_graph_idem")
     assert client.init_graph(age_session) is True
@@ -116,7 +116,7 @@ def test_age_upsert_node_dedup(age_session):
     """同じ (label, name) で 2 回 upsert_node してもノードは 1 つだけ."""
     from sqlalchemy import text
 
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="test_graph_dedup")
     assert client.init_graph(age_session) is True
@@ -136,7 +136,7 @@ def test_age_sqlstate_duplicate_graph_returns_true(age_session):
     """pgcode 42P04 (duplicate_graph) が出ても init_graph は True を返す (SQLSTATE ベース)."""
     from sqlalchemy import text
 
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="test_graph_pgcode")
     assert client.init_graph(age_session) is True
@@ -150,7 +150,7 @@ def test_age_sqlstate_duplicate_graph_returns_true(age_session):
 
 def test_age_upsert_node_with_properties(age_session):
     """プロパティ付きノードのUPSERTと取得."""
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="test_graph_props")
     assert client.init_graph(age_session) is True
@@ -176,7 +176,7 @@ def test_age_upsert_node_with_properties(age_session):
 
 def test_age_upsert_edge(age_session):
     """エッジのUPSERT."""
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="test_graph_edge")
     assert client.init_graph(age_session) is True
@@ -205,7 +205,7 @@ def test_age_upsert_edge(age_session):
 
 def test_age_get_neighbors(age_session):
     """近傍ノード探索."""
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="test_graph_neighbors")
     assert client.init_graph(age_session) is True
@@ -234,7 +234,7 @@ def test_age_get_neighbors(age_session):
 
 def test_age_batch_upsert(age_session):
     """バッチUPSERT."""
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="test_graph_batch")
     assert client.init_graph(age_session) is True
@@ -262,7 +262,7 @@ def test_age_batch_upsert(age_session):
 
 def test_age_cypher_parameters(age_session):
     """パラメータ化Cypherクエリ（SQLインジェクション対策）."""
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="test_graph_param")
     assert client.init_graph(age_session) is True
@@ -294,7 +294,7 @@ def test_age_cypher_parameters(age_session):
 def test_age_graph_stats(age_container):
     """グラフ統計取得."""
     from sqlalchemy.orm import sessionmaker
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     Session = sessionmaker(bind=age_container)
     session = Session()
@@ -339,7 +339,7 @@ def test_age_graph_stats(age_container):
 
 def test_pgvector_store_init(age_container):
     """PgVectorStore 初期化."""
-    from src.services.vector_store import PgVectorStore, HAS_PGVECTOR
+    from src.integrations.vector_store import PgVectorStore, HAS_PGVECTOR
 
     if not HAS_PGVECTOR:
         pytest.skip("pgvector not installed")
@@ -367,7 +367,7 @@ def test_pgvector_store_init(age_container):
 @pytest.mark.asyncio
 async def test_pgvector_store_add_search(age_container):
     """PgVectorStore 追加と検索."""
-    from src.services.vector_store import PgVectorStore, HAS_PGVECTOR
+    from src.integrations.vector_store import PgVectorStore, HAS_PGVECTOR
 
     if not HAS_PGVECTOR:
         pytest.skip("pgvector not installed")
@@ -399,7 +399,7 @@ async def test_pgvector_store_add_search(age_container):
 @pytest.mark.asyncio
 async def test_pgvector_store_hybrid_search(age_container):
     """PgVectorStore ハイブリッド検索 (ベクトル + 全文)."""
-    from src.services.vector_store import PgVectorStore, HAS_PGVECTOR
+    from src.integrations.vector_store import PgVectorStore, HAS_PGVECTOR
 
     if not HAS_PGVECTOR:
         pytest.skip("pgvector not installed")
@@ -438,7 +438,7 @@ async def test_pgvector_store_hybrid_search(age_container):
 
 def test_graph_pipeline_process_chapter(age_session):
     """単章処理パイプライン."""
-    from src.services.graph_pipeline import GraphPipelineService
+    from src.engine.graph_pipeline import GraphPipelineService
 
     pipeline = GraphPipelineService()
     text = "勇者アルスは聖剣エクスカリバーを手に入れ、王都ルミナスへ向かった。\n\n門番のガレスが出迎えた。"
@@ -446,7 +446,7 @@ def test_graph_pipeline_process_chapter(age_session):
     # モックLLMを使用するため、extraction_serviceをパッチ
     from unittest.mock import patch
     from src.models.graph_schemas import GraphExtractionResult, Entity, Relationship
-    from src.services.age_client import age_client
+    from src.integrations.age_client import age_client
 
     # Ensure default graph exists for graph pipeline
     age_client.init_graph(age_session)
@@ -464,9 +464,9 @@ def test_graph_pipeline_process_chapter(age_session):
         plot_summary="アルスが聖剣を得て王都へ向かう",
     )
 
-    with patch("src.services.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
-         patch("src.services.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
-         patch("src.services.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
+    with patch("src.engine.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
+         patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
+         patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
         result = pipeline.process_chapter_knowledge(age_session, 1, text)
 
     assert result.chunks_created >= 1
@@ -476,7 +476,7 @@ def test_graph_pipeline_process_chapter(age_session):
 
 def test_graph_pipeline_batch(age_session):
     """バッチ処理パイプライン."""
-    from src.services.graph_pipeline import GraphPipelineService
+    from src.engine.graph_pipeline import GraphPipelineService
     from unittest.mock import patch
     from src.models.graph_schemas import GraphExtractionResult, Entity
 
@@ -493,9 +493,9 @@ def test_graph_pipeline_batch(age_session):
         plot_summary="テスト",
     )
 
-    with patch("src.services.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
-         patch("src.services.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
-         patch("src.services.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
+    with patch("src.engine.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
+         patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
+         patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
         stats = pipeline.process_chapters_batch(age_session, chapters)
 
     assert stats.chapters_processed == 3
@@ -509,7 +509,7 @@ def test_graph_pipeline_batch(age_session):
 @pytest.mark.asyncio
 async def test_rag_hybrid_search(age_session):
     """ハイブリッド検索 (Vector + Graph + Fulltext)."""
-    from src.services.rag_service import GraphRAGService
+    from src.integrations.rag.rag_service import GraphRAGService
     from unittest.mock import patch
 
     service = GraphRAGService()
@@ -549,7 +549,7 @@ async def test_rag_hybrid_search(age_session):
     age_session.commit()
 
     # グラフデータ準備
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
     client = AgeClient(default_graph_name="test_rag_graph")
     client.init_graph(age_session)
     client.upsert_node(age_session, "Character", "アルス", {})
@@ -566,7 +566,7 @@ async def test_rag_hybrid_search(age_session):
 @pytest.mark.asyncio
 async def test_rag_build_context(age_session):
     """RAGコンテキスト構築."""
-    from src.services.rag_service import GraphRAGService
+    from src.integrations.rag.rag_service import GraphRAGService
     from unittest.mock import patch
 
     service = GraphRAGService()
@@ -599,7 +599,7 @@ async def test_rag_build_context(age_session):
     age_session.commit()
 
     # グラフデータ
-    from src.services.age_client import age_client
+    from src.integrations.age_client import age_client
     age_client.init_graph(age_session)
     age_client.upsert_node(age_session, "Character", "アルス", {"description": "主人公"})
     age_client.upsert_node(age_session, "Item", "聖剣", {"description": "伝説の剣"})
@@ -612,8 +612,8 @@ async def test_rag_build_context(age_session):
     age_session.add(chunk)
     age_session.commit()
 
-    with patch("src.services.rag_service.settings.ENABLE_GRAPHRAG", True), \
-         patch("src.services.rag_service.settings.DATABASE_URL", "postgresql://test"):
+    with patch("src.integrations.rag.rag_service.settings.ENABLE_GRAPHRAG", True), \
+         patch("src.integrations.rag.rag_service.settings.DATABASE_URL", "postgresql://test"):
         context = await service.build_rag_context(
             age_session,
             current_prompt="聖剣を構える",
@@ -677,7 +677,7 @@ def test_graph_api_endpoints(age_container):
 @pytest.mark.perf
 def test_age_performance_1000_nodes(age_session):
     """1000ノードでのパフォーマンステスト."""
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="test_perf")
     assert client.init_graph(age_session) is True
@@ -701,7 +701,7 @@ def test_age_performance_1000_nodes(age_session):
 @pytest.mark.perf
 def test_pgvector_performance_1000_docs(age_container):
     """1000ドキュメントでのベクトル検索パフォーマンス."""
-    from src.services.vector_store import PgVectorStore, HAS_PGVECTOR
+    from src.integrations.vector_store import PgVectorStore, HAS_PGVECTOR
 
     if not HAS_PGVECTOR:
         pytest.skip("pgvector not installed")
@@ -739,7 +739,7 @@ def test_pgvector_performance_1000_docs(age_container):
 
 def test_age_invalid_cypher(age_session):
     """無効なCypherクエリのエラーハンドリング."""
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="test_error")
     client.init_graph(age_session)
@@ -750,7 +750,7 @@ def test_age_invalid_cypher(age_session):
 
 def test_age_connection_retry(age_container):
     """接続リトライ動作."""
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
     from sqlalchemy import create_engine
 
     # 正常な接続でリトライが不要なことを確認
@@ -779,9 +779,9 @@ async def test_graphrag_e2e(age_session):
     5. ハイブリッド検索で関連情報取得
     6. RAGコンテキスト生成
     """
-    from src.services.graph_pipeline import GraphPipelineService
-    from src.services.rag_service import GraphRAGService
-    from src.services.age_client import age_client, AgeClient
+    from src.engine.graph_pipeline import GraphPipelineService
+    from src.integrations.rag.rag_service import GraphRAGService
+    from src.integrations.age_client import age_client, AgeClient
     from unittest.mock import patch
     from src.models.graph_schemas import GraphExtractionResult, Entity, Relationship
 
@@ -814,9 +814,9 @@ async def test_graphrag_e2e(age_session):
 
     # 3. パイプライン実行
     pipeline = GraphPipelineService()
-    with patch("src.services.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
-         patch("src.services.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
-         patch("src.services.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
+    with patch("src.engine.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
+         patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
+         patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
         result = pipeline.process_chapter_knowledge(age_session, 1, chapter_text)
 
     assert result.chunks_created >= 1
@@ -835,8 +835,8 @@ async def test_graphrag_e2e(age_session):
     assert "ガレス" in names
 
     # 5. RAGコンテキスト生成
-    with patch("src.services.rag_service.settings.ENABLE_GRAPHRAG", True), \
-         patch("src.services.rag_service.settings.DATABASE_URL", "postgresql://test"):
+    with patch("src.integrations.rag.rag_service.settings.ENABLE_GRAPHRAG", True), \
+         patch("src.integrations.rag.rag_service.settings.DATABASE_URL", "postgresql://test"):
         context = await rag.build_rag_context(
             age_session,
             current_prompt="聖剣を構えて戦闘の構えをとる",

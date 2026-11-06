@@ -1,13 +1,13 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.services.pdca_cycle import ClosedLoopPDCARunner
-from src.services.audit_aggregator import AuditAggregator
-from src.services.book_score_mapping import UnifiedBookScoreBridge
-from src.services.audit.fast_screener import FastScreener
-from src.services.audit.targeted_diagnostic import TargetedDiagnostic
-from src.services.prose.paragraph_indexer import ParagraphIndexer
-from src.services.prose.patch_merger import PatchMerger
+from src.engine.pdca_cycle import ClosedLoopPDCARunner
+from src.engine.audit.aggregator import AuditAggregator
+from src.engine.book_score.mapping import UnifiedBookScoreBridge
+from src.engine.audit.fast_screener import FastScreener
+from src.engine.audit.targeted_diagnostic import TargetedDiagnostic
+from src.engine.prose.paragraph_indexer import ParagraphIndexer
+from src.engine.prose.patch_merger import PatchMerger
 from src.agents.writing.paragraph_patch_agent import ParagraphPatchAgent
 from src.services.pdca_directive import PDCADirectiveGenerator
 from src.models.patch_pdca import PatchRewriteResult

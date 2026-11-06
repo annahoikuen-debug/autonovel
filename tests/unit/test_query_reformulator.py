@@ -3,9 +3,9 @@
 import pytest
 from unittest.mock import MagicMock
 
-from src.services.query_reformulator import QueryReformulator
+from src.integrations.rag.query_reformulator import QueryReformulator
 from src.services.reflective_rag import ReflectiveRAGService
-from src.services.rag_service import SearchResult
+from src.integrations.rag.rag_service import SearchResult
 
 
 def test_query_reformulator_modes():

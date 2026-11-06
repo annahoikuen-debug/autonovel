@@ -1,14 +1,14 @@
 """
 EasyMode Pipeline - かんたんモード用パイプライン
 後方互換性のために提供されるクラス
-実際の機能は src.services.auto_workflow_pipeline.create_easy_mode_pipeline に委譲
+実際の機能は src.engine.auto_workflow_pipeline.create_easy_mode_pipeline に委譲
 """
 
 from __future__ import annotations
 
 from typing import Any
-from src.services.auto_workflow_pipeline import create_easy_mode_pipeline
-from src.services.pipeline_base import WorkflowContext
+from src.engine.auto_workflow_pipeline import create_easy_mode_pipeline
+from src.engine.pipeline_base import WorkflowContext
 from src.shared.utils import StatusReporter
 
 

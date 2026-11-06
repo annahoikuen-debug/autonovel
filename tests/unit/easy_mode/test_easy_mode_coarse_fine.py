@@ -1,12 +1,12 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, ANY
 
-from src.services.auto_workflow_pipeline import (
+from src.engine.auto_workflow_pipeline import (
     create_easy_mode_pipeline,
     create_full_auto_pipeline,
     AutoWorkflowPipeline,
 )
-from src.services.pipeline_base import WorkflowContext
+from src.engine.pipeline_base import WorkflowContext
 from src.services.pipeline_steps import PlanStep, WriteStep
 from src.backend.background import StatusReporter
 from src.models.plot import EpisodeMacroSkeleton, PlotMicroBlueprint, MasterSceneBlock, SceneBeatBlock, merge_macro_and_micro

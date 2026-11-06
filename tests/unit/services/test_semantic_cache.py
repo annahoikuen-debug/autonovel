@@ -7,7 +7,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.services.semantic_cache import SemanticCacheManager
+from src.integrations.semantic_cache import SemanticCacheManager
 
 
 _SENTINEL = object()

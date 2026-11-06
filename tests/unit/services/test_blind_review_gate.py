@@ -1,4 +1,4 @@
-from src.services.blind_review import BlindReviewGate
+from src.engine.blind_review import BlindReviewGate
 
 def test_blind_review_gate_isolation():
     gate = BlindReviewGate(forbidden_agents=["agent_a"])

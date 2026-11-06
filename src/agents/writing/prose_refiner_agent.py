@@ -2,8 +2,8 @@ from __future__ import annotations
 import time
 from typing import Optional
 from src.models.prose_refinement import ProseRefineResult, RefinementDetail
-from src.services.prose.few_shot_selector import FewShotSelector
-from src.services.llm_service import LLMService
+from src.engine.prose.few_shot_selector import FewShotSelector
+from src.llm.service import LLMService
 import logging
 
 logger = logging.getLogger(__name__)

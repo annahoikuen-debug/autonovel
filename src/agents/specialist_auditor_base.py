@@ -17,8 +17,8 @@ from typing import Any
 import logging
 import re
 
-from src.core.llm.types import LLMRequest
-from src.core.llm.unified_interface import IUnifiedLLMClient
+from src.llm.unified.types import LLMRequest
+from src.llm.unified.interface import IUnifiedLLMClient
 
 
 class LLMUnavailableError(RuntimeError):

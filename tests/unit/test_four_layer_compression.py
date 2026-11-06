@@ -4,7 +4,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import MagicMock, AsyncMock
 
-from src.services.compression import (
+from src.engine.compression import (
     CompressionConfig,
     FourLayerCompressor,
     Layer1KeywordExtractor,
@@ -71,7 +71,7 @@ def test_layer2_subgraph_and_pruning():
 
 def test_layer3_conceptual_abstraction():
     """Layer 3: 具体的表現の上位概念マッピングとカテゴリ化検証."""
-    from src.services.compression.models import SubgraphLayerOutput
+    from src.engine.compression.models import SubgraphLayerOutput
 
     sub = SubgraphLayerOutput(
         nodes=[
@@ -97,7 +97,7 @@ def test_layer4_dynamic_scene_trimming():
     trimmer = Layer4SceneTrimmer(max_tokens=150)
     abstractor = Layer3ConceptAbstractor()
 
-    from src.services.compression.models import SubgraphLayerOutput
+    from src.engine.compression.models import SubgraphLayerOutput
     sub = SubgraphLayerOutput(
         nodes=[
             {"name": "アルカディア", "labels": ["Character"]},
@@ -206,8 +206,8 @@ def test_layer4_packs_smaller_facts_after_large_fact_exceeds_budget():
 
     break → continue の修正により、小さい事実が漏らさずパックされることを確認する。
     """
-    from src.services.compression.layer4_trimming import Layer4SceneTrimmer
-    from src.services.compression.models import SubgraphLayerOutput
+    from src.engine.compression.layer4_trimming import Layer4SceneTrimmer
+    from src.engine.compression.models import SubgraphLayerOutput
     trimmer = Layer4SceneTrimmer(max_tokens=80)
     abstractor = Layer3ConceptAbstractor()
 
@@ -444,7 +444,7 @@ def test_scene_type_accuracy_all_scenes():
 
 def test_scene_type_detection_keywords():
     """シーンタイプ検出キーワードの妥当性検証."""
-    from src.services.compression.layer4_trimming import Layer4SceneTrimmer
+    from src.engine.compression.layer4_trimming import Layer4SceneTrimmer
     from tests.benchmarks.annotations import SCENE_TYPE_KEYWORDS
 
     trimmer = Layer4SceneTrimmer()
@@ -460,7 +460,7 @@ def test_scene_type_detection_keywords():
 
 def test_multi_label_detection():
     """マルチラベルシーンタイプ検出の検証."""
-    from src.services.compression.layer4_trimming import Layer4SceneTrimmer
+    from src.engine.compression.layer4_trimming import Layer4SceneTrimmer
 
     trimmer = Layer4SceneTrimmer()
 
@@ -489,11 +489,11 @@ def test_multi_label_detection():
 
 def test_weight_blending():
     """カテゴリ重みブレンドの検証."""
-    from src.services.compression.layer4_trimming import _blend_category_weights
+    from src.engine.compression.layer4_trimming import _blend_category_weights
 
     # 単一シーン: 元の重みと同じ
     combat_weights = _blend_category_weights({"combat": 1.0})
-    from src.services.compression.layer4_trimming import SCENE_CATEGORY_WEIGHTS
+    from src.engine.compression.layer4_trimming import SCENE_CATEGORY_WEIGHTS
     for cat, weight in SCENE_CATEGORY_WEIGHTS["combat"].items():
         assert combat_weights[cat] == pytest.approx(weight, rel=1e-6)
 
@@ -513,8 +513,8 @@ def test_weight_blending():
 
 def test_trim_with_scene_weights():
     """scene_weights を指定したトリミングの検証."""
-    from src.services.compression.layer4_trimming import Layer4SceneTrimmer
-    from src.services.compression.models import AbstractionLayerOutput
+    from src.engine.compression.layer4_trimming import Layer4SceneTrimmer
+    from src.engine.compression.models import AbstractionLayerOutput
 
     trimmer = Layer4SceneTrimmer(max_tokens=150)
 

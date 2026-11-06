@@ -1,24 +1,20 @@
-"""illustration サービスパッケージ。
+"""後方互換 shim: 実体は src/publishing/illustration/ に移設済み。"""
+from __future__ import annotations
 
-表紙 / 挿絵(シーン) / キャラクター / 6コマ要約漫画 を提供する。
-"""
+import importlib
+import sys
 
-from src.services.illustration.character_service import CharacterIllustrator
-from src.services.illustration.cover_service import CoverGenerator
-from src.services.illustration.scene_service import (
-    SceneExtractor,
-    SceneIllustrationService,
-    SceneIllustrator,
-    YonkomaIllustrator,
-    YonkomaPlanner,
-)
+from src.publishing.illustration import *  # noqa: F401, F403
 
-__all__ = [
-    "CoverGenerator",
-    "SceneExtractor",
-    "SceneIllustrator",
-    "SceneIllustrationService",
-    "CharacterIllustrator",
-    "YonkomaPlanner",
-    "YonkomaIllustrator",
-]
+__all__ = [name for name in dir() if not name.startswith("_")]
+
+
+def __getattr__(name: str):
+    """サブモジュールを src.publishing.illustration にリダイレクト (PEP 562)。"""
+    target = f"src.publishing.illustration.{name}"
+    try:
+        module = importlib.import_module(target)
+    except ModuleNotFoundError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    sys.modules[f"{__name__}.{name}"] = module
+    return module

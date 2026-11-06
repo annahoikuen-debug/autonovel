@@ -15,7 +15,7 @@ from src.backend.security.owner_guard import verify_book_ownership
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.backend.workflows.commercial_pipeline import CommercialPipeline
 from src.core.container import AppContainer
-from src.services.publishers import (
+from src.publishing.publishers import (
     NarouCredentials,
     KakuyomuCredentials,
     KoboCredentials,
@@ -363,7 +363,7 @@ async def get_publish_status(
         投稿ステータス情報
     """
     try:
-        from src.services.publishers import get_publisher, get_credential_store
+        from src.publishing.publishers import get_publisher, get_credential_store
 
         publisher = get_publisher(request.platform)
         credential_store = get_credential_store()
@@ -436,7 +436,7 @@ async def get_publish_records(
 @router.get("/publish/platforms", response_model=list[dict[str, str]])
 async def list_publish_platforms():
     """対応投稿プラットフォーム一覧を取得"""
-    from src.services.publishers import list_publishers
+    from src.publishing.publishers import list_publishers
 
     return list_publishers()
 

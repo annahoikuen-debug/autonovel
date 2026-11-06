@@ -3,13 +3,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.services.publishers.base import (
+from src.publishing.publishers.base import (
     AuthError,
     NetworkError,
     RateLimitError,
     ValidationError,
 )
-from src.services.publishers.narou import (
+from src.publishing.publishers.narou import (
     NarouCredentials,
     NarouPublisher,
     create_narou_publisher,
@@ -51,7 +51,7 @@ def test_get_driver_raises_without_selenium(publisher):
     """_get_driver 内の import 失敗で RuntimeError に変換される。"""
     # selenium 未導入環境（try/except ImportError で None が設定済み）では
     # in-function import も失敗する。まず None 状態を確認。
-    import src.services.publishers.narou as narou_module
+    import src.publishing.publishers.narou as narou_module
     if narou_module.webdriver is None:
         with pytest.raises(RuntimeError, match="Selenium/ChromeDriverが必要です"):
             publisher._get_driver()
@@ -71,7 +71,7 @@ def test_get_driver_and_close(publisher):
     理由付きでスキップする。生成経路だけは
     test_get_driver_raises_without_selenium がカバーしている。
     """
-    import src.services.publishers.narou as narou_module
+    import src.publishing.publishers.narou as narou_module
     if narou_module.webdriver is None:
         pytest.skip("selenium / webdriver-manager not installed")
 
@@ -125,7 +125,7 @@ async def test_authenticate_success_extracts_user_id(publisher, credentials):
     driver = make_driver(current_url="https://mypage.syosetu.com/77777/")
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
-        import src.services.publishers.narou as narou_module
+        import src.publishing.publishers.narou as narou_module
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
@@ -146,7 +146,7 @@ async def test_authenticate_login_failure_with_error_element(publisher, credenti
         # 実機では _get_driver() が self._driver を設定する。
         # quit() が呼ばれるのは _close_driver() が所有 driver を_CLOSE するため。
         publisher._driver = driver
-        import src.services.publishers.narou as narou_module
+        import src.publishing.publishers.narou as narou_module
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
@@ -161,7 +161,7 @@ async def test_authenticate_login_failure_with_error_element(publisher, credenti
 @pytest.mark.asyncio
 async def test_authenticate_unexpected_error_wraps_auth_error(publisher, credentials):
     """スレッド内で _get_driver が失敗した場合も AuthError にラップされる。"""
-    import src.services.publishers.narou as narou_module
+    import src.publishing.publishers.narou as narou_module
 
     def broken_get_driver():
         raise RuntimeError("boom")
@@ -184,7 +184,7 @@ async def test_publish_auto_authenticates_first(publisher, credentials):
 
     _get_driver も差し替える（selenium不要で-browserバックエンドを回避する）。
     """
-    import src.services.publishers.narou as narou_module
+    import src.publishing.publishers.narou as narou_module
 
     publisher._logged_in = False
     driver = make_driver(current_url="https://mypage.syosetu.com/novelmanage/4242/")
@@ -212,7 +212,7 @@ async def test_publish_novel_id_from_mypage_fallback(publisher, credentials):
     publisher._logged_in = True
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
-        import src.services.publishers.narou as narou_module
+        import src.publishing.publishers.narou as narou_module
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
@@ -228,7 +228,7 @@ async def test_publish_validation_error_when_no_novel_id(publisher, credentials)
     publisher._logged_in = True
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
-        import src.services.publishers.narou as narou_module
+        import src.publishing.publishers.narou as narou_module
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
@@ -240,7 +240,7 @@ async def test_publish_validation_error_when_no_novel_id(publisher, credentials)
 @pytest.mark.asyncio
 async def test_publish_rate_limit_error(publisher, credentials):
     """driver.get が「アクセスが集中」エラーを出した場合 RateLimitError に変換。"""
-    import src.services.publishers.narou as narou_module
+    import src.publishing.publishers.narou as narou_module
     driver = MagicMock()
     driver.get.side_effect = RuntimeError("アクセスが集中しています")
     publisher._logged_in = True
@@ -270,7 +270,7 @@ async def test_update_chapter_success(publisher, credentials):
     publisher._logged_in = True
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
-        import src.services.publishers.narou as narou_module
+        import src.publishing.publishers.narou as narou_module
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)
@@ -285,7 +285,7 @@ async def test_update_chapter_success(publisher, credentials):
 
 @pytest.mark.asyncio
 async def test_update_chapter_rate_limit_and_network(publisher, credentials):
-    import src.services.publishers.narou as narou_module
+    import src.publishing.publishers.narou as narou_module
     driver = MagicMock()
     driver.get.side_effect = RuntimeError("アクセスが集中")
     publisher._logged_in = True
@@ -314,7 +314,7 @@ async def test_update_chapter_auto_authenticates(publisher, credentials):
     publisher._logged_in = False
     with pytest.MonkeyPatch.context() as m:
         m.setattr(publisher, "_get_driver", lambda: driver)
-        import src.services.publishers.narou as narou_module
+        import src.publishing.publishers.narou as narou_module
         wait = MagicMock()
         wait.until.return_value = MagicMock()
         m.setattr(narou_module, "WebDriverWait", lambda d, t: wait)

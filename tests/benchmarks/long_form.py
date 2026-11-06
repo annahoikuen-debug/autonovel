@@ -21,7 +21,7 @@ from dataclasses import asdict, dataclass, field
 from typing import Any
 
 from src.models.foreshadowing_status import ForeshadowingScope, ForeshadowingStatus
-from src.services.foreshadowing.planner import plan_foreshadowing
+from src.engine.foreshadowing.planner import plan_foreshadowing
 
 #: 1話あたりの生成文字数（実運用の目安）
 CHARS_PER_EPISODE = 3000

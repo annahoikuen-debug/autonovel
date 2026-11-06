@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 import datetime
 
-from src.services.semantic_cache import SemanticCacheManager
+from src.integrations.semantic_cache import SemanticCacheManager
 
 
 class TestSemanticCacheManager:

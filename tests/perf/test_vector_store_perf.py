@@ -9,8 +9,8 @@ import time
 
 import pytest
 
-from src.services.embedding_service import embedding_service
-from src.services.vector_store import InMemoryFallbackStore
+from src.integrations.rag.embedding_service import embedding_service
+from src.integrations.vector_store import InMemoryFallbackStore
 
 pytestmark = pytest.mark.perf
 

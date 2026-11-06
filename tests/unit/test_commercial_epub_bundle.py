@@ -12,7 +12,7 @@ from src.infrastructure.database.models.base_orm import Base
 from src.backend.database.models import Book, Chapter
 from src.backend.database.series_loader import SeriesDataLoader
 from src.backend.multimedia_service import MultimediaService
-from src.services.exporters.epub_manifest_builder import detect_image_media_type
+from src.publishing.exporters.epub_manifest_builder import detect_image_media_type
 
 
 # 1x1 ダミー画像バイナリ

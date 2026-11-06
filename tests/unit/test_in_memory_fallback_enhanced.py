@@ -1,5 +1,5 @@
 import pytest
-from src.services.vector_store.in_memory import InMemoryFallbackStore
+from src.integrations.vector_store.in_memory import InMemoryFallbackStore
 
 @pytest.mark.asyncio
 async def test_hybrid_search_bm25_rrf():

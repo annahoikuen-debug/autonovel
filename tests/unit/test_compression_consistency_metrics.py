@@ -1,4 +1,4 @@
-from src.services.compression import FourLayerCompressor, ProtectedContext
+from src.engine.compression import FourLayerCompressor, ProtectedContext
 
 def test_compression_pipeline_outputs_high_consistency_metrics():
     compressor = FourLayerCompressor()

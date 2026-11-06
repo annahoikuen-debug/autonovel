@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 # Test ChromaClientProvider initialization
 def test_chroma_client_provider_init_defaults():
     """Test ChromaClientProvider initialization with default parameters."""
-    from src.services.vector_store import ChromaClientProvider
+    from src.integrations.vector_store import ChromaClientProvider
 
     provider = ChromaClientProvider()
     assert provider.db_path == "./chroma_db"
@@ -15,7 +15,7 @@ def test_chroma_client_provider_init_defaults():
 
 def test_chroma_client_provider_init_custom_params():
     """Test ChromaClientProvider initialization with custom parameters."""
-    from src.services.vector_store import ChromaClientProvider
+    from src.integrations.vector_store import ChromaClientProvider
 
     provider = ChromaClientProvider(
         db_path="/custom/path",
@@ -30,7 +30,7 @@ def test_chroma_client_provider_init_custom_params():
 # Test ChromaClientProvider.get_client() method
 def test_chroma_client_provider_get_client_success():
     """Test successful client retrieval from ChromaClientProvider."""
-    from src.services.vector_store import ChromaClientProvider, HAS_CHROMA
+    from src.integrations.vector_store import ChromaClientProvider, HAS_CHROMA
 
     if not HAS_CHROMA:
         pytest.skip("ChromaDB not available")
@@ -38,7 +38,7 @@ def test_chroma_client_provider_get_client_success():
     provider = ChromaClientProvider()
 
     # Mock the chromadb module and PersistentClient
-    with patch('src.services.vector_store.chromadb') as mock_chroma:
+    with patch('src.integrations.vector_store.chromadb') as mock_chroma:
         mock_client = MagicMock()
         mock_chroma.PersistentClient.return_value = mock_client
 
@@ -50,7 +50,7 @@ def test_chroma_client_provider_get_client_success():
 
 def test_chroma_client_provider_get_client_http():
     """Test HTTP client retrieval from ChromaClientProvider."""
-    from src.services.vector_store import ChromaClientProvider, HAS_CHROMA
+    from src.integrations.vector_store import ChromaClientProvider, HAS_CHROMA
 
     if not HAS_CHROMA:
         pytest.skip("ChromaDB not available")
@@ -58,7 +58,7 @@ def test_chroma_client_provider_get_client_http():
     provider = ChromaClientProvider(host="remote-host", port=9000)
 
     # Mock the chromadb module and HttpClient
-    with patch('src.services.vector_store.chromadb') as mock_chroma:
+    with patch('src.integrations.vector_store.chromadb') as mock_chroma:
         mock_client = MagicMock()
         mock_chroma.HttpClient.return_value = mock_client
 
@@ -70,7 +70,7 @@ def test_chroma_client_provider_get_client_http():
 
 def test_chroma_client_provider_get_client_failure_retry():
     """Test client retrieval with connection failure and retry logic."""
-    from src.services.vector_store import ChromaClientProvider, HAS_CHROMA
+    from src.integrations.vector_store import ChromaClientProvider, HAS_CHROMA
 
     if not HAS_CHROMA:
         pytest.skip("ChromaDB not available")
@@ -78,7 +78,7 @@ def test_chroma_client_provider_get_client_failure_retry():
     provider = ChromaClientProvider()
 
     # Mock the chromadb module to fail on first attempt, succeed on second
-    with patch('src.services.vector_store.chromadb') as mock_chroma, \
+    with patch('src.integrations.vector_store.chromadb') as mock_chroma, \
          patch('time.sleep') as mock_sleep:
 
         mock_chroma.PersistentClient.side_effect = [
@@ -94,7 +94,7 @@ def test_chroma_client_provider_get_client_failure_retry():
 
 def test_chroma_client_provider_get_client_all_failures():
     """Test client retrieval when all connection attempts fail."""
-    from src.services.vector_store import ChromaClientProvider, HAS_CHROMA
+    from src.integrations.vector_store import ChromaClientProvider, HAS_CHROMA
 
     if not HAS_CHROMA:
         pytest.skip("ChromaDB not available")
@@ -102,7 +102,7 @@ def test_chroma_client_provider_get_client_all_failures():
     provider = ChromaClientProvider()
 
     # Mock the chromadb module to always fail
-    with patch('src.services.vector_store.chromadb') as mock_chroma:
+    with patch('src.integrations.vector_store.chromadb') as mock_chroma:
         mock_chroma.PersistentClient.side_effect = Exception("Connection failed")
 
         client = provider.get_client()
@@ -113,17 +113,17 @@ def test_chroma_client_provider_get_client_all_failures():
 
 def test_chroma_client_provider_get_client_no_chroma():
     """Test client retrieval when ChromaDB is not available."""
-    from src.services.vector_store import ChromaClientProvider
+    from src.integrations.vector_store import ChromaClientProvider
 
     # Temporarily set HAS_CHROMA to False
-    with patch('src.services.vector_store.HAS_CHROMA', False):
+    with patch('src.integrations.vector_store.HAS_CHROMA', False):
         provider = ChromaClientProvider()
         client = provider.get_client()
         assert client is None
 
 def test_chroma_client_provider_close():
     """Test closing the ChromaDB client connection."""
-    from src.services.vector_store import ChromaClientProvider
+    from src.integrations.vector_store import ChromaClientProvider
 
     provider = ChromaClientProvider()
     mock_client = MagicMock()
@@ -137,7 +137,7 @@ def test_chroma_client_provider_close():
 # Test ChromaVectorStore initialization and collection management
 def test_chroma_vector_store_init():
     """Test ChromaVectorStore initialization."""
-    from src.services.vector_store import ChromaVectorStore, ChromaClientProvider
+    from src.integrations.vector_store import ChromaVectorStore, ChromaClientProvider
 
     mock_provider = MagicMock(spec=ChromaClientProvider)
     store = ChromaVectorStore(client_provider=mock_provider)
@@ -149,7 +149,7 @@ def test_chroma_vector_store_init():
 
 def test_chroma_vector_store_client_property():
     """Test ChromaVectorStore client property."""
-    from src.services.vector_store import ChromaVectorStore, ChromaClientProvider
+    from src.integrations.vector_store import ChromaVectorStore, ChromaClientProvider
 
     mock_provider = MagicMock(spec=ChromaClientProvider)
     mock_client = MagicMock()
@@ -163,7 +163,7 @@ def test_chroma_vector_store_client_property():
 
 def test_chroma_vector_store_initialize_collections():
     """Test ChromaVectorStore initialize_collections method."""
-    from src.services.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionType
+    from src.integrations.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionType
 
     mock_provider = MagicMock(spec=ChromaClientProvider)
     mock_client = MagicMock()
@@ -180,7 +180,7 @@ def test_chroma_vector_store_initialize_collections():
         assert len(result) == len(CollectionType)
         for collection_type in CollectionType:
             # Actually, we need to check DEFAULT_COLLECTIONS
-            from src.services.vector_store import DEFAULT_COLLECTIONS
+            from src.integrations.vector_store import DEFAULT_COLLECTIONS
             assert result[DEFAULT_COLLECTIONS[collection_type].name]
 
         # Verify _ensure_collection was called for each collection type
@@ -196,7 +196,7 @@ def test_chroma_vector_store_initialize_collections():
 
 def test_chroma_vector_store_ensure_collection_success():
     """Test ChromaVectorStore _ensure_collection method success case."""
-    from src.services.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionConfig
+    from src.integrations.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionConfig
 
     mock_provider = MagicMock(spec=ChromaClientProvider)
     mock_client = MagicMock()
@@ -224,7 +224,7 @@ def test_chroma_vector_store_ensure_collection_success():
 
 def test_chroma_vector_store_ensure_collection_exists():
     """Test ChromaVectorStore _ensure_collection method when collection exists."""
-    from src.services.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionConfig
+    from src.integrations.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionConfig
 
     mock_provider = MagicMock(spec=ChromaClientProvider)
     mock_client = MagicMock()
@@ -257,7 +257,7 @@ def test_chroma_vector_store_ensure_collection_exists():
 
 def test_chroma_vector_store_ensure_collection_different_space_warning():
     """Test ChromaVectorStore _ensure_collection method warns on different space."""
-    from src.services.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionConfig
+    from src.integrations.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionConfig
 
     mock_provider = MagicMock(spec=ChromaClientProvider)
     mock_client = MagicMock()
@@ -272,7 +272,7 @@ def test_chroma_vector_store_ensure_collection_different_space_warning():
 
     config = CollectionConfig(name="test_collection", space="cosine")
 
-    with patch('src.services.vector_store.logger') as mock_logger:
+    with patch('src.integrations.vector_store.logger') as mock_logger:
         result = store._ensure_collection(config)
 
         assert result
@@ -281,7 +281,7 @@ def test_chroma_vector_store_ensure_collection_different_space_warning():
 
 def test_chroma_vector_store_ensure_collection_failure():
     """Test ChromaVectorStore _ensure_collection method failure case."""
-    from src.services.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionConfig
+    from src.integrations.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionConfig
 
     mock_provider = MagicMock(spec=ChromaClientProvider)
     mock_client = MagicMock()
@@ -304,7 +304,7 @@ def test_chroma_vector_store_ensure_collection_failure():
 
 def test_chroma_vector_store_get_collection():
     """Test ChromaVectorStore get_collection method."""
-    from src.services.vector_store import ChromaVectorStore, ChromaClientProvider
+    from src.integrations.vector_store import ChromaVectorStore, ChromaClientProvider
 
     mock_provider = MagicMock(spec=ChromaClientProvider)
     mock_client = MagicMock()
@@ -335,7 +335,7 @@ def test_chroma_vector_store_get_collection():
 
 def test_chroma_vector_store_get_collection_no_client():
     """Test ChromaVectorStore get_collection method when no client available."""
-    from src.services.vector_store import ChromaVectorStore, ChromaClientProvider
+    from src.integrations.vector_store import ChromaVectorStore, ChromaClientProvider
 
     mock_provider = MagicMock(spec=ChromaClientProvider)
     mock_provider.get_client.return_value = None  # No client available
@@ -348,12 +348,12 @@ def test_chroma_vector_store_get_collection_no_client():
 
 def test_chroma_vector_store_get_collection_config():
     """Test ChromaVectorStore get_collection_config method."""
-    from src.services.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionType
+    from src.integrations.vector_store import ChromaVectorStore, ChromaClientProvider, CollectionType
 
     mock_provider = MagicMock(spec=ChromaClientProvider)
     store = ChromaVectorStore(client_provider=mock_provider)
 
     config = store.get_collection_config(CollectionType.STYLE_MEMORY)
 
-    from src.services.vector_store import DEFAULT_COLLECTIONS
+    from src.integrations.vector_store import DEFAULT_COLLECTIONS
     assert config == DEFAULT_COLLECTIONS[CollectionType.STYLE_MEMORY]

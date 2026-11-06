@@ -5,7 +5,7 @@ import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
-from src.services.audit.targeted_diagnostic import TargetedDiagnostic
+from src.engine.audit.targeted_diagnostic import TargetedDiagnostic
 
 
 def test_returns_empty_without_text_backward_compatible():

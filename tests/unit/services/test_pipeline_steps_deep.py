@@ -11,7 +11,7 @@ from src.services.pipeline_steps import (
     PlanStep,
     WriteStep,
 )
-from src.services.pipeline_base import WorkflowContext
+from src.engine.pipeline_base import WorkflowContext
 
 
 @pytest.mark.asyncio

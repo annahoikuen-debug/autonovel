@@ -3,7 +3,7 @@
 from typing import Any
 import logging
 
-from src.services.billing.token_budget_tracker import TokenBudgetTracker, CostBudgetExceededError
+from src.integrations.billing.token_budget_tracker import TokenBudgetTracker, CostBudgetExceededError
 
 logger = logging.getLogger(__name__)
 

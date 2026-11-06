@@ -9,7 +9,7 @@ import time
 from unittest.mock import AsyncMock, MagicMock
 
 
-from src.services.publishers.kobo import KoboPublisher, KoboCredentials
+from src.publishing.publishers.kobo import KoboPublisher, KoboCredentials
 
 
 class TestKoboPublisher:

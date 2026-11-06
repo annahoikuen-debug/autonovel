@@ -31,9 +31,9 @@ from src.backend.observability.foreshadowing_ports import (
     BackendForeshadowingKpiPort,
     BackendForeshadowingMetricsPort,
 )
-from src.services.foreshadowing_service import ForeshadowingService
-from src.services.graph_pipeline import graph_pipeline_service
-from src.services.rag_service import rag_service
+from src.engine.foreshadowing.service import ForeshadowingService
+from src.engine.graph_pipeline import graph_pipeline_service
+from src.integrations.rag.rag_service import rag_service
 
 # 伏線ポートの本番実装（src.backend.observability.metrics をバックエンドとする）。
 # 各リクエストでインスタンス生成するコストを避けるためモジュールレベルで保持する。
@@ -364,7 +364,7 @@ async def get_foreshadowing_kpi(
     v5.3 で追加。ロードマップの主要KPI「伏線回収率」を実測する唯一のAPI。
     同時に Prometheus メトリクス（foreshadowing_collection_rate 等）も更新する。
     """
-    from src.services.foreshadowing.kpi import ForeshadowingKpiService
+    from src.engine.foreshadowing.kpi import ForeshadowingKpiService
 
     # IDOR 防止: 作品の所有権を検証する
     await verify_book_ownership(book_id, current_user, session)

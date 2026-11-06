@@ -25,7 +25,7 @@ from src.audit.triage import (
     classify_audit_outcomes,
     classify_static_issues,
 )
-from src.services.audit.targeted_diagnostic import TargetedDiagnostic
+from src.engine.audit.targeted_diagnostic import TargetedDiagnostic
 
 LEVEL_RULE = "rule"    # 決定的ルール置換
 LEVEL_SPAN = "span"    # 段落単位の局所LLMパッチ

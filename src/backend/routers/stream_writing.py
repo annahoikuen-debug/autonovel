@@ -21,7 +21,7 @@ from src.backend.database.uow import UnitOfWork
 from src.backend.rate_limit import stream_limiter
 from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
-from src.services.episode_writer import EpisodeWriter
+from src.engine.episode_writer import EpisodeWriter
 
 router = APIRouter(prefix="/api/stream", tags=["streaming"])
 

@@ -8,7 +8,7 @@ import pytest
 from unittest.mock import AsyncMock, patch
 
 from src.backend.workflows.commercial_pipeline import CommercialPipeline
-from src.services.publishers import (
+from src.publishing.publishers import (
     NarouCredentials,
     KakuyomuCredentials,
     PublishResult,

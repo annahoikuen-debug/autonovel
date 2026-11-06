@@ -9,7 +9,7 @@ import pytest
 
 from src.models.prose_refinement import ProseRefineResult
 from src.services.llm.mock_adapter import MockLLMAdapter
-from src.services.llm_service import LLMService
+from src.llm.service import LLMService
 from src.agents.writing.prose_refiner_agent import ProseRefinerAgent
 
 

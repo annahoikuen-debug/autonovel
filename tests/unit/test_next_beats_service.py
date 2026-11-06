@@ -6,7 +6,7 @@ from src.models.editor import (
     BranchType,
     NextBeatsRequest,
 )
-from src.services.next_beats_service import NextBeatsService
+from src.engine.next_beats_service import NextBeatsService
 
 
 @pytest.fixture

@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock
 import asyncio
 
 
-from src.services.rag_service import GraphRAGService
+from src.integrations.rag.rag_service import GraphRAGService
 
 
 def test_rerank_graph_neighbors():
@@ -18,7 +18,7 @@ def test_rerank_graph_neighbors():
         {"name": "聖剣の鞘", "relation_type": "ITEM", "properties": {"description": "光の加護を持つ"}},
     ]
 
-    with patch("src.services.rag_service.embedding_service") as mock_emb:
+    with patch("src.integrations.rag.rag_service.embedding_service") as mock_emb:
         # プロンプト「魔王軍との戦い」に対して、魔王軍幹部が一番類似度高くなるようにベクトルをモック
         def fake_embedding(text: str):
             if "魔王" in text:
@@ -87,7 +87,7 @@ def test_graph_rag_service_get_reranker():
     assert service._reranker is None
 
     # Call get_reranker - should create a reranker
-    with patch("src.services.reranker.build_default_reranker") as mock_build:
+    with patch("src.integrations.rag.reranker.build_default_reranker") as mock_build:
         mock_reranker = MagicMock()
         mock_build.return_value = mock_reranker
 
@@ -137,7 +137,7 @@ def test_graph_rag_service_get_cache_key():
 
 def test_graph_rag_service_get_cached():
     """Test _get_cached method."""
-    from src.services.rag_service import RagContext
+    from src.integrations.rag.rag_service import RagContext
     import time
 
     service = GraphRAGService()
@@ -171,7 +171,7 @@ def test_graph_rag_service_get_cached():
 
 def test_graph_rag_service_set_cache():
     """Test _set_cache method."""
-    from src.services.rag_service import RagContext
+    from src.integrations.rag.rag_service import RagContext
     import time
 
     service = GraphRAGService()

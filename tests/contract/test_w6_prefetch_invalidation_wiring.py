@@ -15,7 +15,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 async def test_retry_endpoint_cancels_prefetch_for_book():
     from src.backend.routers import episodes
 
-    with patch("src.services.rag_prefetch_service.RagPrefetchService") as S:
+    with patch("src.integrations.rag.prefetch_service.RagPrefetchService") as S:
         S.return_value._registry.cancel_prefix = AsyncMock(return_value=2)
         # ハンドラを直接呼ぶのではなく、ヘルパーだけ検証する（副作用を避ける）
         n = await episodes._cancel_prefetch_for_book(7)
@@ -27,7 +27,7 @@ async def test_retry_endpoint_cancels_prefetch_for_book():
 async def test_helper_is_noop_for_none_book():
     from src.backend.routers import episodes
 
-    with patch("src.services.rag_prefetch_service.RagPrefetchService") as S:
+    with patch("src.integrations.rag.prefetch_service.RagPrefetchService") as S:
         assert await episodes._cancel_prefetch_for_book(None) == 0
     S.assert_not_called()
 
@@ -37,7 +37,7 @@ async def test_helper_never_raises():
     from src.backend.routers import episodes
 
     with patch(
-        "src.services.rag_prefetch_service.RagPrefetchService", side_effect=RuntimeError("x")
+        "src.integrations.rag.prefetch_service.RagPrefetchService", side_effect=RuntimeError("x")
     ):
         assert await episodes._cancel_prefetch_for_book(1) == 0
 
@@ -65,7 +65,7 @@ async def test_helper_really_cancels_shared_registry():
     import asyncio
 
     from src.backend.routers import episodes
-    from src.services.rag_prefetch_service import RagPrefetchService
+    from src.integrations.rag.prefetch_service import RagPrefetchService
 
     svc = RagPrefetchService()
     ev = asyncio.Event()

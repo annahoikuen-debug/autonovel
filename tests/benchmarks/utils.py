@@ -5,7 +5,7 @@ import random
 import time
 import tracemalloc
 from typing import Any, Callable, List
-from src.services.compression.layer1_keywords import count_tokens
+from src.engine.compression.layer1_keywords import count_tokens
 
 
 def measure_memory(func: Callable[..., Any], *args: Any, **kwargs: Any) -> tuple[Any, float]:

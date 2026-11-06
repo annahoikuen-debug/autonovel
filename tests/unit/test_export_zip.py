@@ -7,7 +7,7 @@ import json
 import zipfile
 import pytest
 
-from src.services.marketing.export_package import MarketingService
+from src.integrations.marketing.export_package import MarketingService
 
 
 @pytest.mark.asyncio

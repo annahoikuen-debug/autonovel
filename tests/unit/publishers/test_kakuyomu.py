@@ -12,12 +12,12 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.publishers.kakuyomu import (
+from src.publishing.publishers.kakuyomu import (
     KAKUYOMU_EPISODE_NEW_URL_TEMPLATE,
     KakuyomuPublisher,
     KakuyomuCredentials,
 )
-from src.services.publishers.base import ValidationError
+from src.publishing.publishers.base import ValidationError
 
 
 class TestKakuyomuPublisher:

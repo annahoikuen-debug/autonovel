@@ -1,5 +1,5 @@
 import unittest
-from src.services.exporters.commercial_manuscript_exporter import CommercialManuscriptExporter
+from src.publishing.exporters.commercial_manuscript_exporter import CommercialManuscriptExporter
 
 class TestCommercialManuscriptExporter(unittest.TestCase):
     def test_export(self):

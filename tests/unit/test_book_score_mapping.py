@@ -1,6 +1,6 @@
 """Unit tests for UnifiedBookScoreBridge (Part 3 / Step 30 / Checkpoint 5)."""
 
-from src.services.book_score_mapping import (
+from src.engine.book_score.mapping import (
     UnifiedBookScoreBridge,
     BASE_TRANSFORMATION_MATRIX,
     DEFAULT_DIMENSION_WEIGHTS,

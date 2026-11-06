@@ -41,7 +41,7 @@ class QualityLoop:
         self.backoff_base = backoff_base
         self._anti_ai_controller = anti_ai_controller
         # Anti-AI コントローラーが注入されている場合のみ有効化。
-        # 旧実装は src.services.anti_ai.loop_controller を直接 import していたが、
+        # 旧実装は src.engine.anti_ai.loop_controller を直接 import していたが、
         # ポート経由の DI に置換し、ドメイン層から旧レイアウトを除去した。
         self._enable_anti_ai_loop = enable_anti_ai_loop and anti_ai_controller is not None
         self._anti_ai_threshold = anti_ai_threshold

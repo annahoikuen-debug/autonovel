@@ -20,7 +20,7 @@ from src.backend.database.uow import UnitOfWork
 from src.backend.feature_flags import is_multimedia_enabled
 from src.backend.multimedia_service import MultimediaService
 from src.core.container import AppContainer
-from src.services.exporters.base import get_exporter, list_platforms
+from src.publishing.exporters.base import get_exporter, list_platforms
 
 router = APIRouter(prefix="/api/export", tags=["export"])
 

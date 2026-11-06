@@ -7,14 +7,14 @@ Zero-Cost Infra & Pure Creative Pipelineの全要素（画像/音声の外部従
 from __future__ import annotations
 
 import pytest
-from src.services.illustration.factory import get_image_adapter
-from src.services.illustration.adapters.base import ImagePromptRequest
-from src.services.audio.factory import get_tts_adapter
-from src.services.audio.adapters.base import AudioTtsRequest
-from src.services.formatters.platform_copy_formatter import PlatformCopyFormatter
-from src.services.exporters.commercial_epub_builder import PureCommercialEpubBuilder
-from src.services.cost_guard.budget_calculator import BudgetCalculator
-from src.services.cost_guard.token_circuit_breaker import TokenCircuitBreaker
+from src.publishing.illustration.factory import get_image_adapter
+from src.publishing.illustration.adapters.base import ImagePromptRequest
+from src.integrations.audio.factory import get_tts_adapter
+from src.integrations.audio.adapters.base import AudioTtsRequest
+from src.publishing.formatters.platform_copy_formatter import PlatformCopyFormatter
+from src.publishing.exporters.commercial_epub_builder import PureCommercialEpubBuilder
+from src.integrations.cost_guard.budget_calculator import BudgetCalculator
+from src.integrations.cost_guard.token_circuit_breaker import TokenCircuitBreaker
 
 
 @pytest.mark.asyncio

@@ -396,7 +396,7 @@ class MultimediaService:
             try:
                 if fmt == "epub":
                     # Step 54 & Step 41: Pure Python 商用縦書きEPUB 3ビルダーへの挿絵受け渡し
-                    from src.services.exporters.epub_commercial_builder import CommercialEpubBuilder
+                    from src.publishing.exporters.epub_commercial_builder import CommercialEpubBuilder
                     builder = CommercialEpubBuilder()
                     chap_list = [
                         {"title": ep.title, "content": ep.content}

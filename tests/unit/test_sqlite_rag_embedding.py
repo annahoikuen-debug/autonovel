@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 
 from src.infrastructure.database.models.base_orm import Base
 from src.infrastructure.database.models.chunk import ChapterChunk
-from src.services.rag_service import GraphRAGService
-from src.services.chunk_ingestion import backfill_missing_embeddings
+from src.integrations.rag.rag_service import GraphRAGService
+from src.engine.chunk_ingestion import backfill_missing_embeddings
 
 
 def _make_vector(seed: float, dim: int = 64) -> list[float]:
@@ -46,8 +46,8 @@ async def test_sqlite_rag_batch_vector_search_and_no_truncation(monkeypatch):
     other_vec = _make_vector(-1.0)
     dummy_embedder = DummyEmbeddingService(target_vec, other_vec)
 
-    monkeypatch.setattr("src.services.rag_service.embedding_service", dummy_embedder)
-    monkeypatch.setattr("src.services.chunk_ingestion.embedding_service", dummy_embedder)
+    monkeypatch.setattr("src.integrations.rag.rag_service.embedding_service", dummy_embedder)
+    monkeypatch.setattr("src.engine.chunk_ingestion.embedding_service", dummy_embedder)
 
     with Session(engine) as session:
         session.execute(text("PRAGMA foreign_keys=OFF"))
@@ -116,7 +116,7 @@ async def test_backfill_missing_embeddings(monkeypatch):
 
     vec = _make_vector(0.5)
     dummy_embedder = DummyEmbeddingService(vec, vec)
-    monkeypatch.setattr("src.services.chunk_ingestion.embedding_service", dummy_embedder)
+    monkeypatch.setattr("src.engine.chunk_ingestion.embedding_service", dummy_embedder)
 
     with Session(engine) as session:
         session.execute(text("PRAGMA foreign_keys=OFF"))

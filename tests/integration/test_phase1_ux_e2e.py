@@ -1,8 +1,8 @@
 from src.backend.routers.commercial import (
     PublicationScheduleCreate,
 )
-from src.services.conflict_report_service import ConflictReportService
-from src.services.book_score_service import BookScoreService
+from src.engine.conflict_report_service import ConflictReportService
+from src.engine.book_score.service import BookScoreService
 
 
 def test_phase1_ux_components():

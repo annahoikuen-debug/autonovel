@@ -163,7 +163,7 @@ async def test_metadata_split_failure_does_not_silently_pass(monkeypatch):
     （= finalize が二重に走らないこととも相まって、後処理が
     必ず1回だけ実行されることの前提monitor）。
     """
-    from src.services.prose.novel_output_splitter import NovelOutputSplitter
+    from src.engine.prose.novel_output_splitter import NovelOutputSplitter
 
     def _boom(raw):
         raise RuntimeError("splitter 失敗")

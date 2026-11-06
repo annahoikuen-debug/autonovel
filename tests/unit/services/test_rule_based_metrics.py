@@ -1,4 +1,4 @@
-from src.services.auditors.rule_based_metrics import (
+from src.engine.auditors.rule_based_metrics import (
     calculate_sentence_rhythm,
     calculate_dialogue_ratio,
     calculate_kanji_ratio,

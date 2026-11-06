@@ -1,21 +1,20 @@
-"""Marketing services package.
+"""後方互換 shim: 実体は src/integrations/marketing/ に移設済み。"""
+from __future__ import annotations
 
-マーケティング関連機能の一元化:
-- MarketingAgent: LLM連携マーケティングエージェント (src.agents.marketing)
-- MarketingService: 作品データのパッケージング・エクスポート
-- スコアラー: CTR / キャッチフレーズ
-"""
-from src.agents.marketing import MarketingAgent
-from src.services.marketing.export_package import MarketingService, DEFAULT_FALLBACK
-from src.services.marketing.ctr_scorer import score_title_ctr
-from src.services.marketing.catchphrase_scorer import score_catchphrase_ctr
-from src.services.marketing.trend_syntax_extractor import extract_syntax_features
+import importlib
+import sys
 
-__all__ = [
-    "MarketingAgent",
-    "MarketingService",
-    "DEFAULT_FALLBACK",
-    "score_title_ctr",
-    "score_catchphrase_ctr",
-    "extract_syntax_features",
-]
+from src.integrations.marketing import *  # noqa: F401, F403
+
+__all__ = [name for name in dir() if not name.startswith("_")]
+
+
+def __getattr__(name: str):
+    """サブモジュールを src.integrations.marketing にリダイレクト (PEP 562)。"""
+    target = f"src.integrations.marketing.{name}"
+    try:
+        module = importlib.import_module(target)
+    except ModuleNotFoundError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    sys.modules[f"{__name__}.{name}"] = module
+    return module

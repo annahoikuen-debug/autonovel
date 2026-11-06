@@ -1,8 +1,8 @@
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-from src.core.llm.adapters.openai_unified_client import OpenAIUnifiedClient
-from src.core.llm.types import LLMRequest
+from src.llm.unified.adapters.openai import OpenAIUnifiedClient
+from src.llm.unified.types import LLMRequest
 
 @pytest.fixture
 def mock_clients():

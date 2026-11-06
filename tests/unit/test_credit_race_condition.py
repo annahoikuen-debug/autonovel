@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from src.backend.database.models import Base, User
 from src.backend.database.models_billing import CreditTransaction
-from src.services.billing.credit_service import CreditService, InsufficientCreditsError
+from src.integrations.billing.credit_service import CreditService, InsufficientCreditsError
 
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"

@@ -10,8 +10,8 @@ from src.backend.observability.foreshadowing_ports import (
     BackendForeshadowingKpiPort,
     BackendForeshadowingMetricsPort,
 )
-from src.services.episode_context import EpisodeContextBuilder
-from src.services.foreshadowing_service import ForeshadowingService
+from src.engine.episode_context import EpisodeContextBuilder
+from src.engine.foreshadowing.service import ForeshadowingService
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
 from src.backend.database.models_foreshadowing import ForeshadowingModel
 from src.backend.database.models import Character as CharacterModel
@@ -445,8 +445,8 @@ class TestRegressionPrevention:
     def test_age_client_deprecated(self):
         """age_client が非推奨化されていることを確認"""
         import warnings
-        import src.services.age_client as age_client_module
-        from src.services.age_client import AgeClient
+        import src.integrations.age_client as age_client_module
+        from src.integrations.age_client import AgeClient
 
         # モジュールのドキュメントストリングに非推奨記述があることを確認
         assert age_client_module.__doc__ is not None

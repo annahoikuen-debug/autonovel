@@ -321,7 +321,7 @@ def create_mock_orchestrator(llm: MockLLMAdapter | None = None, repo: MockBookRe
     from src.agents.planning import PlanningAgent
     from src.agents.bible import BibleAgent
     from src.agents.context_builder_agent import ContextBuilderAgent
-    from src.services.image_service import ImageService
+    from src.publishing.illustration.image_service import ImageService
 
     llm = llm or MockLLMAdapter()
     repo = repo or MockBookRepository()

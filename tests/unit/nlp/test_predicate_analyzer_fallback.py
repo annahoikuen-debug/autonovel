@@ -1,6 +1,6 @@
 """Unit tests for ForeshadowingPredicateAnalyzer fallback mechanisms."""
 
-from src.services.nlp.foreshadowing_predicate_analyzer import ForeshadowingPredicateAnalyzer
+from src.engine.nlp.foreshadowing_predicate_analyzer import ForeshadowingPredicateAnalyzer
 
 
 def test_fallback_when_tokenizer_disabled():

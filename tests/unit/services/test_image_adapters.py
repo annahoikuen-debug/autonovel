@@ -4,11 +4,11 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 
-from src.services.illustration.adapters.base import (
+from src.publishing.illustration.adapters.base import (
     ImagePromptRequest,
 )
-from src.services.illustration.adapters.dalle3_adapter import Dalle3Adapter
-from src.services.illustration.adapters.fal_adapter import FalAiAdapter
+from src.publishing.illustration.adapters.dalle3_adapter import Dalle3Adapter
+from src.publishing.illustration.adapters.fal_adapter import FalAiAdapter
 
 
 class TestImagePromptRequest:
@@ -150,13 +150,13 @@ class TestFalAiAdapter:
 
 class TestMockImageAdapter:
     def test_mock_adapter_provider_name(self):
-        from src.services.illustration.adapters.mock_adapter import MockImageAdapter
+        from src.publishing.illustration.adapters.mock_adapter import MockImageAdapter
         adapter = MockImageAdapter()
         assert adapter.provider_name == "mock"
 
     @pytest.mark.asyncio
     async def test_mock_adapter_generate_image(self):
-        from src.services.illustration.adapters.mock_adapter import MockImageAdapter
+        from src.publishing.illustration.adapters.mock_adapter import MockImageAdapter
         adapter = MockImageAdapter()
         req = ImagePromptRequest(prompt="テスト挿絵", aspect_ratio="1:1", style="anime")
         res = await adapter.generate_image(req)
@@ -172,25 +172,25 @@ class TestMockImageAdapter:
 
 class TestImageFactory:
     def test_factory_returns_mock_default(self, monkeypatch):
-        from src.services.illustration.factory import get_image_adapter
+        from src.publishing.illustration.factory import get_image_adapter
         monkeypatch.delenv("IMAGE_PROVIDER", raising=False)
         adapter = get_image_adapter()
         assert adapter.provider_name == "mock"
 
     def test_factory_returns_mock_on_unknown(self):
-        from src.services.illustration.factory import get_image_adapter
+        from src.publishing.illustration.factory import get_image_adapter
         adapter = get_image_adapter("unknown_provider_xyz")
         assert adapter.provider_name == "mock"
 
     def test_factory_returns_dalle3(self, monkeypatch):
-        from src.services.illustration.factory import get_image_adapter
+        from src.publishing.illustration.factory import get_image_adapter
         monkeypatch.setenv("OPENAI_API_KEY", "sk-factory-test")
         adapter = get_image_adapter("dalle3")
         assert adapter.provider_name == "dalle3"
         assert adapter.api_key == "sk-factory-test"
 
     def test_factory_returns_fal_ai(self, monkeypatch):
-        from src.services.illustration.factory import get_image_adapter
+        from src.publishing.illustration.factory import get_image_adapter
         monkeypatch.setenv("FAL_KEY", "fal-factory-test")
         adapter = get_image_adapter("fal")
         assert adapter.provider_name == "fal_ai"

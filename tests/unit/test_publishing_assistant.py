@@ -2,9 +2,9 @@
 
 
 from src.models.publishing_assistant import TargetPlatform
-from src.services.publishing.content_splitter import ContentSplitter
-from src.services.publishing.ai_disclosure_generator import AIDisclosureGenerator
-from src.services.publishing.compliance_validator import ComplianceValidator
+from src.publishing.publishing.content_splitter import ContentSplitter
+from src.publishing.publishing.ai_disclosure_generator import AIDisclosureGenerator
+from src.publishing.publishing.compliance_validator import ComplianceValidator
 from src.config.platform_compliance_rules import get_platform_rule
 
 

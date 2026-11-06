@@ -1,7 +1,7 @@
 
 import pytest
 
-from src.services.rag_prefetch_service import RagPrefetchService
+from src.integrations.rag.prefetch_service import RagPrefetchService
 
 
 def test_rag_prefetch_cache_key():

@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.exporters.base import (
+from src.publishing.exporters.base import (
     EpubExporter,
     KakuyomuExporter,
     MarkdownExporter,

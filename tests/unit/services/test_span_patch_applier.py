@@ -5,7 +5,7 @@ import pathlib
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2]))
 
-from src.services.prose.span_patch_applier import SpanPatchApplier
+from src.engine.prose.span_patch_applier import SpanPatchApplier
 
 
 def test_happy_path_replaces_span():

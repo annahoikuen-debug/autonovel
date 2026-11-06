@@ -3,9 +3,9 @@ from src.domain.schemas.project import ProjectCreateRequest
 from src.domain.schemas.chapter import ChapterCreateRequest, SceneBeat, CliffhangerDef
 from src.domain.schemas.character import CharacterCreateRequest
 from src.domain.schemas.foreshadowing import ForeshadowingCreateRequest
-from src.services.auditors.hybrid_auditor import TwoTierAuditor
-from src.services.formatters.platform_copy_formatter import PlatformCopyFormatter
-from src.services.exporters.commercial_epub_builder import PureCommercialEpubBuilder
+from src.engine.auditors.hybrid_auditor import TwoTierAuditor
+from src.publishing.formatters.platform_copy_formatter import PlatformCopyFormatter
+from src.publishing.exporters.commercial_epub_builder import PureCommercialEpubBuilder
 
 @pytest.mark.asyncio
 async def test_v5_full_novel_lifecycle():

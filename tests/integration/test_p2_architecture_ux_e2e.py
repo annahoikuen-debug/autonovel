@@ -26,8 +26,8 @@ from src.backend.websocket.pipeline_hub import PipelineEventHub
 from src.backend.routers.pipeline_stream import router as pipeline_router
 
 # Publishing Formatters
-from src.services.formatters.ruby_transpiler import PublishPlatform
-from src.services.formatters.platform_formatter import PlatformFormatter
+from src.publishing.formatters.ruby_transpiler import PublishPlatform
+from src.publishing.formatters.platform_formatter import PlatformFormatter
 
 
 # ==============================================================================

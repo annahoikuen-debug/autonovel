@@ -6,12 +6,12 @@ from unittest.mock import Mock, AsyncMock
 from dataclasses import dataclass
 
 from src.domain.writing import WritingService
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import CompressionConfig
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import CompressionConfig
 from src.agents.orchestrator import AgentContext, AgentResult
 from src.agents.context_builder_agent import ContextBuilderAgent
 from src.agents.writing import WritingAgent
-from src.services.book_score_service import BookScoreCalculator
+from src.engine.book_score.service import BookScoreCalculator
 from src.agents.illustration_agent import IllustrationAgent
 
 

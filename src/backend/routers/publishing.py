@@ -13,8 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.backend.auth import get_current_user
 from src.backend.database import get_async_db
 from src.backend.database.models import User, Book
-from src.services.formatters.ruby_transpiler import PublishPlatform
-from src.services.formatters.platform_formatter import PlatformFormatter
+from src.publishing.formatters.ruby_transpiler import PublishPlatform
+from src.publishing.formatters.platform_formatter import PlatformFormatter
 from src.backend.database.series_loader import SeriesDataLoader, SeriesDataLoaderConfig
 
 router = APIRouter(prefix="/publish", tags=["publishing"])

@@ -24,7 +24,7 @@ DEFAULT_WEIGHTS = {
 
 async def score_output(text: str) -> dict[str, float]:
     """QualityScorer を用いて出力を評価する。"""
-    from src.services.quality_scorer import QualityScorer
+    from src.engine.quality_scorer import QualityScorer
 
     scorer = QualityScorer()
     try:

@@ -13,12 +13,12 @@ import sys
 sys.path.insert(0, "/home/herbmatsui/autonovel")
 
 # Minimal imports to avoid circular deps
-from src.services.blind_review import BlindReviewGate
+from src.engine.blind_review import BlindReviewGate
 from src.agents.event_bus import EventBus, AgentEvent
 from src.config.audit_weights import load_weights
-from src.services.audit_aggregator import AuditAggregator
+from src.engine.audit.aggregator import AuditAggregator
 from src.services.reflective_rag import ReflectiveRAGService
-from src.services.rag_service import SearchResult
+from src.integrations.rag.rag_service import SearchResult
 from unittest.mock import MagicMock
 
 
@@ -152,7 +152,7 @@ async def test_phase2_full_pipeline():
     print(f"✅ Specialist Audit: 8 auditors, overall={book_score.overall:.1f}, lowest={lowest}")
 
     # 4. Reflective RAG: Iterative query refinement
-    from src.services.rag_service import SearchResult
+    from src.integrations.rag.rag_service import SearchResult
 
     class MockRAGService:
         def __init__(self):

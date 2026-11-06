@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from src.services.anti_ai.models import AICategory
+from src.engine.anti_ai.models import AICategory
 
 
 @dataclass

@@ -4,8 +4,8 @@ import logging
 from typing import Any
 from src.agents.skill_base import SkillAgent
 from src.agents.orchestrator import AgentContext, AgentResult, AgentName
-from src.core.llm.types import LLMRequest, LLMResponse
-from src.core.llm.unified_interface import IUnifiedLLMClient
+from src.llm.unified.types import LLMRequest, LLMResponse
+from src.llm.unified.interface import IUnifiedLLMClient
 
 logger = logging.getLogger(__name__)
 

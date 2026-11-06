@@ -4,7 +4,7 @@ PLAN 02: エンタメ演出強化・マルチジャンル＆配信・掲示板�
 """
 import pytest
 from unittest.mock import AsyncMock
-from src.services.prose.social_reaction_generator import SocialReactionGenerator
+from src.engine.prose.social_reaction_generator import SocialReactionGenerator
 from src.models.social_reaction import StreamComment, ForumPost
 
 

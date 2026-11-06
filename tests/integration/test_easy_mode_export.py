@@ -16,7 +16,7 @@ import pytest
 
 from src.backend.database.repository import BookRepository
 from src.backend.database.models import Bible, Book, Chapter, Character, Plot
-from src.services.marketing import MarketingAgent
+from src.integrations.marketing.marketing import MarketingAgent
 
 
 @pytest.mark.asyncio
@@ -89,7 +89,7 @@ async def test_fallback_when_book_data_is_none() -> None:
         assert "04_データダンプ.json" in names
         content = zf.read("01_本文.txt").decode("utf-8")
         # DEFAULT_FALLBACK の title を含むこと
-        from src.services.marketing import DEFAULT_FALLBACK
+        from src.integrations.marketing.marketing import DEFAULT_FALLBACK
 
         assert DEFAULT_FALLBACK["title"] in content
 

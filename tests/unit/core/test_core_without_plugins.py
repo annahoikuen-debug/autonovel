@@ -35,7 +35,7 @@ class TestCoreWithoutPlugins:
 
     def test_easy_mode_pipeline_factory_completes(self, all_plugins_disabled):
         """プラグイン 0 件の状態で create_easy_mode_pipeline が完結すること。"""
-        from src.services.auto_workflow_pipeline import create_easy_mode_pipeline
+        from src.engine.auto_workflow_pipeline import create_easy_mode_pipeline
 
         pipeline = create_easy_mode_pipeline()
         assert pipeline is not None

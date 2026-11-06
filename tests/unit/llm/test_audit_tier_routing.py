@@ -7,7 +7,7 @@
 
 from unittest.mock import MagicMock
 
-from src.services.audit.service import (
+from src.engine.audit.service import (
     AUDIT_TIER_MODELS,
     AuditService,
     AuditTierRouter,

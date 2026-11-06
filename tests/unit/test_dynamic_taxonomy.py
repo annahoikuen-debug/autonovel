@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock
 
-from src.services.compression.layer3_taxonomy import (
+from src.engine.compression.layer3_taxonomy import (
     RuleBasedMorphologicalMapper,
     SemanticAnchorTaxonomy,
     LLMDynamicTaxonomy,

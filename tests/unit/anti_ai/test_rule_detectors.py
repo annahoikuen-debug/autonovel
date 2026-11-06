@@ -13,7 +13,7 @@ from src.config.anti_ai_config import (
     TransitionOveruseSettings,
     clear_cache,
 )
-from src.services.anti_ai.detectors import (
+from src.engine.anti_ai.detectors import (
     DirectEmotionDetector,
     GenericVocabularyDetector,
     HedgingPatternsDetector,

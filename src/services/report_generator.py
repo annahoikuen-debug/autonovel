@@ -10,7 +10,7 @@ from src.models.report import (
     EpisodeSummary,
     ProductionReport,
 )
-from src.services.quality_scorer import QualityScorer
+from src.engine.quality_scorer import QualityScorer
 from src.services.token_tracker import TokenTracker
 
 

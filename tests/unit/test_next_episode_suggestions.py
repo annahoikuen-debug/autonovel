@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.models.editor import BranchType, NextBeatsRequest
-from src.services.next_beats_service import NextBeatsService
+from src.engine.next_beats_service import NextBeatsService
 
 
 @pytest.mark.asyncio

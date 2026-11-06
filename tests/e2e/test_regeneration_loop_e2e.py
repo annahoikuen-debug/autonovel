@@ -11,7 +11,7 @@ import pytest
 
 from src.agents.orchestrator import AgentContext, AgentName
 from src.agents.specialists.adapter import AuditAggregatorNode, load_audit_weights
-from src.services.audit_aggregator import AuditAggregator
+from src.engine.audit.aggregator import AuditAggregator
 from src.agents.specialists import (
     ConsistencyAuditor,
     CreativityAuditor,

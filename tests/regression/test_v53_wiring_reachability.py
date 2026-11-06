@@ -143,7 +143,7 @@ class TestSessionTypeContract:
     def test_build_context_is_awaitable_even_without_db(self) -> None:
         import asyncio
 
-        from src.services.episode_context import EpisodeContextBuilder
+        from src.engine.episode_context import EpisodeContextBuilder
 
         builder = EpisodeContextBuilder(db=None)
         result = EpisodeContextBuilder.build_context(builder, book_id=1, ep_num=2)

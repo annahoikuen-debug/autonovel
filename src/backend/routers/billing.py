@@ -7,8 +7,8 @@ from src.backend.config import settings
 from src.backend.database import get_async_db
 from src.backend.auth import get_current_user
 from src.backend.database.models import User
-from src.services.billing.stripe_client import StripeClient
-from src.services.billing.credit_service import CreditService
+from src.integrations.billing.stripe_client import StripeClient
+from src.integrations.billing.credit_service import CreditService
 from src.config.billing_plans import PLAN_CONFIG
 
 logger = logging.getLogger(__name__)

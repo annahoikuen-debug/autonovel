@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.services.llm.gemini_adapter import GeminiAdapter
-from src.services.image_service import ImageService
+from src.llm.adapters.gemini import GeminiAdapter
+from src.publishing.illustration.image_service import ImageService
 
 
 @pytest.mark.asyncio

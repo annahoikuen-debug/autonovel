@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from src.services.bible_service import WorldBibleGenerator
+from src.engine.bible_service import WorldBibleGenerator
 
 
 @pytest.mark.asyncio

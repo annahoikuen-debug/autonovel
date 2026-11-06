@@ -5,12 +5,12 @@ import pytest
 from unittest.mock import Mock, AsyncMock
 from dataclasses import dataclass
 
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import CompressionConfig
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import CompressionConfig
 from src.agents.context_builder_agent import ContextBuilderAgent
 from src.domain.writing import WritingService
 from src.agents.writing.episode_writer import EpisodeWriter
-from src.services.auto_workflow_pipeline import create_easy_mode_pipeline
+from src.engine.auto_workflow_pipeline import create_easy_mode_pipeline
 from src.agents.orchestrator import AgentContext, AgentResult
 
 

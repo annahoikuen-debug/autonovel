@@ -4,8 +4,8 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.agents.specialist_auditor_base import SpecialistAuditor, SpecialistAuditResult, ActionableDiff
-from src.services.audit_aggregator import AuditAggregator, SPECIALIST_NAMES
-from src.services.pdca_cycle import ClosedLoopPDCARunner
+from src.engine.audit.aggregator import AuditAggregator, SPECIALIST_NAMES
+from src.engine.pdca_cycle import ClosedLoopPDCARunner
 
 
 def create_mock_specialist(name: str, score_sequence: list[float]) -> SpecialistAuditor:

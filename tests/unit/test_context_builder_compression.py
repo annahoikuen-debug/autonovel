@@ -7,8 +7,8 @@ from dataclasses import dataclass
 
 from src.agents.context_builder_agent import ContextBuilderAgent
 from src.agents.orchestrator import AgentContext
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import (
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import (
     CompressionConfig,
 )
 

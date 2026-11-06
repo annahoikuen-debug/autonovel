@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from src.agents.orchestrator import Orchestrator, AgentContext, AgentResult
 from src.agents.skill_base import SkillAgent
-from src.services.book_score_service import BookScoreCalculator
+from src.engine.book_score.service import BookScoreCalculator
 from src.infrastructure.database.models.book_score import BookScore as BookScoreModel
 from datetime import datetime
 

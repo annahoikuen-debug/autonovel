@@ -5,7 +5,7 @@ import math
 
 import pytest
 
-from src.services.vector_store import HAS_INMEM, InMemoryFallbackStore
+from src.integrations.vector_store import HAS_INMEM, InMemoryFallbackStore
 
 
 pytestmark = pytest.mark.skipif(

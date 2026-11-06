@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.services.blind_review import (
+from src.engine.blind_review import (
     BlindReviewGate,
     IsolationSchema,
     verify_no_cross_proposal_contamination,

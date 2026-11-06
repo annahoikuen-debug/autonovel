@@ -30,7 +30,7 @@ from src.models.editor import (
 from src.models.unified_audit import UnifiedAuditReport
 from src.services.editor_assist_service import EditorAssistService
 from src.services.editorial_assistant_service import EditorialAssistantService
-from src.services.next_beats_service import NextBeatsService
+from src.engine.next_beats_service import NextBeatsService
 
 logger = logging.getLogger(__name__)
 

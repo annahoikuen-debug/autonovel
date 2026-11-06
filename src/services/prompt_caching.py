@@ -74,7 +74,7 @@ from src.services.redis_cache import (
     get_prompt_cache,
     get_redis_cache,
 )
-from src.services.semantic_cache import SemanticCacheManager
+from src.integrations.semantic_cache import SemanticCacheManager
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 """Unit tests for BlindReviewGate."""
 
 import pytest
-from src.services.blind_review import (
+from src.engine.blind_review import (
     BlindReviewGate,
     BLOCKED_TOKEN_FMT,
     IsolationSchema,

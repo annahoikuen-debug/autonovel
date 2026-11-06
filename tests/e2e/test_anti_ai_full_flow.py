@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 
-from src.services.anti_ai import (
+from src.engine.anti_ai import (
     RuleBasedAntiAIDetector,
     AntiAICorrector,
     AntiAILoopController,
 )
-from src.services.anti_ai.models import AICategory, Severity, ViolationSpan
+from src.engine.anti_ai.models import AICategory, Severity, ViolationSpan
 
 
 class TestAntiAIFullFlow:

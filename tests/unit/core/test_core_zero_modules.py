@@ -10,8 +10,8 @@ pytest.importorskip("anthropic")
 
 from src.core import executor_manager as executor_manager_module
 from src.core.executor_manager import ExecutorManager
-from src.core.llm.adapters.mock_unified_client import UnifiedMockLLMClient
-from src.core.llm.factory import create_unified_llm_client
+from src.llm.unified.adapters.mock import UnifiedMockLLMClient
+from src.llm.unified.factory import create_unified_llm_client
 from src.core.plugin_loader import PluginLoader
 
 

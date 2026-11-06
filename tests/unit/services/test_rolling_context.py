@@ -3,13 +3,13 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.backend.database.models_digest import EpisodeDigestModel
-from src.services.context_compression.digest_service import (
+from src.engine.context_compression.digest_service import (
     generate_episode_digest,
     EpisodeDigestRepository,
     EpisodeDigestService,
     MAX_DIGEST_LENGTH,
 )
-from src.services.context_compression.rolling_memory import RollingMemoryBuilder
+from src.engine.context_compression.rolling_memory import RollingMemoryBuilder
 
 
 # ── Step 13: EpisodeDigestModel ──

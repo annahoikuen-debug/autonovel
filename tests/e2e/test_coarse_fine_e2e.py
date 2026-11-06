@@ -16,8 +16,8 @@ from src.models.plot import (
     SceneBeatBlock,
     merge_macro_and_micro,
 )
-from src.services.default_plot_expander import DefaultPlotExpander
-from src.services.pipeline_base import WorkflowContext
+from src.engine.default_plot_expander import DefaultPlotExpander
+from src.engine.pipeline_base import WorkflowContext
 from src.services.pipeline_steps import PlanStep
 from src.backend.background import StatusReporter
 

@@ -1,9 +1,9 @@
 import pytest
-from src.services.audio.base import AudioSynthesisRequest
-from src.services.audio.dialogue_extractor import DialogueExtractor, split_long_sentence
-from src.services.audio.factory import get_audio_client
-from src.services.audio.mock_client import MockAudioSynthesisClient
-from src.services.audio.speaker_mapper import assign_speaker_id
+from src.integrations.audio.base import AudioSynthesisRequest
+from src.integrations.audio.dialogue_extractor import DialogueExtractor, split_long_sentence
+from src.integrations.audio.factory import get_audio_client
+from src.integrations.audio.mock_client import MockAudioSynthesisClient
+from src.integrations.audio.speaker_mapper import assign_speaker_id
 
 
 def test_sentence_splitting():

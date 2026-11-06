@@ -1,43 +1,20 @@
-"""RAG services package.
+"""後方互換 shim: 実体は src/integrations/rag/ に移設済み。"""
+from __future__ import annotations
 
-RAG関連機能の体系化:
-- RAGPipelineService: 検索パイプラインのエントリポイント（GraphRAGService）
-- ReflectiveRAGService: 反思的RAG検索
-- HybridRetriever: ハイブリッド検索
-- context_retriever: コンテキスト検索ユーティリティ
-"""
-from src.services.rag.rag_service import (
-    GraphRAGService,
-    rag_service,
-    Reranker,
-    SearchResult,
-    RagContext,
-)
-from src.services.rag.reflective_rag import (
-    ReflectiveRAGService,
-    ReflectiveRetrievalResult,
-    ConvergenceConfig,
-    ContextFitResult,
-    ReflectiveDoc,
-)
-from src.services.rag.hybrid_retriever import HybridRetriever
-from src.services.rag.context_retriever import ForeshadowingEntity
+import importlib
+import sys
 
-# 検索パイプラインのエントリポイント
-RAGPipelineService = GraphRAGService
+from src.integrations.rag import *  # noqa: F401, F403
 
-__all__ = [
-    "RAGPipelineService",
-    "GraphRAGService",
-    "rag_service",
-    "Reranker",
-    "SearchResult",
-    "RagContext",
-    "ReflectiveRAGService",
-    "ReflectiveRetrievalResult",
-    "ConvergenceConfig",
-    "ContextFitResult",
-    "ReflectiveDoc",
-    "HybridRetriever",
-    "ForeshadowingEntity",
-]
+__all__ = [name for name in dir() if not name.startswith("_")]
+
+
+def __getattr__(name: str):
+    """サブモジュールを src.integrations.rag にリダイレクト (PEP 562)。"""
+    target = f"src.integrations.rag.{name}"
+    try:
+        module = importlib.import_module(target)
+    except ModuleNotFoundError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    sys.modules[f"{__name__}.{name}"] = module
+    return module

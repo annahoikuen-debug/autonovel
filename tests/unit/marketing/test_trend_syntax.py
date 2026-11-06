@@ -4,7 +4,7 @@ PLAN 01 - Step 2: トレンド構文抽出器の単体テスト
 from __future__ import annotations
 
 
-from src.services.marketing.trend_syntax_extractor import extract_syntax_features
+from src.integrations.marketing.trend_syntax_extractor import extract_syntax_features
 
 
 def test_extract_syntax_features_exile():

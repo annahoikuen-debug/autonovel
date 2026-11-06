@@ -10,7 +10,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.services.audit.audit_cache import AuditCache, compute_manuscript_hash
+from src.engine.audit.audit_cache import AuditCache, compute_manuscript_hash
 
 
 @pytest.fixture

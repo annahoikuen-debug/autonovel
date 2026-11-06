@@ -8,15 +8,15 @@ from src.models.illustration import (
     IllustrationResult,
     IllustrationType,
 )
-from src.services.illustration import (
+from src.publishing.illustration import (
     CharacterIllustrator,
     CoverGenerator,
     SceneIllustrationService,
     SceneIllustrator,
     YonkomaIllustrator,
 )
-from src.services.illustration.model_selector import _type_value, is_r15, resolve_request_model
-from src.services.image_service import ImageService
+from src.publishing.illustration.model_selector import _type_value, is_r15, resolve_request_model
+from src.publishing.illustration.image_service import ImageService
 
 logger = logging.getLogger(__name__)
 
@@ -380,14 +380,14 @@ class IllustrationAgent(SkillAgent):
 
     async def _build_yonkoma_prompt(self, request: IllustrationRequest) -> str:
         """6コマ要約漫画用プロンプトを構築 (画像生成はせず文章のみ返す)。"""
-        from src.services.illustration.prompts import build_yonkoma_prompt
+        from src.publishing.illustration.prompts import build_yonkoma_prompt
 
         text = (getattr(request, "scene_text", "") or "").strip()
         panels = getattr(request, "panels", 6) or 6
         ctx = request.book_context or {}
 
         if text:
-            from src.services.illustration.scene_service import YonkomaPlanner
+            from src.publishing.illustration.scene_service import YonkomaPlanner
 
             planner = YonkomaPlanner()
             if self.llm is not None:
@@ -404,7 +404,7 @@ class IllustrationAgent(SkillAgent):
 
         prompt = build_yonkoma_prompt(summaries, ctx, panels=panels)
         if is_r15(request.safety_level):
-            from src.services.illustration.prompts import apply_yonkoma_safety_modifier
+            from src.publishing.illustration.prompts import apply_yonkoma_safety_modifier
 
             prompt = apply_yonkoma_safety_modifier(prompt, request.safety_level)
         return prompt
@@ -416,7 +416,7 @@ class IllustrationAgent(SkillAgent):
         panels: int = 6,
     ) -> IllustrationResult:
         """本文から 6 コマ要約漫画を生成して 1 枚の画像を返す。"""
-        from src.services.illustration.scene_service import YonkomaPlanner
+        from src.publishing.illustration.scene_service import YonkomaPlanner
 
         planner = YonkomaPlanner()
         if self.llm is not None:

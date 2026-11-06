@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.services.bible_service import WorldBibleGenerator
+from src.engine.bible_service import WorldBibleGenerator
 
 
 def make_gen(repo=None, llm=None, pm=None, debate=None, marketing=None, auditor=None):

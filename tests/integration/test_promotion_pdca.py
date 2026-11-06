@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from datetime import datetime
 
-from src.services.book_score_service import BookScoreCalculator
+from src.engine.book_score.service import BookScoreCalculator
 from src.backend.database.repositories.book_score import BookScoreRepository
 from src.infrastructure.database.models.book_score import BookScore as BookScoreModel
 from src.backend.routers.novel import BookScoreResponse

@@ -171,7 +171,7 @@ async def stop_task(
     # PLAN_W6 Step 10: ユーザー中断時に、進行中の投機プリフェッチを即殺する。
     # 取り消しに失敗してもこの API は落とさない（ログのみ）。
     try:
-        from src.services.semantic_cache import cancel_all_prefetch
+        from src.integrations.semantic_cache import cancel_all_prefetch
 
         await cancel_all_prefetch()
     except Exception as e:

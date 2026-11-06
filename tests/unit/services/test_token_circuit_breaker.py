@@ -1,6 +1,6 @@
 import pytest
-from src.services.cost_guard.budget_calculator import BudgetCalculator
-from src.services.cost_guard.token_circuit_breaker import (
+from src.integrations.cost_guard.budget_calculator import BudgetCalculator
+from src.integrations.cost_guard.token_circuit_breaker import (
     TokenCircuitBreaker,
     BudgetExceededError,
 )

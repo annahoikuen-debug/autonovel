@@ -6,8 +6,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.services.book_score_models import BookScore
-from src.services.book_score_service import (
+from src.engine.book_score.models import BookScore
+from src.engine.book_score.service import (
     NEUTRAL_SCORE,
     BookScoreCalculator,
     BookScoreService,

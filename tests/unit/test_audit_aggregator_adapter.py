@@ -8,7 +8,7 @@ from src.agents.specialists.adapter import (
     create_default_specialists,
     load_audit_weights,
 )
-from src.services.audit_aggregator import BookScoreResult
+from src.engine.audit.aggregator import BookScoreResult
 
 
 def test_create_default_specialists():

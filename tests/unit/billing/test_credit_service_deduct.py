@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.services.billing.credit_service import CreditService, InsufficientCreditsError
+from src.integrations.billing.credit_service import CreditService, InsufficientCreditsError
 
 
 @pytest.mark.asyncio

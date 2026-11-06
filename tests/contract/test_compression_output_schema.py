@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import (
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import (
     CompressionConfig,
     CompressedContextResult,
     RawTextLayerOutput,

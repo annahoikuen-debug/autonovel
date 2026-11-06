@@ -24,7 +24,7 @@ async def trigger_prefetch(
 ) -> None:
     """執筆完了後に Semantic Cache のプリフェッチ機能を起動する"""
     try:
-        from src.services.semantic_cache import SemanticCacheManager
+        from src.integrations.semantic_cache import SemanticCacheManager
 
         vector_store = getattr(engine, "vector_store", None)
         client = getattr(engine, "llm_client", None) or getattr(engine, "client", None)

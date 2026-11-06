@@ -1,30 +1,20 @@
-"""NanoBanana 2 Lite Manga Pipeline package."""
-from src.services.manga.config import MangaPipelineConfig
-from src.services.manga.models import (
-    AspectRatio,
-    CharacterReference,
-    MangaEpisodeInput,
-    MangaPipelineResult,
-    QualityCheckResult,
-    SpeechBubble,
-)
-from src.services.manga.pipeline import MangaPipeline
-from src.services.manga.prompt_generator import MangaPromptGenerator
-from src.services.manga.quality_gate import MangaQualityGate
-from src.services.manga.typesetter import MangaTypesetter
-from src.services.manga.upscaler import MangaUpscaler
+"""後方互換 shim: 実体は src/publishing/manga/ に移設済み。"""
+from __future__ import annotations
 
-__all__ = [
-    "AspectRatio",
-    "CharacterReference",
-    "MangaEpisodeInput",
-    "MangaPipeline",
-    "MangaPipelineConfig",
-    "MangaPipelineResult",
-    "MangaPromptGenerator",
-    "MangaQualityGate",
-    "MangaTypesetter",
-    "MangaUpscaler",
-    "QualityCheckResult",
-    "SpeechBubble",
-]
+import importlib
+import sys
+
+from src.publishing.manga import *  # noqa: F401, F403
+
+__all__ = [name for name in dir() if not name.startswith("_")]
+
+
+def __getattr__(name: str):
+    """サブモジュールを src.publishing.manga にリダイレクト (PEP 562)。"""
+    target = f"src.publishing.manga.{name}"
+    try:
+        module = importlib.import_module(target)
+    except ModuleNotFoundError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    sys.modules[f"{__name__}.{name}"] = module
+    return module

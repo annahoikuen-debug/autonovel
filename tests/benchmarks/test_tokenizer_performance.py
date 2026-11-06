@@ -5,7 +5,7 @@ import pytest
 import time
 import statistics
 
-from src.services.compression.japanese_tokenizer import (
+from src.engine.compression.japanese_tokenizer import (
     create_japanese_tokenizer,
     SudachiTokenizer,
     RegexJapaneseTokenizer,
@@ -154,7 +154,7 @@ class TestCompressionPipelinePerformance:
     @pytest.mark.skipif(not SUDACHI_AVAILABLE, reason="sudachipy not installed")
     def test_full_pipeline_latency(self):
         """Full 4-layer compression pipeline latency."""
-        from src.services.compression import FourLayerCompressor, CompressionConfig
+        from src.engine.compression import FourLayerCompressor, CompressionConfig
 
         config = CompressionConfig(max_tokens=1500)
         compressor = FourLayerCompressor(config=config)
@@ -193,7 +193,7 @@ class TestCompressionPipelinePerformance:
     @pytest.mark.skipif(not SUDACHI_AVAILABLE, reason="sudachipy not installed")
     def test_cache_performance(self):
         """Test cache hit vs miss performance."""
-        from src.services.compression import FourLayerCompressor, CompressionConfig
+        from src.engine.compression import FourLayerCompressor, CompressionConfig
 
         config = CompressionConfig(max_tokens=1500, cache_enabled=True)
         compressor = FourLayerCompressor(config=config)

@@ -419,7 +419,7 @@ class TokenTracker:
             推定コスト（USD）。コスト算出または永続化が失敗した場合は ``None``。
         """
         try:
-            from src.services.cost_analytics import CostCalculator
+            from src.integrations.cost_guard.analytics import CostCalculator
 
             cost_calculator = CostCalculator()
             # 実メソッド名は estimate_cost_usd（calculate は存在しない）

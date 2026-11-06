@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock
 
-from src.services.audit_aggregator import (
+from src.engine.audit.aggregator import (
     AuditAggregator, BookScoreResult, validate_weights, renormalize, SPECIALIST_NAMES
 )
 from src.agents.specialist_auditor_base import (

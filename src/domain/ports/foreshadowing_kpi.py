@@ -1,7 +1,7 @@
 """伏線KPIポート (F2)。
 
 ``DbForeshadowingRepository`` (infrastructure) が
-``src.services.foreshadowing.kpi`` へ直接依存せずに
+``src.engine.foreshadowing.kpi`` へ直接依存せずに
 伏線設置メトリクスを記録できるよう、記録をこのプロトコル経由に抽象化する。
 """
 

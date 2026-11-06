@@ -10,7 +10,7 @@ from src.config.kakuyomu_syntax_patterns import (
     CATCHPHRASE_OPTIMAL_MAX,
     CATCHPHRASE_OPTIMAL_MIN,
 )
-from src.services.marketing.catchphrase_scorer import score_catchphrase_ctr
+from src.integrations.marketing.catchphrase_scorer import score_catchphrase_ctr
 
 
 class TestCatchphraseScorerLimits:

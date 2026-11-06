@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # Attempt to import semantic cache infrastructure
 try:
-    from src.services.semantic_cache import SemanticCacheManager
+    from src.integrations.semantic_cache import SemanticCacheManager
 
     SEMANTIC_CACHE_IMPORTED = True
 except ImportError:

@@ -3,7 +3,7 @@ import json
 import logging
 import re
 from typing import Any
-from src.services.auditors.rule_based_metrics import (
+from src.engine.auditors.rule_based_metrics import (
     calculate_sentence_rhythm,
     calculate_dialogue_ratio,
     detect_ai_cliches,

@@ -51,7 +51,7 @@ def test_no_deprecated_module_imports_in_src():
     """src 配下の全 Python コードで廃止済みモジュールが直接 import されていないこと."""
     forbidden_modules = {
         "src.agent",  # agents (複数形) を使用すべき
-        "src.services.age_client",  # ChromaDB / Relational Memory を使用すべき
+        "src.integrations.age_client",  # ChromaDB / Relational Memory を使用すべき
     }
 
     src_dir = ROOT_DIR / "src"

@@ -5,10 +5,10 @@
 import time
 import pytest
 
-from src.services.age_client import AgeClient
-from src.services.graph_pipeline import GraphPipelineService
-from src.services.rag_service import GraphRAGService
-from src.services.embedding_service import embedding_service
+from src.integrations.age_client import AgeClient
+from src.engine.graph_pipeline import GraphPipelineService
+from src.integrations.rag.rag_service import GraphRAGService
+from src.integrations.rag.embedding_service import embedding_service
 
 # ベンチマーク閾値（ミリ秒）
 THRESHOLDS = {
@@ -161,9 +161,9 @@ def test_pipeline_single_chapter_performance(db_session):
         plot_summary="テスト要約"
     )
 
-    with patch("src.services.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
-         patch("src.services.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
-         patch("src.services.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
+    with patch("src.engine.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
+         patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
+         patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
         start = _now_ms()
         result = pipeline.process_chapter_knowledge(db_session, 999, text)
         elapsed = _now_ms() - start

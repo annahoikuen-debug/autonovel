@@ -3,7 +3,7 @@ import asyncio
 from unittest.mock import MagicMock
 
 from src.models.graph_schemas import Entity, GraphExtractionResult, Relationship
-from src.services.extraction_service import ExtractionService
+from src.engine.extraction_service import ExtractionService
 
 
 def test_graph_extraction_result_response_format():

@@ -1,7 +1,7 @@
 """投稿サイト別（なろう・カクヨム・アルファポリス）整形コピーエンジンの単体テスト (v5.0 Step 13)."""
 import pytest
 
-from src.services.formatters.platform_copy_formatter import (
+from src.publishing.formatters.platform_copy_formatter import (
     PlatformCopyFormatter,
 )
 

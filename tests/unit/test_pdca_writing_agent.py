@@ -3,8 +3,8 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.agents.writing.agent import WritingAgent
-from src.services.pdca_cycle import ClosedLoopPDCARunner, PDCACycleResult
-from src.services.audit_aggregator import AuditAggregator, BookScoreResult
+from src.engine.pdca_cycle import ClosedLoopPDCARunner, PDCACycleResult
+from src.engine.audit.aggregator import AuditAggregator, BookScoreResult
 
 
 class DummyChapter:

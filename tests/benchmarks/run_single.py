@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from tests.benchmarks.utils import measure_time_and_memory, token_count
 from tests.benchmarks.compressor_wrapper import CompressorWrapper
 from tests.benchmarks.fixtures import EpisodeData
-from src.services.compression.models import SceneType
+from src.engine.compression.models import SceneType
 
 
 def benchmark_single_episode(

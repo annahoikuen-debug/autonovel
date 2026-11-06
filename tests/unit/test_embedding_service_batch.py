@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from src.services.embedding_service import EmbeddingService
+from src.integrations.rag.embedding_service import EmbeddingService
 
 
 class TestEmbeddingServiceBatch:

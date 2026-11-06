@@ -1,4 +1,4 @@
-"""下位互換性維持のためのシム。実体は src.services.rag.rag_service に移動しました。"""
+"""下位互換性維持のためのシム。実体は src.integrations.rag.rag_service に移動しました。"""
 import importlib
 import sys
 import types
@@ -6,15 +6,15 @@ import warnings
 from typing import TYPE_CHECKING
 
 warnings.warn(
-    "src.services.rag_service is deprecated; use src.services.rag instead",
+    "src.services.rag_service is deprecated; use src.integrations.rag instead",
     DeprecationWarning,
     stacklevel=2,
 )
 
-_TARGET_MODULE = "src.services.rag.rag_service"
+_TARGET_MODULE = "src.integrations.rag.rag_service"
 
 if TYPE_CHECKING:  # pragma: no cover - 型チェック用の再エクスポート宣言
-    from src.services.rag.rag_service import (
+    from src.integrations.rag.rag_service import (
         GraphRAGService,
         RagContext,
         Reranker,

@@ -1,11 +1,11 @@
-"""src.services.bible_service の深層単体テスト (Step 11)。"""
+"""src.engine.bible_service の深層単体テスト (Step 11)。"""
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.services.bible_service import WorldBibleGenerator
+from src.engine.bible_service import WorldBibleGenerator
 
 
 @pytest.fixture

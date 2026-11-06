@@ -136,7 +136,7 @@ class LocalPolisher:
             (採用後のテキスト, 安全条件を満たして採用したか)
         """
         # 循環 import と既存 import を壊さないため、関数内 import にする
-        from src.services.prose.span_patch_applier import SpanPatchApplier
+        from src.engine.prose.span_patch_applier import SpanPatchApplier
 
         patched = await self.polish_with_llm(text, target_range, improvement_instruction, llm)
         if patched == text:

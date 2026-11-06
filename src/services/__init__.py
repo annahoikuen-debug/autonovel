@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from src.domain.writing import WritingService, WritingServices
-    from src.services.audit import AuditAggregatorService, AuditService
-    from src.services.marketing import MarketingService
-    from src.services.rag import (
+    from src.engine.audit import AuditAggregatorService, AuditService
+    from src.integrations.marketing.marketing import MarketingService
+    from src.integrations.rag import (
         RAGPipelineService,
         GraphRAGService,
         ReflectiveRAGService,
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     )
     from src.services.editor_assist_service import EditorAssistService
     from src.services.editorial_assistant_service import EditorialAssistantService
-    from src.services.next_beats_service import NextBeatsService
+    from src.engine.next_beats_service import NextBeatsService
 
 # 動的遅延解決テーブル
 _EXPORTS = {
@@ -28,19 +28,19 @@ _EXPORTS = {
     "WritingService": ("src.domain.writing", "WritingService"),
     "WritingServices": ("src.domain.writing", "WritingServices"),
     # Part 4: Audit
-    "AuditAggregatorService": ("src.services.audit", "AuditAggregatorService"),
-    "AuditService": ("src.services.audit", "AuditService"),
+    "AuditAggregatorService": ("src.engine.audit", "AuditAggregatorService"),
+    "AuditService": ("src.engine.audit", "AuditService"),
     # Part 4: Marketing
-    "MarketingService": ("src.services.marketing", "MarketingService"),
+    "MarketingService": ("src.integrations.marketing.marketing", "MarketingService"),
     # Part 4: RAG
-    "RAGPipelineService": ("src.services.rag", "RAGPipelineService"),
-    "GraphRAGService": ("src.services.rag", "GraphRAGService"),
-    "ReflectiveRAGService": ("src.services.rag", "ReflectiveRAGService"),
-    "HybridRetriever": ("src.services.rag", "HybridRetriever"),
+    "RAGPipelineService": ("src.integrations.rag", "RAGPipelineService"),
+    "GraphRAGService": ("src.integrations.rag", "GraphRAGService"),
+    "ReflectiveRAGService": ("src.integrations.rag", "ReflectiveRAGService"),
+    "HybridRetriever": ("src.integrations.rag", "HybridRetriever"),
     # Editor
     "EditorAssistService": ("src.services.editor_assist_service", "EditorAssistService"),
     "EditorialAssistantService": ("src.services.editorial_assistant_service", "EditorialAssistantService"),
-    "NextBeatsService": ("src.services.next_beats_service", "NextBeatsService"),
+    "NextBeatsService": ("src.engine.next_beats_service", "NextBeatsService"),
 }
 
 __all__ = [

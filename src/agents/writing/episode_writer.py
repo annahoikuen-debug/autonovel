@@ -16,12 +16,12 @@ from src.backend.observability.foreshadowing_ports import (
     BackendForeshadowingKpiPort,
     BackendForeshadowingMetricsPort,
 )
-from src.services.llm_service import LLMService
-from src.services.rag.context_retriever import ForeshadowingEntity
-from src.services.foreshadowing_service import ForeshadowingService
-from src.services.prose.social_reaction_generator import SocialReactionGenerator
+from src.llm.service import LLMService
+from src.integrations.rag.context_retriever import ForeshadowingEntity
+from src.engine.foreshadowing.service import ForeshadowingService
+from src.engine.prose.social_reaction_generator import SocialReactionGenerator
 from src.models.writing_metadata import WritingMetadata
-from src.services.prose.novel_output_splitter import NovelOutputSplitter
+from src.engine.prose.novel_output_splitter import NovelOutputSplitter
 from prompts.manager import PromptManager
 from src.pipeline.emotional_residue import EmotionalResidueExtractor
 from src.pipeline.character_dict import load_character_dict
@@ -618,7 +618,7 @@ class EpisodeWriter(BaseAgent):
             )
             return
         try:
-            from src.services.context_compression.digest_service import (
+            from src.engine.context_compression.digest_service import (
                 EpisodeDigestRepository,
                 EpisodeDigestService,
             )

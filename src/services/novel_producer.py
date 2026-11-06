@@ -13,7 +13,7 @@ from src.models.production_config import (
     ProductionProgress,
 )
 from src.models.report import ProductionReport
-from src.services.episode_writer import EpisodeWriter
+from src.engine.episode_writer import EpisodeWriter
 from src.services.report_generator import ReportGenerator
 from src.services.token_tracker import TokenTracker
 
@@ -246,7 +246,7 @@ class NovelProducer:
         Returns:
             float: 品質スコア
         """
-        from src.services.quality_scorer import QualityScorer
+        from src.engine.quality_scorer import QualityScorer
 
         scorer = QualityScorer()
         metrics = await scorer.score_all(episode_text)

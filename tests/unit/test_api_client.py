@@ -1,10 +1,10 @@
-"""Unit tests for src/infrastructure/api/api_client.py - Async HTTP API client."""
+"""Unit tests for src/infrastructure/external/api_client.py - Async HTTP API client."""
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 
-from src.infrastructure.api.api_client import (
+from src.infrastructure.external.api_client import (
     get_client,
     _request,
     _async_request,
@@ -74,7 +74,7 @@ class TestSyncClient:
     """Tests for synchronous client functions."""
 
     def setup_method(self):
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._resilient_client = None
 
     def test_get_client_creates_new(self):
@@ -90,7 +90,7 @@ class TestSyncClient:
 
     def test_get_client_uses_mock(self):
         """Test get_client uses mocked client."""
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         mock_client = MagicMock()
         api_client._resilient_client = mock_client
 
@@ -107,10 +107,10 @@ class TestRequestRouting:
         mock_response = MagicMock()
         mock_client.request.return_value = mock_response
 
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._resilient_client = mock_client
 
-        with patch("src.infrastructure.api.api_client._resolve_if_coroutine", return_value=mock_response):
+        with patch("src.infrastructure.external.api_client._resolve_if_coroutine", return_value=mock_response):
             _request("GET", "/test", param1="value1")
 
         call_args = mock_client.request.call_args
@@ -124,10 +124,10 @@ class TestRequestRouting:
         mock_response = MagicMock()
         mock_client.request.return_value = mock_response
 
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._resilient_client = mock_client
 
-        with patch("src.infrastructure.api.api_client._resolve_if_coroutine", return_value=mock_response):
+        with patch("src.infrastructure.external.api_client._resolve_if_coroutine", return_value=mock_response):
             _request("POST", "/test", data1="value1")
 
         call_args = mock_client.request.call_args
@@ -141,10 +141,10 @@ class TestRequestRouting:
         mock_response = MagicMock()
         mock_client.request.return_value = mock_response
 
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._resilient_client = mock_client
 
-        with patch("src.infrastructure.api.api_client._resolve_if_coroutine", return_value=mock_response):
+        with patch("src.infrastructure.external.api_client._resolve_if_coroutine", return_value=mock_response):
             _request("DELETE", "/test", id=123)
 
         call_args = mock_client.request.call_args
@@ -157,10 +157,10 @@ class TestRequestRouting:
         mock_response = MagicMock()
         mock_client.request.return_value = mock_response
 
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._resilient_client = mock_client
 
-        with patch("src.infrastructure.api.api_client._resolve_if_coroutine", return_value=mock_response):
+        with patch("src.infrastructure.external.api_client._resolve_if_coroutine", return_value=mock_response):
             _request("UNKNOWN", "/test", param="value")
 
         call_args = mock_client.request.call_args
@@ -172,7 +172,7 @@ class TestAsyncClient:
     """Tests for asynchronous client functions."""
 
     def setup_method(self):
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._async_client = None
 
     @pytest.mark.asyncio
@@ -194,7 +194,7 @@ class TestAsyncClient:
         _get_async_client()
         await close_async_client()
 
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         assert api_client._async_client is None
 
 
@@ -212,7 +212,7 @@ class TestAsyncRequest:
         mock_client.request.return_value = mock_response
         mock_client.is_closed = False
 
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._async_client = mock_client
 
         response = await _async_request("GET", "http://test/api/test")
@@ -227,7 +227,7 @@ class TestAsyncRequest:
         mock_client.request.side_effect = httpx.ConnectError("Connection failed")
         mock_client.is_closed = False
 
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._async_client = mock_client
 
         with pytest.raises(Exception) as exc_info:
@@ -242,7 +242,7 @@ class TestAsyncRequest:
         mock_client.request.side_effect = httpx.TimeoutException("Timeout")
         mock_client.is_closed = False
 
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._async_client = mock_client
 
         with pytest.raises(Exception) as exc_info:
@@ -263,7 +263,7 @@ class TestAsyncRequest:
         mock_client.request.return_value = mock_response
         mock_client.is_closed = False
 
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._async_client = mock_client
 
         with pytest.raises(Exception) as exc_info:
@@ -276,7 +276,7 @@ class TestAPIMethods:
     """Tests for individual API method functions."""
 
     def setup_method(self):
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._async_client = None
 
     @pytest.mark.asyncio
@@ -285,7 +285,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = [{"id": 1, "title": "Book 1"}]
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await list_books()
 
@@ -297,7 +297,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"id": 1, "title": "Book 1"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await get_book(1)
 
@@ -309,7 +309,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = True
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await delete_book(1)
 
@@ -321,7 +321,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = [{"id": 1, "title": "Plot 1"}]
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await get_plots(1)
 
@@ -333,7 +333,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = [{"id": 1, "title": "Chapter 1"}]
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await get_chapters(1)
 
@@ -345,7 +345,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"settings": {}}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await get_bible(1)
 
@@ -357,7 +357,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = [{"id": 1}]
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await get_opt_history(1)
 
@@ -369,7 +369,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"is_running": True, "progress": 50}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await get_task_status("task-123")
 
@@ -379,7 +379,7 @@ class TestAPIMethods:
     @pytest.mark.asyncio
     async def test_get_task_status_error(self):
         """Test get_task_status error handling."""
-        with patch("src.infrastructure.api.api_client._async_request", side_effect=Exception("Error")):
+        with patch("src.infrastructure.external.api_client._async_request", side_effect=Exception("Error")):
             result = await get_task_status("task-123")
 
         assert result["is_running"] is False
@@ -390,7 +390,7 @@ class TestAPIMethods:
         """Test stop_task."""
         mock_response = MagicMock()
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await stop_task("task-123")
 
@@ -402,7 +402,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"task_id": "task-123"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await generate_easy(
                 api_key="key", config={}, genre="fantasy", keywords="test",
@@ -418,7 +418,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"task_id": "task-123"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await generate_episodes(
                 api_key="key", config={}, book_id=1, write_from=1, write_to=5,
@@ -434,7 +434,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"task_id": "task-123"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await plan_generation(api_key="key", config={}, params={})
 
@@ -446,7 +446,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"task_id": "task-123"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await retry_failed_episodes(
                 api_key="key", config={}, book_id=1, passion=0.8, word_count=2000
@@ -460,7 +460,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"task_id": "task-123"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await expand_plots(
                 api_key="key", config={}, book_id=1, gen_from=1, gen_to=10
@@ -474,7 +474,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"task_id": "task-123"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await rebuild_plots(api_key="key", config={}, params={})
 
@@ -486,7 +486,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"task_id": "task-123"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await critique_optimize(api_key="key", config={}, book_id=1)
 
@@ -498,7 +498,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"task_id": "task-123"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await import_chapter(
                 api_key="key", book_id=1, ep_num=1, import_text="text", do_refine=True
@@ -512,7 +512,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"task_id": "task-123"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await generate_marketing(api_key="key", book_id=1, latest_ep=5)
 
@@ -524,7 +524,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"style": "web"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await analyze_style_dna(api_key="key", sample="sample text")
 
@@ -535,7 +535,7 @@ class TestAPIMethods:
         """Test create_chapter."""
         mock_response = MagicMock()
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await create_chapter(
                 book_id=1, ep_num=1, title="Ch1", content="content",
@@ -550,7 +550,7 @@ class TestAPIMethods:
         """Test delete_chapter."""
         mock_response = MagicMock()
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await delete_chapter(1, 1)
 
@@ -562,7 +562,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = [{"id": 1}]
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await get_issues(1)
 
@@ -574,7 +574,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"status": "resolved"}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await resolve_issue(1, "fix", "api_key")
 
@@ -586,7 +586,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"success": True}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await save_pending_patch(1, "type", "content", {})
 
@@ -598,7 +598,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = [{"id": 1}]
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await get_pending_patches(1)
 
@@ -609,7 +609,7 @@ class TestAPIMethods:
         """Test approve_patch."""
         mock_response = MagicMock()
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await approve_patch(1)
 
@@ -620,7 +620,7 @@ class TestAPIMethods:
         """Test reject_patch."""
         mock_response = MagicMock()
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await reject_patch(1)
 
@@ -632,7 +632,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = [{"version": 1}]
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await get_prompt_versions(1)
 
@@ -644,7 +644,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"success": True}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await rollback_prompt_version(1, 1)
 
@@ -656,7 +656,7 @@ class TestAPIMethods:
         mock_response = MagicMock()
         mock_response.json.return_value = {"score": 80}
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await audit_producer_plan(
                 api_key="key", genre="fantasy", keywords="test",
@@ -670,7 +670,7 @@ class TestAPIMethods:
         """Test export_package."""
         mock_response = MagicMock()
 
-        with patch("src.infrastructure.api.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
+        with patch("src.infrastructure.external.api_client._async_request", new_callable=AsyncMock) as mock_async_request:
             mock_async_request.return_value = mock_response
             result = await export_package(api_key="key", book_id=1)
 
@@ -682,12 +682,12 @@ class TestCloseClient:
 
     def test_close_client(self):
         """Test close_client closes both clients."""
-        import src.infrastructure.api.api_client as api_client
+        import src.infrastructure.external.api_client as api_client
         api_client._resilient_client = MagicMock()
         api_client._async_client = AsyncMock()
         api_client._async_client.is_closed = False
 
-        with patch("src.infrastructure.api.api_client.close_async_client") as mock_close_async:
+        with patch("src.infrastructure.external.api_client.close_async_client") as mock_close_async:
             with patch("asyncio.run"):
                 close_client()
 

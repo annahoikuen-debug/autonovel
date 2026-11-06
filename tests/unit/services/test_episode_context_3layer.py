@@ -6,7 +6,7 @@ EpisodeContextBuilder の Layer 1/2/3 が正しく構築され、
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.services.episode_context import EpisodeContextBuilder
+from src.engine.episode_context import EpisodeContextBuilder
 from src.backend.database.models import Character as CharacterModel
 from src.backend.database.models import Chapter as ChapterModel
 from src.backend.database.models_foreshadowing import ForeshadowingModel

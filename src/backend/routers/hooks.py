@@ -17,7 +17,7 @@ from src.backend.database.models import User
 from src.backend.database.uow import UnitOfWork
 from src.backend.security.owner_guard import verify_book_ownership
 from src.core.container import AppContainer
-from src.services.hook_diagnoser import HOOK_THRESHOLD, HookDiagnoser
+from src.engine.hook_diagnoser import HOOK_THRESHOLD, HookDiagnoser
 
 router = APIRouter(prefix="/api/hooks", tags=["hooks"])
 

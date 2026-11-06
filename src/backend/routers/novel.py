@@ -147,7 +147,7 @@ async def get_chapter_book_score(
 ):
     """指定章の BookScore を取得する"""
     try:
-        from src.services.book_score_service import BookScoreCalculator
+        from src.engine.book_score.service import BookScoreCalculator
 
         async with UnitOfWork(AppContainer.db()) as uow:
             # IDOR 防止: 作品の所有権を検証する
@@ -274,7 +274,7 @@ async def get_pdca_report(
     try:
         from src.backend.database.core import get_db_manager
         from src.backend.database.repositories.book_score import BookScoreRepository
-        from src.services.book_score_service import BookScoreCalculator
+        from src.engine.book_score.service import BookScoreCalculator
 
         # IDOR 防止: 作品の所有権を検証する
         await verify_book_ownership(book_id, current_user, AppContainer.db())
@@ -309,7 +309,7 @@ async def get_book_alerts(
     try:
         from src.backend.database.core import get_db_manager
         from src.backend.database.repositories.book_score import BookScoreRepository
-        from src.services.book_score_service import BookScoreCalculator
+        from src.engine.book_score.service import BookScoreCalculator
 
         # IDOR 防止: 作品の所有権を検証する
         await verify_book_ownership(book_id, current_user, AppContainer.db())

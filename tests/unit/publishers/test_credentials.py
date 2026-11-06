@@ -10,13 +10,13 @@ import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
-from src.services.publishers.credentials import (
+from src.publishing.publishers.credentials import (
     CredentialStore,
     CredentialConfig,
     get_credential_store,
     create_env_file,
 )
-from src.services.publishers import (
+from src.publishing.publishers import (
     NarouCredentials,
 )
 

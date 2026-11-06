@@ -91,7 +91,7 @@ class TestMetadataInstruction:
 
     def test_echoed_metadata_parses(self) -> None:
         """LLM がそのまま echo したメタデータが `WritingMetadata` としてパースできること。"""
-        from src.services.prose.novel_output_splitter import NovelOutputSplitter
+        from src.engine.prose.novel_output_splitter import NovelOutputSplitter
 
         tmpl = _env().get_template("writing_metadata_instruction.j2")
         rendered = tmpl.render(
@@ -118,7 +118,7 @@ class TestMetadataInstruction:
 
     def test_one_bad_entry_does_not_null_out_metadata(self) -> None:
         """1件不正なエントリがあっても WritingMetadata 全体が null にならないこと。"""
-        from src.services.prose.novel_output_splitter import NovelOutputSplitter
+        from src.engine.prose.novel_output_splitter import NovelOutputSplitter
 
         raw = (
             "本文。\n\n[METADATA_JSON]\n"

@@ -4,7 +4,7 @@ PLAN 01 - Step 5: CTRスコアリングエンジンの単体テスト
 from __future__ import annotations
 
 
-from src.services.marketing.ctr_scorer import score_title_ctr
+from src.integrations.marketing.ctr_scorer import score_title_ctr
 
 
 def test_score_title_ctr_high_score():

@@ -250,7 +250,7 @@ async def test_recalc_all_book_scores():
         # Book/Chapter は select() に実 SQLAlchemy モデルが必要なため実モデルを使用
         # （sys.modules への差し替えは不要。実装の import 先は src.backend.database.models）
         # BookScoreCalculator / Repository のみ差し替え
-        import src.services.book_score_service as bss_module
+        import src.engine.book_score.service as bss_module
         calculator = MagicMock()
         calculator.calculate = AsyncMock(return_value=MagicMock())
         m.setattr(bss_module, "BookScoreCalculator",

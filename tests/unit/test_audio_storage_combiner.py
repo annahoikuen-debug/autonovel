@@ -1,10 +1,10 @@
 import os
 import tempfile
 import pytest
-from src.services.audio.audio_combiner import AudioCombiner
-from src.services.audio.audio_storage import AudioStorageService
-from src.services.audio.chapter_synthesizer import ChapterAudioSynthesizer
-from src.services.audio.mock_client import MockAudioSynthesisClient
+from src.integrations.audio.audio_combiner import AudioCombiner
+from src.integrations.audio.audio_storage import AudioStorageService
+from src.integrations.audio.chapter_synthesizer import ChapterAudioSynthesizer
+from src.integrations.audio.mock_client import MockAudioSynthesisClient
 
 
 def test_audio_combiner_with_mock_clips():

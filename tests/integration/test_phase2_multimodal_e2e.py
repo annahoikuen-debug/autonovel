@@ -1,12 +1,12 @@
 import os
 import tempfile
 import pytest
-from src.services.illustration.mock_client import MockImageClient
-from src.services.illustration.base import ImageGenerationRequest
-from src.services.audio.chapter_synthesizer import ChapterAudioSynthesizer
-from src.services.audio.mock_client import MockAudioSynthesisClient
-from src.services.audio.audio_storage import AudioStorageService
-from src.services.exporters.epub_commercial_builder import CommercialEpubBuilder
+from src.publishing.illustration.mock_client import MockImageClient
+from src.publishing.illustration.base import ImageGenerationRequest
+from src.integrations.audio.chapter_synthesizer import ChapterAudioSynthesizer
+from src.integrations.audio.mock_client import MockAudioSynthesisClient
+from src.integrations.audio.audio_storage import AudioStorageService
+from src.publishing.exporters.epub_commercial_builder import CommercialEpubBuilder
 
 
 @pytest.mark.asyncio

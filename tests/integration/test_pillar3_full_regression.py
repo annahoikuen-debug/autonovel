@@ -8,22 +8,22 @@ from src.services.proposal_isolation import (
     ProposalSandboxContext,
     ProposalIsolationRunner,
 )
-from src.services.blind_review import (
+from src.engine.blind_review import (
     BlindFeedbackPurifier,
     BlindReviewGate,
 )
 
 # Part 2 & 3 imports
-from src.services.nlp.japanese_tokenizer import JapaneseTokenizer
-from src.services.rrf_fusion import compute_rrf_scores
-from src.services.query_reformulator import QueryReformulator
+from src.engine.nlp.japanese_tokenizer import JapaneseTokenizer
+from src.integrations.rag.rrf_fusion import compute_rrf_scores
+from src.integrations.rag.query_reformulator import QueryReformulator
 from src.services.reflective_rag import ReflectiveRAGService
-from src.services.rag_service import SearchResult
+from src.integrations.rag.rag_service import SearchResult
 
 # Part 4 & 5 imports
-from src.services.compression.layer3_taxonomy import DynamicTaxonomyEngine
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import CompressionConfig, ProtectedContext
+from src.engine.compression.layer3_taxonomy import DynamicTaxonomyEngine
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import CompressionConfig, ProtectedContext
 
 # Part 6 imports
 from src.agents.context_builder_agent import ContextBuilderAgent

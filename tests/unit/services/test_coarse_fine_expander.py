@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from src.services.default_plot_expander import DefaultPlotExpander
+from src.engine.default_plot_expander import DefaultPlotExpander
 from src.models.plot import (
     EpisodeMacroSkeleton,
     PlotMacroBatch,

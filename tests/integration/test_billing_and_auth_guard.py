@@ -15,7 +15,7 @@ from src.backend.server import app
 from src.backend.config import settings
 from src.backend.database import get_async_db
 from src.backend.database.models import Base, User
-from src.services.billing.credit_service import CreditService
+from src.integrations.billing.credit_service import CreditService
 from src.config.billing_plans import get_credits_for_price_id
 from src.backend.security.jwt import create_access_token
 
@@ -143,7 +143,7 @@ class TestCreditLifecycle:
             credit_service = CreditService(session)
 
             # 所持クレジット以上の消費を試みる
-            from src.services.billing.credit_service import InsufficientCreditsError
+            from src.integrations.billing.credit_service import InsufficientCreditsError
 
             with pytest.raises(InsufficientCreditsError):
                 await credit_service.deduct_credits(

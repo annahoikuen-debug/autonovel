@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, AsyncMock
 from src.agents.context_builder_agent import ContextBuilderAgent
 from src.agents.orchestrator import AgentContext
 from src.services.reflective_rag import ReflectiveRAGService
-from src.services.rag_service import GraphRAGService, SearchResult
+from src.integrations.rag.rag_service import GraphRAGService, SearchResult
 
 
 @pytest.fixture

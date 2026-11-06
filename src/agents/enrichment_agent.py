@@ -255,7 +255,7 @@ class EnrichmentAgent(SkillAgent):
 
         # トークン予算上限（精緻なトークン計算）
         try:
-            from src.services.compression.layer1_keywords import count_tokens
+            from src.engine.compression.layer1_keywords import count_tokens
         except Exception:
             def count_tokens(s: str) -> int:
                 return max(1, len(s) // 2)
@@ -789,4 +789,4 @@ class EnrichmentAgent(SkillAgent):
         last_period = trimmed.rfind("。")
         if last_period > len(original):
             return trimmed[:last_period + 1]
-        return original
+        return original

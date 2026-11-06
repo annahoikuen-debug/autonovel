@@ -119,13 +119,13 @@ async def test_lifespan_completes_with_optional_side_effects_unwired():
 
 @pytest.mark.asyncio
 async def test_real_wiring_supplies_prefetch_cancellation():
-    """実 wiring の cancel_prefetch が src.services.semantic_cache を指すこと。"""
+    """実 wiring の cancel_prefetch が src.integrations.semantic_cache を指すこと。"""
     from src.backend.wiring import build_wiring
 
     wiring = build_wiring()
     assert wiring.cancel_prefetch is not None
     with patch(
-        "src.services.semantic_cache.cancel_all_prefetch",
+        "src.integrations.semantic_cache.cancel_all_prefetch",
         new=AsyncMock(return_value=7),
     ) as m:
         cancelled = await wiring.cancel_prefetch()

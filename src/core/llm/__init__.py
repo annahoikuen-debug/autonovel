@@ -43,17 +43,17 @@ from typing import TYPE_CHECKING, Any
 
 _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
     # 統合抽象インターフェース・型（軽量なので即時 import してよいもの）
-    "IUnifiedLLMClient": ("src.core.llm.unified_interface", "IUnifiedLLMClient"),
-    "LLMRequest": ("src.core.llm.types", "LLMRequest"),
-    "LLMResponse": ("src.core.llm.types", "LLMResponse"),
-    "LLMUsage": ("src.core.llm.types", "LLMUsage"),
-    "StreamChunk": ("src.core.llm.types", "StreamChunk"),
+    "IUnifiedLLMClient": ("src.llm.unified.interface", "IUnifiedLLMClient"),
+    "LLMRequest": ("src.llm.unified.types", "LLMRequest"),
+    "LLMResponse": ("src.llm.unified.types", "LLMResponse"),
+    "LLMUsage": ("src.llm.unified.types", "LLMUsage"),
+    "StreamChunk": ("src.llm.unified.types", "StreamChunk"),
     # アダプタ群（SDK を/topLevel import するため遅延）
-    "GeminiUnifiedClient": ("src.core.llm.adapters.gemini_unified_client", "GeminiUnifiedClient"),
-    "OpenAIUnifiedClient": ("src.core.llm.adapters.openai_unified_client", "OpenAIUnifiedClient"),
-    "UnifiedMockLLMClient": ("src.core.llm.adapters.mock_unified_client", "UnifiedMockLLMClient"),
+    "GeminiUnifiedClient": ("src.llm.unified.adapters.gemini", "GeminiUnifiedClient"),
+    "OpenAIUnifiedClient": ("src.llm.unified.adapters.openai", "OpenAIUnifiedClient"),
+    "UnifiedMockLLMClient": ("src.llm.unified.adapters.mock", "UnifiedMockLLMClient"),
     # ファクトリ
-    "create_unified_llm_client": ("src.core.llm.factory", "create_unified_llm_client"),
+    "create_unified_llm_client": ("src.llm.unified.factory", "create_unified_llm_client"),
     # src/llm/ からの re-export（後方互換ブリッジ）
     "LLMCircuitBreaker": ("src.llm.circuit_breaker", "LLMCircuitBreaker"),
     "ResilientLLMGateway": ("src.llm.resilient_gateway", "ResilientLLMGateway"),
@@ -64,21 +64,21 @@ _LAZY_EXPORTS: dict[str, tuple[str, str]] = {
     "select_model": ("src.llm.model_router", "select_model"),
     "is_openai_compatible": ("src.llm.model_router", "is_openai_compatible"),
     # 低レベルクライアント
-    "BaseLLMClient": ("src.core.llm_clients.base", "BaseLLMClient"),
-    "GeminiApiClient": ("src.core.llm_clients.gemini", "GeminiApiClient"),
-    "OpenAIApiClient": ("src.core.llm_clients.openai", "OpenAIApiClient"),
+    "BaseLLMClient": ("src.llm.clients.base", "BaseLLMClient"),
+    "GeminiApiClient": ("src.llm.clients.gemini", "GeminiApiClient"),
+    "OpenAIApiClient": ("src.llm.clients.openai", "OpenAIApiClient"),
 }
 
 if TYPE_CHECKING:  # pragma: no cover - 型チェック/static analysis のみ
-    from src.core.llm.types import LLMRequest, LLMResponse, LLMUsage, StreamChunk  # noqa: F401
-    from src.core.llm.unified_interface import IUnifiedLLMClient  # noqa: F401
-    from src.core.llm.adapters.gemini_unified_client import GeminiUnifiedClient  # noqa: F401
-    from src.core.llm.adapters.mock_unified_client import UnifiedMockLLMClient  # noqa: F401
-    from src.core.llm.adapters.openai_unified_client import OpenAIUnifiedClient  # noqa: F401
+    from src.llm.unified.types import LLMRequest, LLMResponse, LLMUsage, StreamChunk  # noqa: F401
+    from src.llm.unified.interface import IUnifiedLLMClient  # noqa: F401
+    from src.llm.unified.adapters.gemini import GeminiUnifiedClient  # noqa: F401
+    from src.llm.unified.adapters.mock import UnifiedMockLLMClient  # noqa: F401
+    from src.llm.unified.adapters.openai import OpenAIUnifiedClient  # noqa: F401
     from src.core.llm.factory import create_unified_llm_client  # noqa: F401
-    from src.core.llm_clients.base import BaseLLMClient  # noqa: F401
-    from src.core.llm_clients.gemini import GeminiApiClient  # noqa: F401
-    from src.core.llm_clients.openai import OpenAIApiClient  # noqa: F401
+    from src.llm.clients.base import BaseLLMClient  # noqa: F401
+    from src.llm.clients.gemini import GeminiApiClient  # noqa: F401
+    from src.llm.clients.openai import OpenAIApiClient  # noqa: F401
     from src.llm.base import LLMProvider  # noqa: F401
     from src.llm.base import LLMResponse as LLMResponsePydantic  # noqa: F401
     from src.llm.circuit_breaker import LLMCircuitBreaker  # noqa: F401

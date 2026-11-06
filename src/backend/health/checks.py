@@ -188,7 +188,7 @@ async def check_enrichment_agent() -> HealthCheckResult:
     start = time.perf_counter()
     try:
         from src.backend.config import settings
-        from src.services.rag_service import rag_service
+        from src.integrations.rag.rag_service import rag_service
 
         # 機能フラグチェック
         if not settings.ENRICHMENT_ENABLED:

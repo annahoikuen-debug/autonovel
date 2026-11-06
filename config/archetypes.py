@@ -1,4 +1,6 @@
-# archetypes.py — 正規エントリポイント
-# 以前の archetypes_legacy.py / archetypes_fixed_legacy.py / archetypes_stub_legacy.py は
-# 2026-09-28 に削除。archetypes_new.py を正規ソースとする。
-from config.archetypes_new import *  # noqa: F401, F403
+"""後方互換 shim: 実体は src/config/archetypes.py に移設済み。"""
+from __future__ import annotations
+
+from src.config.archetypes import *  # noqa: F401, F403
+
+__all__ = [name for name in dir() if not name.startswith("_")]

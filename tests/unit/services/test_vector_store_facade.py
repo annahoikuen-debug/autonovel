@@ -7,7 +7,7 @@ config・collection 系・InMemoryFallbackStore 以外のパブリックAPIを�
 
 import pytest
 
-import src.services.vector_store as vs
+import src.integrations.vector_store as vs
 
 
 class TestCollectionTypeAndConfig:

@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.agents.specialists.adapter import AuditAggregatorNode
 from src.agents.specialist_auditor_base import SpecialistAuditResult, ActionableDiff
-from src.services.audit_aggregator import BookScoreResult
+from src.engine.audit.aggregator import BookScoreResult
 from src.agents.orchestrator import AgentContext, AgentName
 from src.agents.prompt_composer import PromptComposer
 

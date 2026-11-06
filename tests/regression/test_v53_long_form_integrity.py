@@ -15,7 +15,7 @@ from src.agents.specialists.consistency_auditor import (
     _extract_foreshadowing_descriptions,
 )
 from src.models.foreshadowing_status import ForeshadowingScope, ForeshadowingStatus
-from src.services.foreshadowing.planner import (
+from src.engine.foreshadowing.planner import (
     DEFAULT_TOTAL_EPISODES,
     plan_foreshadowing,
 )
@@ -200,7 +200,7 @@ class TestReschedulerUsesRealApi:
     async def test_calls_update_target_episode(self):
         """v5.2: DbForeshadowingRepository に update_target_episode が無く
         hasattr ガードでサイレント no-op + 偽成功ログになっていた"""
-        from src.services.foreshadowing.rescheduler import ForeshadowingRescheduler
+        from src.engine.foreshadowing.rescheduler import ForeshadowingRescheduler
 
         repo = MagicMock()
         repo.update_target_episode = AsyncMock(return_value=True)
@@ -213,7 +213,7 @@ class TestReschedulerUsesRealApi:
     @pytest.mark.asyncio
     async def test_missing_api_returns_none_not_fake_success(self):
         """API が無い場合は成功を偽装せず None を返す"""
-        from src.services.foreshadowing.rescheduler import ForeshadowingRescheduler
+        from src.engine.foreshadowing.rescheduler import ForeshadowingRescheduler
 
         repo = SimpleNamespace()  # update_target_episode を持たない
         result = await ForeshadowingRescheduler.reschedule_foreshadowing(
@@ -223,7 +223,7 @@ class TestReschedulerUsesRealApi:
 
     @pytest.mark.asyncio
     async def test_rejected_update_returns_none(self):
-        from src.services.foreshadowing.rescheduler import ForeshadowingRescheduler
+        from src.engine.foreshadowing.rescheduler import ForeshadowingRescheduler
 
         repo = MagicMock()
         repo.update_target_episode = AsyncMock(return_value=False)
@@ -233,7 +233,7 @@ class TestReschedulerUsesRealApi:
         assert result is None
 
     def test_find_next_suitable_is_after_current(self):
-        from src.services.foreshadowing.rescheduler import ForeshadowingRescheduler
+        from src.engine.foreshadowing.rescheduler import ForeshadowingRescheduler
 
         for cur in (1, 5, 10, 20, 30, 39):
             nxt = ForeshadowingRescheduler.find_next_suitable_episode(cur, 40)
@@ -241,7 +241,7 @@ class TestReschedulerUsesRealApi:
 
     def test_long_book_postponement_is_not_killed_by_40(self):
         """Step 15 (M2): `max_episode=40` 固定を廃止し、100话本でも延期が機能する"""
-        from src.services.foreshadowing.rescheduler import ForeshadowingRescheduler
+        from src.engine.foreshadowing.rescheduler import ForeshadowingRescheduler
 
         for cur in (45, 60, 80, 100, 120):
             nxt = ForeshadowingRescheduler.find_next_suitable_episode(cur)
@@ -250,14 +250,14 @@ class TestReschedulerUsesRealApi:
 
     def test_postponement_beyond_fixed_40_default(self):
         """旧既定値 40 のままでは 45话以降の延期先が 40话以下へ巻き戻っていた"""
-        from src.services.foreshadowing.rescheduler import ForeshadowingRescheduler
+        from src.engine.foreshadowing.rescheduler import ForeshadowingRescheduler
 
         nxt = ForeshadowingRescheduler.find_next_suitable_episode(60, max_episode=120)
         assert nxt > 60, f"61..120 の範囲へ延期されるべき: {nxt}"
 
     def test_no_upper_bound_never_rewinds_to_earlier_episode(self):
         """Step 16: 回収ビートが無い即使に `min(cur+2, max)` で現在话以下を返さない"""
-        from src.services.foreshadowing.rescheduler import ForeshadowingRescheduler
+        from src.engine.foreshadowing.rescheduler import ForeshadowingRescheduler
 
         # 総话数を超過している = 延期不能（None）か、せめて現在话より後
         for cur in (100, 200):
@@ -265,14 +265,14 @@ class TestReschedulerUsesRealApi:
             assert nxt is None, f"cur={cur}: 延期不能なら None を返す（{nxt} は偽の延期）"
 
     def test_postponement_impossible_returns_none(self):
-        from src.services.foreshadowing.rescheduler import ForeshadowingRescheduler
+        from src.engine.foreshadowing.rescheduler import ForeshadowingRescheduler
 
         assert ForeshadowingRescheduler.find_next_suitable_episode(40, max_episode=40) is None
 
     @pytest.mark.asyncio
     async def test_postponement_impossible_does_not_fake_success(self):
         """Step 16: 延期不能時は update_target_episode を呼ばない"""
-        from src.services.foreshadowing.rescheduler import ForeshadowingRescheduler
+        from src.engine.foreshadowing.rescheduler import ForeshadowingRescheduler
 
         repo = MagicMock()
         repo.update_target_episode = AsyncMock(return_value=True)
@@ -285,8 +285,8 @@ class TestReschedulerUsesRealApi:
     @pytest.mark.asyncio
     async def test_max_episode_is_propagated_from_service(self, monkeypatch):
         """Step 15: `check_and_resolve` の total_episodes が延期の上限として伝わる"""
-        import src.services.foreshadowing_service as svc_mod
-        from src.services.foreshadowing_service import ForeshadowingService
+        import src.engine.foreshadowing.service as svc_mod
+        from src.engine.foreshadowing.service import ForeshadowingService
 
         captured = {}
 
@@ -317,7 +317,7 @@ class TestReschedulerUsesRealApi:
     @pytest.mark.asyncio
     async def test_progressed_to_progressed_is_normal_not_warning(self, caplog):
         """Step 14 (M1): progress() の拒否は異常ではなく「変化なし」として扱う"""
-        from src.services.foreshadowing_service import ForeshadowingService
+        from src.engine.foreshadowing.service import ForeshadowingService
 
         f = SimpleNamespace(
             id=1, title="伏線B", description="d", planted_episode=1,
@@ -330,7 +330,7 @@ class TestReschedulerUsesRealApi:
         repo.update_target_episode = AsyncMock(return_value=True)
 
         service = ForeshadowingService(repo)
-        with caplog.at_level("INFO", logger="src.services.foreshadowing_service"):
+        with caplog.at_level("INFO", logger="src.engine.foreshadowing.service"):
             resolved = await service.check_and_resolve(
                 book_id=1, episode_num=5, draft_text="伏線Bがさらに動いた",
                 contract_ids=[1],
@@ -356,7 +356,7 @@ class TestReschedulerUsesRealApi:
     @pytest.mark.asyncio
     async def test_progressed_success_logs_update(self, caplog):
         """Step 14: 遷移が成功したときだけ成功ログを出す"""
-        from src.services.foreshadowing_service import ForeshadowingService
+        from src.engine.foreshadowing.service import ForeshadowingService
 
         f = SimpleNamespace(
             id=2, title="伏線C", description="d", planted_episode=1,
@@ -368,7 +368,7 @@ class TestReschedulerUsesRealApi:
         repo.update_target_episode = AsyncMock(return_value=True)
 
         service = ForeshadowingService(repo)
-        with caplog.at_level("INFO", logger="src.services.foreshadowing_service"):
+        with caplog.at_level("INFO", logger="src.engine.foreshadowing.service"):
             await service.check_and_resolve(
                 book_id=1, episode_num=5, draft_text="伏線Cが動いた", contract_ids=[2],
             )
@@ -379,7 +379,7 @@ class TestReschedulerUsesRealApi:
     @pytest.mark.asyncio
     async def test_empty_contract_ids_is_distinct_from_none(self):
         """Step 17 (M14): 契約0件([]) と契約情報なし(None) を区別する"""
-        from src.services.foreshadowing_service import ForeshadowingService
+        from src.engine.foreshadowing.service import ForeshadowingService
 
         f = SimpleNamespace(
             id=3, title="伏線D", description="d", planted_episode=1,
@@ -406,7 +406,7 @@ class TestReschedulerUsesRealApi:
 
 class TestForeshadowingKpi:
     def _service(self, balance, overdue=()):
-        from src.services.foreshadowing.kpi import ForeshadowingKpiService
+        from src.engine.foreshadowing.kpi import ForeshadowingKpiService
 
         repo = MagicMock()
         repo.get_balance = AsyncMock(return_value=balance)
@@ -509,7 +509,7 @@ class TestContractForeshadowingWiring:
         service_cls = MagicMock(return_value=service)
 
         import src.infrastructure.repositories.foreshadowing_repo as repo_mod
-        import src.services.foreshadowing_service as svc_mod
+        import src.engine.foreshadowing.service as svc_mod
 
         monkeypatch.setattr(repo_mod, "DbForeshadowingRepository", repo_cls)
         monkeypatch.setattr(svc_mod, "ForeshadowingService", service_cls)

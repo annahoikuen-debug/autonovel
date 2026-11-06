@@ -2,14 +2,14 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.services.audio.adapters.base import (
+from src.integrations.audio.adapters.base import (
     TtsRequest,
 )
-from src.services.audio.adapters.elevenlabs_adapter import (
+from src.integrations.audio.adapters.elevenlabs_adapter import (
     ElevenLabsAdapter,
     OpenAIttsAdapter,
 )
-from src.services.audio.factory import (
+from src.integrations.audio.factory import (
     MockTtsAdapter,
     get_tts_adapter,
 )

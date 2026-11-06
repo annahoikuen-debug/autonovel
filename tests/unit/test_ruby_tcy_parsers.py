@@ -1,6 +1,6 @@
-from src.services.exporters.ruby_parser import parse_bouten, parse_ruby_to_xhtml
-from src.services.exporters.tcy_formatter import apply_tatechuyoko
-from src.services.exporters.epub_content_builder import EpubContentBuilder
+from src.publishing.exporters.ruby_parser import parse_bouten, parse_ruby_to_xhtml
+from src.publishing.exporters.tcy_formatter import apply_tatechuyoko
+from src.publishing.exporters.epub_content_builder import EpubContentBuilder
 
 
 def test_ruby_parsing():

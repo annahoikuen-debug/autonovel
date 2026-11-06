@@ -4,8 +4,8 @@ from __future__ import annotations
 import pytest
 from unittest.mock import MagicMock
 
-from src.services.chunk_ingestion import upsert_chunks
-from src.services.vector_store import InMemoryFallbackStore
+from src.engine.chunk_ingestion import upsert_chunks
+from src.integrations.vector_store import InMemoryFallbackStore
 
 
 def _fake_chunk(id: str = "x", content: str = "hello", chapter_id: int = 1, chunk_index: int = 0):

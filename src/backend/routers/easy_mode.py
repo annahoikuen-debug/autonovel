@@ -19,17 +19,17 @@ from src.backend.rate_limit import generate_limiter
 from src.backend.security.owner_guard import verify_book_ownership
 from src.domain.entities.easy_mode import EasyModeInput, GenerationResponse
 from src.services.digest_service import process_chapter
-from src.services.graph_pipeline import graph_pipeline_service
+from src.engine.graph_pipeline import graph_pipeline_service
 from src.services.llm.factory import get_llm_adapter
 from src.services.llm.prompts import (
     NOVEL_SYSTEM_PROMPT,
     NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE,
     SUGGESTIONS_PROMPT_TEMPLATE,
 )
-from src.services.marketing import MarketingAgent
-from src.services.rag_service import rag_service
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import CompressionConfig
+from src.integrations.marketing.marketing import MarketingAgent
+from src.integrations.rag.rag_service import rag_service
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import CompressionConfig
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

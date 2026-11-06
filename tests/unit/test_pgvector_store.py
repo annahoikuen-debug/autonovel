@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.services.vector_store import PgVectorStore, HAS_PGVECTOR
+from src.integrations.vector_store import PgVectorStore, HAS_PGVECTOR
 
 
 @pytest.mark.skipif(not HAS_PGVECTOR, reason="pgvector not installed")
@@ -12,8 +12,8 @@ class TestPgVectorStore:
 
     def test_init(self):
         """Test initialization."""
-        with patch("src.services.vector_store.create_async_engine") as mock_engine, \
-             patch("src.services.vector_store.async_sessionmaker") as mock_session:
+        with patch("src.integrations.vector_store.create_async_engine") as mock_engine, \
+             patch("src.integrations.vector_store.async_sessionmaker") as mock_session:
             store = PgVectorStore(
                 database_url="postgresql+asyncpg://user:pass@localhost/db",
                 dimension=768,
@@ -28,8 +28,8 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_ensure_table(self):
         """Test _ensure_table creates table and index."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with patch("src.integrations.vector_store.create_async_engine"), \
+             patch("src.integrations.vector_store.async_sessionmaker"):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -50,8 +50,8 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_add_documents(self):
         """Test add_documents inserts data."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with patch("src.integrations.vector_store.create_async_engine"), \
+             patch("src.integrations.vector_store.async_sessionmaker"):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -75,8 +75,8 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_search(self):
         """Test search returns results."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with patch("src.integrations.vector_store.create_async_engine"), \
+             patch("src.integrations.vector_store.async_sessionmaker"):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -103,8 +103,8 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_search_with_score(self):
         """Test search_with_score filters by min_score."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with patch("src.integrations.vector_store.create_async_engine"), \
+             patch("src.integrations.vector_store.async_sessionmaker"):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -127,8 +127,8 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_delete_by_id(self):
         """Test delete_by_id removes rows."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with patch("src.integrations.vector_store.create_async_engine"), \
+             patch("src.integrations.vector_store.async_sessionmaker"):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -144,8 +144,8 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_clear_collection(self):
         """Test clear_collection truncates table."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with patch("src.integrations.vector_store.create_async_engine"), \
+             patch("src.integrations.vector_store.async_sessionmaker"):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)
@@ -161,8 +161,8 @@ class TestPgVectorStore:
     @pytest.mark.asyncio
     async def test_hybrid_search(self):
         """Test hybrid_search combines vector and text results."""
-        with patch("src.services.vector_store.create_async_engine"), \
-             patch("src.services.vector_store.async_sessionmaker"):
+        with patch("src.integrations.vector_store.create_async_engine"), \
+             patch("src.integrations.vector_store.async_sessionmaker"):
             store = PgVectorStore(database_url="postgresql+asyncpg://")
             mock_session = AsyncMock()
             store._session = MagicMock(return_value=mock_session)

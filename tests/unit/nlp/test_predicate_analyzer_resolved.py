@@ -1,6 +1,6 @@
 """Unit tests for ForeshadowingPredicateAnalyzer detecting resolved predicates."""
 
-from src.services.nlp.foreshadowing_predicate_analyzer import ForeshadowingPredicateAnalyzer
+from src.engine.nlp.foreshadowing_predicate_analyzer import ForeshadowingPredicateAnalyzer
 
 
 def test_resolved_predicates_detection():

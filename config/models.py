@@ -1,21 +1,6 @@
-"""
-config/models.py — 設定モデルの集約・再エクスポート用モジュール
-"""
+"""後方互換 shim: 実体は src/domain/models/config_models.py に移設済み。"""
+from __future__ import annotations
 
-from schemas.config import (
-    DomainProfileModel,
-    GlobalConfigModel,
-    InteractionMatrixModel,
-    ModelRegistryModel,
-    SystemPluginsModel,
-    TropesModel,
-)
+from src.domain.models.config_models import *  # noqa: F401, F403
 
-__all__ = [
-    "GlobalConfigModel",
-    "ModelRegistryModel",
-    "SystemPluginsModel",
-    "TropesModel",
-    "InteractionMatrixModel",
-    "DomainProfileModel",
-]
+__all__ = [name for name in dir() if not name.startswith("_")]

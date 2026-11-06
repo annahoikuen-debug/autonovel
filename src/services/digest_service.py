@@ -12,7 +12,7 @@ from src.domain.entities.easy_mode import (
     DigestResponse,
     DigestStatus,
 )
-from src.services.llm_service import LLMService
+from src.llm.service import LLMService
 
 logger = logging.getLogger("quick_digest")
 

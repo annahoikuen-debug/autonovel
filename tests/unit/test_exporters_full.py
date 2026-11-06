@@ -4,7 +4,7 @@ tests/unit/test_exporters_full.py - Exporters & Export Router の網羅テスト
 
 import pytest
 
-from src.services.exporters.base import (
+from src.publishing.exporters.base import (
     EpubExporter,
     KakuyomuExporter,
     MarkdownExporter,

@@ -3,20 +3,20 @@ from __future__ import annotations
 
 import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
-from src.services.rag_service import RagContext
+from src.integrations.rag.rag_service import RagContext
 
 import pytest
 
 from src.infrastructure.database.models.chunk import ChapterChunk
 from src.models.graph_schemas import Entity, GraphExtractionResult, Relationship
-from src.services.age_client import AgeClient
-from src.services.embedding_service import EmbeddingService
-from src.services.extraction_service import ExtractionService
-from src.services.graph_pipeline import GraphPipelineService
+from src.integrations.age_client import AgeClient
+from src.integrations.rag.embedding_service import EmbeddingService
+from src.engine.extraction_service import ExtractionService
+from src.engine.graph_pipeline import GraphPipelineService
 from src.services.llm.mock_adapter import MockLLMAdapter
 from src.services.llm.openai_adapter import OpenAIAdapter
-from src.services.rag_service import GraphRAGService
-from src.services.text_chunker import split_into_paragraphs
+from src.integrations.rag.rag_service import GraphRAGService
+from src.engine.text_chunker import split_into_paragraphs
 
 
 @pytest.fixture
@@ -278,7 +278,7 @@ async def test_graph_pipeline_service(db_session):
     chapter_id の FK 制約を回避するため、先に Book / Chapter を作成する。
     GEMINI_API_KEY 未設定時はグラフ更新が失敗するため、chunks_created のみ検証する。
     """
-    from src.services.graph_pipeline import ChapterProcessResult
+    from src.engine.graph_pipeline import ChapterProcessResult
     from src.backend.database.models import Book as BookModel, Chapter as ChapterModel
 
     book = BookModel(title="テスト", genre="Fantasy", concept="テスト")
@@ -360,7 +360,7 @@ def test_age_client_init_graph_sqlstate_42p04(db_session):
 
     from sqlalchemy.exc import IntegrityError
 
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     fake_orig = MagicMock()
     fake_orig.pgcode = "42P04"
@@ -375,7 +375,7 @@ def test_age_client_init_graph_sqlstate_42p04(db_session):
 
 def test_age_client_get_all_nodes_on_sqlite(db_session):
     """SQLite 環境で get_all_nodes は例外ではなく空リストを返す."""
-    from src.services.age_client import AgeClient
+    from src.integrations.age_client import AgeClient
 
     client = AgeClient(default_graph_name="sqlite_test")
     result = client.get_all_nodes(db_session)

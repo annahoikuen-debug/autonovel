@@ -18,7 +18,7 @@ from src.models.illustration import (
     IllustrationType,
     SafetyLevel,
 )
-from src.services.image_service import ImageService
+from src.publishing.illustration.image_service import ImageService
 
 
 def _build_agent():

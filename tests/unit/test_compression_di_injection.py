@@ -4,8 +4,8 @@ from __future__ import annotations
 import pytest
 
 from src.core.container.app import AppContainer
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import CompressionConfig
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import CompressionConfig
 
 
 class TestCompressionDIInjection:

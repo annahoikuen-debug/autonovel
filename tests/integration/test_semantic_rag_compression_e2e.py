@@ -4,9 +4,9 @@ import pytest
 from unittest.mock import MagicMock
 
 from src.services.reflective_rag import ReflectiveRAGService
-from src.services.rag_service import SearchResult
-from src.services.compression.compressor import FourLayerCompressor
-from src.services.compression.models import CompressionConfig, ProtectedContext
+from src.integrations.rag.rag_service import SearchResult
+from src.engine.compression.compressor import FourLayerCompressor
+from src.engine.compression.models import CompressionConfig, ProtectedContext
 from src.agents.context_builder_agent import ContextBuilderAgent
 
 

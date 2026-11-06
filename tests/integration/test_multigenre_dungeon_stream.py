@@ -6,7 +6,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.agents.writing.opening_booster import OpeningBoosterAgent
 from src.agents.writing.episode_writer import EpisodeWriter
-from src.services.prose.social_reaction_generator import SocialReactionGenerator
+from src.engine.prose.social_reaction_generator import SocialReactionGenerator
 from src.models.opening_booster import OpeningEpisodeConfig
 from src.models.social_reaction import StreamComment, ForumPost
 

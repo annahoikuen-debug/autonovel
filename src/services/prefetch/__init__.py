@@ -1,1 +1,20 @@
-"""投機的プリフェッチのタスク管理（PLAN_W6）。"""
+"""後方互換 shim: 実体は src/integrations/prefetch/ に移設済み。"""
+from __future__ import annotations
+
+import importlib
+import sys
+
+from src.integrations.prefetch import *  # noqa: F401, F403
+
+__all__ = [name for name in dir() if not name.startswith("_")]
+
+
+def __getattr__(name: str):
+    """サブモジュールを src.integrations.prefetch にリダイレクト (PEP 562)。"""
+    target = f"src.integrations.prefetch.{name}"
+    try:
+        module = importlib.import_module(target)
+    except ModuleNotFoundError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    sys.modules[f"{__name__}.{name}"] = module
+    return module

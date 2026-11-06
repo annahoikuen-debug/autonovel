@@ -9,11 +9,11 @@ from unittest.mock import AsyncMock, Mock
 
 from src.agents.writing.episode_writer import EpisodeWriter
 from src.agents.context_builder_agent import ContextBuilderAgent
-from src.services.llm_service import LLMService
-from src.services.rag.context_retriever import LongFormContextRetriever, ForeshadowingEntity
-from src.services.audio.chapter_synthesizer import ChapterAudioSynthesizer
+from src.llm.service import LLMService
+from src.integrations.rag.context_retriever import LongFormContextRetriever, ForeshadowingEntity
+from src.integrations.audio.chapter_synthesizer import ChapterAudioSynthesizer
 from src.agents.media_script_agent import MediaScriptAgent
-from src.services.exporters.epub_commercial_builder import CommercialEpubBuilder
+from src.publishing.exporters.epub_commercial_builder import CommercialEpubBuilder
 from src.agents.specialists.consistency_auditor import ConsistencyAuditor
 from src.services.commercial_benchmarks import CommercialBenchmarkJudge
 from prompts.manager import PromptManager

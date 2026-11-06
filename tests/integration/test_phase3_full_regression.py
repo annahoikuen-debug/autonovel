@@ -1,5 +1,5 @@
-from src.services.graph.networkx_store import NetworkXGraphStore
-from src.services.cost_budget_guard import CostBudgetGuard
+from src.engine.graph.networkx_store import NetworkXGraphStore
+from src.integrations.cost_guard.budget_guard import CostBudgetGuard
 from src.agents.specialists.model_router import AuditorModelRouter
 
 
@@ -15,7 +15,7 @@ def test_networkx_graph_store_regression():
 
 
 def test_cost_budget_guard_regression():
-    from src.services.cost_analytics import CostCalculator
+    from src.integrations.cost_guard.analytics import CostCalculator
     calc = CostCalculator()
     guard = CostBudgetGuard(calculator=calc, budget_limit=10.0)
     status = guard.check_budget_status(book_id=1)

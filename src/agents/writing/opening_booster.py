@@ -12,7 +12,7 @@ import jinja2
 from src.agents.base import BaseAgent
 from src.config.opening_rules import GENRE_OPENING_TARGETS, OPENING_FORBIDDEN_RULES
 from src.models.opening_booster import CliffhangerEvaluation, OpeningEpisodeConfig
-from src.services.auditors.cliffhanger_scorer import score_cliffhanger
+from src.engine.auditors.cliffhanger_scorer import score_cliffhanger
 
 if TYPE_CHECKING:
     pass

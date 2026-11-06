@@ -5,7 +5,7 @@ from src.services.proposal_isolation import (
     ProposalSandboxContext,
     ProposalIsolationRunner,
 )
-from src.services.blind_review import (
+from src.engine.blind_review import (
     BlindFeedbackPurifier,
     BlindReviewGate,
     detect_proposal_leaks,

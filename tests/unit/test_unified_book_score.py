@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.services.book_score_service import BookScore, BookScoreCalculator
+from src.engine.book_score.service import BookScore, BookScoreCalculator
 
 
 def test_calculate_from_specialists_delegation():

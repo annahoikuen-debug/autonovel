@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.reranker import (
+from src.integrations.rag.reranker import (
     HAS_CROSS_ENCODER,
     CrossEncoderReranker,
     NoopReranker,

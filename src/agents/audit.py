@@ -18,9 +18,9 @@ from src.models.audit import (
 from src.models.db import PlotDbModel
 from src.models.graph_schemas import GraphExtractionResult
 from src.models.sharp_edge import SharpEdgeSpec
-from src.services.llm_service import LLMService
+from src.llm.service import LLMService
 from src.agents.audit_screeners import AbilityConsistencyChecker, FastPlotScreener  # noqa: F401
-from src.services.extraction_service import extraction_service
+from src.engine.extraction_service import extraction_service
 
 logger = logging.getLogger(__name__)
 
@@ -813,7 +813,7 @@ class InternalLogicValidator:
 class LogicalAuditor:
     """@deprecated ロジカル一貫性チェックエージェント。
 
-    このクラスは非推奨です。新規コードでは `src.services.audit_aggregator.AuditAggregator`
+    このクラスは非推奨です。新規コードでは `src.engine.audit.aggregator.AuditAggregator`
     または `src.agents.audit_agent.AuditAgent` を使用してください。(Phase 6: Step 65)
     """
 

@@ -36,6 +36,6 @@ def test_domain_writing_import():
 
 
 def test_anti_ai_import():
-    """src.services.anti_ai からアンチAI検出器がインポートできること"""
-    from src.services.anti_ai import RuleBasedAntiAIDetector
+    """src.engine.anti_ai からアンチAI検出器がインポートできること"""
+    from src.engine.anti_ai import RuleBasedAntiAIDetector
     assert RuleBasedAntiAIDetector is not None

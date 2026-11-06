@@ -2,7 +2,7 @@
 """Context Compression 設定読み込みユーティリティ（互換レイヤー）"""
 from __future__ import annotations
 
-from src.services.compression.models import (
+from src.engine.compression.models import (
     SudachiConfig,
     CompressionConfig,
     load_compression_config,

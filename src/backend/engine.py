@@ -6,7 +6,7 @@ engine.py — 後方互換 shim（非推奨）
 
   - エージェント管理   → src.agents.orchestrator.Orchestrator
   - エンジンアダプタ   → src.backend.orchestrator_engine_adapter.OrchestratorEngineAdapter
-  - 生成サービス       → src.services.auto_workflow_pipeline
+  - 生成サービス       → src.engine.auto_workflow_pipeline
   - LLM ゲートウェイ  → src.llm.resilient_gateway.ResilientLLMGateway
 
 新規コードでは上記を直接 import してください。

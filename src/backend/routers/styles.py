@@ -12,7 +12,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from src.interfaces.api.styles import build_distill_router, router as styles_router
-from src.services.style_distiller import style_distiller_service
+from src.publishing.formatters.style_distiller import style_distiller_service
 
 # FastAPI 0.141+ の include_router は遅延展開 (_IncludedRouter) を持つため、
 # 旧契約テスト (tests/contract/test_router_paths.py) が APIRoute を直接列挙

@@ -42,7 +42,7 @@ async def test_stripe_webhook_grants_credits(monkeypatch):
                 # Mock the get_tier_for_price_id function
                 with patch("src.backend.routers.billing_webhook.get_tier_for_price_id", return_value="pro"):
                     # Mock CreditService.grant_credits to avoid real DB access
-                    with patch("src.services.billing.credit_service.CreditService.grant_credits", new_callable=AsyncMock) as mock_grant:
+                    with patch("src.integrations.billing.credit_service.CreditService.grant_credits", new_callable=AsyncMock) as mock_grant:
                         # Call the handler
                         await handle_stripe_webhook(mock_request, db=mock_session)
 

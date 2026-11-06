@@ -1,34 +1,20 @@
-"""Audit services package.
+"""後方互換 shim: 実体は src/engine/audit/ に移設済み。"""
+from __future__ import annotations
 
-監査関連機能の統合:
-- AuditAggregatorService: 公開ファサード（8スペシャリスト監査の集約）
-- AuditService: 監査サービス（スクリーン・能力チェック・DeAI監査）
-- AuditAdapter: 監査エンジン共通アダプタ
-"""
-from src.services.audit.aggregator import (
-    AuditAggregator,
-    BookScoreResult,
-    SPECIALIST_NAMES,
-)
-from src.services.audit.service import AuditService
-from src.services.audit.adapter import AuditAdapter, create_audit_adapter
-from src.services.audit.fast_screener import FastScreener
-from src.services.audit.targeted_diagnostic import TargetedDiagnostic
-from src.services.audit.audit_cache import AuditCache, compute_manuscript_hash
+import importlib
+import sys
 
-# 公開ファサード
-AuditAggregatorService = AuditAggregator
+from src.engine.audit import *  # noqa: F401, F403
 
-__all__ = [
-    "AuditAggregatorService",
-    "AuditAggregator",
-    "BookScoreResult",
-    "SPECIALIST_NAMES",
-    "AuditService",
-    "AuditAdapter",
-    "create_audit_adapter",
-    "FastScreener",
-    "TargetedDiagnostic",
-    "AuditCache",
-    "compute_manuscript_hash",
-]
+__all__ = [name for name in dir() if not name.startswith("_")]
+
+
+def __getattr__(name: str):
+    """サブモジュールを src.engine.audit にリダイレクト (PEP 562)。"""
+    target = f"src.engine.audit.{name}"
+    try:
+        module = importlib.import_module(target)
+    except ModuleNotFoundError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    sys.modules[f"{__name__}.{name}"] = module
+    return module

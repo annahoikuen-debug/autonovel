@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock
 from src.agents.orchestrator import AgentContext, AgentName
 from src.agents.enrichment_agent import EnrichmentAgent
 from src.agents.specialists.adapter import AuditAggregatorNode
-from src.services.audit_aggregator import AuditAggregator, BookScoreResult
+from src.engine.audit.aggregator import AuditAggregator, BookScoreResult
 from src.agents.specialists import (
     ConsistencyAuditor,
     CreativityAuditor,

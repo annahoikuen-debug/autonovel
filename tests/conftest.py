@@ -304,7 +304,7 @@ def mock_llm_adapter(request, llm_mocker: LLMMocker, monkeypatch) -> MockLLMAdap
     def mock_get_llm_adapter(*args, **kwargs):
         return mock_adapter
 
-    monkeypatch.setattr("src.services.llm.factory.get_llm_adapter", mock_get_llm_adapter)
+    monkeypatch.setattr("src.llm.adapters.factory.get_llm_adapter", mock_get_llm_adapter)
     return mock_adapter
 
 

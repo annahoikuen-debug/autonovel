@@ -1,6 +1,6 @@
 import io
 import zipfile
-from src.services.exporters.epub_commercial_builder import CommercialEpubBuilder
+from src.publishing.exporters.epub_commercial_builder import CommercialEpubBuilder
 
 
 def test_commercial_epub_builder():

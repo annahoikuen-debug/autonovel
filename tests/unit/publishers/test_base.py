@@ -7,7 +7,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import patch
 
-from src.services.publishers.base import (
+from src.publishing.publishers.base import (
     PublisherAdapter,
     PublisherCredentials,
     PublishResult,
@@ -55,7 +55,7 @@ class TestPublisherDataClasses:
 
     def test_narou_credentials(self):
         """NarouCredentialsテスト"""
-        from src.services.publishers.narou import NarouCredentials
+        from src.publishing.publishers.narou import NarouCredentials
         creds = NarouCredentials(email="test@test.com", password="pass123")
         assert creds.email == "test@test.com"
         assert creds.password == "pass123"
@@ -63,7 +63,7 @@ class TestPublisherDataClasses:
 
     def test_kakuyomu_credentials(self):
         """KakuyomuCredentialsテスト"""
-        from src.services.publishers.kakuyomu import KakuyomuCredentials
+        from src.publishing.publishers.kakuyomu import KakuyomuCredentials
         creds = KakuyomuCredentials(api_token="token123", user_id="user456")
         assert creds.api_token == "token123"
         assert creds.user_id == "user456"
@@ -71,7 +71,7 @@ class TestPublisherDataClasses:
 
     def test_kobo_credentials(self):
         """KoboCredentialsテスト"""
-        from src.services.publishers.kobo import KoboCredentials
+        from src.publishing.publishers.kobo import KoboCredentials
         creds = KoboCredentials(client_id="id", client_secret="secret")
         assert creds.client_id == "id"
         assert creds.client_secret == "secret"
@@ -79,7 +79,7 @@ class TestPublisherDataClasses:
 
     def test_kindle_credentials(self):
         """KindleCredentialsテスト"""
-        from src.services.publishers.kindle import KindleCredentials
+        from src.publishing.publishers.kindle import KindleCredentials
         creds = KindleCredentials(client_id="id", client_secret="secret", refresh_token="refresh")
         assert creds.client_id == "id"
         assert creds.client_secret == "secret"

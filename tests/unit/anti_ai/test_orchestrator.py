@@ -11,7 +11,7 @@ from src.config.anti_ai_config import (
     DetectorSettings,
     clear_cache,
 )
-from src.services.anti_ai import (
+from src.engine.anti_ai import (
     AICategory,
     RuleBasedAntiAIDetector,
 )

@@ -1,6 +1,6 @@
 """文体蒸留サービスの port（interfaces / 配線側が具象を注入する）。
 
-実体 ``StyleDistillerService`` は旧レイヤー ``src.services.style_distiller``
+実体 ``StyleDistillerService`` は旧レイヤー ``src.publishing.formatters.style_distiller``
 に残しており、構造的型付け（Protocol）でここに適合する。
 """
 

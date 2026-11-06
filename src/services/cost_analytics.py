@@ -1,13 +1,6 @@
-"""コスト計算モジュール - 後方互換 shim。
+"""後方互換 shim: 実体は src/integrations/cost_guard/analytics.py に移設済み。"""
+from __future__ import annotations
 
-F4 フェーズ: 実装は src/domain/services/cost_analytics.py に移設。
-このモジュールは re-export 用 shim として残す。
-"""
+from src.integrations.cost_guard.analytics import *  # noqa: F401, F403
 
-from src.domain.services.cost_analytics import (  # noqa: F401
-    CostCalculator,
-    DEFAULT_PRICING,
-    _default_calculator,
-    check_budget_alert,
-    estimate_cost_usd,
-)
+__all__ = [name for name in dir() if not name.startswith("_")]

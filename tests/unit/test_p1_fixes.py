@@ -6,8 +6,8 @@ import pytest
 from unittest.mock import MagicMock
 
 from src.backend.rate_limit import RateLimiter
-from src.services.rag_service import GraphRAGService, RagContext
-from src.services.vector_store import PgVectorStore
+from src.integrations.rag.rag_service import GraphRAGService, RagContext
+from src.integrations.vector_store import PgVectorStore
 
 
 @pytest.mark.asyncio

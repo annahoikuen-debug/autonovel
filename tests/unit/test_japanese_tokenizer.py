@@ -10,9 +10,9 @@ try:
 except ImportError:  # pragma: no cover - environment without sudachipy
     _SUDACHI_AVAILABLE = False
 
-from src.services.nlp.japanese_tokenizer import JapaneseTokenizer
+from src.engine.nlp.japanese_tokenizer import JapaneseTokenizer
 from src.services.reflective_rag import ReflectiveRAGService
-from src.services.rag_service import SearchResult
+from src.integrations.rag.rag_service import SearchResult
 
 
 @pytest.mark.skipif(not _SUDACHI_AVAILABLE, reason="sudachipy not installed")

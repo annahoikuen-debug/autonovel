@@ -7,9 +7,8 @@ Part 4 (Step 13-15) リグレッション防止テスト:
 
 import threading
 import time
-from src.llm.circuit_breaker import LLMCircuitBreaker, CircuitState
-from src.services.llm.circuit_breaker import CircuitBreaker
-from src.services.llm.provider_failover import ProviderFailoverManager
+from src.llm.circuit_breaker import LLMCircuitBreaker, CircuitState, CircuitBreaker
+from src.llm.adapters.failover import ProviderFailoverManager
 
 
 def test_circuit_breaker_state_transitions():

@@ -22,7 +22,7 @@ from src.models.illustration import (
     IllustrationType,
     SafetyLevel,
 )
-from src.services.billing.credit_service import CreditService, InsufficientCreditsError
+from src.integrations.billing.credit_service import CreditService, InsufficientCreditsError
 
 router = APIRouter()
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from src.services.pipeline_base import WorkflowContext
+from src.engine.pipeline_base import WorkflowContext
 from src.models.writing import FullAutoWorkflowResult
 
 

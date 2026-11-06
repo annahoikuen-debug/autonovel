@@ -14,7 +14,7 @@ from typing import Any
 
 import yaml
 
-from src.services.audit_aggregator import (
+from src.engine.audit.aggregator import (
     SPECIALIST_NAMES,
     renormalize,
     validate_weights,

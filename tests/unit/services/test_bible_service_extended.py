@@ -13,7 +13,7 @@ from src.models import (
     WorldRules,
 )
 from src.models.planning_config import PlanningConfig
-from src.services.bible_service import WorldBibleGenerator
+from src.engine.bible_service import WorldBibleGenerator
 
 
 def make_llm(metadata=None, success=True, error_message="err"):
@@ -228,7 +228,7 @@ class TestFallbackSynopsis:
         core.title = "T"
         core.arcs = [ArcBlueprint(arc_num=1, start_ep=1, end_ep=2, title="A", summary="S")]
         with patch(
-            "src.services.bible_service.DomainProfileService.get_fallback_synopsis_details",
+            "src.engine.bible_service.DomainProfileService.get_fallback_synopsis_details",
             return_value={"theme_desc": "THEME", "ending_desc": "ENDING"},
         ):
             out = gen._generate_fallback_synopsis(core, "fantasy", "kw", "hero")
@@ -242,7 +242,7 @@ class TestFallbackSynopsis:
         core = WorldBibleCore()
         core.mc_profile = None
         with patch(
-            "src.services.bible_service.DomainProfileService.get_fallback_synopsis_details",
+            "src.engine.bible_service.DomainProfileService.get_fallback_synopsis_details",
             return_value={"theme_desc": "T", "ending_desc": "E"},
         ):
             out = gen._generate_fallback_synopsis(core, "fantasy", "kw", "hero")
@@ -285,7 +285,7 @@ class TestGenerateWorldRules:
     async def test_failure_uses_defaults(self):
         gen = make_generator(llm=make_llm(None, success=False))
         with patch(
-            "src.services.bible_service.DomainProfileService.get_default_causality_map",
+            "src.engine.bible_service.DomainProfileService.get_default_causality_map",
             return_value=["x"],
         ):
             rules = await gen._generate_world_rules("fantasy", "kw", "hero", 70, 1.5, None)
@@ -619,9 +619,9 @@ class TestStandardPlan:
         gen = make_generator(llm=llm)
         config = make_config(target_eps=3, initial_plot_limit=0)
         with patch(
-            "src.services.bible_service.DomainProfileService.get_fallback_synopsis_details",
+            "src.engine.bible_service.DomainProfileService.get_fallback_synopsis_details",
             return_value={"theme_desc": "TH", "ending_desc": "EN"},
-        ), patch("src.services.bible_service.DomainProfileService.get_default_causality_map", return_value=[]):
+        ), patch("src.engine.bible_service.DomainProfileService.get_default_causality_map", return_value=[]):
             await gen._create_standard_plan(config, None)
 
     async def test_plot_expansion_invoked(self):
@@ -647,7 +647,7 @@ class TestStandardPlan:
         llm.generate_json = AsyncMock(side_effect=lambda *a, **k: make())
         gen = make_generator(llm=llm)
         config = make_config(target_eps=2, initial_plot_limit=2)
-        with patch("src.services.bible_service.PlotExpander") as exp:
+        with patch("src.engine.bible_service.PlotExpander") as exp:
             exp.return_value.expand_plots = AsyncMock()
             await gen._create_standard_plan(config, None)
         exp.return_value.expand_plots.assert_awaited_once()
@@ -715,7 +715,7 @@ class TestUltraFastPlan:
         llm = make_llm(self._uf_payload(synopsis="short"))
         gen = make_generator(llm=llm)
         with patch(
-            "src.services.bible_service.DomainProfileService.get_fallback_synopsis_details",
+            "src.engine.bible_service.DomainProfileService.get_fallback_synopsis_details",
             return_value={"theme_desc": "TH", "ending_desc": "EN"},
         ):
             _, bible = await gen._create_ultra_fast_plan(

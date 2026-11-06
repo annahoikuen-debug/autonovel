@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.compression import (
+from src.engine.compression import (
     FourLayerCompressor,
     CompressionConfig,
     SudachiConfig,
@@ -188,13 +188,13 @@ class TestTokenizerFallback:
 
     def test_fallback_to_regex(self, monkeypatch):
         """When Sudachi fails, should fall back to regex tokenizer."""
-        import src.services.compression.japanese_tokenizer as jt_module
+        import src.engine.compression.japanese_tokenizer as jt_module
 
         # Simulate Sudachi unavailable
         monkeypatch.setattr(jt_module, 'SUDACHI_AVAILABLE', False)
 
-        from src.services.compression.japanese_tokenizer import create_japanese_tokenizer
-        from src.services.compression import FourLayerCompressor, CompressionConfig
+        from src.engine.compression.japanese_tokenizer import create_japanese_tokenizer
+        from src.engine.compression import FourLayerCompressor, CompressionConfig
 
         tokenizer = create_japanese_tokenizer()
         assert type(tokenizer).__name__ == "RegexJapaneseTokenizer"

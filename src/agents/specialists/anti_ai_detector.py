@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.agents.specialist_auditor_base import SpecialistAuditor, SpecialistAuditResult
-from src.services.anti_ai.orchestrator import RuleBasedAntiAIDetector
+from src.engine.anti_ai.orchestrator import RuleBasedAntiAIDetector
 
 
 class AntiAIDetector(SpecialistAuditor):

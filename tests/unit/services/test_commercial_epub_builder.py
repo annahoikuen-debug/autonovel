@@ -2,9 +2,9 @@
 import io
 import zipfile
 
-from src.services.exporters.epub_vertical_styler import COMMERCIAL_VERTICAL_CSS
-from src.services.exporters.epub_ruby_processor import EpubRubyProcessor
-from src.services.exporters.commercial_epub_builder import PureCommercialEpubBuilder
+from src.publishing.exporters.epub_vertical_styler import COMMERCIAL_VERTICAL_CSS
+from src.publishing.exporters.epub_ruby_processor import EpubRubyProcessor
+from src.publishing.exporters.commercial_epub_builder import PureCommercialEpubBuilder
 
 
 class TestEpubVerticalStyler:

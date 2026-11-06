@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from src.backend.planning_service import PlanningService
 from src.backend.writing_service import WritingService
-from src.services.book_score_service import BookScoreCalculator
+from src.engine.book_score.service import BookScoreCalculator
 
 
 @dataclass

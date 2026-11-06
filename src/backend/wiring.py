@@ -8,7 +8,7 @@ init_db・エラーハンドラ・認証ミドルウェア・ヘルス/メトリ
 
 from __future__ import annotations
 
-from src.backend.api.admin_phase2 import (
+from src.backend.routers.admin_phase2 import (
     enrichment_router as admin_enrichment_router,
     rag_router as admin_rag_router,
     router as admin_audit_router,
@@ -78,7 +78,7 @@ def _huey_check() -> object:
 
 async def _cancel_prefetch() -> int:
     """バックグラウンドの RAG プリフェッチタスクを取り消す（遅延 import）。"""
-    from src.services.semantic_cache import cancel_all_prefetch
+    from src.integrations.semantic_cache import cancel_all_prefetch
 
     return await cancel_all_prefetch()
 

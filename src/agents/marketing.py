@@ -11,11 +11,11 @@ from src.models.marketing_ctr import (
     ViralTitleRequest,
     ViralTitleResponse,
 )
-from src.services.llm_service import LLMService
+from src.llm.service import LLMService
 
 # Marketing imports for catchphrase functionality
 try:
-    from src.services.marketing.catchphrase_scorer import score_catchphrase_ctr
+    from src.integrations.marketing.catchphrase_scorer import score_catchphrase_ctr
 except ImportError:
     # Fallback for when catchphrase_scorer is not yet implemented
     def score_catchphrase_ctr(catchphrase: str) -> int:
@@ -99,7 +99,7 @@ class MarketingAgent(BaseAgent):
                 or [raw_candidates]
             )
 
-        from src.services.marketing.ctr_scorer import score_title_ctr
+        from src.integrations.marketing.ctr_scorer import score_title_ctr
 
         scored_candidates: list[TitleCandidate] = []
         for item in candidates_list:

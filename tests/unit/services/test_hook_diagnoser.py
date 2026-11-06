@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from src.services.hook_diagnoser import HookDiagnoser
+from src.engine.hook_diagnoser import HookDiagnoser
 
 
 @pytest.fixture
@@ -14,7 +14,7 @@ def mock_quality_scorer():
 
 @pytest.fixture
 def hook_diagnoser(mock_quality_scorer, monkeypatch):
-    monkeypatch.setattr("src.services.hook_diagnoser.QualityScorer", lambda: mock_quality_scorer)
+    monkeypatch.setattr("src.engine.hook_diagnoser.QualityScorer", lambda: mock_quality_scorer)
     return HookDiagnoser(llm_service=None)
 
 
@@ -82,7 +82,7 @@ async def test_generate_hook_fix_with_llm(hook_diagnoser):
 async def test_generate_hook_fix_without_llm(hook_diagnoser, monkeypatch):
     mock_llm_instance = MagicMock()
     mock_llm_instance.generate_text = AsyncMock(return_value="自動生成フック")
-    monkeypatch.setattr("src.services.llm_service.LLMService", lambda api_key: mock_llm_instance)
+    monkeypatch.setattr("src.llm.service.LLMService", lambda api_key: mock_llm_instance)
 
     hook_diagnoser._llm = None
     chapter = {"content": "本文"}

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.audio.emotion_classifier import (
+from src.integrations.audio.emotion_classifier import (
     SpeechEmotion,
     AcousticParameters,
     EMOTION_ACOUSTIC_TABLE,
     DialogueEmotionClassifier,
 )
-from src.services.audio.speaker_mapper import (
+from src.integrations.audio.speaker_mapper import (
     VOICEVOX_STYLE_REGISTRY,
     resolve_speaker_and_style,
     load_voice_config,

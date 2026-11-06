@@ -1,6 +1,6 @@
 """ブックスコア計算アプリケーションポート（ドメイン層定義）。
 
-``src.services.book_score_service.BookScoreCalculator`` を抽象化したポート。
+``src.engine.book_score.service.BookScoreCalculator`` を抽象化したポート。
 ドメイン層はこのポート経由で BookScore を計算し、旧レイアウトに直接
 依存しない。
 

@@ -8,7 +8,7 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from src.services.compression import FourLayerCompressor, ProtectedContext
+from src.engine.compression import FourLayerCompressor, ProtectedContext
 
 def run_benchmark():
     """Run benchmark varying token budgets and measuring retention rates."""

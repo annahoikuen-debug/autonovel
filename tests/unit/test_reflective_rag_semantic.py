@@ -9,7 +9,7 @@ from src.services.reflective_rag import (
     ReflectiveDoc,
     ContextFitResult,
 )
-from src.services.rag_service import SearchResult
+from src.integrations.rag.rag_service import SearchResult
 
 
 def test_context_fit_check_world_bible_statuses():

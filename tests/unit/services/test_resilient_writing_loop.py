@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import AsyncMock
-from src.services.llm.provider_failover import ProviderFailoverManager
-from src.services.billing.cost_budget_guard import CostBudgetConfig
-from src.services.billing.token_budget_tracker import TokenBudgetTracker, CostBudgetExceededError
+from src.llm.adapters.failover import ProviderFailoverManager
+from src.integrations.billing.cost_budget_guard import CostBudgetConfig
+from src.integrations.billing.token_budget_tracker import TokenBudgetTracker, CostBudgetExceededError
 
 @pytest.mark.asyncio
 async def test_failover_and_budget_integration():

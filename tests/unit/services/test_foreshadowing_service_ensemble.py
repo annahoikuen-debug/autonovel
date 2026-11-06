@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 from dataclasses import dataclass
 
 from src.models.writing_metadata import WritingMetadata, ForeshadowingReport
-from src.services.foreshadowing_service import ForeshadowingService
+from src.engine.foreshadowing.service import ForeshadowingService
 
 
 @dataclass

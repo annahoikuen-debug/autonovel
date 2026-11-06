@@ -6,7 +6,7 @@ from __future__ import annotations
 
 from src.models.emotional_hook import EmotionalHookSpec
 from src.models.sharp_edge import SharpEdgeSpec
-from src.services.narrative.narrative_spine_composer import NarrativeSpineComposer
+from src.engine.narrative.narrative_spine_composer import NarrativeSpineComposer
 
 
 def test_narrative_spine_composer() -> None:

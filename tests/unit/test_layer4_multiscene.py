@@ -1,12 +1,12 @@
 """Unit tests for Layer 4 Multi-scene awareness and Protected Token pinning (Part 5 / Steps 49-54)."""
 
 
-from src.services.compression.layer4_trimming import (
+from src.engine.compression.layer4_trimming import (
     Layer4SceneTrimmer,
     SCENE_CATEGORY_WEIGHTS,
     SCENE_KEYWORDS_WEIGHTED,
 )
-from src.services.compression.models import (
+from src.engine.compression.models import (
     AbstractionLayerOutput,
     ProtectedContext,
 )

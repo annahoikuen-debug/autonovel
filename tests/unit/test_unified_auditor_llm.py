@@ -1,5 +1,5 @@
 import pytest
-from src.core.llm.types import LLMRequest, LLMResponse, LLMUsage
+from src.llm.unified.types import LLMRequest, LLMResponse, LLMUsage
 from src.agents.specialist_auditor_base import SpecialistAuditResult
 
 # Mock LLM client that returns a fixed JSON response for auditors

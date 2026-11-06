@@ -4,8 +4,8 @@ PLAN 03 - Step 2: 感情の三段論法検知器の単体テスト作成（TDD�
 """
 from __future__ import annotations
 
-from src.services.anti_ai.detectors import EmotionSyllogismDetector
-from src.services.anti_ai.models import AICategory
+from src.engine.anti_ai.detectors import EmotionSyllogismDetector
+from src.engine.anti_ai.models import AICategory
 
 
 def test_detect_syllogism_pattern():

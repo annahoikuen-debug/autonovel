@@ -1,13 +1,13 @@
-"""下位互換性維持のためのシム。実体は src.services.rag.reflective_rag に移動しました。"""
+"""下位互換性維持のためのシム。実体は src.integrations.rag.reflective_rag に移動しました。"""
 import warnings
 
 warnings.warn(
-    "src.services.reflective_rag is deprecated; use src.services.rag instead",
+    "src.services.reflective_rag is deprecated; use src.integrations.rag instead",
     DeprecationWarning,
     stacklevel=2,
 )
 
-from src.services.rag.reflective_rag import (  # noqa: F401
+from src.integrations.rag.reflective_rag import (  # noqa: F401
     ReflectiveRAGService,
     ReflectiveRetrievalResult,
     ConvergenceConfig,

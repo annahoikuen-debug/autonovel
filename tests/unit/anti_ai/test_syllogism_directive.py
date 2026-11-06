@@ -4,8 +4,8 @@ PLAN 03 - Step 11: リライト指示生成器の検証
 """
 from __future__ import annotations
 
-from src.services.anti_ai.detectors import EmotionSyllogismDetector
-from src.services.anti_ai.rewrite_directive_generator import generate_syllogism_rewrite_directive
+from src.engine.anti_ai.detectors import EmotionSyllogismDetector
+from src.engine.anti_ai.rewrite_directive_generator import generate_syllogism_rewrite_directive
 
 
 def test_generate_syllogism_rewrite_directive():

@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.services.vector_store import (
+from src.integrations.vector_store import (
     get_default_store,
     InMemoryFallbackStore,
     PgVectorStore,
@@ -136,8 +136,8 @@ class TestInMemoryFallbackStore:
 class TestPgVectorStore:
     @pytest.fixture
     def mock_db(self):
-        with patch("src.services.vector_store.pgvector.create_async_engine") as mock_engine, \
-             patch("src.services.vector_store.pgvector.async_sessionmaker") as mock_sessionmaker_factory:
+        with patch("src.integrations.vector_store.pgvector.create_async_engine") as mock_engine, \
+             patch("src.integrations.vector_store.pgvector.async_sessionmaker") as mock_sessionmaker_factory:
 
             # session_factory() -> session
             mock_session = AsyncMock()
@@ -296,9 +296,9 @@ class TestChromaVectorStore:
 # ==============================================================================
 
 class TestGetDefaultStore:
-    @patch("src.services.vector_store.InMemoryFallbackStore")
-    @patch("src.services.vector_store.ChromaVectorStore")
-    @patch("src.services.vector_store.PgVectorStore")
+    @patch("src.integrations.vector_store.InMemoryFallbackStore")
+    @patch("src.integrations.vector_store.ChromaVectorStore")
+    @patch("src.integrations.vector_store.PgVectorStore")
     @patch("os.environ.get")
     @patch("src.backend.config.settings")
     def test_store_selection_modes(self, mock_settings, mock_env, mock_pg, mock_chroma, mock_inmem):
@@ -308,7 +308,7 @@ class TestGetDefaultStore:
         mock_env.return_value = "pgvector"
 
         # Mock HAS_PGVECTOR = True
-        with patch("src.services.vector_store.HAS_PGVECTOR", True):
+        with patch("src.integrations.vector_store.HAS_PGVECTOR", True):
             get_default_store()
             mock_pg.assert_called()
 
@@ -317,7 +317,7 @@ class TestGetDefaultStore:
         # Mode: chroma
         mock_settings.AUTONOVEL_RAG_MODE = "chroma"
         mock_env.return_value = "chroma"
-        with patch("src.services.vector_store.HAS_CHROMA", True):
+        with patch("src.integrations.vector_store.HAS_CHROMA", True):
             get_default_store()
             mock_chroma.assert_called()
 
@@ -339,21 +339,21 @@ class TestGetDefaultStore:
         # Priority: PgVector > Chroma > Memory
 
         # Case 1: PgVector available
-        with patch("src.services.vector_store.HAS_PGVECTOR", True), \
-             patch("src.services.vector_store.PgVectorStore") as mock_pg:
+        with patch("src.integrations.vector_store.HAS_PGVECTOR", True), \
+             patch("src.integrations.vector_store.PgVectorStore") as mock_pg:
             get_default_store()
             mock_pg.assert_called()
 
         # Case 2: PgVector unavailable, Chroma available
-        with patch("src.services.vector_store.HAS_PGVECTOR", False), \
-             patch("src.services.vector_store.HAS_CHROMA", True), \
-             patch("src.services.vector_store.ChromaVectorStore") as mock_chroma:
+        with patch("src.integrations.vector_store.HAS_PGVECTOR", False), \
+             patch("src.integrations.vector_store.HAS_CHROMA", True), \
+             patch("src.integrations.vector_store.ChromaVectorStore") as mock_chroma:
             get_default_store()
             mock_chroma.assert_called()
 
         # Case 3: Both unavailable -> Memory
-        with patch("src.services.vector_store.HAS_PGVECTOR", False), \
-             patch("src.services.vector_store.HAS_CHROMA", False), \
-             patch("src.services.vector_store.InMemoryFallbackStore") as mock_inmem:
+        with patch("src.integrations.vector_store.HAS_PGVECTOR", False), \
+             patch("src.integrations.vector_store.HAS_CHROMA", False), \
+             patch("src.integrations.vector_store.InMemoryFallbackStore") as mock_inmem:
             get_default_store()
             mock_inmem.assert_called()

@@ -1,38 +1,20 @@
-"""Anti-AI Detection & Correction module.
+"""後方互換 shim: 実体は src/engine/anti_ai/ に移設済み。"""
+from __future__ import annotations
 
-Detects LLM-generated "fingerprints" in draft text and automatically
-rewrites them to make the prose read as if a human wrote it.
+import importlib
+import sys
 
-Public surface::
+from src.engine.anti_ai import *  # noqa: F401, F403
 
-    from src.services.anti_ai import (
-        AntiAIDetectionResult, AICategory, Severity, ViolationSpan,
-        RuleBasedAntiAIDetector,
-        AntiAICorrector,
-        AntiAILoopController,
-        LoopResult,
-    )
-"""
+__all__ = [name for name in dir() if not name.startswith("_")]
 
-from src.services.anti_ai.models import (
-    AICategory,
-    AntiAIDetectionResult,
-    CorrectionHistory,
-    Severity,
-    ViolationSpan,
-)
-from src.services.anti_ai.orchestrator import RuleBasedAntiAIDetector
-from src.services.anti_ai.correction_pipeline import AntiAICorrector
-from src.services.anti_ai.loop_controller import AntiAILoopController, LoopResult
 
-__all__ = [
-    "AICategory",
-    "AntiAIDetectionResult",
-    "AntiAICorrector",
-    "AntiAILoopController",
-    "CorrectionHistory",
-    "LoopResult",
-    "RuleBasedAntiAIDetector",
-    "Severity",
-    "ViolationSpan",
-]
+def __getattr__(name: str):
+    """サブモジュールを src.engine.anti_ai にリダイレクト (PEP 562)。"""
+    target = f"src.engine.anti_ai.{name}"
+    try:
+        module = importlib.import_module(target)
+    except ModuleNotFoundError:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+    sys.modules[f"{__name__}.{name}"] = module
+    return module

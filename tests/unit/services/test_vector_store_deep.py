@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import MagicMock
 
-from src.services.vector_store import (
+from src.integrations.vector_store import (
     ChromaClientProvider,
     ChromaVectorStore,
     CollectionType,

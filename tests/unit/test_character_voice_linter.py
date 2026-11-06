@@ -1,5 +1,5 @@
-from src.services.character.voice_linter import VoiceLinter
-from src.services.character.voice_normalizer import VoiceNormalizer
+from src.engine.character.voice_linter import VoiceLinter
+from src.engine.character.voice_normalizer import VoiceNormalizer
 from src.models.character_voice_profile import CharacterVoiceProfile
 
 def test_voice_linter_and_normalizer():

@@ -4,7 +4,7 @@
 from src.agents.skill_base import SkillAgent
 from src.agents.orchestrator import AgentContext, AgentResult
 from src.agents.writing import WritingAgent
-from src.services.book_score_service import BookScoreCalculator
+from src.engine.book_score.service import BookScoreCalculator
 import logging
 import time
 

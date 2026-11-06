@@ -336,7 +336,7 @@ async def test_three_layer_context_reaches_prompt(tmp_path):
 @pytest.mark.asyncio
 async def test_abandon_is_called_when_postponement_impossible(tmp_path):
     """作品末尾で回収できない伏線は `abandoned` へ遷移する（KPI の実数値化）。"""
-    from src.services.foreshadowing_service import ForeshadowingService
+    from src.engine.foreshadowing.service import ForeshadowingService
 
     async with _real_db(tmp_path) as sf:
         async with sf() as setup_session:

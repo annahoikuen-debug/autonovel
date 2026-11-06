@@ -6,8 +6,8 @@ Tests PatchMerger, ParagraphPatchAgent, and FastScreener.
 import pytest
 
 from src.models.patch_pdca import ParagraphTarget, PatchRewriteResult
-from src.services.audit.fast_screener import FastScreener
-from src.services.prose.patch_merger import PatchMerger
+from src.engine.audit.fast_screener import FastScreener
+from src.engine.prose.patch_merger import PatchMerger
 from src.agents.writing.paragraph_patch_agent import ParagraphPatchAgent
 
 

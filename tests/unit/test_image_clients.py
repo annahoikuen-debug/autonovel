@@ -1,10 +1,10 @@
 import pytest
 
-from src.services.illustration.base import ImageGenerationRequest, ImageGenerationResult
-from src.services.illustration.mock_client import MockImageClient
-from src.services.illustration.sd_client import SDWebUIClient
-from src.services.illustration.dalle_client import DalleClient
-from src.services.illustration.factory import get_image_client
+from src.publishing.illustration.base import ImageGenerationRequest, ImageGenerationResult
+from src.publishing.illustration.mock_client import MockImageClient
+from src.publishing.illustration.sd_client import SDWebUIClient
+from src.publishing.illustration.dalle_client import DalleClient
+from src.publishing.illustration.factory import get_image_client
 
 
 @pytest.mark.asyncio

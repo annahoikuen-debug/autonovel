@@ -13,7 +13,7 @@ from src.agents.specialists import (
     StructureAuditor,
     MultimodalAuditor,
 )
-from src.services.audit_aggregator import AuditAggregator, BookScoreResult
+from src.engine.audit.aggregator import AuditAggregator, BookScoreResult
 
 
 class SpecialistDummyLLM:

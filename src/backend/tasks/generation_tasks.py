@@ -25,7 +25,7 @@ from src.agents.orchestrator import (
     AgentResult,
     _make_execute_node,
 )
-from src.services.billing.credit_service import CreditService
+from src.integrations.billing.credit_service import CreditService
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +64,8 @@ def _run_async(coro: Any) -> Any:
 async def _generate(payload: dict[str, Any]) -> dict[str, Any]:
     """タスク本体。``generate_with_llm`` 遅延 import で循環参照を回避する。"""
     from src.backend.routers.easy_mode import generate_with_llm
-    from src.services.compression.compressor import FourLayerCompressor
-    from src.services.compression.models import CompressionConfig
+    from src.engine.compression.compressor import FourLayerCompressor
+    from src.engine.compression.models import CompressionConfig
     # TODO: AppContainer から compressor を取得するよう変更（将来的に DI 経由で取得）
     compressor = FourLayerCompressor(config=CompressionConfig())
     # compressor を payload に追加して generate_with_llm で利用可能にする
@@ -87,11 +87,11 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
     from src.agents.illustration_agent import IllustrationAgent
     from src.agents.marketing import MarketingAgent
     from src.services.llm.factory import get_llm_adapter
-    from src.services.image_service import ImageService
+    from src.publishing.illustration.image_service import ImageService
     from src.services.reflective_rag import ReflectiveRAGService
-    from src.services.rag_service import rag_service
-    from src.services.compression.compressor import FourLayerCompressor
-    from src.services.compression.models import CompressionConfig
+    from src.integrations.rag.rag_service import rag_service
+    from src.engine.compression.compressor import FourLayerCompressor
+    from src.engine.compression.models import CompressionConfig
     # TODO: AppContainer から compressor を取得するよう変更（将来的に DI 経由で取得）
     from src.agents.social.manager import SocialInteractionManager
     from src.backend.database.repository import BookRepository

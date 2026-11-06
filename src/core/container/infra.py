@@ -25,12 +25,12 @@ from src.core.spi.vector_store.provider_factory import VectorStoreFactory
 from src.core.spi.image.provider_factory import ImageProviderFactory
 
 def _get_chroma_client_provider():
-    from src.services.vector_store.chroma import ChromaClientProvider
+    from src.integrations.vector_store.chroma import ChromaClientProvider
     return ChromaClientProvider(db_path="./chroma_db")
 
 
 def _get_vector_store():
-    from src.services.vector_store import get_default_store
+    from src.integrations.vector_store import get_default_store
     return get_default_store()
 
 

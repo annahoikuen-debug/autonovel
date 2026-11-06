@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-from src.services.embedding_service import (
+from src.integrations.rag.embedding_service import (
     EmbeddingService,
     LRUEmbeddingCache,
     RedisEmbeddingCache,

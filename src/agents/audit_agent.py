@@ -862,7 +862,7 @@ class AuditAgent(SkillAgent):
         既存経路（``actionable_patch`` / ``LocalPolisher``）へフォールバックする。
         """
         from src.generation.local_polish import LocalPolisher
-        from src.services.prose.paragraph_indexer import ParagraphIndexer
+        from src.engine.prose.paragraph_indexer import ParagraphIndexer
 
         if getattr(plan, "level", "") != "span":
             return None
@@ -1412,7 +1412,7 @@ class AuditAgent(SkillAgent):
     ) -> dict[str, Any]:
         """8専門家オーディター（AuditAggregator）を実行・集約するアダプタメソッド (Phase 6: Step 66)."""
         try:
-            from src.services.audit_aggregator import AuditAggregator
+            from src.engine.audit.aggregator import AuditAggregator
             from src.services.genre_audit_weights import get_genre_weights
 
             weights = get_genre_weights(genre, phase)

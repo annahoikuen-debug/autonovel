@@ -146,3 +146,6 @@ tmp/
 output/multimedia/
 
 frontend/test-results/
+
+# ローカルe2eテスト用DB（生成物）
+e2e.db*

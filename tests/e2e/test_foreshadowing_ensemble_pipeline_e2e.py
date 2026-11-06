@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from src.agents.orchestrator import AgentContext
 from src.agents.writing.episode_writer import EpisodeWriter
-from src.services.foreshadowing_service import ForeshadowingService
+from src.engine.foreshadowing.service import ForeshadowingService
 
 
 @dataclass

@@ -9,8 +9,8 @@ import time
 from unittest.mock import AsyncMock, MagicMock
 
 
-from src.services.publishers.kindle import KindlePublisher, KindleCredentials
-from src.services.publishers.base import AuthError, ValidationError
+from src.publishing.publishers.kindle import KindlePublisher, KindleCredentials
+from src.publishing.publishers.base import AuthError, ValidationError
 
 
 class TestKindlePublisher:

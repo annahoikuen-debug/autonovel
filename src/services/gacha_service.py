@@ -14,8 +14,8 @@ from src.domain.entities.easy_mode import (
     GachaResponse,
 )
 from src.domain.entities.review_session import ReviewRound, ReviewSession
-from src.services.blind_review import BlindReviewGate
-from src.services.llm_service import LLMService
+from src.engine.blind_review import BlindReviewGate
+from src.llm.service import LLMService
 
 logger = logging.getLogger("gacha_pitch")
 

@@ -141,7 +141,7 @@ async def _cancel_prefetch_for_book(book_id: int | None) -> int:
     if book_id is None:
         return 0
     try:
-        from src.services.rag_prefetch_service import RagPrefetchService
+        from src.integrations.rag.prefetch_service import RagPrefetchService
 
         svc = RagPrefetchService()
         cancelled = await svc._registry.cancel_prefix(f"{book_id}")

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from src.services.rag.context_retriever import (
+from src.integrations.rag.context_retriever import (
     ForeshadowingStatus,
     ForeshadowingEntity,
     LongFormContextRetriever,
 )
-from src.services.graph.subgraph_extractor import (
+from src.engine.graph.subgraph_extractor import (
     extract_character_subgraph,
     build_knowledge_graph_from_entities,
     KnowledgeGraphExtractor,

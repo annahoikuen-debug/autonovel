@@ -9,8 +9,8 @@ from pydantic import BaseModel
 
 from src.agents.skill_base import SkillAgent
 from src.agents.orchestrator import AgentContext, AgentResult, AgentName
-from src.services.compression.models import ProtectedContext, SceneFlowHistory
-from src.services.episode_context import EpisodeContextBuilder
+from src.engine.compression.models import ProtectedContext, SceneFlowHistory
+from src.engine.episode_context import EpisodeContextBuilder
 
 # T6 Step 2: `if hasattr(self, "logger")` は `SkillAgent` に属性が無いため恒久的に
 # False であり、警告を無言化していた。モジュールレベル `logger` を単一の解決先とする。
@@ -496,7 +496,7 @@ class ContextBuilderAgent(SkillAgent):
             from src.infrastructure.repositories.foreshadowing_repo import (
                 DbForeshadowingRepository,
             )
-            from src.services.foreshadowing_service import ForeshadowingService
+            from src.engine.foreshadowing.service import ForeshadowingService
 
             repo = DbForeshadowingRepository(
                 session,

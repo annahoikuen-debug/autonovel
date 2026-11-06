@@ -120,7 +120,7 @@ class PromotionService:
             if target_b_id is not None:
                 from src.backend.database.models import Plot
                 from src.backend.database.models_foreshadowing import ForeshadowingModel
-                from src.services.foreshadowing.planner import plan_foreshadowing
+                from src.engine.foreshadowing.planner import plan_foreshadowing
 
                 fs_stmt = ForeshadowingModel.__table__.select().where(
                     ForeshadowingModel.book_id == target_b_id

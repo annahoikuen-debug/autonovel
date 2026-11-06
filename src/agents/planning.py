@@ -8,7 +8,7 @@ from src.config.commercial_beat_sheet import COMMERCIAL_40EP_BEATS
 from src.models.beat_sheet import EpisodeBeat
 from src.models.plot import ArcList
 from src.models.subversion import SubversionEngine
-from src.services.llm_service import LLMService
+from src.llm.service import LLMService
 
 logger = logging.getLogger(__name__)
 

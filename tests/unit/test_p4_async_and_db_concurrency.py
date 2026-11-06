@@ -4,10 +4,10 @@ import asyncio
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from src.services.embedding_service import embedding_service
-from src.services.chunk_ingestion import upsert_chunks, backfill_missing_embeddings
-from src.services.rag_service import GraphRAGService
-from src.services.graph_pipeline import GraphPipelineService
+from src.integrations.rag.embedding_service import embedding_service
+from src.engine.chunk_ingestion import upsert_chunks, backfill_missing_embeddings
+from src.integrations.rag.rag_service import GraphRAGService
+from src.engine.graph_pipeline import GraphPipelineService
 from src.backend.redis_util import get_async_redis_client
 
 
@@ -67,7 +67,7 @@ class TestChunkIngestionAsync:
             MagicMock(id=2, content="text2"),
         ]
 
-        with patch("src.services.chunk_ingestion.embedding_service") as mock_emb:
+        with patch("src.engine.chunk_ingestion.embedding_service") as mock_emb:
             mock_emb.embed_texts_async = AsyncMock(return_value=[[0.1] * 1536, [0.2] * 1536])
             mock_store.add_documents = AsyncMock()
 
@@ -87,7 +87,7 @@ class TestChunkIngestionAsync:
         ]
         mock_session.query.return_value.all.return_value = mock_chunks
 
-        with patch("src.services.chunk_ingestion.embedding_service") as mock_emb:
+        with patch("src.engine.chunk_ingestion.embedding_service") as mock_emb:
             mock_emb.embed_texts_async = AsyncMock(return_value=[[0.1] * 1536, [0.2] * 1536])
 
             result = await backfill_missing_embeddings(mock_session, mock_store, "test", batch_size=64)
@@ -107,7 +107,7 @@ class TestRAGServiceAsync:
 
         # pgvectorブランチのテスト（HAS_PGVECTOR=FalseでSQLiteブランチをテスト）
 
-        with patch("src.services.rag_service.embedding_service") as mock_emb:
+        with patch("src.integrations.rag.rag_service.embedding_service") as mock_emb:
             mock_emb.get_embedding = MagicMock(return_value=[0.1] * 1536)
 
             rag = GraphRAGService()
@@ -123,7 +123,7 @@ class TestRAGServiceAsync:
 
         mock_session = MagicMock()
 
-        with patch("src.services.rag_service.embedding_service") as mock_emb:
+        with patch("src.integrations.rag.rag_service.embedding_service") as mock_emb:
             mock_emb.get_embedding = MagicMock(return_value=[0.1] * 1536)
             mock_emb.embed_texts = MagicMock(return_value=[[0.2] * 1536])
 
@@ -143,7 +143,7 @@ class TestGraphPipelineAsync:
         mock_session = MagicMock()
         pipeline = GraphPipelineService()
 
-        with patch("src.services.graph_pipeline.embedding_service") as mock_emb:
+        with patch("src.engine.graph_pipeline.embedding_service") as mock_emb:
             mock_emb.get_embedding = AsyncMock(return_value=[0.1] * 1536)
 
             result = await pipeline._save_chapter_chunks_atomic(mock_session, 1, "test paragraph")

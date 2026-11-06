@@ -240,7 +240,7 @@ def load_skill_from_spec(spec: SkillManifestItem | dict, **dependencies: Any) ->
         if not img_svc:
             try:
                 import os
-                from src.services.image_service import ImageService
+                from src.publishing.illustration.image_service import ImageService
                 api_key = os.getenv("GOOGLE_GENAI_API_KEY") or os.getenv("GEMINI_API_KEY") or "dummy-key"
                 img_svc = ImageService(api_key=api_key)
             except Exception:
@@ -261,4 +261,4 @@ def load_skill_from_spec(spec: SkillManifestItem | dict, **dependencies: Any) ->
     instance._manifest_config = item.config
     instance._skill_name = item.name
     instance.enabled = item.config.get("enabled", True)
-    return instance
+    return instance

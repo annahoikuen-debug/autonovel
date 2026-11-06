@@ -18,7 +18,7 @@ from src.agents.specialists import (
     StyleAuditor,
 )
 from src.config.weight_variants import load_variants_from_yaml
-from src.services.audit_aggregator import AuditAggregator, BookScoreResult
+from src.engine.audit.aggregator import AuditAggregator, BookScoreResult
 from src.services.experiment_allocator import ExperimentAllocator, DEFAULT_ALLOCATOR
 
 logger = logging.getLogger(__name__)
@@ -335,7 +335,7 @@ class AuditAggregatorNode:
             report = await unified.audit(draft_text)
 
             # 後方互換スコアの生成
-            from src.services.book_score_mapping import BookScoreResult
+            from src.engine.book_score.mapping import BookScoreResult
             by_sp = {
                 "reader_hook": report.qualitative.hook_score,
                 "emotion_curve": report.qualitative.emotional_score,
