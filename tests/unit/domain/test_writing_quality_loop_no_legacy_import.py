@@ -59,7 +59,9 @@ def test_collect_import_prefixes_detects_legacy():
     """検出器自体の動作確認: 意図的に旧レイヤー import を含むモジュールを検出できる."""
     import tempfile
 
-    code = "from src.engine.book_score.service import BookScoreCalculator\n"
+    # NOTE: これは検出器のテスト用サンプルコード（実行されない）のため、
+    # 意図的に旧レイヤー (src.services) の import を含める。
+    code = "from src.services.book_score_service import BookScoreCalculator\n"
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
         f.write(code)
         tmp = Path(f.name)

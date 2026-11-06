@@ -47,9 +47,22 @@ def test_episode_beat_still_rejects_zero():
 def test_no_consumer_imports_plot_structures():
     from pathlib import Path
 
+    # NOTE: コメント・docstring 内の言及（例: 「旧 PLOT_STRUCTURES は削除した」）は
+    # 実コード参照ではないため除外する。行頭コメントを除去した上で検索する。
+    def _strip_line_comments(text: str) -> str:
+        lines = []
+        for line in text.splitlines():
+            stripped = line.lstrip()
+            if stripped.startswith("#"):
+                continue
+            lines.append(line)
+        return "\n".join(lines)
+
     offenders = [
         str(p) for p in Path("src").rglob("*.py")
-        if "PLOT_STRUCTURES" in p.read_text(encoding="utf-8", errors="ignore")
+        if "PLOT_STRUCTURES" in _strip_line_comments(
+            p.read_text(encoding="utf-8", errors="ignore")
+        )
     ]
     assert not offenders, f"PLOT_STRUCTURES の参照が残存: {offenders}"
 

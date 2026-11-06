@@ -5,6 +5,6 @@
 
 from __future__ import annotations
 
-from src.backend.routers.conflicts import router  # noqa: F401
+from src.backend.routers.conflicts import *  # noqa: F401, F403
 
-__all__ = ["router"]
+__all__ = [name for name in dir() if not name.startswith("_")]

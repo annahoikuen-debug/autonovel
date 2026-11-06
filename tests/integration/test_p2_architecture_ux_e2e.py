@@ -17,7 +17,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 # Core Unified LLM
-from src.core.llm.adapters.mock_unified_client import UnifiedMockLLMClient
+from src.llm.unified.adapters.mock import UnifiedMockLLMClient
 from src.agents.specialist_auditor_base import SpecialistAuditResult
 
 # WebSocket & Pipeline Events

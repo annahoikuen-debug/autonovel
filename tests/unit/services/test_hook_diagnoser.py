@@ -82,7 +82,10 @@ async def test_generate_hook_fix_with_llm(hook_diagnoser):
 async def test_generate_hook_fix_without_llm(hook_diagnoser, monkeypatch):
     mock_llm_instance = MagicMock()
     mock_llm_instance.generate_text = AsyncMock(return_value="自動生成フック")
-    monkeypatch.setattr("src.llm.service.LLMService", lambda api_key: mock_llm_instance)
+    # NOTE: hook_diagnoser は src.services.llm_service (shim) から LLMService を
+    # 遅延 import するため、shim の名前空間をパッチする必要がある。
+    # src.llm.service を直接パッチしても shim の import * コピーには反映されない。
+    monkeypatch.setattr("src.services.llm_service.LLMService", lambda api_key: mock_llm_instance)
 
     hook_diagnoser._llm = None
     chapter = {"content": "本文"}

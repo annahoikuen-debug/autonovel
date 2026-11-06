@@ -50,6 +50,16 @@ class ExecutorManager:
         self.io_executor.shutdown(wait=True)
         self.cpu_executor.shutdown(wait=True)
         logger.info("ExecutorManager pools shutdown complete.")
+        # NOTE: FastAPI lifespan の shutdown がテスト中に呼ばれることがあるため、
+        # shutdown 後もシングルトンインスタンスを再利用可能にする。
+        # （shutdown 済み executor の再利用は RuntimeError を起こすため、
+        #  新規プールを作り直して冪等にする）
+        self.io_executor = ThreadPoolExecutor(
+            max_workers=32, thread_name_prefix="LLM_IO_Pool"
+        )
+        self.cpu_executor = ThreadPoolExecutor(
+            max_workers=8, thread_name_prefix="LLM_CPU_Pool"
+        )
 
 
 # シングルトンインスタンスを提供

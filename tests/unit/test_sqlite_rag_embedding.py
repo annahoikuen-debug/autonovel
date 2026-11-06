@@ -46,8 +46,18 @@ async def test_sqlite_rag_batch_vector_search_and_no_truncation(monkeypatch):
     other_vec = _make_vector(-1.0)
     dummy_embedder = DummyEmbeddingService(target_vec, other_vec)
 
-    monkeypatch.setattr("src.integrations.rag.rag_service.embedding_service", dummy_embedder)
-    monkeypatch.setattr("src.engine.chunk_ingestion.embedding_service", dummy_embedder)
+    # NOTE: monkeypatch の文字列パスは pytest 内部の resolve が「親パッケージ属性」を
+    # 優先するため、src.integrations.rag.__init__ が rag_service (GraphRAGService
+    # インスタンス) をエクスポートしているとモジュール解決に失敗する。
+    # import x.y.z as w も同様に親パッケージ属性を優先するため、
+    # importlib.import_module でモジュールオブジェクトを確実に取得してパッチする。
+    import importlib
+
+    rag_service_module = importlib.import_module("src.integrations.rag.rag_service")
+    chunk_ingestion_module = importlib.import_module("src.engine.chunk_ingestion")
+
+    monkeypatch.setattr(rag_service_module, "embedding_service", dummy_embedder)
+    monkeypatch.setattr(chunk_ingestion_module, "embedding_service", dummy_embedder)
 
     with Session(engine) as session:
         session.execute(text("PRAGMA foreign_keys=OFF"))
@@ -116,7 +126,9 @@ async def test_backfill_missing_embeddings(monkeypatch):
 
     vec = _make_vector(0.5)
     dummy_embedder = DummyEmbeddingService(vec, vec)
-    monkeypatch.setattr("src.engine.chunk_ingestion.embedding_service", dummy_embedder)
+    import src.engine.chunk_ingestion as chunk_ingestion_module
+
+    monkeypatch.setattr(chunk_ingestion_module, "embedding_service", dummy_embedder)
 
     with Session(engine) as session:
         session.execute(text("PRAGMA foreign_keys=OFF"))
