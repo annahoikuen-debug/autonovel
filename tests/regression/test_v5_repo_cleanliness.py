@@ -57,7 +57,18 @@ def test_no_deprecated_module_imports_in_src():
     src_dir = ROOT_DIR / "src"
     violations = []
 
+    # NOTE: 後方互換 shim（docstring に「後方互換 shim」「下位互換性維持」等を含む）
+    # は旧パス → 廃止モジュールの橋渡し役として import が必要なため除外する。
+    # （削除自体は docs/SHIM_REMOVAL_PLAN.md Phase R3 で管理）
+    import json as _json
+
+    _shim_files = set(
+        _json.loads((ROOT_DIR / "config" / "shim_registry.json").read_text(encoding="utf-8"))["shims"]
+    )
+
     for py_file in src_dir.rglob("*.py"):
+        if str(py_file.relative_to(ROOT_DIR)) in _shim_files:
+            continue
         try:
             tree = ast.parse(py_file.read_text(encoding="utf-8"), filename=str(py_file))
         except Exception:

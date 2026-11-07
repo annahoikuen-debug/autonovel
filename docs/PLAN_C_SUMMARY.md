@@ -165,11 +165,28 @@ config/
 
 | 項目 | 優先度 | 内容 |
 |------|--------|------|
-| 統合・e2e テストの CI 実行 | 中 | Docker/testcontainers 依存の `tests/integration`・`tests/e2e` は本環境で実行不可のため CI で確認 |
-| `tests/unit` の重複ディレクトリ統合 | 低 | `agent/` vs `agents/`、`llm_clients/` 旧残骸（実体0）、`publishing/illustration_src_backup` 等の一時ディレクトリ清掃 |
-| shim 削除計画の策定 | 低 | 141 shim は後方互換のため維持中。案B+C で新規コードは全て新パスを使うため、安定後に段階削除（DeprecationWarning 付き → 削除）を検討 |
-| `src/services/` ルート残置49ファイルの将来分類 | 低 | 横断ユーティリティとして残置中。参照数に変化があれば分類表を更新 |
+| 統合・e2e テストの緑化 | 中 | 2026-11-08 時点で **54 failed + 36 errors → 9 failed / 336 passed / 37 skipped** まで改善（45件解消）。残り9件は深いロジック系（伏線解析 NLP・世代タスク・degrade スコアとゲート閾値の整合等）で個別調査が必要。CI `integration-observe`（観測モード）で継続管理 |
+| shim 削除計画の Phase R0+R1 | ✅ 完了 | 141 shim 全てに DeprecationWarning 付与（`47e5c9d3`）。R1 検証テスト・R0 観測基盤（`test_shim_deprecation_warning.py` / `test_shim_usage_stats.py`）追加。R2（参照解消）以降は `docs/SHIM_REMOVAL_PLAN.md` に従う |
+| `tests/unit` 重複ディレクトリ統合 | ✅ 完了 | `llm_clients/` 削除、`*_src_backup` 3ディレクトリ統合（270テスト）、`agent/` → `agents/` 統合（18テスト）。収集件数 8124 損失なし（`a4012811`） |
 | Docker 実ビルド検証 | 低 | Docker 導入環境で `docker build` を1回実行し、C1 のフォールバック検証を補完 |
+
+### 統合テスト緑化の主な修正（2026-11-08、コミット `f142c516`〜）
+
+**プロダクションバグ修正（テストが正しく発見）**:
+- `BookRepository.get_book_by_id` 欠落 → **IDOR 対策の 403 経路が壊れていた**（book.py に実装追加）
+- `get_all_plots` 旧 API 呼び出し（位置引数に branch_id、keyword に book_id が二重定義 → TypeError）を `marketing.py` / `export_package.py` で修正
+- `generation_tasks` の `CreditService.deduct_credits` **await 漏れ**（async 化に未追従）を修正
+- マイグレーション複数バグ: 0033 `_rebuild_table`（Constraint 混在で c.name=None → TypeError）、0032/0034（SQLite は FK 名を保存しないため downgrade の drop_constraint が失敗 → naming_convention 明示）、0025/0018/0021/0022/0024（create_all フォールバック DB でインデックス有無がずれる → 存在チェック付き drop_index）
+- `PlanStep` が `ctx.easy_parameters` を丸ごと再構築し前段の官能パラメータを破壊 → マージ方式に修正
+- `MarketingAgent` の fallback 経路復旧（repo 未指定時は DEFAULT_FALLBACK、repo あり不存在時は ValueError）
+
+**テスト側の整合（実装の仕様変更に追従）**:
+- `verify_book_ownership` の NULL user_id 拒否 → seed に user_id 追加
+- FastAPI 0.162 の `_IncludedRouter`（遅延解決）→ `app.openapi()["paths"]` ベースの検証に移行
+- `build_fused_emotional_context_prompt` 第2引数誤用 → キーワード引数に修正、annotation 優先契約は `highest_confidence` モード注入で検証
+- `create_hegemony_plan` キーワード引数呼び出し → kwargs で検証
+- 12ステップ固定ビート廃止（Spine ベース生成）・LLM 呼び出し失敗は 502（縮退しない）に追従
+- 案A で移動した bat のパス更新（`scripts/windows/`）
 
 ---
 
