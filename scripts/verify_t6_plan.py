@@ -88,8 +88,11 @@ check("S5 token_tracker が利用", "resolve_pricing" in read("src/services/toke
 check("S6 CLI 存在", pathlib.Path("scripts/report_episode_cost.py").exists())
 
 # --- Step 7: LocalPolisher の LLM 注入 -----------------------------------
+# NOTE: AuditAgent は src/agents/audit_agent/ パッケージに分割済み（案A+B）。
+# 旧パス audit_agent.py は Phase R3 で削除される shim なので、検証は
+# 実装本体 (audit_agent/agent.py) を読む。
 _lp = read("src/generation/local_polish.py")
-_aa = read("src/agents/audit_agent.py")
+_aa = read("src/agents/audit_agent/agent.py")
 check("S7 polish_with_llm 存在", "def polish_with_llm" in _lp)
 check("S7 audit_agent が注入 LLM を渡す", "polish_with_llm(" in _aa)
 check("S7 try_local_patch が async", "async def try_local_patch" in _aa)

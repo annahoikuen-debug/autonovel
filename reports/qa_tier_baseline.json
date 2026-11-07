@@ -1,0 +1,12 @@
+{
+  "tier1_failing_files": [
+    "tests/regression/test_conftest_fixtures.py",
+    "tests/regression/test_docs_router_count_matches_reality.py",
+    "tests/regression/test_subprocess_encoding_gate.py",
+    "tests/regression/test_tier_quality_gate.py",
+    "tests/regression/test_v5_version_consistency.py",
+    "tests/security/test_idor_regression.py",
+    "tests/security/test_server_route_mount_parity.py"
+  ],
+  "note": "Tier1 の既知の失敗ファイル。新たな失敗が 1 件でも出たら fail する。ファイルを直したら必ずこのリストからも削除すること。既存ファイルをリストに足すのは自己申告であり防御にならない。"
+}
