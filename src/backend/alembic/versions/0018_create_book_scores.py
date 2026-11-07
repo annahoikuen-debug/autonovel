@@ -22,6 +22,16 @@ def _table_exists(table_name: str) -> bool:
     return table_name in inspector.get_table_names()
 
 
+
+def ix_exists(index_name: str, table_name: str) -> bool:
+    """インデックスが実在する場合のみ True（create_all フォールバック DB 対策）。"""
+    import sqlalchemy as sa
+
+    insp = sa.inspect(op.get_bind())
+    if table_name not in insp.get_table_names():
+        return False
+    return any(i["name"] == index_name for i in insp.get_indexes(table_name))
+
 def upgrade() -> None:
     if not _table_exists("book_scores"):
         op.create_table(
@@ -44,5 +54,6 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     if _table_exists("book_scores"):
-        op.drop_index(op.f("ix_book_scores_book_id"), table_name="book_scores")
+        if ix_exists("ix_book_scores_book_id", "book_scores"):
+            op.drop_index("ix_book_scores_book_id", table_name="book_scores")
         op.drop_table("book_scores")

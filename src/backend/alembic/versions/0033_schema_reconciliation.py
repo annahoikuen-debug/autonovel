@@ -121,10 +121,14 @@ def _rebuild_table(old: str, new: str, columns: list[sa.Column], select_expr: st
     SQLite / PostgreSQL の両方で動く（``op.rename_table`` は両対応）。
     """
     op.create_table(new, *columns)
+    # NOTE: columns には ForeignKeyConstraint / PrimaryKeyConstraint も含まれ
+    # （呼び出し側が create_table 用の定義をそのまま渡す）、それらは name 属性が
+    # None になるため INSERT 列リストからは除外する。
+    column_names = [c.name for c in columns if isinstance(c, sa.Column) and c.name]
     op.execute(
         "INSERT INTO {new} ({cols}) {select_expr}".format(
             new=new,
-            cols=", ".join(c.name for c in columns),
+            cols=", ".join(column_names),
             select_expr=select_expr,
         )
     )

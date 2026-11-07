@@ -23,6 +23,16 @@ def _table_exists(table_name: str) -> bool:
     return table_name in inspector.get_table_names()
 
 
+
+def ix_exists(index_name: str, table_name: str) -> bool:
+    """インデックスが実在する場合のみ True（create_all フォールバック DB 対策）。"""
+    import sqlalchemy as sa
+
+    insp = sa.inspect(op.get_bind())
+    if table_name not in insp.get_table_names():
+        return False
+    return any(i["name"] == index_name for i in insp.get_indexes(table_name))
+
 def upgrade() -> None:
     if _table_exists("pdca_history_snapshots"):
         return
@@ -60,6 +70,7 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     if _table_exists("pdca_history_snapshots"):
-        op.drop_index(op.f("ix_pdca_history_snapshots_book_id"), table_name="pdca_history_snapshots")
+        if ix_exists("ix_pdca_history_snapshots_book_id", "pdca_history_snapshots"):
+            op.drop_index("ix_pdca_history_snapshots_book_id", table_name="pdca_history_snapshots")
         op.drop_index("idx_pdca_history_book_chap", table_name="pdca_history_snapshots")
         op.drop_table("pdca_history_snapshots")

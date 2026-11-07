@@ -68,8 +68,18 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     if _table_exists("task_wal_logs"):
-        op.drop_index(op.f("ix_task_wal_logs_heartbeat"), table_name="task_wal_logs")
-        op.drop_index(op.f("ix_task_wal_logs_task_id"), table_name="task_wal_logs")
-        op.drop_index(op.f("ix_task_wal_logs_node_id"), table_name="task_wal_logs")
-        op.drop_index(op.f("ix_task_wal_logs_dag_id"), table_name="task_wal_logs")
+        # NOTE: create_all フォールバックで構築された DB ではインデックスの
+        # 有無が alembic の前提とずれることがあるため存在チェックしてから落とす
+        import sqlalchemy as sa
+
+        insp = sa.inspect(op.get_bind())
+        existing = {i["name"] for i in insp.get_indexes("task_wal_logs")}
+        for ix in (
+            "ix_task_wal_logs_heartbeat",
+            "ix_task_wal_logs_task_id",
+            "ix_task_wal_logs_node_id",
+            "ix_task_wal_logs_dag_id",
+        ):
+            if ix in existing:
+                op.drop_index(ix, table_name="task_wal_logs")
         op.drop_table("task_wal_logs")

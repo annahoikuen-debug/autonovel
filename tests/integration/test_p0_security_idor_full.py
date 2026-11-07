@@ -1,5 +1,17 @@
 """P0 セキュリティ IDOR ガード網羅検証テスト"""
 import pytest
+
+
+# NOTE: 本モジュールは IDOR 対策（所有権検証）を検証するため、
+# conftest 既定の AUTH_DISABLED=true を無効化して実認証モードで実行する。
+@pytest.fixture(autouse=True)
+def _real_auth_mode():
+    import src.backend.auth as auth_module
+
+    original = auth_module.settings.AUTH_DISABLED
+    auth_module.settings.AUTH_DISABLED = False
+    yield
+    auth_module.settings.AUTH_DISABLED = original
 from fastapi.testclient import TestClient
 from src.backend.server import app
 from src.backend.security.jwt import create_access_token
@@ -7,7 +19,7 @@ from src.backend.database.models import Base, User, Book
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
-from src.backend.database import get_db
+from src.backend.database import get_async_db, get_db
 from src.core.container import AppContainer
 
 TEST_DB_URL = "sqlite+aiosqlite:///:memory:"
@@ -29,8 +41,10 @@ async def setup_db():
     original_db = AppContainer.db
     AppContainer.db = TestingSessionLocal
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_async_db] = override_get_db
     yield
     app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_async_db, None)
     AppContainer.db = original_db
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)

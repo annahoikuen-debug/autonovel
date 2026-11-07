@@ -119,7 +119,10 @@ def test_orchestrated_routes_are_reachable():
     """
     from src.backend.server import app
 
-    paths = {r.path for r in app.routes}
+    # NOTE: FastAPI 0.162 / Starlette 1.10 では include_router の結果が
+    # _IncludedRouter（遅延解決）として routes に積まれるため、
+    # r.path 直接走査では取得できない。OpenAPI スキーマから展開する。
+    paths = set(app.openapi()["paths"].keys())
     expected = {
         "/orchestrated/generate",
         "/orchestrated/status/{task_id}",

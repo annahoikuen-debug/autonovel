@@ -107,15 +107,15 @@ async def test_40ep_commercial_lifecycle():
     assert long_term_result[0].title == "長期伏線1"
 
     # 8. ビジュアルシーンスキーマのテスト
+    # NOTE: 現スキーマは scene_id / description / importance の3フィールド
     visual_scene = VisualKeyScene(
-        scene_type="バトルシーン",
-        focus_subject="主人公の必殺技",
-        visual_cue="青い光のオーラ",
-        atmosphere="緊迫した静けさ"
+        scene_id=1,
+        description="バトルシーン: 主人公の必殺技。青い光のオーラ、緊迫した静けさ",
+        importance="high",
     )
 
-    assert visual_scene.scene_type == "バトルシーン"
-    assert visual_scene.focus_subject == "主人公の必殺技"
+    assert visual_scene.scene_id == 1
+    assert "必殺技" in visual_scene.description
 
     # 9. 全体の文字数目標チェック（簡易版）
     total_chars = sum(len(ep["content"]) for ep in episodes_content)

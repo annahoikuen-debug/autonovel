@@ -24,7 +24,7 @@ async def test_commercial_quality_pipeline_flow() -> None:
         target_tension_peak=85,
     )
     edge = SharpEdgeSpec(
-        edge_type="cunning",
+        edge_type="sharp_conflict",
         description="打算的な生存戦略",
         key_phrase="利益計算は済んでいる",
     )

@@ -409,12 +409,18 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
             # 新しいDBセッションでCreditServiceを初期化
             credit_service = CreditService(credit_session)
             # クレジットを仮押さえ（即時引き落とし）
-            credit_service.deduct_credits(
-                user_id=user_id,
-                amount=credit_cost,
-                transaction_type="consumption",
-                description="Chapter generation (easy mode) credit hold",
-                task_id=str(task_id) if task_id else None
+            # NOTE: deduct_credits は async のため、Huey 同期ワーカー内で
+            # 専用イベントループを立てて実行する
+            import asyncio as _asyncio
+
+            _asyncio.run(
+                credit_service.deduct_credits(
+                    user_id=user_id,
+                    amount=credit_cost,
+                    transaction_type="consumption",
+                    description="Chapter generation (easy mode) credit hold",
+                    task_id=str(task_id) if task_id else None
+                )
             )
             credits_deducted = True
         except Exception as e:

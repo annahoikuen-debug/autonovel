@@ -41,7 +41,11 @@ def upgrade() -> None:
     for table in _TABLES:
         if not _table_exists(table) or _has_fk(table, "user_id", "users"):
             continue
-        with op.batch_alter_table(table) as batch:
+        # NOTE: SQLite は FK 名を保存しないため、downgrade の drop_constraint が
+        # 名前一致できるよう naming_convention を明示する。
+        with op.batch_alter_table(
+            table, naming_convention={"fk": f"fk_{table}_user_id_users"}
+        ) as batch:
             batch.create_foreign_key(
                 f"fk_{table}_user_id_users",
                 "users",
@@ -53,7 +57,17 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     for table in reversed(_TABLES):
-        if not _table_exists(table) or not _has_fk(table, "user_id", "users"):
+        if not _table_exists(table):
             continue
-        with op.batch_alter_table(table) as batch:
+        # user_id 列を落とす前に、該当列のインデックスを先に落とす
+        # （SQLite は列削除時に残存インデックスがあると OperationalError を出す）
+        ix_name = f"ix_{table}_user_id"
+        insp = sa.inspect(op.get_bind())
+        if ix_name in [i["name"] for i in insp.get_indexes(table)]:
+            op.drop_index(ix_name, table_name=table)
+        if not _has_fk(table, "user_id", "users"):
+            continue
+        with op.batch_alter_table(
+            table, naming_convention={"fk": f"fk_{table}_user_id_users"}
+        ) as batch:
             batch.drop_constraint(f"fk_{table}_user_id_users", type_="foreignkey")

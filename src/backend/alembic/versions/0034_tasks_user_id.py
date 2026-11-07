@@ -77,7 +77,10 @@ def upgrade() -> None:
     if _table_exists("users") and not _has_fk("tasks", "user_id", "users"):
         # tasks は users の子なので、親側のテーブル再構築はここでは行わない
         # （PRAGMA の扱いは 0033 の _sqlite_foreign_keys_off を参照）。
-        with op.batch_alter_table("tasks") as batch:
+        # NOTE: SQLite は FK 名を保存しないため、downgrade の drop_constraint が
+        # 名前一致できるよう naming_convention を明示する。
+        _naming = {"fk": _CONSTRAINT_NAME}
+        with op.batch_alter_table("tasks", naming_convention=_naming) as batch:
             batch.create_foreign_key(
                 _CONSTRAINT_NAME, "users", ["user_id"], ["id"], ondelete="CASCADE"
             )
@@ -92,7 +95,8 @@ def downgrade() -> None:
     if _index_exists("tasks", _INDEX_NAME):
         op.drop_index(_INDEX_NAME, table_name="tasks")
     if _has_fk("tasks", "user_id", "users"):
-        with op.batch_alter_table("tasks") as batch:
+        _naming = {"fk": _CONSTRAINT_NAME}
+        with op.batch_alter_table("tasks", naming_convention=_naming) as batch:
             batch.drop_constraint(_CONSTRAINT_NAME, type_="foreignkey")
     if _column_exists("tasks", "user_id"):
         with op.batch_alter_table("tasks") as batch:
