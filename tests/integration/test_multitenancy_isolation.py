@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.backend.server import app
-from src.backend.database import get_db
+from src.backend.database import get_async_db, get_db
 from src.backend.database.models import Base, User
 from src.backend.security.jwt import create_access_token
 from src.backend.security.password import hash_password
@@ -39,10 +39,13 @@ async def init_test_db():
     original_db = AppContainer.db
     AppContainer.db = TestingSessionLocal
     app.dependency_overrides[get_db] = override_get_db
+    # NOTE: get_current_user は get_async_db を使用するためこちらも override する
+    app.dependency_overrides[get_async_db] = override_get_db
 
     yield
 
     app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_async_db, None)
     AppContainer.db = original_db
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -62,7 +65,7 @@ async def alice_token():
         session.add(alice)
         await session.commit()
         await session.refresh(alice)
-        return create_access_token(alice.id, alice.role)
+        return create_access_token(alice.id, role=alice.role)
 
 
 @pytest_asyncio.fixture
@@ -79,11 +82,17 @@ async def bob_token():
         session.add(bob)
         await session.commit()
         await session.refresh(bob)
-        return create_access_token(bob.id, bob.role)
+        return create_access_token(bob.id, role=bob.role)
 
 
 @pytest.mark.asyncio
-async def test_multitenancy_isolation(alice_token, bob_token):
+async def test_multitenancy_isolation(alice_token, bob_token, monkeypatch):
+    # NOTE: conftest は全テストで AUTH_DISABLED=true を設定するが、本テストは
+    # JWT 認証経路でのテナント分離を検証するため、auth モジュールの settings を
+    # 実認証 (AUTH_DISABLED=False) に差し替える。
+    import src.backend.auth as auth_module
+
+    monkeypatch.setattr(auth_module.settings, "AUTH_DISABLED", False)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         # 1. Aliceが作品を作成

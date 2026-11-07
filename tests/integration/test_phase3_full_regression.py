@@ -1,3 +1,5 @@
+import asyncio
+
 from src.engine.graph.networkx_store import NetworkXGraphStore
 from src.integrations.cost_guard.budget_guard import CostBudgetGuard
 from src.agents.specialists.model_router import AuditorModelRouter
@@ -18,7 +20,9 @@ def test_cost_budget_guard_regression():
     from src.integrations.cost_guard.analytics import CostCalculator
     calc = CostCalculator()
     guard = CostBudgetGuard(calculator=calc, budget_limit=10.0)
-    status = guard.check_budget_status(book_id=1)
+    # NOTE: check_budget_status は async 化 (check_budget_status_async) された。
+    # total_cost_usd を明示指定すれば db_session は参照されないため None を渡す。
+    status = asyncio.run(guard.check_budget_status_async(None, book_id=1, total_cost_usd=5.0))
     assert status.value in ("normal", "warning", "exceeded")
 
 

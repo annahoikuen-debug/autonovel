@@ -1,4 +1,16 @@
 import pytest
+
+
+# NOTE: 本モジュールは JWT 認証経路・テナント分離を検証するため、
+# conftest 既定の AUTH_DISABLED=true を無効化して実認証モードで実行する。
+@pytest.fixture(autouse=True)
+def _real_auth_mode():
+    import src.backend.auth as auth_module
+
+    original = auth_module.settings.AUTH_DISABLED
+    auth_module.settings.AUTH_DISABLED = False
+    yield
+    auth_module.settings.AUTH_DISABLED = original
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -88,8 +100,8 @@ async def test_cross_tenant_isolation_on_plots_and_trace():
         await session.commit()
         await session.refresh(alice_book)
 
-    alice_token = create_access_token(alice.id, alice.role)
-    bob_token = create_access_token(bob.id, bob.role)
+    alice_token = create_access_token(alice.id, role=alice.role)
+    bob_token = create_access_token(bob.id, role=bob.role)
 
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:

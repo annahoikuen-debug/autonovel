@@ -75,6 +75,13 @@ class BookRepository(BaseRepository):
 
         return BookDbModel(**d)
 
+    async def get_book_by_id(self, book_id: int) -> BookDbModel | None:
+        """指定IDの作品を取得（所有権検証なし）。見つからなければ None。
+
+        ``BookUseCases.get_book`` が所有権不一致の 403 判定に使用する。
+        """
+        return await self.get_book(book_id)
+
     async def get_all_books(
         self, user_id: int | None = None, limit: int = 100, offset: int = 0
     ) -> list[BookDbModel]:

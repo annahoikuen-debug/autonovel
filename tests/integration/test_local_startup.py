@@ -9,6 +9,7 @@ CI 環境では実際のプロセス起動を避けるため、スクリプト�
 
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 import urllib.request
@@ -20,6 +21,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 START_SCRIPT = PROJECT_ROOT / "scripts" / "start_local.ps1"
 STOP_SCRIPT = PROJECT_ROOT / "scripts" / "stop_local.ps1"
 BACKEND_URL = "http://localhost:8200/health"
+
+
+def _find_powershell() -> str | None:
+    """Windows PowerShell または PowerShell Core (pwsh) の実行パスを返す。"""
+    for cmd in ("powershell", "pwsh"):
+        found = shutil.which(cmd)
+        if found:
+            return found
+    return None
+
+
 
 # 実プロセス起動テストは明示的にオプトインした場合のみ実行
 RUN_REAL_LAUNCH = "--run-real-launch" in sys.argv
@@ -64,10 +76,16 @@ class TestScriptPresence:
 class TestDryRun:
     """-DryRun モードが正常終了し、プロセスを起動しないこと。"""
 
+    @pytest.fixture(autouse=True)
+    def _require_powershell(self):
+        ps = _find_powershell()
+        if ps is None:
+            pytest.skip("powershell / pwsh が利用できない環境")
+
     def test_dry_run_exits_zero(self):
         result = subprocess.run(
             [
-                "powershell",
+                _find_powershell(),
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
@@ -88,7 +106,7 @@ class TestDryRun:
     def test_dry_run_lists_all_services(self):
         result = subprocess.run(
             [
-                "powershell",
+                _find_powershell(),
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
@@ -112,14 +130,15 @@ class TestBatchWrapper:
     """アプリ起動_ローカル.bat が start_local.ps1 の薄いラッパーであること。"""
 
     def test_batch_wrapper_calls_powershell(self):
-        bat = PROJECT_ROOT / "アプリ起動_ローカル.bat"
+        # 案A で bat ファイルは scripts/windows/ へ移動済み
+        bat = PROJECT_ROOT / "scripts" / "windows" / "アプリ起動_ローカル.bat"
         assert bat.exists()
         content = bat.read_text(encoding="utf-8")
         assert "start_local.ps1" in content
         assert "-ExecutionPolicy" in content or "ExecutionPolicy" in content
 
     def test_stop_batch_wrapper_calls_powershell(self):
-        bat = PROJECT_ROOT / "アプリ停止.bat"
+        bat = PROJECT_ROOT / "scripts" / "windows" / "アプリ停止.bat"
         assert bat.exists()
         content = bat.read_text(encoding="utf-8")
         assert "stop_local.ps1" in content
@@ -134,7 +153,7 @@ class TestRealLaunch:
         # 1) 起動
         launch = subprocess.Popen(
             [
-                "powershell",
+                _find_powershell(),
                 "-NoProfile",
                 "-ExecutionPolicy",
                 "Bypass",
@@ -164,7 +183,7 @@ class TestRealLaunch:
             # 3) 停止スクリプトで正常停止
             subprocess.run(
                 [
-                    "powershell",
+                    _find_powershell(),
                     "-NoProfile",
                     "-ExecutionPolicy",
                     "Bypass",

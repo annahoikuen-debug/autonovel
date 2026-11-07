@@ -19,7 +19,13 @@ def test_erotic_curve_creation():
     assert curve.get_peak_beat().phase == "peak"
 
 
-def test_safety_manifest_included_in_prompt():
+def test_safety_manifest_included_in_prompt(monkeypatch):
+    # NOTE: 官能生成はオプトイン (ENABLE_NSFW=true) が必須。
+    # pydantic BaseSettings は起動時に読み込むため setenv では反映されない
+    # （settings インスタンスを直接パッチする）。
+    from src.backend.config import settings as backend_settings
+
+    monkeypatch.setattr(backend_settings, "ENABLE_NSFW", True)
     specialist = EroticSpecialist()
     curve = EroticCurve.create_default(2)
     prompt = specialist.build_scene_prompt(curve, {})

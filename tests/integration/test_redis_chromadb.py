@@ -1,6 +1,15 @@
 """Test to verify Redis and ChromaDB fixtures work."""
 from __future__ import annotations
 
+import pytest
+
+from tests.integration.conftest import docker_daemon_available
+
+pytestmark = pytest.mark.skipif(
+    not docker_daemon_available(),
+    reason="Docker daemon が利用できない環境では testcontainers テストを実行不可",
+)
+
 import redis
 
 

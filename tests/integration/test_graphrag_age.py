@@ -9,6 +9,8 @@
 """
 from __future__ import annotations
 
+from tests.integration.conftest import HAS_TESTCONTAINERS, docker_daemon_available
+
 import socket
 import time
 
@@ -38,7 +40,7 @@ def _docker_available() -> bool:
 
 
 pytestmark = pytest.mark.skipif(
-    not (_HAS_TESTCONTAINERS and _docker_available()),
+    not (HAS_TESTCONTAINERS and docker_daemon_available()),
     reason="testcontainers / Docker daemon not available",
 )
 

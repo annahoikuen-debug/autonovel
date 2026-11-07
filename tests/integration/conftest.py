@@ -3,9 +3,28 @@ from __future__ import annotations
 
 import os
 import pytest
+import shutil
+import subprocess
 import time
 import redis
 from pathlib import Path
+
+
+def docker_daemon_available() -> bool:
+    """Docker daemon が利用可能か（CI/ローカル共通の skip 条件）。
+
+    testcontainers は Docker daemon への接続を前提とするため、
+    daemon が無い環境（ローカル開発環境等）では該当テストを skip する。
+    """
+    if shutil.which("docker") is None:
+        return False
+    try:
+        result = subprocess.run(
+            ["docker", "info"], capture_output=True, timeout=10,
+        )
+        return result.returncode == 0
+    except (OSError, subprocess.TimeoutExpired):
+        return False
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 try:
@@ -51,6 +70,8 @@ def postgres_container():
     """PostgreSQL コンテナをセッションスコープで起動."""
     if not HAS_TESTCONTAINERS:
         pytest.skip("testcontainers is not installed")
+    if not docker_daemon_available():
+        pytest.skip("Docker daemon が利用できない環境")
     postgres = PostgresContainer("postgres:15")
     postgres.start()
     # Install the vector extension
@@ -114,6 +135,10 @@ def postgres_session(postgres_engine):
 @pytest.fixture(scope="session")
 def redis_container():
     """Redis コンテナをセッションスコープで起動."""
+    if not HAS_TESTCONTAINERS:
+        pytest.skip("testcontainers is not installed")
+    if not docker_daemon_available():
+        pytest.skip("Docker daemon が利用できない環境")
     with RedisContainer("redis:7-alpine") as redis:
         yield redis
 
@@ -133,6 +158,10 @@ def redis_client(redis_container):
 @pytest.fixture(scope="session")
 def chromadb_container():
     """ChromaDB コンテナをセッションスコープで起動."""
+    if not HAS_TESTCONTAINERS:
+        pytest.skip("testcontainers is not installed")
+    if not docker_daemon_available():
+        pytest.skip("Docker daemon が利用できない環境")
     with DockerContainer("chromadb/chroma:latest") as chromadb:
         chromadb.with_exposed_ports(8000)
         chromadb.with_command("chroma run --host 0.0.0.0 --port 8000")
