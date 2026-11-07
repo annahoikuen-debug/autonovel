@@ -1,4 +1,5 @@
 """後方互換 shim: 実体は ``src/application/formatters/platform_copy_formatter.py``。"""
+
 from __future__ import annotations
 
 

@@ -67,7 +67,7 @@ class RefineEroticWorkflow(BaseWorkflow):
             consent_state = peak_beat.consent_state if peak_beat else "implicit"
             is_ok, issues, _, _ = self._integrity_checker.check_all(refined_content, consent_state=consent_state)
         except Exception as exc:
-            logger.warning('EroticIntegrityChecker check failed: %s', exc)
+            logger.warning("EroticIntegrityChecker check failed: %s", exc)
 
         # 3. afterglow 評価
         try:
@@ -75,7 +75,7 @@ class RefineEroticWorkflow(BaseWorkflow):
             afterglow_candidate = refined_content[afterglow_start:]
             afterglow_ok, afterglow_issues = self._afterglow_evaluator.evaluate(afterglow_candidate)
         except Exception as exc:
-            logger.warning('AfterglowEvaluator evaluation failed: %s', exc)
+            logger.warning("AfterglowEvaluator evaluation failed: %s", exc)
 
         # ノート: 実際のワークフローではここで問題があるとフラグを立てるか、または
         # 再処理を行うが、この簡易メソッドでは基本的な洗練されたテキストを返す

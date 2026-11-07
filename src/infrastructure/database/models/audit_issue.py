@@ -26,8 +26,6 @@ class AuditIssue(Base):
 
     # Review linkage fields
     patch_review_id = Column(Integer, ForeignKey("patch_reviews.id"), nullable=True)
-    user_resolution = Column(
-        String(50), nullable=True
-    )  # USER_ACCEPTED, USER_REJECTED, USER_MODIFIED
+    user_resolution = Column(String(50), nullable=True)  # USER_ACCEPTED, USER_REJECTED, USER_MODIFIED
     resolved_at = Column(CompatibleDateTime, nullable=True)
     resolved_by = Column(String(100), nullable=True)

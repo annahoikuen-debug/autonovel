@@ -45,12 +45,7 @@ async def validate_structure(
     async with UnitOfWork(AppContainer.db()) as uow:
         if uow.session is None:
             raise RuntimeError("Database session not initialized")
-        result = await uow.session.execute(
-            select(Plot).where(Plot.book_id == book_id).order_by(Plot.ep_num)
-        )
-        plots = [
-            {"ep_num": p.ep_num, "title": p.title, "tension": p.tension or 0}
-            for p in result.scalars().all()
-        ]
+        result = await uow.session.execute(select(Plot).where(Plot.book_id == book_id).order_by(Plot.ep_num))
+        plots = [{"ep_num": p.ep_num, "title": p.title, "tension": p.tension or 0} for p in result.scalars().all()]
 
     return validate(plots, structure, pattern_key=pattern)

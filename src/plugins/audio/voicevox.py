@@ -46,9 +46,7 @@ class VoicevoxProvider:
     def is_available(self) -> bool:
         """VOICEVOX サーバーが起動しているか確認する。"""
         try:
-            req = urllib.request.Request(
-                f"{self.base_url}/version", method="GET"
-            )
+            req = urllib.request.Request(f"{self.base_url}/version", method="GET")
             with urllib.request.urlopen(req, timeout=_QUERY_TIMEOUT):
                 return True
         except (urllib.error.URLError, OSError):
@@ -74,10 +72,7 @@ class VoicevoxProvider:
 
         try:
             # 1) audio_query で韻律情報を取得
-            query_url = (
-                f"{self.base_url}/audio_query?text={urllib.parse.quote(text)}"
-                f"&speaker={speaker}"
-            )
+            query_url = f"{self.base_url}/audio_query?text={urllib.parse.quote(text)}&speaker={speaker}"
             req = urllib.request.Request(query_url, method="POST")
             with urllib.request.urlopen(req, timeout=_QUERY_TIMEOUT) as resp:
                 query_json = resp.read()

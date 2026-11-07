@@ -36,9 +36,7 @@ class _ReporterShim:
     def report(self, message: str, level: str = "info") -> None:
         pass
 
-    def update_progress(
-        self, current: int, total: int, message: str = "", sub_message: str = ""
-    ) -> None:
+    def update_progress(self, current: int, total: int, message: str = "", sub_message: str = "") -> None:
         pass
 
     @property
@@ -85,9 +83,7 @@ async def generate_illustration(
             illustration_type=IllustrationType(request.illustration_type),
             episode_number=request.episode_number,
             model=IllustrationModel(request.model),
-            safety_level=SafetyLevel.R15_CONTENT
-            if request.enable_r15
-            else SafetyLevel.BLOCK_SOME,
+            safety_level=SafetyLevel.R15_CONTENT if request.enable_r15 else SafetyLevel.BLOCK_SOME,
         )
 
         # 簡易的なレポート (Protocol なのでダミー化)
@@ -283,9 +279,7 @@ async def get_scene_illustration(
 
 
 @router.get("/status/{task_id}")
-async def get_illustration_status(
-    task_id: str, current_user: User = Depends(get_current_user)
-):
+async def get_illustration_status(task_id: str, current_user: User = Depends(get_current_user)):
     """Huey タスクのステータス・結果を取得する。"""
     from src.backend.database.core import get_db_manager
     from src.backend.database.repository import BookRepository

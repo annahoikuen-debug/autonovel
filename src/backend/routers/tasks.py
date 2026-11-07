@@ -59,9 +59,7 @@ async def get_task_status(
             if val:
                 data = json.loads(val)
         except Exception as exc:
-            logger.warning(
-                "Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True
-            )
+            logger.warning("Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True)
 
     if data is None:
         db = AppContainer.db()
@@ -124,9 +122,7 @@ async def _load_task_state(task_id: str) -> dict:
             if val:
                 return json.loads(val)
         except Exception as exc:
-            logger.warning(
-                "Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True
-            )
+            logger.warning("Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True)
 
     db = AppContainer.db()
     if db is None:
@@ -186,9 +182,7 @@ async def stop_task(
             if val:
                 state_dict = json.loads(val)
         except Exception as exc:
-            logger.warning(
-                "Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True
-            )
+            logger.warning("Redis task_status 取得失敗、DB にフォールバックします: %s", exc, exc_info=True)
 
     db = AppContainer.db()
     if not state_dict:
@@ -217,13 +211,9 @@ async def stop_task(
             await redis_client.set(f"task_status:{task_id}", state_json, ex=86400)
             return {"message": "Stop request registered via Redis"}
         except Exception as exc:
-            logger.warning(
-                "Redis task_status 保存失敗、DB にフォールバックします: %s", exc, exc_info=True
-            )
+            logger.warning("Redis task_status 保存失敗、DB にフォールバックします: %s", exc, exc_info=True)
 
-    await db.save_internal_state(
-        f"task_status:{task_id}", state_json, time.strftime("%Y-%m-%d %H:%M:%S")
-    )
+    await db.save_internal_state(f"task_status:{task_id}", state_json, time.strftime("%Y-%m-%d %H:%M:%S"))
     return {"message": "Stop request registered"}
 
 
@@ -291,9 +281,12 @@ async def get_wal_logs(dag_id: str):
     db_manager = AppContainer.db()
 
     async with db_manager.get_session() as session:
-        stmt = select(TaskWALLogModel).where(
-            TaskWALLogModel.dag_id == dag_id
-        ).order_by(TaskWALLogModel.created_at.desc()).limit(100)
+        stmt = (
+            select(TaskWALLogModel)
+            .where(TaskWALLogModel.dag_id == dag_id)
+            .order_by(TaskWALLogModel.created_at.desc())
+            .limit(100)
+        )
         result = await session.execute(stmt)
         logs = result.scalars().all()
 

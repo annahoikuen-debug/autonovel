@@ -98,9 +98,7 @@ class NovelProducer:
         """
         self._update_progress("generating", f"第{ep_num}話を生成中...")
 
-        result = await self.episode_writer.write(
-            book_id=project_id, ep_num=ep_num, context=self._build_context(ep_num)
-        )
+        result = await self.episode_writer.write(book_id=project_id, ep_num=ep_num, context=self._build_context(ep_num))
 
         # 結果を記録
         episode_result = EpisodeResult(

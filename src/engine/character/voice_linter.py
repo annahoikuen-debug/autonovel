@@ -1,5 +1,6 @@
 from src.models.character_voice_profile import CharacterVoiceProfile
 
+
 class VoiceLinter:
     """セリフの口調ルール違反を検知するクラス"""
 

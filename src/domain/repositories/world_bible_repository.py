@@ -28,9 +28,7 @@ class IWorldBibleRepository(Protocol):
         ...
 
     # Settings
-    async def get_setting(
-        self, novel_id: NovelId, setting_id: SettingId
-    ) -> Optional[Setting]:
+    async def get_setting(self, novel_id: NovelId, setting_id: SettingId) -> Optional[Setting]:
         """Get setting by ID (scoped to a novel)."""
         ...
 
@@ -134,8 +132,6 @@ class IWorldBibleRepository(Protocol):
         """Get setting version history."""
         ...
 
-    async def restore_setting_version(
-        self, novel_id: NovelId, version_id: int
-    ) -> Optional[WorldBible]:
+    async def restore_setting_version(self, novel_id: NovelId, version_id: int) -> Optional[WorldBible]:
         """Restore a previous setting version. None if version not found."""
         ...

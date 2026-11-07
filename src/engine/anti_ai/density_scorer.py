@@ -21,6 +21,7 @@ class DensityScore:
         sensory_overload: Ratio of dominant sensory modality (0-1)
         verb_strength: Verb diversity ratio (0-1)
     """
+
     aggressive_density: float = 0.0
     metaphor_density: float = 0.0
     sensory_overload: float = 0.0
@@ -40,38 +41,115 @@ class DensityScorer:
     # Sensory lexicons for detecting over-reliance on specific modalities
     SENSORY_LEXICON: Dict[str, set[str]] = {
         "visual": {
-            "視線", "瞳", "目", "見る", "眺める", "光", "影", "色",
-            "輝く", "きらめく", "暗い", "明るい", "赤", "青", "緑", "黄",
-            "白", "黒", "輝き", "glow", "sparkle", "gleam"
+            "視線",
+            "瞳",
+            "目",
+            "見る",
+            "眺める",
+            "光",
+            "影",
+            "色",
+            "輝く",
+            "きらめく",
+            "暗い",
+            "明るい",
+            "赤",
+            "青",
+            "緑",
+            "黄",
+            "白",
+            "黒",
+            "輝き",
+            "glow",
+            "sparkle",
+            "gleam",
         },
         "auditory": {
-            "音", "声", "響き", "静寂", "囁き", "叫び", "騒音",
-            "音楽", "歌う", "ささやく", "怒鳴る", "泣く", "笑う",
-            "騒がしい", "静かな", "響渡る", "耳鳴り"
+            "音",
+            "声",
+            "響き",
+            "静寂",
+            "囁き",
+            "叫び",
+            "騒音",
+            "音楽",
+            "歌う",
+            "ささやく",
+            "怒鳴る",
+            "泣く",
+            "笑う",
+            "騒がしい",
+            "静かな",
+            "響渡る",
+            "耳鳴り",
         },
         "tactile": {
-            "冷た", "熱", "痛", "触れ", "肌", "指先", "震え",
-            "ざらざら", "つるつる", "ぬるぬる", "こわばる", "しびれ",
-            "感触", "手触り", "肌ざわり", "温度", "体温"
+            "冷た",
+            "熱",
+            "痛",
+            "触れ",
+            "肌",
+            "指先",
+            "震え",
+            "ざらざら",
+            "つるつる",
+            "ぬるぬる",
+            "こわばる",
+            "しびれ",
+            "感触",
+            "手触り",
+            "肌ざわり",
+            "温度",
+            "体温",
         },
         "visceral": {
-            "胃", "心臓", "血", "息", "吐き気", "めまい", "脳",
-            "腸", "肝臓", "腎臓", "嘔吐", "下痢", "便秘",
-            "動悸", "息切れ", "立ち眩み", "ふらつき"
-        }
+            "胃",
+            "心臓",
+            "血",
+            "息",
+            "吐き気",
+            "めまい",
+            "脳",
+            "腸",
+            "肝臓",
+            "腎臓",
+            "嘔吐",
+            "下痢",
+            "便秘",
+            "動悸",
+            "息切れ",
+            "立ち眩み",
+            "ふらつき",
+        },
     }
 
     # Aggressive physical reaction patterns
     AGGRESSIVE_LEXICON: set[str] = {
-        "歯を食いしば", "舌打ち", "拳を握り", "胃を痛め",
-        "血の気が引", "激痛が脳", "奥歯を軋ませ", "目を剥き",
-        "声を荒げ", "眉をひそめ", "肩をすくめ", "足をすくめ"
+        "歯を食いしば",
+        "舌打ち",
+        "拳を握り",
+        "胃を痛め",
+        "血の気が引",
+        "激痛が脳",
+        "奥歯を軋ませ",
+        "目を剥き",
+        "声を荒げ",
+        "眉をひそめ",
+        "肩をすくめ",
+        "足をすくめ",
     }
 
     # Metaphor markers
     METAPHOR_MARKERS: set[str] = {
-        "まるで", "ように", "かのよう", "似ている", "似た",
-        " analogously", "likewise", "as if", "as though"
+        "まるで",
+        "ように",
+        "かのよう",
+        "似ている",
+        "似た",
+        " analogously",
+        "likewise",
+        "as if",
+        "as though",
     }
 
     @classmethod
@@ -92,17 +170,11 @@ class DensityScorer:
             return DensityScore()
 
         # Calculate aggressive reaction density
-        aggressive_count = sum(
-            1 for term in cls.AGGRESSIVE_LEXICON
-            if term in paragraph
-        )
+        aggressive_count = sum(1 for term in cls.AGGRESSIVE_LEXICON if term in paragraph)
         aggressive_density = (aggressive_count * 1000) / chars
 
         # Calculate metaphor density
-        metaphor_count = sum(
-            1 for marker in cls.METAPHOR_MARKERS
-            if marker in paragraph
-        )
+        metaphor_count = sum(1 for marker in cls.METAPHOR_MARKERS if marker in paragraph)
         # Also count simile/metaphor patterns
         metaphor_pattern_count = len(re.findall(r"(まるで|のように|かのよう)", paragraph))
         metaphor_count = max(metaphor_count, metaphor_pattern_count)
@@ -129,8 +201,14 @@ class DensityScorer:
         # Calculate verb strength (diversity of verb usage)
         # Find verb-like patterns (simplified: words ending in common Japanese verb endings)
         verb_patterns = [
-            r"[あ-ん]+た", r"[あ-ん]+だ", r"[あ-ん]+て", r"[あ-ん]+る",
-            r"[あ-ん]+よう", r"[あ-ん]+そう", r"[あ-ん]+たい", r"[あ-ん]+ない"
+            r"[あ-ん]+た",
+            r"[あ-ん]+だ",
+            r"[あ-ん]+て",
+            r"[あ-ん]+る",
+            r"[あ-ん]+よう",
+            r"[あ-ん]+そう",
+            r"[あ-ん]+たい",
+            r"[あ-ん]+ない",
         ]
 
         verbs_found: List[str] = []
@@ -149,7 +227,7 @@ class DensityScorer:
             aggressive_density=aggressive_density,
             metaphor_density=metaphor_density,
             sensory_overload=sensory_overload,
-            verb_strength=verb_strength
+            verb_strength=verb_strength,
         )
 
     @classmethod
@@ -159,7 +237,7 @@ class DensityScorer:
         aggressive_threshold: float = 2.0,
         metaphor_threshold: float = 3.0,
         sensory_threshold: float = 0.5,
-        verb_strength_threshold: float = 0.3
+        verb_strength_threshold: float = 0.3,
     ) -> bool:
         """Determine if text should be simplified based on density scores.
 
@@ -174,10 +252,10 @@ class DensityScorer:
             True if text exceeds thresholds and should be simplified
         """
         return (
-            score.aggressive_density > aggressive_threshold or
-            score.metaphor_density > metaphor_threshold or
-            score.sensory_overload > sensory_threshold or
-            score.verb_strength < verb_strength_threshold
+            score.aggressive_density > aggressive_threshold
+            or score.metaphor_density > metaphor_threshold
+            or score.sensory_overload > sensory_threshold
+            or score.verb_strength < verb_strength_threshold
         )
 
     @classmethod

@@ -1,7 +1,7 @@
 {
   "ruff_errors": 85,
-  "mypy_errors": 954,
-  "format_files": 759,
+  "mypy_errors": 952,
+  "format_files": 0,
   "policy": "burn-down",
   "history": [
     {

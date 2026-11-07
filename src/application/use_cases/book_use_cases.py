@@ -62,9 +62,7 @@ class BookUseCases:
     async def _get_uow(self) -> IUnitOfWork:
         if self._uow is not None:
             return self._uow
-        raise RuntimeError(
-            "uow が未設定です。BookUseCases に uow を渡してください。"
-        )
+        raise RuntimeError("uow が未設定です。BookUseCases に uow を渡してください。")
 
     async def list_books(self, user_id: int) -> list[dict[str, Any]]:
         """ユーザーの作品一覧を取得"""
@@ -82,7 +80,10 @@ class BookUseCases:
             other_book = await self.book_repository.get_book_by_id(book_id)
             if other_book and other_book.user_id != current_user.id and current_user.role != "admin":
                 from fastapi import HTTPException, status
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対するアクセス権限がありません")
+
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対するアクセス権限がありません"
+                )
             raise NotFoundError("Book not found", resource_type="Book", resource_id=str(book_id))
 
         return BookDTO.from_orm(b).to_dict()
@@ -116,7 +117,10 @@ class BookUseCases:
             other_book = await self.book_repository.get_book_by_id(book_id)
             if other_book and other_book.user_id != current_user.id and current_user.role != "admin":
                 from fastapi import HTTPException, status
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対するアクセス権限がありません")
+
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN, detail="この作品に対するアクセス権限がありません"
+                )
             raise NotFoundError("Book not found", resource_type="Book", resource_id=str(book_id))
 
         await self.book_repository.delete_book(book_id=book_id, user_id=current_user.id)

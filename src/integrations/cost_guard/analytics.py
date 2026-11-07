@@ -4,7 +4,6 @@ F4 フェーズ: 実装は src/domain/services/cost_analytics.py に移設。
 このモジュールは re-export 用 shim として残す。
 """
 
-
 import warnings
 
 warnings.warn(

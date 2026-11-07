@@ -51,12 +51,8 @@ class AssistRequest(BaseModel):
 
     text: str = Field(..., min_length=1, description="選択・編集対象の本文テキスト")
     action: AssistAction = Field(default=AssistAction.DESCRIBE, description="実行するアクション")
-    sensory_type: SensoryType | None = Field(
-        default=None, description="五感拡張の種別（action=describe時）"
-    )
-    tone_type: ToneType | None = Field(
-        default=None, description="書き換えトーン種別（action=rewrite時）"
-    )
+    sensory_type: SensoryType | None = Field(default=None, description="五感拡張の種別（action=describe時）")
+    tone_type: ToneType | None = Field(default=None, description="書き換えトーン種別（action=rewrite時）")
     genre: str = Field(default="ハイファンタジー (R15)", description="作品ジャンル")
     context_before: str = Field(default="", description="選択箇所の直前の文脈")
     context_after: str = Field(default="", description="選択箇所の直後の文脈")
@@ -81,9 +77,7 @@ class GraphEvidenceNode(BaseModel):
     """回答の根拠となったナレッジグラフのノード・事実情報"""
 
     id: str = Field(..., description="ノードIDまたはエンティティ名")
-    label: str = Field(
-        default="Entity", description="ノードラベル (Character, Location, Item, Event)"
-    )
+    label: str = Field(default="Entity", description="ノードラベル (Character, Location, Item, Event)")
     properties: dict[str, Any] = Field(default_factory=dict, description="ノード属性情報")
     source_reference: str = Field(default="", description="出展情報 (例: 第1章, 世界観バイブル)")
 
@@ -103,9 +97,7 @@ class AskBibleResponse(BaseModel):
     evidence_nodes: list[GraphEvidenceNode] = Field(
         default_factory=list, description="回答の根拠となったグラフノード群"
     )
-    related_characters: list[str] = Field(
-        default_factory=list, description="関連キャラクター名一覧"
-    )
+    related_characters: list[str] = Field(default_factory=list, description="関連キャラクター名一覧")
 
 
 class ConsistencyIssue(BaseModel):
@@ -118,9 +110,7 @@ class ConsistencyIssue(BaseModel):
             "issue_type / conflicting_text から決定的に生成する"
         ),
     )
-    issue_type: str = Field(
-        ..., description="矛盾の種類 (attribute, relationship, timeline, death_status, location)"
-    )
+    issue_type: str = Field(..., description="矛盾の種類 (attribute, relationship, timeline, death_status, location)")
     severity: str = Field(default="warning", description="重要度 (error, warning, info)")
     description: str = Field(..., description="矛盾内容の解説")
     conflicting_text: str = Field(default="", description="本文中の該当箇所")
@@ -206,4 +196,3 @@ class AuditFastHybridRequest(BaseModel):
     draft_text: str = Field(..., min_length=1, description="監査対象のドラフト本文")
     character_profiles: str = Field(default="", description="登場人物の設定・プロファイル")
     plot_spec: str = Field(default="", description="プロット・構成情報")
-

@@ -18,12 +18,64 @@ logger = logging.getLogger(__name__)
 
 # Novel-specific stopwords that carry low semantic value across queries and retrieval
 NOVEL_STOPWORDS: set[str] = {
-    "こと", "もの", "ため", "よう", "そう", "これ", "それ", "あれ", "どれ",
-    "ここ", "そこ", "あそこ", "どこ", "私", "僕", "俺", "彼", "彼女", "自分",
-    "いう", "思う", "みる", "いる", "ある", "なる", "する", "いく", "くる",
-    "くれる", "しまう", "おく", "わけ", "はず", "つもり", "ほう", "とき",
-    "時", "前", "後", "中", "上", "下", "中", "間", "何", "誰",
-    "の", "は", "が", "を", "に", "で", "と", "も", "や", "な", "た", "だ",
+    "こと",
+    "もの",
+    "ため",
+    "よう",
+    "そう",
+    "これ",
+    "それ",
+    "あれ",
+    "どれ",
+    "ここ",
+    "そこ",
+    "あそこ",
+    "どこ",
+    "私",
+    "僕",
+    "俺",
+    "彼",
+    "彼女",
+    "自分",
+    "いう",
+    "思う",
+    "みる",
+    "いる",
+    "ある",
+    "なる",
+    "する",
+    "いく",
+    "くる",
+    "くれる",
+    "しまう",
+    "おく",
+    "わけ",
+    "はず",
+    "つもり",
+    "ほう",
+    "とき",
+    "時",
+    "前",
+    "後",
+    "中",
+    "上",
+    "下",
+    "中",
+    "間",
+    "何",
+    "誰",
+    "の",
+    "は",
+    "が",
+    "を",
+    "に",
+    "で",
+    "と",
+    "も",
+    "や",
+    "な",
+    "た",
+    "だ",
 }
 
 
@@ -54,6 +106,7 @@ class JapaneseTokenizer:
         """Initialize SudachiPy dictionary and tokenizer safely."""
         try:
             from sudachipy import dictionary, tokenizer
+
             self._sudachi_tokenizer = dictionary.Dictionary().create()
             if self.split_mode_name == "A":
                 self._split_mode = tokenizer.Tokenizer.SplitMode.A

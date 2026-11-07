@@ -25,39 +25,23 @@ logger = logging.getLogger(__name__)
 
 # InferenceStep は既存のまま維持 (高機能のため)
 class InferenceStep(WorkflowStep):
-    async def execute(
-        self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter
-    ) -> bool:
+    async def execute(self, ctx: WorkflowContext, engine: UltimateHegemonyEngine, reporter: StatusReporter) -> bool:
         if ctx.user_prompt:
             try:
                 reporter.report(
                     f"🔮 1行プロンプトから覇権企画を自動強化（推論）中: 「{ctx.user_prompt}」",
                     "info",
                 )
-                inference = await engine.planner.infer_easy_mode_params(
-                    ctx.user_prompt, reporter=reporter
-                )
+                inference = await engine.planner.infer_easy_mode_params(ctx.user_prompt, reporter=reporter)
 
                 ctx.genre = inference.genre_key or ctx.genre
-                ctx.concept = (
-                    f"{ctx.concept}\n{inference.core_idea}".strip()
-                    if ctx.concept
-                    else inference.core_idea
-                )
+                ctx.concept = f"{ctx.concept}\n{inference.core_idea}".strip() if ctx.concept else inference.core_idea
                 if inference.mc_concept:
-                    ctx.keywords = (
-                        f"{ctx.keywords}, {inference.mc_concept}"
-                        if ctx.keywords
-                        else inference.mc_concept
-                    )
+                    ctx.keywords = f"{ctx.keywords}, {inference.mc_concept}" if ctx.keywords else inference.mc_concept
                 ctx.title = inference.title_idea
-                reporter.report(
-                    f"✨ 自動強化完了！ ジャンル: {ctx.genre} / コンセプト推論成功", "info"
-                )
+                reporter.report(f"✨ 自動強化完了！ ジャンル: {ctx.genre} / コンセプト推論成功", "info")
             except Exception as e:
-                reporter.report(
-                    f"⚠️ 自動強化に失敗しましたが、既存のパラメータで続行します。: {e}", "warning"
-                )
+                reporter.report(f"⚠️ 自動強化に失敗しましたが、既存のパラメータで続行します。: {e}", "warning")
         return True
 
 

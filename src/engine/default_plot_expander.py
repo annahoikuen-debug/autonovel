@@ -64,16 +64,10 @@ class DefaultPlotExpander:
             logger.warning(f"No bible found for book_id={book_id}, cannot expand macro skeletons")
             return []
 
-        bible_dict = (
-            bible.model_dump()
-            if hasattr(bible, "model_dump")
-            else (bible if isinstance(bible, dict) else {})
-        )
+        bible_dict = bible.model_dump() if hasattr(bible, "model_dump") else (bible if isinstance(bible, dict) else {})
         bible_json_str = json.dumps(bible_dict, ensure_ascii=False)
 
-        prompt = await self.pm.build_macro_plot_skeleton_prompt(
-            bible_json_str, target_ep_list, book_id=book_id
-        )
+        prompt = await self.pm.build_macro_plot_skeleton_prompt(bible_json_str, target_ep_list, book_id=book_id)
 
         res = await self.llm.generate_json(
             self.model_planning,
@@ -92,9 +86,7 @@ class DefaultPlotExpander:
 
         skeletons = batch.episodes
         for sk in skeletons:
-            existing = await self.repo.get_plot(
-                branch_id, sk.ep_num, branch_id=branch_id, book_id=book_id
-            )
+            existing = await self.repo.get_plot(branch_id, sk.ep_num, branch_id=branch_id, book_id=book_id)
             if existing is None:
                 dummy_micro = PlotMicroBlueprint(ep_num=sk.ep_num)
                 partial_plot = merge_macro_and_micro(sk, dummy_micro)
@@ -169,9 +161,7 @@ class DefaultPlotExpander:
         reporter: IReporter | None = None,
     ) -> PlotEpisode:
         """指定話数の詳細プロットが存在することを保証する（完全冪等）"""
-        existing = await self.repo.get_plot(
-            branch_id, ep_num, branch_id=branch_id, book_id=book_id
-        )
+        existing = await self.repo.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
         if existing and hasattr(existing, "scenes") and len(existing.scenes) >= 3:
             return existing
 
@@ -179,9 +169,7 @@ class DefaultPlotExpander:
         if existing and hasattr(existing, "extract_macro_skeleton"):
             skeleton = existing.extract_macro_skeleton()
         else:
-            skeletons = await self.expand_macro_skeletons(
-                book_id, [ep_num], reporter=reporter, branch_id=branch_id
-            )
+            skeletons = await self.expand_macro_skeletons(book_id, [ep_num], reporter=reporter, branch_id=branch_id)
             skeleton = skeletons[0] if skeletons else EpisodeMacroSkeleton(ep_num=ep_num)
 
         prev_ending_text = ""
@@ -209,6 +197,7 @@ class DefaultPlotExpander:
         branch_id: int = 1,
     ) -> asyncio.Task | None:
         """次話の詳細プロットを非同期バックグラウンドで先行展開する（レイテンシ隠蔽）"""
+
         async def _prefetch():
             try:
                 await self.ensure_detailed_plot(book_id, next_ep, branch_id=branch_id)
@@ -263,9 +252,7 @@ class DefaultPlotExpander:
         async def _process_single(ep_num: int) -> Any | None:
             async with sem:
                 try:
-                    existing = await self.repo.get_plot(
-                        branch_id, ep_num, branch_id=branch_id, book_id=book_id
-                    )
+                    existing = await self.repo.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
                     if existing and not force:
                         if (
                             hasattr(existing, "detailed_blueprint")
@@ -286,9 +273,7 @@ class DefaultPlotExpander:
                         reporter=reporter,
                     )
                     if not plot_res.success:
-                        logger.error(
-                            f"Plot generation failed for Ep.{ep_num}: {plot_res.error_message}"
-                        )
+                        logger.error(f"Plot generation failed for Ep.{ep_num}: {plot_res.error_message}")
                         return None
 
                     plots = UltraFastPlotBatch.model_validate(plot_res.metadata).plots

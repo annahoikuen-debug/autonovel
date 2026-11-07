@@ -25,6 +25,7 @@ class AuditUnavailableError(RuntimeError):
 @dataclass
 class Issue:
     """Represents an issue found by the auditor."""
+
     type: str  # Issue category (e.g., "plot_inconsistency", "character_appeal")
     message: str  # Human-readable description
     location: Optional[Tuple[int, int]] = None  # (start_index, end_index) or None if location unknown
@@ -46,6 +47,7 @@ def call_llm_api(prompt: str, system_prompt: Optional[str] = None) -> str:
     """
     try:
         from src.services.llm.factory import get_llm_adapter
+
         adapter = get_llm_adapter()
         if hasattr(adapter, "generate_text_sync"):
             return adapter.generate_text_sync(prompt=prompt, system_prompt=system_prompt)
@@ -57,6 +59,7 @@ def call_llm_api(prompt: str, system_prompt: Optional[str] = None) -> str:
             if loop and loop.is_running():
                 # 既にイベントループが動いている場合はブロッキング回避のためスレッドで実行
                 import concurrent.futures
+
                 with concurrent.futures.ThreadPoolExecutor() as pool:
                     future = pool.submit(asyncio.run, adapter.generate_text(prompt=prompt, system_prompt=system_prompt))
                     return future.result(timeout=30)
@@ -65,14 +68,11 @@ def call_llm_api(prompt: str, system_prompt: Optional[str] = None) -> str:
         # generate_text 系が 1 つも無い場合は従来 None を暗黙 return して
         # 呼び出し側が AttributeError を受けていた。明示的に失敗させる。
         raise AttributeError(
-            f"LLM adapter {type(adapter).__name__} exposes neither "
-            "'generate_text_sync' nor 'generate_text'"
+            f"LLM adapter {type(adapter).__name__} exposes neither 'generate_text_sync' nor 'generate_text'"
         )
     except Exception as e:
         logger.error("Default LLM adapter call failed: %s", e, exc_info=True)
-        raise AuditUnavailableError(
-            f"LLM API呼び出しが実装されていないか利用できません: {e}"
-        ) from e
+        raise AuditUnavailableError(f"LLM API呼び出しが実装されていないか利用できません: {e}") from e
 
 
 class UnifiedLLMAuditor:
@@ -190,9 +190,7 @@ issue_typeには以下のいずれかを使用してください：
             # (test_auditor_handles_broken_text_gracefully) が [] を
             # 要求しているため空リストを返しつつ、debug ではなく
             # error レベルで可視化する。
-            logger.error(
-                "UnifiedLLMAuditor: LLM 応答を JSON として解釈できませんでした: %s", e
-            )
+            logger.error("UnifiedLLMAuditor: LLM 応答を JSON として解釈できませんでした: %s", e)
             return []
 
         if not isinstance(data, list):
@@ -217,9 +215,7 @@ issue_typeには以下のいずれかを使用してください：
                 )
             )
         if skipped:
-            logger.error(
-                "UnifiedLLMAuditor: 形式不正の指摘項目を %d 件スキップしました", skipped
-            )
+            logger.error("UnifiedLLMAuditor: 形式不正の指摘項目を %d 件スキップしました", skipped)
         return issues
 
     @staticmethod

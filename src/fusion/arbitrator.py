@@ -1,4 +1,5 @@
 """Arbitrator logic for resolving conflicts and fusing emotional vectors."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Protocol, Tuple
@@ -12,6 +13,7 @@ from src.pipeline.emotional_residue import EmotionType
 
 class ConflictResolutionStoreProtocol(Protocol):
     """手動解決ストアのプロトコル"""
+
     def get_resolution(self, conflict_id: str) -> Optional[Dict[str, Any]]: ...
 
 
@@ -42,9 +44,7 @@ class Arbitrator:
 
         # 1. 矛盾検出
         conflicts = self.conflict_detector.detect(source_vectors)
-        conflict_map: Dict[Tuple[Tuple[str, str], EmotionType], Conflict] = {
-            (c.pair, c.emotion): c for c in conflicts
-        }
+        conflict_map: Dict[Tuple[Tuple[str, str], EmotionType], Conflict] = {(c.pair, c.emotion): c for c in conflicts}
 
         # 2. 全ソースの (pair, emotion) データをグループ化
         # key: ((src, tgt), emo) -> list of (namespace, value, confidence)

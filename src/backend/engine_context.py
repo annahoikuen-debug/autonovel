@@ -57,6 +57,7 @@ class ContextManager:
         if self._delegate_agent is None:
             try:
                 from src.agents.context_builder_agent import ContextBuilderAgent
+
                 self._delegate_agent = ContextBuilderAgent(repo=self.repo, compressor=self.compressor)
             except Exception as e:
                 logger.warning(f"Could not initialize ContextBuilderAgent delegate: {e}")
@@ -106,38 +107,34 @@ class ContextManager:
                 plot_list = plots if isinstance(plots, list) else [plots]
                 search_area = " ".join(
                     [
-                        (p.detailed_blueprint or "")
-                        + " "
-                        + (p.summary or "")
-                        + " "
-                        + (p.script_content or "")
+                        (p.detailed_blueprint or "") + " " + (p.summary or "") + " " + (p.script_content or "")
                         for p in plot_list
                     ]
                 )
-                active_chars = [c for c in all_chars if c.name and (c.name in search_area or c.name in recent_ctx or any(role in (c.role or "") for role in ["主人公", "ヒロイン", "悪役", "ライバル"]))]
+                active_chars = [
+                    c
+                    for c in all_chars
+                    if c.name
+                    and (
+                        c.name in search_area
+                        or c.name in recent_ctx
+                        or any(role in (c.role or "") for role in ["主人公", "ヒロイン", "悪役", "ライバル"])
+                    )
+                ]
                 return delegate._build_char_static_ctx(active_chars)
             except Exception as e:
                 logger.warning(f"Delegation failed, using fallback: {e}")
 
         plot_list = plots if isinstance(plots, list) else [plots]
         search_area = " ".join(
-            [
-                (p.detailed_blueprint or "")
-                + " "
-                + (p.summary or "")
-                + " "
-                + (p.script_content or "")
-                for p in plot_list
-            ]
+            [(p.detailed_blueprint or "") + " " + (p.summary or "") + " " + (p.script_content or "") for p in plot_list]
         )
 
         lines = []
         for c in all_chars:
             if not c.name:
                 continue
-            is_important = any(
-                role in (c.role or "") for role in ["主人公", "ヒロイン", "悪役", "ライバル"]
-            )
+            is_important = any(role in (c.role or "") for role in ["主人公", "ヒロイン", "悪役", "ライバル"])
             if (c.name in search_area) or (c.name in recent_ctx) or is_important:
                 reg = self._parse_character_registry(c)
                 lines.append(
@@ -197,11 +194,7 @@ class ContextManager:
         if all_past:
             try:
                 for chap in all_past[:10]:
-                    ws = (
-                        json.loads(chap.world_state)
-                        if isinstance(chap.world_state, str)
-                        else chap.world_state
-                    )
+                    ws = json.loads(chap.world_state) if isinstance(chap.world_state, str) else chap.world_state
                     if not isinstance(ws, dict):
                         continue
                     if not cumulative_summary and ws.get("cumulative_summary"):
@@ -317,21 +310,12 @@ class ContextManager:
         # 検索範囲を拡大
         plot_list = plots if isinstance(plots, list) else [plots]
         search_area = " ".join(
-            [
-                (p.detailed_blueprint or "")
-                + " "
-                + (p.summary or "")
-                + " "
-                + (p.script_content or "")
-                for p in plot_list
-            ]
+            [(p.detailed_blueprint or "") + " " + (p.summary or "") + " " + (p.script_content or "") for p in plot_list]
         )
         active_char_names = [c.name for c in all_chars if c.name and c.name in search_area]
 
         # 基本コンテキスト
-        base_past_ctx = await self.build_past_context(
-            book_id, ep_num, active_char_names=active_char_names
-        )
+        base_past_ctx = await self.build_past_context(book_id, ep_num, active_char_names=active_char_names)
 
         # RAGによる動的検索の追加
         if isinstance(plots, list):
@@ -339,9 +323,7 @@ class ContextManager:
         else:
             query = plots.detailed_blueprint or ""
 
-        rag_ctx = await self.repo.get_relevant_past_logs(
-            branch_id, ep_num, query_text=query, book_id=book_id
-        )
+        rag_ctx = await self.repo.get_relevant_past_logs(branch_id, ep_num, query_text=query, book_id=book_id)
 
         prev_ctx = base_past_ctx + "\n" + rag_ctx
         char_ctx = self.filter_active_characters(plots, all_chars, char_states, recent_ctx=prev_ctx)
@@ -403,9 +385,7 @@ class ContextManager:
         active_char_names = [c.name for c in chars if c.name and c.name in search_area]
 
         # 提案3: 視点ベースで過去の文脈をフィルタリングして構築
-        prev_ctx = await self.build_past_context(
-            book_id, ep_num, active_char_names=active_char_names
-        )
+        prev_ctx = await self.build_past_context(book_id, ep_num, active_char_names=active_char_names)
         static_lines, dynamic_lines = [], []
 
         # 主人公の特定
@@ -415,9 +395,7 @@ class ContextManager:
         for c in chars:
             if not c.name:
                 continue
-            is_important = any(
-                role in (c.role or "") for role in ["主人公", "ヒロイン", "悪役", "ライバル"]
-            )
+            is_important = any(role in (c.role or "") for role in ["主人公", "ヒロイン", "悪役", "ライバル"])
 
             # 提案3: 主人公がシーンに登場しないPOVの場合、不要な詳細情報を遮断する
             if c.name == mc_name and not is_mc_active:
@@ -494,16 +472,12 @@ class ContextManager:
                     config=SystemConfig(
                         active_constraints=active_constraints or [], pacing_instruction=pacing_instruction
                     ),
-                    dynamic=DynamicState(
-                        character_states=char_states, current_tension=50, unresolved_threads=[]
-                    ),
+                    dynamic=DynamicState(character_states=char_states, current_tension=50, unresolved_threads=[]),
                 )
             except Exception as e:
                 logger.warning(f"Delegation failed for get_structured_context_split, using fallback: {e}")
 
-        static_str, dyn_str, prev_ctx = await self.get_optimal_context_split(
-            book_id, ep_num, plot, chars
-        )
+        static_str, dyn_str, prev_ctx = await self.get_optimal_context_split(book_id, ep_num, plot, chars)
 
         # Parse the strings back into dicts/lists for the structured model (mock implementation for architectural transition)
         static_profiles = {}
@@ -527,10 +501,6 @@ class ContextManager:
                 locked_foreshadowings=[],
                 static_character_profiles=static_profiles,
             ),
-            config=SystemConfig(
-                active_constraints=active_constraints or [], pacing_instruction=pacing_instruction
-            ),
-            dynamic=DynamicState(
-                character_states=char_states, current_tension=50, unresolved_threads=[]
-            ),
+            config=SystemConfig(active_constraints=active_constraints or [], pacing_instruction=pacing_instruction),
+            dynamic=DynamicState(character_states=char_states, current_tension=50, unresolved_threads=[]),
         )

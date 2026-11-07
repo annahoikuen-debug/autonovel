@@ -13,6 +13,7 @@ from typing import Any
 @dataclass
 class GraphNode:
     """グラフノードの表現."""
+
     id: str
     label: str
     name: str
@@ -22,6 +23,7 @@ class GraphNode:
 @dataclass
 class GraphEdge:
     """グラフエッジの表現."""
+
     source: str
     target: str
     relation_type: str
@@ -31,6 +33,7 @@ class GraphEdge:
 @dataclass
 class GraphStats:
     """グラフ統計情報."""
+
     node_count: int
     edge_count: int
     labels: list[str]
@@ -40,6 +43,7 @@ class GraphStats:
 @dataclass
 class CentralityScores:
     """中心性スコア."""
+
     pagerank: dict[str, float]
     degree_centrality: dict[str, float]
     betweenness_centrality: dict[str, float] | None = None
@@ -49,6 +53,7 @@ class CentralityScores:
 @dataclass
 class NeighborResult:
     """近傍探索結果."""
+
     nodes: list[GraphNode]
     edges: list[GraphEdge]
     depth: int
@@ -57,6 +62,7 @@ class NeighborResult:
 @dataclass
 class PathResult:
     """パス探索結果."""
+
     nodes: list[str]
     edges: list[tuple[str, str, str]]  # (source, relation_type, target)
     length: int

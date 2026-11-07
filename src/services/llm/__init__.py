@@ -4,6 +4,7 @@
 サブモジュール（factory, gemini_adapter, mock_adapter 等）への
 直接参照も PEP 562 の __getattr__ で新パスにリダイレクトする。
 """
+
 from __future__ import annotations
 
 

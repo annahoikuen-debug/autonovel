@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import networkx as nx
+
     HAS_NETWORKX = True
 except Exception as e:
     logger.warning(f"[VECTOR STORE] networkx not available: {e}")
@@ -20,6 +21,7 @@ except Exception as e:
 
 try:
     from rank_bm25 import BM25Okapi
+
     HAS_BM25 = True
 except Exception as e:
     logger.warning(f"[VECTOR STORE] rank_bm25 not available: {e}")
@@ -64,6 +66,7 @@ class InMemoryFallbackStore(BaseVectorStore):
     def _tokenize(text: str) -> list[str]:
         """ChromaVectorStore._tokenize と同等の簡易トークナイズ（日本語文字 + 英数字）"""
         import re
+
         tokens = re.findall(r"[a-zA-Z0-9]+|[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+", text.lower())
         char_tokens = list(text.lower())
         return tokens + char_tokens
@@ -255,13 +258,15 @@ class InMemoryFallbackStore(BaseVectorStore):
                     continue
                 normalized_bm25 = (bm25_scores[idx] - min_bm25) / bm25_range
                 doc_content, meta = id_to_doc.get(doc_id, ("", {}))
-                bm25_results.append({
-                    "id": doc_id,
-                    "content": doc_content,
-                    "bm25_score": bm25_scores[idx],
-                    "normalized_bm25": normalized_bm25,
-                    "metadata": meta,
-                })
+                bm25_results.append(
+                    {
+                        "id": doc_id,
+                        "content": doc_content,
+                        "bm25_score": bm25_scores[idx],
+                        "normalized_bm25": normalized_bm25,
+                        "metadata": meta,
+                    }
+                )
 
         # 3) RRF 融合（k=60）
         vector_map = {r["id"]: r for r in vector_results}
@@ -281,15 +286,17 @@ class InMemoryFallbackStore(BaseVectorStore):
             rrf = (alpha / (k + v_rank)) + ((1 - alpha) / (k + b_rank))
             if rrf >= min_score:
                 metadata = v.get("metadata", {}) if v else (b.get("metadata", {}) if b else {})
-                combined.append({
-                    "id": doc_id,
-                    "content": v.get("content") if v else (b.get("content", "") if b else ""),
-                    "metadata": metadata,
-                    "vector_similarity": v.get("similarity", 0.0) if v else 0.0,
-                    "bm25_score": b.get("bm25_score", 0.0) if b else 0.0,
-                    "normalized_bm25": b.get("normalized_bm25", 0.0) if b else 0.0,
-                    "combined_score": rrf,
-                })
+                combined.append(
+                    {
+                        "id": doc_id,
+                        "content": v.get("content") if v else (b.get("content", "") if b else ""),
+                        "metadata": metadata,
+                        "vector_similarity": v.get("similarity", 0.0) if v else 0.0,
+                        "bm25_score": b.get("bm25_score", 0.0) if b else 0.0,
+                        "normalized_bm25": b.get("normalized_bm25", 0.0) if b else 0.0,
+                        "combined_score": rrf,
+                    }
+                )
 
         combined.sort(key=lambda x: x["combined_score"], reverse=True)
         return combined[:top_k]
@@ -323,24 +330,28 @@ class InMemoryFallbackStore(BaseVectorStore):
                     continue
                 if nbr not in visited:
                     visited.add(nbr)
-                    results.append({
-                        "entity": nbr,
-                        "relation": data.get("rel_type", "related"),
-                        "depth": depth + 1,
-                        "metadata": {k: v for k, v in data.items() if k != "rel_type"},
-                    })
+                    results.append(
+                        {
+                            "entity": nbr,
+                            "relation": data.get("rel_type", "related"),
+                            "depth": depth + 1,
+                            "metadata": {k: v for k, v in data.items() if k != "rel_type"},
+                        }
+                    )
                     frontier.append((nbr, depth + 1))
             for nbr, _, data in g.in_edges(node, data=True):
                 if rel_type and data.get("rel_type") != rel_type:
                     continue
                 if nbr not in visited:
                     visited.add(nbr)
-                    results.append({
-                        "entity": nbr,
-                        "relation": f"reverse_{data.get('rel_type', 'related')}",
-                        "depth": depth + 1,
-                        "metadata": {k: v for k, v in data.items() if k != "rel_type"},
-                    })
+                    results.append(
+                        {
+                            "entity": nbr,
+                            "relation": f"reverse_{data.get('rel_type', 'related')}",
+                            "depth": depth + 1,
+                            "metadata": {k: v for k, v in data.items() if k != "rel_type"},
+                        }
+                    )
                     frontier.append((nbr, depth + 1))
         return results[:limit]
 

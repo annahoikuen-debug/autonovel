@@ -52,7 +52,11 @@ class TokenExpander:
         self._dict = {
             "subtext": {
                 "irony": {"templates": ["「……{phrase}」"], "phrases": ["好きにすればいい"]},
-                "cold_acceptance": {"templates": ["「……{phrase}」——{action}。"], "phrases": ["それでいい"], "actions": ["目を伏せる"]},
+                "cold_acceptance": {
+                    "templates": ["「……{phrase}」——{action}。"],
+                    "phrases": ["それでいい"],
+                    "actions": ["目を伏せる"],
+                },
             },
             "beat": {"pause": {"short": ["……"], "long": ["沈黙が流れる"]}},
             "glance": {"away": ["視線を逸らす"]},

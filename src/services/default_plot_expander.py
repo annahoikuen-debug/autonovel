@@ -1,4 +1,5 @@
 """後方互換 shim: 実体は src/engine/default_plot_expander.py に移設済み。"""
+
 from __future__ import annotations
 
 

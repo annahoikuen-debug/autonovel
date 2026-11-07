@@ -15,7 +15,6 @@ def format_thought_event(step: AgentThoughtStep) -> str:
     return f"event: progress\ndata: {payload}\n\n"
 
 
-
 async def task_event_generator(task_id: str) -> AsyncGenerator[str, None]:
     """
     Server-Sent Events (SSE) 用のタスク進捗イベントジェネレータ。
@@ -37,9 +36,7 @@ async def task_event_generator(task_id: str) -> AsyncGenerator[str, None]:
                 db = AppContainer.db()
                 try:
                     async with db.get_session() as session:
-                        stmt = select(InternalState).where(
-                            InternalState.key == f"task_status:{task_id}"
-                        )
+                        stmt = select(InternalState).where(InternalState.key == f"task_status:{task_id}")
                         result = await session.execute(stmt)
                         row = result.scalar_one_or_none()
                         if row:
@@ -134,9 +131,7 @@ async def _sqlite_polling_fallback(task_id: str) -> AsyncGenerator[str, None]:
 
                         state = json.loads(val)
                         if not state.get("is_running", True):
-                            logger.info(
-                                f"[SSE] Task {task_id} completed. Closing database polling."
-                            )
+                            logger.info(f"[SSE] Task {task_id} completed. Closing database polling.")
                             break
         except Exception as e:
             logger.error(f"[SSE] Database polling error: {e}")

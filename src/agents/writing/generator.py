@@ -1,5 +1,6 @@
 # src/agents/writing/generator.py
 """WritingGenerator - 本文生成の実装ロジック"""
+
 from __future__ import annotations
 
 import logging
@@ -77,6 +78,7 @@ class WritingGenerator:
         # 第1話〜第3話はOpeningBoosterAgentを使用
         if ep_num in (1, 2, 3):
             from src.models.opening_booster import OpeningEpisodeConfig
+
             config = OpeningEpisodeConfig(
                 ep_num=ep_num,
                 target_word_count=target_word_count,
@@ -105,6 +107,7 @@ class WritingGenerator:
             # 第4話以降はEpisodeWriter（Beat-to-Scene分割執筆）を使用
             # ContextBuilderが必要なので、ここでは簡易版として書く
             from src.agents.context_builder_agent import ContextBuilderAgent
+
             context_builder = ContextBuilderAgent(
                 repo=self.repo,
                 llm=self.llm,
@@ -202,6 +205,7 @@ class WritingGenerator:
         """第1話〜第3話の場合は OpeningBoosterAgent へ委譲し、それ以外は None を返す"""
         if ep_num in (1, 2, 3):
             from src.models.opening_booster import OpeningEpisodeConfig
+
             config = OpeningEpisodeConfig(
                 ep_num=ep_num,
                 target_word_count=target_word_count,

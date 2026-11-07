@@ -103,9 +103,7 @@ class GeminiProvider(LLMProvider):
                 temp=temperature,
                 **kwargs,
             )
-            return LLMResponse(
-                content=content, metadata=metadata, usage=self._parse_usage(usage), success=True
-            )
+            return LLMResponse(content=content, metadata=metadata, usage=self._parse_usage(usage), success=True)
         except Exception as e:
             mapped = self._map_exception(e)
             raise mapped from e

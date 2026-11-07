@@ -34,9 +34,7 @@ class PromptService(ABC):
         ...
 
     @abstractmethod
-    async def get_active_version(
-        self, book_id: int, prompt_key: str
-    ) -> PromptVersionDbModel | None:
+    async def get_active_version(self, book_id: int, prompt_key: str) -> PromptVersionDbModel | None:
         """Get the currently active prompt version."""
         ...
 

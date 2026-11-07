@@ -1,4 +1,5 @@
 """SQLiteとPostgreSQL pgvectorを透過的に吸収するVector型。"""
+
 from __future__ import annotations
 import json
 from typing import Any, List, Optional
@@ -7,6 +8,7 @@ from sqlalchemy.types import TypeDecorator
 
 try:
     from pgvector.sqlalchemy import Vector as PGVector
+
     HAS_PGVECTOR = True
 except ImportError:
     PGVector = None

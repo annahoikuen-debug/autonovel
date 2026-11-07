@@ -1,4 +1,5 @@
 """Book (ORM) と Novel (Domain Entity) の双方向マッパー。"""
+
 from __future__ import annotations
 
 from src.infrastructure.database.models.book import Book

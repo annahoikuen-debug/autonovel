@@ -230,9 +230,7 @@ async def _async_request(method: str, url: str, **kwargs: Any) -> httpx.Response
         return response
     except (httpx.ConnectError, httpx.TimeoutException) as e:
         logger.error(f"Connection error requesting {method} {url}: {e}")
-        raise APIException(
-            f"バックエンドAPIサーバーに接続できません。 (詳細: {e})", recoverable=False
-        )
+        raise APIException(f"バックエンドAPIサーバーに接続できません。 (詳細: {e})", recoverable=False)
     except httpx.HTTPStatusError as e:
         if audit_logger:
             audit_logger.log(
@@ -337,9 +335,7 @@ async def get_task_status(task_id: str, timeout: float = ASYNC_REQUEST_TIMEOUT) 
         エラー情報を含む辞書を返す。
     """
     try:
-        response = await _async_request(
-            "GET", f"{API_BASE_URL}/tasks/{task_id}/status", timeout=timeout
-        )
+        response = await _async_request("GET", f"{API_BASE_URL}/tasks/{task_id}/status", timeout=timeout)
         return (
             response.json()
             if response
@@ -446,9 +442,7 @@ async def retry_failed_episodes(
     return response.json().get("task_id") if response else None
 
 
-async def expand_plots(
-    api_key: str, config: dict, book_id: int, gen_from: int, gen_to: int
-) -> str | None:
+async def expand_plots(api_key: str, config: dict, book_id: int, gen_from: int, gen_to: int) -> str | None:
     """プロットを拡張するタスクを起動し、task_id を返す。"""
     payload = {
         "api_key": api_key,
@@ -475,9 +469,7 @@ async def critique_optimize(api_key: str, config: dict, book_id: int) -> str | N
     return response.json().get("task_id") if response else None
 
 
-async def import_chapter(
-    api_key: str, book_id: int, ep_num: int, import_text: str, do_refine: bool
-) -> str | None:
+async def import_chapter(api_key: str, book_id: int, ep_num: int, import_text: str, do_refine: bool) -> str | None:
     """チャプターを外部テキストから取り込むタスクを起動し、task_id を返す。"""
     payload = {
         "api_key": api_key,
@@ -547,9 +539,7 @@ async def get_issues(book_id: int) -> list[dict[str, Any]]:
 async def resolve_issue(issue_id: int, action: str, api_key: str) -> dict[str, Any]:
     """課題を解決する。結果の辞書を返す。"""
     payload = {"action": action, "api_key": api_key}
-    response = await _async_request(
-        "POST", f"{API_BASE_URL}/issues/{issue_id}/resolve", json=payload
-    )
+    response = await _async_request("POST", f"{API_BASE_URL}/issues/{issue_id}/resolve", json=payload)
     return response.json() if response else {"status": "error", "message": "No response"}
 
 
@@ -594,9 +584,7 @@ async def get_prompt_versions(book_id: int) -> list[dict[str, Any]]:
 async def rollback_prompt_version(book_id: int, version_id: int) -> dict[str, Any]:
     """プロンプトを指定バージョンにロールバックする。"""
     payload = {"version_id": version_id}
-    response = await _async_request(
-        "POST", f"{API_BASE_URL}/prompts/rollback/{book_id}", json=payload
-    )
+    response = await _async_request("POST", f"{API_BASE_URL}/prompts/rollback/{book_id}", json=payload)
     return response.json() if response else {"success": False, "error": "No response"}
 
 

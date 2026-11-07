@@ -4,6 +4,7 @@ calibre等の外部CLIツールやC言語拡張不要。
 標準ライブラリ（zipfile, io, uuid）のみで、Kindle Direct Publishing (KDP) および
 楽天Koboの仕様（EPUB 3.0 / vertical-rl / 右開き）に完全準拠した電子書籍バイナリを出力する。
 """
+
 from __future__ import annotations
 
 import io
@@ -57,9 +58,7 @@ class PureCommercialEpubBuilder:
             # 3. OEBPS/styles/vertical.css
             zf.writestr("OEBPS/styles/vertical.css", COMMERCIAL_VERTICAL_CSS)
 
-            manifest_items = [
-                '<item id="css" href="styles/vertical.css" media-type="text/css"/>'
-            ]
+            manifest_items = ['<item id="css" href="styles/vertical.css" media-type="text/css"/>']
             spine_items = []
 
             # 4. 表紙 (cover)
@@ -83,14 +82,12 @@ class PureCommercialEpubBuilder:
 </body>
 </html>"""
                 zf.writestr("OEBPS/cover.xhtml", cover_html)
-                manifest_items.append(
-                    '<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>'
-                )
+                manifest_items.append('<item id="cover" href="cover.xhtml" media-type="application/xhtml+xml"/>')
                 spine_items.append('<itemref idref="cover"/>')
 
             # 中扉ページ (中扉)
             middle_page_id = "middle-page"
-            middle_page_html = f'''<?xml version="1.0" encoding="UTF-8"?>
+            middle_page_html = f"""<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" xml:lang="ja">
 <head>
@@ -104,9 +101,11 @@ class PureCommercialEpubBuilder:
     <div class="author">{author}</div>
   </div>
 </body>
-</html>'''
+</html>"""
             zf.writestr(f"OEBPS/{middle_page_id}.xhtml", middle_page_html)
-            manifest_items.append(f'<item id="{middle_page_id}" href="{middle_page_id}.xhtml" media-type="application/xhtml+xml"/>')
+            manifest_items.append(
+                f'<item id="{middle_page_id}" href="{middle_page_id}.xhtml" media-type="application/xhtml+xml"/>'
+            )
             spine_items.append(f'<itemref idref="{middle_page_id}"/>')
 
             # 5. 各章のXHTML生成
@@ -128,9 +127,7 @@ class PureCommercialEpubBuilder:
 </body>
 </html>"""
                 zf.writestr(f"OEBPS/{ch_id}.xhtml", xhtml)
-                manifest_items.append(
-                    f'<item id="{ch_id}" href="{ch_id}.xhtml" media-type="application/xhtml+xml"/>'
-                )
+                manifest_items.append(f'<item id="{ch_id}" href="{ch_id}.xhtml" media-type="application/xhtml+xml"/>')
                 spine_items.append(f'<itemref idref="{ch_id}"/>')
 
             # 6. OEBPS/content.opf (縦書き・右開き指定: page-progression-direction="rtl")

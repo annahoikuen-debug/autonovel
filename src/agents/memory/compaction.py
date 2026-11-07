@@ -1,4 +1,5 @@
 """Compaction policy for CoreMemory eviction and summarization."""
+
 from __future__ import annotations
 
 import re
@@ -34,7 +35,7 @@ class CompactionPolicy:
         # 1. 5話以上更新されていない感情を Archival へ退避して Core から削除
         for pair_key, emotions in list(core_memory.character_emotions.items()):
             updated_str = emotions.get("updated", "")
-            match = re.search(r'ep(\d+)', updated_str)
+            match = re.search(r"ep(\d+)", updated_str)
             if match:
                 up_ep = int(match.group(1))
                 if (current_episode - up_ep) >= self.stale_episode_threshold:

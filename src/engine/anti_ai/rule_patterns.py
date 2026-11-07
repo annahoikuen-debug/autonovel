@@ -132,9 +132,7 @@ GENERIC_VOCABULARY_TERMS: tuple[str, ...] = (
     "巨大な",
     "豊富な",
 )
-GENERIC_VOCABULARY_PATTERN: Pattern[str] = re.compile(
-    "|".join(re.escape(t) for t in GENERIC_VOCABULARY_TERMS)
-)
+GENERIC_VOCABULARY_PATTERN: Pattern[str] = re.compile("|".join(re.escape(t) for t in GENERIC_VOCABULARY_TERMS))
 
 __all__ = [
     "TRANSITION_OVERUSE_PATTERNS",

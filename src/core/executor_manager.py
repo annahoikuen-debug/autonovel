@@ -21,14 +21,10 @@ class ExecutorManager:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
             # I/Oバウンド処理用: 待機時間が長いため、多めのスレッドを確保
-            cls._instance.io_executor = ThreadPoolExecutor(
-                max_workers=32, thread_name_prefix="LLM_IO_Pool"
-            )
+            cls._instance.io_executor = ThreadPoolExecutor(max_workers=32, thread_name_prefix="LLM_IO_Pool")
             # CPUバウンド処理用: 計算負荷が高いため、コア数に近い数に制限してコンテキストスイッチを抑制
             # (Embedding計算などの重い処理用)
-            cls._instance.cpu_executor = ThreadPoolExecutor(
-                max_workers=8, thread_name_prefix="LLM_CPU_Pool"
-            )
+            cls._instance.cpu_executor = ThreadPoolExecutor(max_workers=8, thread_name_prefix="LLM_CPU_Pool")
             logger.info("ExecutorManager initialized with IO and CPU pools.")
         return cls._instance
 
@@ -54,12 +50,8 @@ class ExecutorManager:
         # shutdown 後もシングルトンインスタンスを再利用可能にする。
         # （shutdown 済み executor の再利用は RuntimeError を起こすため、
         #  新規プールを作り直して冪等にする）
-        self.io_executor = ThreadPoolExecutor(
-            max_workers=32, thread_name_prefix="LLM_IO_Pool"
-        )
-        self.cpu_executor = ThreadPoolExecutor(
-            max_workers=8, thread_name_prefix="LLM_CPU_Pool"
-        )
+        self.io_executor = ThreadPoolExecutor(max_workers=32, thread_name_prefix="LLM_IO_Pool")
+        self.cpu_executor = ThreadPoolExecutor(max_workers=8, thread_name_prefix="LLM_CPU_Pool")
 
 
 # シングルトンインスタンスを提供

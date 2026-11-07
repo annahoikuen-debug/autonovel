@@ -63,10 +63,7 @@ class InMemoryForeshadowingRepository(ForeshadowingRepository):
         """
         with self._lock:
             foreshadowings = self._store.get(book_id, [])
-            unresolved = [
-                fs for fs in foreshadowings
-                if fs.resolution_volume is None and fs.resolution_episode is None
-            ]
+            unresolved = [fs for fs in foreshadowings if fs.resolution_volume is None and fs.resolution_episode is None]
             return unresolved.copy()
 
     def resolve(self, foreshadowing_id: str, volume: int, episode: int) -> None:
@@ -111,8 +108,4 @@ class InMemoryForeshadowingRepository(ForeshadowingRepository):
 
             balance = hang_count - resolve_count
 
-            return {
-                "hang_count": hang_count,
-                "resolve_count": resolve_count,
-                "balance": balance
-            }
+            return {"hang_count": hang_count, "resolve_count": resolve_count, "balance": balance}

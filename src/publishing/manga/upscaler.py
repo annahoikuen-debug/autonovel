@@ -1,4 +1,5 @@
 """Local super-resolution (upscaling) pipeline for manga sheets."""
+
 from __future__ import annotations
 
 import logging
@@ -30,11 +31,7 @@ class MangaUpscaler:
     ) -> Path:
         """マンガシートを高解像度化する。"""
         if output_image_path is None:
-            output_image_path = (
-                input_image_path.parent.parent
-                / "upscaled"
-                / f"upscaled_{input_image_path.name}"
-            )
+            output_image_path = input_image_path.parent.parent / "upscaled" / f"upscaled_{input_image_path.name}"
 
         output_image_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -53,10 +50,14 @@ class MangaUpscaler:
         try:
             cmd = [
                 self.executable_path,
-                "-i", str(input_path),
-                "-o", str(output_path),
-                "-s", str(self.scale_factor),
-                "-n", "realesrgan-x4plus-anime",
+                "-i",
+                str(input_path),
+                "-o",
+                str(output_path),
+                "-s",
+                str(self.scale_factor),
+                "-n",
+                "realesrgan-x4plus-anime",
             ]
             res = subprocess.run(cmd, capture_output=True, timeout=60)
             if res.returncode == 0 and output_path.exists():
@@ -85,9 +86,7 @@ class MangaUpscaler:
         upscaled = enhancer.enhance(1.15)
 
         # アンシャープマスクで線画を引き締める
-        upscaled = upscaled.filter(
-            ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3)
-        )
+        upscaled = upscaled.filter(ImageFilter.UnsharpMask(radius=2, percent=150, threshold=3))
 
         upscaled.save(output_path, format="PNG")
         logger.info("PIL super-resolution completed: %s (%dx%d)", output_path, new_w, new_h)

@@ -1,4 +1,5 @@
 """プロジェクト全体で使用する定数値"""
+
 from pathlib import Path
 from typing import Final
 
@@ -71,4 +72,3 @@ RATE_LIMIT_MAX_REQUESTS: Final[int] = 100
 RATE_LIMIT_WINDOW_SECONDS: Final[int] = 60
 RATE_LIMIT_STORE_MAX_ENTRIES: Final[int] = 10000
 MAX_CONCURRENT_API_CALLS: Final[int] = 5
-

@@ -11,6 +11,7 @@ from src.domain.value_objects.ids import NovelId, AuditId
 
 class AuditCategory(Enum):
     """Audit finding category."""
+
     LOGIC = "logic"
     STYLE = "style"
     CHARACTER = "character"
@@ -25,6 +26,7 @@ class AuditCategory(Enum):
 
 class AuditSeverity(Enum):
     """Audit finding severity."""
+
     CRITICAL = "critical"
     HIGH = "high"
     MEDIUM = "medium"
@@ -34,6 +36,7 @@ class AuditSeverity(Enum):
 
 class AuditStatus(Enum):
     """Audit finding status."""
+
     OPEN = "open"
     ACKNOWLEDGED = "acknowledged"
     IN_PROGRESS = "in_progress"
@@ -44,6 +47,7 @@ class AuditStatus(Enum):
 
 class AuditType(Enum):
     """Audit type."""
+
     LOGICAL = "logical"
     STYLE = "style"
     COMPREHENSIVE = "comprehensive"
@@ -53,6 +57,7 @@ class AuditType(Enum):
 @dataclass
 class AuditFinding:
     """Individual audit finding."""
+
     id: AuditId
     category: AuditCategory
     severity: AuditSeverity
@@ -151,6 +156,7 @@ class AuditFinding:
 @dataclass
 class AuditResult:
     """Audit result aggregate - contains all findings for an episode."""
+
     id: AuditId
     novel_id: NovelId
     episode_number: int
@@ -232,11 +238,7 @@ class AuditResult:
             AuditSeverity.INFO: 1,
         }
 
-        total_deduction = sum(
-            severity_weights.get(f.severity, 5)
-            for f in self.findings
-            if f.is_open()
-        )
+        total_deduction = sum(severity_weights.get(f.severity, 5) for f in self.findings if f.is_open())
 
         self.overall_score = max(0, 100 - total_deduction)
 

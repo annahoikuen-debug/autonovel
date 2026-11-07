@@ -43,9 +43,7 @@ class AsyncDbSaveStrategy(SaveStrategy):
             return
         try:
             loop = asyncio.get_running_loop()
-            task = loop.create_task(
-                state.repo.db.save_internal_state(f"task_status:{state.task_id}", state_json, now)
-            )
+            task = loop.create_task(state.repo.db.save_internal_state(f"task_status:{state.task_id}", state_json, now))
             task.add_done_callback(
                 lambda t: (
                     logger.error(f"[ProgressState] DB Save error: {t.exception()}")
@@ -259,11 +257,7 @@ class BackgroundReporter:
 
     def report_exception(self, e: Exception, context: str = "") -> None:
         """例外をキャッチしてエラーとして報告する"""
-        error_msg = (
-            f"{context} - {type(e).__name__}: {str(e)}"
-            if context
-            else f"{type(e).__name__}: {str(e)}"
-        )
+        error_msg = f"{context} - {type(e).__name__}: {str(e)}" if context else f"{type(e).__name__}: {str(e)}"
         self.logger.exception(f"Unhandled exception in background task: {error_msg}")
         self.state.update(message="🚨 エラーが発生しました", error=error_msg)
 
@@ -303,14 +297,11 @@ class StatusReporter:
             self.state.streaming_text = text
             self.state._save_to_db()
 
+
 def report_exception(self, e: Exception, context: str = "") -> None:
-         """例外をキャッチしてエラーとして報告する。"""
-         error_msg = (
-             f"{context} - {type(e).__name__}: {str(e)}"
-             if context
-             else f"{type(e).__name__}: {str(e)}"
-         )
-         self.report(error_msg, level="error")
+    """例外をキャッチしてエラーとして報告する。"""
+    error_msg = f"{context} - {type(e).__name__}: {str(e)}" if context else f"{type(e).__name__}: {str(e)}"
+    self.report(error_msg, level="error")
 
 
 # ==========================================
@@ -341,14 +332,11 @@ class BackgroundTaskManager:
             progress_state = ProgressState(
                 is_running=True,
                 task_id=task_id,
-                repo=None  # 実際のリポジトリは必要に応じて設定
+                repo=None,  # 実際のリポジトリは必要に応じて設定
             )
 
             # 初期メッセージを設定
-            progress_state.update(
-                message=f"タスク '{task_name}' を開始しました",
-                sub_message="初期化中..."
-            )
+            progress_state.update(message=f"タスク '{task_name}' を開始しました", sub_message="初期化中...")
 
             # タスクを登録
             self._tasks[task_id] = progress_state
@@ -368,11 +356,7 @@ class BackgroundTaskManager:
             if task_id in self._tasks:
                 state = self._tasks[task_id]
                 # 進捗を更新（total_stepsを100として、current_stepをprogressに設定）
-                state.update(
-                    message=message,
-                    step=progress,
-                    total=100
-                )
+                state.update(message=message, step=progress, total=100)
 
     def get_status(self, task_id: str) -> dict[str, Any] | None:
         """
@@ -401,7 +385,7 @@ class BackgroundTaskManager:
                     "result_data": state.result_data,
                     "start_time": state.start_time,
                     "last_updated": state.last_updated,
-                    "token_usage": state.token_usage.copy()
+                    "token_usage": state.token_usage.copy(),
                 }
             return None
 

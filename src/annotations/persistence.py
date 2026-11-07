@@ -1,4 +1,5 @@
 """Annotation persistence adapter - saves beats to Vector/Graph/Log stores."""
+
 from __future__ import annotations
 
 from typing import Optional
@@ -58,6 +59,7 @@ class AnnotationPersistence:
             # 安全のために文字列の場合も対応
             if isinstance(beat.emotion, str):
                 from src.pipeline.emotional_residue import EmotionType
+
                 emotion = EmotionType(beat.emotion)
             else:
                 emotion = beat.emotion
@@ -68,7 +70,7 @@ class AnnotationPersistence:
                 emotion_type=emotion,
                 value=beat.delta,
                 confidence=beat.confidence,
-                evidence_span=f"[beat:{emotion.value}{beat.delta:+.1f} cause=\"{beat.cause}\"]",
+                evidence_span=f'[beat:{emotion.value}{beat.delta:+.1f} cause="{beat.cause}"]',
                 episode_id=f"ep{episode}",
                 cause=beat.cause,
                 hidden=beat.hidden,
@@ -95,14 +97,16 @@ class AnnotationPersistence:
         }
         props[beat.emotion.value] = beat.delta
 
-        props.update({
-            "cause": beat.cause,
-            "episode": episode,
-            "beat_id": beat.beat_id,
-            "confidence": beat.confidence,
-            "hidden": beat.hidden,
-            "source_type": "annotation",
-        })
+        props.update(
+            {
+                "cause": beat.cause,
+                "episode": episode,
+                "beat_id": beat.beat_id,
+                "confidence": beat.confidence,
+                "hidden": beat.hidden,
+                "source_type": "annotation",
+            }
+        )
 
         self.graph_store.upsert_edge(
             source=beat.source,

@@ -16,9 +16,7 @@ class InternalLogicValidator:
      kwargs 経由で注入できる（LogicalAuditor と同様の設計）。
     """
 
-    def __init__(
-        self, repo: Any = None, llm: Any = None, ctx_mgr: Any = None, pm: Any = None, **kwargs
-    ):
+    def __init__(self, repo: Any = None, llm: Any = None, ctx_mgr: Any = None, pm: Any = None, **kwargs):
         self.repo = repo
         self.ctx_mgr = ctx_mgr
         self.prompt_manager = pm
@@ -34,14 +32,10 @@ class InternalLogicValidator:
 
         self.wave_analyzer = None
 
-    async def validate_alibi_and_timeline(
-        self, blueprint: str, script: str
-    ) -> tuple[bool, list[str]]:
+    async def validate_alibi_and_timeline(self, blueprint: str, script: str) -> tuple[bool, list[str]]:
         """アリバイとタイムラインの整合性を検証する（スタブ）。"""
         return True, []
 
-    async def check_information_asymmetry(
-        self, past_info: str, current_info: str
-    ) -> tuple[bool, list[str]]:
+    async def check_information_asymmetry(self, past_info: str, current_info: str) -> tuple[bool, list[str]]:
         """情報の非対称性を検証する（スタブ）。"""
         return True, []

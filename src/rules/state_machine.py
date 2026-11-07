@@ -3,6 +3,7 @@
 ペアごとの感情状態を管理する。
 内部状態: Dict[(source, target, EmotionType), float]
 """
+
 from __future__ import annotations
 
 from typing import Dict, Iterator, Optional, Tuple
@@ -80,11 +81,7 @@ class EmotionalStateMachine:
 
     def get_state(self, source: str, target: str) -> Dict[EmotionType, float]:
         """特定ペアの全感情状態を取得。"""
-        return {
-            emo: val
-            for (s, t, emo), val in self._state.items()
-            if s == source and t == target
-        }
+        return {emo: val for (s, t, emo), val in self._state.items() if s == source and t == target}
 
     # ------------------------------------------------------------------
     # 減衰・スナップショット
@@ -128,7 +125,9 @@ class EmotionalStateMachine:
             result.setdefault(pair_key, {})[emo.value] = val
         return result
 
-    def restore(self, snapshot: Dict[str, Dict[str, float]], decays: Optional[Dict[str, Dict[str, float]]] = None) -> None:
+    def restore(
+        self, snapshot: Dict[str, Dict[str, float]], decays: Optional[Dict[str, Dict[str, float]]] = None
+    ) -> None:
         """スナップショットから状態を復元する。
 
         Args:

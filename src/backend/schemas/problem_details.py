@@ -1,4 +1,5 @@
 """RFC 7807 Problem Details スキーマ。"""
+
 from __future__ import annotations
 from typing import Any, Optional
 from pydantic import BaseModel, Field
@@ -6,6 +7,7 @@ from pydantic import BaseModel, Field
 
 class ProblemDetails(BaseModel):
     """RFC 7807 に準拠した構造化エラーレスポンス。"""
+
     type: str = Field(
         default="about:blank",
         description="エラー種別を識別するURI参照",

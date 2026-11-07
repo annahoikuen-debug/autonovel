@@ -1,4 +1,5 @@
 """Violation Span Extractor for localized cadence reformation."""
+
 from __future__ import annotations
 
 import re
@@ -9,6 +10,7 @@ from typing import List
 @dataclass
 class TargetSpan:
     """Localized text window containing cadence violations with surrounding context."""
+
     start_sentence_idx: int
     end_sentence_idx: int
     target_sentences: List[str]
@@ -62,14 +64,16 @@ class ViolationSpanExtractor:
                     prec = sentences[start_idx - 1].strip() if start_idx > 0 else ""
                     foll = sentences[end_idx + 1].strip() if end_idx + 1 < len(sentences) else ""
 
-                    spans.append(TargetSpan(
-                        start_sentence_idx=start_idx,
-                        end_sentence_idx=end_idx,
-                        target_sentences=sentences[start_idx:end_idx + 1],
-                        preceding_context=prec,
-                        following_context=foll,
-                        violation_type="consecutive_ta"
-                    ))
+                    spans.append(
+                        TargetSpan(
+                            start_sentence_idx=start_idx,
+                            end_sentence_idx=end_idx,
+                            target_sentences=sentences[start_idx : end_idx + 1],
+                            preceding_context=prec,
+                            following_context=foll,
+                            violation_type="consecutive_ta",
+                        )
+                    )
                     # スパンを消費したのでリセット
                     consecutive_indices.clear()
             else:
@@ -77,25 +81,18 @@ class ViolationSpanExtractor:
 
         return spans
 
-    def splice_span(
-        self,
-        sentences: List[str],
-        span: TargetSpan,
-        refined_text: str
-    ) -> List[str]:
+    def splice_span(self, sentences: List[str], span: TargetSpan, refined_text: str) -> List[str]:
         """Splice refined text back into the sentence list at the exact span location."""
         refined_clean = refined_text.strip()
         if not refined_clean:
             return sentences
 
         # 句点で文分割してリスト化
-        refined_sentences = [
-            s.strip() for s in re.split(r"(?<=[。！？!?])", refined_clean) if s.strip()
-        ]
+        refined_sentences = [s.strip() for s in re.split(r"(?<=[。！？!?])", refined_clean) if s.strip()]
         if not refined_sentences:
             refined_sentences = [refined_clean]
 
-        prefix = sentences[:span.start_sentence_idx]
-        suffix = sentences[span.end_sentence_idx + 1:]
+        prefix = sentences[: span.start_sentence_idx]
+        suffix = sentences[span.end_sentence_idx + 1 :]
 
         return prefix + refined_sentences + suffix

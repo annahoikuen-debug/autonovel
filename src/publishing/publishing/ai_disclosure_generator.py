@@ -1,6 +1,7 @@
 from __future__ import annotations
 from src.models.publishing_assistant import TargetPlatform
 
+
 class AIDisclosureGenerator:
     """文化庁ガイドラインおよび各プラットフォーム規約に適合した
     AI利用明記文を自動生成するジェネレーター。

@@ -54,9 +54,7 @@ async def get_pending_patches(book_id: int, current_user: User = Depends(get_cur
 
 
 @router.post("/patches/{patch_id}/approve", dependencies=[Depends(get_current_user)])
-async def approve_patch(
-    patch_id: int, req: Any | None = None, current_user: User = Depends(get_current_user)
-):
+async def approve_patch(patch_id: int, req: Any | None = None, current_user: User = Depends(get_current_user)):
     from src.backend.database.uow import UnitOfWork
 
     async with UnitOfWork(AppContainer.db()) as uow:
@@ -66,9 +64,7 @@ async def approve_patch(
         result = await uow.session.execute(select(PendingPatch).where(PendingPatch.id == patch_id))
         patch = result.scalar_one_or_none()
         if not patch:
-            raise NotFoundError(
-                "Patch not found", resource_type="PendingPatch", resource_id=str(patch_id)
-            )
+            raise NotFoundError("Patch not found", resource_type="PendingPatch", resource_id=str(patch_id))
 
         # 所有権を確認
         await verify_book_ownership(patch.book_id, current_user, uow)
@@ -80,9 +76,7 @@ async def approve_patch(
         if patch.patch_type == "config":
             validation = PatchValidator.validate_config_patch(str(patch.patch_content))
             if not validation.is_safe:
-                raise ValidationError(
-                    f"Config patch validation failed: {', '.join(validation.errors)}"
-                )
+                raise ValidationError(f"Config patch validation failed: {', '.join(validation.errors)}")
 
             # GlobalConfigに即時適用
             if validation.sanitized_patch is None:
@@ -93,9 +87,7 @@ async def approve_patch(
         elif patch.patch_type == "prompt":
             validation = PatchValidator.validate_prompt_patch(str(patch.patch_content))
             if not validation.is_safe:
-                raise ValidationError(
-                    f"Prompt patch validation failed: {', '.join(validation.errors)}"
-                )
+                raise ValidationError(f"Prompt patch validation failed: {', '.join(validation.errors)}")
 
             # プロンプトパッチをアクティブ化する
             ver_res = await uow.session.execute(
@@ -121,9 +113,7 @@ async def approve_patch(
 
 
 @router.post("/patches/{patch_id}/reject", dependencies=[Depends(get_current_user)])
-async def reject_patch(
-    patch_id: int, req: Any | None = None, current_user: User = Depends(get_current_user)
-):
+async def reject_patch(patch_id: int, req: Any | None = None, current_user: User = Depends(get_current_user)):
     from src.backend.database.uow import UnitOfWork
 
     async with UnitOfWork(AppContainer.db()) as uow:
@@ -133,9 +123,7 @@ async def reject_patch(
         result = await uow.session.execute(select(PendingPatch).where(PendingPatch.id == patch_id))
         patch = result.scalar_one_or_none()
         if not patch:
-            raise NotFoundError(
-                "Patch not found", resource_type="PendingPatch", resource_id=str(patch_id)
-            )
+            raise NotFoundError("Patch not found", resource_type="PendingPatch", resource_id=str(patch_id))
 
         # 所有権を確認
         await verify_book_ownership(patch.book_id, current_user, uow)
@@ -160,9 +148,7 @@ async def edit_patch(patch_id: int, req: Any, current_user: User = Depends(get_c
         result = await uow.session.execute(select(PendingPatch).where(PendingPatch.id == patch_id))
         patch = result.scalar_one_or_none()
         if not patch:
-            raise NotFoundError(
-                "Patch not found", resource_type="PendingPatch", resource_id=str(patch_id)
-            )
+            raise NotFoundError("Patch not found", resource_type="PendingPatch", resource_id=str(patch_id))
 
         # 所有権を確認
         await verify_book_ownership(patch.book_id, current_user, uow)
@@ -174,15 +160,11 @@ async def edit_patch(patch_id: int, req: Any, current_user: User = Depends(get_c
         if patch.patch_type == "config":
             validation = PatchValidator.validate_config_patch(str(req.content))
             if not validation.is_safe:
-                raise ValidationError(
-                    f"Config patch validation failed: {', '.join(validation.errors)}"
-                )
+                raise ValidationError(f"Config patch validation failed: {', '.join(validation.errors)}")
         elif patch.patch_type == "prompt":
             validation = PatchValidator.validate_prompt_patch(str(req.content))
             if not validation.is_safe:
-                raise ValidationError(
-                    f"Prompt patch validation failed: {', '.join(validation.errors)}"
-                )
+                raise ValidationError(f"Prompt patch validation failed: {', '.join(validation.errors)}")
 
         # パッチ内容を書き換え
         patch.patch_content = req.content
@@ -229,9 +211,7 @@ async def get_review_detail(review_id: int, current_user: User = Depends(get_cur
             raise RuntimeError("Database session not initialized")
         review = await uow.misc.get_patch_review(review_id)
         if not review:
-            raise NotFoundError(
-                "Review not found", resource_type="PatchReview", resource_id=str(review_id)
-            )
+            raise NotFoundError("Review not found", resource_type="PatchReview", resource_id=str(review_id))
 
         # 所有権を確認 (reviewからbook_idを取得して確認)
         await verify_book_ownership(review["book_id"], current_user, uow)
@@ -239,9 +219,7 @@ async def get_review_detail(review_id: int, current_user: User = Depends(get_cur
 
 
 @router.post("/patches/reviews/{review_id}/approve", dependencies=[Depends(get_current_user)])
-async def approve_review(
-    review_id: int, req: ReviewActionRequest, current_user: User = Depends(get_current_user)
-):
+async def approve_review(review_id: int, req: ReviewActionRequest, current_user: User = Depends(get_current_user)):
     """レビューを承認"""
     from src.backend.database.uow import UnitOfWork
 
@@ -250,9 +228,7 @@ async def approve_review(
             raise RuntimeError("Database session not initialized")
         review = await uow.misc.get_patch_review(review_id)
         if not review:
-            raise NotFoundError(
-                "Review not found", resource_type="PatchReview", resource_id=str(review_id)
-            )
+            raise NotFoundError("Review not found", resource_type="PatchReview", resource_id=str(review_id))
 
         # 所有権を確認
         await verify_book_ownership(review["book_id"], current_user, uow)
@@ -280,9 +256,7 @@ async def approve_review(
 
 
 @router.post("/patches/reviews/{review_id}/reject", dependencies=[Depends(get_current_user)])
-async def reject_review(
-    review_id: int, req: ReviewActionRequest, current_user: User = Depends(get_current_user)
-):
+async def reject_review(review_id: int, req: ReviewActionRequest, current_user: User = Depends(get_current_user)):
     """レビューを差し戻し"""
     from src.backend.database.uow import UnitOfWork
 
@@ -294,9 +268,7 @@ async def reject_review(
             raise RuntimeError("Database session not initialized")
         review = await uow.misc.get_patch_review(review_id)
         if not review:
-            raise NotFoundError(
-                "Review not found", resource_type="PatchReview", resource_id=str(review_id)
-            )
+            raise NotFoundError("Review not found", resource_type="PatchReview", resource_id=str(review_id))
 
         # 所有権を確認
         await verify_book_ownership(review["book_id"], current_user, uow)
@@ -324,9 +296,7 @@ async def reject_review(
 
 
 @router.post("/patches/reviews/{review_id}/revise", dependencies=[Depends(get_current_user)])
-async def revise_review(
-    review_id: int, req: ReviseReviewRequest, current_user: User = Depends(get_current_user)
-):
+async def revise_review(review_id: int, req: ReviseReviewRequest, current_user: User = Depends(get_current_user)):
     """レビューに修正案を提示（再レビュー要求）"""
     from src.backend.database.uow import UnitOfWork
 
@@ -335,9 +305,7 @@ async def revise_review(
             raise RuntimeError("Database session not initialized")
         review = await uow.misc.get_patch_review(review_id)
         if not review:
-            raise NotFoundError(
-                "Review not found", resource_type="PatchReview", resource_id=str(review_id)
-            )
+            raise NotFoundError("Review not found", resource_type="PatchReview", resource_id=str(review_id))
 
         # 所有権を確認
         await verify_book_ownership(review["book_id"], current_user, uow)
@@ -430,9 +398,7 @@ async def patch_paragraph(
             raise RuntimeError("Database session not initialized")
 
         # episode_id から chapter を取得し book_id を特定
-        result = await uow.session.execute(
-            select(Chapter).where(Chapter.id == episode_id)
-        )
+        result = await uow.session.execute(select(Chapter).where(Chapter.id == episode_id))
         chapter = result.scalar_one_or_none()
         if not chapter:
             raise NotFoundError("Episode not found", resource_type="Chapter", resource_id=str(episode_id))
@@ -492,4 +458,3 @@ async def patch_paragraph(
         original_paragraph=target_para,
         patched_paragraph=patch_result.patched_text,
     )
-

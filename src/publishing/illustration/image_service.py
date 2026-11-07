@@ -31,6 +31,7 @@ class ImageService:
         resolved_key = api_key
         if not resolved_key:
             from src.backend.config import settings
+
             resolved_key = settings.get_gemini_api_key()
         if not resolved_key:
             raise ValueError(

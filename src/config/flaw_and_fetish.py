@@ -2,6 +2,7 @@
 Presets for Character Flaw, Secret Motives, and Petty Ego.
 PLAN 03: AI優等生病の外科的切除（生々しいエゴ・下品な打算・偏執的な毒気）
 """
+
 from __future__ import annotations
 
 from typing import Any

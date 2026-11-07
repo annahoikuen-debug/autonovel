@@ -63,6 +63,7 @@ async def _stream_generator(input_data: EasyModeInput, request: Request) -> Asyn
 
     llm_cfg = input_data.llm_config
     from src.llm.model_router import resolve_model_for_purpose
+
     writing_model = resolve_model_for_purpose("writing", llm_cfg)
 
     adapter = get_llm_adapter(
@@ -71,7 +72,6 @@ async def _stream_generator(input_data: EasyModeInput, request: Request) -> Asyn
         model_name=writing_model,
         base_url=llm_cfg.base_url if llm_cfg else None,
     )
-
 
     yield f"data: {json.dumps({'type': 'start'}, ensure_ascii=False)}\n\n"
 
@@ -159,9 +159,7 @@ async def stream_generation(
         input_data = body_input
     else:
         history_list = (
-            [line for line in (chapter_history or "").split("\n") if line]
-            if chapter_history is not None
-            else None
+            [line for line in (chapter_history or "").split("\n") if line] if chapter_history is not None else None
         )
         query_input = StreamQueryInput(
             chapter_history=history_list,

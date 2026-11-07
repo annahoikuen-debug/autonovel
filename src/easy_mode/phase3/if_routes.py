@@ -280,9 +280,7 @@ class IFRouteGraph:
         for node in self.nodes.values():
             for choice in node.choices:
                 if choice.target_node_id and choice.target_node_id not in self.nodes:
-                    errors.append(
-                        f"Node {node.id}: choice {choice.id} targets missing node {choice.target_node_id}"
-                    )
+                    errors.append(f"Node {node.id}: choice {choice.id} targets missing node {choice.target_node_id}")
 
         return errors
 
@@ -357,9 +355,7 @@ class IFRouteGenerator:
 
         # 最初の選択肢：物語の始まり方を選ぶ
         choices = [
-            RouteChoice(
-                id="prologue_normal", text="普通に始める", target_node_id="ep1_main", priority=10
-            ),
+            RouteChoice(id="prologue_normal", text="普通に始める", target_node_id="ep1_main", priority=10),
             RouteChoice(
                 id="prologue_flashback",
                 text="過去の回想から始める",
@@ -588,9 +584,7 @@ class IFRouteGenerator:
             return True
         return False
 
-    def _create_subroute_nodes(
-        self, ep_num: int, parent_id: str, series: SeriesResult
-    ) -> list[RouteNode]:
+    def _create_subroute_nodes(self, ep_num: int, parent_id: str, series: SeriesResult) -> list[RouteNode]:
         """サブルートノード作成"""
         nodes = []
 
@@ -696,9 +690,7 @@ class IFRouteGenerator:
             return self._create_catharsis_variant_node(node_id, series)
 
         # エンディング分岐（ハッピー、ビター、オープン等）
-        if node_id.endswith(
-            ("_happy_end", "_bittersweet", "_open_end", "_true_route", "_flag_avoid")
-        ):
+        if node_id.endswith(("_happy_end", "_bittersweet", "_open_end", "_true_route", "_flag_avoid")):
             return self._create_ending_variant_node(node_id, series)
 
         # プロローグ分岐（フラッシュバック、アクション開始等）
@@ -955,9 +947,7 @@ class IFRouteGenerator:
             ),
         }
 
-        title, desc, variant = variant_map.get(
-            node_id, ("特別な始まり", "特別な幕開け——", "special")
-        )
+        title, desc, variant = variant_map.get(node_id, ("特別な始まり", "特別な幕開け——", "special"))
 
         return RouteNode(
             id=node_id,
@@ -1076,9 +1066,7 @@ class IFRouteGenerator:
                     id=f"{node_id}_continue",
                     text="隠しルートを進む",
                     target_node_id=hidden_target,
-                    conditions=[
-                        BranchCondition("flags.hidden_unlocked", ConditionOperator.EQUALS, True)
-                    ],
+                    conditions=[BranchCondition("flags.hidden_unlocked", ConditionOperator.EQUALS, True)],
                     priority=1,
                 ),
                 RouteChoice(
@@ -1222,9 +1210,7 @@ class IFRoutePlayer:
         }
 
 
-def create_if_route_system(
-    genre: str, series: SeriesResult, preset: dict[str, Any]
-) -> IFRouteGraph:
+def create_if_route_system(genre: str, series: SeriesResult, preset: dict[str, Any]) -> IFRouteGraph:
     """IFルートシステム作成のエントリーポイント"""
     generator = IFRouteGenerator(genre, preset)
 

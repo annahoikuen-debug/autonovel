@@ -31,7 +31,6 @@ def build_metrics_router(
         return await metrics_endpoint()
 
     if huey_status is not None:
-
         # 既存の huey-sqlite-busy エンドポイントは互換性のため残却、非推奨化
         @router.get("/metrics/huey-sqlite-busy", deprecated=True)
         async def huey_sqlite_busy_metrics():

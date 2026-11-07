@@ -1,5 +1,6 @@
 # src/agents/skills/v2/enrichment_skill.py
 """EnrichmentSkill v2 - EnrichmentAgent のスキルラッパー（v2・将来のA/Bテスト用）"""
+
 from src.agents.skill_base import SkillAgent
 from src.agents.orchestrator import AgentContext, AgentResult
 from src.agents.enrichment_agent import EnrichmentAgent

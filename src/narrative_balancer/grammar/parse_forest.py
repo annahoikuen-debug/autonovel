@@ -8,6 +8,7 @@ from src.narrative_balancer.grammar.symbols import NonTerminal, Terminal
 @dataclass(frozen=True)
 class EarleyItem:
     """Represents an Earley chart item: lhs -> alpha . beta, origin."""
+
     lhs: NonTerminal
     rule: Tuple[Union[NonTerminal, Terminal], ...]
     dot: int
@@ -27,6 +28,7 @@ class EarleyItem:
 @dataclass
 class ParseForest:
     """Contains chart states and analyzed pending/completed structures."""
+
     consumed_terminals: int
     chart: List[Set[EarleyItem]] = field(default_factory=list)
     pending_nonterminals: Set[NonTerminal] = field(default_factory=set)

@@ -16,10 +16,13 @@ from src.agents.specialist_auditor_base import (
 )
 
 
-
 # Simple POS tagger patterns for Japanese
-ADJ_PATTERN = re.compile(r"(?:[^。]*?)(?:い|な)(?:だ|です|でした|だった|だっ|だろ|だろう|なら|に|な|だ|で|でし|です|だっ|たり|た|だ|だ)")
-ADV_PATTERN = re.compile(r"(?:[^。]*?)(?:に|く|で|して|も|でも|し|しい|しい|する|した|す|しろ|せよ|せず|せぬ|せん|せまい|せん)")
+ADJ_PATTERN = re.compile(
+    r"(?:[^。]*?)(?:い|な)(?:だ|です|でした|だった|だっ|だろ|だろう|なら|に|な|だ|で|でし|です|だっ|たり|た|だ|だ)"
+)
+ADV_PATTERN = re.compile(
+    r"(?:[^。]*?)(?:に|く|で|して|も|でも|し|しい|しい|する|した|す|しろ|せよ|せず|せぬ|せん|せまい|せん)"
+)
 # Verb-ending patterns for Japanese verbs (simplified)
 VERB_ENDINGS = ("う", "く", "ぐ", "す", "つ", "ぬ", "ぶ", "む", "る")
 
@@ -40,7 +43,7 @@ def _ngram_repetition(tokens: list[str], n: int = 4) -> float:
     """Fraction of repeated n-grams (0 = no repetition, 1 = all same)."""
     if len(tokens) < n:
         return 0.0
-    ngrams = [tuple(tokens[i:i+n]) for i in range(len(tokens) - n + 1)]
+    ngrams = [tuple(tokens[i : i + n]) for i in range(len(tokens) - n + 1)]
     if not ngrams:
         return 0.0
     unique = len(set(ngrams))
@@ -80,7 +83,8 @@ class CreativityAuditor(SpecialistAuditor):
         draft = ctx.get("draft_text", "") or ""
         if not draft:
             return SpecialistAuditResult(
-                "creativity", 0.0,
+                "creativity",
+                0.0,
                 feedback={"error": "no draft_text"},
                 suggestions=["Provide draft_text in context"],
             )
@@ -111,11 +115,15 @@ class CreativityAuditor(SpecialistAuditor):
         """Rule-based fallback using Type-Token Ratio, n-gram repetition, and POS diversity."""
         draft = ctx.get("draft_text", "") or ""
         if not draft:
-            return SpecialistAuditResult("creativity", 0.0, feedback={"error": "no draft_text", "fallback": "rule-based"}, degraded=True)
+            return SpecialistAuditResult(
+                "creativity", 0.0, feedback={"error": "no draft_text", "fallback": "rule-based"}, degraded=True
+            )
 
         tokens = _tokenize(draft)
         if not tokens:
-            return SpecialistAuditResult("creativity", 50.0, feedback={"tokens": 0, "fallback": "rule-based"}, degraded=True)
+            return SpecialistAuditResult(
+                "creativity", 50.0, feedback={"tokens": 0, "fallback": "rule-based"}, degraded=True
+            )
 
         ttr = _type_token_ratio(tokens)
         rep4 = _ngram_repetition(tokens, 4)

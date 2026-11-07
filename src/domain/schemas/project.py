@@ -3,6 +3,7 @@ from typing import List
 from pydantic import Field
 from src.domain.schemas.base import TimestampedSchema, AutoNovelBaseSchema
 
+
 class BookSchema(TimestampedSchema):
     id: int
     project_id: int
@@ -19,11 +20,13 @@ class BookSchema(TimestampedSchema):
     cost_severity: int = Field(default=2, ge=1, le=5, description="能力の代償・世界のリスク過酷度")
     thematic_core: str = Field(default="", description="物語の根底にあるテーマ・哲学的問い")
 
+
 class ProjectSchema(TimestampedSchema):
     id: int
     name: str = Field(..., max_length=100)
     description: str = Field(default="")
     books: List[BookSchema] = Field(default_factory=list)
+
 
 class ProjectCreateRequest(AutoNovelBaseSchema):
     name: str = Field(..., min_length=1, max_length=100)

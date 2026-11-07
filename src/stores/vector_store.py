@@ -1,4 +1,5 @@
 """Vector store interface and Redis implementation for emotional vectors."""
+
 from __future__ import annotations
 
 import abc
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def _episode_from_id(episode_id: Optional[str]) -> Optional[int]:
-    """"ep14" / "ep014" 形式からエピソード番号を取り出す (失敗時は None)。"""
+    """ "ep14" / "ep014" 形式からエピソード番号を取り出す (失敗時は None)。"""
     if not episode_id:
         return None
     text = str(episode_id).strip().lower()
@@ -255,7 +256,7 @@ class RedisVectorStore(VectorStore):
                 prefix = f"emotional:{namespace}:"
                 for k in batch:
                     if k.startswith(prefix):
-                        keys.append(k[len(prefix):])
+                        keys.append(k[len(prefix) :])
                 if cursor == 0:
                     break
         except redis.RedisError as e:
@@ -300,7 +301,8 @@ class InMemoryVectorStore(VectorStore):
             if target_pair in key:
                 vec = EmotionalVector.from_dict(json.loads(data))
                 import re
-                ep_match = re.search(r'ep(\d+)', vec.episode_id)
+
+                ep_match = re.search(r"ep(\d+)", vec.episode_id)
                 ep_num = int(ep_match.group(1)) if ep_match else 0
                 if ep_num >= max_ep:
                     max_ep = ep_num

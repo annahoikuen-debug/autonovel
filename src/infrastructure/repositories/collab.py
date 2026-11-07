@@ -33,9 +33,7 @@ class CollabRepository:
     async def remove_member(self, member_id: int) -> int:
         from sqlalchemy import delete
 
-        result = await self.session.execute(
-            delete(ProjectMember).where(ProjectMember.id == member_id)
-        )
+        result = await self.session.execute(delete(ProjectMember).where(ProjectMember.id == member_id))
         return result.rowcount
 
     # ---- Comments ----
@@ -80,15 +78,11 @@ class CollabRepository:
         まず `comment.book_id` を取り出す必要があるため、本メソッドを
         経由しない所有者検証は実施できない。
         """
-        result = await self.session.execute(
-            select(Comment).where(Comment.id == comment_id)
-        )
+        result = await self.session.execute(select(Comment).where(Comment.id == comment_id))
         return result.scalar_one_or_none()
 
     @retry_on_lock()
-    async def resolve_comment(
-        self, comment_id: int, resolved: bool = True, book_id: int | None = None
-    ) -> int:
+    async def resolve_comment(self, comment_id: int, resolved: bool = True, book_id: int | None = None) -> int:
         """コメントを解決済みにする。`book_id` を渡すと作品で絞り込む。
 
         `book_id` による絞りは呼び出し側が所有権検証を忘れた場合の

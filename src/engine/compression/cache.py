@@ -1,4 +1,5 @@
 """Intermediate Representation Cache for Context Compression (Step 32)."""
+
 from __future__ import annotations
 
 import hashlib

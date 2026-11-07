@@ -54,7 +54,7 @@ class FastScreener:
             score -= 20.0
 
         # 3. Sentence ending repetition check (e.g. 4+ consecutive sentences ending with 'た。')
-        sentences = re.split(r'[。！？\n]', cleaned)
+        sentences = re.split(r"[。！？\n]", cleaned)
         valid_sentences = [s.strip() for s in sentences if len(s.strip()) > 3]
         if len(valid_sentences) >= 4:
             ta_endings = 0
@@ -72,10 +72,7 @@ class FastScreener:
         if self.llm_client is not None:
             try:
                 # If LLM screening is available, invoke lightweight screening
-                prompt = (
-                    f"次の文章の品質を100点満点で評価し、数字のみを出力してください。\n"
-                    f"文章:\n{cleaned[:300]}"
-                )
+                prompt = f"次の文章の品質を100点満点で評価し、数字のみを出力してください。\n文章:\n{cleaned[:300]}"
                 if hasattr(self.llm_client, "generate_async"):
                     res = await self.llm_client.generate_async(prompt)
                     match = re.search(r"\d+", str(res))

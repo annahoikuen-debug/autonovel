@@ -1,4 +1,5 @@
 """ロールベースアクセス制御 (RBAC) ガード。"""
+
 from __future__ import annotations
 from enum import Enum
 from typing import Callable

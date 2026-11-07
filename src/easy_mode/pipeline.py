@@ -26,12 +26,7 @@ class EasyModePipeline:
         # モック用にrunメソッドを持たせる（テストでの差し替えを許可）
         self.run = None  # type: ignore
 
-    async def execute(
-        self,
-        theme: str,
-        reporter: StatusReporter | None = None,
-        **kwargs: Any
-    ) -> dict[str, Any]:
+    async def execute(self, theme: str, reporter: StatusReporter | None = None, **kwargs: Any) -> dict[str, Any]:
         """
         簡易インターフェースでパイプラインを実行
 
@@ -95,20 +90,16 @@ class EasyModePipeline:
                 "status": "done",
                 "book_id": hash(theme) % 10000,  # テーマベースのダミーID
                 "theme": theme,
-                "episodes": 1
+                "episodes": 1,
             }
         except Exception:
             # フォールバック: 簡易結果を返す
-            return {
-                "status": "done",
-                "book_id": hash(theme) % 10000,
-                "theme": theme,
-                "episodes": 1
-            }
+            return {"status": "done", "book_id": hash(theme) % 10000, "theme": theme, "episodes": 1}
 
     async def audit_draft(self, draft_text: str, character_profiles: str = "", plot_spec: str = "") -> dict[str, Any]:
         """v5.0: UnifiedAuditor による高速二層監査"""
         from src.agents.specialists.unified_auditor import UnifiedAuditor
+
         auditor = UnifiedAuditor()
         report = await auditor.audit(draft_text, character_profiles, plot_spec)
         return {
@@ -121,4 +112,3 @@ class EasyModePipeline:
 
 # 後方互換性のためのエイリアス
 __all__ = ["EasyModePipeline"]
-

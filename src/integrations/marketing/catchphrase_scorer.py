@@ -37,7 +37,7 @@ def score_catchphrase_ctr(catchphrase: str) -> int:
     score += min(power_word_count * 10, 30)
 
     # カギ括弧「」や記号（――、！？）のフック判定（各5点、最大20点）
-    hook_chars = ['「', '」', '――', '！', '？']
+    hook_chars = ["「", "」", "――", "！", "？"]
     hook_count = sum(1 for char in hook_chars if char in catchphrase)
     score += min(hook_count * 5, 20)
 

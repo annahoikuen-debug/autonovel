@@ -7,6 +7,7 @@ from dataclasses import dataclass
 @dataclass
 class IllustrationPoint:
     """挿絵ポイントデータクラス"""
+
     id: str
     page: str  # 例: "口絵1", "15"
     scene_description: str

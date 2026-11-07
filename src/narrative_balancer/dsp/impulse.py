@@ -4,10 +4,7 @@ import numpy as np
 
 
 def design_midpoint_disaster_impulse(
-    length: int = 5,
-    peak: float = 9.0,
-    decay: float = 0.70,
-    base: float = 0.0
+    length: int = 5, peak: float = 9.0, decay: float = 0.70, base: float = 0.0
 ) -> np.ndarray:
     """Design a synthetic disaster impulse response with sharp onset and exponential decay.
 

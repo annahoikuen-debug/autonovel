@@ -11,13 +11,15 @@ from src.domain.value_objects.ids import NovelId, SceneId
 
 class SceneRole(Enum):
     """Role of a scene within an episode (3-scene structure)."""
-    INTRODUCTION = "導入"      # Scene 1: Setup, world-building, character introduction
-    CONFLICT = "衝突"          # Scene 2: Main conflict, tension escalation
-    HOOK = "引き"              # Scene 3: Cliffhanger, hook for next episode
+
+    INTRODUCTION = "導入"  # Scene 1: Setup, world-building, character introduction
+    CONFLICT = "衝突"  # Scene 2: Main conflict, tension escalation
+    HOOK = "引き"  # Scene 3: Cliffhanger, hook for next episode
 
 
 class SceneStatus(Enum):
     """Scene generation status."""
+
     PLANNED = "planned"
     WRITING = "writing"
     COMPLETED = "completed"
@@ -27,6 +29,7 @@ class SceneStatus(Enum):
 @dataclass
 class Scene:
     """Individual scene within an episode (beat-to-scene split)."""
+
     id: SceneId
     novel_id: NovelId
     branch_id: NovelId
@@ -39,7 +42,7 @@ class Scene:
     target_word_count: int = 800  # ~1/3 of episode target
     actual_word_count: int = 0
     tension_start: int = 0  # Tension at scene start (0-100)
-    tension_end: int = 0    # Tension at scene end (0-100)
+    tension_end: int = 0  # Tension at scene end (0-100)
     status: SceneStatus = SceneStatus.PLANNED
     beats: List[str] = field(default_factory=list)  # Narrative beats to hit
     created_at: datetime = field(default_factory=datetime.now)
@@ -73,7 +76,8 @@ class Scene:
             target_word_count=target_word_count,
             tension_start=20,
             tension_end=50,
-            beats=beats or [
+            beats=beats
+            or [
                 "日常/現状の提示",
                 "主人公の目的/動機の暗示",
                 "小さな事件/違和感の導入",
@@ -101,7 +105,8 @@ class Scene:
             target_word_count=target_word_count,
             tension_start=50,
             tension_end=85,
-            beats=beats or [
+            beats=beats
+            or [
                 "主要な対立/困難の顕在化",
                 "主人公の試行錯誤/葛藤",
                 "ピンチ/絶体絶命の状況",
@@ -129,7 +134,8 @@ class Scene:
             target_word_count=target_word_count,
             tension_start=85,
             tension_end=95,
-            beats=beats or [
+            beats=beats
+            or [
                 "最大の危機/クライマックス",
                 "意外な展開/伏線の回収",
                 "次回への強烈なフック/クリフハンガー",
@@ -149,17 +155,23 @@ class Scene:
         per_scene = target_word_count // 3
         return [
             cls.create_introduction(
-                novel_id, branch_id, episode_number,
+                novel_id,
+                branch_id,
+                episode_number,
                 target_word_count=per_scene,
                 beats=custom_beats.get(SceneRole.INTRODUCTION) if custom_beats else None,
             ),
             cls.create_conflict(
-                novel_id, branch_id, episode_number,
+                novel_id,
+                branch_id,
+                episode_number,
                 target_word_count=per_scene,
                 beats=custom_beats.get(SceneRole.CONFLICT) if custom_beats else None,
             ),
             cls.create_hook(
-                novel_id, branch_id, episode_number,
+                novel_id,
+                branch_id,
+                episode_number,
                 target_word_count=per_scene,
                 beats=custom_beats.get(SceneRole.HOOK) if custom_beats else None,
             ),

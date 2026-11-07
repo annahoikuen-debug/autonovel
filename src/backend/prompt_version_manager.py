@@ -58,9 +58,7 @@ class PromptVersionManager:
 
                         if uow.session is None:
                             raise RuntimeError("Database session not initialized")
-                        await uow.session.execute(
-                            delete(PromptVersion).where(PromptVersion.id == old_v.id)
-                        )
+                        await uow.session.execute(delete(PromptVersion).where(PromptVersion.id == old_v.id))
 
             return new_ver.id
 
@@ -111,31 +109,23 @@ class PromptVersionManager:
                     previous_candidates = [
                         v
                         for v in versions
-                        if v.prompt_key == prompt_key
-                        and v.id != version_id
-                        and not v.rollback_reason
+                        if v.prompt_key == prompt_key and v.id != version_id and not v.rollback_reason
                     ]
 
                     if previous_candidates:
                         # 直近のロールバックされていない正常なバージョンをアクティブにする
                         fallback_ver = previous_candidates[0]
-                        await uow.prompt_versions.set_active_prompt_version(
-                            book_id, prompt_key, fallback_ver.id
-                        )
+                        await uow.prompt_versions.set_active_prompt_version(book_id, prompt_key, fallback_ver.id)
                         from config.project_context import GlobalConfig
 
                         GlobalConfig().set("optimized_prompt_patch", fallback_ver.content)
-                        logger.info(
-                            f"Successfully rolled back to version {fallback_ver.version_tag}"
-                        )
+                        logger.info(f"Successfully rolled back to version {fallback_ver.version_tag}")
                     else:
                         # 候補がない場合はデフォルト（空文字列）に戻す
                         from config.project_context import GlobalConfig
 
                         GlobalConfig().set("optimized_prompt_patch", "")
-                        logger.info(
-                            "No fallback prompt version found. Reverted to default empty prompt."
-                        )
+                        logger.info("No fallback prompt version found. Reverted to default empty prompt.")
 
                     return True
             return False

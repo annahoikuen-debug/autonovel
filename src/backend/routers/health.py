@@ -58,9 +58,11 @@ async def health_ready():
     Returns 200 when all dependencies are healthy, 503 with error payload otherwise.
     """
     from fastapi.responses import JSONResponse
+
     checks = {}
     try:
         from src.backend.observability.health import check_database
+
         db_res = await check_database(timeout=2.0)
         checks["database"] = db_res
         if db_res.get("status") != "ok":
@@ -155,12 +157,8 @@ async def health_check(_: None = Depends(require_api_key)):
         if isinstance(result, Exception):
             # 詳細をクライアントへ漏らさず、サーバログにのみ残す
             logger.warning("health check %s raised: %s", name, result, exc_info=result)
-            checks[name] = HealthCheckResult(
-                status=HealthStatus.ERROR, details="check raised an internal error"
-            )
-            check_responses[name] = CheckResponse(
-                status=HealthStatus.ERROR, error="check raised an internal error"
-            )
+            checks[name] = HealthCheckResult(status=HealthStatus.ERROR, details="check raised an internal error")
+            check_responses[name] = CheckResponse(status=HealthStatus.ERROR, error="check raised an internal error")
         elif isinstance(result, HealthCheckResult):
             checks[name] = result
             check_responses[name] = CheckResponse(
@@ -170,15 +168,9 @@ async def health_check(_: None = Depends(require_api_key)):
                 error=result.error,
             )
         else:
-            checks[name] = HealthCheckResult(
-                status=HealthStatus.ERROR, error="Unexpected result type"
-            )
-            check_responses[name] = CheckResponse(
-                status=HealthStatus.ERROR, error="Unexpected result type"
-            )
+            checks[name] = HealthCheckResult(status=HealthStatus.ERROR, error="Unexpected result type")
+            check_responses[name] = CheckResponse(status=HealthStatus.ERROR, error="Unexpected result type")
 
     overall = determine_overall_status(checks)
 
-    return HealthResponse(
-        status=overall, timestamp=datetime.now(UTC).isoformat(), checks=check_responses
-    )
+    return HealthResponse(status=overall, timestamp=datetime.now(UTC).isoformat(), checks=check_responses)

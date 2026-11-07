@@ -33,9 +33,7 @@ class TokenUsageTracker:
         self.stats["calls"] += 1
 
     def get_cost_usd(self) -> float:
-        return (self.stats["prompt"] * COST_INPUT_FLASH) + (
-            self.stats["completion"] * COST_OUTPUT_FLASH
-        )
+        return (self.stats["prompt"] * COST_INPUT_FLASH) + (self.stats["completion"] * COST_OUTPUT_FLASH)
 
     def get_summary(self) -> str:
         return f"API呼び出し: {self.stats['calls']}回 | 推定コスト: ${self.get_cost_usd():.4f}"

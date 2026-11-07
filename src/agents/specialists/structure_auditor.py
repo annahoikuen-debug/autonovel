@@ -70,7 +70,8 @@ class StructureAuditor(SpecialistAuditor):
         plot_tree = ctx.get("plot_tree") or ctx.get("plot_summary") or ""
         if not draft:
             return SpecialistAuditResult(
-                "structure", 0.0,
+                "structure",
+                0.0,
                 feedback={"error": "no draft_text"},
                 suggestions=["Provide draft_text in context"],
             )
@@ -123,7 +124,8 @@ class StructureAuditor(SpecialistAuditor):
 
         if not plot:
             return SpecialistAuditResult(
-                "structure", 50.0,
+                "structure",
+                50.0,
                 feedback={"fallback": "no plot tree", "degraded": True},
                 suggestions=["Provide plot tree for structure check"],
                 degraded=True,

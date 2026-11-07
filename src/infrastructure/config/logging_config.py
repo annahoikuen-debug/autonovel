@@ -8,9 +8,7 @@ def get_logging_config() -> Dict[str, Any]:
         "version": 1,
         "disable_existing_loggers": False,
         "formatters": {
-            "standard": {
-                "format": "%(asctime)s [%(levelname)s] [%(trace_id)s] %(name)s: %(message)s"
-            },
+            "standard": {"format": "%(asctime)s [%(levelname)s] [%(trace_id)s] %(name)s: %(message)s"},
             "json": {
                 "()": "pythonjsonlogger.jsonlogger.JsonFormatter",
                 "format": "%(asctime)s %(levelname)s %(name)s %(trace_id)s %(message)s",

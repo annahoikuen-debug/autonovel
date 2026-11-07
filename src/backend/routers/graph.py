@@ -61,9 +61,7 @@ def _is_admin(user: User | None) -> bool:
     return getattr(user, "role", None) == "admin"
 
 
-async def _assert_chapter_ownership(
-    chapter_id: int, current_user: User, session: AsyncSession
-) -> None:
+async def _assert_chapter_ownership(chapter_id: int, current_user: User, session: AsyncSession) -> None:
     """``chapter_id`` から ``book_id`` を解決して所有権を検証する。"""
     result = await session.execute(select(ChapterModel).where(ChapterModel.id == chapter_id))
     chapter = result.scalar_one_or_none()
@@ -75,9 +73,7 @@ async def _assert_chapter_ownership(
     await verify_book_ownership(int(chapter.book_id), current_user, session)
 
 
-async def _require_book_scope(
-    book_id: int | None, current_user: User
-) -> int:
+async def _require_book_scope(book_id: int | None, current_user: User) -> int:
     """RAG 系で book_id 任意になっている経路の認可を行う。
 
     ``book_id`` が指定されていれば通常どおり所有権を検証する。
@@ -116,7 +112,9 @@ async def _run_blocking(fn: Callable[..., Any], /, **kwargs: Any) -> Any:
 # ============================================================
 
 
-ALLOWED_COLUMN_DEF_PATTERN = re.compile(r"^\s*\(\s*[a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)?(?:\s*,\s*[a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)?)*\s*\)\s*$")
+ALLOWED_COLUMN_DEF_PATTERN = re.compile(
+    r"^\s*\(\s*[a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)?(?:\s*,\s*[a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)?)*\s*\)\s*$"
+)
 
 
 class CypherQueryRequest(BaseModel):
@@ -131,7 +129,9 @@ class CypherQueryRequest(BaseModel):
     @classmethod
     def validate_column_definition(cls, v: str) -> str:
         if not ALLOWED_COLUMN_DEF_PATTERN.match(v) or any(char in v for char in (";", "-", "/", "\\", "*", "$")):
-            raise ValueError("Invalid column_definition format: must be in form '(col_name type, ...)' with no special SQL characters")
+            raise ValueError(
+                "Invalid column_definition format: must be in form '(col_name type, ...)' with no special SQL characters"
+            )
         return v
 
 
@@ -281,9 +281,8 @@ async def get_graph_data(
 
         # キャラクター情報も追加
         from sqlalchemy import select
-        characters = await session.execute(
-            select(CharacterModel).where(CharacterModel.book_id == book_id)
-        )
+
+        characters = await session.execute(select(CharacterModel).where(CharacterModel.book_id == book_id))
         character_list = characters.scalars().all()
 
         character_nodes = []
@@ -320,6 +319,7 @@ async def get_graph_data(
 
         # キャラクター関係も追加
         from src.backend.database.models_relation import CharacterRelationModel
+
         char_relations = await session.execute(
             select(CharacterRelationModel).where(CharacterRelationModel.book_id == book_id)
         )
@@ -353,9 +353,7 @@ async def get_graph_data(
 @router.get("/foreshadowing/kpi")
 async def get_foreshadowing_kpi(
     book_id: int = Query(..., description="作品ID"),
-    current_episode: int | None = Query(
-        None, ge=1, description="現在話数（指定時は期限超過数も計測）"
-    ),
+    current_episode: int | None = Query(None, ge=1, description="現在話数（指定時は期限超過数も計測）"),
     session: AsyncSession = Depends(database.get_async_db),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
@@ -374,9 +372,7 @@ async def get_foreshadowing_kpi(
             metrics_port=_foreshadowing_metrics_port,
             kpi_port=_foreshadowing_kpi_port,
         )
-        kpi = await ForeshadowingKpiService(repo).compute(
-            book_id=book_id, current_episode=current_episode
-        )
+        kpi = await ForeshadowingKpiService(repo).compute(book_id=book_id, current_episode=current_episode)
         return kpi.to_dict()
     except Exception as e:
         logger.error(f"Failed to compute foreshadowing KPI for book_id={book_id}: {e}")

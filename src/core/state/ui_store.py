@@ -33,9 +33,7 @@ class UIStateStore:
         return get_session().runtime
 
     @staticmethod
-    def update(
-        update_func: Callable[[AppStateModel], None], notify_keys: list[str] | None = None
-    ) -> None:
+    def update(update_func: Callable[[AppStateModel], None], notify_keys: list[str] | None = None) -> None:
         """
         状態を安全に更新し、保存する。
         update_func は AppStateModel を受け取り、変更を加える関数であること。
@@ -290,9 +288,7 @@ class UIStateStore:
 
     @staticmethod
     def increment_rerun_count() -> None:
-        UIStateStore.update_runtime(
-            "rerun_count", UIStateStore.get_runtime().rerun_count + 1, save=False
-        )
+        UIStateStore.update_runtime("rerun_count", UIStateStore.get_runtime().rerun_count + 1, save=False)
 
     @staticmethod
     def get_api_key_input() -> str:

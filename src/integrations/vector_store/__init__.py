@@ -1,6 +1,7 @@
 """
 src/services/vector_store - ベクトルストアパッケージ (分割後)
 """
+
 from __future__ import annotations
 
 import sys
@@ -54,9 +55,7 @@ def get_default_store(
     import os
     from src.backend.config import settings
 
-    mode = getattr(settings, "AUTONOVEL_RAG_MODE", "auto") or os.environ.get(
-        "AUTONOVEL_RAG_MODE", "auto"
-    )
+    mode = getattr(settings, "AUTONOVEL_RAG_MODE", "auto") or os.environ.get("AUTONOVEL_RAG_MODE", "auto")
 
     if mode == "pgvector" or (mode == "auto" and HAS_PGVECTOR):
         if not HAS_PGVECTOR:
@@ -65,9 +64,7 @@ def get_default_store(
         else:
             database_url = settings.DATABASE_URL
             if database_url.startswith("sqlite"):
-                logger.warning(
-                    "[VECTOR STORE] pgvector requires PostgreSQL, falling back to chroma/memory"
-                )
+                logger.warning("[VECTOR STORE] pgvector requires PostgreSQL, falling back to chroma/memory")
             else:
                 return PgVectorStore(
                     database_url=database_url,

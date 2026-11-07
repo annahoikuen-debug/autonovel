@@ -3,6 +3,7 @@
 Saves journal entries, reactions/comments, and character dynamic relationships
 into the Apache AGE graph database using Cypher queries.
 """
+
 from __future__ import annotations
 
 import logging

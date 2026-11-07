@@ -1,4 +1,5 @@
 """MemoryManager integrating Core, Working, and Archival memory tiers."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -68,14 +69,16 @@ class MemoryManager:
 
         current_frame = self.working_memory.peek()
         if current_frame is not None:
-            current_frame.emotional_beats.append({
-                "source": source,
-                "target": target,
-                "emotion": emotion,
-                "delta": delta,
-                "reason": reason,
-                "result_value": new_val,
-            })
+            current_frame.emotional_beats.append(
+                {
+                    "source": source,
+                    "target": target,
+                    "emotion": emotion,
+                    "delta": delta,
+                    "reason": reason,
+                    "result_value": new_val,
+                }
+            )
 
         return new_val
 

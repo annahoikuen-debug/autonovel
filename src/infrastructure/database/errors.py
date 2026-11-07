@@ -36,8 +36,7 @@ def retry_on_lock(retries: int = 10, base_delay: float = 0.1, max_delay: float =
                     if "locked" in error_msg or "busy" in error_msg:
                         delay = min(base_delay * (2**i), max_delay)
                         logger.warning(
-                            f"Database locked in {func.__name__}. "
-                            f"Retry {i + 1}/{retries} after {delay:.2f}s..."
+                            f"Database locked in {func.__name__}. Retry {i + 1}/{retries} after {delay:.2f}s..."
                         )
                         await asyncio.sleep(delay)
                     else:
@@ -47,9 +46,7 @@ def retry_on_lock(retries: int = 10, base_delay: float = 0.1, max_delay: float =
                     # その他の例外はリトライせずに再送出
                     raise e
 
-            logger.error(
-                f"Max retries reached in {func.__name__} due to database lock: {last_exception}"
-            )
+            logger.error(f"Max retries reached in {func.__name__} due to database lock: {last_exception}")
             raise last_exception
 
         return wrapper

@@ -21,11 +21,7 @@ CHAPTER_MAX_LENGTH = 1500
 
 def process_chapter(chapter: str) -> str:
     """章本文から主要テキストを抽出する。"""
-    return (
-        (chapter[:CHAPTER_MAX_LENGTH].rstrip() + "...")
-        if len(chapter) > CHAPTER_MAX_LENGTH
-        else chapter
-    )
+    return (chapter[:CHAPTER_MAX_LENGTH].rstrip() + "...") if len(chapter) > CHAPTER_MAX_LENGTH else chapter
 
 
 class DigestService:
@@ -41,9 +37,7 @@ class DigestService:
         db: Any = None,
     ):
         if db is None:
-            raise ValueError(
-                "DigestService requires db=DatabaseManager (in-memory store removed in v2)."
-            )
+            raise ValueError("DigestService requires db=DatabaseManager (in-memory store removed in v2).")
         self.llm_service = llm_service or LLMService()
         self._db = db
 
@@ -149,20 +143,10 @@ class DigestService:
 
             # return_exceptions=True: 片方の失敗で他方の結果が破棄されるのを防ぐ。
             # 部分失敗は下の except で明示的に扱う。
-            ep1_text, climax_text = await asyncio.gather(
-                ep1_task, climax_task, return_exceptions=True
-            )
-            if isinstance(ep1_text, BaseException) or isinstance(
-                climax_text, BaseException
-            ):
-                failed = (
-                    ep1_text
-                    if isinstance(ep1_text, BaseException)
-                    else climax_text
-                )
-                raise RuntimeError(
-                    f"LLM generation failed during quick-digest: {failed}"
-                )
+            ep1_text, climax_text = await asyncio.gather(ep1_task, climax_task, return_exceptions=True)
+            if isinstance(ep1_text, BaseException) or isinstance(climax_text, BaseException):
+                failed = ep1_text if isinstance(ep1_text, BaseException) else climax_text
+                raise RuntimeError(f"LLM generation failed during quick-digest: {failed}")
 
             response = DigestResponse(
                 book_id=draft_id,

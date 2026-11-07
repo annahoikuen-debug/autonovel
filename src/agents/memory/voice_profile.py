@@ -1,4 +1,5 @@
 """Character voice profile models and prompt customization."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -8,11 +9,12 @@ from typing import Any, Dict, List
 @dataclass
 class VoiceProfile:
     """キャラクターごとの口調・内心表出度などのプロファイル"""
+
     character_name: str
     speech_patterns: List[str] = field(default_factory=list)
     vocabulary_level: str = "standard"  # casual, formal, archaic, child, etc.
-    emotional_leakage: float = 0.5      # 0.0: ポーカーフェイス, 1.0: 感情が顔や声に丸出し
-    lying_tendency: float = 0.1         # 虚飾・嘘をつきやすさ
+    emotional_leakage: float = 0.5  # 0.0: ポーカーフェイス, 1.0: 感情が顔や声に丸出し
+    lying_tendency: float = 0.1  # 虚飾・嘘をつきやすさ
 
     def to_dict(self) -> Dict[str, Any]:
         return {

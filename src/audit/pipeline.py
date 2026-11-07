@@ -51,12 +51,14 @@ class AuditPipeline:
 
         # 静的ルールのIssueを変換
         for static_issue in static_issues:
-            all_issues.append(UnifiedIssue(
-                type=static_issue.type,
-                message=static_issue.message,
-                location=static_issue.location,
-                suggestion=static_issue.suggestion
-            ))
+            all_issues.append(
+                UnifiedIssue(
+                    type=static_issue.type,
+                    message=static_issue.message,
+                    location=static_issue.location,
+                    suggestion=static_issue.suggestion,
+                )
+            )
 
         # LLMオーディターのIssueを追加
         all_issues.extend(llm_issues)

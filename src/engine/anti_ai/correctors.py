@@ -47,9 +47,7 @@ class TransitionOveruseCorrector(BaseCorrector):
         "そもそも": ["本来なら", "事の起こりは"],
     }
 
-    def _build_replacements(
-        self, text: str, violations: list[ViolationSpan]
-    ) -> list[tuple[int, int, str]]:
+    def _build_replacements(self, text: str, violations: list[ViolationSpan]) -> list[tuple[int, int, str]]:
         if not violations:
             return []
         # Keep the first violation untouched, rewrite the rest.
@@ -110,15 +108,15 @@ class SameStructureCorrector(BaseCorrector):
         "いた。": ["いた。", "ていた。", "いていた。"],
     }
 
-    def _build_replacements(
-        self, text: str, violations: list[ViolationSpan]
-    ) -> list[tuple[int, int, str]]:
+    def _build_replacements(self, text: str, violations: list[ViolationSpan]) -> list[tuple[int, int, str]]:
         edits: list[tuple[int, int, str]] = []
         seen_tail: dict[str, int] = defaultdict(int)
         for v in violations:
             sentence = v.matched_text
             # Find the tail in this sentence.
-            tail_match = re.search(r"[。\n]?([だで]った|であった|ました|です|ます|[、]?った|[、]?いた)[。\n]?$", sentence)
+            tail_match = re.search(
+                r"[。\n]?([だで]った|であった|ました|です|ます|[、]?った|[、]?いた)[。\n]?$", sentence
+            )
             if not tail_match:
                 continue
             tail = tail_match.group(0)
@@ -165,9 +163,7 @@ class DirectEmotionCorrector(BaseCorrector):
         (re.compile(r"と思わずに(?:は)?いられな[いか]"), "胸が締めつけられた"),
     ]
 
-    def _build_replacements(
-        self, text: str, violations: list[ViolationSpan]
-    ) -> list[tuple[int, int, str]]:
+    def _build_replacements(self, text: str, violations: list[ViolationSpan]) -> list[tuple[int, int, str]]:
         edits: list[tuple[int, int, str]] = []
         for v in violations:
             matched = v.matched_text
@@ -213,9 +209,7 @@ class HedgingPatternsCorrector(BaseCorrector):
         "きっと": ["確かに", "確かに"],
     }
 
-    def _build_replacements(
-        self, text: str, violations: list[ViolationSpan]
-    ) -> list[tuple[int, int, str]]:
+    def _build_replacements(self, text: str, violations: list[ViolationSpan]) -> list[tuple[int, int, str]]:
         edits: list[tuple[int, int, str]] = []
         counters: dict[str, int] = defaultdict(int)
         for v in violations:
@@ -281,9 +275,7 @@ class TemplatePhrasesCorrector(BaseCorrector):
         "上記の",
     }
 
-    def _build_replacements(
-        self, text: str, violations: list[ViolationSpan]
-    ) -> list[tuple[int, int, str]]:
+    def _build_replacements(self, text: str, violations: list[ViolationSpan]) -> list[tuple[int, int, str]]:
         edits: list[tuple[int, int, str]] = []
         for v in violations:
             original = v.matched_text.strip()
@@ -310,9 +302,7 @@ class UniformParagraphCorrector(BaseCorrector):
 
     category = AICategory.UNIFORM_PARAGRAPH
 
-    def _build_replacements(
-        self, text: str, violations: list[ViolationSpan]
-    ) -> list[tuple[int, int, str]]:
+    def _build_replacements(self, text: str, violations: list[ViolationSpan]) -> list[tuple[int, int, str]]:
         return []
 
 
@@ -353,9 +343,7 @@ class GenericVocabularyCorrector(BaseCorrector):
         "豊富な": ["多くの", ""],
     }
 
-    def _build_replacements(
-        self, text: str, violations: list[ViolationSpan]
-    ) -> list[tuple[int, int, str]]:
+    def _build_replacements(self, text: str, violations: list[ViolationSpan]) -> list[tuple[int, int, str]]:
         edits: list[tuple[int, int, str]] = []
         counters: dict[str, int] = defaultdict(int)
         for v in violations:

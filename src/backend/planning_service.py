@@ -92,6 +92,7 @@ class PlanningService:
 
         # 擬似的な AgentContext を作成して計算
         from src.agents.orchestrator import AgentContext
+
         AgentContext(book_id=0, branch_id=1, ep_num=1, artifacts={"arcs": arcs})
 
         # 簡易実装: 構造スコアはアークの論理的流れから、読者体験は冒頭フックから推定
@@ -128,7 +129,7 @@ class PlanningService:
         for i, arcs in enumerate(proposals):
             score_dict = await self.predict_book_score_from_outline(arcs, genre, target_eps)
             score_dict["proposal_index"] = i
-            score_dict["proposal_name"] = f"案{i+1}"
+            score_dict["proposal_name"] = f"案{i + 1}"
             results.append(score_dict)
 
         # 総合スコアでソート（降順）
@@ -136,7 +137,7 @@ class PlanningService:
 
         # 推奨フラグ付与
         for i, r in enumerate(results):
-            r["recommended"] = (i == 0)
+            r["recommended"] = i == 0
             r["rank"] = i + 1
 
         return results

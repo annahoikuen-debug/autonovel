@@ -3,6 +3,7 @@
 長編執筆におけるコンテキスト肥大化を防止するため、
 各エピソード本文から客観的事実のみを100字〜150字以内で抽出・永続化する。
 """
+
 from __future__ import annotations
 
 import inspect
@@ -93,9 +94,7 @@ async def generate_episode_digest(
     if not digest_text or not digest_text.strip():
         lines = [line.strip() for line in cleaned_draft.splitlines() if line.strip()]
         # 台詞以外の主要記述を抽出
-        narrative_lines = [
-            line for line in lines if not (line.startswith("「") or line.startswith("『"))
-        ]
+        narrative_lines = [line for line in lines if not (line.startswith("「") or line.startswith("『"))]
         sample_lines = narrative_lines[-3:] if len(narrative_lines) >= 3 else lines[-3:]
         fallback_summary = "。".join([line.rstrip("。") for line in sample_lines])
         digest_text = f"第{ep_num}話要約: {fallback_summary}"
@@ -103,7 +102,7 @@ async def generate_episode_digest(
     # 長さ正規化 (最大 MAX_DIGEST_LENGTH 字)
     cleaned = digest_text.strip()
     if len(cleaned) > MAX_DIGEST_LENGTH:
-        cleaned = cleaned[:MAX_DIGEST_LENGTH - 3].rstrip() + "..."
+        cleaned = cleaned[: MAX_DIGEST_LENGTH - 3].rstrip() + "..."
 
     return cleaned
 

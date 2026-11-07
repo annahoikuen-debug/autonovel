@@ -11,6 +11,7 @@ MODEL_CONFIG_DEFAULTS = ConfigDict(populate_by_name=True, extra="allow", protect
 
 class GenerateCharacterIllustrationDTO(BaseModel):
     """DTO for generating character illustration."""
+
     character_id: str = Field(..., min_length=1)
     novel_id: str = Field(..., min_length=1)
     description: Optional[str] = None
@@ -25,6 +26,7 @@ class GenerateCharacterIllustrationDTO(BaseModel):
 
 class GenerateCoverIllustrationDTO(BaseModel):
     """DTO for generating cover illustration."""
+
     novel_id: str = Field(..., min_length=1)
     title: str = Field(..., min_length=1)
     author: Optional[str] = None
@@ -37,6 +39,7 @@ class GenerateCoverIllustrationDTO(BaseModel):
 
 class GenerateSceneIllustrationDTO(BaseModel):
     """DTO for generating scene illustration."""
+
     novel_id: str = Field(..., min_length=1)
     episode_number: int = Field(..., ge=1)
     scene_description: str = Field(..., min_length=1)
@@ -50,6 +53,7 @@ class GenerateSceneIllustrationDTO(BaseModel):
 
 class IllustrationResponseDTO(BaseModel):
     """DTO for illustration response."""
+
     id: str = Field(default_factory=lambda: str(uuid4()))
     novel_id: str
     illustration_type: str  # "character", "cover", "scene"
@@ -89,5 +93,6 @@ class IllustrationResponseDTO(BaseModel):
 
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from uuid import uuid4

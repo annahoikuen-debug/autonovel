@@ -80,9 +80,7 @@ def evaluate_gate(outcomes: list[dict[str, Any]]) -> dict[str, Any]:
         and not strict_guard
         and get_advisory_threshold() < threshold
         and aggregate >= get_advisory_threshold()
-        and all(
-            (o.get("effective_severity") in AUDIT_GATE_ADVISORY_SEVERITIES) for o in failed
-        )
+        and all((o.get("effective_severity") in AUDIT_GATE_ADVISORY_SEVERITIES) for o in failed)
     ):
         advisory_threshold = get_advisory_threshold()
         requires_regeneration = False

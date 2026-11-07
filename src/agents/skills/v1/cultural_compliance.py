@@ -1,5 +1,6 @@
 # src/agents/skills/cultural_compliance.py
 """文化的コンプライアンスチェックスキル（サンプル実装）"""
+
 from src.agents.skill_base import SkillAgent
 from src.agents.orchestrator import AgentContext, AgentResult
 
@@ -15,16 +16,16 @@ class CulturalComplianceChecker(SkillAgent):
 
     async def execute(self, ctx: AgentContext) -> AgentResult:
         """原稿の文化的適切性をチェック"""
-        self.emit_event("cultural_compliance.started", {
-            "book_id": ctx.book_id,
-            "ep_num": ctx.ep_num,
-        })
+        self.emit_event(
+            "cultural_compliance.started",
+            {
+                "book_id": ctx.book_id,
+                "ep_num": ctx.ep_num,
+            },
+        )
 
         drafted_text = (
-            ctx.artifacts.get("drafted_text")
-            or ctx.artifacts.get("content")
-            or ctx.artifacts.get("chapter_text")
-            or ""
+            ctx.artifacts.get("drafted_text") or ctx.artifacts.get("content") or ctx.artifacts.get("chapter_text") or ""
         )
         issues = []
 
@@ -38,19 +39,24 @@ class CulturalComplianceChecker(SkillAgent):
         for region in self.regions:
             for word in ng_words.get(region, []):
                 if word in drafted_text:
-                    issues.append({
-                        "region": region,
-                        "type": "cultural_sensitivity",
-                        "message": f"地域 {region} で不適切な表現が検出されました: {word}",
-                        "severity": "high" if self.strict_mode else "medium",
-                    })
+                    issues.append(
+                        {
+                            "region": region,
+                            "type": "cultural_sensitivity",
+                            "message": f"地域 {region} で不適切な表現が検出されました: {word}",
+                            "severity": "high" if self.strict_mode else "medium",
+                        }
+                    )
 
         if issues:
-            self.emit_event("cultural_compliance.failed", {
-                "book_id": ctx.book_id,
-                "ep_num": ctx.ep_num,
-                "issues_count": len(issues),
-            })
+            self.emit_event(
+                "cultural_compliance.failed",
+                {
+                    "book_id": ctx.book_id,
+                    "ep_num": ctx.ep_num,
+                    "issues_count": len(issues),
+                },
+            )
             return AgentResult(
                 next_agent=None,
                 artifacts={
@@ -60,11 +66,14 @@ class CulturalComplianceChecker(SkillAgent):
                 error="Cultural compliance issues detected" if self.strict_mode else None,
             )
 
-        self.emit_event("cultural_compliance.completed", {
-            "book_id": ctx.book_id,
-            "ep_num": ctx.ep_num,
-            "result": "passed",
-        })
+        self.emit_event(
+            "cultural_compliance.completed",
+            {
+                "book_id": ctx.book_id,
+                "ep_num": ctx.ep_num,
+                "result": "passed",
+            },
+        )
 
         return AgentResult(
             next_agent=None,

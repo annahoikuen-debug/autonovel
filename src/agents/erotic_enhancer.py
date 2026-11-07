@@ -108,6 +108,7 @@ class EroticEnhancer:
             # 官能専門スペシャリストを使用して強化
             if specialist:
                 from src.engine.prompts.erotic_specialist import EroticSpecialist
+
                 specialist = EroticSpecialist()
                 specialist.build_scene_prompt(
                     curve=None,  # 簡略化のためNone
@@ -125,4 +126,3 @@ class EroticEnhancer:
             pass
 
         return result
-

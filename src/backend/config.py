@@ -5,6 +5,7 @@ TRACK / F3 ポート化: 正規レイヤー（infrastructure）へ移設し、�
 ``monkeypatch.setattr(cfg_mod, "ROOT_DIR", ...)`` 等の旧来の使い方を
 壊さないよう、属性は本モジュールの名前空間にも再束縛する。
 """
+
 from __future__ import annotations
 
 

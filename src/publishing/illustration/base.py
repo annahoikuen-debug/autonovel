@@ -15,12 +15,14 @@ class ImageGenerationRequest:
     seed: int = -1
     lora_tags: list[str] | None = None
 
+
 @dataclass
 class ImageGenerationResult:
     image_bytes: bytes
     format: str = "png"
     seed_used: int = -1
     metadata: dict = None
+
 
 class ImageGeneratorClient(ABC):
     @abstractmethod
@@ -36,6 +38,7 @@ def extract_png_metadata(image_bytes: bytes) -> Dict[str, Any]:
     """
     try:
         from PIL import Image
+
         with Image.open(io.BytesIO(image_bytes)) as img:
             width, height = img.size
             format = img.format

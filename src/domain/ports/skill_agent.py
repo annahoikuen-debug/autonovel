@@ -22,5 +22,4 @@ class ISkillAgent(Protocol):
     を返すことが期待される。
     """
 
-    async def execute(self, ctx: Any) -> Any:
-        ...
+    async def execute(self, ctx: Any) -> Any: ...

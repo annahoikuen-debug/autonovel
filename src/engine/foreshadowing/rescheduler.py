@@ -21,9 +21,7 @@ class ForeshadowingRescheduler:
     MAX_CASCADE = 10
 
     @classmethod
-    def find_next_suitable_episode(
-        cls, current_episode: int, max_episode: int | None = None
-    ) -> Optional[int]:
+    def find_next_suitable_episode(cls, current_episode: int, max_episode: int | None = None) -> Optional[int]:
         """回収に適した次の話数を探索する。
 
         Args:
@@ -33,16 +31,16 @@ class ForeshadowingRescheduler:
         Returns:
             次の回収予定話数。延期が不可能な場合は None（＝回収期限切れ確定）。
         """
-        scan_end = (
-            current_episode + cls.UNBOUNDED_SCAN_LIMIT
-            if max_episode is None
-            else max_episode
-        )
+        scan_end = current_episode + cls.UNBOUNDED_SCAN_LIMIT if max_episode is None else max_episode
         for ep in range(current_episode + 1, scan_end + 1):
             beat = get_beat_for_episode(ep)
             if beat:
                 # Check if beat directive mentions resolution/recovery
-                fs_dir = beat.get("foreshadowing_directive", "") if isinstance(beat, dict) else getattr(beat, "foreshadowing_directive", "")
+                fs_dir = (
+                    beat.get("foreshadowing_directive", "")
+                    if isinstance(beat, dict)
+                    else getattr(beat, "foreshadowing_directive", "")
+                )
                 if "回収" in str(fs_dir):
                     return ep
 

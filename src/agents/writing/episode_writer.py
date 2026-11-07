@@ -96,9 +96,7 @@ async def _resolve_total_episodes(
 
         from src.backend.database.models import Book as BookModel
 
-        res = await session.execute(
-            select(BookModel.target_eps).where(BookModel.id == book_id)
-        )
+        res = await session.execute(select(BookModel.target_eps).where(BookModel.id == book_id))
         row = res.first()
         value = row[0] if row is not None else None
         return int(value) if isinstance(value, int) and value > 0 else None
@@ -369,9 +367,7 @@ class EpisodeWriter(BaseAgent):
                 # 延期の上限として渡す。production の呼び出し元が
                 # `total_episodes` を渡さないため `max_episode` が常に None に
                 # なり、100話本でも延期不能が正しく判定されていなかった。
-                total_episodes = await _resolve_total_episodes(
-                    resolved_session, book_id, (writing_context or {})
-                )
+                total_episodes = await _resolve_total_episodes(resolved_session, book_id, (writing_context or {}))
 
                 foreshadowing_repo = DbForeshadowingRepository(
                     resolved_session,
@@ -388,9 +384,7 @@ class EpisodeWriter(BaseAgent):
                     total_episodes=total_episodes,
                 )
                 if resolved_titles:
-                    logger.info(
-                        f"Ep.{ep_num}: 伏線自動回収 - {', '.join(resolved_titles)}"
-                    )
+                    logger.info(f"Ep.{ep_num}: 伏線自動回収 - {', '.join(resolved_titles)}")
             except Exception as e:
                 logger.warning(f"Ep.{ep_num}: 伏線自動回収でエラー: {e}")
 
@@ -400,19 +394,13 @@ class EpisodeWriter(BaseAgent):
         # これを失ってまで1話-rollbackする理由がない。T6 Step 11:
         # 隔離 + 警告に揃え、握り潰しも無言化も避ける。
         try:
-            await self._persist_episode_digest(
-                resolved_session, book_id, ep_num, written_text
-            )
+            await self._persist_episode_digest(resolved_session, book_id, ep_num, written_text)
         except Exception as e:
-            logger.warning(
-                f"Ep.{ep_num}: ダイジェスト永続化でエラー（本文と伏線回収は保持）: {e}"
-            )
+            logger.warning(f"Ep.{ep_num}: ダイジェスト永続化でエラー（本文と伏線回収は保持）: {e}")
 
         return resolved_titles
 
-    def detect_resolved_foreshadowings(
-        self, content: str, pending_list: List[ForeshadowingEntity]
-    ) -> List[str]:
+    def detect_resolved_foreshadowings(self, content: str, pending_list: List[ForeshadowingEntity]) -> List[str]:
         """生成された本文中から解決された伏線を簡易検知する。
 
         Args:
@@ -508,9 +496,7 @@ class EpisodeWriter(BaseAgent):
             if prose_refiner_enabled:
                 refiner = ProseRefinerAgent()
                 refinement_result = await refiner.refine(
-                    draft_text=result,
-                    genre=genre,
-                    style_intensity=style_intensity
+                    draft_text=result, genre=genre, style_intensity=style_intensity
                 )
                 result = refinement_result.refined_text
         except Exception:
@@ -531,10 +517,7 @@ class EpisodeWriter(BaseAgent):
                     climax_text = result[-100:] if len(result) > 100 else result  # フォールバック
 
                 # 配信コメントを生成
-                comments = await social_generator.generate_stream_comments(
-                    highlight_description=climax_text,
-                    count=20
-                )
+                comments = await social_generator.generate_stream_comments(highlight_description=climax_text, count=20)
 
                 # コメントブロックをフォーマット
                 if comments:
@@ -613,9 +596,7 @@ class EpisodeWriter(BaseAgent):
         if session is None or not written_text:
             return
         if not _is_episode_digest_enabled():
-            logger.info(
-                f"Ep.{ep_num}: 事実ダイジェスト生成は ENABLE_EPISODE_DIGEST=0 で無効化されています"
-            )
+            logger.info(f"Ep.{ep_num}: 事実ダイジェスト生成は ENABLE_EPISODE_DIGEST=0 で無効化されています")
             return
         try:
             from src.engine.context_compression.digest_service import (

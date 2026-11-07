@@ -2,6 +2,7 @@ from typing import Iterator, AsyncIterator
 from src.llm.unified.types import LLMRequest, LLMResponse, StreamChunk
 from src.llm.unified.interface import IUnifiedLLMClient, with_metrics
 
+
 class UnifiedMockLLMClient(IUnifiedLLMClient):
     def __init__(self, response_text: str = "Mock response"):
         self.response_text = response_text

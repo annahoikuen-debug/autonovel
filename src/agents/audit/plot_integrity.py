@@ -241,9 +241,7 @@ class PlotIntegrityMonitor:
             return (
                 True,
                 1.0,
-                CausalityAuditResult(
-                    is_consistent=True, score=1.0, contradictions=[f"監査エラー: {str(e)}"]
-                ),
+                CausalityAuditResult(is_consistent=True, score=1.0, contradictions=[f"監査エラー: {str(e)}"]),
             )
 
     async def _extract_causality_links(self, text: str, source: str) -> list[CausalityLink]:
@@ -424,9 +422,7 @@ class PlotIntegrityMonitor:
         # 2. 矛盾: Blueprintにある重要関係がContentにない
         for source, target, rel_type in graph_diff.missing_relations:
             if rel_type in ("POSSESSES", "LOCATED_IN", "KNOWS", "ALLY_OF", "ENEMY_OF"):
-                contradictions.append(
-                    f"関係欠落: {source} --{rel_type}--> {target} (BlueprintにありContentにない)"
-                )
+                contradictions.append(f"関係欠落: {source} --{rel_type}--> {target} (BlueprintにありContentにない)")
 
         # 3. 伏線検出: Blueprintにのみ存在する重要アイテム/イベント
         bp_result = await self._extraction_service.extract_graph_from_text(blueprint)
@@ -453,9 +449,7 @@ class PlotIntegrityMonitor:
                 else:
                     importance = "Major"
             elif entity.type == "Character":
-                if entity.properties.get("is_protagonist") or entity.properties.get(
-                    "is_antagonist"
-                ):
+                if entity.properties.get("is_protagonist") or entity.properties.get("is_antagonist"):
                     importance = "Major"
 
             if importance in ("Critical", "Major"):
@@ -463,9 +457,7 @@ class PlotIntegrityMonitor:
                     ForeshadowingItem(
                         entity_name=entity_name,
                         setup_chapter=current_ep,
-                        setup_context=entity.description[:200]
-                        if entity.description
-                        else f"{entity_name} が言及される",
+                        setup_context=entity.description[:200] if entity.description else f"{entity_name} が言及される",
                         expected_payoff=f"{entity_name} の活用・回収・解決",
                         importance=importance,  # type: ignore
                     )
@@ -529,9 +521,7 @@ class PlotIntegrityMonitor:
         if contradictions:
             detail = "\n".join(f"  - {c}" for c in contradictions[:15])
 
-            patch_content = self.CONTRADICTION_FIX_PROMPT_TEMPLATE.format(
-                contradictions_detail=detail
-            )
+            patch_content = self.CONTRADICTION_FIX_PROMPT_TEMPLATE.format(contradictions_detail=detail)
             patches.append(
                 PromptPatch(
                     target_prompt="bible_update",
@@ -619,12 +609,8 @@ class PlotIntegrityMonitor:
         """
         try:
             # world_settings を blueprint に含めてチェック
-            combined_blueprint = (
-                blueprint + "\n\n【世界設定】\n" + world_settings if world_settings else blueprint
-            )
-            is_ok, score, result = await self.check_integrity(
-                [], combined_blueprint, content, threshold=0.7
-            )
+            combined_blueprint = blueprint + "\n\n【世界設定】\n" + world_settings if world_settings else blueprint
+            is_ok, score, result = await self.check_integrity([], combined_blueprint, content, threshold=0.7)
 
             # 結果を旧形式に変換
             failures = []
@@ -673,11 +659,7 @@ class PlotIntegrityMonitor:
         try:
             failures = []
             for i, constraint in enumerate(active_constraints):
-                constraint_text = (
-                    constraint.get("constraint", "")
-                    if isinstance(constraint, dict)
-                    else str(constraint)
-                )
+                constraint_text = constraint.get("constraint", "") if isinstance(constraint, dict) else str(constraint)
                 if constraint_text and constraint_text not in content:
                     failures.append(
                         {

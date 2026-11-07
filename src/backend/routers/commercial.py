@@ -43,9 +43,7 @@ class PublishRequest(BaseModel):
     """投稿実行リクエスト"""
 
     book_id: int = Field(..., ge=1, description="書籍ID")
-    platforms: list[str] = Field(
-        default_factory=lambda: ["kakuyomu", "narou"], description="投稿先プラットフォーム"
-    )
+    platforms: list[str] = Field(default_factory=lambda: ["kakuyomu", "narou"], description="投稿先プラットフォーム")
     episode_range: tuple[int, int] | None = Field(None, description="投稿対象話数範囲 (from, to)")
     episode_ids: list[int] | None = Field(None, description="投稿対象エピソードIDリスト")
     schedule: dict[str, Any] | None = Field(None, description="定期投稿スケジュール設定")
@@ -132,6 +130,7 @@ async def get_schedules(
     await verify_book_ownership(book_id, current_user, db)
     try:
         from sqlalchemy import select
+
         stmt = (
             select(PublicationScheduleDbModel)
             .where(PublicationScheduleDbModel.book_id == book_id)
@@ -162,7 +161,7 @@ async def cancel_schedule(
     schedule_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_db),
-    api_key: str = Depends(require_api_key)
+    api_key: str = Depends(require_api_key),
 ):
     """
     投稿スケジュールを取り消す。
@@ -172,7 +171,9 @@ async def cancel_schedule(
         from sqlalchemy import select
 
         # スケジュールの取得
-        result = await db.execute(select(PublicationScheduleDbModel).where(PublicationScheduleDbModel.id == schedule_id))
+        result = await db.execute(
+            select(PublicationScheduleDbModel).where(PublicationScheduleDbModel.id == schedule_id)
+        )
         schedule = result.scalar_one_or_none()
 
         if not schedule:
@@ -184,8 +185,7 @@ async def cancel_schedule(
 
         if schedule.status != "pending":
             raise HTTPException(
-                status_code=400,
-                detail=f"Only pending schedules can be cancelled. Current status: {schedule.status}"
+                status_code=400, detail=f"Only pending schedules can be cancelled. Current status: {schedule.status}"
             )
 
         # ステータスを cancelled に更新
@@ -206,7 +206,7 @@ async def run_schedule_now(
     schedule_id: int,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_async_db),
-    api_key: str = Depends(require_api_key)
+    api_key: str = Depends(require_api_key),
 ):
     """
     予約投稿を即時に実行する (Step 10).
@@ -253,9 +253,7 @@ async def run_schedule_now(
 
 
 @router.post("/run", response_model=dict[str, Any])
-async def run_commercial_pipeline(
-    config: CommercialConfig, api_key: str = Depends(require_api_key)
-):
+async def run_commercial_pipeline(config: CommercialConfig, api_key: str = Depends(require_api_key)):
     """
     Commercial Pipeline を実行するエンドポイント。
 
@@ -302,15 +300,13 @@ async def publish_commercial(request: PublishRequest, api_key: str = Depends(req
     """
     raise HTTPException(
         status_code=410,
-        detail="Automated direct posting has been deprecated to comply with platform terms of service and prevent account bans. Please use the Safe Publishing Assistant clipboard formatting and checklist API instead."
+        detail="Automated direct posting has been deprecated to comply with platform terms of service and prevent account bans. Please use the Safe Publishing Assistant clipboard formatting and checklist API instead.",
     )
 
 
 @router.get("/scheduled-tasks/{book_id}", response_model=dict[str, Any])
 async def get_scheduled_publish_tasks(
-    book_id: int,
-    current_user: User = Depends(get_current_user),
-    api_key: str = Depends(require_api_key)
+    book_id: int, current_user: User = Depends(get_current_user), api_key: str = Depends(require_api_key)
 ) -> dict[str, Any]:
     """予約投稿ジョブの一覧を取得する (Step 56)."""
     from src.backend.tasks.commercial_tasks import get_scheduled_commercial_tasks
@@ -322,9 +318,7 @@ async def get_scheduled_publish_tasks(
 
 @router.delete("/scheduled-tasks/{task_id}", response_model=dict[str, Any])
 async def cancel_scheduled_publish_task(
-    task_id: str,
-    current_user: User = Depends(get_current_user),
-    api_key: str = Depends(require_api_key)
+    task_id: str, current_user: User = Depends(get_current_user), api_key: str = Depends(require_api_key)
 ) -> dict[str, Any]:
     """予約投稿ジョブを取り消す (Step 57)."""
     from src.backend.tasks.commercial_tasks import _SCHEDULED_JOBS, cancel_commercial_task
@@ -350,9 +344,7 @@ async def cancel_scheduled_publish_task(
 
 
 @router.post("/publish/status", response_model=dict[str, Any])
-async def get_publish_status(
-    request: PublishStatusRequest, api_key: str = Depends(require_api_key)
-):
+async def get_publish_status(request: PublishStatusRequest, api_key: str = Depends(require_api_key)):
     """
     投稿ステータスを取得する。
 
@@ -380,9 +372,7 @@ async def get_publish_status(
 
 @router.get("/publish/records/{book_id}", response_model=dict[str, Any])
 async def get_publish_records(
-    book_id: int,
-    current_user: User = Depends(get_current_user),
-    api_key: str = Depends(require_api_key)
+    book_id: int, current_user: User = Depends(get_current_user), api_key: str = Depends(require_api_key)
 ):
     """
     書籍の投稿履歴を取得する。

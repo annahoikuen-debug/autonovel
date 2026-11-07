@@ -32,9 +32,7 @@ class TraceRepository:
         return run.id
 
     @retry_on_lock()
-    async def list_by_book(
-        self, book_id: int, chapter_ep: int | None = None
-    ) -> list[GenerationRun]:
+    async def list_by_book(self, book_id: int, chapter_ep: int | None = None) -> list[GenerationRun]:
         stmt = select(GenerationRun).where(GenerationRun.book_id == book_id)
         if chapter_ep is not None:
             stmt = stmt.where(GenerationRun.chapter_ep == chapter_ep)

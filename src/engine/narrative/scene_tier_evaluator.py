@@ -17,9 +17,7 @@ class SceneTierEvaluator:
     ):
         self.plot_service = plot_service
 
-    async def is_climax(
-        self, book_id: int, episode_number: int, total_episodes: int
-    ) -> bool:
+    async def is_climax(self, book_id: int, episode_number: int, total_episodes: int) -> bool:
         """
         Determine if the given episode is a climax.
 

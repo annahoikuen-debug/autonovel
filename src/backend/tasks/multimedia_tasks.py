@@ -1,4 +1,5 @@
 """src/backend/tasks/multimedia_tasks.py - Huey tasks for Audio & Multimedia generation (Step 18)."""
+
 from __future__ import annotations
 
 import logging
@@ -40,7 +41,7 @@ def generate_asset_pack_task(
             "asset_id": result.asset_id,
             "files": result.files,
             "metadata": result.metadata,
-            "file_count": len(result.files)
+            "file_count": len(result.files),
         }
     except Exception as exc:
         logger.warning(f"generate_asset_pack_task failed for book {book_id}: {exc}")

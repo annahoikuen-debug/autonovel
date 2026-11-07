@@ -9,9 +9,7 @@ from src.models.predicate_match import PredicateAnalysisResult, PredicateMatch
 logger = logging.getLogger(__name__)
 
 # Patterns indicating negation of resolution in Japanese
-NEGATION_PATTERN = re.compile(
-    r"(?:ない|なかった|ぬ|ず|わけではない|とは言えない|できない|不可能)[。！？!?\s]*$"
-)
+NEGATION_PATTERN = re.compile(r"(?:ない|なかった|ぬ|ず|わけではない|とは言えない|できない|不可能)[。！？!?\s]*$")
 
 
 class PredicateScorer:

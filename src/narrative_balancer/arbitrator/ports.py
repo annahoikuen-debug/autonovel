@@ -16,8 +16,7 @@ class NarrativeBalancerPort(Protocol):
 
     name: str
 
-    def balance(self, state: PlotState) -> BalancerResult:
-        ...
+    def balance(self, state: PlotState) -> BalancerResult: ...
 
 
 class DSPAdapter(NarrativeBalancerPort):
@@ -39,14 +38,16 @@ class DSPAdapter(NarrativeBalancerPort):
             actions: List[CorrectionAction] = []
             for orig, corr in zip(state.beats, corrected):
                 if orig.tension != corr.tension or orig.beat_type != corr.beat_type:
-                    actions.append(CorrectionAction(
-                        episode=orig.episode,
-                        action_type="DSP_TENSION_ADJUST",
-                        target_field="tension",
-                        original_value=orig.tension,
-                        new_value=corr.tension,
-                        reason="DSP impulse correction of sagging section",
-                    ))
+                    actions.append(
+                        CorrectionAction(
+                            episode=orig.episode,
+                            action_type="DSP_TENSION_ADJUST",
+                            target_field="tension",
+                            original_value=orig.tension,
+                            new_value=corr.tension,
+                            reason="DSP impulse correction of sagging section",
+                        )
+                    )
 
             return BalancerResult(
                 balancer_name=self.name,
@@ -108,14 +109,16 @@ class CSPAdapter(NarrativeBalancerPort):
             for corr in csp_beats:
                 orig = orig_map.get(corr.episode)
                 if orig is None or orig.tension != corr.tension or orig.beat_type != corr.beat_type:
-                    actions.append(CorrectionAction(
-                        episode=corr.episode,
-                        action_type="CSP_CONSTRAINT_SOLVE",
-                        target_field="beat_type",
-                        original_value=orig.beat_type.value if orig else None,
-                        new_value=corr.beat_type.value,
-                        reason="CP-SAT structural constraint satisfaction",
-                    ))
+                    actions.append(
+                        CorrectionAction(
+                            episode=corr.episode,
+                            action_type="CSP_CONSTRAINT_SOLVE",
+                            target_field="beat_type",
+                            original_value=orig.beat_type.value if orig else None,
+                            new_value=corr.beat_type.value,
+                            reason="CP-SAT structural constraint satisfaction",
+                        )
+                    )
 
             return BalancerResult(
                 balancer_name=self.name,
@@ -155,14 +158,16 @@ class GrammarAdapter(NarrativeBalancerPort):
             actions: List[CorrectionAction] = []
             for orig, corr in zip(state.beats, balanced_beats):
                 if orig.beat_type != corr.beat_type or orig.tension != corr.tension:
-                    actions.append(CorrectionAction(
-                        episode=orig.episode,
-                        action_type="GRAMMAR_REWRITE",
-                        target_field="beat_type",
-                        original_value=orig.beat_type.value,
-                        new_value=corr.beat_type.value,
-                        reason="Grammar structural rule rewrite (e.g. crisis injection)",
-                    ))
+                    actions.append(
+                        CorrectionAction(
+                            episode=orig.episode,
+                            action_type="GRAMMAR_REWRITE",
+                            target_field="beat_type",
+                            original_value=orig.beat_type.value,
+                            new_value=corr.beat_type.value,
+                            reason="Grammar structural rule rewrite (e.g. crisis injection)",
+                        )
+                    )
 
             return BalancerResult(
                 balancer_name=self.name,

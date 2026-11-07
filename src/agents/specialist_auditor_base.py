@@ -35,6 +35,7 @@ class ModelRouterUnavailableError(RuntimeError):
 @dataclass
 class ActionableDiff:
     """Represents a concrete, actionable text improvement suggestion."""
+
     location: str  # e.g., "第1段落 冒頭", "末尾2文"
     original_quote: str  # 原文の問題箇所
     improved_suggestion: str  # 改善後の具体的な文章
@@ -73,10 +74,7 @@ class SpecialistAuditResult:
             "confidence": self.confidence,
             "reasoning_trace": self.reasoning_trace,
             "llm_raw_response": self.llm_raw_response,
-            "actionable_diffs": [
-                d.to_dict() if hasattr(d, "to_dict") else d
-                for d in self.actionable_diffs
-            ],
+            "actionable_diffs": [d.to_dict() if hasattr(d, "to_dict") else d for d in self.actionable_diffs],
         }
 
 
@@ -250,9 +248,11 @@ class SpecialistAuditor(ABC):
         self.llm = llm
         self._model_router = model_router
         from src.agents.specialists.windowing import NovelSectionExtractor
+
         self.section_extractor = NovelSectionExtractor()
         # Allow runtime override via environment variable
         import os
+
         samples = os.getenv("AUDIT_LLM_SAMPLES")
         if samples:
             try:
@@ -264,6 +264,7 @@ class SpecialistAuditor(ABC):
         """Ленивая загрузка model_router для избежания circular import."""
         if self._model_router is None:
             from src.agents.specialists.model_router import AuditorModelRouter
+
             self._model_router = AuditorModelRouter()
         return self._model_router
 
@@ -351,6 +352,7 @@ class SpecialistAuditor(ABC):
         if inject_anchors and self.specialist_name:
             try:
                 from src.agents.specialists.anchors import get_anchor_preset
+
                 anchor_preset = get_anchor_preset(self.specialist_name)
                 if anchor_preset and "【採点基準アンカー" not in full_prompt:
                     anchor_text = anchor_preset.format_for_prompt()
@@ -397,7 +399,7 @@ class SpecialistAuditor(ABC):
             # We want to remove the system prefix.
             prefix = f"【システム役割】\n{system_prompt}\n\n"
             if full_prompt.startswith(prefix):
-                user_prompt = full_prompt[len(prefix):]
+                user_prompt = full_prompt[len(prefix) :]
             else:
                 # Fallback: we assume the system_prompt is at the start and remove it.
                 # This is a bit fragile, but we'll do our best.
@@ -411,8 +413,8 @@ class SpecialistAuditor(ABC):
             system_prompt=system_prompt or "",
             temperature=0.7,  # Default temperature
             max_tokens=None,  # Let the LLM client decide
-            model=None,       # Let the LLM client decide
-            json_mode=True,   # We are asking for JSON output
+            model=None,  # Let the LLM client decide
+            json_mode=True,  # We are asking for JSON output
             response_schema=None,
             extra_params={},
         )
@@ -427,7 +429,9 @@ class SpecialistAuditor(ABC):
                         text_resp = str(text_resp_raw).strip()
                         if not text_resp:
                             raise LLMUnavailableError("LLM returned empty response")
-                        score, critique, suggestions, confidence, reasoning, actionable_diffs = parse_audit_response_json(text_resp)
+                        score, critique, suggestions, confidence, reasoning, actionable_diffs = (
+                            parse_audit_response_json(text_resp)
+                        )
                         return score, critique, suggestions, confidence, reasoning, text_resp, actionable_diffs
                     except LLMUnavailableError:
                         raise
@@ -439,7 +443,9 @@ class SpecialistAuditor(ABC):
                         text_resp = str(getattr(text_resp_raw, "content", text_resp_raw)).strip()
                         if not text_resp:
                             raise LLMUnavailableError("LLM returned empty response")
-                        score, critique, suggestions, confidence, reasoning, actionable_diffs = parse_audit_response_json(text_resp)
+                        score, critique, suggestions, confidence, reasoning, actionable_diffs = (
+                            parse_audit_response_json(text_resp)
+                        )
                         return score, critique, suggestions, confidence, reasoning, text_resp, actionable_diffs
                     except LLMUnavailableError:
                         raise
@@ -474,7 +480,9 @@ class SpecialistAuditor(ABC):
 
                 if not text_resp:
                     raise LLMUnavailableError("LLM returned empty response")
-                score, critique, suggestions, confidence, reasoning, actionable_diffs = parse_audit_response_json(text_resp)
+                score, critique, suggestions, confidence, reasoning, actionable_diffs = parse_audit_response_json(
+                    text_resp
+                )
                 return score, critique, suggestions, confidence, reasoning, text_resp, actionable_diffs
             except LLMUnavailableError:
                 raise
@@ -504,6 +512,7 @@ class SpecialistAuditor(ABC):
         # Check variance
         if len(scores) >= 2:
             import statistics
+
             stdev = statistics.stdev(scores)
             if stdev > self.LLM_MAX_SCORE_STDEV:
                 raise LLMUnavailableError(

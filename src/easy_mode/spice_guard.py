@@ -76,15 +76,11 @@ class SpiceGuard:
                 "priority": "critical",
             },
             "villain_despair": {
-                "patterns": [
-                    r"(?:敵|悪党|裏切り者|元仲間)(?:の|が)(?:顔面蒼白|青ざめ|震え|叫び|懇願|涙目)"
-                ],
+                "patterns": [r"(?:敵|悪党|裏切り者|元仲間)(?:の|が)(?:顔面蒼白|青ざめ|震え|叫び|懇願|涙目)"],
                 "priority": "high",
             },
             "power_gap": {
-                "patterns": [
-                    r"(?:レベル|ステータス|戦力|実力)(?:差|圧倒|無効|通用しない|ゴミ|雑魚)"
-                ],
+                "patterns": [r"(?:レベル|ステータス|戦力|実力)(?:差|圧倒|無効|通用しない|ゴミ|雑魚)"],
                 "priority": "high",
             },
         },
@@ -504,9 +500,7 @@ class SpiceGuard:
         """SPICEマーカーを除去"""
         return re.sub(r"<<<SPICE:[^>]+>>>|<<</SPICE>>>", "", text)
 
-    def build_rewrite_prompt(
-        self, content: str, improvements: list[str], elements: list[SpiceElement]
-    ) -> str:
+    def build_rewrite_prompt(self, content: str, improvements: list[str], elements: list[SpiceElement]) -> str:
         """SpiceGuard付きリライトプロンプト構築"""
         protected_content = self.inject_markers(content, elements)
 

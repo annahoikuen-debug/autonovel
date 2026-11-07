@@ -42,9 +42,7 @@ class CoverGenerator:
             generation_time_ms=elapsed,
         )
 
-    async def generate_variations(
-        self, request: IllustrationRequest, count: int = 3
-    ) -> list[IllustrationResult]:
+    async def generate_variations(self, request: IllustrationRequest, count: int = 3) -> list[IllustrationResult]:
         """バリエーション付きで複数の表紙を生成する。"""
         results: list[IllustrationResult] = []
         for i in range(count):

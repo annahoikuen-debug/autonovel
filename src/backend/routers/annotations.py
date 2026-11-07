@@ -25,6 +25,7 @@ router = APIRouter(
 
 class BeatDTO(BaseModel):
     """感情ビートDTO（API用）"""
+
     beat_id: Optional[str] = None
     episode: int
     scene: int
@@ -40,6 +41,7 @@ class BeatDTO(BaseModel):
 
 class PersistRequest(BaseModel):
     """アノテーション永続化リクエスト"""
+
     book_id: int
     episode: int
     beats: List[BeatDTO]
@@ -47,12 +49,14 @@ class PersistRequest(BaseModel):
 
 class PersistResponse(BaseModel):
     """永続化レスポンス"""
+
     persisted: int
     errors: List[str] = []
 
 
 class HistoryRequest(BaseModel):
     """履歴取得リクエスト"""
+
     book_id: int
     episode: int
     source: Optional[str] = None
@@ -61,6 +65,7 @@ class HistoryRequest(BaseModel):
 
 class RollbackRequest(BaseModel):
     """ロールバックリクエスト"""
+
     book_id: int
     episode: int
     beat_id: str
@@ -159,15 +164,17 @@ async def get_annotation_history(
             if vec:
                 emotions = vec.get_pair_emotions(source, target)
                 for emo, val in emotions.items():
-                    history.append({
-                        "episode": vec.episode_id,
-                        "source": source,
-                        "target": target,
-                        "emotion": emo.value,
-                        "value": val,
-                        "confidence": vec.confidences.get((source, target, emo), 0.0),
-                        "cause": vec.causes.get((source, target, emo)),
-                    })
+                    history.append(
+                        {
+                            "episode": vec.episode_id,
+                            "source": source,
+                            "target": target,
+                            "emotion": emo.value,
+                            "value": val,
+                            "confidence": vec.confidences.get((source, target, emo), 0.0),
+                            "cause": vec.causes.get((source, target, emo)),
+                        }
+                    )
         return {"history": history}
 
     # 全履歴（指定エピソード）
@@ -178,15 +185,17 @@ async def get_annotation_history(
         vec = vector_store._get_by_key("annotation", key)
         if vec:
             for (s, t, emo), val in vec.signals.items():
-                history.append({
-                    "episode": vec.episode_id,
-                    "source": s,
-                    "target": t,
-                    "emotion": emo.value,
-                    "value": val,
-                    "confidence": vec.confidences.get((s, t, emo), 0.0),
-                    "cause": vec.causes.get((s, t, emo)),
-                })
+                history.append(
+                    {
+                        "episode": vec.episode_id,
+                        "source": s,
+                        "target": t,
+                        "emotion": emo.value,
+                        "value": val,
+                        "confidence": vec.confidences.get((s, t, emo), 0.0),
+                        "cause": vec.causes.get((s, t, emo)),
+                    }
+                )
     return {"history": history}
 
 
@@ -214,7 +223,7 @@ async def rollback_annotation(
         # ここでソース・ターゲットが必要だが、beat_idから推定するか、
         # 全エッジからbeat_idで検索して削除する
         # 簡易実装: InMemoryGraphStoreではbeat_idでフィルタ削除可能
-        if hasattr(graph_store, '_edges'):
+        if hasattr(graph_store, "_edges"):
             for (src, tgt), edges in list(graph_store._edges.items()):
                 graph_store._edges[(src, tgt)] = [e for e in edges if e.get("beat_id") != req.beat_id]
                 if len(graph_store._edges.get((src, tgt), [])) == 0:

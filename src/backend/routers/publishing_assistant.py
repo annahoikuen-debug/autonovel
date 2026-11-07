@@ -14,6 +14,7 @@ router = APIRouter(
     tags=["publishing_assistant"],
 )
 
+
 class FormatRequest(BaseModel):
     platform: TargetPlatform = Field(TargetPlatform.KAKUYOMU, description="投稿先プラットフォーム")
     chapter_title: str = Field(..., description="話・章のタイトル")
@@ -58,7 +59,7 @@ async def format_chapter_for_publishing(request: FormatRequest, api_key: str = D
             chapter_title=request.chapter_title,
             main_content=main_content,
             foreword=foreword,
-            afterword=afterword
+            afterword=afterword,
         )
 
         return FormattedChapterPayload(
@@ -69,7 +70,7 @@ async def format_chapter_for_publishing(request: FormatRequest, api_key: str = D
             afterword=afterword,
             char_count=total_chars,
             ai_disclosure_statement=ai_statement,
-            validation_warnings=warnings
+            validation_warnings=warnings,
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Publishing assistant formatting failed: {str(e)}")

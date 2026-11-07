@@ -13,6 +13,7 @@ from src.domain.value_objects.metadata import BranchMetadata
 
 class BranchPlayStatus(Enum):
     """Branch play session status."""
+
     ACTIVE = "active"
     PAUSED = "paused"
     COMPLETED = "completed"
@@ -22,6 +23,7 @@ class BranchPlayStatus(Enum):
 @dataclass
 class Branch:
     """Branch entity - alternate storyline path."""
+
     id: BranchId
     novel_id: NovelId
     name: str
@@ -138,6 +140,7 @@ class Branch:
 @dataclass
 class BranchPlaySession:
     """Interactive Fiction branch play session."""
+
     id: BranchId  # Using BranchId as generic UUID
     novel_id: NovelId
     branch_id: BranchId

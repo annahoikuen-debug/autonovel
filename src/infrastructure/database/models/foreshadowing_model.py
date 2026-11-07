@@ -3,6 +3,7 @@
 伏線の設置・進展・回収・放棄をリレーショナルテーブルで管理する。
 Apache AGE / NetworkX を完全に置換するv5.0の中核テーブル。
 """
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -44,12 +45,10 @@ class ForeshadowingModel(Base):
     planted_episode = Column(Integer, nullable=False)
     target_episode = Column(Integer, nullable=True)
     resolved_episode = Column(Integer, nullable=True)
-    scope = Column(String(32), nullable=False, server_default='short_term')
+    scope = Column(String(32), nullable=False, server_default="short_term")
     status = Column(String(20), default="planted", nullable=False, index=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
     def __repr__(self) -> str:
         return (

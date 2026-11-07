@@ -1,4 +1,5 @@
 """Beat validator for emotional annotations."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -12,6 +13,7 @@ from src.pipeline.character_dict import load_character_dict
 @dataclass
 class ValidationResult:
     """検証結果"""
+
     is_valid: bool
     errors: list[str]
     warnings: list[str]
@@ -124,8 +126,7 @@ class BeatValidator:
         overt_emo = overt_beat.emotion
 
         # 既知の矛盾ペア
-        if (hidden_emo, overt_emo) in self.contradiction_pairs or \
-           (overt_emo, hidden_emo) in self.contradiction_pairs:
+        if (hidden_emo, overt_emo) in self.contradiction_pairs or (overt_emo, hidden_emo) in self.contradiction_pairs:
             warnings.append(
                 f"Potential contradiction: {hidden_beat.source}->{hidden_beat.target} "
                 f"hidden={hidden_emo.value}({hidden_beat.delta:+.2f}) "
@@ -161,8 +162,10 @@ class BeatValidator:
                 for o_beat in overt_beats:
                     # 異なる感情での矛盾チェック
                     if h_beat.emotion != o_beat.emotion:
-                        if (h_beat.emotion, o_beat.emotion) in self.contradiction_pairs or \
-                           (o_beat.emotion, h_beat.emotion) in self.contradiction_pairs:
+                        if (h_beat.emotion, o_beat.emotion) in self.contradiction_pairs or (
+                            o_beat.emotion,
+                            h_beat.emotion,
+                        ) in self.contradiction_pairs:
                             warnings.append(
                                 f"Cross-emotion contradiction: {key[2]}->{key[3]} "
                                 f"hidden={h_beat.emotion.value}({h_beat.delta:+.2f}) "

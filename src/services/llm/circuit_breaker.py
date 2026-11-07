@@ -1,4 +1,5 @@
 """LLMプロバイダー向けサーキットブレーカー (src.llm.circuit_breaker 統合版)。"""
+
 from __future__ import annotations
 
 
@@ -19,6 +20,7 @@ from src.llm.circuit_breaker import (
 
 class CircuitBreakerOpenException(Exception):
     """回路遮断中にリクエストが試行された場合の例外。"""
+
     pass
 
 

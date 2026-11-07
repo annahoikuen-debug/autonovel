@@ -76,11 +76,7 @@ class PlanningAgent(SkillAgent):
         # プロンプトにも「第N話以降」の指示を合成する。
         effective_eps = max(target_eps - start_ep + 1, 1)
         if start_ep > 1:
-            synopsis = (
-                f"【第{start_ep}話からの再構築】\n"
-                f"以下は第{start_ep}話以降の物語構成である。\n"
-                f"{synopsis}"
-            )
+            synopsis = f"【第{start_ep}話からの再構築】\n以下は第{start_ep}話以降の物語構成である。\n{synopsis}"
 
         prompt = self.prompt_manager.build_arc_generation_prompt(
             title=title,
@@ -141,10 +137,13 @@ class PlanningAgent(SkillAgent):
 
     async def execute(self, ctx: AgentContext) -> AgentResult:
         """スキル実行エントリーポイント。run から呼ばれる。"""
-        self.emit_event("planning.started", {
-            "book_id": ctx.book_id,
-            "title": ctx.artifacts.get("title"),
-        })
+        self.emit_event(
+            "planning.started",
+            {
+                "book_id": ctx.book_id,
+                "title": ctx.artifacts.get("title"),
+            },
+        )
 
         title = ctx.artifacts.get("title")
         synopsis = ctx.artifacts.get("synopsis", "")
@@ -152,10 +151,13 @@ class PlanningAgent(SkillAgent):
         start_ep = ctx.artifacts.get("start_ep", 1)
 
         if not title:
-            self.emit_event("planning.error", {
-                "book_id": ctx.book_id,
-                "error": "title is required in artifacts",
-            })
+            self.emit_event(
+                "planning.error",
+                {
+                    "book_id": ctx.book_id,
+                    "error": "title is required in artifacts",
+                },
+            )
             return AgentResult(
                 next_agent=None,
                 artifacts={},
@@ -191,11 +193,14 @@ class PlanningAgent(SkillAgent):
             )
             artifacts["proposals"] = proposals
 
-        self.emit_event("planning.completed", {
-            "book_id": ctx.book_id,
-            "arc_count": len(arcs.arcs) if arcs.arcs else 0,
-            "proposal_count": len(artifacts.get("proposals", {})),
-        })
+        self.emit_event(
+            "planning.completed",
+            {
+                "book_id": ctx.book_id,
+                "arc_count": len(arcs.arcs) if arcs.arcs else 0,
+                "proposal_count": len(artifacts.get("proposals", {})),
+            },
+        )
 
         return AgentResult(
             next_agent=AgentName.PLOT,
@@ -223,7 +228,7 @@ class PlanningAgent(SkillAgent):
             # ★各提案ごとに独立シードで裏切りスケジュール生成
             prop_kwargs = {
                 **kwargs,
-                "subversion_seed": f"{kwargs.get('subversion_seed', '')}_{sandbox_ctx.proposal_id}"
+                "subversion_seed": f"{kwargs.get('subversion_seed', '')}_{sandbox_ctx.proposal_id}",
             }
             arcs = await self.generate_arcs(
                 title=f"{title} ({variant_seed})",

@@ -38,9 +38,7 @@ class EngineLLMClient:
             try:
                 loop = asyncio.get_running_loop()
             except RuntimeError:
-                return GenerateResult(
-                    success=False, error_type="LOOP_ERROR", error_message="No running event loop"
-                )
+                return GenerateResult(success=False, error_type="LOOP_ERROR", error_message="No running event loop")
 
             if not hasattr(self._local, "sems"):
                 self._local.sems = {}

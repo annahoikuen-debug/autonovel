@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class InsufficientCreditsError(Exception):
     """Raised when user attempts to deduct more credits than available."""
+
     pass
 
 
@@ -18,8 +19,8 @@ class CreditService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    COST_PER_EPISODE = 1          # テキスト執筆時の消費クレジット
-    COST_PER_ILLUSTRATION = 5     # 画像生成時の消費クレジット
+    COST_PER_EPISODE = 1  # テキスト執筆時の消費クレジット
+    COST_PER_ILLUSTRATION = 5  # 画像生成時の消費クレジット
 
     async def get_balance(self, user_id: int) -> int:
         """ユーザーの現在のクレジット残高を取得する (users.credits を絶対マスターとする)。"""
@@ -43,11 +44,7 @@ class CreditService:
         if amount <= 0:
             raise ValueError(f"付与額は正の整数である必要があります: {amount}")
 
-        stmt = (
-            update(User)
-            .where(User.id == user_id)
-            .values(credits=User.credits + amount)
-        )
+        stmt = update(User).where(User.id == user_id).values(credits=User.credits + amount)
         result = await self.db.execute(stmt)
         if result.rowcount == 0:  # type: ignore[attr-defined]
             raise ValueError(f"ユーザーが見つかりません: {user_id}")
@@ -91,25 +88,17 @@ class CreditService:
 
         # アトミック UPDATE (SQLite/PostgreSQL 共通対応)
         # credits >= amount の条件により、同時リクエスト時も残高不足でのマイナス消費をDBレベルで防ぐ
-        stmt = (
-            update(User)
-            .where(User.id == user_id, User.credits >= amount)
-            .values(credits=User.credits - amount)
-        )
+        stmt = update(User).where(User.id == user_id, User.credits >= amount).values(credits=User.credits - amount)
         result = await self.db.execute(stmt)
 
         if result.rowcount == 0:  # type: ignore[attr-defined]
             # ユーザー不在か残高不足かを判定
-            user_exists = (
-                await self.db.execute(select(User.id).where(User.id == user_id))
-            ).scalar_one_or_none()
+            user_exists = (await self.db.execute(select(User.id).where(User.id == user_id))).scalar_one_or_none()
             if not user_exists:
                 raise ValueError(f"ユーザーが見つかりません: {user_id}")
 
             current_balance = await self.get_balance(user_id)
-            raise InsufficientCreditsError(
-                f"Insufficient credits. Required: {amount}, Available: {current_balance}"
-            )
+            raise InsufficientCreditsError(f"Insufficient credits. Required: {amount}, Available: {current_balance}")
 
         new_balance = await self.get_balance(user_id)
 

@@ -3,6 +3,7 @@
 ルールの適用条件として使用できる事前定義関数を提供する。
 YAML から文字列式を eval せず、このレジストリ経由で関数を参照する。
 """
+
 from __future__ import annotations
 
 import inspect

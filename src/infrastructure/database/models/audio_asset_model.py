@@ -19,6 +19,4 @@ class AudioAssetModel(Base):
     file_size_bytes = Column(Integer, nullable=False, default=0)
     created_at = Column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (
-        Index("idx_audio_assets_book_ep", "book_id", "episode_num"),
-    )
+    __table_args__ = (Index("idx_audio_assets_book_ep", "book_id", "episode_num"),)

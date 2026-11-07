@@ -16,9 +16,7 @@ class EroticQualityReport(BaseModel):
     overall_score: float = Field(..., ge=0.0, le=100.0, description="総合スコア (0-100)")
     sensuality_score: float = Field(..., ge=0.0, le=100.0, description="感覚的要素スコア (0-100)")
     emotional_score: float = Field(..., ge=0.0, le=100.0, description="感情的要素スコア (0-100)")
-    psychological_score: float = Field(
-        ..., ge=0.0, le=100.0, description="心理的要素スコア (0-100)"
-    )
+    psychological_score: float = Field(..., ge=0.0, le=100.0, description="心理的要素スコア (0-100)")
     technical_score: float = Field(..., ge=0.0, le=100.0, description="技術的要素スコア (0-100)")
     details: dict[str, Any] = Field(default_factory=dict, description="詳細な評価項目・講評")
 
@@ -150,22 +148,15 @@ class EroticQualityScorer:
         text_lower = text.lower()
         total_chars = len(text)
 
-        sensuality_score = self._score_category(
-            text_lower, self.quality_keywords.get("sensory", []), total_chars
-        )
-        emotional_score = self._score_category(
-            text_lower, self.quality_keywords.get("emotional", []), total_chars
-        )
+        sensuality_score = self._score_category(text_lower, self.quality_keywords.get("sensory", []), total_chars)
+        emotional_score = self._score_category(text_lower, self.quality_keywords.get("emotional", []), total_chars)
         psychological_score = self._score_category(
             text_lower, self.quality_keywords.get("psychological", []), total_chars
         )
         technical_score = self._score_technical(text, total_chars)
 
         overall_score = (
-            sensuality_score * 0.3
-            + emotional_score * 0.3
-            + psychological_score * 0.2
-            + technical_score * 0.2
+            sensuality_score * 0.3 + emotional_score * 0.3 + psychological_score * 0.2 + technical_score * 0.2
         )
 
         return EroticQualityReport(
@@ -177,12 +168,8 @@ class EroticQualityScorer:
             details={
                 "eval_method": "keyword_heuristic",
                 "text_length": total_chars,
-                "sensuality_matches": self._count_matches(
-                    text_lower, self.quality_keywords.get("sensory", [])
-                ),
-                "emotional_matches": self._count_matches(
-                    text_lower, self.quality_keywords.get("emotional", [])
-                ),
+                "sensuality_matches": self._count_matches(text_lower, self.quality_keywords.get("sensory", [])),
+                "emotional_matches": self._count_matches(text_lower, self.quality_keywords.get("emotional", [])),
                 "psychological_matches": self._count_matches(
                     text_lower, self.quality_keywords.get("psychological", [])
                 ),

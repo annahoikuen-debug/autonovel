@@ -13,6 +13,7 @@ from src.domain.value_objects.scores import CostScore
 
 class NovelStatus(Enum):
     """Novel status enumeration."""
+
     DRAFT = "draft"
     WRITING = "writing"
     EDITING = "editing"
@@ -23,6 +24,7 @@ class NovelStatus(Enum):
 
 class NovelMode(Enum):
     """Novel writing mode."""
+
     EASY = "easy"
     NORMAL = "normal"
     EXPERT = "expert"
@@ -30,6 +32,7 @@ class NovelMode(Enum):
 
 class SettingType(Enum):
     """Setting type enumeration for World Bible."""
+
     WORLDVIEW = "worldview"
     CHARACTER = "character"
     TERMINOLOGY = "terminology"
@@ -42,6 +45,7 @@ class SettingType(Enum):
 @dataclass(frozen=True, slots=True)
 class NovelMetadata:
     """Novel metadata value object."""
+
     novel_id: NovelId
     title: Title
     author_id: UserId
@@ -93,6 +97,7 @@ class NovelMetadata:
 
 class PublishPlatform(Enum):
     """Publishing platform enumeration."""
+
     NAROU = "narou"
     KAKUYOMU = "kakuyomu"
     KINDLE = "kindle"
@@ -102,6 +107,7 @@ class PublishPlatform(Enum):
 
 class PublishStatus(Enum):
     """Publishing status."""
+
     PENDING = "pending"
     SCHEDULED = "scheduled"
     RUNNING = "running"
@@ -113,6 +119,7 @@ class PublishStatus(Enum):
 @dataclass(frozen=True, slots=True)
 class PublishMetadata:
     """Publishing metadata value object."""
+
     novel_id: NovelId
     platform: PublishPlatform
     episode_range_start: int = 1
@@ -134,6 +141,7 @@ class PublishMetadata:
 @dataclass(frozen=True, slots=True)
 class ChapterMetadata:
     """Chapter metadata value object."""
+
     chapter_id: NovelId  # Using NovelId as generic ID
     novel_id: NovelId
     episode_number: int
@@ -152,6 +160,7 @@ class ChapterMetadata:
 @dataclass(frozen=True, slots=True)
 class CharacterMetadata:
     """Character metadata value object."""
+
     character_id: NovelId  # Using NovelId as generic ID
     novel_id: NovelId
     name: str
@@ -168,6 +177,7 @@ class CharacterMetadata:
 @dataclass(frozen=True, slots=True)
 class BranchMetadata:
     """Branch metadata value object."""
+
     branch_id: NovelId
     novel_id: NovelId
     name: str
@@ -184,6 +194,7 @@ class BranchMetadata:
 @dataclass(frozen=True, slots=True)
 class AuditMetadata:
     """Audit metadata value object."""
+
     audit_id: NovelId
     novel_id: NovelId
     episode_number: int

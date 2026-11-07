@@ -8,6 +8,7 @@ Create Date: 2026-09-14
 0000 のベースライン (Base.metadata.create_all) が既にテーブルを作っている
 可能性があるため、全操作を既存ガイド (0011 等) と同じガードで冪等化する。
 """
+
 from alembic import op
 import sqlalchemy as sa
 

@@ -30,6 +30,7 @@ from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.tasks.generation_tasks import generate_chapter_orchestrated_task
 from src.backend.tasks.huey import huey
 from src.agents.event_bus import EventBus, AgentEvent
+
 try:
     from sse_starlette.sse import EventSourceResponse
 except ImportError:
@@ -144,9 +145,7 @@ async def get_orchestrated_task_status(
     # IDOR 防止: task_id は連番/推測可能なため、タスク所有者を必ず検証する。
     # `tasks.py` の `_assert_task_ownership` と同じ fail-closed 方針に従う
     # （所有者が記録されていないタスクは管理者のみ参照可）。
-    _assert_task_ownership(
-        result if isinstance(result, dict) else {}, current_user
-    )
+    _assert_task_ownership(result if isinstance(result, dict) else {}, current_user)
 
     if result is None:
         logger.info("Orchestrated task status polled (pending): task_id=%s", task_id)
@@ -231,9 +230,7 @@ async def export_orchestrated_package(
         content=zip_bytes,
         media_type="application/zip",
         headers={
-            "Content-Disposition": (
-                f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"
-            ),
+            "Content-Disposition": (f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"),
             "Cache-Control": "no-store",
         },
     )

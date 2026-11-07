@@ -101,9 +101,7 @@ class RulesRepository(BaseRepository):
     @retry_on_lock()
     async def update_rule_status(self, rule_id: int, status: str) -> None:
         now = datetime.now()
-        await self.session.execute(
-            update(Rule).where(Rule.id == rule_id).values(status=status, updated_at=now)
-        )
+        await self.session.execute(update(Rule).where(Rule.id == rule_id).values(status=status, updated_at=now))
 
     @retry_on_lock()
     async def delete_rule(self, rule_id: int) -> None:
@@ -111,9 +109,7 @@ class RulesRepository(BaseRepository):
 
     # ---------- Masterpieces ----------
     @retry_on_lock()
-    async def create_masterpiece(
-        self, emotion_or_scene: str, content: str, vector: list[float] | None = None
-    ) -> int:
+    async def create_masterpiece(self, emotion_or_scene: str, content: str, vector: list[float] | None = None) -> int:
         now = datetime.now()
         vector_json = json.dumps(vector) if vector is not None else None
         mp = Masterpiece(

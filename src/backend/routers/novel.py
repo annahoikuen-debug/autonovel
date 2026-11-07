@@ -172,7 +172,9 @@ async def get_chapter_book_score(
                         "avg_overall_score": round(avg_overall, 2),
                         "trend_slope": round(trend_slope, 2),  # 正なら向上、負なら低下
                         "chapters_count": len(recent),
-                        "recent_scores": [{"chapter": int(s.chapter_number), "overall": float(s.overall_score)} for s in recent],
+                        "recent_scores": [
+                            {"chapter": int(s.chapter_number), "overall": float(s.overall_score)} for s in recent
+                        ],
                     }
 
             return BookScoreResponse(
@@ -239,6 +241,7 @@ async def check_promotion_eligibility(
         # メトリクス記録
         try:
             from src.backend.observability.metrics import record_promotion_eligible
+
             record_promotion_eligible(book_id, eligible)
         except Exception:
             pass  # メトリクス失敗は無視
@@ -329,41 +332,49 @@ async def get_book_alerts(
         if trend.get("changepoints"):
             for cp in trend["changepoints"]:
                 if cp["change"] < -15:
-                    alerts.append({
-                        "type": "score_drop",
-                        "severity": "high",
-                        "message": f"第{cp['chapter_index']}章でスコアが {abs(cp['change']):.1f} 点急落",
-                        "chapter_index": cp["chapter_index"],
-                        "details": cp,
-                    })
+                    alerts.append(
+                        {
+                            "type": "score_drop",
+                            "severity": "high",
+                            "message": f"第{cp['chapter_index']}章でスコアが {abs(cp['change']):.1f} 点急落",
+                            "chapter_index": cp["chapter_index"],
+                            "details": cp,
+                        }
+                    )
 
         # 停滞アラート（傾斜がほぼゼロかつ平均70未満）
         if abs(trend.get("slope", 0)) < 0.5 and trend.get("avg_score", 0) < 70:
-            alerts.append({
-                "type": "stagnation",
-                "severity": "medium",
-                "message": f"スコアが停滞しています（平均: {trend['avg_score']:.1f}、傾斜: {trend['slope']:.2f}）",
-                "avg_score": trend["avg_score"],
-                "slope": trend["slope"],
-            })
+            alerts.append(
+                {
+                    "type": "stagnation",
+                    "severity": "medium",
+                    "message": f"スコアが停滞しています（平均: {trend['avg_score']:.1f}、傾斜: {trend['slope']:.2f}）",
+                    "avg_score": trend["avg_score"],
+                    "slope": trend["slope"],
+                }
+            )
 
         # 異常値アラート（極端に低いスコア）
         if trend.get("latest_score", 100) < 50:
-            alerts.append({
-                "type": "anomaly",
-                "severity": "critical",
-                "message": f"最新章のスコアが極端に低いです: {trend['latest_score']:.1f}",
-                "latest_score": trend["latest_score"],
-            })
+            alerts.append(
+                {
+                    "type": "anomaly",
+                    "severity": "critical",
+                    "message": f"最新章のスコアが極端に低いです: {trend['latest_score']:.1f}",
+                    "latest_score": trend["latest_score"],
+                }
+            )
 
         # 改善停止アラート（5章以上改善なし）
         if trend.get("slope", 0) <= 0 and trend.get("chapters_evaluated", 0) >= 5:
-            alerts.append({
-                "type": "no_improvement",
-                "severity": "medium",
-                "message": f"{trend['chapters_evaluated']}章以上改善が見られません",
-                "slope": trend["slope"],
-            })
+            alerts.append(
+                {
+                    "type": "no_improvement",
+                    "severity": "medium",
+                    "message": f"{trend['chapters_evaluated']}章以上改善が見られません",
+                    "slope": trend["slope"],
+                }
+            )
 
         return {"book_id": book_id, "alerts": alerts}
     except HTTPException:

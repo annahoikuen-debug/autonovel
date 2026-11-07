@@ -3,6 +3,7 @@
 Step 9: `src/models/api_schemas` から `src/domain/schemas` への移行と
 レスポンスの ProjectSchema 統一を担当する。
 """
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends

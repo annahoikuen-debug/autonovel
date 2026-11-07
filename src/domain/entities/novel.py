@@ -14,6 +14,7 @@ from src.domain.value_objects.scores import CostScore
 @dataclass
 class Novel:
     """Novel (Book) aggregate root."""
+
     id: NovelId
     title: Title
     author_id: UserId
@@ -131,8 +132,7 @@ class Novel:
     def add_cost(self, cost_usd: float, tokens: int = 0) -> None:
         """Add to cumulative cost."""
         self.cumulative_cost = CostScore(
-            value=self.cumulative_cost.value + cost_usd,
-            tokens_used=self.cumulative_cost.tokens_used + tokens
+            value=self.cumulative_cost.value + cost_usd, tokens_used=self.cumulative_cost.tokens_used + tokens
         )
         self.updated_at = datetime.now()
 
@@ -178,6 +178,7 @@ class Novel:
 @dataclass(frozen=True, slots=True)
 class Chapter:
     """Chapter entity (belongs to a novel)."""
+
     id: NovelId  # Using NovelId as generic UUID
     novel_id: NovelId
     branch_id: NovelId
@@ -272,6 +273,7 @@ class Chapter:
 @dataclass(frozen=True, slots=True)
 class Episode:
     """Episode entity (alias for chapter in this context)."""
+
     id: NovelId
     novel_id: NovelId
     branch_id: NovelId
@@ -308,6 +310,7 @@ class Episode:
 @dataclass(frozen=True, slots=True)
 class Volume:
     """Volume entity (collection of chapters/episodes)."""
+
     id: NovelId
     novel_id: NovelId
     number: int

@@ -33,9 +33,7 @@ def _column_exists(table_name: str, column_name: str) -> bool:
 def upgrade() -> None:
     if _table_exists("books") and not _column_exists("books", "catchcopy"):
         with op.batch_alter_table("books", schema=None) as batch_op:
-            batch_op.add_column(
-                sa.Column("catchcopy", sa.String(255), nullable=True, server_default="")
-            )
+            batch_op.add_column(sa.Column("catchcopy", sa.String(255), nullable=True, server_default=""))
 
 
 def downgrade() -> None:

@@ -12,6 +12,7 @@ from dependency_injector import containers, providers
 
 from src.backend.database import DataRepository, UnitOfWork
 from src.backend.engine_config import EngineConfig
+
 try:
     from src.agents.context_builder_agent import ContextBuilderAgent as ContextManager
 except ImportError:
@@ -209,9 +210,7 @@ class AppContainer(InfraContainer):
         ),
         engine=engine,
     )
-    redis_cache: providers.Singleton = providers.Singleton(
-        "src.services.redis_cache.RedisCacheService"
-    )
+    redis_cache: providers.Singleton = providers.Singleton("src.services.redis_cache.RedisCacheService")
     prompt_cache: providers.Factory = providers.Factory(
         "src.services.redis_cache.PromptCacheService",
         redis_cache=redis_cache,

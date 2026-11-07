@@ -66,10 +66,7 @@ class BM25SparseRetriever:
         else:
             # Fallback simple overlap scoring
             q_set = set(query_tokens)
-            raw_scores = [
-                sum(1 for t in doc_tok if t in q_set)
-                for doc_tok in self._tokenized_corpus
-            ]
+            raw_scores = [sum(1 for t in doc_tok if t in q_set) for doc_tok in self._tokenized_corpus]
 
         # Pair scores with documents
         scored_pairs = []
@@ -84,11 +81,13 @@ class BM25SparseRetriever:
 
         results: list[SearchResult] = []
         for score, doc in top_pairs:
-            results.append(SearchResult(
-                id=str(doc.get("id", "")),
-                content=doc.get("content", ""),
-                metadata=doc.get("metadata", {}),
-                source="bm25_sparse",
-                score=score,
-            ))
+            results.append(
+                SearchResult(
+                    id=str(doc.get("id", "")),
+                    content=doc.get("content", ""),
+                    metadata=doc.get("metadata", {}),
+                    source="bm25_sparse",
+                    score=score,
+                )
+            )
         return results

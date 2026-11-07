@@ -3,6 +3,7 @@
 生成された本文テキスト中に伏線キーワードが含まれているかを検出する。
 高速な文字列マッチングベースの簡易検出器。
 """
+
 from __future__ import annotations
 
 import re
@@ -13,6 +14,7 @@ from typing import Any
 @dataclass
 class ForeshadowingMention:
     """検出された伏線への言及"""
+
     foreshadowing_id: int
     title: str
     mention_count: int
@@ -22,10 +24,21 @@ class ForeshadowingMention:
 
 # 回収を示唆するキーワード群
 _RESOLUTION_KEYWORDS = [
-    "ついに", "やはり", "やっと", "ようやく",
-    "明らかになった", "判明した", "真相", "正体",
-    "解き明かされ", "答えが", "理由は", "原因は",
-    "回収", "伏線", "あの時の",
+    "ついに",
+    "やはり",
+    "やっと",
+    "ようやく",
+    "明らかになった",
+    "判明した",
+    "真相",
+    "正体",
+    "解き明かされ",
+    "答えが",
+    "理由は",
+    "原因は",
+    "回収",
+    "伏線",
+    "あの時の",
 ]
 
 
@@ -72,13 +85,15 @@ def detect_foreshadowing_mentions(
             # 回収候補かどうかの判定
             is_resolution = _check_resolution_context(text, title)
 
-            mentions.append(ForeshadowingMention(
-                foreshadowing_id=f_id,
-                title=title,
-                mention_count=count,
-                context_snippets=snippets,
-                is_resolution_candidate=is_resolution,
-            ))
+            mentions.append(
+                ForeshadowingMention(
+                    foreshadowing_id=f_id,
+                    title=title,
+                    mention_count=count,
+                    context_snippets=snippets,
+                    is_resolution_candidate=is_resolution,
+                )
+            )
 
     return mentions
 

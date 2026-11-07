@@ -3,7 +3,6 @@ src/api/health.py - DEPRECATED: Use src.backend.routers.health instead.
 Compatibility shim for legacy health router imports.
 """
 
-
 import warnings
 
 warnings.warn(

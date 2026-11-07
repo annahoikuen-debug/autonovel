@@ -59,9 +59,7 @@ class GeminiAdapter(BaseLLMAdapter):
         if self._client is None:
             # Gemini API は常にリモートなので、キー未設定はそのまま渡すと
             # 不透明な 400/401 になる。明確な設定エラーに翻訳する。
-            ensure_api_key_configured(
-                self.api_key, provider="Gemini", env_var="GEMINI_API_KEY"
-            )
+            ensure_api_key_configured(self.api_key, provider="Gemini", env_var="GEMINI_API_KEY")
             from google import genai  # 遅延 import（起動時間短縮のため）
 
             self._client = genai.Client(api_key=self.api_key)

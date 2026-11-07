@@ -6,6 +6,7 @@ from src.agents.orchestrator import AgentContext, AgentResult
 from src.agents.illustration_agent import IllustrationAgent
 
 import logging
+
 logger = logging.getLogger(__name__)
 
 

@@ -48,6 +48,7 @@ def load_bias_corrections(config_path: str = "config/llm_bias_correction.yaml") 
         if not path.is_absolute():
             # Try relative to project root
             import os
+
             project_root = os.getenv("PROJECT_ROOT", ".")
             path = Path(project_root) / config_path
 
@@ -71,7 +72,9 @@ def load_bias_corrections(config_path: str = "config/llm_bias_correction.yaml") 
         return _correction_cache
 
 
-def apply_bias_correction(score: float, specialist_name: str, config_path: str = "config/llm_bias_correction.yaml") -> float:
+def apply_bias_correction(
+    score: float, specialist_name: str, config_path: str = "config/llm_bias_correction.yaml"
+) -> float:
     """Apply bias correction to a specialist score.
 
     Args:

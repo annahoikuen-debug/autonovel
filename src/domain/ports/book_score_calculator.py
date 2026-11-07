@@ -23,5 +23,4 @@ class IBookScoreCalculator(Protocol):
         ctx: Any,
         genre: str = "",
         phase: str = "",
-    ) -> Any:
-        ...
+    ) -> Any: ...

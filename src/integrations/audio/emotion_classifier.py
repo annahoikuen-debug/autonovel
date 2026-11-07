@@ -159,9 +159,7 @@ class DialogueEmotionClassifier:
 
         return SpeechEmotion.NEUTRAL
 
-    def adjust_acoustics_by_punctuation(
-        self, params: AcousticParameters, text: str
-    ) -> AcousticParameters:
+    def adjust_acoustics_by_punctuation(self, params: AcousticParameters, text: str) -> AcousticParameters:
         """Dynamically adjust acoustic parameters based on punctuation."""
         adjusted = AcousticParameters(
             speed_scale=params.speed_scale,

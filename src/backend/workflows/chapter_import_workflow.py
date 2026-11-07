@@ -15,7 +15,5 @@ class ChapterImportWorkflow(BaseWorkflow):
         do_refine = kwargs["do_refine"]
 
         # WritingService 経由で委譲（engine.writer から移行済）
-        result = await self.writing.analyze_and_import_chapter(
-            book_id, ep_num, import_text, do_refine=do_refine
-        )
+        result = await self.writing.analyze_and_import_chapter(book_id, ep_num, import_text, do_refine=do_refine)
         return result

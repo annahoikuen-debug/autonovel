@@ -1,4 +1,5 @@
 """Japanese tokenizer with SudachiPy backend and regex fallback."""
+
 from __future__ import annotations
 
 import logging
@@ -11,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from sudachipy import dictionary, tokenizer
+
     SUDACHI_AVAILABLE = True
 except ImportError:
     SUDACHI_AVAILABLE = False
@@ -19,16 +21,53 @@ except ImportError:
 
 
 STOP_WORDS = {
-    "の", "は", "が", "を", "に", "で", "と", "も", "や", "な", "た", "だ", "する",
-    "ある", "いる", "こと", "もの", "これ", "それ", "あれ", "よう", "そう", "ため",
-    "から", "まで", "より", "など", "そして", "しかし", "だが", "また", "その", "この",
-    "あの", "どの", "という", "について", "として", "により", "による",
+    "の",
+    "は",
+    "が",
+    "を",
+    "に",
+    "で",
+    "と",
+    "も",
+    "や",
+    "な",
+    "た",
+    "だ",
+    "する",
+    "ある",
+    "いる",
+    "こと",
+    "もの",
+    "これ",
+    "それ",
+    "あれ",
+    "よう",
+    "そう",
+    "ため",
+    "から",
+    "まで",
+    "より",
+    "など",
+    "そして",
+    "しかし",
+    "だが",
+    "また",
+    "その",
+    "この",
+    "あの",
+    "どの",
+    "という",
+    "について",
+    "として",
+    "により",
+    "による",
 }
 
 
 @dataclass
 class TokenInfo:
     """Trimming result of a single token."""
+
     surface: str
     pos: str
     pos_detail: str
@@ -39,6 +78,7 @@ class TokenInfo:
 @dataclass
 class SudachiConfig:
     """Configuration for SudachiTokenizer."""
+
     split_mode: str = "C"
     include_proper: bool = True
     include_compound: bool = True
@@ -48,14 +88,14 @@ class SudachiConfig:
 
 class JapaneseTokenizer(Protocol):
     """Protocol for Japanese tokenizer implementations."""
+
     def extract_nouns(
         self,
         text: str,
         include_proper: bool = True,
         include_compound: bool = True,
         min_length: int | None = None,
-    ) -> List[str]:
-        ...
+    ) -> List[str]: ...
 
 
 class SudachiTokenizer:
@@ -84,13 +124,15 @@ class SudachiTokenizer:
         tokens = []
         for m in self._tokenizer.tokenize(text, self._split_mode):
             pos_parts = m.part_of_speech()
-            tokens.append(TokenInfo(
-                surface=m.surface(),
-                pos=pos_parts[0] if pos_parts else "",
-                pos_detail=pos_parts[1] if len(pos_parts) > 1 else "",
-                reading=m.reading_form(),
-                normalized=m.normalized_form(),
-            ))
+            tokens.append(
+                TokenInfo(
+                    surface=m.surface(),
+                    pos=pos_parts[0] if pos_parts else "",
+                    pos_detail=pos_parts[1] if len(pos_parts) > 1 else "",
+                    reading=m.reading_form(),
+                    normalized=m.normalized_form(),
+                )
+            )
         return tokens
 
     def extract_nouns(

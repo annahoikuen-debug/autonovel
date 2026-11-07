@@ -1,6 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, Field
 
+
 class ConflictItemSchema(BaseModel):
     category: str = Field(..., description="カテゴリ (rhythm, dialogue, cliche, hook, character)")
     severity: str = Field(..., description="重要度 (critical, high, medium, low)")
@@ -14,6 +15,7 @@ class ConflictItemSchema(BaseModel):
     constraint_for_next: str = ""
     confidence: float = 0.9
 
+
 class QualitativeAudit(BaseModel):
     hook_score: float = Field(..., ge=0.0, le=100.0, description="読者引き込み度")
     emotional_score: float = Field(..., ge=0.0, le=100.0, description="感情曲線の自然さ")
@@ -21,6 +23,7 @@ class QualitativeAudit(BaseModel):
     overall_score: float = Field(..., ge=0.0, le=100.0, description="定性総合評価")
     critique: str = Field(default="", description="主要講評")
     actionable_patch: str | None = Field(default=None, description="推奨局所修正パッチ")
+
 
 class UnifiedAuditReport(BaseModel):
     is_acceptable: bool

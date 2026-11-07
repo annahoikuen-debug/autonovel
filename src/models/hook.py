@@ -7,6 +7,7 @@ from dataclasses import dataclass
 @dataclass
 class Hook:
     """フックデータクラス"""
+
     id: str
     type: Literal["mystery", "threat", "emotion"]
     content: str

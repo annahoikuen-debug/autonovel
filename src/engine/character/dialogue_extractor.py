@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 
+
 class DialogueExtractor:
     """小説本文からセリフと話者を抽出するクラス"""
 
@@ -14,7 +15,7 @@ class DialogueExtractor:
         for match in matches:
             dialogue = match.group(1)
             # ト書きの特定ロジック（簡易版）
-            preceding_text = text[:match.start()]
+            preceding_text = text[: match.start()]
             speaker = self._estimate_speaker(preceding_text)
             dialogues.append({"dialogue": dialogue, "speaker": speaker})
 

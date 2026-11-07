@@ -3,6 +3,7 @@
 プロット上で発生するイベントと、そのイベントにおけるキャラクターの役割を
 型安全に扱うためのスキーマ。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -16,29 +17,29 @@ class Role(str, Enum):
     source (感情を感じる側) / target (感情を向けられる側) の解決に使用する。
     """
 
-    VICTIM = "victim"              # 被害者
-    PERPETRATOR = "perpetrator"    # 加害者
-    RESCUER = "rescuer"            # 救助者
-    WITNESS = "witness"            # 目撃者
-    SHARER = "sharer"              # 秘密を共有する側
-    RECEIVER = "receiver"          # 秘密を受け取る側
-    PARTICIPANT = "participant"    # 参加者
-    CONFESSOR = "confessor"        # 告白する側
-    LISTENER = "listener"          # 告白を聞く側
+    VICTIM = "victim"  # 被害者
+    PERPETRATOR = "perpetrator"  # 加害者
+    RESCUER = "rescuer"  # 救助者
+    WITNESS = "witness"  # 目撃者
+    SHARER = "sharer"  # 秘密を共有する側
+    RECEIVER = "receiver"  # 秘密を受け取る側
+    PARTICIPANT = "participant"  # 参加者
+    CONFESSOR = "confessor"  # 告白する側
+    LISTENER = "listener"  # 告白を聞く側
 
 
 class PlotEventType(str, Enum):
     """プロットイベントタイプ。"""
 
-    BETRAYAL = "betrayal"                    # 裏切り
-    RESCUE = "rescue"                        # 救出
-    CONFESSION = "confession"                # 告白
-    COMBAT_VICTORY = "combat_victory"        # 戦闘勝利
+    BETRAYAL = "betrayal"  # 裏切り
+    RESCUE = "rescue"  # 救出
+    CONFESSION = "confession"  # 告白
+    COMBAT_VICTORY = "combat_victory"  # 戦闘勝利
     LOSS_OF_LOVED_ONE = "loss_of_loved_one"  # 愛する人の喪失
-    SECRET_SHARED = "secret_shared"          # 秘密の共有
+    SECRET_SHARED = "secret_shared"  # 秘密の共有
     FORCED_COOPERATION = "forced_cooperation"  # 強制協力
-    REJECTION = "rejection"                  # 拒絶
-    CUSTOM = "custom"                        # カスタムイベント
+    REJECTION = "rejection"  # 拒絶
+    CUSTOM = "custom"  # カスタムイベント
 
 
 @dataclass
@@ -78,8 +79,7 @@ class PlotEvent:
             "episode": self.episode,
             "scene": self.scene,
             "event_type": self.event_type.value,
-            "roles": {role.value if isinstance(role, Role) else role: name
-                      for role, name in self.roles.items()},
+            "roles": {role.value if isinstance(role, Role) else role: name for role, name in self.roles.items()},
             "metadata": self.metadata,
         }
 

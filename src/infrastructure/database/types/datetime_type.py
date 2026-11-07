@@ -1,4 +1,5 @@
 """常にUTCタイムゾーン付きとして安全に変換するDateTime型。"""
+
 from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional

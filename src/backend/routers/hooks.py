@@ -39,15 +39,8 @@ async def diagnose_hooks(
         await verify_book_ownership(book_id, current_user, uow)
         if uow.session is None:
             raise RuntimeError("Database session not initialized")
-        result = await uow.session.execute(
-            select(Chapter)
-            .where(Chapter.book_id == book_id)
-            .order_by(Chapter.ep_num)
-        )
-        chapters = [
-            {"ep_num": c.ep_num, "title": c.title, "content": c.content or ""}
-            for c in result.scalars().all()
-        ]
+        result = await uow.session.execute(select(Chapter).where(Chapter.book_id == book_id).order_by(Chapter.ep_num))
+        chapters = [{"ep_num": c.ep_num, "title": c.title, "content": c.content or ""} for c in result.scalars().all()]
 
     diagnoser = HookDiagnoser()
     scores = await diagnoser.diagnose(chapters)

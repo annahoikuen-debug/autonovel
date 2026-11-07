@@ -12,9 +12,7 @@ logger = logging.getLogger(__name__)
 class BaseAgent(ABC):
     """すべてのエージェントの基底クラス"""
 
-    def __init__(
-        self, repo: Any = None, llm: Any = None, style_rag: Any = None, rag_prefetch: Any = None
-    ):
+    def __init__(self, repo: Any = None, llm: Any = None, style_rag: Any = None, rag_prefetch: Any = None):
         self.repo = repo
         self.llm = llm
         self.style_rag = style_rag

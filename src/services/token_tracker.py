@@ -113,9 +113,7 @@ class TokenTracker:
             bucket["output_tokens"] += output_tokens
             bucket["total_tokens"] += input_tokens + output_tokens
             bucket["cost_usd"] = round(
-                bucket["cost_usd"] + self.estimate_cost_usd(
-                    input_tokens, output_tokens, model_name
-                ),
+                bucket["cost_usd"] + self.estimate_cost_usd(input_tokens, output_tokens, model_name),
                 8,
             )
             if model_name:
@@ -127,9 +125,7 @@ class TokenTracker:
                 model_bucket["output_tokens"] += output_tokens
                 model_bucket["total_tokens"] += input_tokens + output_tokens
                 model_bucket["calls"] += 1
-            self.call_count_by_task[task_type] = (
-                self.call_count_by_task.get(task_type, 0) + 1
-            )
+            self.call_count_by_task[task_type] = self.call_count_by_task.get(task_type, 0) + 1
 
         else:
             # task_type 無し呼び出し: 明示のフォールバックバケットに計上する
@@ -193,8 +189,7 @@ class TokenTracker:
         bucket["output_tokens"] += output_tokens
         bucket["total_tokens"] += input_tokens + output_tokens
         bucket["cost_usd"] = round(
-            bucket["cost_usd"]
-            + self.estimate_cost_usd(input_tokens, output_tokens, model_name),
+            bucket["cost_usd"] + self.estimate_cost_usd(input_tokens, output_tokens, model_name),
             8,
         )
         bucket["calls"] += 1
@@ -210,9 +205,7 @@ class TokenTracker:
         self.call_count_by_tier[tier] = self.call_count_by_tier.get(tier, 0) + 1
 
     @staticmethod
-    def estimate_cost_usd(
-        input_tokens: int, output_tokens: int, model_name: str | None
-    ) -> float:
+    def estimate_cost_usd(input_tokens: int, output_tokens: int, model_name: str | None) -> float:
         """1Mトークンあたりの単価からUSDコストを推定する。
 
         ``src/config/cost_optimization.py`` の ``resolve_pricing`` を参照する。
@@ -261,8 +254,7 @@ class TokenTracker:
         bucket["output_tokens"] += output_tokens
         bucket["total_tokens"] += input_tokens + output_tokens
         bucket["cost_usd"] = round(
-            bucket["cost_usd"]
-            + self.estimate_cost_usd(input_tokens, output_tokens, model_name),
+            bucket["cost_usd"] + self.estimate_cost_usd(input_tokens, output_tokens, model_name),
             8,
         )
         bucket["calls"] += 1
@@ -282,8 +274,7 @@ class TokenTracker:
         ``task_type`` 無し呼び出し（``unassigned_usage``）も含める。
         """
         return round(
-            sum(b["cost_usd"] for b in self.usage_by_task.values())
-            + self.unassigned_usage["cost_usd"],
+            sum(b["cost_usd"] for b in self.usage_by_task.values()) + self.unassigned_usage["cost_usd"],
             8,
         )
 
@@ -423,9 +414,7 @@ class TokenTracker:
 
             cost_calculator = CostCalculator()
             # 実メソッド名は estimate_cost_usd（calculate は存在しない）
-            cost_usd = cost_calculator.estimate_cost_usd(
-                input_tokens, output_tokens, model_name
-            )
+            cost_usd = cost_calculator.estimate_cost_usd(input_tokens, output_tokens, model_name)
         except Exception:
             import logging
 
@@ -457,7 +446,5 @@ class TokenTracker:
         except Exception:
             import logging
 
-            logging.getLogger(__name__).warning(
-                "Failed to log cost consumption for book_id=%s", book_id, exc_info=True
-            )
+            logging.getLogger(__name__).warning("Failed to log cost consumption for book_id=%s", book_id, exc_info=True)
         return cost_usd

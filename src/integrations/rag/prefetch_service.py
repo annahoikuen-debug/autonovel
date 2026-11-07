@@ -96,9 +96,7 @@ class RagPrefetchService:
         # ハンドル保持はレジストリに集約する（cancel / cancel_prefix の入口を 1 か所にする）。
         self._registry.track(key, task)
 
-    async def _do_prefetch(
-        self, engine: Any, book_id: int, branch_id: int, ep_num: int, blueprint: str
-    ) -> None:
+    async def _do_prefetch(self, engine: Any, book_id: int, branch_id: int, ep_num: int, blueprint: str) -> None:
         """バックグラウンドで3種類のRAG検索を並列実行する"""
         key = self.cache_key(book_id, ep_num)
         try:
@@ -106,20 +104,14 @@ class RagPrefetchService:
 
             # 1. スタイルRAG検索
             if hasattr(engine, "style_rag") and engine.style_rag:
-                tasks.append(
-                    engine.style_rag.find_best_samples(
-                        scene_description=blueprint, phase="Prep", top_k=3
-                    )
-                )
+                tasks.append(engine.style_rag.find_best_samples(scene_description=blueprint, phase="Prep", top_k=3))
             else:
                 tasks.append(_null([]))
 
             # 2. 過去ログRAG検索
             if hasattr(engine, "repo") and hasattr(engine.repo, "get_relevant_past_logs"):
                 tasks.append(
-                    engine.repo.get_relevant_past_logs(
-                        branch_id, ep_num, query_text=blueprint, book_id=book_id
-                    )
+                    engine.repo.get_relevant_past_logs(branch_id, ep_num, query_text=blueprint, book_id=book_id)
                 )
             else:
                 tasks.append(_null(""))

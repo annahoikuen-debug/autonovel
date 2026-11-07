@@ -70,9 +70,17 @@ class AntiAILoopController:
             loop_cfg = getattr(config, "loop", None)
             if loop_cfg:
                 self._max_loops = max_loops if max_loops is not None else getattr(loop_cfg, "max_iterations", 5)
-                self._score_threshold = score_threshold if score_threshold is not None else getattr(loop_cfg, "stop_threshold", 90.0)
-                self._min_score_improvement = min_score_improvement if min_score_improvement is not None else getattr(loop_cfg, "min_improvement", 2.0)
-                self._backoff_base = backoff_base if backoff_base is not None else getattr(loop_cfg, "backoff_base_seconds", 2.0)
+                self._score_threshold = (
+                    score_threshold if score_threshold is not None else getattr(loop_cfg, "stop_threshold", 90.0)
+                )
+                self._min_score_improvement = (
+                    min_score_improvement
+                    if min_score_improvement is not None
+                    else getattr(loop_cfg, "min_improvement", 2.0)
+                )
+                self._backoff_base = (
+                    backoff_base if backoff_base is not None else getattr(loop_cfg, "backoff_base_seconds", 2.0)
+                )
             else:
                 self._max_loops = max_loops if max_loops is not None else 5
                 self._score_threshold = score_threshold if score_threshold is not None else 90.0
@@ -133,20 +141,26 @@ class AntiAILoopController:
 
             score_improvement = output_score - previous_output_score
 
-            history.append(CorrectionHistory(
-                iteration=iteration,
-                input_score=current_score,
-                output_score=output_score,
-                violations_found=len(result.violations),
-                violations_corrected=correction_result.total_changes,
-                corrected_text=correction_result.text,
-            ))
+            history.append(
+                CorrectionHistory(
+                    iteration=iteration,
+                    input_score=current_score,
+                    output_score=output_score,
+                    violations_found=len(result.violations),
+                    violations_corrected=correction_result.total_changes,
+                    corrected_text=correction_result.text,
+                )
+            )
 
             if iteration > 1 and score_improvement < self._min_score_improvement:
                 backoff_iterations += 1
                 if backoff_iterations >= 2:
                     backoff_time = min(self._backoff_base ** (backoff_iterations - 1), self._backoff_max)
-                    logger.info("Score improvement %.2f below threshold - backing off for %.1f seconds", score_improvement, backoff_time)
+                    logger.info(
+                        "Score improvement %.2f below threshold - backing off for %.1f seconds",
+                        score_improvement,
+                        backoff_time,
+                    )
                     await asyncio.sleep(backoff_time)
             else:
                 backoff_iterations = 0

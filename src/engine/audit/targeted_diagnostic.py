@@ -45,9 +45,7 @@ class TargetedDiagnostic:
         self.max_targets = max_targets
         self.indexer = ParagraphIndexer()
 
-    def identify_weak_paragraphs(
-        self, audit_result: Dict[str, any], text: str = ""
-    ) -> List[ParagraphTarget]:
+    def identify_weak_paragraphs(self, audit_result: Dict[str, any], text: str = "") -> List[ParagraphTarget]:
         """
         Identify which paragraphs need revision based on audit results.
         Args:
@@ -68,21 +66,25 @@ class TargetedDiagnostic:
             for para in paragraphs:
                 matched = next((h for h in hints if h in para["text"]), None)
                 if matched:
-                    targets.append(ParagraphTarget(
-                        index=para["index"],
-                        original_text=para["text"],
-                        issue_category="weak_paragraph",
-                        directive=matched,
-                    ))
+                    targets.append(
+                        ParagraphTarget(
+                            index=para["index"],
+                            original_text=para["text"],
+                            issue_category="weak_paragraph",
+                            directive=matched,
+                        )
+                    )
             if not targets:
                 # LLMが末尾で切るため、末尾1件を対象にする
                 last = paragraphs[-1]
-                targets.append(ParagraphTarget(
-                    index=last["index"],
-                    original_text=last["text"],
-                    issue_category="weak_paragraph",
-                    directive=_FALLBACK_DIRECTIVE,
-                ))
+                targets.append(
+                    ParagraphTarget(
+                        index=last["index"],
+                        original_text=last["text"],
+                        issue_category="weak_paragraph",
+                        directive=_FALLBACK_DIRECTIVE,
+                    )
+                )
             return targets[: max(0, self.max_targets)]
         except Exception:
             # pdca_cycle を落とさないため、空リストへ倒す

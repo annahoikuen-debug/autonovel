@@ -1,5 +1,6 @@
 # src/utils/phase3_config.py
 """Phase 3 共通設定読み込みユーティリティ"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -10,6 +11,7 @@ import yaml
 @dataclass
 class FeaturesConfig:
     """機能フラグ設定"""
+
     compression_enabled: bool
     dag_scheduler_enabled: bool
     social_interaction_enabled: bool
@@ -18,6 +20,7 @@ class FeaturesConfig:
 @dataclass
 class ResourcesConfig:
     """リソース制限設定"""
+
     max_cpu_cores: int
     max_memory_gb: int
     max_gpu_memory_gb: int
@@ -27,6 +30,7 @@ class ResourcesConfig:
 @dataclass
 class LoggingConfig:
     """ログ設定"""
+
     level: str
     format: str
     phase_prefix: str
@@ -35,6 +39,7 @@ class LoggingConfig:
 @dataclass
 class MetricsConfig:
     """メトリクス設定"""
+
     prefix: str
     default_buckets: dict
 
@@ -42,6 +47,7 @@ class MetricsConfig:
 @dataclass
 class CacheConfig:
     """キャッシュ設定"""
+
     redis_url: str
     default_ttl_seconds: int
     compression_cache_prefix: str
@@ -52,6 +58,7 @@ class CacheConfig:
 @dataclass
 class TimeoutsConfig:
     """タイムアウト設定"""
+
     default_task_timeout_seconds: int
     dag_task_timeout_seconds: int
     compression_timeout_seconds: int
@@ -62,6 +69,7 @@ class TimeoutsConfig:
 @dataclass
 class RetryConfig:
     """リトライ設定"""
+
     max_retries: int
     base_delay_seconds: float
     max_delay_seconds: float
@@ -71,6 +79,7 @@ class RetryConfig:
 @dataclass
 class CircuitBreakerConfig:
     """サーキットブレーカー設定"""
+
     failure_threshold: int
     recovery_timeout_seconds: int
     half_open_max_calls: int
@@ -79,6 +88,7 @@ class CircuitBreakerConfig:
 @dataclass
 class Phase3Config:
     """Phase 3 全体設定"""
+
     features: FeaturesConfig
     resources: ResourcesConfig
     logging: LoggingConfig

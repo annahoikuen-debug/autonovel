@@ -11,7 +11,7 @@ from src.publishing.formatters.ruby_transpiler import PublishPlatform, RubyTrans
 
 # Regex helpers for typography normalization
 CONSECUTIVE_BLANKS = re.compile(r"\n{3,}")
-DIALOGUE_STARTERS = ("「", "『", "（", "(", "【", "［", "[", "〈", "《", "“", "\"")
+DIALOGUE_STARTERS = ("「", "『", "（", "(", "【", "［", "[", "〈", "《", "“", '"')
 
 
 class PlatformFormatter:

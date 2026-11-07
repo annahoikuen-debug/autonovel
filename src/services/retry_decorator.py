@@ -223,11 +223,7 @@ def with_llm_retry():
                         raise LLMUnrecoverableError(f"Fatal unrecoverable LLM error: {e}") from e
 
                     # 3. 一時的なエラーの判定
-                    is_timeout = (
-                        isinstance(e, asyncio.TimeoutError)
-                        or "timeout" in err_msg
-                        or "deadline" in err_msg
-                    )
+                    is_timeout = isinstance(e, asyncio.TimeoutError) or "timeout" in err_msg or "deadline" in err_msg
                     # 空/切り詰め応答は最も頻出する一時的失敗であり、
                     # キーワードを含まないため従来は「回復不能」と誤判定されていた。
                     is_empty_response = any(
@@ -306,9 +302,7 @@ def with_llm_retry():
                         )
 
                     # 5xx 連続エラーのカウントアップとモデルフォールバック
-                    if is_timeout or any(
-                        x in err_msg for x in ["503", "500", "deadline", "exhausted"]
-                    ):
+                    if is_timeout or any(x in err_msg for x in ["503", "500", "deadline", "exhausted"]):
                         lock = getattr(self, "_lock", None)
                         if lock is not None:
                             with lock:
@@ -319,9 +313,7 @@ def with_llm_retry():
                                 )
                                 fail_count = getattr(self, "_consecutive_5xx", 0)
                         else:
-                            setattr(
-                                self, "_consecutive_5xx", getattr(self, "_consecutive_5xx", 0) + 1
-                            )
+                            setattr(self, "_consecutive_5xx", getattr(self, "_consecutive_5xx", 0) + 1)
                             fail_count = getattr(self, "_consecutive_5xx", 0)
 
                         if fail_count >= 2:
@@ -335,11 +327,7 @@ def with_llm_retry():
                             if state.model_name != MODEL_ULTRA_STABLE and (
                                 state.attempt >= 2 or state.model_name == MODEL_STABLE_FALLBACK
                             ):
-                                state.model_name = (
-                                    MODEL_ULTRA_STABLE
-                                    if MODEL_ULTRA_STABLE
-                                    else "gemini-3.1-flash-lite"
-                                )
+                                state.model_name = MODEL_ULTRA_STABLE if MODEL_ULTRA_STABLE else "gemini-3.1-flash-lite"
                                 logger.warning(
                                     "[Gemini FALLBACK] Persistent 5xx. Switching to ULTRA_STABLE: %s",
                                     state.model_name,
@@ -349,9 +337,7 @@ def with_llm_retry():
                                 and MODEL_STABLE_FALLBACK != state.original_model_name
                             ):
                                 state.model_name = (
-                                    MODEL_STABLE_FALLBACK
-                                    if MODEL_STABLE_FALLBACK
-                                    else "gemini-3.1-flash-lite"
+                                    MODEL_STABLE_FALLBACK if MODEL_STABLE_FALLBACK else "gemini-3.1-flash-lite"
                                 )
                                 logger.warning(
                                     "[Gemini FALLBACK] 5xx detected. Switching to STABLE_FALLBACK: %s",

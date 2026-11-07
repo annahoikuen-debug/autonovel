@@ -2,6 +2,7 @@
 
 実体は src/domain/schemas/easy_mode.py に移設済み。
 """
+
 from __future__ import annotations
 
 

@@ -23,23 +23,14 @@ class LLMConfigOverride(BaseModel):
 
     provider: str | None = Field(default=None, description="gemini / openai / mock")
     api_key: str | None = Field(default=None, description="カスタムAPIキー")
-    model_name: str | None = Field(
-        default=None, description="全体既定モデル名 (例: gemini-2.5-flash, gpt-4o-mini)"
-    )
+    model_name: str | None = Field(default=None, description="全体既定モデル名 (例: gemini-2.5-flash, gpt-4o-mini)")
     base_url: str | None = Field(default=None, description="OpenAI互換 Base URL")
-    model_planning: str | None = Field(
-        default=None, description="プロット・構成用モデル (例: gemini-2.5-flash)"
-    )
-    model_writing: str | None = Field(
-        default=None, description="本文執筆用モデル (例: gpt-4o, claude-3-5-sonnet)"
-    )
-    model_audit: str | None = Field(
-        default=None, description="校正・監査用モデル (例: gemini-2.5-flash)"
-    )
+    model_planning: str | None = Field(default=None, description="プロット・構成用モデル (例: gemini-2.5-flash)")
+    model_writing: str | None = Field(default=None, description="本文執筆用モデル (例: gpt-4o, claude-3-5-sonnet)")
+    model_audit: str | None = Field(default=None, description="校正・監査用モデル (例: gemini-2.5-flash)")
     model_embedding: str | None = Field(
         default=None, description="ベクトル検索・Embedding用モデル (例: text-embedding-3-small)"
     )
-
 
 
 class EasyModeInput(BaseModel):
@@ -50,9 +41,7 @@ class EasyModeInput(BaseModel):
     character_params: CharacterParams = Field(default_factory=CharacterParams)
     content_length_limit: int = Field(default=2000, ge=1, le=10000)
     target_episodes: int = Field(default=1, ge=1, le=50, description="目標話数 (1〜50)")
-    style_override: dict[str, Any] | None = Field(
-        default=None, description="カスタムStyleProfileの辞書"
-    )
+    style_override: dict[str, Any] | None = Field(default=None, description="カスタムStyleProfileの辞書")
     llm_config: LLMConfigOverride | None = Field(default=None, description="オプトインのLLM設定")
     book_id: int | None = Field(
         default=None,
@@ -148,7 +137,6 @@ class GachaResponse(BaseModel):
     review_session_id: str | None = Field(default=None, description="レビューセッションID")
 
 
-
 class DigestRequest(BaseModel):
     request_id: str = Field(..., description="元のガチャリクエストID")
     selected_plan_id: str = Field(..., description="ユーザーが選択した企画ID")
@@ -159,9 +147,7 @@ class DigestResponse(BaseModel):
     title: str = Field(default="", description="タイトル")
     synopsis: str = Field(default="", description="全体あらすじ")
     episode_1_text: str = Field(default="", description="第1話の本文テキスト")
-    climax_preview_text: str = Field(
-        default="", description="クライマックス（見せ場）のプレビューテキスト"
-    )
+    climax_preview_text: str = Field(default="", description="クライマックス（見せ場）のプレビューテキスト")
     status: DigestStatus = Field(default=DigestStatus.COMPLETED, description="生成ステータス")
 
 
@@ -179,9 +165,7 @@ class ReversePlotGeneratePayload(BaseModel):
     """逆算プロット生成リクエスト（APIキー不要のかんたんモード・UI用）"""
 
     answers: dict[str, Any] = Field(default_factory=dict, description="4ステップ回答")
-    target_episodes: int = Field(
-        default=10, ge=1, le=50, alias="targetEpisodes", description="目標話数"
-    )
+    target_episodes: int = Field(default=10, ge=1, le=50, alias="targetEpisodes", description="目標話数")
     genre: str = Field(default="ハイファンタジー (R15)", description="ジャンル")
     llm_config: LLMConfigOverride | None = Field(default=None, description="オプトインのLLM設定")
 
@@ -206,9 +190,7 @@ class FullAutoRequest(BaseModel):
     keywords: list[str] = Field(default_factory=list, description="キーワードリスト")
     protagonist_type: str = Field(default="チート主人公", description="主人公タイプ")
     target_episodes: int = Field(default=10, ge=1, le=50, description="目標話数")
-    words_per_episode: int = Field(
-        default=2000, ge=500, le=10000, description="話あたりの目標文字数"
-    )
+    words_per_episode: int = Field(default=2000, ge=500, le=10000, description="話あたりの目標文字数")
     enable_audit: bool = Field(default=True, description="推敲監査を有効化")
     max_rewrites: int = Field(default=2, ge=0, le=5, description="最大リライト回数")
     start_ep: int = Field(default=1, ge=1, le=50, description="開始話数")

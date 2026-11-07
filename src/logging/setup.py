@@ -1,6 +1,7 @@
 import sys
 from loguru import logger
 
+
 def setup_logging():
     """
     Configure logging to output JSON format with rotation.

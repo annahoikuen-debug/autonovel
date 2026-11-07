@@ -1,11 +1,13 @@
 """
 Commercial publishing helper functions to be shared between routers and tasks.
 """
+
 from typing import Any
 from sqlalchemy import select
 from src.backend.database.models import Book, Chapter
 from src.backend.database.uow import UnitOfWork
 from src.core.container import AppContainer
+
 
 async def _get_novel_data(book_id: int) -> dict[str, Any]:
     """書籍から小説の基本情報を取得する"""
@@ -25,14 +27,13 @@ async def _get_novel_data(book_id: int) -> dict[str, Any]:
             "is_adult": bool(getattr(book_row, "sanctuary_integrity", 100) < 100),
         }
 
+
 async def _get_episodes_data(
     book_id: int, episode_ids: list[int] | None = None, platforms: list[str] | None = None
 ) -> list[dict[str, Any]]:
     """書籍からエピソードデータを取得する（プラットフォーム投稿ID含む）"""
     async with UnitOfWork(AppContainer.db()) as uow:
-        chapters_query = (
-            select(Chapter).where(Chapter.book_id == book_id).order_by(Chapter.ep_num)
-        )
+        chapters_query = select(Chapter).where(Chapter.book_id == book_id).order_by(Chapter.ep_num)
         if episode_ids:
             chapters_query = chapters_query.where(Chapter.id.in_(episode_ids))
 

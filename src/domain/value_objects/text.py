@@ -7,6 +7,7 @@ from enum import Enum
 
 class TextFormat(Enum):
     """Text format types."""
+
     PLAIN = "plain"
     MARKDOWN = "markdown"
     HTML = "html"
@@ -15,6 +16,7 @@ class TextFormat(Enum):
 @dataclass(frozen=True, slots=True)
 class TextContent:
     """Base text content value object."""
+
     content: str
     format: TextFormat = TextFormat.PLAIN
 
@@ -52,13 +54,14 @@ class TextContent:
             return NotImplemented
         return TextContent(
             content=self.content + other.content,
-            format=self.format if self.format == other.format else TextFormat.PLAIN
+            format=self.format if self.format == other.format else TextFormat.PLAIN,
         )
 
 
 @dataclass(frozen=True, slots=True)
 class PlainText(TextContent):
     """Plain text content."""
+
     content: str
 
     def __post_init__(self) -> None:
@@ -68,6 +71,7 @@ class PlainText(TextContent):
 @dataclass(frozen=True, slots=True)
 class MarkdownText(TextContent):
     """Markdown formatted text content."""
+
     content: str
 
     def __post_init__(self) -> None:
@@ -77,6 +81,7 @@ class MarkdownText(TextContent):
 @dataclass(frozen=True, slots=True)
 class HtmlText(TextContent):
     """HTML formatted text content."""
+
     content: str
 
     def __post_init__(self) -> None:
@@ -86,6 +91,7 @@ class HtmlText(TextContent):
 @dataclass(frozen=True, slots=True)
 class Title:
     """Title value object with validation."""
+
     value: str
 
     def __post_init__(self) -> None:
@@ -101,6 +107,7 @@ class Title:
 @dataclass(frozen=True, slots=True)
 class Summary:
     """Summary/description value object."""
+
     value: str
 
     def __post_init__(self) -> None:
@@ -114,6 +121,7 @@ class Summary:
 @dataclass(frozen=True, slots=True)
 class Catchcopy:
     """Catchcopy/tagline value object."""
+
     value: str
 
     def __post_init__(self) -> None:
@@ -129,6 +137,7 @@ class Catchcopy:
 @dataclass(frozen=True, slots=True)
 class Genre:
     """Genre value object."""
+
     value: str
 
     def __post_init__(self) -> None:

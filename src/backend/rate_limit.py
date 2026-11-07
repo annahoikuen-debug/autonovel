@@ -134,9 +134,7 @@ class RateLimiter:
                     addr = ipaddress.ip_address(candidate)
                 except ValueError:
                     continue
-                if not any(
-                    addr in net for net in (self._trusted_proxies or ())
-                ):
+                if not any(addr in net for net in (self._trusted_proxies or ())):
                     return candidate
             return forwarded.split(",")[0].strip()
 

@@ -11,9 +11,7 @@ class NarrativeConstraint(BaseModel):
     """物語上の絶対遵守すべき論理制約（因果律ユニットテスト用）"""
 
     subject: str = Field(..., description="対象（キャラ名、アイテム名）")
-    constraint: str = Field(
-        ..., description="制約内容（〜を知らない、〜を持っている、〜できない等）"
-    )
+    constraint: str = Field(..., description="制約内容（〜を知らない、〜を持っている、〜できない等）")
     importance: Literal["Low", "Medium", "High"] = Field(default="High")
 
     model_config = MODEL_CONFIG_DEFAULTS
@@ -26,16 +24,12 @@ class Foreshadowing(BaseModel):
         default="",
         description="伏線の具体的な内容（例：主人公が拾った錆びた鍵が実は王家の証である等、具体的に）",
     )
-    exposure_level: int = Field(
-        default=3, ge=1, le=5, description="読者へのバレやすさ(1:完全隠蔽〜5:露骨な予告)"
-    )
+    exposure_level: int = Field(default=3, ge=1, le=5, description="読者へのバレやすさ(1:完全隠蔽〜5:露骨な予告)")
 
 
 class ClimaxScene(BaseModel):
     timing: str = Field(default="", description="発生予定の話数やタイミング。例: '第10話 決戦時'")
-    event: str = Field(
-        default="", description="名場面の内容。何が起き、誰がどうなり、どのようなカタルシスがあるか"
-    )
+    event: str = Field(default="", description="名場面の内容。何が起き、誰がどうなり、どのようなカタルシスがあるか")
     target_emotion: str = Field(
         default="", description="読者に抱かせたい感情（例：絶望、鳥肌が立つような爽快感、感動の涙）"
     )
@@ -43,34 +37,18 @@ class ClimaxScene(BaseModel):
 
 
 class WorldRules(BaseModel):
-    magic_cost_and_taboo: str = Field(
-        default="なし", description="魔法やスキルの残酷な代償と世界の禁忌"
-    )
-    social_hierarchy_and_discrimination: str = Field(
-        default="なし", description="主人公が迫害される絶対的な社会的構造"
-    )
-    hidden_truths: dict[str, str] = Field(
-        default_factory=dict, description="絶望的な真実・最大の伏線を3つ以上"
-    )
-    truth_ledger: dict[str, Any] = Field(
-        default_factory=dict, description="物語の根幹に関わる真実のデータベース"
-    )
-    geopolitics_and_economy: str = Field(
-        default="なし", description="資源の偏り、通貨の価値、地政学的緊張"
-    )
-    religious_dogma_and_heresy: str = Field(
-        default="なし", description="信仰と、それを破った際の社会的制裁"
-    )
+    magic_cost_and_taboo: str = Field(default="なし", description="魔法やスキルの残酷な代償と世界の禁忌")
+    social_hierarchy_and_discrimination: str = Field(default="なし", description="主人公が迫害される絶対的な社会的構造")
+    hidden_truths: dict[str, str] = Field(default_factory=dict, description="絶望的な真実・最大の伏線を3つ以上")
+    truth_ledger: dict[str, Any] = Field(default_factory=dict, description="物語の根幹に関わる真実のデータベース")
+    geopolitics_and_economy: str = Field(default="なし", description="資源の偏り、通貨の価値、地政学的緊張")
+    religious_dogma_and_heresy: str = Field(default="なし", description="信仰と、それを破った際の社会的制裁")
     causality_map: list[str] = Field(
         default_factory=list, description="設定間の不可避な因果律の連鎖（AがBを生み、Cに繋がる等）"
     )
     foreshadowing_map: list[Foreshadowing] = Field(default_factory=list)
-    active_constraints: list[NarrativeConstraint] = Field(
-        default_factory=list, description="現在有効な論理制約リスト"
-    )
-    climax_scenes: list[ClimaxScene] = Field(
-        default_factory=list, description="読者の心を揺さぶる名場面(3〜5個)"
-    )
+    active_constraints: list[NarrativeConstraint] = Field(default_factory=list, description="現在有効な論理制約リスト")
+    climax_scenes: list[ClimaxScene] = Field(default_factory=list, description="読者の心を揺さぶる名場面(3〜5個)")
     mystery_disclosure_schedule: list[dict[str, Any]] = Field(default_factory=list)
     tension_threshold: int = Field(default=85)
     tension_gain: float = Field(default=1.0)
@@ -112,25 +90,15 @@ class WorldRules(BaseModel):
                 val = data["causality_map"]
                 if isinstance(val, str):
                     if "\n" in val:
-                        data["causality_map"] = [
-                            line.strip("- *").strip() for line in val.split("\n") if line.strip()
-                        ]
+                        data["causality_map"] = [line.strip("- *").strip() for line in val.split("\n") if line.strip()]
                     elif "→" in val:
-                        data["causality_map"] = [
-                            part.strip() for part in val.split("→") if part.strip()
-                        ]
+                        data["causality_map"] = [part.strip() for part in val.split("→") if part.strip()]
                     elif "->" in val:
-                        data["causality_map"] = [
-                            part.strip() for part in val.split("->") if part.strip()
-                        ]
+                        data["causality_map"] = [part.strip() for part in val.split("->") if part.strip()]
                     elif "、" in val:
-                        data["causality_map"] = [
-                            part.strip() for part in val.split("、") if part.strip()
-                        ]
+                        data["causality_map"] = [part.strip() for part in val.split("、") if part.strip()]
                     elif "," in val:
-                        data["causality_map"] = [
-                            part.strip() for part in val.split(",") if part.strip()
-                        ]
+                        data["causality_map"] = [part.strip() for part in val.split(",") if part.strip()]
                     else:
                         data["causality_map"] = [val.strip()]
                 elif isinstance(val, list):
@@ -148,9 +116,7 @@ class AnchorResponse(BaseModel):
     # --- Comfort Engine Metrics ---
     qol_score: int = Field(default=0, description="生活の質（0-1000）")
     sanctuary_integrity: int = Field(default=100, description="聖域の堅牢性（0-100）")
-    discovery_logs: list[dict[str, Any]] = Field(
-        default_factory=list, description="発見された素材・技術の履歴"
-    )
+    discovery_logs: list[dict[str, Any]] = Field(default_factory=list, description="発見された素材・技術の履歴")
 
     # --- Enigma Engine Metrics ---
     intellectual_satisfaction: int = Field(default=0, description="知的充足度（0-100）")
@@ -176,9 +142,7 @@ class WorldState(BaseModel):
     story_threads: list[StoryThread] = Field(default_factory=list)
     dynamic_anchors: list[str] = Field(default_factory=list)
     subplot_progression: dict[str, int] = Field(default_factory=dict)
-    cumulative_summary: str = Field(
-        default="", description="第1話から最新話までの圧縮あらすじ（800文字以内）"
-    )
+    cumulative_summary: str = Field(default="", description="第1話から最新話までの圧縮あらすじ（800文字以内）")
     dependency_graph: dict[str, Any] = Field(default_factory=dict)
     character_states: dict[str, str] = Field(default_factory=dict)
     memory_integrity_score: int = Field(
@@ -188,9 +152,7 @@ class WorldState(BaseModel):
     # --- Comfort Engine Dynamic State ---
     qol_score: int = Field(default=0, description="現在の生活の質")
     sanctuary_integrity: int = Field(default=100, description="現在の聖域の堅牢性")
-    veneration_level: float = Field(
-        default=0.0, description="周囲からの崇拝度・神格化レベル (0.0 - 1.0)"
-    )
+    veneration_level: float = Field(default=0.0, description="周囲からの崇拝度・神格化レベル (0.0 - 1.0)")
     fulfillment_matrix: dict[str, float] = Field(
         default_factory=lambda: {"cuisine": 0.0, "craft": 0.0, "nature": 0.0, "relation": 0.0},
         description="多次元的充足指標（CCTに基づく）",
@@ -231,14 +193,11 @@ class ForeshadowingAudit(BaseModel):
             # 2. recovered_items が文字列のリストで来た場合、辞書形式に変換
             if "recovered_items" in data and isinstance(data["recovered_items"], list):
                 data["recovered_items"] = [
-                    {"foreshadowing_id": item} if isinstance(item, str) else item
-                    for item in data["recovered_items"]
+                    {"foreshadowing_id": item} if isinstance(item, str) else item for item in data["recovered_items"]
                 ]
 
             # 3. Default injections
-            if "is_recovered" not in data and not any(
-                a in data for a in ["recovered", "isRecovered"]
-            ):
+            if "is_recovered" not in data and not any(a in data for a in ["recovered", "isRecovered"]):
                 data["is_recovered"] = True
         return data
 

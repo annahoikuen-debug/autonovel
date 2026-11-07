@@ -1,4 +1,5 @@
 """Layer 2: Apache AGE 2-Hop Subgraph Extractor & Edge Pruner (Steps 27 & 28)."""
+
 from __future__ import annotations
 
 import logging
@@ -121,12 +122,14 @@ class Layer2SubgraphExtractor:
                 if n_name and m_name:
                     rel_types = _parse_agtype_local(row[6]) if row[6] else ["related"]
                     rel_type = rel_types[0] if isinstance(rel_types, list) and rel_types else "related"
-                    raw_edges.append({
-                        "source": n_name,
-                        "target": m_name,
-                        "type": str(rel_type),
-                        "hop": len(rel_types) if isinstance(rel_types, list) else 1,
-                    })
+                    raw_edges.append(
+                        {
+                            "source": n_name,
+                            "target": m_name,
+                            "type": str(rel_type),
+                            "hop": len(rel_types) if isinstance(rel_types, list) else 1,
+                        }
+                    )
 
         except Exception as e:
             logger.warning(f"AGE Cypher query failed: {e}")
@@ -203,12 +206,14 @@ class Layer2SubgraphExtractor:
                         visited_nodes.add(v)
                         next_layer.add(v)
                         node_hops[v] = hop
-                    collected_edges.append({
-                        "source": rel.get("source"),
-                        "target": rel.get("target"),
-                        "type": rel.get("type", "related"),
-                        "hop": hop,
-                    })
+                    collected_edges.append(
+                        {
+                            "source": rel.get("source"),
+                            "target": rel.get("target"),
+                            "type": rel.get("type", "related"),
+                            "hop": hop,
+                        }
+                    )
             current_layer = next_layer
             if not current_layer:
                 break
@@ -278,7 +283,7 @@ class Layer2SubgraphExtractor:
         pruned_edges = [e for e in scored_edges if e["relevance_score"] >= self.relevance_threshold]
         if len(pruned_edges) > self.max_edges:
             pruned_edges.sort(key=lambda x: x["relevance_score"], reverse=True)
-            pruned_edges = pruned_edges[:self.max_edges]
+            pruned_edges = pruned_edges[: self.max_edges]
 
         # 残ったエッジに接続しているノードを収集
         active_node_ids = set()
@@ -295,7 +300,7 @@ class Layer2SubgraphExtractor:
         filtered_nodes = [n for n in nodes if n.get("id", n.get("name")) in active_node_ids]
         if len(filtered_nodes) > self.max_nodes:
             filtered_nodes.sort(key=lambda x: x.get("hop", 2))
-            filtered_nodes = filtered_nodes[:self.max_nodes]
+            filtered_nodes = filtered_nodes[: self.max_nodes]
 
         removed_edges = initial_edge_count - len(pruned_edges)
 

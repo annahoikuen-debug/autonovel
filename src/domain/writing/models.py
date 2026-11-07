@@ -13,6 +13,7 @@ def clean_writing_response(text: str) -> str:
 
 class WritingGenerationContext(BaseModel):
     """執筆生成コンテキストモデル"""
+
     sys_inst: str = ""
     fw_prompt: str = ""
     pov_instruction: str = ""
@@ -51,6 +52,7 @@ from dataclasses import dataclass, field
 @dataclass
 class RegenerationAction:
     """再生成アクション定義"""
+
     focus_dimensions: list[str]
     context_builder_focus: list[str]
     writing_focus: list[str]

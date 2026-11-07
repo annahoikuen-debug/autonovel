@@ -1,4 +1,5 @@
 """Branch memory manager for what-if route branches and memory state comparisons."""
+
 from __future__ import annotations
 
 import copy

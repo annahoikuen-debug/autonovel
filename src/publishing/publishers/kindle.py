@@ -98,9 +98,7 @@ class KindlePublisher(PublisherAdapter):
             )
 
         client = self._get_client()
-        auth_header = base64.b64encode(
-            f"{credentials.client_id}:{credentials.client_secret}".encode()
-        ).decode()
+        auth_header = base64.b64encode(f"{credentials.client_id}:{credentials.client_secret}".encode()).decode()
 
         try:
             response = await client.post(
@@ -175,9 +173,7 @@ class KindlePublisher(PublisherAdapter):
                 "language": "ja",
                 "categories": self._map_categories(novel.get("genre", "general")),
                 "keywords": novel.get("tags", [])[:7],  # KDPは最大7キーワード
-                "contributors": [
-                    {"role": "Author", "name": novel.get("author", "AI Novel Engine")}
-                ],
+                "contributors": [{"role": "Author", "name": novel.get("author", "AI Novel Engine")}],
                 "publishing_rights": "world",
                 "status": "draft",
             }
@@ -190,9 +186,7 @@ class KindlePublisher(PublisherAdapter):
 
             if response.status_code == 429:
                 retry_after = float(response.headers.get("Retry-After", 60))
-                raise RateLimitError(
-                    "レート制限に達しました", self.platform, retry_after=retry_after
-                )
+                raise RateLimitError("レート制限に達しました", self.platform, retry_after=retry_after)
             elif response.status_code >= 400:
                 raise ValidationError(f"書籍作成失敗: {response.text}", self.platform)
 
@@ -215,9 +209,7 @@ class KindlePublisher(PublisherAdapter):
             )
 
             if upload_response.status_code >= 400:
-                raise ValidationError(
-                    f"アップロードURL取得失敗: {upload_response.text}", self.platform
-                )
+                raise ValidationError(f"アップロードURL取得失敗: {upload_response.text}", self.platform)
 
             upload_data = upload_response.json()
             _ = upload_data.get("uploadUrl")
@@ -278,9 +270,7 @@ class KindlePublisher(PublisherAdapter):
             )
 
             if upload_response.status_code >= 400:
-                raise ValidationError(
-                    f"アップロードURL取得失敗: {upload_response.text}", self.platform
-                )
+                raise ValidationError(f"アップロードURL取得失敗: {upload_response.text}", self.platform)
 
             return PublishResult(
                 success=True,

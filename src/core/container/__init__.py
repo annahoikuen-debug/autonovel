@@ -14,6 +14,7 @@ def make_container(api_key: str, db=None):
     """
     warnings.warn("use AppContainer instead", DeprecationWarning, stacklevel=2)
     from src.core.container.app import AppContainer
+
     if db is None:
         db = InfraContainer.db()
     return AppContainer(
@@ -25,9 +26,11 @@ def make_container(api_key: str, db=None):
 def __getattr__(name: str):
     if name in ("AppContainer", "AppContainer2"):
         from src.core.container.app import AppContainer, AppContainer2
+
         return AppContainer if name == "AppContainer" else AppContainer2
     if name == "LLMGenerateResultProxy":
         from src.core.llm_gateway import LLMGenerateResultProxy
+
         return LLMGenerateResultProxy
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
@@ -39,4 +42,3 @@ __all__ = [
     "LLMGenerateResultProxy",
     "make_container",
 ]
-

@@ -1,5 +1,6 @@
 # src/core/exceptions/phase3.py
 """Phase 3 共通例外・エラーコード定義"""
+
 from __future__ import annotations
 
 from typing import Any, Optional

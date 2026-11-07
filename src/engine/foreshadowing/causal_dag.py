@@ -115,9 +115,7 @@ def edges_of(rows: list[dict]) -> list[CausalEdge]:
     for row in ordered:
         fid = int(row["id"])
         description = str(row.get("description") or "")
-        has_marker = bool(description.strip()) and any(
-            marker in description for marker in _CONTINUATION_MARKERS
-        )
+        has_marker = bool(description.strip()) and any(marker in description for marker in _CONTINUATION_MARKERS)
         if has_marker and prev_id is not None:
             edges.append(CausalEdge(before=prev_id, after=fid))
         if _status_of(row) not in _TERMINAL_STATUSES:

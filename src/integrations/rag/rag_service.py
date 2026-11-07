@@ -89,7 +89,6 @@ class GraphRAGService:
         self._custom_vector_store = val
         self._vector_store_instance = val
 
-
     def get_reranker(self) -> Reranker:
         """遅延初期化で Reranker を返す."""
         if self._reranker is None:
@@ -106,6 +105,7 @@ class GraphRAGService:
         """2つのベクトルのコサイン類似度を計算する (NumPy or 純Python) (Step 28)."""
         try:
             import numpy as np
+
             v1 = np.asarray(vec1, dtype=np.float32)
             v2 = np.asarray(vec2, dtype=np.float32)
             norm1 = float(np.linalg.norm(v1))
@@ -115,6 +115,7 @@ class GraphRAGService:
             return float(np.dot(v1, v2) / (norm1 * norm2))
         except Exception:
             import math
+
             dot = sum(a * b for a, b in zip(vec1, vec2))
             norm1 = math.sqrt(sum(a * a for a in vec1))
             norm2 = math.sqrt(sum(b * b for b in vec2))
@@ -129,6 +130,7 @@ class GraphRAGService:
             return []
         try:
             import numpy as np
+
             q = np.asarray(query_vec, dtype=np.float32)
             m = np.asarray(matrix, dtype=np.float32)
             q_norm = float(np.linalg.norm(q))
@@ -149,10 +151,7 @@ class GraphRAGService:
 
     def _purge_expired(self, now: float) -> None:
         """TTL切れエントリを削除する (読取を待たずに回収する)."""
-        expired = [
-            k for k, (_, ts) in self._cache.items()
-            if now - ts >= self._cache_ttl
-        ]
+        expired = [k for k, (_, ts) in self._cache.items() if now - ts >= self._cache_ttl]
         for k in expired:
             del self._cache[k]
 
@@ -231,9 +230,7 @@ class GraphRAGService:
                     LIMIT :limit
                     """
                 )
-                result = session.execute(
-                    stmt, {"query_vector": str(query_vector), "limit": limit * 2}
-                )
+                result = session.execute(stmt, {"query_vector": str(query_vector), "limit": limit * 2})
                 rows = []
                 for row in result:
                     distance = float(row.distance) if row.distance is not None else 1.0
@@ -268,12 +265,7 @@ class GraphRAGService:
                 # SQLite 高速フォールバック検索 (Step 28-33)
                 # Step 29: limit * 3 制限撤廃 (最大1000件のスキャン)
                 query_limit = 1000
-                chunks = (
-                    session.query(ChapterChunk)
-                    .order_by(ChapterChunk.created_at.desc())
-                    .limit(query_limit)
-                    .all()
-                )
+                chunks = session.query(ChapterChunk).order_by(ChapterChunk.created_at.desc()).limit(query_limit).all()
                 if not chunks:
                     self._last_call_stats = {
                         "backend": "sqlite_vector",
@@ -308,9 +300,7 @@ class GraphRAGService:
                 # 欠損分のみオンデマンドで一括計算・保存 (Step 31)
                 if missing_chunks:
                     missing_texts = [str(c.content) for c in missing_chunks]
-                    computed_vectors = embedding_service.embed_texts(
-                        missing_texts, batch_size=len(missing_texts)
-                    )
+                    computed_vectors = embedding_service.embed_texts(missing_texts, batch_size=len(missing_texts))
                     for c, vec in zip(missing_chunks, computed_vectors):
                         c.embedding = vec
                         valid_chunks.append(c)
@@ -479,11 +469,7 @@ class GraphRAGService:
             )
 
         # 2. グラフ探索
-        if (
-            core_entities
-            and settings.ENABLE_GRAPHRAG
-            and settings.DATABASE_URL.startswith("postgresql")
-        ):
+        if core_entities and settings.ENABLE_GRAPHRAG and settings.DATABASE_URL.startswith("postgresql"):
             graph_results = self._search_graph_sync(session, core_entities, query_embedding, top_k * 2)
             for i, r in enumerate(graph_results):
                 rrf_score = beta / (60 + i + 1)
@@ -623,11 +609,13 @@ class GraphRAGService:
             if not name or not name.strip():
                 continue
             # Add the entity itself
-            all_neighbors.append({
-                "name": name.strip(),
-                "relation_type": "self",
-                "properties": {},
-            })
+            all_neighbors.append(
+                {
+                    "name": name.strip(),
+                    "relation_type": "self",
+                    "properties": {},
+                }
+            )
             # Get neighbors (from relational memory / fallback)
             neighbors: list[dict[str, Any]] = []
             all_neighbors.extend(neighbors)
@@ -766,9 +754,7 @@ class GraphRAGService:
         # 同一キャラ名の他書籍とキーが衝突し、混入したコンテキストを返してしまうため。
         cache_enabled = use_cache and self._enable_cache and book_id is not None
         if use_cache and book_id is None:
-            logger.debug(
-                "RAG context cache bypassed: book_id is required to scope the cache key"
-            )
+            logger.debug("RAG context cache bypassed: book_id is required to scope the cache key")
         cache_key = self._get_cache_key(
             "rag_ctx",
             str(book_id),
@@ -792,9 +778,7 @@ class GraphRAGService:
         # 2. グラフ探索と Reranking
         neighbors = self.get_graph_context(session, entities_to_query, max_depth=2)
         if neighbors:
-            ranked_neighbors = self.rerank_graph_neighbors_sync(
-                neighbors, current_prompt, top_k=7
-            )
+            ranked_neighbors = self.rerank_graph_neighbors_sync(neighbors, current_prompt, top_k=7)
             graph_lines = []
             for item in ranked_neighbors:
                 name = item.get("name")
@@ -811,9 +795,7 @@ class GraphRAGService:
         # 3. ハイブリッド検索 (ベクトル + グラフ + 全文)
         if query_embedding is None:
             query_embedding = embedding_service.get_embedding(current_prompt)
-        hybrid_results = self.hybrid_search_sync(
-            session, current_prompt, query_embedding, entities_to_query, top_k=5
-        )
+        hybrid_results = self.hybrid_search_sync(session, current_prompt, query_embedding, entities_to_query, top_k=5)
 
         if hybrid_results:
             vector_lines = []
@@ -825,9 +807,7 @@ class GraphRAGService:
             vector_context = "なし（関連情報なし）"
 
         # 4. トークン予算内に調整
-        graph_context = "\n".join(
-            self._truncate_to_budget(graph_context.split("\n"), self._token_budget // 3)
-        )
+        graph_context = "\n".join(self._truncate_to_budget(graph_context.split("\n"), self._token_budget // 3))
         vector_context = "\n\n".join(
             self._truncate_to_budget(vector_context.split("\n\n"), self._token_budget * 2 // 3)
         )
@@ -926,9 +906,11 @@ class GraphRAGService:
         from src.infrastructure.database.models.chunk import ChapterChunk
 
         # World Bible 関連のチャンクを取得（book_id でフィルタ、メタデータでタイプ判定）
-        chunks = session.query(ChapterChunk).filter(
-            ChapterChunk.chunk_metadata.op('->>')('type').in_(['world_bible', 'setting', 'lore'])
-        ).all()
+        chunks = (
+            session.query(ChapterChunk)
+            .filter(ChapterChunk.chunk_metadata.op("->>")("type").in_(["world_bible", "setting", "lore"]))
+            .all()
+        )
 
         # 簡易実装: キーワードベースの逆引き索引
         index = {}
@@ -943,7 +925,8 @@ class GraphRAGService:
 
             # キーワード抽出（簡易: 名詞っぽい単語）
             import re
-            keywords = re.findall(r'[一-龯ァ-ヴー]{2,}|[a-zA-Z]{3,}', content)
+
+            keywords = re.findall(r"[一-龯ァ-ヴー]{2,}|[a-zA-Z]{3,}", content)
             for kw in set(keywords):
                 if len(kw) >= 2:
                     index.setdefault(kw, []).append(source_ref)
@@ -993,14 +976,16 @@ class GraphRAGService:
             elif "cultural" in str(meta).lower() or "culture" in str(meta).lower():
                 source_type = "cultural_trivia"
 
-            trivia_candidates.append({
-                "fact": r.content,
-                "source": r.source,
-                "source_type": source_type,
-                "metadata": r.metadata,
-                "relevance_score": r.score,
-                "entity": meta.get("entity") or meta.get("source_entity"),
-            })
+            trivia_candidates.append(
+                {
+                    "fact": r.content,
+                    "source": r.source,
+                    "source_type": source_type,
+                    "metadata": r.metadata,
+                    "relevance_score": r.score,
+                    "entity": meta.get("entity") or meta.get("source_entity"),
+                }
+            )
 
         return trivia_candidates
 

@@ -1,4 +1,5 @@
 """Intelligent Cadence Reformatter Models and Configurations."""
+
 from __future__ import annotations
 
 from enum import Enum
@@ -7,14 +8,16 @@ from pydantic import BaseModel, Field
 
 class CadenceMode(str, Enum):
     """Operation modes for intelligent cadence reformation."""
-    RULE_SAFE = "rule_safe"            # 安全なルールベース置換のみ（時制混在なし、ダッシュなし）
+
+    RULE_SAFE = "rule_safe"  # 安全なルールベース置換のみ（時制混在なし、ダッシュなし）
     COMPOUND_MERGE = "compound_merge"  # 複文結合（連用形マージ）で文末重複を削減
-    LOCAL_LLM = "local_llm"            # 違反スパンのみ軽量LLMで局所推敲
-    HYBRID = "hybrid"                  # 通常はcompound_merge、難所はlocal_llmへ自動ルーティング
+    LOCAL_LLM = "local_llm"  # 違反スパンのみ軽量LLMで局所推敲
+    HYBRID = "hybrid"  # 通常はcompound_merge、難所はlocal_llmへ自動ルーティング
 
 
 class CadenceIntelligentConfig(BaseModel):
     """Configuration for intelligent cadence reformation."""
+
     mode: CadenceMode = Field(default=CadenceMode.HYBRID, description="動作モード")
     max_consecutive_ta: int = Field(default=3, ge=2, le=5, description="許容する最大連続『〜た』数")
     enable_llm_refine: bool = Field(default=True, description="局所LLM推敲の有効化")

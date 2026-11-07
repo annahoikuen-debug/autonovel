@@ -6,6 +6,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 logger = logging.getLogger(__name__)
 
+
 class ErrorHandlerMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         try:
@@ -17,6 +18,7 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
             # Optionally, send to Sentry if available
             try:
                 import sentry_sdk
+
                 sentry_sdk.capture_exception(exc)
             except ImportError:
                 pass  # Sentry not available, ignore

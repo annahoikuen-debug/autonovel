@@ -42,14 +42,16 @@ def csp_solution_to_beats(
 
         chars_present = [ch for ch, presence in vars.char_presence.items() if solver.Value(presence[i])]
 
-        beats.append(Beat(
-            episode=ep,
-            tension=t_val,
-            beat_type=beat_type,
-            title=f"第{ep}話",
-            summary=f"ビート: {beat_type.value}",
-            characters=chars_present,
-            is_defeat=is_def,
-        ))
+        beats.append(
+            Beat(
+                episode=ep,
+                tension=t_val,
+                beat_type=beat_type,
+                title=f"第{ep}話",
+                summary=f"ビート: {beat_type.value}",
+                characters=chars_present,
+                is_defeat=is_def,
+            )
+        )
 
     return beats

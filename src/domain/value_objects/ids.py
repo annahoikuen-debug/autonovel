@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 @dataclass(frozen=True, slots=True)
 class NovelId:
     """Novel (Book) identifier."""
+
     value: UUID
 
     @classmethod
@@ -28,6 +29,7 @@ class NovelId:
 @dataclass(frozen=True, slots=True)
 class ChapterId:
     """Chapter identifier."""
+
     value: UUID
 
     @classmethod
@@ -48,6 +50,7 @@ class ChapterId:
 @dataclass(frozen=True, slots=True)
 class EpisodeId:
     """Episode identifier (episode number within a novel)."""
+
     value: int
 
     @classmethod
@@ -66,6 +69,7 @@ class EpisodeId:
 @dataclass(frozen=True, slots=True)
 class CharacterId:
     """Character identifier."""
+
     value: UUID
 
     @classmethod
@@ -86,6 +90,7 @@ class CharacterId:
 @dataclass(frozen=True, slots=True)
 class BranchId:
     """Branch identifier."""
+
     value: UUID
 
     @classmethod
@@ -106,6 +111,7 @@ class BranchId:
 @dataclass(frozen=True, slots=True)
 class PlotId:
     """Plot identifier."""
+
     value: UUID
 
     @classmethod
@@ -126,6 +132,7 @@ class PlotId:
 @dataclass(frozen=True, slots=True)
 class SettingId:
     """Setting identifier."""
+
     value: UUID
 
     @classmethod
@@ -146,6 +153,7 @@ class SettingId:
 @dataclass(frozen=True, slots=True)
 class LoreId:
     """Lore identifier."""
+
     value: UUID
 
     @classmethod
@@ -166,6 +174,7 @@ class LoreId:
 @dataclass(frozen=True, slots=True)
 class PlotPointId:
     """Plot point identifier."""
+
     value: UUID
 
     @classmethod
@@ -186,6 +195,7 @@ class PlotPointId:
 @dataclass(frozen=True, slots=True)
 class ArcId:
     """Arc identifier."""
+
     value: UUID
 
     @classmethod
@@ -206,6 +216,7 @@ class ArcId:
 @dataclass(frozen=True, slots=True)
 class AuditId:
     """Audit identifier."""
+
     value: UUID
 
     @classmethod
@@ -226,6 +237,7 @@ class AuditId:
 @dataclass(frozen=True, slots=True)
 class SceneId:
     """Scene identifier."""
+
     value: UUID
 
     @classmethod
@@ -246,6 +258,7 @@ class SceneId:
 @dataclass(frozen=True, slots=True)
 class UserId:
     """User identifier."""
+
     value: UUID
 
     @classmethod

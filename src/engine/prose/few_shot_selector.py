@@ -3,6 +3,7 @@ import os
 from typing import Dict, List, Optional
 from functools import lru_cache
 
+
 class FewShotSelector:
     """ジャンル・シーンタイプに応じて最適なFew-Shotを動的に選択するセレクター"""
 
@@ -19,7 +20,7 @@ class FewShotSelector:
     def _load_few_shots(self) -> None:
         """Few-ShotデータをJSONファイルから読み込む"""
         try:
-            with open(self.few_shots_path, 'r', encoding='utf-8') as f:
+            with open(self.few_shots_path, "r", encoding="utf-8") as f:
                 self._few_shots_data = json.load(f)
         except FileNotFoundError:
             # ファイルが見つからない場合は空の辞書で初期化
@@ -64,9 +65,13 @@ class FewShotSelector:
             # シーンタイプに基づく簡易マッチング
             if scene_type == "action" and any(keyword in before_text for keyword in ["走", "撃", "斬", "爆発", "闘"]):
                 filtered_samples.append(sample)
-            elif scene_type == "dialogue" and any(keyword in before_text for keyword in ["言", "話", "会", " conversation"]):
+            elif scene_type == "dialogue" and any(
+                keyword in before_text for keyword in ["言", "話", "会", " conversation"]
+            ):
                 filtered_samples.append(sample)
-            elif scene_type == "internal_monologue" and any(keyword in before_text for keyword in ["感", "思", "考", "思い"]):
+            elif scene_type == "internal_monologue" and any(
+                keyword in before_text for keyword in ["感", "思", "考", "思い"]
+            ):
                 filtered_samples.append(sample)
             else:
                 # マッチしない場合も全体から選択（フォールバック）

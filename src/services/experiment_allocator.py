@@ -3,6 +3,7 @@
 F4 フェーズ: 実装は src/domain/services/experiment_allocator.py に移設。
 このモジュールは re-export 用 shim として残す。
 """
+
 from __future__ import annotations
 
 

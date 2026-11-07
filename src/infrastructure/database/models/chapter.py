@@ -45,6 +45,4 @@ class Chapter(Base):
     cost_jpy = Column(Float, default=0.0)
     cache_hit_ratio = Column(Float, default=0.0)
 
-    __table_args__ = (
-        UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_chapters_book_branch_ep"),
-    )
+    __table_args__ = (UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_chapters_book_branch_ep"),)

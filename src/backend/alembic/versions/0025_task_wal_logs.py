@@ -6,6 +6,7 @@ Revises: 0024_cost_consumption_logs
 Phase 3 Part 5: Task Write-Ahead Log for crash recovery.
 Stores execution state, input/output parameters, and heartbeats for each DAG task node.
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa

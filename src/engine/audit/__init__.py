@@ -5,6 +5,7 @@
 - AuditService: 監査サービス（スクリーン・能力チェック・DeAI監査）
 - AuditAdapter: 監査エンジン共通アダプタ
 """
+
 from src.engine.audit.aggregator import (
     AuditAggregator,
     BookScoreResult,

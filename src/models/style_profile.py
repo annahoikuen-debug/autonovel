@@ -57,9 +57,7 @@ class StyleProfile(BaseModel):
         description="語り口・トーンの概要",
     )
     sentence_length: SentenceLengthModel = Field(default_factory=SentenceLengthModel)
-    sentence_end_distribution: SentenceEndDistribution = Field(
-        default_factory=SentenceEndDistribution
-    )
+    sentence_end_distribution: SentenceEndDistribution = Field(default_factory=SentenceEndDistribution)
     metaphor_frequency: MetaphorFrequency = Field(default_factory=MetaphorFrequency)
     kerenmi_intensity: float = Field(
         default=0.8,
@@ -107,7 +105,5 @@ class StyleProfile(BaseModel):
             forb_str = "、".join(self.forbidden_patterns[:3])
             lines.append(f"- 禁止表現: {forb_str}")
         if self.few_shot_sample:
-            lines.append(
-                f"\n【お手本とする文体・リズム（Few-Shot）】:\n{self.few_shot_sample.strip()}"
-            )
+            lines.append(f"\n【お手本とする文体・リズム（Few-Shot）】:\n{self.few_shot_sample.strip()}")
         return "\n".join(lines)

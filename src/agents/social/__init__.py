@@ -1,4 +1,5 @@
 """Social Narrative Dynamics and Relationships Package."""
+
 from src.agents.social.models import (
     ReactionType,
     JournalEntry,
@@ -31,4 +32,3 @@ __all__ = [
     "SocialEventListener",
     "register_social_listener",
 ]
-

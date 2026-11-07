@@ -43,13 +43,15 @@ def extract_character_subgraph(
     subgraph = graph.subgraph(subgraph_nodes)
 
     for u, v, data in subgraph.edges(data=True):
-        edges.append({
-            "source": u,
-            "target": v,
-            "relation": data.get("relation", "related"),
-            "weight": data.get("weight", 1.0),
-            "metadata": data.get("metadata", {}),
-        })
+        edges.append(
+            {
+                "source": u,
+                "target": v,
+                "relation": data.get("relation", "related"),
+                "weight": data.get("weight", 1.0),
+                "metadata": data.get("metadata", {}),
+            }
+        )
 
     return edges
 
@@ -110,12 +112,14 @@ class KnowledgeGraphExtractor:
         relations = []
         for neighbor in self.graph.neighbors(character_name):
             edge_data = self.graph.get_edge_data(character_name, neighbor)
-            relations.append({
-                "character": character_name,
-                "related_to": neighbor,
-                "relation": edge_data.get("relation", "related"),
-                "weight": edge_data.get("weight", 1.0),
-            })
+            relations.append(
+                {
+                    "character": character_name,
+                    "related_to": neighbor,
+                    "relation": edge_data.get("relation", "related"),
+                    "weight": edge_data.get("weight", 1.0),
+                }
+            )
         return relations
 
     def find_path(self, source: str, target: str) -> list[str] | None:

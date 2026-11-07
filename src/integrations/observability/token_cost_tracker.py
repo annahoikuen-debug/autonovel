@@ -64,12 +64,7 @@ class TokenCostTracker:
         cache_read_cost_usd = (cache_read_tokens / 1_000_000) * pricing["cached_input"]
         cache_creation_cost_usd = (cache_creation_tokens / 1_000_000) * pricing["cached_input"]
 
-        total_usd = (
-            input_cost_usd
-            + output_cost_usd
-            + cache_read_cost_usd
-            + cache_creation_cost_usd
-        )
+        total_usd = input_cost_usd + output_cost_usd + cache_read_cost_usd + cache_creation_cost_usd
 
         # Convert to JPY
         total_jpy = total_usd * self.usd_to_jpy_rate
@@ -91,7 +86,7 @@ class TokenCostTracker:
             "cache_savings": {
                 "usd": cache_savings_usd,
                 "jpy": cache_savings_jpy,
-            }
+            },
         }
 
     def track_request(

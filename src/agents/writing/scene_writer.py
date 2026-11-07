@@ -112,9 +112,7 @@ class SceneWriter(BaseAgent):
 
         # シーン用プロンプトを構築
         prompt_composer = PromptComposer(self)
-        prompt = await prompt_composer.compose_scene_prompt(
-            book_id, ep_num, scene, context
-        )
+        prompt = await prompt_composer.compose_scene_prompt(book_id, ep_num, scene, context)
 
         # LLMで生成
         result = await self.llm.generate_text(
@@ -166,8 +164,7 @@ class SceneWriter(BaseAgent):
         try:
             # コンテキスト構築
             context = await self.build_scene_context(
-                book_id, ctx.branch_id, ep_num, scene,
-                previous_scene_content, writing_context
+                book_id, ctx.branch_id, ep_num, scene, previous_scene_content, writing_context
             )
 
             # シーン生成
@@ -211,6 +208,7 @@ class SceneWriterOrchestrator:
         """1話分の3シーンを順次生成し、Sceneオブジェクトのリストを返す。"""
         # 3シーン構造を作成
         from src.domain.value_objects.ids import NovelId
+
         novel_id_any = writing_context.get("novel_id")
         branch_id_any = writing_context.get("branch_id")
         scene_novel_id: NovelId = novel_id_any if isinstance(novel_id_any, NovelId) else NovelId.generate()
@@ -227,10 +225,7 @@ class SceneWriterOrchestrator:
         completed_scenes = []
 
         for scene in scenes:
-            logger.info(
-                f"Generating scene {scene.scene_number}/3 ({scene.role.value}) "
-                f"for episode {ep_num}"
-            )
+            logger.info(f"Generating scene {scene.scene_number}/3 ({scene.role.value}) for episode {ep_num}")
 
             # エージェントコンテキスト作成
             agent_ctx = AgentContext(

@@ -1,4 +1,5 @@
 """ArchivalMemory adapter wrapping VectorStore, GraphStore and EventLogStore."""
+
 from __future__ import annotations
 
 import uuid
@@ -98,11 +99,13 @@ class ArchivalMemory(BaseArchivalMemory):
                 for k_str, val in signals.items():
                     # k_str match
                     if source in k_str and target in k_str and emotion in k_str:
-                        causes.append({
-                            "episode": meta.get("episode"),
-                            "cause": entry.content,
-                            "value": val,
-                        })
+                        causes.append(
+                            {
+                                "episode": meta.get("episode"),
+                                "cause": entry.content,
+                                "value": val,
+                            }
+                        )
         return causes
 
     def get_emotional_history(
@@ -118,14 +121,20 @@ class ArchivalMemory(BaseArchivalMemory):
         history = []
         src, tgt = pair
         for ep in range(from_ep, to_ep + 1):
-            vec = self.vector_store.get_latest("fused", (src, tgt)) or self.vector_store.get_latest("annotation", (src, tgt))
+            vec = self.vector_store.get_latest("fused", (src, tgt)) or self.vector_store.get_latest(
+                "annotation", (src, tgt)
+            )
             if vec:
                 emotions = vec.get_pair_emotions(src, tgt)
                 if emotions:
-                    history.append({
-                        "episode": ep,
-                        "emotions": {emo.value if hasattr(emo, "value") else str(emo): val for emo, val in emotions.items()},
-                    })
+                    history.append(
+                        {
+                            "episode": ep,
+                            "emotions": {
+                                emo.value if hasattr(emo, "value") else str(emo): val for emo, val in emotions.items()
+                            },
+                        }
+                    )
         return history
 
 

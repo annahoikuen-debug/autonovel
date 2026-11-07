@@ -26,9 +26,7 @@ class Plot(Base):
     __tablename__ = "plots"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    target_tension = Column(
-        Float, nullable=True, comment="動的に計算された目標テンション値 (0.0-1.0)"
-    )
+    target_tension = Column(Float, nullable=True, comment="動的に計算された目標テンション値 (0.0-1.0)")
     book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
     # 複合一意制約 ``(book_id, branch_id, ep_num)`` の先頭列が ``book_id`` のため、
     # ``branch_id`` 単独の述語には使えない。branch_id のみによる絞り込み用に index を張る。
@@ -78,6 +76,4 @@ class Plot(Base):
     candidates = Column(Text, default="[]")
     created_at = Column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_plots_book_branch_ep"),
-    )
+    __table_args__ = (UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_plots_book_branch_ep"),)

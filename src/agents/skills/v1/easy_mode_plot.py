@@ -1,5 +1,6 @@
 # src/agents/skills/v1/easy_mode_plot.py
 """easy_mode 専用 PlotSkill - 簡易プロット生成"""
+
 from __future__ import annotations
 
 import logging
@@ -42,7 +43,10 @@ class EasyModePlotSkill(SkillAgent):
 
             # 既存の PlotAgent ロジックを簡易化して実行
             from src.agents.plot import PlotAgent
-            plot_agent = PlotAgent(repo=self.repo, pm=self.pm, generate_json=self.llm.generate_json if self.llm else None)
+
+            plot_agent = PlotAgent(
+                repo=self.repo, pm=self.pm, generate_json=self.llm.generate_json if self.llm else None
+            )
 
             arcs = getattr(bible, "arcs", []) if bible else []
 

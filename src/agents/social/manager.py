@@ -1,4 +1,5 @@
 """SocialInteractionManager Orchestrator Base (Step 46)."""
+
 from __future__ import annotations
 
 import logging
@@ -27,9 +28,7 @@ class SocialInteractionManager:
         self.age_client = age_client
         self.repo = repo
         # SocialRepository が渡されているか、repo が SocialRepository 互換の場合に保持
-        self.social_repo = social_repo or (
-            repo if repo is not None and hasattr(repo, "upsert_relationship") else None
-        )
+        self.social_repo = social_repo or (repo if repo is not None and hasattr(repo, "upsert_relationship") else None)
         # (char_a, char_b) -> RelationshipMetrics (インメモリキャッシュ)
         self._relationship_store: dict[tuple[str, str], RelationshipMetrics] = {}
 
@@ -113,16 +112,12 @@ class SocialInteractionManager:
         """非同期で関係性を更新し、DBへupsertおよび履歴スナップショットを記録 (Step 15)"""
         # DBに既存データがあればロード
         await self.get_relationship_async(char_a, char_b, book_id=book_id)
-        rel = self.update_relationship(
-            char_a, char_b, trust_delta, tension_delta, affinity_delta, ep_num
-        )
+        rel = self.update_relationship(char_a, char_b, trust_delta, tension_delta, affinity_delta, ep_num)
 
         if self.social_repo is not None:
             pair = self._normalize_pair(char_a, char_b)
             await self.social_repo.upsert_relationship(book_id, pair[0], pair[1], rel)
-            await self.social_repo.record_history(
-                book_id, pair[0], pair[1], ep_num, rel, trigger_event=trigger_event
-            )
+            await self.social_repo.record_history(book_id, pair[0], pair[1], ep_num, rel, trigger_event=trigger_event)
 
         return rel
 
@@ -130,9 +125,7 @@ class SocialInteractionManager:
         """インメモリに保持されている全関係性を取得する (Step 16)"""
         return dict(self._relationship_store)
 
-    async def get_all_relationships_async(
-        self, book_id: int = 1
-    ) -> dict[tuple[str, str], RelationshipMetrics]:
+    async def get_all_relationships_async(self, book_id: int = 1) -> dict[tuple[str, str], RelationshipMetrics]:
         """DBから全関係性をロードしてキャッシュを更新し、返す (Step 16)"""
         if self.social_repo is not None:
             rels = await self.social_repo.get_all_relationships(book_id)
@@ -142,10 +135,7 @@ class SocialInteractionManager:
     def get_all_relationships_for_character(self, character_name: str) -> list[RelationshipMetrics]:
         """Retrieve all tracked relationships involving the given character."""
         name = character_name.strip()
-        return [
-            rel for rel in self._relationship_store.values()
-            if rel.char_a == name or rel.char_b == name
-        ]
+        return [rel for rel in self._relationship_store.values() if rel.char_a == name or rel.char_b == name]
 
     def prune_history(self, max_entries_per_pair: int = 50) -> int:
         """インメモリの関係性履歴をキャラクターペアごとに最大件数に制限（メモリ肥大化防止）(Step 25)"""
@@ -328,4 +318,3 @@ class SocialInteractionManager:
 
 
 __all__ = ["SocialInteractionManager"]
-

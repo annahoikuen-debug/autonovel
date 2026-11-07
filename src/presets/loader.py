@@ -182,9 +182,7 @@ if __name__ == "__main__":
             preset = load_preset(genre)
             validation = validate_preset(preset)
             status = "OK" if validation["valid"] else "INCOMPLETE"
-            print(
-                f"[{status}] {genre}: keys={list(preset.keys())}, warnings={validation['warnings']}"
-            )
+            print(f"[{status}] {genre}: keys={list(preset.keys())}, warnings={validation['warnings']}")
         except Exception as e:
             print(f"[ERROR] {genre}: {e}")
 

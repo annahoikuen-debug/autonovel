@@ -26,12 +26,14 @@ class EarleyParser:
 
         # Initial state: predict from start symbol
         for prod in self.grammar.get(self.start_symbol, []):
-            chart[0].add(EarleyItem(
-                lhs=self.start_symbol,
-                rule=tuple(prod),
-                dot=0,
-                origin=0,
-            ))
+            chart[0].add(
+                EarleyItem(
+                    lhs=self.start_symbol,
+                    rule=tuple(prod),
+                    dot=0,
+                    origin=0,
+                )
+            )
 
         for k in range(n + 1):
             changed = True
@@ -41,7 +43,7 @@ class EarleyParser:
 
                 # Prune if chart set grows excessively (Step 21 ambiguity management)
                 if len(current_items) > self.max_items_per_chart:
-                    current_items = current_items[:self.max_items_per_chart]
+                    current_items = current_items[: self.max_items_per_chart]
 
                 for item in current_items:
                     next_sym = item.next_symbol

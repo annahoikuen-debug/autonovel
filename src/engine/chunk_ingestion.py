@@ -88,7 +88,9 @@ async def backfill_missing_embeddings(
     from src.infrastructure.database.models.chunk import ChapterChunk
 
     all_chunks = session.query(ChapterChunk).all()
-    missing_chunks = [c for c in all_chunks if not c.embedding or not isinstance(c.embedding, (list, tuple)) or len(c.embedding) == 0]
+    missing_chunks = [
+        c for c in all_chunks if not c.embedding or not isinstance(c.embedding, (list, tuple)) or len(c.embedding) == 0
+    ]
 
     if not missing_chunks:
         return 0

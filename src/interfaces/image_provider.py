@@ -74,9 +74,7 @@ class BaseImageProvider:
         **options: Any,
     ) -> str:
         """デフォルト実装: 未実装プロバイダとして例外を送出。"""
-        raise ImageProviderError(
-            f"Image provider '{self.name}' does not implement generate_image()"
-        )
+        raise ImageProviderError(f"Image provider '{self.name}' does not implement generate_image()")
 
     def is_available(self) -> bool:
         """デフォルト実装: 利用不可。"""

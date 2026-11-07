@@ -1,4 +1,5 @@
 """GiNZA/NLP pipeline initialization (singleton)."""
+
 from __future__ import annotations
 
 import functools

@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 class CyclicDependencyError(ValueError, RuntimeError):
     """スキル間の循環依存が検出された場合に送出されるエラー"""
+
     pass
 
 
@@ -57,11 +58,13 @@ AgentNode = Callable[[AgentContext], Awaitable[AgentResult]]
 
 def _make_skill_node(inst: SkillAgent, nxt: str | None) -> AgentNode:
     """トポロジカル順序の次ノードを自動設定するノードクロージャ"""
+
     async def _node(ctx: AgentContext) -> AgentResult:
         res = await inst.run(ctx)
         if res.next_agent is None and nxt is not None and not res.error:
             res.next_agent = nxt
         return res
+
     return _node
 
 
@@ -76,11 +79,13 @@ def _make_execute_node(inst: SkillAgent, nxt: str | None) -> AgentNode:
     `execute(ctx)` を直接呼ぶことで、上書きされた `run` へ依存せず
     正しいプロトコルに乗せられる。連鎖の埋め方は `_make_skill_node` と同一。
     """
+
     async def _node(ctx: AgentContext) -> AgentResult:
         res = await inst.execute(ctx)
         if res.next_agent is None and nxt is not None and not res.error:
             res.next_agent = nxt
         return res
+
     return _node
 
 
@@ -107,7 +112,6 @@ class Orchestrator:
         # 実行中の A/B テストタスクへの強参照（GC による実行中の消失を防ぐ）
         self._ab_test_tasks: set[Any] = set()
 
-
     def _build_dag_graph(self) -> "DAGGraph":
         """Orchestrator のスキル順序に基づいて DAGGraph を構築する"""
         from src.backend.tasks.dag_models import DAGGraph, DAGTaskNode, TaskResourceRequirement
@@ -126,7 +130,7 @@ class Orchestrator:
                     # 最初のタスクには入力元がない
                 }
             else:
-                prev_skill_name = self._ordered_skill_names[i-1]
+                prev_skill_name = self._ordered_skill_names[i - 1]
                 prev_task_id = f"{self.correlation_id}_{prev_skill_name}"
                 dependencies = [prev_task_id]
                 kwargs = {
@@ -135,11 +139,7 @@ class Orchestrator:
                 }
 
             # デフォルトのリソース要件（後で設定可能にする）
-            resources = TaskResourceRequirement(
-                cpu_cores=1.0,
-                ram_mb=512,
-                gpu_mem_mb=0
-            )
+            resources = TaskResourceRequirement(cpu_cores=1.0, ram_mb=512, gpu_mem_mb=0)
 
             # DAGTaskNode を作成
             task_node = DAGTaskNode(
@@ -167,7 +167,6 @@ class Orchestrator:
         for skill_name, skill_instance in self._skill_instances.items():
             self.dag_scheduler.register_task(skill_name, skill_instance.run)
 
-
     def register_discovered_skills(self, skill_pkg: str = "src.agents.skills.v1") -> None:
         """指定パッケージからスキルを検出し、内部レジストリに登録する。"""
         skills = SkillAgent.discover_skills(skill_pkg)
@@ -186,6 +185,7 @@ class Orchestrator:
 
         try:
             from src.backend.observability.metrics import record_skill_version
+
             for skill_name in self._skill_registry.keys():
                 record_skill_version(skill_name, version)
         except Exception:
@@ -254,6 +254,7 @@ class Orchestrator:
                 result.append(available_skills[name])
             else:
                 import logging
+
                 logger = logging.getLogger(__name__)
                 logger.warning(f"Skill '{name}' in manifest but not registered, skipping")
         return result
@@ -340,7 +341,13 @@ class Orchestrator:
             except ValueError:
                 pass
 
-        orch = cls(nodes=nodes, event_bus=event_bus, correlation_id=correlation_id, dag_scheduler=dag_scheduler, use_dag_scheduler=use_dag_scheduler)
+        orch = cls(
+            nodes=nodes,
+            event_bus=event_bus,
+            correlation_id=correlation_id,
+            dag_scheduler=dag_scheduler,
+            use_dag_scheduler=use_dag_scheduler,
+        )
         orch._ordered_skill_names = ordered_names
         orch._skill_instances = skill_instances
         orch._register_skills_to_scheduler()
@@ -410,10 +417,12 @@ class Orchestrator:
                 )
                 try:
                     result = await skill_instance.execute(ctx_copy)
-                    results["a"].append({
-                        "success": result.error is None,
-                        "duration": getattr(skill_instance, '_last_duration', 0),
-                    })
+                    results["a"].append(
+                        {
+                            "success": result.error is None,
+                            "duration": getattr(skill_instance, "_last_duration", 0),
+                        }
+                    )
                 except Exception:
                     results["a"].append({"success": False, "duration": 0})
 
@@ -433,10 +442,12 @@ class Orchestrator:
                 )
                 try:
                     result = await skill_instance.execute(ctx_copy)
-                    results["b"].append({
-                        "success": result.error is None,
-                        "duration": getattr(skill_instance, '_last_duration', 0),
-                    })
+                    results["b"].append(
+                        {
+                            "success": result.error is None,
+                            "duration": getattr(skill_instance, "_last_duration", 0),
+                        }
+                    )
                 except Exception:
                     results["b"].append({"success": False, "duration": 0})
 
@@ -469,6 +480,7 @@ class Orchestrator:
 
             # 簡易p値計算（二項検定の近似）
             import math
+
             n = len(results["a"])
             if n > 0:
                 p_a = stats_a["success_rate"]
@@ -498,6 +510,7 @@ class Orchestrator:
             # メトリクス記録
             try:
                 from src.backend.observability.metrics import record_ab_test_result
+
                 record_ab_test_result(
                     skill_name=skill_name,
                     winner=winner,
@@ -532,10 +545,7 @@ class Orchestrator:
         # 指定サンプル数のコンテキストを生成して A/B 評価を実行する。
         # 周期実行 (interval_hours) は Huey 等の永続キューに載せる必要が
         # あるため、ここでは単発実行のスケジューリングのみ行う。
-        ctx_list = [
-            AgentContext(book_id=i, branch_id=1, ep_num=1, artifacts={})
-            for i in range(min_samples)
-        ]
+        ctx_list = [AgentContext(book_id=i, branch_id=1, ep_num=1, artifacts={}) for i in range(min_samples)]
         coro = self.run_ab_test(skill_name, version_a, version_b, ctx_list)
 
         try:
@@ -545,8 +555,7 @@ class Orchestrator:
             # 「実行中ループなし」で RuntimeError になるため、その場で
             # 完了まで実行して結果（None）を返す。
             logger.warning(
-                "schedule_ab_test: 実行中のイベントループがないため "
-                "A/B テストを同期実行します (skill=%s)",
+                "schedule_ab_test: 実行中のイベントループがないため A/B テストを同期実行します (skill=%s)",
                 skill_name,
             )
             return asyncio.run(coro)
@@ -578,6 +587,7 @@ class Orchestrator:
         # メトリクス記録
         try:
             from src.backend.observability.metrics import record_skill_promotion
+
             record_skill_promotion(skill_name, winner_version)
         except Exception:
             pass
@@ -628,7 +638,9 @@ class Orchestrator:
                             if input_from and input_from in task_results:
                                 # Use previous task's output artifacts as input artifacts
                                 prev_result = task_results[input_from]
-                                input_artifacts = prev_result.artifacts.copy() if hasattr(prev_result, 'artifacts') else {}
+                                input_artifacts = (
+                                    prev_result.artifacts.copy() if hasattr(prev_result, "artifacts") else {}
+                                )
                             else:
                                 # First task or no input_from: use the original ctx's artifacts
                                 input_artifacts = ctx.artifacts.copy()
@@ -782,12 +794,16 @@ class Orchestrator:
                     ctx.artifacts["regeneration_directive"] = result.artifacts.get("regeneration_directive")
                     ctx.artifacts["audit_status"] = "rejected"
                     # Add to backtrack history
-                    ctx.backtrack_history.append({
-                        "from_node": current_agent_name,
-                        "to_node": result.next_agent.value if hasattr(result.next_agent, "value") else str(result.next_agent),
-                        "reason": "audit_failed",
-                        "count": current_count
-                    })
+                    ctx.backtrack_history.append(
+                        {
+                            "from_node": current_agent_name,
+                            "to_node": result.next_agent.value
+                            if hasattr(result.next_agent, "value")
+                            else str(result.next_agent),
+                            "reason": "audit_failed",
+                            "count": current_count,
+                        }
+                    )
                     ctx.artifacts["backtrack_history"] = ctx.backtrack_history
                     # Publish agent.backtracked event
                     if self.event_bus:
@@ -798,8 +814,10 @@ class Orchestrator:
                                     "status": "backtracked",
                                     "ep_num": ctx.ep_num,
                                     "from": current_agent_name,
-                                    "to": result.next_agent.value if hasattr(result.next_agent, "value") else str(result.next_agent),
-                                    "count": current_count
+                                    "to": result.next_agent.value
+                                    if hasattr(result.next_agent, "value")
+                                    else str(result.next_agent),
+                                    "count": current_count,
                                 },
                                 correlation_id=self.correlation_id,
                             )
@@ -844,6 +862,3 @@ class Orchestrator:
                     )
                 raise RuntimeError(error_msg)
         return ctx
-
-
-

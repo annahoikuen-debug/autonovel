@@ -113,9 +113,7 @@ class PriorityResolver:
             else:
                 # Max tension recommended by any balancer
                 # tension は Optional[float] で None/NaN があり得るため除外する
-                candidates = [
-                    p.tension for p in proposals.values() if _is_valid_tension(p.tension)
-                ]
+                candidates = [p.tension for p in proposals.values() if _is_valid_tension(p.tension)]
                 if candidates:
                     chosen_beat.tension = max(candidates)
                 # 全部 None/NaN の場合は既存値 (base) をそのまま維持する
@@ -145,12 +143,14 @@ class PriorityResolver:
                 applied_actions.append(action)
 
                 if len(conflicting_names) > 1:
-                    conflicts.append(ConflictRecord(
-                        episode=ep,
-                        conflicting_balancers=conflicting_names,
-                        winning_balancer=primary_winner,
-                        chosen_action=action,
-                        rationale="Synthesized attributes according to domain expertise: Grammar for structure, CSP for arcs, DSP for tension.",
-                    ))
+                    conflicts.append(
+                        ConflictRecord(
+                            episode=ep,
+                            conflicting_balancers=conflicting_names,
+                            winning_balancer=primary_winner,
+                            chosen_action=action,
+                            rationale="Synthesized attributes according to domain expertise: Grammar for structure, CSP for arcs, DSP for tension.",
+                        )
+                    )
 
         return final_beats, applied_actions, conflicts

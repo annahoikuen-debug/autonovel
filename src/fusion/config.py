@@ -1,4 +1,5 @@
 """Configuration loader and models for fusion layer."""
+
 from __future__ import annotations
 
 import os

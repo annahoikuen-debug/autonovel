@@ -87,9 +87,7 @@ class ExtractionService:
         self._llm = llm_adapter or get_llm_adapter()
         self._cache: dict[str, GraphExtractionResult] = {}
 
-    async def extract_graph_from_text(
-        self, text: str, *, use_cache: bool = True
-    ) -> GraphExtractionResult:
+    async def extract_graph_from_text(self, text: str, *, use_cache: bool = True) -> GraphExtractionResult:
         """テキストからエンティティとリレーションを高精度に抽出し、GraphExtractionResult を返す."""
         if not text or not text.strip():
             return GraphExtractionResult(entities=[], relationships=[], plot_summary="")
@@ -191,9 +189,7 @@ class ExtractionService:
                 )
                 return self._heuristic_fallback(text)
 
-    def _post_process(
-        self, result: GraphExtractionResult, original_text: str
-    ) -> GraphExtractionResult:
+    def _post_process(self, result: GraphExtractionResult, original_text: str) -> GraphExtractionResult:
         """抽出結果の後処理: 正規化、重複除去、信頼度付与."""
         # エンティティ名の正規化（前後の空白除去）
         for ent in result.entities:
@@ -222,9 +218,7 @@ class ExtractionService:
         # 存在しないエンティティを参照する関係を除去
         entity_names = {ent.name for ent in result.entities}
         valid_relationships = [
-            rel
-            for rel in result.relationships
-            if rel.source in entity_names and rel.target in entity_names
+            rel for rel in result.relationships if rel.source in entity_names and rel.target in entity_names
         ]
         result.relationships = valid_relationships
 
@@ -381,9 +375,7 @@ class ExtractionService:
         relationships: list[Relationship] = []
 
         # キャラクター名らしきパターン（カタカナ・漢字の組み合わせ）
-        char_pattern = (
-            r"([ァ-ヶー][ァ-ヶー一-龯]{1,5}|[一-龯]{2,4})(?:は|が|を|に|と|の|へ|で|や|も)"
-        )
+        char_pattern = r"([ァ-ヶー][ァ-ヶー一-龯]{1,5}|[一-龯]{2,4})(?:は|が|を|に|と|の|へ|で|や|も)"
         for match in re.finditer(char_pattern, text[:1000]):
             name = match.group(1)
             if len(name) >= 2 and name not in ["主人公", "彼女", "彼", "自分", "みんな", "誰も"]:

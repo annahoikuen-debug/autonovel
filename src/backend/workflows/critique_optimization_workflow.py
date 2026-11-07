@@ -21,7 +21,5 @@ class CritiqueOptimizationWorkflow(BaseWorkflow):
                 reporter.report(f"❌ 分析に失敗しました: {result.error_message}", "error")
             return result
         except Exception as e:
-            reporter.report(
-                f"🚨 分析ワークフロー内で予期せぬエラーが発生しました: {str(e)}", "error"
-            )
+            reporter.report(f"🚨 分析ワークフロー内で予期せぬエラーが発生しました: {str(e)}", "error")
             raise

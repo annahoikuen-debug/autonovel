@@ -1,4 +1,5 @@
 """Social Media-style Narrative Relationship Models (Step 45)."""
+
 from __future__ import annotations
 
 from datetime import datetime, timezone

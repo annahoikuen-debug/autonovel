@@ -12,6 +12,7 @@
 1作品のみにスコープされた**ストリーム専用トークンを発行する。
 クエリ文字列に載せてよいのはこの短命トークンのみとする。
 """
+
 from __future__ import annotations
 
 import logging

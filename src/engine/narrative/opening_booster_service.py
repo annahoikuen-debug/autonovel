@@ -1,6 +1,7 @@
 """
 opening_booster_service.py - 序盤1〜3話のクリフハンガー強制チェックおよびリライト指令生成サービス
 """
+
 from __future__ import annotations
 
 from typing import List

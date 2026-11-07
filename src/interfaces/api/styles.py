@@ -117,9 +117,7 @@ async def get_style_categories() -> list[StyleCategory]:
     }
     result = []
     for cat_id, style_ids in categories.items():
-        result.append(
-            StyleCategory(id=cat_id, label=category_labels.get(cat_id, cat_id), style_ids=style_ids)
-        )
+        result.append(StyleCategory(id=cat_id, label=category_labels.get(cat_id, cat_id), style_ids=style_ids))
     return result
 
 

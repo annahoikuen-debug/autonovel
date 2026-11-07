@@ -68,12 +68,7 @@ class ProseDetoxPipeline:
         self.stream_guard.reset()
         self._processing_times = {}
 
-    def process(
-        self,
-        text: str,
-        episode_id: Optional[str] = None,
-        metadata: Optional[Dict] = None
-    ) -> Tuple[str, Dict]:
+    def process(self, text: str, episode_id: Optional[str] = None, metadata: Optional[Dict] = None) -> Tuple[str, Dict]:
         """Process text through the full detox pipeline.
 
         Args:
@@ -114,7 +109,7 @@ class ProseDetoxPipeline:
             self.aggressive_threshold,
             self.metaphor_threshold,
             self.sensory_threshold,
-            self.verb_strength_threshold
+            self.verb_strength_threshold,
         )
         stage2_time = (time.time() - stage2_start) * 1000  # ms
 
@@ -127,9 +122,7 @@ class ProseDetoxPipeline:
             # Get current counts from stream guard for context
             stats = self.stream_guard.get_stats()
             syntax_refined, _, _ = self.syntax_refiner.refine_paragraph(
-                stream_filtered,
-                stats["aggressive_count"],
-                stats["metaphor_count"]
+                stream_filtered, stats["aggressive_count"], stats["metaphor_count"]
             )
             stage3_time = (time.time() - stage3_start) * 1000  # ms
 
@@ -140,7 +133,7 @@ class ProseDetoxPipeline:
             "stream_guard": stage1_time,
             "density_gate": stage2_time,
             "syntax_refiner": stage3_time,
-            "total": total_time
+            "total": total_time,
         }
 
         # Prepare metrics
@@ -148,24 +141,18 @@ class ProseDetoxPipeline:
             "episode_id": self._episode_id,
             "input_length": len(text),
             "output_length": len(syntax_refined),
-            "stream_guard": {
-                "time_ms": stage1_time,
-                "stats": self.stream_guard.get_stats()
-            },
+            "stream_guard": {"time_ms": stage1_time, "stats": self.stream_guard.get_stats()},
             "density_gate": {
                 "time_ms": stage2_time,
                 "score": score,
                 "should_refine": should_refine,
-                "density_category": self.density_scorer.get_density_category(score)
+                "density_category": self.density_scorer.get_density_category(score),
             },
-            "syntax_refiner": {
-                "time_ms": stage3_time,
-                "applied": should_refine
-            },
+            "syntax_refiner": {"time_ms": stage3_time, "applied": should_refine},
             "pipeline": {
                 "total_time_ms": total_time,
-                "meets_latency_target": total_time < 200  # 200ms target
-            }
+                "meets_latency_target": total_time < 200,  # 200ms target
+            },
         }
 
         if metadata:
@@ -182,7 +169,7 @@ class ProseDetoxPipeline:
             "stream_guard": {"time_ms": 0.0, "stats": {}},
             "density_gate": {"time_ms": 0.0, "score": DensityScore(), "should_refine": False},
             "syntax_refiner": {"time_ms": 0.0, "applied": False},
-            "pipeline": {"total_time_ms": 0.0, "meets_latency_target": True}
+            "pipeline": {"total_time_ms": 0.0, "meets_latency_target": True},
         }
 
     def get_processing_times(self) -> Dict[str, float]:
@@ -195,11 +182,7 @@ class ProseDetoxPipeline:
 
 
 # Convenience function for simple usage
-def detox_prose(
-    text: str,
-    episode_id: str = "default",
-    **kwargs
-) -> Tuple[str, Dict]:
+def detox_prose(text: str, episode_id: str = "default", **kwargs) -> Tuple[str, Dict]:
     """Convenience function for one-off prose detoxification.
 
     Args:

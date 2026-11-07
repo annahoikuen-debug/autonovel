@@ -80,15 +80,11 @@ def _parse_metadata(json_str: str) -> Optional[WritingMetadata]:
         cleaned_json = re.sub(r"^```(?:json)?\s*", "", json_str).rstrip("` \n")
         data = json.loads(cleaned_json)
     except Exception as e:
-        logger.warning(
-            f"Failed to json-parse WritingMetadata from LLM output: {e}. Raw json snippet: {json_str[:200]}"
-        )
+        logger.warning(f"Failed to json-parse WritingMetadata from LLM output: {e}. Raw json snippet: {json_str[:200]}")
         return None
 
     if not isinstance(data, dict):
-        logger.warning(
-            f"WritingMetadata JSON is not an object: {type(data).__name__}. Raw: {json_str[:200]}"
-        )
+        logger.warning(f"WritingMetadata JSON is not an object: {type(data).__name__}. Raw: {json_str[:200]}")
         return None
 
     entries = data.get("foreshadowings")
@@ -98,9 +94,7 @@ def _parse_metadata(json_str: str) -> Optional[WritingMetadata]:
             try:
                 ForeshadowingReport.model_validate(entry)
             except Exception as e:
-                logger.warning(
-                    f"Dropping malformed foreshadowing entry #{index} in WritingMetadata: {e}"
-                )
+                logger.warning(f"Dropping malformed foreshadowing entry #{index} in WritingMetadata: {e}")
                 continue
             valid_entries.append(entry)
         if len(valid_entries) != len(entries):
@@ -109,7 +103,5 @@ def _parse_metadata(json_str: str) -> Optional[WritingMetadata]:
     try:
         return WritingMetadata.model_validate(data)
     except Exception as e:
-        logger.warning(
-            f"Failed to validate WritingMetadata from LLM output: {e}. Raw json snippet: {json_str[:200]}"
-        )
+        logger.warning(f"Failed to validate WritingMetadata from LLM output: {e}. Raw json snippet: {json_str[:200]}")
         return None

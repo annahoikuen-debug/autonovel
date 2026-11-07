@@ -28,6 +28,7 @@ TOKEN_REGEX = re.compile(r"\[([A-Z]+):([a-z0-9_]+(?:(?::[a-z0-9_]+)*))\]")
 
 class TokenSpec(BaseModel):
     """Parsed representation of a control token."""
+
     category: str = Field(..., description="Token category in uppercase")
     key: str = Field(..., description="Primary token key")
     modifiers: List[str] = Field(default_factory=list, description="Sub-keys or modifiers")

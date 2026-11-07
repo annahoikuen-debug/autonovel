@@ -1,4 +1,5 @@
 """Conflict detector between multiple emotional vector sources."""
+
 from __future__ import annotations
 
 from typing import Dict, List, Optional, Tuple

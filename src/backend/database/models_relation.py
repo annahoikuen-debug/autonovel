@@ -3,6 +3,7 @@
 Apache AGE のグラフDB Edge を置換する、
 単純な (source_char_id, target_char_id, relation_type) テーブル。
 """
+
 from __future__ import annotations
 
 from sqlalchemy import Column, Integer, String, Text, UniqueConstraint

@@ -42,13 +42,15 @@ class MultimodalAuditor(SpecialistAuditor):
         illust_prompts = ctx.get("illustration_prompts") or ctx.get("illustration_prompt") or ""
         if not draft:
             return SpecialistAuditResult(
-                "multimodal", 0.0,
+                "multimodal",
+                0.0,
                 feedback={"error": "no draft_text"},
                 suggestions=["Provide draft_text in context"],
             )
         if not illust_prompts:
             return SpecialistAuditResult(
-                "multimodal", 50.0,
+                "multimodal",
+                50.0,
                 feedback={"note": "no illustration prompts provided"},
                 suggestions=["Provide illustration_prompts for multimodal check"],
             )
@@ -85,7 +87,8 @@ class MultimodalAuditor(SpecialistAuditor):
         illust = ctx.get("illustration_prompts") or ctx.get("illustration_prompt") or ""
         if not draft or not illust:
             return SpecialistAuditResult(
-                "multimodal", 50.0,
+                "multimodal",
+                50.0,
                 feedback={"fallback": "missing draft or illustration"},
                 degraded=True,
             )
@@ -97,7 +100,8 @@ class MultimodalAuditor(SpecialistAuditor):
         if not draft_triples or not illust_triples:
             # Fallback to bigram Jaccard if triple extraction fails
             def _bigrams(text: str) -> set[str]:
-                return {text[i:i+2] for i in range(len(text)-1)}
+                return {text[i : i + 2] for i in range(len(text) - 1)}
+
             draft_bi = _bigrams(draft)
             illust_bi = _bigrams(str(illust))
             if not draft_bi or not illust_bi:
@@ -116,7 +120,9 @@ class MultimodalAuditor(SpecialistAuditor):
                     "overlap": overlap,
                     "jaccard": round(jaccard, 3),
                 },
-                suggestions=["Increase keyword overlap between text and illustration prompts"] if jaccard < 0.15 else [],
+                suggestions=["Increase keyword overlap between text and illustration prompts"]
+                if jaccard < 0.15
+                else [],
                 degraded=True,
             )
 
@@ -140,11 +146,9 @@ class MultimodalAuditor(SpecialistAuditor):
         emotion_jaccard = _jaccard(draft_emotions, illust_emotions)
 
         # Weighted combination
-        score = max(10.0, min(100.0, round((
-            0.5 * char_jaccard +
-            0.3 * prop_jaccard +
-            0.2 * emotion_jaccard
-        ) * 200.0, 1)))
+        score = max(
+            10.0, min(100.0, round((0.5 * char_jaccard + 0.3 * prop_jaccard + 0.2 * emotion_jaccard) * 200.0, 1))
+        )
 
         suggs = []
         if char_jaccard < 0.2:

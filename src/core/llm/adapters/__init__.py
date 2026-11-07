@@ -2,6 +2,7 @@
 
 実体は src/llm/unified/adapters/ に移設済み。
 """
+
 from __future__ import annotations
 
 

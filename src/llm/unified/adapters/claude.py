@@ -111,8 +111,7 @@ class ClaudeUnifiedClient(IUnifiedLLMClient):
         非同期ジェネレータを直接使用すること。
         """
         raise NotImplementedError(
-            "ClaudeUnifiedClient.stream() is not implemented. "
-            "Use astream() for asynchronous streaming instead."
+            "ClaudeUnifiedClient.stream() is not implemented. Use astream() for asynchronous streaming instead."
         )
 
     async def astream(self, req: LLMRequest) -> AsyncIterator[StreamChunk]:

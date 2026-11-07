@@ -1,4 +1,5 @@
 """Function calling tools and schema definitions for agent memory operations."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List

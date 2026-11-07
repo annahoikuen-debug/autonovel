@@ -1,4 +1,5 @@
 """Emotion polarity classification from verbs and context."""
+
 from __future__ import annotations
 
 from typing import Tuple
@@ -26,8 +27,16 @@ def classify_emotion(
     best_score = 0.0
 
     for emo_type in [
-        "affection", "tension", "fear", "trust", "intimacy",
-        "jealousy", "anger", "sadness", "surprise", "disgust"
+        "affection",
+        "tension",
+        "fear",
+        "trust",
+        "intimacy",
+        "jealousy",
+        "anger",
+        "sadness",
+        "surprise",
+        "disgust",
     ]:
         pos_words = lexicon.get_positive_words(emo_type)
         neg_words = lexicon.get_negative_words(emo_type)

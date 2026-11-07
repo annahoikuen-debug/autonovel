@@ -30,9 +30,7 @@ class ImagenModelSpec:
 
 # 単一真理源: モデルIDはこの辞書にだけ書く
 IMAGEN_MODEL_CATALOG: Dict[str, ImagenModelSpec] = {
-    ImagenTier.FAST.value: ImagenModelSpec(
-        "fast", "imagen-4.0-fast-generate-001", tier_rank=1, description="高速生成"
-    ),
+    ImagenTier.FAST.value: ImagenModelSpec("fast", "imagen-4.0-fast-generate-001", tier_rank=1, description="高速生成"),
     ImagenTier.QUALITY.value: ImagenModelSpec(
         "quality", "imagen-4.0-generate-001", tier_rank=2, description="標準品質"
     ),

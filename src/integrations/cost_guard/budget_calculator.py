@@ -3,6 +3,7 @@
 各LLMモデル（Gemini 2.5 Flash, Claude Haiku, GPT-4o mini等）の入出力トークン消費から
 1話あたりのリアルタイムコスト（USD / JPY）を精密計算する。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -43,9 +44,9 @@ class BudgetCalculator:
     ) -> CostEstimate:
         """モデル名とトークン数からコスト（USD / JPY）を算出する。"""
         pricing = MODEL_PRICING.get(model, {"input": 0.15, "output": 0.60})
-        cost_usd = (prompt_tokens / 1_000_000.0) * pricing["input"] + (
-            completion_tokens / 1_000_000.0
-        ) * pricing["output"]
+        cost_usd = (prompt_tokens / 1_000_000.0) * pricing["input"] + (completion_tokens / 1_000_000.0) * pricing[
+            "output"
+        ]
         cost_jpy = cost_usd * USD_JPY_RATE
 
         return CostEstimate(

@@ -108,9 +108,7 @@ class IllustrationWorkflow(BaseWorkflow):
                 total_steps = len(target_chapters)
 
                 for i, ep_num in enumerate(target_chapters):
-                    reporter.update_progress(
-                        (i + 1) / total_steps, 1, f"第{ep_num}話の挿絵を生成中..."
-                    )
+                    reporter.update_progress((i + 1) / total_steps, 1, f"第{ep_num}話の挿絵を生成中...")
 
                     ep_request = IllustrationRequest(
                         book_id=book_id,
@@ -185,9 +183,7 @@ class IllustrationWorkflow(BaseWorkflow):
         )
         # DB へ永続化
         illustration_id = None
-        if self.illustration_agent.repo is not None and hasattr(
-            self.illustration_agent.repo, "create_illustration"
-        ):
+        if self.illustration_agent.repo is not None and hasattr(self.illustration_agent.repo, "create_illustration"):
             try:
                 illustration_id = await self.illustration_agent.repo.create_illustration(
                     book_id=book_id,

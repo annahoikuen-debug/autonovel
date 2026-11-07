@@ -9,6 +9,7 @@ Part 2: Token budget & API cost monitoring guard.
 Records detailed token consumption per agent/model for cost analytics
 and automatic model downgrade decisions.
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa
@@ -26,7 +27,6 @@ def _table_exists(table_name: str) -> bool:
     return table_name in inspector.get_table_names()
 
 
-
 def ix_exists(index_name: str, table_name: str) -> bool:
     """インデックスが実在する場合のみ True（create_all フォールバック DB 対策）。"""
     import sqlalchemy as sa
@@ -35,6 +35,7 @@ def ix_exists(index_name: str, table_name: str) -> bool:
     if table_name not in insp.get_table_names():
         return False
     return any(i["name"] == index_name for i in insp.get_indexes(table_name))
+
 
 def upgrade() -> None:
     if _table_exists("cost_consumption_logs"):

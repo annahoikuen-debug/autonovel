@@ -8,6 +8,7 @@ from __future__ import annotations
 import warnings
 from src.agents.context_builder_agent import ContextBuilderAgent
 
+
 # 後方互換性エイリアスとして残し、警告のみを出す
 class ContextBuilder(ContextBuilderAgent):
     def __init__(self, *args, **kwargs):

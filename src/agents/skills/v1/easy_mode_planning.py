@@ -1,5 +1,6 @@
 # src/agents/skills/v1/easy_mode_planning.py
 """easy_mode 専用 PlanningSkill - 簡易企画生成"""
+
 from __future__ import annotations
 
 import logging
@@ -37,6 +38,7 @@ class EasyModePlanningSkill(SkillAgent):
 
             # 既存の PlanningAgent ロジックを簡易化して実行
             from src.agents.planning import PlanningAgent
+
             planner = PlanningAgent(repo=self.repo, llm=self.llm, prompt_manager=self.pm)
 
             book_id, bible = await planner.create_hegemony_plan(

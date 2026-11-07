@@ -7,6 +7,7 @@ Layer 1: 【設定・世界観バイブル】 (核となる設定・キャラク
 Layer 2: 【過去話の確定事実タイムライン】 (各話100字ダイジェストのウィンドウ制御)
 Layer 3: 【直前エピソード本文】 (直近の文脈・台詞テンポ維持)
 """
+
 from __future__ import annotations
 
 from typing import Any, List
@@ -78,7 +79,9 @@ class RollingMemoryBuilder:
         result = []
         result.extend(initial_part)
         if omitted_count > 0:
-            result.append(f"……（第{init_count + 1}話〜第{init_count + omitted_count}話の確定事実はアーカイブ保存中 / 省略）……")
+            result.append(
+                f"……（第{init_count + 1}話〜第{init_count + omitted_count}話の確定事実はアーカイブ保存中 / 省略）……"
+            )
         result.extend(recent_part)
         return result
 
@@ -92,7 +95,7 @@ class RollingMemoryBuilder:
             return cleaned
 
         # 直前の文脈が最も重要なので、末尾の文字数を残す
-        truncated = cleaned[-self.max_prev_episode_chars:]
+        truncated = cleaned[-self.max_prev_episode_chars :]
         return f"……（前略）\n{truncated}"
 
     def build_context(
@@ -130,10 +133,9 @@ class RollingMemoryBuilder:
         )
 
         # トークン / 文字数バジェットガード（超過時はダイジェストと直前話を動的追加圧縮）
-        while (
-            (len(ctx) > self.max_total_chars or self.estimate_tokens(ctx) > self.max_total_tokens)
-            and len(windowed_digests) > (self.preserve_initial_digests + 1)
-        ):
+        while (len(ctx) > self.max_total_chars or self.estimate_tokens(ctx) > self.max_total_tokens) and len(
+            windowed_digests
+        ) > (self.preserve_initial_digests + 1):
             # 直近ダイジェストの中間を間引く
             windowed_digests.pop(-2)
             digests_str = "\n".join(windowed_digests)
@@ -150,7 +152,7 @@ class RollingMemoryBuilder:
         if len(ctx) > self.max_total_chars or self.estimate_tokens(ctx) > self.max_total_tokens:
             excess = max(len(ctx) - self.max_total_chars, 0)
             if len(prev_text_clean) > excess + 200:
-                shortened_prev = prev_text_clean[excess + 50:]
+                shortened_prev = prev_text_clean[excess + 50 :]
                 prev_text_clean = f"……（前略）\n{shortened_prev}"
                 ctx = (
                     f"【設定・世界観バイブル】\n"

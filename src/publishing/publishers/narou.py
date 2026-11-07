@@ -121,8 +121,7 @@ class NarouPublisher(PublisherAdapter):
                 from webdriver_manager.chrome import ChromeDriverManager
             except ImportError as e:
                 raise RuntimeError(
-                    "Selenium/ChromeDriverが必要です。"
-                    "pip install selenium webdriver-manager を実行してください。"
+                    "Selenium/ChromeDriverが必要です。pip install selenium webdriver-manager を実行してください。"
                 ) from e
 
             options = Options()
@@ -175,9 +174,7 @@ class NarouPublisher(PublisherAdapter):
                 password_input.clear()
                 password_input.send_keys(credentials.password)
 
-                login_btn = driver.find_element(
-                    By.CSS_SELECTOR, "input[type='submit'][value='ログイン']"
-                )
+                login_btn = driver.find_element(By.CSS_SELECTOR, "input[type='submit'][value='ログイン']")
                 login_btn.click()
                 time.sleep(2)
 
@@ -191,9 +188,7 @@ class NarouPublisher(PublisherAdapter):
                         # 汎用メッセージに置き換わってしまう。
                         raise
                     except Exception:
-                        raise AuthError(
-                            "ログインに失敗しました（リダイレクトされませんでした）", self.platform
-                        )
+                        raise AuthError("ログインに失敗しました（リダイレクトされませんでした）", self.platform)
 
                 match = re.search(r"/(\d+)/", driver.current_url)
                 if match:
@@ -278,17 +273,13 @@ class NarouPublisher(PublisherAdapter):
                 episode_body_area.send_keys(self._format_for_narou(chapter.get("content", "")))
 
                 # 確認画面へ
-                confirm_btn = driver.find_element(
-                    By.CSS_SELECTOR, "input[type='submit'][value='確認画面へ']"
-                )
+                confirm_btn = driver.find_element(By.CSS_SELECTOR, "input[type='submit'][value='確認画面へ']")
                 confirm_btn.click()
                 time.sleep(1)
 
                 # 確認画面で「登録する」ボタンをクリック
                 register_btn = wait.until(
-                    EC.element_to_be_clickable(
-                        (By.CSS_SELECTOR, "input[type='submit'][value='登録する']")
-                    )
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "input[type='submit'][value='登録する']"))
                 )
                 register_btn.click()
                 time.sleep(2)
@@ -324,9 +315,7 @@ class NarouPublisher(PublisherAdapter):
             except Exception as e:
                 logger.exception("なろう投稿エラー")
                 if "アクセスが集中" in str(e) or "しばらく経ってから" in str(e):
-                    raise RateLimitError(
-                        "アクセス集中のため投稿できません", self.platform, retry_after=300
-                    )
+                    raise RateLimitError("アクセス集中のため投稿できません", self.platform, retry_after=300)
                 raise NetworkError(f"投稿中にエラーが発生しました: {e}", self.platform)
 
         return await asyncio.to_thread(_sync_publish)
@@ -353,9 +342,7 @@ class NarouPublisher(PublisherAdapter):
 
                 # 「新しい話を追加」ボタンを探してクリック
                 add_btn = wait.until(
-                    EC.element_to_be_clickable(
-                        (By.CSS_SELECTOR, "a[href*='noveladd/'], input[value='新しい話を追加']")
-                    )
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "a[href*='noveladd/'], input[value='新しい話を追加']"))
                 )
                 add_btn.click()
                 time.sleep(1)
@@ -364,9 +351,7 @@ class NarouPublisher(PublisherAdapter):
                 episode_num = chapter.get("ep_num", 1)
 
                 # タイトル入力
-                title_input = wait.until(
-                    EC.presence_of_element_located((By.NAME, f"episodetitle{episode_num}"))
-                )
+                title_input = wait.until(EC.presence_of_element_located((By.NAME, f"episodetitle{episode_num}")))
                 title_input.clear()
                 title_input.send_keys(chapter.get("title", f"第{episode_num}話")[:100])
 
@@ -376,17 +361,13 @@ class NarouPublisher(PublisherAdapter):
                 body_area.send_keys(self._format_for_narou(chapter.get("content", "")))
 
                 # 確認画面へ
-                confirm_btn = driver.find_element(
-                    By.CSS_SELECTOR, "input[type='submit'][value='確認画面へ']"
-                )
+                confirm_btn = driver.find_element(By.CSS_SELECTOR, "input[type='submit'][value='確認画面へ']")
                 confirm_btn.click()
                 time.sleep(1)
 
                 # 登録
                 register_btn = wait.until(
-                    EC.element_to_be_clickable(
-                        (By.CSS_SELECTOR, "input[type='submit'][value='登録する']")
-                    )
+                    EC.element_to_be_clickable((By.CSS_SELECTOR, "input[type='submit'][value='登録する']"))
                 )
                 register_btn.click()
                 time.sleep(2)
@@ -403,9 +384,7 @@ class NarouPublisher(PublisherAdapter):
             except Exception as e:
                 logger.exception("なろう話追加エラー")
                 if "アクセスが集中" in str(e):
-                    raise RateLimitError(
-                        "アクセス集中のため話追加できません", self.platform, retry_after=300
-                    )
+                    raise RateLimitError("アクセス集中のため話追加できません", self.platform, retry_after=300)
                 raise NetworkError(f"話追加中にエラーが発生しました: {e}", self.platform)
 
         return await asyncio.to_thread(_sync_update)

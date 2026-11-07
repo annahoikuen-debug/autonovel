@@ -165,6 +165,7 @@ def validate_api_key_sync(api_key: str) -> str | bool:
     if not allowed_keys:
         return False
     import hmac
+
     is_valid = any(hmac.compare_digest(api_key, k) for k in allowed_keys)
     if not is_valid:
         return False

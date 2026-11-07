@@ -39,6 +39,4 @@ class Foreshadowing(Base):
     created_at = Column(CompatibleDateTime, server_default=func.now())
     updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
 
-    __table_args__ = (
-        UniqueConstraint("book_id", "branch_id", "ep_num", "type", name="uq_foreshadowing"),
-    )
+    __table_args__ = (UniqueConstraint("book_id", "branch_id", "ep_num", "type", name="uq_foreshadowing"),)

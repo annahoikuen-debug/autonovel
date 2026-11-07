@@ -66,6 +66,7 @@ async def _generate(payload: dict[str, Any]) -> dict[str, Any]:
     from src.backend.routers.easy_mode import generate_with_llm
     from src.engine.compression.compressor import FourLayerCompressor
     from src.engine.compression.models import CompressionConfig
+
     # TODO: AppContainer から compressor を取得するよう変更（将来的に DI 経由で取得）
     compressor = FourLayerCompressor(config=CompressionConfig())
     # compressor を payload に追加して generate_with_llm で利用可能にする
@@ -92,6 +93,7 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
     from src.integrations.rag.rag_service import rag_service
     from src.engine.compression.compressor import FourLayerCompressor
     from src.engine.compression.models import CompressionConfig
+
     # TODO: AppContainer から compressor を取得するよう変更（将来的に DI 経由で取得）
     from src.agents.social.manager import SocialInteractionManager
     from src.backend.database.repository import BookRepository
@@ -131,16 +133,16 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
     episode_tier = resolve_episode_tier(ep_num=ep_num, payload=payload)
     if routing_enabled and not llm_config:
         climax = episode_tier == "tier3_premium"
-        planning_model = resolve_optimized_model(
-            "planning", is_climax=climax, ep_num=ep_num
-        )
+        planning_model = resolve_optimized_model("planning", is_climax=climax, ep_num=ep_num)
         audit_model = resolve_optimized_model("audit", is_climax=False, ep_num=ep_num)
-        writing_model = resolve_optimized_model(
-            "writing", is_climax=climax, ep_num=ep_num
-        )
+        writing_model = resolve_optimized_model("writing", is_climax=climax, ep_num=ep_num)
         logger.info(
             "v6 tier routing: ep=%s tier=%s writing=%s planning=%s audit=%s",
-            ep_num, episode_tier, writing_model, planning_model, audit_model,
+            ep_num,
+            episode_tier,
+            writing_model,
+            planning_model,
+            audit_model,
         )
 
     llm_adapter = get_llm_adapter(
@@ -179,6 +181,7 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
 
     # Phase 3/4 依存サービスのインスタンス化
     from src.backend.database.social_repository import SocialRepository
+
     social_repo = SocialRepository(session)
     reflective_rag = ReflectiveRAGService(rag_service=rag_service)
     compressor = FourLayerCompressor(config=CompressionConfig())
@@ -189,6 +192,7 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
 
     # EventBus 初期化（環境変数 USE_REDIS_EVENTS=true で Redis 使用）
     from src.backend.config import settings
+
     use_redis = os.environ.get("USE_REDIS_EVENTS", "false").lower() == "true"
     event_bus = EventBus(use_redis=use_redis)
     if use_redis:
@@ -263,23 +267,21 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
             # 「next_agent 未指定なら次ノードを埋める」連鎖を一箇所に集約する。
             # （manifest 経路は `_make_skill_node` 経由で IllustrationSkill が
             #   終端ノード `runs_before: []` のままなので影響を受けない）
-            illustration_agent = IllustrationAgent(
-                image_service=image_service, repo=repo, llm=llm_adapter
-            )
-            illustration_node = _make_execute_node(
-                illustration_agent, AgentName.MARKETING
-            )
+            illustration_agent = IllustrationAgent(image_service=image_service, repo=repo, llm=llm_adapter)
+            illustration_node = _make_execute_node(illustration_agent, AgentName.MARKETING)
 
             if enrichment_enabled:
                 nodes[AgentName.ENRICHMENT] = EnrichmentAgent(repo=repo, llm=llm_adapter).run
                 nodes[AgentName.AUDIT] = audit_node.run
                 nodes[AgentName.ILLUSTRATION] = illustration_node
             else:
+
                 async def enrichment_passthrough(ctx: AgentContext) -> AgentResult:
                     return AgentResult(
                         next_agent=AgentName.AUDIT,
                         artifacts=ctx.artifacts,
                     )
+
                 nodes[AgentName.ENRICHMENT] = enrichment_passthrough
                 nodes[AgentName.AUDIT] = audit_node.run
                 nodes[AgentName.ILLUSTRATION] = illustration_node
@@ -354,7 +356,11 @@ def _update_task_in_db(
                     )
                     # Extract book_id from payload, handle missing or invalid
                     raw_book_id = payload.get("book_id") if payload else None
-                    target_book_id = int(raw_book_id) if raw_book_id is not None and str(raw_book_id).isdigit() and int(raw_book_id) > 0 else None
+                    target_book_id = (
+                        int(raw_book_id)
+                        if raw_book_id is not None and str(raw_book_id).isdigit() and int(raw_book_id) > 0
+                        else None
+                    )
 
                     saved_book = repo.save_or_update_book_with_chapter(
                         book_id=target_book_id,
@@ -419,7 +425,7 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
                     amount=credit_cost,
                     transaction_type="consumption",
                     description="Chapter generation (easy mode) credit hold",
-                    task_id=str(task_id) if task_id else None
+                    task_id=str(task_id) if task_id else None,
                 )
             )
             credits_deducted = True
@@ -462,7 +468,7 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
                     amount=credit_cost,
                     transaction_type="refund",
                     description="Refund for failed chapter generation (easy mode)",
-                    task_id=str(task_id) if task_id else None
+                    task_id=str(task_id) if task_id else None,
                 )
             except Exception as refund_err:
                 logger.error(f"Failed to refund credits: {refund_err}")
@@ -504,7 +510,7 @@ def generate_chapter_orchestrated_task(payload: dict[str, Any]) -> dict[str, Any
                 amount=credit_cost,
                 transaction_type="consumption",
                 description="Chapter generation (orchestrated mode) credit hold",
-                task_id=str(task_id) if task_id else None
+                task_id=str(task_id) if task_id else None,
             )
             credits_deducted = True
         except Exception as e:
@@ -545,7 +551,7 @@ def generate_chapter_orchestrated_task(payload: dict[str, Any]) -> dict[str, Any
                     amount=credit_cost,
                     transaction_type="refund",
                     description="Refund for failed chapter generation (orchestrated mode)",
-                    task_id=str(task_id) if task_id else None
+                    task_id=str(task_id) if task_id else None,
                 )
             except Exception as refund_err:
                 logger.error(f"Failed to refund credits: {refund_err}")
@@ -569,11 +575,13 @@ def dag_task(
     priority: int = 0,
 ):
     """Decorator to attach DAG metadata to generation tasks (Step 43)."""
+
     def decorator(fn: Any) -> Any:
         fn._dag_dependencies = dependencies or []
         fn._dag_resources = resources or {"cpu_cores": 1.0, "ram_mb": 512, "gpu_mem_mb": 0}
         fn._dag_priority = priority
         return fn
+
     return decorator
 
 

@@ -52,6 +52,7 @@ class WritingSkillAgent(SkillAgent):
             # v2 新機能: 詳細なメトリクスを記録
             try:
                 from src.backend.observability.metrics import record_generation_task
+
                 workflow_type = "writing_v2"
                 status = "completed" if not result.error else "failed"
                 record_generation_task(workflow_type, status, duration)
@@ -70,6 +71,7 @@ class WritingSkillAgent(SkillAgent):
 
             try:
                 from src.backend.observability.metrics import record_generation_task
+
                 workflow_type = "writing_v2"
                 record_generation_task(workflow_type, "failed", duration)
             except Exception:
@@ -95,7 +97,9 @@ class WritingSkillAgent(SkillAgent):
 
                     # ここでは簡易版として、将来的に実装する旨を示す
                     # 実際には BookScoreCalculator.calculate() を呼び出す
-                    logger.info(f"WritingSkillAgent: BookScore feedback would be calculated for book {book_id}, chapter {chapter_number}")
+                    logger.info(
+                        f"WritingSkillAgent: BookScore feedback would be calculated for book {book_id}, chapter {chapter_number}"
+                    )
                 except Exception as e:
                     logger.debug(f"BookScore feedback skipped: {e}")
 

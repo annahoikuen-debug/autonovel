@@ -1,4 +1,5 @@
 """DAG Checkpoint/Resume Persistence (Step 6)."""
+
 from __future__ import annotations
 
 from typing import Protocol, Optional
@@ -7,6 +8,7 @@ from src.backend.tasks.dag_models import DAGGraph
 
 class DAGPersistence(Protocol):
     """DAG 状態の永続化プロトコル。"""
+
     def save_checkpoint(self, graph: DAGGraph, checkpoint_id: str) -> None:
         """グラフ状態をチェックポイント保存。"""
         ...
@@ -31,6 +33,7 @@ from datetime import datetime
 
 class FileSystemDAGPersistence:
     """ローカルファイルシステムへの JSON 保存。"""
+
     def __init__(self, base_dir: str = "/tmp/dag_checkpoints"):
         self.base_dir = Path(base_dir)
         self.base_dir.mkdir(parents=True, exist_ok=True)
@@ -44,7 +47,7 @@ class FileSystemDAGPersistence:
         data["_checkpoint_meta"] = {
             "saved_at": datetime.now().isoformat(),
             "dag_id": graph.dag_id,
-            "checkpoint_id": checkpoint_id
+            "checkpoint_id": checkpoint_id,
         }
         path = self._checkpoint_path(checkpoint_id)
         path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
@@ -75,6 +78,7 @@ class FileSystemDAGPersistence:
 # Redis 実装 (オプション)
 try:
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -83,6 +87,7 @@ except ImportError:
 
 class RedisDAGPersistence:
     """Redis への JSON 保存 (分散環境用)。"""
+
     def __init__(self, url: str = "redis://localhost:6379", ttl: int = 86400):
         if not REDIS_AVAILABLE:
             raise RuntimeError("redis not installed. Install with: pip install redis")
@@ -109,6 +114,7 @@ class RedisDAGPersistence:
             data = self.client.get(key)
             if data:
                 import json
+
                 meta = json.loads(data).get("_checkpoint_meta", {})
                 if meta.get("dag_id") == dag_id:
                     checkpoints.append(key.split(":")[-1])

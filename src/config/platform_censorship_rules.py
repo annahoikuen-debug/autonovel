@@ -29,6 +29,4 @@ PLATFORM_CENSORSHIP_RULES: Dict[str, List[Dict[str, str]]] = {
 
 def get_censorship_rules(platform: str) -> List[Dict[str, str]]:
     """プラットフォーム別の伏字ルールリストを返す。"""
-    return PLATFORM_CENSORSHIP_RULES.get(
-        platform, PLATFORM_CENSORSHIP_RULES.get("kakuyomu_romance", [])
-    )
+    return PLATFORM_CENSORSHIP_RULES.get(platform, PLATFORM_CENSORSHIP_RULES.get("kakuyomu_romance", []))

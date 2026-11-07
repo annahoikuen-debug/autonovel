@@ -3,6 +3,7 @@ from typing import Optional
 from pydantic import Field
 from src.domain.schemas.base import TimestampedSchema, AutoNovelBaseSchema
 
+
 class ForeshadowingSchema(TimestampedSchema):
     id: int
     book_id: int
@@ -12,6 +13,7 @@ class ForeshadowingSchema(TimestampedSchema):
     target_episode: Optional[int] = None
     resolved_episode: Optional[int] = None
     status: str = Field(default="planted")  # planted, progressed, resolved, abandoned
+
 
 class ForeshadowingCreateRequest(AutoNovelBaseSchema):
     book_id: int

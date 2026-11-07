@@ -16,6 +16,7 @@ from src.narrative_balancer.models import Beat, BeatType, CorrectionAction  # no
 
 class TensionSignal(BaseModel):
     """Numerical representation of tension values along episode timeline."""
+
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     episodes: List[int] = Field(..., description="Episode indices")
@@ -28,6 +29,7 @@ class TensionSignal(BaseModel):
 
 class SagDetection(BaseModel):
     """Detection result for mid-story tension sagging (中だるみ)."""
+
     model_config = ConfigDict(extra="ignore")
 
     start_episode: int = Field(..., description="Start episode of sag window")
@@ -41,6 +43,7 @@ class SagDetection(BaseModel):
 
 class ImpulseConfig(BaseModel):
     """Parameters for synthetic midpoint impulse curve."""
+
     length: int = Field(default=5, ge=1, le=20)
     peak: float = Field(default=9.0, ge=1.0, le=10.0)
     decay: float = Field(default=0.7, ge=0.1, le=0.99)
@@ -49,9 +52,14 @@ class ImpulseConfig(BaseModel):
 
 class DSPConfig(BaseModel):
     """Configuration for DSP Tension Balancer."""
+
     window_size: int = Field(default=8, ge=3, le=20, description="Sliding window size in episodes")
-    flatness_threshold: float = Field(default=0.6, ge=0.0, le=1.0, description="Threshold above which curve is considered flat")
-    low_freq_ratio_threshold: float = Field(default=0.65, ge=0.0, le=1.0, description="Threshold for low frequency dominance")
+    flatness_threshold: float = Field(
+        default=0.6, ge=0.0, le=1.0, description="Threshold above which curve is considered flat"
+    )
+    low_freq_ratio_threshold: float = Field(
+        default=0.65, ge=0.0, le=1.0, description="Threshold for low frequency dominance"
+    )
     min_tension_clip: float = Field(default=1.0, ge=0.0, le=10.0)
     max_tension_clip: float = Field(default=10.0, ge=0.0, le=10.0)
     impulse: ImpulseConfig = Field(default_factory=ImpulseConfig)

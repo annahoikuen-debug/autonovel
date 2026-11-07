@@ -56,7 +56,7 @@ def tension_monotony_penalty(beats: List[Beat]) -> float:
     penalty = 0.0
 
     for i in range(len(tensions) - 3):
-        window = tensions[i:i + 4]
+        window = tensions[i : i + 4]
         if np.var(window) < 0.2:
             penalty += 5.0
 

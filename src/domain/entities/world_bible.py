@@ -12,6 +12,7 @@ from src.domain.value_objects.text import TextContent, MarkdownText
 @dataclass
 class WorldBible:
     """World Bible aggregate root - contains all world settings for a novel."""
+
     id: SettingId
     novel_id: NovelId
     settings: TextContent
@@ -109,6 +110,7 @@ class WorldBible:
     def from_dict(cls, data: dict) -> WorldBible:
         """Deserialize from dictionary."""
         from src.domain.value_objects.ids import SettingId, NovelId
+
         return cls(
             id=SettingId.from_string(data["id"]),
             novel_id=NovelId.from_string(data["novel_id"]),
@@ -131,6 +133,7 @@ class WorldBible:
 @dataclass(frozen=True, slots=True)
 class PendingSetting:
     """Pending setting awaiting confirmation."""
+
     id: SettingId
     novel_id: NovelId
     field_name: str
@@ -149,6 +152,7 @@ class PendingSetting:
 @dataclass(frozen=True, slots=True)
 class Setting:
     """Individual setting entry."""
+
     id: SettingId
     name: str
     value: TextContent
@@ -191,6 +195,7 @@ class Setting:
 @dataclass(frozen=True, slots=True)
 class Lore:
     """Lore entry - deeper worldbuilding element."""
+
     id: SettingId
     novel_id: NovelId
     title: str

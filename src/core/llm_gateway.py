@@ -90,9 +90,7 @@ class LLMGenerateResultProxy:
     @staticmethod
     def _normalize_response(response: Any) -> Any:
         class _Response:
-            def __init__(
-                self, success: bool, content: Any = None, metadata: Any = None, usage: Any = None
-            ):
+            def __init__(self, success: bool, content: Any = None, metadata: Any = None, usage: Any = None):
                 self.success = success
                 self.content = content
                 self.metadata = metadata
@@ -156,9 +154,7 @@ class LLMGenerateResultProxy:
             story_content=response.content,
             token_usage={
                 "prompt": LLMGenerateResultProxy._usage_metric(response.usage, "prompt_tokens", 0),
-                "completion": LLMGenerateResultProxy._usage_metric(
-                    response.usage, "completion_tokens", 0
-                ),
+                "completion": LLMGenerateResultProxy._usage_metric(response.usage, "completion_tokens", 0),
                 "calls": 1,
             },
         )
@@ -201,17 +197,13 @@ class LLMGenerateResultProxy:
             story_content=response.content,
             token_usage={
                 "prompt": LLMGenerateResultProxy._usage_metric(response.usage, "prompt_tokens", 0),
-                "completion": LLMGenerateResultProxy._usage_metric(
-                    response.usage, "completion_tokens", 0
-                ),
+                "completion": LLMGenerateResultProxy._usage_metric(response.usage, "completion_tokens", 0),
                 "calls": 1,
             },
         )
 
     def generate(self, *args, **kwargs):
-        raise NotImplementedError(
-            "generate() is deprecated. Use generate_text() or generate_json()."
-        )
+        raise NotImplementedError("generate() is deprecated. Use generate_text() or generate_json().")
 
 
 LLMGateway = LLMGenerateResultProxy

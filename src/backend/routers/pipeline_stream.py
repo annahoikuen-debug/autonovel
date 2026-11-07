@@ -12,6 +12,7 @@
     - 検証通過後も **book_id の所有権を必ず確認** する。
       認証済みであることと、その作品を閲覧する権限があることは別である。
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -135,9 +136,7 @@ async def _ensure_book_accessible(book_id: int, user_id: int | None) -> None:
 
     async for db in get_async_db():
         try:
-            book = (
-                await db.execute(select(Book).where(Book.id == book_id))
-            ).scalar_one_or_none()
+            book = (await db.execute(select(Book).where(Book.id == book_id))).scalar_one_or_none()
         finally:
             pass
 
@@ -145,9 +144,7 @@ async def _ensure_book_accessible(book_id: int, user_id: int | None) -> None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="作品が見つかりません")
 
     if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="認証が必要です"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="認証が必要です")
 
     # API キー接続 (user_id == 0) は system 権限の読み取り用途として許可する
     if user_id == 0:
@@ -176,9 +173,7 @@ async def _async_verify(
         book_id=book_id,
     )
     if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid authentication token")
     await _ensure_book_accessible(book_id, user_id)
     return user_id
 
@@ -315,14 +310,10 @@ async def issue_stream_token(
         async for db in get_async_db():
             from sqlalchemy import select as _select
 
-            user = (
-                await db.execute(_select(User).where(User.id == user_id))
-            ).scalar_one_or_none()
+            user = (await db.execute(_select(User).where(User.id == user_id))).scalar_one_or_none()
 
     if user is None or user.status != "active":
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="ユーザーが無効化されています"
-        )
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="ユーザーが無効化されています")
 
     await verify_book_ownership(book_id, user)
 

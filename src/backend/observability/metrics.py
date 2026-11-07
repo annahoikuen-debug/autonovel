@@ -11,9 +11,7 @@ from fastapi import Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 
 # ===================== 標準 HTTP メトリクス =====================
-http_requests_total = Counter(
-    "http_requests_total", "Total HTTP requests", ["method", "path", "status"]
-)
+http_requests_total = Counter("http_requests_total", "Total HTTP requests", ["method", "path", "status"])
 
 http_request_duration_seconds = Histogram(
     "http_request_duration_seconds",
@@ -64,9 +62,7 @@ llm_api_tokens_total = Counter(
     ["model", "token_type"],  # token_type: prompt, completion
 )
 
-db_pool_connections_active = Gauge(
-    "db_pool_connections_active", "Active database connections in pool"
-)
+db_pool_connections_active = Gauge("db_pool_connections_active", "Active database connections in pool")
 
 db_pool_connections_idle = Gauge("db_pool_connections_idle", "Idle database connections in pool")
 
@@ -187,8 +183,15 @@ phase3_operation_total = Counter(
 )
 
 
-def record_ab_test_result(skill_name: str, winner: str, version_a: str, version_b: str,
-                          duration: float, success_rate_a: float, success_rate_b: float):
+def record_ab_test_result(
+    skill_name: str,
+    winner: str,
+    version_a: str,
+    version_b: str,
+    duration: float,
+    success_rate_a: float,
+    success_rate_b: float,
+):
     """A/Bテスト結果を記録"""
     ab_test_result_total.labels(skill_name=skill_name, winner=winner).inc()
     ab_test_duration_seconds.labels(skill_name=skill_name, version="a").observe(duration)
@@ -199,9 +202,7 @@ def record_ab_test_result(skill_name: str, winner: str, version_a: str, version_
 
 def record_book_score(score: dict, genre: str = "", phase: str = ""):
     """BookScore メトリクスを記録"""
-    book_score_overall.labels(genre=genre or "unknown", phase=phase or "writing").observe(
-        score.get("overall_score", 0)
-    )
+    book_score_overall.labels(genre=genre or "unknown", phase=phase or "writing").observe(score.get("overall_score", 0))
     for dim in ["structure", "coherency", "factual_grounding", "visual_textual_synergy", "reader_experience"]:
         val = score.get(f"{dim}_score", 0)
         book_score_dimensions.labels(dimension=dim).observe(val)
@@ -213,12 +214,8 @@ def record_book_score(score: dict, genre: str = "", phase: str = ""):
     book_id = score.get("book_id")
     if book_id and "trend_3ch" in score and score["trend_3ch"]:
         trend = score["trend_3ch"]
-        book_score_trend.labels(book_id=str(book_id), metric="avg_overall").set(
-            trend.get("avg_overall_score", 0)
-        )
-        book_score_trend.labels(book_id=str(book_id), metric="slope").set(
-            trend.get("trend_slope", 0)
-        )
+        book_score_trend.labels(book_id=str(book_id), metric="avg_overall").set(trend.get("avg_overall_score", 0))
+        book_score_trend.labels(book_id=str(book_id), metric="slope").set(trend.get("trend_slope", 0))
 
     # 昇格判定メトリクス（昇格条件チェック時に呼び出す想定）
     # ここでは記録しない（API呼び出し時に記録）
@@ -273,16 +270,12 @@ def record_llm_call(model: str, status: str, prompt_tokens: int = 0, completion_
 
 def record_llm_call_per_episode(episode_id: str, model: str, tier: str):
     """1話あたりの LLM 呼出回数を記録（TRACK-C C1）."""
-    llm_calls_per_episode.labels(
-        episode_id=episode_id, model=model, tier=tier
-    ).inc()
+    llm_calls_per_episode.labels(episode_id=episode_id, model=model, tier=tier).inc()
 
 
 def record_audit_call(episode_id: str, specialist: str, provider: str):
     """監査フェーズの LLM 呼出回数を記録（TRACK-C C1）."""
-    llm_calls_audit_phase.labels(
-        episode_id=episode_id, specialist=specialist, provider=provider
-    ).inc()
+    llm_calls_audit_phase.labels(episode_id=episode_id, specialist=specialist, provider=provider).inc()
 
 
 def update_db_pool_metrics(active: int, idle: int):

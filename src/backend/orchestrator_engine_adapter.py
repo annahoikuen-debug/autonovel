@@ -35,12 +35,7 @@ class PlannerAdapter:
     async def create_hegemony_plan(self, **kwargs):
         """PlanningAgent.create_hegemony_plan と互換"""
         # Orchestrator経由で planning スキルを実行
-        ctx = AgentContext(
-            book_id=kwargs.get("book_id", 0),
-            branch_id=1,
-            ep_num=1,
-            artifacts=kwargs
-        )
+        ctx = AgentContext(book_id=kwargs.get("book_id", 0), branch_id=1, ep_num=1, artifacts=kwargs)
         # 実際には Orchestrator の planning ノードを直接呼び出す
         planning_node = self._orchestrator.nodes.get("planning") or self._orchestrator.nodes.get(AgentName.PLANNING)
         if planning_node:

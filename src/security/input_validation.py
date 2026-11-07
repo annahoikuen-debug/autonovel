@@ -1,12 +1,15 @@
 """
 Input validation and sanitization utilities.
 """
+
 from pydantic import BaseModel, validator
+
 
 class SecureBaseModel(BaseModel):
     """
     Base model with strict validation and sanitization.
     """
+
     class Config:
         # Enforce strict validation (e.g., forbid extra fields)
         extra = "forbid"

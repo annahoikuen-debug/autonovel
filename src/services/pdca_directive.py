@@ -15,6 +15,7 @@ from src.agents.specialist_auditor_base import ActionableDiff
 @dataclass
 class WritingDirective:
     """Represents a mandatory writing constraint/instruction for chapter regeneration."""
+
     dimension: str  # e.g., "structure", "consistency", "emotion_curve"
     severity: str  # "CRITICAL", "MAJOR", "MINOR"
     target_location: str  # e.g., "起（導入部）", "中盤セグメント"
@@ -38,25 +39,22 @@ class WritingDirective:
 
     def format_for_prompt(self) -> str:
         """Format directive as a prompt section for chapter generation."""
-        sev_marker = {"CRITICAL": "【最優先必須修正】", "MAJOR": "【重点改善要求】", "MINOR": "【表現ブラッシュアップ】"}.get(
-            self.severity, "【修正指示】"
-        )
-        result = (
-            f"{sev_marker} 対象箇所: {self.target_location}\n"
-            f"  - 現状の課題: {self.current_issue}\n"
-        )
+        sev_marker = {
+            "CRITICAL": "【最優先必須修正】",
+            "MAJOR": "【重点改善要求】",
+            "MINOR": "【表現ブラッシュアップ】",
+        }.get(self.severity, "【修正指示】")
+        result = f"{sev_marker} 対象箇所: {self.target_location}\n  - 現状の課題: {self.current_issue}\n"
         if self.foreshadowing_directives:
             result += f"  - 伏線指示: {', '.join(self.foreshadowing_directives)}\n"
-        result += (
-            f"  - 必須執筆要件: {self.mandatory_instruction}\n"
-            f"  - 改善の狙い: {self.rationale}"
-        )
+        result += f"  - 必須執筆要件: {self.mandatory_instruction}\n  - 改善の狙い: {self.rationale}"
         return result
 
 
 @dataclass
 class PDCACycleResult:
     """Encapsulates the outcome of a closed-loop PDCA regeneration cycle."""
+
     cycle_number: int
     initial_score: float
     final_score: float
@@ -167,14 +165,9 @@ class PDCADirectiveGenerator:
         suggestion = diff.improved_suggestion or "表現の修正・拡充"
         rationale = diff.rationale or "評価スコア向上のため"
 
-        instruction = (
-            f"原文抜粋『{quote}』の描写を改め、"
-            f"以下の指示通りにリライトすること: {suggestion}"
-        )
+        instruction = f"原文抜粋『{quote}』の描写を改め、以下の指示通りにリライトすること: {suggestion}"
         # Check if this diff is related to foreshadowing
-        is_foreshadowing_related = (
-            "伏線" in loc or "伏線" in quote or "伏線" in suggestion or "伏線" in rationale
-        )
+        is_foreshadowing_related = "伏線" in loc or "伏線" in quote or "伏線" in suggestion or "伏線" in rationale
         foreshadowing_directives = []
         if is_foreshadowing_related:
             # For now, we can add a generic foreshadowing directive
@@ -250,7 +243,10 @@ class PDCADirectiveGenerator:
         if not directives:
             return ""
 
-        lines = [header, "前回の評価で基準点に満たなかった弱点を克服するため、以下の項目を必ず反映して再執筆してください:\n"]
+        lines = [
+            header,
+            "前回の評価で基準点に満たなかった弱点を克服するため、以下の項目を必ず反映して再執筆してください:\n",
+        ]
         for i, d in enumerate(directives, 1):
             lines.append(f"《修正指示 {i}》")
             lines.append(d.format_for_prompt())

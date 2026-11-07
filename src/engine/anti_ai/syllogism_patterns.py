@@ -2,6 +2,7 @@
 Emotion syllogism regex patterns for Anti-AI prose detection.
 PLAN 03: AI優等生病の外科的切除
 """
+
 from __future__ import annotations
 
 import re

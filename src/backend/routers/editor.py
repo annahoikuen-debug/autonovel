@@ -99,6 +99,7 @@ async def audit_fast_hybrid(
     await generate_limiter.check(request)
     try:
         from src.agents.specialists.unified_auditor import UnifiedAuditor
+
         auditor = UnifiedAuditor()
         report = await auditor.audit(
             text=req.draft_text,
@@ -109,7 +110,6 @@ async def audit_fast_hybrid(
     except Exception as e:
         logger.error(f"Error in audit_fast_hybrid: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
 
 
 @router.post("/next-beats", response_model=NextBeatsResponse)

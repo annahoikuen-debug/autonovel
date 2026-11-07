@@ -5,6 +5,7 @@ from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.metrics import MeterProvider
 from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
+
 try:
     from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
     from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
@@ -27,6 +28,7 @@ try:
 except ImportError:
     SQLAlchemyInstrumentor = None
 
+
 def init_otel(app=None, service_name="autonovel"):
     """
     Initialize OpenTelemetry tracing and metrics.
@@ -37,10 +39,9 @@ def init_otel(app=None, service_name="autonovel"):
         return None
 
     # Set up resource
-    resource = Resource(attributes={
-        "service.name": service_name,
-        "service.version": os.environ.get("APP_VERSION", "1.0.0")
-    })
+    resource = Resource(
+        attributes={"service.name": service_name, "service.version": os.environ.get("APP_VERSION", "1.0.0")}
+    )
 
     # Tracing
     tracer_provider = TracerProvider(resource=resource)

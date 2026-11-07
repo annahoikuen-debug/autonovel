@@ -1,4 +1,5 @@
 """純Pythonコサイン類似度計算ユーティリティ。"""
+
 from __future__ import annotations
 import math
 from typing import Sequence

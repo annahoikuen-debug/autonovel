@@ -98,9 +98,7 @@ class PromptService(PromptServiceInterface):
             # Template not found on file system
             raise FileNotFoundError(f"Prompt template '{template_name}' not found")
 
-    async def get_active_version(
-        self, book_id: int, prompt_key: str
-    ) -> PromptVersionDbModel | None:
+    async def get_active_version(self, book_id: int, prompt_key: str) -> PromptVersionDbModel | None:
         """Get the currently active prompt version."""
         return await self._repository.get_active_prompt_version(book_id, prompt_key)
 
@@ -198,14 +196,10 @@ class PromptRegistry:
     ) -> str:
         """Render template with A/B variant selection based on user/request."""
         if self._service and book_id:
-            return await self._service.render_async(
-                template_name, context, book_id, user_id, request_id
-            )
+            return await self._service.render_async(template_name, context, book_id, user_id, request_id)
 
         # AB test variant selection from file system
-        source = await self._get_ab_variant(
-            template_name, book_id, user_id, request_id, version_tags
-        )
+        source = await self._get_ab_variant(template_name, book_id, user_id, request_id, version_tags)
 
         env = Environment(
             loader=FileSystemLoader(self._templates_dir),

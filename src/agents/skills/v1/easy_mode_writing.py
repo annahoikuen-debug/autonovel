@@ -1,5 +1,6 @@
 # src/agents/skills/v1/easy_mode_writing.py
 """easy_mode 専用 WritingSkill - 簡易本文生成"""
+
 from __future__ import annotations
 
 import logging
@@ -30,6 +31,7 @@ class EasyModeWritingSkill(SkillAgent):
     def writing_agent(self):
         if self._writing_agent is None:
             from src.agents.writing.agent import WritingAgent
+
             self._writing_agent = WritingAgent(
                 repo=self.repo,
                 llm=self.llm,

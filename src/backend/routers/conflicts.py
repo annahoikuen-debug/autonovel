@@ -1,4 +1,5 @@
 """API endpoints for conflict review and manual resolution."""
+
 from __future__ import annotations
 
 from typing import Optional

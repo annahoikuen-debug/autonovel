@@ -246,14 +246,18 @@ def _build(spans: list[tuple[int, int, _Node]]) -> list[BeatInstance]:
 def _as(inst: BeatInstance, beat) -> BeatInstance:
     """既存 instance の役割だけを、指定した語彙の beat へ差し替える（話数は保持）。"""
     return BeatInstance(
-        inst.ep_start, inst.ep_end, beat.key, beat.label, beat.role,
-        beat.duty, beat.tension, beat.artifact,
+        inst.ep_start,
+        inst.ep_end,
+        beat.key,
+        beat.label,
+        beat.role,
+        beat.duty,
+        beat.tension,
+        beat.artifact,
     )
 
 
-def _enforce_invariants(
-    instances: list[BeatInstance], market_key: str, eps: int
-) -> list[BeatInstance]:
+def _enforce_invariants(instances: list[BeatInstance], market_key: str, eps: int) -> list[BeatInstance]:
     """3不変条件を強制する。1 話でも 発端 → 中点反転 → クライマックス を保つ。"""
     if not instances:
         return instances
@@ -272,8 +276,14 @@ def _enforce_invariants(
     if market_key == "web" and eps >= 2 and instances[-1].key != "volume_hook":
         # Web 連載は話末の引きで終わる。最終話 (ep == eps) を volume_hook に譲る。
         hook = BeatInstance(
-            eps, eps, hook_def.key, hook_def.label,
-            hook_def.role, hook_def.duty, hook_def.tension, hook_def.artifact,
+            eps,
+            eps,
+            hook_def.key,
+            hook_def.label,
+            hook_def.role,
+            hook_def.duty,
+            hook_def.tension,
+            hook_def.artifact,
         )
         last = instances[-1]
         if last.key not in _ALWAYS_KEEP:

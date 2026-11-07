@@ -49,6 +49,7 @@ def execute_agent_node_task(
 ) -> dict[str, Any]:
     """Huey 分散ワーカー上で単一エージェントノードまたはタスクを実行 (Step 39, 40, 44)"""
     import asyncio
+
     logger.info("Huey worker executing task for node: %s", node_name)
 
     async def _run():
@@ -59,6 +60,7 @@ def execute_agent_node_task(
                 raise RuntimeError(payload.get("error_msg", "Forced test failure"))
             elif node_name == "social_process":
                 from src.agents.social.manager import SocialInteractionManager
+
                 manager = SocialInteractionManager()
                 return await manager.process_scene_async(
                     book_id=payload.get("book_id", 1),
@@ -132,6 +134,7 @@ def _register_tasks() -> None:
         import src.backend.tasks.generation_tasks  # noqa
     except ImportError:
         pass
+
 
 __all__: list[str] = [
     "huey",

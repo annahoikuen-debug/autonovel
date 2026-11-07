@@ -250,11 +250,7 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
             prompt=suggestions_prompt,
             max_tokens=300,
         )
-        suggestions = [
-            line.lstrip("- ").strip()
-            for line in suggestions_raw.strip().split("\n")
-            if line.strip()
-        ][:3]
+        suggestions = [line.lstrip("- ").strip() for line in suggestions_raw.strip().split("\n") if line.strip()][:3]
 
     except Exception:
         logger.warning("Failed to generate suggestions, using defaults", exc_info=True)
@@ -376,7 +372,7 @@ async def generate_content(
             input_data.character_params.model_dump()
             if hasattr(input_data.character_params, "model_dump")
             else dict(input_data.character_params)
-)
+        )
 
         # 生成パラメータ準備
         params: dict[str, Any] = {
@@ -414,9 +410,7 @@ async def generate_content(
         # `/status/{task_id}` が `_assert_task_ownership` で自分のタスクを拒否する。
         repo = BookRepository(session)
         if repo.is_async:
-            await repo.create_task_async(
-                task_id=huey_task_id, status="running", user_id=owner_id
-            )
+            await repo.create_task_async(task_id=huey_task_id, status="running", user_id=owner_id)
         else:
             repo.create_task(task_id=huey_task_id, status="running", user_id=owner_id)
 
@@ -478,9 +472,7 @@ async def export_easy_mode_package(
         content=zip_bytes,
         media_type="application/zip",
         headers={
-            "Content-Disposition": (
-                f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"
-            ),
+            "Content-Disposition": (f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"),
             "Cache-Control": "no-store",
         },
     )
@@ -572,7 +564,6 @@ async def gacha_endpoint(
     """3案ガチャ企画生成 [Gacha Pitch]"""
     from fastapi import HTTPException
 
-
     db = get_db_manager()
     svc = GachaService(db=db)
     try:
@@ -590,7 +581,6 @@ async def digest_endpoint(
 ) -> DigestResponse:
     """ダイジェスト生成 [Quick Digest]"""
     from fastapi import HTTPException
-
 
     db = get_db_manager()
     svc = DigestService(db=db)
@@ -696,9 +686,7 @@ async def export_with_data_endpoint(
             {
                 "ep_num": 1,
                 "title": "第1話 運命の覚醒",
-                "one_line_summary": payload.current_text[:100]
-                if payload.current_text
-                else "冒険の始まり",
+                "one_line_summary": payload.current_text[:100] if payload.current_text else "冒険の始まり",
             }
         ],
         "bible_settings": {},
@@ -714,9 +702,7 @@ async def export_with_data_endpoint(
         content=zip_bytes,
         media_type="application/zip",
         headers={
-            "Content-Disposition": (
-                f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"
-            ),
+            "Content-Disposition": (f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"),
             "Cache-Control": "no-store",
         },
     )

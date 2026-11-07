@@ -55,9 +55,7 @@ async def _run_illustration_batch(book_id: int, settings: dict) -> dict[str, Any
         def report(self, message: str, level: str = "info") -> None:
             pass
 
-        def update_progress(
-            self, current: int, total: int, message: str = "", sub_message: str = ""
-        ) -> None:
+        def update_progress(self, current: int, total: int, message: str = "", sub_message: str = "") -> None:
             pass
 
         @property

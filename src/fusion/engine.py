@@ -1,4 +1,5 @@
 """Fusion engine for aggregating, arbitrating and caching emotional vectors across pairs."""
+
 from __future__ import annotations
 
 import re
@@ -14,7 +15,7 @@ from src.stores.vector_store import VectorStore
 
 
 def _episode_of(episode_id: str) -> int:
-    """"ep31" 形式からエピソード番号を取り出す (解析できなければ -1)。"""
+    """ "ep31" 形式からエピソード番号を取り出す (解析できなければ -1)。"""
     text = str(episode_id or "").strip().lower()
     if text.startswith("ep"):
         try:
@@ -49,7 +50,10 @@ class FusionEngine:
             keys = self.vector_store.get_namespace_keys(ns)
             for k in keys:
                 # パターン1: "ep01:A->B" or "A->B"
-                match = re.search(r'([A-Za-z0-9_\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff]+)->([A-Za-z0-9_\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff]+)', k)
+                match = re.search(
+                    r"([A-Za-z0-9_\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff]+)->([A-Za-z0-9_\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff]+)",
+                    k,
+                )
                 if match:
                     pairs.add((match.group(1), match.group(2)))
 
@@ -57,7 +61,7 @@ class FusionEngine:
             try:
                 vectors = self.vector_store.get_all(ns)
                 for v in vectors:
-                    for (src, tgt, emo) in v.signals.keys():
+                    for src, tgt, emo in v.signals.keys():
                         pairs.add((src, tgt))
             except Exception:
                 pass

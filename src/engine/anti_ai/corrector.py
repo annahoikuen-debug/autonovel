@@ -120,9 +120,7 @@ class BaseCorrector(ABC):
         )
 
     @abstractmethod
-    def _build_replacements(
-        self, text: str, violations: list[ViolationSpan]
-    ) -> list[tuple[int, int, str]]:
+    def _build_replacements(self, text: str, violations: list[ViolationSpan]) -> list[tuple[int, int, str]]:
         """Return a list of non-overlapping edits.
 
         Each edit is ``(start, end, replacement)`` and the

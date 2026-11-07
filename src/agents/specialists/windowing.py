@@ -15,6 +15,7 @@ from typing import Any
 @dataclass
 class NovelSection:
     """Represents an extracted contextual section/window from a novel draft."""
+
     name: str  # e.g., "opening", "ending", "ki", "sho", "ten", "ketsu", "section_1"
     text: str
     start_pos: int
@@ -133,7 +134,7 @@ class NovelSectionExtractor:
         start_candidate = len(text) - max_chars
         # Search for a sentence end around start_candidate so the ending section begins
         # at the start of a complete sentence.
-        search_window = text[start_candidate:start_candidate + min(300, max_chars // 2)]
+        search_window = text[start_candidate : start_candidate + min(300, max_chars // 2)]
         m = self.SENTENCE_END_PATTERN.search(search_window)
         if m:
             clean_start = start_candidate + m.end()

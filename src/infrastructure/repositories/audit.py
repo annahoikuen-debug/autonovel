@@ -54,11 +54,7 @@ class AuditRepository(BaseRepository):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def update_issue_status(
-        self, issue_id: int, status: str, resolved_note: str = ""
-    ) -> None:
+    async def update_issue_status(self, issue_id: int, status: str, resolved_note: str = "") -> None:
         await self.session.execute(
-            update(AuditIssue)
-            .where(AuditIssue.id == issue_id)
-            .values(status=status, resolved_note=resolved_note)
+            update(AuditIssue).where(AuditIssue.id == issue_id).values(status=status, resolved_note=resolved_note)
         )

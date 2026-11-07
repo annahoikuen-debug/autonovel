@@ -170,6 +170,7 @@ class _SensitiveDataFilter(logging.Filter):
     def _is_sensitive_key(self, key: str) -> bool:
         """キー名が機密情報を示すか判定する。"""
         import re
+
         sensitive_patterns = [
             r"(?i)^api[_-]?key$",
             r"(?i)^access[_-]?token$",
@@ -188,8 +189,6 @@ class _SensitiveDataFilter(logging.Filter):
             r"(?i)^csrf[_-]?token$",
         ]
         return any(re.match(pattern, str(key)) for pattern in sensitive_patterns)
-
-
 
 
 def _logger_levels_from_env() -> dict[str, int]:
@@ -225,9 +224,7 @@ def configure() -> None:
     handler: logging.Handler
     if log_format == "text" or _is_text_mode():
         handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter(
-            "%(asctime)s %(levelname)s %(name)s [%(app)s/%(env)s]: %(message)s"
-        )
+        formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s [%(app)s/%(env)s]: %(message)s")
     else:
         try:
             try:

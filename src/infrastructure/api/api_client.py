@@ -4,6 +4,7 @@
 プライベート属性（_request 等）も含めて全属性をリダイレクトする。
 patch() でのモック置き換えにも対応するため __setattr__ も実装する。
 """
+
 from __future__ import annotations
 
 

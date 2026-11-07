@@ -67,9 +67,7 @@ class EpisodeWritingWorkflow(BaseWorkflow):
                 from src.backend.tasks import enqueue_audit_after_write
 
                 enqueue_audit_after_write(book_id, write_from, write_to)
-                reporter.report(
-                    "⚖️ 非同期の論理監査タスク (Shadow Mode) をエンキューしました。", "info"
-                )
+                reporter.report("⚖️ 非同期の論理監査タスク (Shadow Mode) をエンキューしました。", "info")
             except Exception as e:
                 logger.error(f"Failed to enqueue shadow audit: {e}")
             return {"chars_count": chars_count, "failed_episodes": failed, "book_id": book_id}
@@ -92,16 +90,12 @@ class EpisodeWritingWorkflow(BaseWorkflow):
                 from src.backend.tasks import enqueue_audit_after_write
 
                 enqueue_audit_after_write(book_id, write_from, write_to)
-                reporter.report(
-                    "⚖️ 非同期の論理監査タスク (Shadow Mode) をエンキューしました。", "info"
-                )
+                reporter.report("⚖️ 非同期の論理監査タスク (Shadow Mode) をエンキューしました。", "info")
             except Exception as e:
                 logger.error(f"Failed to enqueue shadow audit: {e}")
             return {"chars_count": chars_count, "book_id": book_id}
 
-    async def _trigger_prefetch(
-        self, book_id: int, last_episode: int, reporter: StatusReporter
-    ) -> None:
+    async def _trigger_prefetch(self, book_id: int, last_episode: int, reporter: StatusReporter) -> None:
         """
         執筆完了後に Semantic Cache のプリフェッチ機能を起動し、
         次のエピソード群のEmbeddingを先行計算してキャッシュをウォームアップする。
@@ -114,9 +108,7 @@ class EpisodeWritingWorkflow(BaseWorkflow):
         - 新たな投機処理は書かない。`prefetch_by_pattern` は Step 4 で既定 OFF。
         - Step 11: 投機は「高確度かつ自動モード」のときだけ（既定では走らない）。
         """
-        if not should_speculate(
-            getattr(self, "last_audit_score", None), bool(getattr(self, "auto_mode", False))
-        ):
+        if not should_speculate(getattr(self, "last_audit_score", None), bool(getattr(self, "auto_mode", False))):
             logger.debug("[PREFETCH] Speculative prefetch is not allowed; skipping")
             return
         try:
@@ -161,9 +153,7 @@ class EpisodeWritingWorkflow(BaseWorkflow):
             prefetch_tasks.add(task)
             task.add_done_callback(prefetch_tasks.discard)
 
-            reporter.report(
-                f"🚀 Prefetch triggered for ep{next_ep}-ep{next_ep + 2} (background)", "debug"
-            )
+            reporter.report(f"🚀 Prefetch triggered for ep{next_ep}-ep{next_ep + 2} (background)", "debug")
             logger.info(f"[PREFETCH] Triggered for book_id={book_id}, ep{next_ep}-ep{next_ep + 2}")
         except Exception as e:
             # プリフェッチ失敗は致命的なエラーではなくログ出力のみ

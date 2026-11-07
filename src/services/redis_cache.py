@@ -51,9 +51,7 @@ class RedisCacheService:
             max_connections: 接続プールの最大接続数
         """
         if not REDIS_AVAILABLE:
-            logger.warning(
-                "redis.asyncio がインストールされていません。Redisキャッシュは無効化されます。"
-            )
+            logger.warning("redis.asyncio がインストールされていません。Redisキャッシュは無効化されます。")
             self._client = None
             self._pool = None
             # namespace / default_ttl は縮退モードでも必ず定義する。
@@ -121,9 +119,7 @@ class RedisCacheService:
             logger.error(f"[REDIS CACHE GET ERROR] key={key}: {e}")
             return None
 
-    async def set(
-        self, key: str, value: Any, ttl: int | None = None, nx: bool = False, xx: bool = False
-    ) -> bool:
+    async def set(self, key: str, value: Any, ttl: int | None = None, nx: bool = False, xx: bool = False) -> bool:
         """キャッシュに値を設定.
 
         Args:
@@ -369,11 +365,7 @@ class PromptCacheService:
         - ``invalidate_task_type``: ``prompt:*:*:*:{task_type}:*``
         - ``invalidate_book``:      ``prompt:*:*:*:*:{book_id}:*``
         """
-        book_seg = (
-            self._key_segment(book_id)
-            if book_id is not None
-            else self.SCOPE_UNKNOWN
-        )
+        book_seg = self._key_segment(book_id) if book_id is not None else self.SCOPE_UNKNOWN
         return ":".join(
             [
                 "prompt",
@@ -398,9 +390,7 @@ class PromptCacheService:
         """タスクタイプに基づくTTLを取得."""
         if custom_ttl is not None:
             return custom_ttl
-        return self.DEFAULT_TTL_BY_TASK_TYPE.get(
-            task_type, self.DEFAULT_TTL_BY_TASK_TYPE["default"]
-        )
+        return self.DEFAULT_TTL_BY_TASK_TYPE.get(task_type, self.DEFAULT_TTL_BY_TASK_TYPE["default"])
 
     async def _record_hit(self, layer: str) -> None:
         """ヒットを記録."""
@@ -458,9 +448,7 @@ class PromptCacheService:
                 キーへ埋め込む。省略時はスコープ不明キー (`-`) として扱われる。
         """
         prompt_hash = self.compute_prompt_hash(prompt, **params)
-        cache_key = self._generate_cache_key(
-            template_name, prompt_hash, model_id, template_version, task_type, book_id
-        )
+        cache_key = self._generate_cache_key(template_name, prompt_hash, model_id, template_version, task_type, book_id)
         l1_key = f"{cache_key}:{self._key_segment(genre)}:{temperature}"
 
         # L1: インメモリキャッシュ
@@ -476,9 +464,7 @@ class PromptCacheService:
                 cached = await self.redis.get(cache_key)
                 if cached is not None:
                     await self._record_hit("l2")
-                    logger.info(
-                        f"[PROMPT CACHE] L2 (Redis) HIT: {template_name} (task={task_type})"
-                    )
+                    logger.info(f"[PROMPT CACHE] L2 (Redis) HIT: {template_name} (task={task_type})")
                     # L1 にも格納して次回高速化
                     if self.l1 is not None:
                         self.l1[l1_key] = cached
@@ -499,9 +485,7 @@ class PromptCacheService:
                 )
                 if similar is not None:
                     await self._record_hit("l3")
-                    logger.info(
-                        f"[PROMPT CACHE] L3 (Semantic) HIT: {template_name} (task={task_type})"
-                    )
+                    logger.info(f"[PROMPT CACHE] L3 (Semantic) HIT: {template_name} (task={task_type})")
                     # Redis と L1 にも格納
                     if self.redis:
                         try:
@@ -535,9 +519,7 @@ class PromptCacheService:
     ) -> None:
         """3層キャッシュに応答を保存."""
         prompt_hash = self.compute_prompt_hash(prompt, **params)
-        cache_key = self._generate_cache_key(
-            template_name, prompt_hash, model_id, template_version, task_type, book_id
-        )
+        cache_key = self._generate_cache_key(template_name, prompt_hash, model_id, template_version, task_type, book_id)
         l1_key = f"{cache_key}:{self._key_segment(genre)}:{temperature}"
         effective_ttl = self._get_ttl(task_type, ttl)
 
@@ -568,9 +550,7 @@ class PromptCacheService:
                 await self._record_error()
 
         await self._record_set()
-        logger.info(
-            f"[PROMPT CACHE] STORED: {template_name} (task={task_type}, ttl={effective_ttl}s, key={cache_key})"
-        )
+        logger.info(f"[PROMPT CACHE] STORED: {template_name} (task={task_type}, ttl={effective_ttl}s, key={cache_key})")
 
     async def invalidate_book(self, book_id: int) -> int:
         """特定の書籍に関連するキャッシュを無効化 (Redis パターン削除)."""
@@ -580,10 +560,7 @@ class PromptCacheService:
         pattern = f"prompt:*:*:*:*:{self._key_segment(book_id)}:*"
         deleted = await self.redis.invalidate_pattern(pattern)
         l1_deleted = self._purge_l1(lambda k: f":{self._key_segment(book_id)}:" in k)
-        logger.info(
-            f"[PROMPT CACHE] Invalidated book {book_id}: "
-            f"{deleted} redis keys + {l1_deleted} L1 entries"
-        )
+        logger.info(f"[PROMPT CACHE] Invalidated book {book_id}: {deleted} redis keys + {l1_deleted} L1 entries")
         return deleted
 
     async def invalidate_template(self, template_name: str) -> int:
@@ -595,8 +572,7 @@ class PromptCacheService:
         tmpl_prefix = f"prompt:{self._key_segment(template_name)}:"
         l1_deleted = self._purge_l1(lambda k: k.startswith(tmpl_prefix))
         logger.info(
-            f"[PROMPT CACHE] Invalidated template {template_name}: "
-            f"{deleted} redis keys + {l1_deleted} L1 entries"
+            f"[PROMPT CACHE] Invalidated template {template_name}: {deleted} redis keys + {l1_deleted} L1 entries"
         )
         return deleted
 
@@ -607,13 +583,8 @@ class PromptCacheService:
         # キーの4番目が task_type セグメント
         pattern = f"prompt:*:*:*:{self._key_segment(task_type)}:*"
         deleted = await self.redis.invalidate_pattern(pattern)
-        l1_deleted = self._purge_l1(
-            lambda k: k.startswith(f"prompt:*:*:*:{self._key_segment(task_type)}:")
-        )
-        logger.info(
-            f"[PROMPT CACHE] Invalidated task_type {task_type}: "
-            f"{deleted} redis keys + {l1_deleted} L1 entries"
-        )
+        l1_deleted = self._purge_l1(lambda k: k.startswith(f"prompt:*:*:*:{self._key_segment(task_type)}:"))
+        logger.info(f"[PROMPT CACHE] Invalidated task_type {task_type}: {deleted} redis keys + {l1_deleted} L1 entries")
         return deleted
 
     def _purge_l1(self, predicate: Any) -> int:
@@ -712,9 +683,7 @@ class PromptCacheService:
                 await self._record_error()
 
         await self._record_warm_cache()
-        logger.info(
-            f"[PROMPT CACHE] Warmed {success_count}/{len(entries)} entries for task_type={task_type}"
-        )
+        logger.info(f"[PROMPT CACHE] Warmed {success_count}/{len(entries)} entries for task_type={task_type}")
         return success_count
 
     async def prefetch_next_episodes(
@@ -748,8 +717,7 @@ class PromptCacheService:
         candidates = [current_ep + i for i in range(1, next_ep_count + 1)]
         await self._record_prefetch()
         logger.info(
-            "[PROMPT CACHE] Prefetch candidates enumerated (no cache written) for "
-            "book=%s, episodes %s",
+            "[PROMPT CACHE] Prefetch candidates enumerated (no cache written) for book=%s, episodes %s",
             book_id,
             candidates,
         )

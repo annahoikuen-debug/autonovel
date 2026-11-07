@@ -15,11 +15,13 @@ from src.domain.repositories.character_repository import ICharacterRepository
 
 class CharacterValidationError(Exception):
     """Raised when character validation fails."""
+
     pass
 
 
 class RelationshipType(Enum):
     """Types of character relationships."""
+
     ALLY = "ally"
     ENEMY = "enemy"
     ROMANTIC = "romantic"
@@ -33,6 +35,7 @@ class RelationshipType(Enum):
 @dataclass
 class CharacterRelationship:
     """Represents a relationship between two characters."""
+
     character_id: CharacterId
     target_id: CharacterId
     relationship_type: RelationshipType
@@ -45,6 +48,7 @@ class CharacterRelationship:
 @dataclass
 class CharacterConsistencyIssue:
     """Represents a consistency issue with a character."""
+
     issue_type: str
     field: str
     description: str
@@ -107,12 +111,14 @@ class CharacterConsistencyChecker:
 
         character = await self._char_repo.get_by_id(character_id)
         if not character:
-            issues.append(CharacterConsistencyIssue(
-                issue_type="not_found",
-                field="character",
-                description=f"Character {character_id} not found",
-                severity="error",
-            ))
+            issues.append(
+                CharacterConsistencyIssue(
+                    issue_type="not_found",
+                    field="character",
+                    description=f"Character {character_id} not found",
+                    severity="error",
+                )
+            )
             return issues
 
         # Check arcs consistency
@@ -128,12 +134,14 @@ class CharacterConsistencyChecker:
             role_counts[c.role] += 1
 
         if role_counts[character.role] > 1:
-            issues.append(CharacterConsistencyIssue(
-                issue_type="duplicate_role",
-                field="role",
-                description=f"Multiple characters have role '{character.role}' in this novel",
-                severity="warning",
-            ))
+            issues.append(
+                CharacterConsistencyIssue(
+                    issue_type="duplicate_role",
+                    field="role",
+                    description=f"Multiple characters have role '{character.role}' in this novel",
+                    severity="warning",
+                )
+            )
 
         return issues
 
@@ -146,28 +154,34 @@ class CharacterConsistencyChecker:
         issues = []
 
         if arc.character_id != character.id:
-            issues.append(CharacterConsistencyIssue(
-                issue_type="arc_mismatch",
-                field="character_id",
-                description=f"Arc character_id ({arc.character_id}) doesn't match character ({character.id})",
-                severity="error",
-            ))
+            issues.append(
+                CharacterConsistencyIssue(
+                    issue_type="arc_mismatch",
+                    field="character_id",
+                    description=f"Arc character_id ({arc.character_id}) doesn't match character ({character.id})",
+                    severity="error",
+                )
+            )
 
         if arc.novel_id != character.novel_id:
-            issues.append(CharacterConsistencyIssue(
-                issue_type="arc_mismatch",
-                field="novel_id",
-                description=f"Arc novel_id ({arc.novel_id}) doesn't match character ({character.novel_id})",
-                severity="error",
-            ))
+            issues.append(
+                CharacterConsistencyIssue(
+                    issue_type="arc_mismatch",
+                    field="novel_id",
+                    description=f"Arc novel_id ({arc.novel_id}) doesn't match character ({character.novel_id})",
+                    severity="error",
+                )
+            )
 
         if arc.is_completed and arc.current_stage_index < len(arc.arc_stages) - 1:
-            issues.append(CharacterConsistencyIssue(
-                issue_type="arc_incomplete",
-                field="is_completed",
-                description="Arc marked complete but not all stages finished",
-                severity="warning",
-            ))
+            issues.append(
+                CharacterConsistencyIssue(
+                    issue_type="arc_incomplete",
+                    field="is_completed",
+                    description="Arc marked complete but not all stages finished",
+                    severity="warning",
+                )
+            )
 
         return issues
 
@@ -308,6 +322,7 @@ class CharacterDomainService:
     Pure business logic - no infrastructure dependencies.
     Depends only on repository interfaces.
     """
+
     character_repo: ICharacterRepository
 
     def __post_init__(self):

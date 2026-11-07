@@ -104,9 +104,7 @@ class NarrativeMetricRepository(BaseRepository[NarrativeMetric]):
             )
             self.add(metric)
 
-    async def delete_scene_metrics(
-        self, book_id: int, branch_id: int, ep_num: int, scene_num: int
-    ) -> None:
+    async def delete_scene_metrics(self, book_id: int, branch_id: int, ep_num: int, scene_num: int) -> None:
         """
         指定されたシーンの全バージョンの指標を削除する。
         """
@@ -142,9 +140,7 @@ class NarrativeMetricRepository(BaseRepository[NarrativeMetric]):
                 func.max(NarrativeMetric.version).label("max_version"),
             )
             .where(NarrativeMetric.book_id == book_id, NarrativeMetric.branch_id == branch_id)
-            .group_by(
-                NarrativeMetric.ep_num, NarrativeMetric.scene_num, NarrativeMetric.metric_name
-            )
+            .group_by(NarrativeMetric.ep_num, NarrativeMetric.scene_num, NarrativeMetric.metric_name)
         ).subquery()
 
         # 最新バージョンに紐づくレコードを結合して取得

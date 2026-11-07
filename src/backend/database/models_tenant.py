@@ -29,9 +29,7 @@ class TenantMember(Base):
     """テナントメンバーシップおよびロール定義。"""
 
     __tablename__ = "tenant_members"
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "user_id", name="uq_tenant_user"),
-    )
+    __table_args__ = (UniqueConstraint("tenant_id", "user_id", name="uq_tenant_user"),)
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     tenant_id = Column(Integer, ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True)

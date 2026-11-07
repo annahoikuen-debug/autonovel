@@ -87,7 +87,7 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
             act_count = 3
 
         # ダミーの幕名を生成
-        acts = [f"第{i+1}幕" for i in range(act_count)]
+        acts = [f"第{i + 1}幕" for i in range(act_count)]
 
         return {"acts": acts}
 
@@ -173,9 +173,7 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
         sacrifice = answers.get("sacrifice", "peace")
         opening_hook = answers.get("openingHook", "isekai_awakening")
 
-        catharsis_map = EMOTIONAL_GOAL_TO_CATHARSIS.get(
-            emotional_goal, EMOTIONAL_GOAL_TO_CATHARSIS["triumph"]
-        )
+        catharsis_map = EMOTIONAL_GOAL_TO_CATHARSIS.get(emotional_goal, EMOTIONAL_GOAL_TO_CATHARSIS["triumph"])
 
         # テンションと各話の役割は STORY_SPINE が単一のソースになる。
         # （旧実装は `_calc_tension` で自前計算しており、構造テンプレと二重実装になっていた）
@@ -227,9 +225,7 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
 
     def _design_catharsis(self, answers: dict, target_episodes: int) -> CatharsisPattern:
         emotional_goal = answers.get("emotionalGoal", "triumph")
-        catharsis_map = EMOTIONAL_GOAL_TO_CATHARSIS.get(
-            emotional_goal, EMOTIONAL_GOAL_TO_CATHARSIS["triumph"]
-        )
+        catharsis_map = EMOTIONAL_GOAL_TO_CATHARSIS.get(emotional_goal, EMOTIONAL_GOAL_TO_CATHARSIS["triumph"])
 
         if catharsis_map["pattern"] == "explosion":
             catharsis_points = [target_episodes]
@@ -243,8 +239,7 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
         # テンション波も Spine の値を単一のソースとする
         spine = self._spine_for(target_episodes)
         tension_wave = [
-            int(round((spine.at(ep).tension if spine.at(ep) else 0.5) * 100))
-            for ep in range(1, target_episodes + 1)
+            int(round((spine.at(ep).tension if spine.at(ep) else 0.5) * 100)) for ep in range(1, target_episodes + 1)
         ]
 
         return CatharsisPattern(

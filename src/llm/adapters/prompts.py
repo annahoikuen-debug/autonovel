@@ -54,6 +54,7 @@ GRAPH_EXTRACTION_USER_PROMPT = """以下の小説の章テキストから、エ�
 {text}
 """
 
+
 class PromptTemplateWithSpine(str):
     """STORY_SPINE 対応プロンプトテンプレート。
 

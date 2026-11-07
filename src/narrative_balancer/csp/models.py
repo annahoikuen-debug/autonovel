@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class CharRole(str, Enum):
     """Character narrative roles."""
+
     PROTAGONIST = "PROTAGONIST"
     RIVAL = "RIVAL"
     MENTOR = "MENTOR"
@@ -16,6 +17,7 @@ class CharRole(str, Enum):
 
 class ConstraintPriority(str, Enum):
     """Constraint enforcement level."""
+
     HARD = "HARD"
     SOFT_HIGH = "SOFT_HIGH"
     SOFT_MEDIUM = "SOFT_MEDIUM"
@@ -24,6 +26,7 @@ class ConstraintPriority(str, Enum):
 
 class ConflictClause(BaseModel):
     """Diagnosed conflicting constraint clause in infeasible problems."""
+
     model_config = ConfigDict(extra="ignore")
 
     constraint_name: str

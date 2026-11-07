@@ -136,9 +136,7 @@ class KakuyomuPublisher(PublisherAdapter):
             },
         )
 
-    async def get_post_status(
-        self, post_id: str, credentials: KakuyomuCredentials
-    ) -> dict[str, Any]:
+    async def get_post_status(self, post_id: str, credentials: KakuyomuCredentials) -> dict[str, Any]:
         """作品ステータス取得 — 作品ページURLのみを返却（HTTPリクエストなし）。"""
         work_id = str(post_id).strip()
         return {
@@ -160,9 +158,7 @@ class KakuyomuPublisher(PublisherAdapter):
         """
         return KAKUYOMU_EPISODE_NEW_URL_TEMPLATE.format(work_id=str(work_id).strip())
 
-    def build_episode_handoff(
-        self, work_id: str, title: str, body: str
-    ) -> KakuyomuEpisodeHandoff:
+    def build_episode_handoff(self, work_id: str, title: str, body: str) -> KakuyomuEpisodeHandoff:
         """整形済み本文と投稿画面URLをまとめたハンドオフペイロードを構築する。"""
         formatted = self._format_for_kakuyomu(body)
         return KakuyomuEpisodeHandoff(

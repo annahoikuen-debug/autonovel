@@ -4,11 +4,13 @@ from pydantic import BaseModel, Field
 
 from src.models.base import MODEL_CONFIG_DEFAULTS
 
+
 class TargetPlatform(str, Enum):
     KAKUYOMU = "kakuyomu"
     NAROU = "narou"
     ALPHAPOLIS = "alphapolis"
     KINDLE = "kindle"
+
 
 class FormattedChapterPayload(BaseModel):
     platform: TargetPlatform

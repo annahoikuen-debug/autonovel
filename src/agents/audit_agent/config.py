@@ -142,6 +142,4 @@ def is_advisory_strict_guard_enabled() -> bool:
 
     ``ENABLE_AUDIT_ADVISORY_STRICT_GUARD=false`` で無効化できる。
     """
-    return _env_flag(
-        "ENABLE_AUDIT_ADVISORY_STRICT_GUARD", DEFAULT_ENABLE_AUDIT_ADVISORY_STRICT_GUARD
-    )
+    return _env_flag("ENABLE_AUDIT_ADVISORY_STRICT_GUARD", DEFAULT_ENABLE_AUDIT_ADVISORY_STRICT_GUARD)

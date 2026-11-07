@@ -19,21 +19,18 @@ DEFAULT_PRICING: Dict[str, Tuple[float, float]] = {
     "default": (0.50, 1.50),
 }
 
+
 @dataclass
 class CostCalculator:
     # NOTE: None を許すと mypy が属性アクセス毎に Optional チェックを要求するため、
     # dataclass の default として DEFAULT_PRICING を直接束ねる（挙動は同一）。
-    pricing: Dict[str, Tuple[float, float]] = dataclasses_field(
-        default_factory=lambda: DEFAULT_PRICING.copy()
-    )
+    pricing: Dict[str, Tuple[float, float]] = dataclasses_field(default_factory=lambda: DEFAULT_PRICING.copy())
 
     def estimate_cost_usd(self, input_tokens: int, output_tokens: int, model: Optional[str] = None) -> float:
         """トークン数とモデルから推定コスト（USD）を計算する。"""
         effective_model = model or self._task_to_model()
         in_price, out_price = self.pricing.get(effective_model, self.pricing.get("default", (0.50, 1.50)))
-        return round(
-            (input_tokens / 1_000_000) * in_price + (output_tokens / 1_000_000) * out_price, 6
-        )
+        return round((input_tokens / 1_000_000) * in_price + (output_tokens / 1_000_000) * out_price, 6)
 
     def _task_to_model(self, task_type: str = None) -> str:
         """タスク種別をモデル名にマッピングする（環境変数を考慮）。"""
@@ -63,6 +60,7 @@ class CostCalculator:
 
 
 _default_calculator = CostCalculator()
+
 
 def estimate_cost_usd(input_tokens: int, output_tokens: int, model: Optional[str] = None) -> float:
     """トークン数とモデルから推定コスト（USD）を計算する（デフォルト計算機を使用）。"""

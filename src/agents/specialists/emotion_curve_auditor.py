@@ -83,7 +83,8 @@ class EmotionCurveAuditor(SpecialistAuditor):
         draft = ctx.get("draft_text", "") or ""
         if not draft:
             return SpecialistAuditResult(
-                "emotion_curve", 0.0,
+                "emotion_curve",
+                0.0,
                 feedback={"error": "no draft_text"},
                 suggestions=["Provide draft_text in context"],
             )
@@ -139,7 +140,8 @@ class EmotionCurveAuditor(SpecialistAuditor):
 
         if len(segments) < 2:
             return SpecialistAuditResult(
-                "emotion_curve", 35.0,
+                "emotion_curve",
+                35.0,
                 feedback={"fallback": "rule-based", "segments": len(segments), "note": "too short for curve"},
                 suggestions=["Need at least 2 segments for emotion curve", "感情の起伏を設けてください"],
                 degraded=True,
@@ -150,7 +152,9 @@ class EmotionCurveAuditor(SpecialistAuditor):
                         improved_suggestion="情動語や登場人物の心理描写、葛藤や驚きを追加して感情の起伏を創出する。",
                         rationale="文章が短すぎるか感情語が皆無で感情曲線を形成できていないため。",
                     )
-                ] if draft else [],
+                ]
+                if draft
+                else [],
             )
 
         # Compute emotional polarity per segment
@@ -167,9 +171,11 @@ class EmotionCurveAuditor(SpecialistAuditor):
             polarities.append(polarity)
 
         if len(polarities) < 2:
-            return SpecialistAuditResult("emotion_curve", 35.0, feedback={"fallback": "rule-based"}, suggestions=[], degraded=True)
+            return SpecialistAuditResult(
+                "emotion_curve", 35.0, feedback={"fallback": "rule-based"}, suggestions=[], degraded=True
+            )
 
-        variance = sum((p - sum(polarities)/len(polarities))**2 for p in polarities) / len(polarities)
+        variance = sum((p - sum(polarities) / len(polarities)) ** 2 for p in polarities) / len(polarities)
         amplitude = max(polarities) - min(polarities)
         final_catharsis = catharsis_counts[-1] if catharsis_counts else 0
         start_to_end_shift = polarities[-1] - polarities[0] if polarities else 0
@@ -179,12 +185,7 @@ class EmotionCurveAuditor(SpecialistAuditor):
         catharsis_score = min(100, final_catharsis * 20)
         shift_score = min(100, abs(start_to_end_shift) * 5)
 
-        total = (
-            0.3 * variance_score
-            + 0.3 * amplitude_score
-            + 0.2 * catharsis_score
-            + 0.2 * shift_score
-        )
+        total = 0.3 * variance_score + 0.3 * amplitude_score + 0.2 * catharsis_score + 0.2 * shift_score
 
         suggs = []
         actionable_diffs: list[ActionableDiff] = []
@@ -247,16 +248,16 @@ class EmotionCurveAuditor(SpecialistAuditor):
         # If too few paragraphs, split by sentence and group by emotional density
         sentences = [s.strip() for s in re.split(r"[。！？]", text) if s.strip()]
         if len(sentences) < 4:
-            return [text[i:i+200] for i in range(0, len(text), 200)]
+            return [text[i : i + 200] for i in range(0, len(text), 200)]
 
         # Compute emotional density per sentence
         densities = []
         for sent in sentences:
             density = (
-                _count_emotion(sent, POSITIVE_EMOTIONS) +
-                _count_emotion(sent, NEGATIVE_EMOTIONS) +
-                _count_emotion(sent, TENSION_WORDS) +
-                _count_emotion(sent, CATHARSIS_WORDS)
+                _count_emotion(sent, POSITIVE_EMOTIONS)
+                + _count_emotion(sent, NEGATIVE_EMOTIONS)
+                + _count_emotion(sent, TENSION_WORDS)
+                + _count_emotion(sent, CATHARSIS_WORDS)
             )
             densities.append(density)
 
@@ -280,7 +281,7 @@ class EmotionCurveAuditor(SpecialistAuditor):
         if current_segment:
             segments.append("。".join(current_segment) + "。")
 
-        return segments if len(segments) >= 2 else [text[i:i+200] for i in range(0, len(text), 200)]
+        return segments if len(segments) >= 2 else [text[i : i + 200] for i in range(0, len(text), 200)]
 
     def _count_catharsis_with_negation(self, text: str) -> int:
         """Count catharsis words, excluding those preceded by negation within 3 chars."""

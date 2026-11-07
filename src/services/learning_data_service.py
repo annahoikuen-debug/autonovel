@@ -112,15 +112,9 @@ class LearningDataService:
             # 検索用テキストを構築
             audit_type = sample_data["audit_type"]
             feedback = sample_data.get("original_feedback", {})
-            feedback_text = (
-                json.dumps(feedback, ensure_ascii=False)
-                if isinstance(feedback, dict)
-                else str(feedback)
-            )
+            feedback_text = json.dumps(feedback, ensure_ascii=False) if isinstance(feedback, dict) else str(feedback)
 
-            search_text = (
-                f"audit_type:{audit_type} feedback:{feedback_text} label:{sample_data['label']}"
-            )
+            search_text = f"audit_type:{audit_type} feedback:{feedback_text} label:{sample_data['label']}"
 
             import hashlib
 
@@ -215,9 +209,7 @@ class LearningDataService:
             "positive_samples_count": 0,
         }
 
-    async def should_skip_audit_type(
-        self, audit_type: str, field_path: str | None = None
-    ) -> tuple[bool, float]:
+    async def should_skip_audit_type(self, audit_type: str, field_path: str | None = None) -> tuple[bool, float]:
         """ネガティブサンプルに基づき、特定の監査タイプをスキップ/閾値緩和すべきか判定
 
         Returns:

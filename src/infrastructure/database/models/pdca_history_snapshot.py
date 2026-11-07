@@ -24,6 +24,4 @@ class PDCAHistorySnapshot(Base):
     converged = Column(Boolean, nullable=False, default=False)
     created_at = Column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
-        Index("idx_pdca_history_book_chap", "book_id", "chapter_number"),
-    )
+    __table_args__ = (Index("idx_pdca_history_book_chap", "book_id", "chapter_number"),)

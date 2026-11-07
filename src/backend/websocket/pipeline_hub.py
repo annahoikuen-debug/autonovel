@@ -7,6 +7,7 @@ from src.backend.schemas.pipeline_events import PipelineEvent
 
 logger = logging.getLogger(__name__)
 
+
 class PipelineEventHub:
     def __init__(self):
         # book_id -> set of WebSocket connections or queues
@@ -79,10 +80,17 @@ class PipelineEventHub:
         try:
             while True:
                 await asyncio.sleep(interval)
-                await websocket.send_json({"event_type": "ping", "book_id": book_id, "timestamp": datetime.now().isoformat() if 'datetime' in globals() else ""})
+                await websocket.send_json(
+                    {
+                        "event_type": "ping",
+                        "book_id": book_id,
+                        "timestamp": datetime.now().isoformat() if "datetime" in globals() else "",
+                    }
+                )
         except asyncio.CancelledError:
             raise
         except Exception:
             pass
+
 
 pipeline_event_hub = PipelineEventHub()

@@ -2,6 +2,7 @@ from __future__ import annotations
 import re
 from typing import Dict
 
+
 class ContentSplitter:
     """小説本文から「前書き」「本文」「後書き」を自動抽出・構造化し、
     プラットフォーム別のルビ記法変換を行うエンジン。
@@ -19,7 +20,11 @@ class ContentSplitter:
         afterword = ""
 
         # 前書きの抽出
-        foreword_match = re.search(r"【(?:前書き|まえがき)】\s*(.*?)(?=\n\s*\n|【(?:本文|本編|後書き|あとがき)】|――次回予告――|$)", raw_text, re.DOTALL)
+        foreword_match = re.search(
+            r"【(?:前書き|まえがき)】\s*(.*?)(?=\n\s*\n|【(?:本文|本編|後書き|あとがき)】|――次回予告――|$)",
+            raw_text,
+            re.DOTALL,
+        )
         if foreword_match:
             foreword = foreword_match.group(1).strip()
             # 本文から前書き部分を除去
@@ -31,11 +36,7 @@ class ContentSplitter:
             afterword = afterword_match.group(0).strip()
             main_content = main_content.replace(afterword_match.group(0), "", 1)
 
-        return {
-            "foreword": foreword.strip(),
-            "main_content": main_content.strip(),
-            "afterword": afterword.strip()
-        }
+        return {"foreword": foreword.strip(), "main_content": main_content.strip(), "afterword": afterword.strip()}
 
     @staticmethod
     def convert_ruby(text: str, target_platform: str) -> str:

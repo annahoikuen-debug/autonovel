@@ -1,4 +1,5 @@
 """Layer 1: Keyphrase Extractor for 4-Layer Context Compression (Step 26)."""
+
 from __future__ import annotations
 
 import re
@@ -15,10 +16,46 @@ except Exception:
 
 
 STOP_WORDS = {
-    "の", "は", "が", "を", "に", "で", "と", "も", "や", "な", "た", "だ", "する",
-    "ある", "いる", "こと", "もの", "これ", "それ", "あれ", "よう", "そう", "ため",
-    "から", "まで", "より", "など", "そして", "しかし", "だが", "また", "その", "この",
-    "あの", "どの", "という", "について", "として", "により", "による",
+    "の",
+    "は",
+    "が",
+    "を",
+    "に",
+    "で",
+    "と",
+    "も",
+    "や",
+    "な",
+    "た",
+    "だ",
+    "する",
+    "ある",
+    "いる",
+    "こと",
+    "もの",
+    "これ",
+    "それ",
+    "あれ",
+    "よう",
+    "そう",
+    "ため",
+    "から",
+    "まで",
+    "より",
+    "など",
+    "そして",
+    "しかし",
+    "だが",
+    "また",
+    "その",
+    "この",
+    "あの",
+    "どの",
+    "という",
+    "について",
+    "として",
+    "により",
+    "による",
 }
 
 
@@ -32,6 +69,7 @@ def count_tokens(text: str) -> int:
         return 0
     try:
         import tiktoken
+
         global _tiktoken_encoder
         if _tiktoken_encoder is None:
             _tiktoken_encoder = tiktoken.get_encoding("cl100k_base")
@@ -171,22 +209,22 @@ class TFIDFExtractor(KeyphraseExtractor):
         """日本語名詞らしきパターンを抽出（正規表現ベース） - 旧実装と互換性を保つため"""
         patterns = [
             # 漢字2文字以上の熟語（名詞っぽい）
-            r'[\u4e00-\u9fff]{2,}',
+            r"[\u4e00-\u9fff]{2,}",
             # カタカナ語（外来語・固有名詞）
-            r'[\u30a0-\u30ff]{2,}',
+            r"[\u30a0-\u30ff]{2,}",
             # ひらがな＋漢字の混在（3文字以上）
-            r'[\u3040-\u309f]{1,}[\u4e00-\u9fff]+',
+            r"[\u3040-\u309f]{1,}[\u4e00-\u9fff]+",
             # 漢字＋ひらがなの混在（例: 旅立）
-            r'[\u4e00-\u9fff]+[\u3040-\u309f]+',
+            r"[\u4e00-\u9fff]+[\u3040-\u309f]+",
             # 漢字＋カタカナの混在
-            r'[\u4e00-\u9fff]+[\u30a0-\u30ff]+',
+            r"[\u4e00-\u9fff]+[\u30a0-\u30ff]+",
             # 英数字
-            r'[a-zA-Z0-9]{2,}',
+            r"[a-zA-Z0-9]{2,}",
             # 単体の漢字（助詞の前後などで単独で現れるもの）
-            r'(?<=[はがをにへとでからまでよりのもやなどにて])[\u4e00-\u9fff](?=[。．！？!?\n\s])',
-            r'(?<=[はがをにへとでからまでよりのもやなどて])[\u4e00-\u9fff]{2,}(?=[。．！？!?\n\s])',
-            r'[\u4e00-\u9fff](?=[はがをにへとでからまでよりのもやなどて])',
-            r'[\u4e00-\u9fff]{2,}(?=[はがをにへとでからまでよりのもやなどて])',
+            r"(?<=[はがをにへとでからまでよりのもやなどにて])[\u4e00-\u9fff](?=[。．！？!?\n\s])",
+            r"(?<=[はがをにへとでからまでよりのもやなどて])[\u4e00-\u9fff]{2,}(?=[。．！？!?\n\s])",
+            r"[\u4e00-\u9fff](?=[はがをにへとでからまでよりのもやなどて])",
+            r"[\u4e00-\u9fff]{2,}(?=[はがをにへとでからまでよりのもやなどて])",
         ]
 
         nouns = []
@@ -200,21 +238,23 @@ class TFIDFExtractor(KeyphraseExtractor):
         for noun in nouns:
             if noun in seen:
                 continue
-            if len(noun) < 2 and not (len(noun) == 1 and '\u4e00' <= noun <= '\u9fff'):
+            if len(noun) < 2 and not (len(noun) == 1 and "\u4e00" <= noun <= "\u9fff"):
                 continue
             if self._is_function_word(noun):
                 continue
             if noun.isdigit():
                 continue
             # 削除: 助詞で始まる名詞（例: の剣士）
-            if noun[0] in {'は', 'が', 'を', 'に', 'へ', 'と', 'で', 'から', 'より', 'の', 'も', 'や'}:
+            if noun[0] in {"は", "が", "を", "に", "へ", "と", "で", "から", "より", "の", "も", "や"}:
                 continue
             seen.add(noun)
             filtered.append(noun)
 
         return filtered
 
-    def _compute_tfidf_scores(self, nouns: list[str], sentences: list[str], top_k: int, min_score: float) -> list[tuple[str, float]]:
+    def _compute_tfidf_scores(
+        self, nouns: list[str], sentences: list[str], top_k: int, min_score: float
+    ) -> list[tuple[str, float]]:
         """Compute TF-IDF scores - simplified implementation for compatibility"""
         # Create a temporary text from sentences for scoring
         text = "。".join(sentences) if sentences else ""
@@ -223,7 +263,9 @@ class TFIDFExtractor(KeyphraseExtractor):
         scored_items.sort(key=lambda x: x[1], reverse=True)
         return scored_items[:top_k]
 
-    def _compute_frequency_scores(self, nouns: list[str], text: str, top_k: int, min_score: float) -> list[tuple[str, float]]:
+    def _compute_frequency_scores(
+        self, nouns: list[str], text: str, top_k: int, min_score: float
+    ) -> list[tuple[str, float]]:
         """Compute frequency-based scores"""
         if not nouns:
             return []
@@ -244,13 +286,72 @@ class TFIDFExtractor(KeyphraseExtractor):
     def _is_function_word(self, word: str) -> bool:
         """Check if word is a function word"""
         function_words = {
-            'は', 'が', 'を', 'に', 'へ', 'と', 'で', 'から', 'まで', 'より', 'の', 'も', 'や', 'など',
-            'にて', 'として', 'について', 'において', 'よって', 'のため', 'ように', 'ために',
-            'だ', 'です', 'である', 'だっ', 'だった', 'ます', 'ませ', 'まし', 'ましょう',
-            'ない', 'ぬ', 'ん', 'れる', 'られる', 'せる', 'させる', 'たい', 'たがる',
-            'そして', 'しかし', 'したがって', 'また', 'さらに', 'つまり', 'すなわち', 'ただし',
-            'これ', 'それ', 'あれ', 'この', 'その', 'あの', 'ここ', 'そこ', 'あそこ',
-            '私', 'わたし', '僕', 'ぼく', '俺', 'あなた', '貴方', '彼', '彼女',
+            "は",
+            "が",
+            "を",
+            "に",
+            "へ",
+            "と",
+            "で",
+            "から",
+            "まで",
+            "より",
+            "の",
+            "も",
+            "や",
+            "など",
+            "にて",
+            "として",
+            "について",
+            "において",
+            "よって",
+            "のため",
+            "ように",
+            "ために",
+            "だ",
+            "です",
+            "である",
+            "だっ",
+            "だった",
+            "ます",
+            "ませ",
+            "まし",
+            "ましょう",
+            "ない",
+            "ぬ",
+            "ん",
+            "れる",
+            "られる",
+            "せる",
+            "させる",
+            "たい",
+            "たがる",
+            "そして",
+            "しかし",
+            "したがって",
+            "また",
+            "さらに",
+            "つまり",
+            "すなわち",
+            "ただし",
+            "これ",
+            "それ",
+            "あれ",
+            "この",
+            "その",
+            "あの",
+            "ここ",
+            "そこ",
+            "あそこ",
+            "私",
+            "わたし",
+            "僕",
+            "ぼく",
+            "俺",
+            "あなた",
+            "貴方",
+            "彼",
+            "彼女",
         }
         return word in function_words or word.isdigit()
 
@@ -267,11 +368,12 @@ class BM25Extractor(KeyphraseExtractor):
     def _tokenize(self, text: str) -> list[str]:
         """Simple tokenization (Japanese compatible)"""
         import unicodedata
+
         result = []
         current = ""
         for ch in text:
             cat = unicodedata.category(ch)
-            if cat.startswith('L') or cat.startswith('N'):
+            if cat.startswith("L") or cat.startswith("N"):
                 current += ch
             else:
                 if current:
@@ -285,7 +387,7 @@ class BM25Extractor(KeyphraseExtractor):
                 final.append(token)
             else:
                 for i in range(len(token) - 1):
-                    final.append(token[i:i+2])
+                    final.append(token[i : i + 2])
         return final if final else [text]
 
 
@@ -293,6 +395,7 @@ class KeyBERTExtractor(KeyphraseExtractor):
     def extract(self, text: str, top_k: int = 20, min_score: float = 0.01) -> list[tuple[str, float]]:
         try:
             from keybert import KeyBERT
+
             kw = KeyBERT()
             return kw.extract_keywords(text, top_n=top_k)
         except Exception:

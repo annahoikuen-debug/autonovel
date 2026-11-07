@@ -35,9 +35,7 @@ def upgrade() -> None:
     # plots テーブルが存在し、erotic_intensity カラムが未追加の場合のみ追加
     if _table_exists("plots") and not _column_exists("plots", "erotic_intensity"):
         with op.batch_alter_table("plots", schema=None) as batch_op:
-            batch_op.add_column(
-                sa.Column("erotic_intensity", sa.Integer(), nullable=True, server_default="0")
-            )
+            batch_op.add_column(sa.Column("erotic_intensity", sa.Integer(), nullable=True, server_default="0"))
 
 
 def downgrade() -> None:

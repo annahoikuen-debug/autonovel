@@ -259,9 +259,7 @@ class StyleDistillerService:
             self._llm = get_llm_adapter()
         return self._llm
 
-    async def distill_from_text(
-        self, sample_text: str, name_hint: str | None = None
-    ) -> StyleProfile:
+    async def distill_from_text(self, sample_text: str, name_hint: str | None = None) -> StyleProfile:
         """サンプルテキストからStyleProfileを抽出"""
         cleaned_text = sample_text.strip()
         if not cleaned_text:
@@ -301,18 +299,12 @@ class StyleDistillerService:
         min_len = min(lengths)
         max_len = max(lengths)
 
-        da_dearu_count = sum(
-            1 for s in sentences if s.endswith(("だ", "である", "た", "いた", "った"))
-        )
-        desu_masu_count = sum(
-            1 for s in sentences if s.endswith(("です", "ます", "でした", "ました"))
-        )
+        da_dearu_count = sum(1 for s in sentences if s.endswith(("だ", "である", "た", "いた", "った")))
+        desu_masu_count = sum(1 for s in sentences if s.endswith(("です", "ます", "でした", "ました")))
         nominal_count = sum(
             1
             for s in sentences
-            if not s.endswith(
-                ("だ", "である", "た", "いた", "った", "です", "ます", "でした", "ました")
-            )
+            if not s.endswith(("だ", "である", "た", "いた", "った", "です", "ます", "でした", "ました"))
         )
         total_s = max(len(sentences), 1)
 

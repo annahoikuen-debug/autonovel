@@ -8,6 +8,7 @@ Stores each reflective retrieval attempt: original query, refined queries
 JSON array, iterations count, final document count, and convergence flag.
 Used for offline analysis (iterations avg, convergence rate, filter rate).
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa

@@ -45,11 +45,7 @@ class PlotExpansionWorkflow(BaseWorkflow):
             getattr(bible, "settings", None) if bible else None,
         )
         settings = (
-            bible.settings
-            if isinstance(bible.settings, dict)
-            else json.loads(bible.settings or "{}")
-            if bible
-            else {}
+            bible.settings if isinstance(bible.settings, dict) else json.loads(bible.settings or "{}") if bible else {}
         )
         arcs = settings.get("arcs", [])
         # 候補生成モードの場合、planner側に候補生成を指示する
@@ -65,9 +61,7 @@ class PlotExpansionWorkflow(BaseWorkflow):
         #      従来はここで NotImplementedError が送出され、プロット展開ごと
         #      500 になっていた。展開自体は tension と独立して実行できる。
         if self.tension is None:
-            logger.warning(
-                "Tension 功能が利用不可のため、目標Tensionの算出と逸脱検証をスキップします。"
-            )
+            logger.warning("Tension 功能が利用不可のため、目標Tensionの算出と逸脱検証をスキップします。")
             if reporter:
                 reporter.report(
                     "テンション目標の算出は未対応のため，本次プロット展開では検証しません。",
@@ -98,9 +92,7 @@ class PlotExpansionWorkflow(BaseWorkflow):
             for res in results:
                 ep_num = res.ep_num
                 gen_tension = res.tension / 100.0  # 0-100 scale to 0.0-1.0
-                is_valid, dev = await self.tension.validate_tension_deviation(
-                    ep_num, gen_tension, book_id
-                )
+                is_valid, dev = await self.tension.validate_tension_deviation(ep_num, gen_tension, book_id)
                 if not is_valid:
                     if reporter:
                         reporter.report(

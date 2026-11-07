@@ -1,4 +1,5 @@
 """Inline beat tag parser for script annotations."""
+
 from __future__ import annotations
 
 import re
@@ -11,10 +12,7 @@ from src.pipeline.character_dict import load_character_dict
 
 # インラインタグ正規表現
 # [beat:emotion+delta cause="reason" hidden]
-BEAT_PATTERN = re.compile(
-    r'\[beat:(\w+)([+-]\d+\.?\d*)\s*(?:cause="([^"]*)")?\s*(hidden)?\]',
-    re.IGNORECASE
-)
+BEAT_PATTERN = re.compile(r'\[beat:(\w+)([+-]\d+\.?\d*)\s*(?:cause="([^"]*)")?\s*(hidden)?\]', re.IGNORECASE)
 
 # 感情タイプ正規化マップ
 EMOTION_ALIASES = {
@@ -69,7 +67,7 @@ def parse_beats(
     beat_id_counter = 0
     current_offset = 0
 
-    for line in text.split('\n'):
+    for line in text.split("\n"):
         # その行のタグを全て抽出
         line_beats = []
         last_end = 0
@@ -125,10 +123,10 @@ def parse_beats(
 
         # 残りのテキスト追加
         clean_line_parts.append(line[last_end:])
-        clean_lines.append(''.join(clean_line_parts))
+        clean_lines.append("".join(clean_line_parts))
         current_offset += len(line) + 1  # 1 for '\n'
 
-    return '\n'.join(clean_lines), beats
+    return "\n".join(clean_lines), beats
 
 
 def _estimate_speaker(
@@ -138,15 +136,16 @@ def _estimate_speaker(
 ) -> Optional[str]:
     """タグ位置より前のテキストから発言者を推定（なければ直後から推定）"""
     import re
+
     # 1. タグ位置より前のテキストを取得
     prefix = full_text[:tag_position]
-    lines = prefix.split('\n')
+    lines = prefix.split("\n")
     for line in reversed(lines):
         line = line.strip()
         if not line:
             continue
         # 「キャラ名「セリフ」」パターン
-        match = re.match(r'^([^「\n]+)「', line)
+        match = re.match(r"^([^「\n]+)「", line)
         if match:
             speaker = match.group(1).strip()
             if speaker in character_dict:
@@ -162,11 +161,11 @@ def _estimate_speaker(
 
     # 2. タグ位置より後のテキストから探す（行頭タグ対応）
     suffix = full_text[tag_position:]
-    for line in suffix.split('\n'):
+    for line in suffix.split("\n"):
         line = line.strip()
         if not line:
             continue
-        match = re.search(r'([A-Za-z0-9_\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff]+)「', line)
+        match = re.search(r"([A-Za-z0-9_\u4e00-\u9faf\u3040-\u309f\u30a0-\u30ff]+)「", line)
         if match:
             speaker = match.group(1).strip()
             if speaker in character_dict:

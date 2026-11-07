@@ -52,9 +52,7 @@ class EditorialAssistantService:
             node_desc = "\n".join(f"- [{n.label}] {n.id}: {n.properties}" for n in evidence_nodes)
             evidence_text_parts.append("【ナレッジグラフ確定事実】\n" + node_desc)
 
-        evidence_text = (
-            "\n\n".join(evidence_text_parts) if evidence_text_parts else "（関連設定データなし）"
-        )
+        evidence_text = "\n\n".join(evidence_text_parts) if evidence_text_parts else "（関連設定データなし）"
         character_text = ", ".join(entities) if entities else "（特になし）"
 
         prompt = ASK_BIBLE_PROMPT_TEMPLATE.format(
@@ -83,14 +81,10 @@ class EditorialAssistantService:
             related_characters=entities,
         )
 
-    async def audit_consistency(
-        self, session: Session, request: ConsistencyAuditRequest
-    ) -> ConsistencyAuditResponse:
+    async def audit_consistency(self, session: Session, request: ConsistencyAuditRequest) -> ConsistencyAuditResponse:
         """執筆テキストと GraphRAG 設定の矛盾・不整合をリアルタイム診断する"""
         entities = self._extract_entities(request.content)
-        evidence_nodes = self._retrieve_evidence(
-            session, request.book_id, entities, request.content
-        )
+        evidence_nodes = self._retrieve_evidence(session, request.book_id, entities, request.content)
 
         node_desc = (
             "\n".join(f"- [{n.label}] {n.id}: {n.properties}" for n in evidence_nodes)
@@ -119,8 +113,7 @@ class EditorialAssistantService:
             return parsed.model_copy(
                 update={
                     "issues": [
-                        issue.with_stable_id(request.book_id, request.current_chapter)
-                        for issue in parsed.issues
+                        issue.with_stable_id(request.book_id, request.current_chapter) for issue in parsed.issues
                     ]
                 }
             )

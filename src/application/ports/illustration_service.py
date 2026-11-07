@@ -15,22 +15,16 @@ class IIllustrationService(ABC):
     """Interface for illustration generation service."""
 
     @abstractmethod
-    async def generate_character_illustration(
-        self, dto: GenerateCharacterIllustrationDTO
-    ) -> IllustrationResponseDTO:
+    async def generate_character_illustration(self, dto: GenerateCharacterIllustrationDTO) -> IllustrationResponseDTO:
         """Generate an illustration for a character."""
         ...
 
     @abstractmethod
-    async def generate_cover_illustration(
-        self, dto: GenerateCoverIllustrationDTO
-    ) -> IllustrationResponseDTO:
+    async def generate_cover_illustration(self, dto: GenerateCoverIllustrationDTO) -> IllustrationResponseDTO:
         """Generate an illustration for a book cover."""
         ...
 
     @abstractmethod
-    async def generate_scene_illustration(
-        self, dto: GenerateSceneIllustrationDTO
-    ) -> IllustrationResponseDTO:
+    async def generate_scene_illustration(self, dto: GenerateSceneIllustrationDTO) -> IllustrationResponseDTO:
         """Generate an illustration for a scene."""
         ...

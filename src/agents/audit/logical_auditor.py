@@ -20,9 +20,7 @@ class LogicalAuditor:
     または `src.agents.audit_agent.AuditAgent` を使用してください。(Phase 6: Step 65)
     """
 
-    def __init__(
-        self, repo: Any = None, llm: Any = None, ctx_mgr: Any = None, pm: Any = None, **kwargs
-    ):
+    def __init__(self, repo: Any = None, llm: Any = None, ctx_mgr: Any = None, pm: Any = None, **kwargs):
         warnings.warn(
             "LogicalAuditor is deprecated, use AuditAggregator or AuditAgent instead",
             DeprecationWarning,
@@ -83,15 +81,9 @@ class LogicalAuditor:
         if isinstance(data, dict):
             return CriticFeedback.model_validate(data)
 
-        return (
-            result
-            if isinstance(result, CriticFeedback)
-            else CriticFeedback(rewrite_guidance=str(result))
-        )
+        return result if isinstance(result, CriticFeedback) else CriticFeedback(rewrite_guidance=str(result))
 
-    async def validate_alibi_and_timeline(
-        self, blueprint: str, script: str
-    ) -> tuple[bool, list[str]]:
+    async def validate_alibi_and_timeline(self, blueprint: str, script: str) -> tuple[bool, list[str]]:
         """
         アリバイとタイムラインの整合性を検証する（スタブ）
         """
@@ -119,9 +111,7 @@ class LogicalAuditor:
 
         return True, "OK", 1.0
 
-    async def _check_base_config(
-        self, book_id: int, ep_num: int, branch_id: int | None = None
-    ) -> tuple[bool, str]:
+    async def _check_base_config(self, book_id: int, ep_num: int, branch_id: int | None = None) -> tuple[bool, str]:
         """基本設定の一貫性"""
         if self.repo is None:
             return True, "OK"
@@ -130,27 +120,21 @@ class LogicalAuditor:
         if branch_id is None:
             settings = await self.repo.bible.get_plot(book_id, ep_num)
         else:
-            settings = await self.repo.bible.get_plot(
-                branch_id, ep_num, branch_id=branch_id, book_id=book_id
-            )
+            settings = await self.repo.bible.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
         if not settings:
             return False, "設定未設定"
         if not settings.get("scene_integrity", "false"):
             return False, "scene integrity violation"
         return True, "OK"
 
-    async def _check_plot_integrity(
-        self, book_id: int, ep_num: int, branch_id: int | None = None
-    ) -> tuple[bool, str]:
+    async def _check_plot_integrity(self, book_id: int, ep_num: int, branch_id: int | None = None) -> tuple[bool, str]:
         """プロット全体の一貫性"""
         if self.repo is None:
             return True, "OK"
         if branch_id is None:
             plot = await self.repo.plot.get_plot(book_id, ep_num)
         else:
-            plot = await self.repo.plot.get_plot(
-                branch_id, ep_num, branch_id=branch_id, book_id=book_id
-            )
+            plot = await self.repo.plot.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
         if not plot:
             return False, "plot not found"
         if not await self._check_pacing(plot):
@@ -161,9 +145,7 @@ class LogicalAuditor:
         """テンションの一貫性チェック"""
         return True
 
-    async def check_information_asymmetry(
-        self, past_info: str, current_info: str
-    ) -> tuple[bool, list[str]]:
+    async def check_information_asymmetry(self, past_info: str, current_info: str) -> tuple[bool, list[str]]:
         """
         情報の非対称性を検証する（スタブ）
         """
@@ -280,9 +262,7 @@ class LogicalAuditor:
                 },
             ]
             if reporter:
-                reporter.report(
-                    f"ℹ️ Ep.{ep_num} Scene.{scene_num}: 没入スコア {total_score:.1f}", "info"
-                )
+                reporter.report(f"ℹ️ Ep.{ep_num} Scene.{scene_num}: 没入スコア {total_score:.1f}", "info")
             return scores
         except Exception as e:
             if reporter:

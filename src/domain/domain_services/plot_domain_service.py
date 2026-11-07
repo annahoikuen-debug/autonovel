@@ -12,6 +12,7 @@ from src.domain.repositories.plot_repository import IPlotRepository
 
 class PlotValidationError(Exception):
     """Raised when plot validation fails."""
+
     pass
 
 
@@ -35,10 +36,14 @@ class PlotStructureValidator:
             errors.append("Episode number must be positive")
 
         if not PlotStructureValidator.MIN_TENSION <= plot.tension_score.value <= PlotStructureValidator.MAX_TENSION:
-            errors.append(f"Tension score must be between {PlotStructureValidator.MIN_TENSION} and {PlotStructureValidator.MAX_TENSION}")
+            errors.append(
+                f"Tension score must be between {PlotStructureValidator.MIN_TENSION} and {PlotStructureValidator.MAX_TENSION}"
+            )
 
         if not PlotStructureValidator.MIN_CATHARSIS <= plot.catharsis <= PlotStructureValidator.MAX_CATHARSIS:
-            errors.append(f"Catharsis must be between {PlotStructureValidator.MIN_CATHARSIS} and {PlotStructureValidator.MAX_CATHARSIS}")
+            errors.append(
+                f"Catharsis must be between {PlotStructureValidator.MIN_CATHARSIS} and {PlotStructureValidator.MAX_CATHARSIS}"
+            )
 
         if plot.status == PlotStatus.LOCKED and plot.is_locked:
             pass
@@ -158,6 +163,7 @@ class PlotDomainService:
     Pure business logic - no infrastructure dependencies.
     Depends only on repository interfaces.
     """
+
     plot_repo: IPlotRepository
 
     def __post_init__(self):
@@ -234,7 +240,9 @@ class PlotDomainService:
             raise PlotValidationError(f"Plot {plot_id} not found")
 
         if not self._validator.MIN_TENSION <= tension <= self._validator.MAX_TENSION:
-            raise PlotValidationError(f"Tension must be between {self._validator.MIN_TENSION} and {self._validator.MAX_TENSION}")
+            raise PlotValidationError(
+                f"Tension must be between {self._validator.MIN_TENSION} and {self._validator.MAX_TENSION}"
+            )
 
         plot.set_tension(tension, delta)
         return await self.plot_repo.save(plot)
@@ -251,7 +259,9 @@ class PlotDomainService:
             raise PlotValidationError(f"Plot {plot_id} not found")
 
         if not self._validator.MIN_CATHARSIS <= catharsis <= self._validator.MAX_CATHARSIS:
-            raise PlotValidationError(f"Catharsis must be between {self._validator.MIN_CATHARSIS} and {self._validator.MAX_CATHARSIS}")
+            raise PlotValidationError(
+                f"Catharsis must be between {self._validator.MIN_CATHARSIS} and {self._validator.MAX_CATHARSIS}"
+            )
 
         plot.set_catharsis(catharsis, catharsis_type)
         return await self.plot_repo.save(plot)
@@ -353,9 +363,7 @@ class PlotDomainService:
         episode_number: int,
     ) -> List[str]:
         """Validate continuity for an episode."""
-        return await self._integrity_checker.check_episode_continuity(
-            novel_id, branch_id, episode_number
-        )
+        return await self._integrity_checker.check_episode_continuity(novel_id, branch_id, episode_number)
 
     async def check_arc_coverage(
         self,

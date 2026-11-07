@@ -69,9 +69,7 @@ class DataRepositoryFacade:
                         return await getattr(repo, name)(*args, **kwargs)
                 raise AttributeError(f"DataRepositoryFacade (UoW mode) has no attribute '{name}'")
             else:
-                log.warning(
-                    f"No UoW context for {name}. Falling back to Auto mode (New Transaction)."
-                )
+                log.warning(f"No UoW context for {name}. Falling back to Auto mode (New Transaction).")
                 from .uow import UnitOfWork
 
                 async with UnitOfWork(self.db) as temp_uow:
@@ -90,9 +88,7 @@ class DataRepositoryFacade:
                         repo = getattr(temp_uow, repo_attr)
                         if hasattr(repo, name):
                             return await getattr(repo, name)(*args, **kwargs)
-                    raise AttributeError(
-                        f"DataRepositoryFacade (Auto mode) has no attribute '{name}'"
-                    )
+                    raise AttributeError(f"DataRepositoryFacade (Auto mode) has no attribute '{name}'")
 
         return wrapper
 
@@ -119,9 +115,7 @@ class DataRepositoryFacade:
             if not state:
                 state = InternalState(key=key)
                 session.add(state)
-            state.value = (
-                json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value
-            )
+            state.value = json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value
             state.updated_at = datetime.now()
             await session.commit()
 
@@ -151,6 +145,7 @@ class BookRepository:
     def is_async(self) -> bool:
         """セッションが AsyncSession であるかを判定する"""
         from sqlalchemy.ext.asyncio import AsyncSession
+
         return isinstance(self.session, AsyncSession)
 
     async def commit_async(self) -> None:
@@ -170,6 +165,7 @@ class BookRepository:
     def _safe_commit(self) -> None:
         """同期コミット実行（非同期セッションの場合は警告を出して同期コミットを試みる）"""
         import inspect
+
         res = self.session.commit()
         if inspect.isawaitable(res):
             logger.warning(
@@ -177,13 +173,16 @@ class BookRepository:
                 "Use 'await repo.commit_async()' instead."
             )
             import asyncio
+
             try:
                 # 既にイベントループが実行中の場合はタスクとして待機コールバックを付与
                 loop = asyncio.get_running_loop()
                 task = loop.create_task(_await_awaitable(res))
+
                 def _on_done(t):
                     if not t.cancelled() and t.exception():
                         logger.error(f"[BookRepository] Async commit error: {t.exception()}")
+
                 task.add_done_callback(_on_done)
             except RuntimeError:
                 asyncio.run(_await_awaitable(res))
@@ -191,6 +190,7 @@ class BookRepository:
     def _safe_refresh(self, instance: Any) -> None:
         """同期リフレッシュ実行（非同期セッションの場合は警告）"""
         import inspect
+
         res = self.session.refresh(instance)
         if inspect.isawaitable(res):
             logger.warning(
@@ -198,12 +198,15 @@ class BookRepository:
                 "Use 'await repo.refresh_async()' instead."
             )
             import asyncio
+
             try:
                 loop = asyncio.get_running_loop()
                 task = loop.create_task(_await_awaitable(res))
+
                 def _on_done(t):
                     if not t.cancelled() and t.exception():
                         logger.error(f"[BookRepository] Async refresh error: {t.exception()}")
+
                 task.add_done_callback(_on_done)
             except RuntimeError:
                 asyncio.run(_await_awaitable(res))
@@ -233,6 +236,7 @@ class BookRepository:
         now = int(time.time())
         if not task_id:
             import uuid
+
             task_id = str(uuid.uuid4())
         task = Task(
             id=task_id,
@@ -258,6 +262,7 @@ class BookRepository:
         now = int(time.time())
         if not task_id:
             import uuid
+
             task_id = str(uuid.uuid4())
         task = Task(
             id=task_id,
@@ -333,9 +338,7 @@ class BookRepository:
                 self.session.delete(task)
             await self.commit_async()
 
-    def get_all_non_anchor_chapters(
-        self, book_id: int, branch_id: int = 1, order_by: str = "ep_num"
-    ) -> list[Chapter]:
+    def get_all_non_anchor_chapters(self, book_id: int, branch_id: int = 1, order_by: str = "ep_num") -> list[Chapter]:
         """指定した作品・ブランチの、アンカーではない章をすべて取得する。"""
         stmt = (
             select(Chapter)
@@ -354,20 +357,13 @@ class BookRepository:
 
     def get_latest_bible(self, book_id: int) -> Bible | None:
         """指定した作品の最新の世界観設定（Bible）を取得する"""
-        stmt = (
-            select(Bible).where(Bible.book_id == book_id).order_by(desc(Bible.created_at)).limit(1)
-        )
+        stmt = select(Bible).where(Bible.book_id == book_id).order_by(desc(Bible.created_at)).limit(1)
         result = self.session.execute(stmt)
         return result.scalar_one_or_none()
 
     def get_all_plots(self, book_id: int, branch_id: int = 1) -> list[Plot]:
         """指定した作品・ブランチのプロットをすべて取得する"""
-        stmt = (
-            select(Plot)
-            .where(Plot.book_id == book_id)
-            .where(Plot.branch_id == branch_id)
-            .order_by(Plot.ep_num)
-        )
+        stmt = select(Plot).where(Plot.book_id == book_id).where(Plot.branch_id == branch_id).order_by(Plot.ep_num)
         result = self.session.execute(stmt)
         return list(result.scalars().all())
 
@@ -429,11 +425,7 @@ class BookRepository:
         # キャラクターの登録/更新
         if character_params and character_params.get("name"):
             char_name = character_params["name"]
-            stmt = (
-                select(Character)
-                .where(Character.book_id == book.id)
-                .where(Character.name == char_name)
-            )
+            stmt = select(Character).where(Character.book_id == book.id).where(Character.name == char_name)
             char = self.session.execute(stmt).scalar_one_or_none()
             if char:
                 char.personality = character_params.get("personality", "")
@@ -510,11 +502,7 @@ class BookRepository:
         # キャラクターの登録/更新
         if character_params and character_params.get("name"):
             char_name = character_params["name"]
-            stmt = (
-                select(Character)
-                .where(Character.book_id == book.id)
-                .where(Character.name == char_name)
-            )
+            stmt = select(Character).where(Character.book_id == book.id).where(Character.name == char_name)
             if self.is_async:
                 res = await self.session.execute(stmt)
             else:

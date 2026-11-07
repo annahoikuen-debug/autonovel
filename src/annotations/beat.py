@@ -1,4 +1,5 @@
 """Emotional beat annotation data structures."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -10,16 +11,17 @@ from src.pipeline.emotional_residue import EmotionalSignal, EmotionType
 @dataclass
 class EmotionalBeat:
     """感情ビートアノテーション（作者が明示的に記述）"""
+
     episode: int
     scene: int
     source: str
     target: str
     emotion: EmotionType
-    delta: float                    # -1.0 ~ +1.0 (変化量)
-    cause: str                      # 理由・根拠
+    delta: float  # -1.0 ~ +1.0 (変化量)
+    cause: str  # 理由・根拠
     beat_id: str = field(default_factory=lambda: str(uuid4())[:8])
-    confidence: float = 1.0         # 確信度 0.0~1.0
-    hidden: bool = False            # 表向き/内心の区別
+    confidence: float = 1.0  # 確信度 0.0~1.0
+    hidden: bool = False  # 表向き/内心の区別
     metadata: dict = field(default_factory=dict)
 
     def __post_init__(self):
@@ -40,7 +42,7 @@ class EmotionalBeat:
             emotion_type=self.emotion,
             value=self.delta,
             confidence=self.confidence,
-            evidence_span=f"[beat:{self.emotion.value}{self.delta:+.1f} cause=\"{self.cause}\"]",
+            evidence_span=f'[beat:{self.emotion.value}{self.delta:+.1f} cause="{self.cause}"]',
             episode_id=f"ep{self.episode}",
             cause=self.cause,
             hidden=self.hidden,
@@ -83,6 +85,7 @@ class EmotionalBeat:
 @dataclass
 class ParsedScript:
     """パース結果"""
+
     clean_text: str
     beats: list[EmotionalBeat]
     frontmatter_beats: list[EmotionalBeat]

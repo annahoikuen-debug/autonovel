@@ -3,6 +3,7 @@
 LLMの予期せぬ無限ループや異常な大量トークン消費を瞬時に検知し、
 設定した予算上限（例: 50,000トークン / 15円）を超えた瞬間に処理を自動遮断する安全保護装置。
 """
+
 from __future__ import annotations
 
 
@@ -31,9 +32,7 @@ class TokenCircuitBreaker:
         self.accumulated_cost_jpy += cost_jpy
 
         if self.accumulated_tokens > self.max_tokens:
-            raise BudgetExceededError(
-                f"Token budget exceeded: {self.accumulated_tokens} > {self.max_tokens}"
-            )
+            raise BudgetExceededError(f"Token budget exceeded: {self.accumulated_tokens} > {self.max_tokens}")
         if self.accumulated_cost_jpy > self.max_cost_jpy:
             raise BudgetExceededError(
                 f"Cost budget exceeded: {self.accumulated_cost_jpy:.2f} JPY > {self.max_cost_jpy:.2f} JPY"

@@ -233,9 +233,7 @@ class UnifiedPromptCache:
         Raises:
             ContextCachingNotSupportedError: L4 が未実装のため常に送出。
         """
-        return self._context_cache_manager.get_or_create_cache(
-            cache_key, contents, model_name, ttl_minutes
-        )
+        return self._context_cache_manager.get_or_create_cache(cache_key, contents, model_name, ttl_minutes)
 
     def clear_context_cache(self, cache_key: str):
         """Gemini Context Cache をクリア."""

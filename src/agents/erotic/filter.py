@@ -331,9 +331,7 @@ class EroticIntegrityChecker:
 
         # 2つ以上あるが、同じ位置に密集しているかチェック
         consent_positions.sort()
-        spread = (
-            consent_positions[-1][0] - consent_positions[0][0] if len(consent_positions) >= 2 else 0
-        )
+        spread = consent_positions[-1][0] - consent_positions[0][0] if len(consent_positions) >= 2 else 0
 
         if spread < 50 and len(consent_positions) >= 2:
             # 同じ発話内での複数キーワード（片方だけの可能性あり）
@@ -375,9 +373,7 @@ class EroticIntegrityChecker:
                 phase = self._detect_phase(sentence)
                 pos_in_text = scene_text.find(sentence)
 
-                self.clothing_events.append(
-                    self.ClothingEvent(event_type, pos_in_text, phase, sentence)
-                )
+                self.clothing_events.append(self.ClothingEvent(event_type, pos_in_text, phase, sentence))
 
     def _detect_event_type(self, sentence: str) -> str | None:
         """文から衣服イベントを検出する。"""
@@ -463,9 +459,7 @@ class EroticIntegrityChecker:
 
             for cont_kw in CONSENT_CONTINUATION_KEYWORDS:
                 if cont_kw in context:
-                    issues.append(
-                        f"強制的状況検出: '{kw}'表現の後に継続を示す'{cont_kw}'が検出されました"
-                    )
+                    issues.append(f"強制的状況検出: '{kw}'表現の後に継続を示す'{cont_kw}'が検出されました")
                     break
 
     def _detect_violence_patterns(self, scene_text: str, issues: list[str]) -> None:
@@ -475,9 +469,7 @@ class EroticIntegrityChecker:
             violence_count += scene_text.count(kw)
 
         if violence_count >= 2:
-            issues.append(
-                f"暴力的表現が{violence_count}箇所検出されました（安全でない描写の可能性）"
-            )
+            issues.append(f"暴力的表現が{violence_count}箇所検出されました（安全でない描写の可能性）")
 
     def check_clothing_consistency(self, scene_text: str) -> tuple[bool, list[str]]:
         """服装の整合性をチェックする。"""
@@ -490,9 +482,7 @@ class EroticIntegrityChecker:
 
         return len(issues) == 0, issues
 
-    def check_consent_state(
-        self, scene_text: str, declared_consent: str = "implicit"
-    ) -> tuple[bool, list[str]]:
+    def check_consent_state(self, scene_text: str, declared_consent: str = "implicit") -> tuple[bool, list[str]]:
         """
         シーン内の同意表現是否符合 declared_consent を検証する。
         """
@@ -534,99 +524,55 @@ class EroticIntegrityChecker:
 
         for char in chars_to_check:
             # 体力チェック
-            all_issues.extend(
-                self.continuity_tracker.check_stamina_continuity(current_ep, char, current_text)
-            )
-            all_issues.extend(
-                self.continuity_tracker.check_recovery_description(current_ep, char, current_text)
-            )
-            all_issues.extend(
-                self.continuity_tracker.check_stamina_jump(current_ep, char, current_text)
-            )
+            all_issues.extend(self.continuity_tracker.check_stamina_continuity(current_ep, char, current_text))
+            all_issues.extend(self.continuity_tracker.check_recovery_description(current_ep, char, current_text))
+            all_issues.extend(self.continuity_tracker.check_stamina_jump(current_ep, char, current_text))
 
             # 心理チェック
-            all_issues.extend(
-                self.continuity_tracker.check_psych_continuity(current_ep, char, current_text)
-            )
-            all_issues.extend(
-                self.continuity_tracker.check_psych_trigger(current_ep, char, current_text)
-            )
-            all_issues.extend(
-                self.continuity_tracker.check_psych_jump(current_ep, char, current_text)
-            )
+            all_issues.extend(self.continuity_tracker.check_psych_continuity(current_ep, char, current_text))
+            all_issues.extend(self.continuity_tracker.check_psych_trigger(current_ep, char, current_text))
+            all_issues.extend(self.continuity_tracker.check_psych_jump(current_ep, char, current_text))
 
             # 衣服チェック
-            all_issues.extend(
-                self.continuity_tracker.check_clothing_continuity(current_ep, char, current_text)
-            )
+            all_issues.extend(self.continuity_tracker.check_clothing_continuity(current_ep, char, current_text))
 
             # 場所チェック
-            all_issues.extend(
-                self.continuity_tracker.check_location_continuity(current_ep, char, current_text)
-            )
+            all_issues.extend(self.continuity_tracker.check_location_continuity(current_ep, char, current_text))
 
             # 一般シーン整合性チェック
-            all_issues.extend(
-                self.scene_continuity_tracker.check_all_continuity(current_ep, char, current_text)
-            )
+            all_issues.extend(self.scene_continuity_tracker.check_all_continuity(current_ep, char, current_text))
 
         # ペア関係性チェック（2人以上のキャラクターが指定された場合）
         if len(chars_to_check) >= 2:
             # ペア表記をソートして一意にする
             pair_name = ":".join(sorted(chars_to_check))
             for char in chars_to_check:
+                all_issues.extend(self.continuity_tracker.check_intimacy_regression(current_ep, char, current_text))
+                all_issues.extend(self.continuity_tracker.check_intimacy_rush(current_ep, char, current_text))
                 all_issues.extend(
-                    self.continuity_tracker.check_intimacy_regression(
-                        current_ep, char, current_text
-                    )
-                )
-                all_issues.extend(
-                    self.continuity_tracker.check_intimacy_rush(current_ep, char, current_text)
-                )
-                all_issues.extend(
-                    self.continuity_tracker.check_intimacy_vs_erotic_level(
-                        current_ep, char, current_text
-                    )
+                    self.continuity_tracker.check_intimacy_vs_erotic_level(current_ep, char, current_text)
                 )
 
             # ペア単位の親密度チェック
+            all_issues.extend(self.continuity_tracker.check_intimacy_regression(current_ep, pair_name, current_text))
+            all_issues.extend(self.continuity_tracker.check_intimacy_rush(current_ep, pair_name, current_text))
             all_issues.extend(
-                self.continuity_tracker.check_intimacy_regression(
-                    current_ep, pair_name, current_text
-                )
-            )
-            all_issues.extend(
-                self.continuity_tracker.check_intimacy_rush(current_ep, pair_name, current_text)
-            )
-            all_issues.extend(
-                self.continuity_tracker.check_intimacy_vs_erotic_level(
-                    current_ep, pair_name, current_text
-                )
+                self.continuity_tracker.check_intimacy_vs_erotic_level(current_ep, pair_name, current_text)
             )
             checked.append("intimacy_pair")
         else:
             # 単一キャラの場合でも自己親密度（あるいはデフォルトペア）のチェックを実行
             all_issues.extend(
-                self.continuity_tracker.check_intimacy_regression(
-                    current_ep, character_name, current_text
-                )
+                self.continuity_tracker.check_intimacy_regression(current_ep, character_name, current_text)
             )
+            all_issues.extend(self.continuity_tracker.check_intimacy_rush(current_ep, character_name, current_text))
             all_issues.extend(
-                self.continuity_tracker.check_intimacy_rush(
-                    current_ep, character_name, current_text
-                )
-            )
-            all_issues.extend(
-                self.continuity_tracker.check_intimacy_vs_erotic_level(
-                    current_ep, character_name, current_text
-                )
+                self.continuity_tracker.check_intimacy_vs_erotic_level(current_ep, character_name, current_text)
             )
             checked.append("intimacy_single")
 
         if prev_text:
-            all_issues.extend(
-                self.continuity_tracker.check_environment_consistency(prev_text, current_text)
-            )
+            all_issues.extend(self.continuity_tracker.check_environment_consistency(prev_text, current_text))
 
         checked.extend(["stamina", "psychology", "clothing", "location"])
 
@@ -638,9 +584,7 @@ class EroticIntegrityChecker:
             episode_num=current_ep,
         )
 
-    def finalize_episode(
-        self, character_name: str, episode_num: int, scene_text: str
-    ) -> CharacterStateSnapshot:
+    def finalize_episode(self, character_name: str, episode_num: int, scene_text: str) -> CharacterStateSnapshot:
         """エピソード完了時にスナップショットを自動保存する。"""
         # カンマ、ハイフン、コロン等で区切られたペア名対応
         chars_to_save = []
@@ -673,9 +617,7 @@ class EroticIntegrityChecker:
         # ペア全体としても保存
         if len(chars_to_save) >= 2:
             pair_name = ":".join(sorted(chars_to_save))
-            pair_snapshot = self.continuity_tracker.extract_snapshot(
-                pair_name, episode_num, scene_text
-            )
+            pair_snapshot = self.continuity_tracker.extract_snapshot(pair_name, episode_num, scene_text)
             self.continuity_tracker.save_snapshot(pair_snapshot)
 
         return last_snap
@@ -713,9 +655,7 @@ class EroticIntegrityChecker:
         # Continuity check（前話データと現在のエピソード番号/キャラクター名がある場合のみ）
         continuity_report = None
         if current_ep > 0 and character_name:
-            continuity_report = self.check_continuity(
-                current_ep, character_name, scene_text, prev_text
-            )
+            continuity_report = self.check_continuity(current_ep, character_name, scene_text, prev_text)
             if continuity_report and not continuity_report.is_consistent:
                 all_issues.extend(continuity_report.issues)
 

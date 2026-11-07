@@ -63,9 +63,7 @@ class CheckpointSaver:
         self.db_path = db_path
         self._saver: Any = None
         if not HAS_LANGGRAPH:
-            logger.warning(
-                "langgraph が未インストールのため CheckpointSaver はインメモリ保存にフォールバックします。"
-            )
+            logger.warning("langgraph が未インストールのため CheckpointSaver はインメモリ保存にフォールバックします。")
 
     def _get_saver(self) -> Any:
         if self._saver is None:
@@ -99,13 +97,22 @@ class CheckpointSaver:
 from src.domain.entities.checkpoint import WorkflowCheckpoint, CheckpointStatus
 from src.infrastructure.repositories.checkpoint import CheckpointRepository
 
+
 class CheckpointManager:
     """DBベースのチェックポイント永続化管理マネージャー。"""
 
     def __init__(self, session_factory):
         self.session_factory = session_factory
 
-    def record_step(self, task_id: str, step_name: str, step_index: int, state_payload: dict, status: CheckpointStatus = CheckpointStatus.COMPLETED, error_message: str | None = None) -> str:
+    def record_step(
+        self,
+        task_id: str,
+        step_name: str,
+        step_index: int,
+        state_payload: dict,
+        status: CheckpointStatus = CheckpointStatus.COMPLETED,
+        error_message: str | None = None,
+    ) -> str:
         checkpoint_id = f"{task_id}_{step_index}_{step_name}"
         checkpoint = WorkflowCheckpoint(
             checkpoint_id=checkpoint_id,

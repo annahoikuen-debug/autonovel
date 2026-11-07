@@ -14,9 +14,7 @@ def _ensure_stripe_api_key() -> None:
     """
     api_key = getattr(settings, "STRIPE_SECRET_KEY", None) or ""
     if not api_key:
-        raise RuntimeError(
-            "STRIPE_SECRET_KEY is not configured. Set it in .env or environment."
-        )
+        raise RuntimeError("STRIPE_SECRET_KEY is not configured. Set it in .env or environment.")
     stripe.api_key = api_key
 
 
@@ -24,13 +22,7 @@ class StripeClient:
     """Stripe SDKラッパークラス"""
 
     @staticmethod
-    def create_checkout_session(
-        user_id: int,
-        user_email: str,
-        price_id: str,
-        success_url: str,
-        cancel_url: str
-    ) -> str:
+    def create_checkout_session(user_id: int, user_email: str, price_id: str, success_url: str, cancel_url: str) -> str:
         """
         Stripe Checkout Sessionを生成してURLを返す
 
@@ -52,17 +44,17 @@ class StripeClient:
             # Checkout Sessionを作成
             session = stripe.checkout.Session.create(
                 customer=customer.id,
-                payment_method_types=['card'],
-                line_items=[{
-                    'price': price_id,
-                    'quantity': 1,
-                }],
-                mode='subscription',
+                payment_method_types=["card"],
+                line_items=[
+                    {
+                        "price": price_id,
+                        "quantity": 1,
+                    }
+                ],
+                mode="subscription",
                 success_url=success_url,
                 cancel_url=cancel_url,
-                metadata={
-                    'user_id': str(user_id)
-                }
+                metadata={"user_id": str(user_id)},
             )
 
             return session.url
@@ -118,10 +110,7 @@ class StripeClient:
         _ensure_stripe_api_key()
         try:
             # メタデータの user_id で既存顧客を検索（重複防止）
-            customers = stripe.Customer.list(
-                limit=100,
-                metadata={'user_id': str(user_id)}
-            )
+            customers = stripe.Customer.list(limit=100, metadata={"user_id": str(user_id)})
             if customers.data:
                 return customers.data[0]
 
@@ -131,12 +120,7 @@ class StripeClient:
                 return customers_by_email.data[0]
 
             # 新規顧客作成
-            customer = stripe.Customer.create(
-                email=user_email,
-                metadata={
-                    'user_id': str(user_id)
-                }
-            )
+            customer = stripe.Customer.create(email=user_email, metadata={"user_id": str(user_id)})
             return customer
         except stripe.error.StripeError as e:
             logger.error("Stripe API error getting or creating customer: %s", e, exc_info=True)

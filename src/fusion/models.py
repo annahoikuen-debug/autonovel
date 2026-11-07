@@ -1,4 +1,5 @@
 """Data models for emotional vector fusion layer."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -11,6 +12,7 @@ from src.pipeline.emotional_residue import EmotionalVector, EmotionType
 @dataclass
 class SourceVector:
     """単一ソース（名前空間）から収集された感情ベクトル情報"""
+
     namespace: str
     vector: EmotionalVector
     confidence: float
@@ -37,6 +39,7 @@ class SourceVector:
 @dataclass
 class FusedValue:
     """融合後の感情値"""
+
     value: float
     primary_source: str
     contributing_sources: List[str] = field(default_factory=list)
@@ -65,6 +68,7 @@ class Conflict:
     """矛盾情報
     sources: List[Tuple[source_name, value, confidence]]
     """
+
     pair: Tuple[str, str]
     emotion: EmotionType
     sources: List[Tuple[str, float, float]] = field(default_factory=list)
@@ -96,6 +100,7 @@ class Conflict:
 @dataclass
 class FusedVector:
     """全感情値の融合結果および矛盾情報"""
+
     values: Dict[Tuple[str, str, EmotionType], FusedValue] = field(default_factory=dict)
     conflicts: List[Conflict] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)

@@ -2,6 +2,7 @@
 Social reaction generation service for streaming comments and forum posts.
 PLAN 02: エンタメ演出強化・マルチジャンル＆配信・掲示板演出
 """
+
 from __future__ import annotations
 
 import json
@@ -19,11 +20,7 @@ class SocialReactionGenerator:
     def __init__(self, llm: LLMService):
         self.llm = llm
 
-    async def generate_stream_comments(
-        self,
-        highlight_description: str,
-        count: int = 25
-    ) -> List[StreamComment]:
+    async def generate_stream_comments(self, highlight_description: str, count: int = 25) -> List[StreamComment]:
         """
         配信コメントブロックを生成
 
@@ -42,11 +39,11 @@ class SocialReactionGenerator:
 
             comments = []
             for item in comments_data.get("comments", []):
-                comments.append(StreamComment(
-                    user=item.get("user", "匿名"),
-                    text=item.get("text", ""),
-                    timestamp=item.get("timestamp")
-                ))
+                comments.append(
+                    StreamComment(
+                        user=item.get("user", "匿名"), text=item.get("text", ""), timestamp=item.get("timestamp")
+                    )
+                )
 
             logger.info(f"Generated {len(comments)} stream comments")
             return comments
@@ -56,11 +53,7 @@ class SocialReactionGenerator:
             # フォールバック: 簡易コメントを返す
             return self._generate_fallback_stream_comments(count)
 
-    async def generate_forum_thread(
-        self,
-        highlight_description: str,
-        post_count: int = 30
-    ) -> List[ForumPost]:
+    async def generate_forum_thread(self, highlight_description: str, post_count: int = 30) -> List[ForumPost]:
         """
         掲示板スレッドを生成
 
@@ -79,11 +72,7 @@ class SocialReactionGenerator:
 
             posts = []
             for i, item in enumerate(threads_data.get("posts", []), start=1):
-                posts.append(ForumPost(
-                    res_num=i,
-                    name=item.get("name", "名無し"),
-                    body=item.get("body", "")
-                ))
+                posts.append(ForumPost(res_num=i, name=item.get("name", "名無し"), body=item.get("body", "")))
 
             logger.info(f"Generated {len(posts)} forum posts")
             return posts
@@ -161,19 +150,23 @@ class SocialReactionGenerator:
         """LLM生成に失敗した場合のフォールバックコメント"""
         comments = []
         for i in range(count):
-            comments.append(StreamComment(
-                user=f"視聴者{i % 10 + 1}",
-                text="わあああああああああああああああああああああああｗｗｗ",
-            ))
+            comments.append(
+                StreamComment(
+                    user=f"視聴者{i % 10 + 1}",
+                    text="わあああああああああああああああああああああああｗｗｗ",
+                )
+            )
         return comments
 
     def _generate_fallback_forum_posts(self, count: int) -> List[ForumPost]:
         """LLM生成に失敗した場合のフォールバックスレッド"""
         posts = []
         for i in range(count):
-            posts.append(ForumPost(
-                res_num=i+1,
-                name=f"名無しさん{i+1:4d}",
-                body="これはひどい... でもちょっと面白いかもｗｗｗ",
-            ))
+            posts.append(
+                ForumPost(
+                    res_num=i + 1,
+                    name=f"名無しさん{i + 1:4d}",
+                    body="これはひどい... でもちょっと面白いかもｗｗｗ",
+                )
+            )
         return posts

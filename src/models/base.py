@@ -70,9 +70,7 @@ class GenerateResult(BaseModel):
     error_message: str | None = None
     token_usage: dict[str, Any] | None = None
 
-    def unwrap_or(
-        self, default_meta: dict[str, Any], default_story: str
-    ) -> tuple[dict[str, Any], str]:
+    def unwrap_or(self, default_meta: dict[str, Any], default_story: str) -> tuple[dict[str, Any], str]:
         """成功時は結果を、失敗時はデフォルト値を返す便利メソッド"""
         if self.success:
             return self.metadata, self.story_content
@@ -163,6 +161,7 @@ def ensure_str(v: Any) -> str:
 # Base Engine Class
 # ==========================================
 
+
 class BaseEngine(BaseModel):
     model_config = {**MODEL_CONFIG_DEFAULTS, "extra": "allow"}
 
@@ -219,9 +218,7 @@ class FlatModelMixin(BaseModel):
                 continue
 
             # モデルが get_routing_keys を持っていればそれを使い、なければフィールド名をすべて使う
-            routing_keys = getattr(
-                model_cls, "get_routing_keys", lambda: list(model_cls.model_fields.keys())
-            )()
+            routing_keys = getattr(model_cls, "get_routing_keys", lambda: list(model_cls.model_fields.keys()))()
 
             # フラットなデータから対象キーを抽出
             extracted = {k: data[k] for k in routing_keys if k in data}

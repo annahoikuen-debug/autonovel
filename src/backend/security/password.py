@@ -17,9 +17,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     ValueError を発生させる。想定外の例外はログに出力しつつ False を返す。
     """
     try:
-        return bcrypt.checkpw(
-            plain_password.encode("utf-8"), hashed_password.encode("utf-8")
-        )
+        return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
     except (ValueError, TypeError) as exc:
         # ハッシュ形式が不正など、入力データの問題
         logger.debug("Password verification input error: %s", exc)

@@ -16,8 +16,6 @@ class EntertainmentCheckResult(BaseModel):
     """
 
     interest_score: int = Field(..., ge=0, le=100, description="興味を引く度 (0-100)")
-    physiological_reaction: str = Field(
-        ..., description="読者の生理反応: 涙/怒り/背筋/共感/無反応 等"
-    )
+    physiological_reaction: str = Field(..., description="読者の生理反応: 涙/怒り/背筋/共感/無反応 等")
     would_continue_reading: bool = Field(..., description="読み進めたいか")
     feedback: str = Field(..., max_length=300, description="面白さに関するフィードバック")

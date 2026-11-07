@@ -60,5 +60,5 @@ class DalleClient(ImageGeneratorClient):
             except Exception as exc:
                 last_error = exc
                 if attempt < self.max_retries - 1:
-                    await asyncio.sleep(2 ** attempt)
+                    await asyncio.sleep(2**attempt)
         raise RuntimeError(f"DALL-E 3 generation failed after {self.max_retries} attempts") from last_error

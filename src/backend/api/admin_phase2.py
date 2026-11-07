@@ -1,4 +1,5 @@
 """後方互換 shim: 実体は src/backend/routers/admin_phase2.py に移設済み。"""
+
 from __future__ import annotations
 
 

@@ -2,6 +2,7 @@
 
 This package loads the STYLE_DEFINITIONS from the styles.json file.
 """
+
 from __future__ import annotations
 
 import json

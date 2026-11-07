@@ -33,9 +33,7 @@ class ForeshadowingPredicateAnalyzer:
             self._tokenizer = dictionary.Dictionary().create()
             self._split_mode = tokenizer.Tokenizer.SplitMode.C
         except Exception as e:
-            logger.warning(
-                f"SudachiPy not available in ForeshadowingPredicateAnalyzer, fallback regex used: {e}"
-            )
+            logger.warning(f"SudachiPy not available in ForeshadowingPredicateAnalyzer, fallback regex used: {e}")
             self._tokenizer = None
 
     def split_sentences(self, text: str) -> List[str]:
@@ -45,9 +43,7 @@ class ForeshadowingPredicateAnalyzer:
         sentences = [s.strip() for s in SENTENCE_SPLIT_PATTERN.findall(text) if s.strip()]
         return sentences
 
-    def analyze_sentence(
-        self, sentence: str, keyword: str
-    ) -> List[Tuple[str, str]]:
+    def analyze_sentence(self, sentence: str, keyword: str) -> List[Tuple[str, str]]:
         """
         Extract predicates related to the keyword in the sentence.
 

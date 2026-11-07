@@ -48,9 +48,7 @@ def _load_easy_mode_preset(genre: str) -> dict[str, Any]:
 
     preset_name = resolve_preset_key(genre)
     if preset_name is None:
-        logger.warning(
-            "GENRE_REGISTRY に %r が無い。既定プリセット 'zarma' を使う", genre
-        )
+        logger.warning("GENRE_REGISTRY に %r が無い。既定プリセット 'zarma' を使う", genre)
         preset_name = "zarma"
 
     try:
@@ -73,9 +71,7 @@ def _get_archetype_settings(archetype_key: str) -> dict[str, Any]:
         return {}
 
 
-def _merge_preset_with_archetype(
-    preset: dict[str, Any], archetype: dict[str, Any]
-) -> dict[str, Any]:
+def _merge_preset_with_archetype(preset: dict[str, Any], archetype: dict[str, Any]) -> dict[str, Any]:
     """プリセットとアーキタイプ設定を合成 (アーキタイプ優先で上書き)"""
     import copy
 
@@ -146,9 +142,7 @@ def get_tension_curve(preset: dict[str, Any]) -> dict[str, Any]:
 
     # FullAuto 形式なら変換
     return {
-        "curve_points": tension.get(
-            "curve_points", [[0.0, 0.3], [0.25, 0.6], [0.5, 0.8], [0.75, 0.9], [1.0, 1.0]]
-        ),
+        "curve_points": tension.get("curve_points", [[0.0, 0.3], [0.25, 0.6], [0.5, 0.8], [0.75, 0.9], [1.0, 1.0]]),
         "catharsis_spikes": tension.get("catharsis_spikes", [0.25, 0.5, 0.75, 1.0]),
     }
 

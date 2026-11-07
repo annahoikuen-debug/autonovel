@@ -91,12 +91,14 @@ def _get_package_version() -> str:
         pyproject_path = ROOT_DIR / "pyproject.toml"
         if pyproject_path.exists():
             import tomllib
+
             with open(pyproject_path, "rb") as f:
                 data = tomllib.load(f)
                 ver = data.get("project", {}).get("version")
                 if ver:
                     return str(ver)
         from importlib.metadata import version
+
         return version("autonovel")
     except Exception:
         return "unknown"
@@ -134,9 +136,7 @@ class Settings(BaseSettings):
 
     # 認証・セキュリティ設定
     AUTH_DISABLED: bool = False
-    CORS_ORIGINS: str = (
-        "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:8080"
-    )
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:8080,http://127.0.0.1:5173,http://127.0.0.1:8080"
     # `X-Forwarded-For` を信頼してよいプロキシの CIDR（カンマ区切り）。
     # 未設定（既定）または空の場合はヘッダーを一切信用せず、
     # 直接接続の peer (`request.client.host`) をクライアント IP として扱う。
@@ -172,8 +172,7 @@ class Settings(BaseSettings):
             # 「change-in-prod を含む」鍵は部分一致でも拒否する（設定し忘れた検知）。
             if self.JWT_SECRET_KEY and "change-in-prod" in self.JWT_SECRET_KEY:
                 raise ValueError(
-                    "本番環境 (APP_ENV=production) では 'change-in-prod' を含む "
-                    "JWT_SECRET_KEY を使用できません。"
+                    "本番環境 (APP_ENV=production) では 'change-in-prod' を含む JWT_SECRET_KEY を使用できません。"
                 )
             if self.JWT_SECRET_KEY and len(self.JWT_SECRET_KEY) < _MIN_PROD_JWT_SECRET_LEN:
                 raise ValueError(
@@ -217,6 +216,7 @@ class Settings(BaseSettings):
         """JWTシークレットキーを取得し、本番環境での安全性を厳格に検証する。"""
         import os
         import logging
+
         key = self.JWT_SECRET_KEY or os.environ.get("JWT_SECRET_KEY") or os.environ.get("SECRET_KEY")
         if self.APP_ENV == "production":
             if _is_insecure_jwt_secret(key) or (key is not None and len(key) < _MIN_PROD_JWT_SECRET_LEN):
@@ -234,6 +234,7 @@ class Settings(BaseSettings):
         global _ephemeral_dev_jwt_secret
         if _ephemeral_dev_jwt_secret is None:
             import secrets
+
             _ephemeral_dev_jwt_secret = secrets.token_hex(32)
             logging.getLogger(__name__).warning(
                 "[SECURITY WARNING] JWT_SECRET_KEY is not set or insecure. "
@@ -374,6 +375,7 @@ class Settings(BaseSettings):
     def get_gemini_api_key(self) -> str:
         """GEMINI_API_KEY または GOOGLE_GENAI_API_KEY を安全・一元的に解決して返す (Step 38)."""
         import os
+
         return self.GEMINI_API_KEY or os.environ.get("GOOGLE_GENAI_API_KEY") or os.environ.get("GEMINI_API_KEY") or ""
 
     def is_nsfw_enabled(self) -> bool:
@@ -427,6 +429,3 @@ def is_nsfw_enabled() -> bool:
 
 
 __all__ = ["Settings", "settings", "is_auth_bypass_enabled", "is_nsfw_enabled", "STORAGE_DIR", "ROOT_DIR"]
-
-
-

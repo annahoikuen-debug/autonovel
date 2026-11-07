@@ -115,9 +115,7 @@ def verify_character_tone(original_text: str, corrected_text: str) -> list[str]:
 
             def _get_end(txt):
                 tokens = [
-                    t
-                    for t in tokenizer_obj.tokenize(txt.strip(), mode)
-                    if t.part_of_speech()[0] not in ["補助記号"]
+                    t for t in tokenizer_obj.tokenize(txt.strip(), mode) if t.part_of_speech()[0] not in ["補助記号"]
                 ]
                 return tokens[-1] if tokens else None
 
@@ -137,9 +135,7 @@ def verify_character_tone(original_text: str, corrected_text: str) -> list[str]:
             orig_end = re.sub(r"[？！。、]", "", orig.strip())[-2:]
             corr_end = re.sub(r"[？！。、]", "", corr.strip())[-2:]
             if orig_end != corr_end:
-                errors.append(
-                    f"口調警告: 第{i + 1}番目の台詞文末が変化: 「{orig_end}」→「{corr_end}」"
-                )
+                errors.append(f"口調警告: 第{i + 1}番目の台詞文末が変化: 「{orig_end}」→「{corr_end}」")
     return errors
 
 
@@ -178,9 +174,7 @@ class AdaptiveCooldown:
     旧来の wait/on_success 等のインターフェースを維持しつつ、内部的にTokenBucketで流量制御を行う。
     """
 
-    def __init__(
-        self, base_sec: float, min_sec: float, max_sec: float, name: str = "adaptive_cooldown"
-    ):
+    def __init__(self, base_sec: float, min_sec: float, max_sec: float, name: str = "adaptive_cooldown"):
         # base_sec を 1秒あたりのリクエスト数(fill_rate)に変換
         # 例: base_sec=2.0s -> fill_rate=0.5 req/s
         initial_fill_rate = 1.0 / max(0.1, base_sec)

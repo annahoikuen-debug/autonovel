@@ -5,6 +5,7 @@
 batch_alter_table が使えないため本マイグレーションは**新規 DB にのみ**適用される前提。
 既存 DB の防衛はアプリ層の ``verify_book_ownership`` が担う (owner_guard.py:48)。
 """
+
 from __future__ import annotations
 
 import sqlalchemy as sa
@@ -43,9 +44,7 @@ def upgrade() -> None:
             continue
         # NOTE: SQLite は FK 名を保存しないため、downgrade の drop_constraint が
         # 名前一致できるよう naming_convention を明示する。
-        with op.batch_alter_table(
-            table, naming_convention={"fk": f"fk_{table}_user_id_users"}
-        ) as batch:
+        with op.batch_alter_table(table, naming_convention={"fk": f"fk_{table}_user_id_users"}) as batch:
             batch.create_foreign_key(
                 f"fk_{table}_user_id_users",
                 "users",
@@ -67,7 +66,5 @@ def downgrade() -> None:
             op.drop_index(ix_name, table_name=table)
         if not _has_fk(table, "user_id", "users"):
             continue
-        with op.batch_alter_table(
-            table, naming_convention={"fk": f"fk_{table}_user_id_users"}
-        ) as batch:
+        with op.batch_alter_table(table, naming_convention={"fk": f"fk_{table}_user_id_users"}) as batch:
             batch.drop_constraint(f"fk_{table}_user_id_users", type_="foreignkey")

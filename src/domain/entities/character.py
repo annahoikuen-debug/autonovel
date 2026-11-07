@@ -12,6 +12,7 @@ from src.domain.value_objects.metadata import CharacterMetadata
 @dataclass
 class Character:
     """Character aggregate root."""
+
     id: CharacterId
     novel_id: NovelId
     name: str
@@ -115,6 +116,7 @@ class Character:
 @dataclass
 class CharacterArc:
     """Character arc entity."""
+
     id: CharacterId  # Using CharacterId as generic UUID
     novel_id: NovelId
     character_id: CharacterId

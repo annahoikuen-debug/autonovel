@@ -22,6 +22,7 @@ def _extract_bearer(authorization: str) -> str:
         return authorization[7:].strip()
     return authorization.strip()
 
+
 @router.post("/register", response_model=UserProfileResponse)
 async def register(request: UserRegisterRequest, db: AsyncSession = Depends(get_async_db)):
     # パスワード強度チェック：最低 8 文字以上
@@ -39,12 +40,13 @@ async def register(request: UserRegisterRequest, db: AsyncSession = Depends(get_
         email=request.email,
         hashed_password=hash_password(request.password),
         display_name=request.display_name,
-        credits=50
+        credits=50,
     )
     db.add(user)
     await db.commit()
     await db.refresh(user)
     return user
+
 
 def _issue_tokens(user: User) -> dict:
     """ユーザー向けのアクセストークンとリフレッシュトークンを発行する。"""
@@ -99,6 +101,7 @@ async def refresh(
         raise HTTPException(status_code=401, detail="ユーザーが存在しないか、無効化されています")
 
     return _issue_tokens(user)
+
 
 @router.get("/me", response_model=UserProfileResponse)
 async def get_me(user: User = Depends(get_current_user)):

@@ -1,4 +1,5 @@
 """Writer Agent with hierarchical agent memory (Core/Working/Archival) integration."""
+
 from __future__ import annotations
 
 import json

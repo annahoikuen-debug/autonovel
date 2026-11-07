@@ -92,9 +92,7 @@ class KoboPublisher(PublisherAdapter):
 
         # トークンリフレッシュ
         client = self._get_client()
-        auth_header = base64.b64encode(
-            f"{credentials.client_id}:{credentials.client_secret}".encode()
-        ).decode()
+        auth_header = base64.b64encode(f"{credentials.client_id}:{credentials.client_secret}".encode()).decode()
 
         response = await client.post(
             self.AUTH_URL,
@@ -138,9 +136,7 @@ class KoboPublisher(PublisherAdapter):
 
         # 初回トークン取得（Client Credentials Grant）
         client = self._get_client()
-        auth_header = base64.b64encode(
-            f"{credentials.client_id}:{credentials.client_secret}".encode()
-        ).decode()
+        auth_header = base64.b64encode(f"{credentials.client_id}:{credentials.client_secret}".encode()).decode()
 
         try:
             response = await client.post(
@@ -173,9 +169,7 @@ class KoboPublisher(PublisherAdapter):
     async def _fetch_publisher_id(self, credentials: KoboCredentials):
         """出版社IDを取得"""
         client = self._get_client()
-        response = await client.get(
-            f"{self.API_BASE}/publishers", headers=self._get_auth_headers(credentials)
-        )
+        response = await client.get(f"{self.API_BASE}/publishers", headers=self._get_auth_headers(credentials))
 
         if response.status_code == 200:
             publishers = response.json().get("publishers", [])
@@ -211,9 +205,7 @@ class KoboPublisher(PublisherAdapter):
 
             if response.status_code == 429:
                 retry_after = float(response.headers.get("Retry-After", 60))
-                raise RateLimitError(
-                    "レート制限に達しました", self.platform, retry_after=retry_after
-                )
+                raise RateLimitError("レート制限に達しました", self.platform, retry_after=retry_after)
             elif response.status_code >= 400:
                 raise ValidationError(f"書籍作成失敗: {response.text}", self.platform)
 
@@ -297,9 +289,7 @@ class KoboPublisher(PublisherAdapter):
 
             if response.status_code == 429:
                 retry_after = float(response.headers.get("Retry-After", 60))
-                raise RateLimitError(
-                    "レート制限に達しました", self.platform, retry_after=retry_after
-                )
+                raise RateLimitError("レート制限に達しました", self.platform, retry_after=retry_after)
             elif response.status_code >= 400:
                 raise ValidationError(f"チャプター追加失敗: {response.text}", self.platform)
 
@@ -331,9 +321,7 @@ class KoboPublisher(PublisherAdapter):
         client = self._get_client()
 
         try:
-            response = await client.get(
-                f"{self.API_BASE}/books/{post_id}", headers=self._get_auth_headers(credentials)
-            )
+            response = await client.get(f"{self.API_BASE}/books/{post_id}", headers=self._get_auth_headers(credentials))
 
             if response.status_code == 404:
                 return {"book_id": post_id, "status": "not_found"}

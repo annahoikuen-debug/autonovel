@@ -8,14 +8,17 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class ArbitratorConfig(BaseModel):
     """Configuration options for global narrative arbitration."""
+
     model_config = ConfigDict(extra="ignore")
 
     priority_order: List[str] = Field(default_factory=lambda: ["grammar", "csp", "dsp"])
-    enabled_balancers: Dict[str, bool] = Field(default_factory=lambda: {
-        "grammar": True,
-        "csp": True,
-        "dsp": True,
-    })
+    enabled_balancers: Dict[str, bool] = Field(
+        default_factory=lambda: {
+            "grammar": True,
+            "csp": True,
+            "dsp": True,
+        }
+    )
     fallback_chain: List[str] = Field(default_factory=lambda: ["grammar", "csp", "dsp"])
     timeout_seconds: float = 10.0
     validate_output: bool = True

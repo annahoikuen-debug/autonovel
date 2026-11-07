@@ -117,6 +117,4 @@ class SchedulerCoordinator:
                     task.cancel()
         except Exception as exc:
             if hasattr(self.agent, "logger"):
-                self.agent.logger.warning(
-                    "スケジューラタスクのキャンセルに失敗: %s", exc, exc_info=True
-                )
+                self.agent.logger.warning("スケジューラタスクのキャンセルに失敗: %s", exc, exc_info=True)

@@ -19,9 +19,7 @@ _MAX_LENGTH_RATIO = 3.0
 class SpanPatchApplier:
     """スパン置換の安全条件を検査する純クラス（例外を送出しない）。"""
 
-    def apply(
-        self, text: str, start: int, end: int, replacement: str
-    ) -> tuple[str, bool]:
+    def apply(self, text: str, start: int, end: int, replacement: str) -> tuple[str, bool]:
         """スパン置換を行い、安全条件を満たした場合だけ新しいテキストを返す。
 
         Returns:
@@ -57,11 +55,7 @@ class SpanPatchApplier:
                 return False
             if not patched.strip():
                 return False
-            if not (
-                len(original) * _MIN_LENGTH_RATIO
-                <= len(patched)
-                <= len(original) * _MAX_LENGTH_RATIO
-            ):
+            if not (len(original) * _MIN_LENGTH_RATIO <= len(patched) <= len(original) * _MAX_LENGTH_RATIO):
                 return False
             if patched.count(_PARAGRAPH_SEP) < original.count(_PARAGRAPH_SEP):
                 return False

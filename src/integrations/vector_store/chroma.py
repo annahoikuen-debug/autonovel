@@ -1,6 +1,7 @@
 """
 src/services/vector_store/chroma.py - ChromaDB ベクトルストア実装
 """
+
 from __future__ import annotations
 
 import importlib
@@ -147,16 +148,12 @@ class ChromaClientProvider:
             return self._client
 
         if not HAS_CHROMA:
-            logger.warning(
-                "[CHROMA PROVIDER] chromadb is not installed. Vector features will be disabled."
-            )
+            logger.warning("[CHROMA PROVIDER] chromadb is not installed. Vector features will be disabled.")
             return None
 
         chromadb_mod = _get_chromadb()
         if chromadb_mod is None:
-            logger.warning(
-                "[CHROMA PROVIDER] chromadb import failed. Vector features will be disabled."
-            )
+            logger.warning("[CHROMA PROVIDER] chromadb import failed. Vector features will be disabled.")
             return None
 
         import time
@@ -177,15 +174,11 @@ class ChromaClientProvider:
                 return self._client
             except Exception as e:
                 delay = base_delay * (2**attempt)
-                logger.error(
-                    f"[CHROMA PROVIDER] Failed to initialize ChromaDB: {e}. Retrying in {delay}s..."
-                )
+                logger.error(f"[CHROMA PROVIDER] Failed to initialize ChromaDB: {e}. Retrying in {delay}s...")
                 if attempt < retries - 1:
                     time.sleep(delay)
                 else:
-                    logger.critical(
-                        f"[CHROMA PROVIDER] All {retries} attempts to initialize ChromaDB failed."
-                    )
+                    logger.critical(f"[CHROMA PROVIDER] All {retries} attempts to initialize ChromaDB failed.")
 
         return None
 
@@ -220,9 +213,7 @@ class ChromaVectorStore(BaseVectorStore):
         """プロバイダー経由でクライアントを取得する"""
         return self.client_provider.get_client()
 
-    def initialize_collections(
-        self, collection_types: list[CollectionType] | None = None
-    ) -> dict[str, bool]:
+    def initialize_collections(self, collection_types: list[CollectionType] | None = None) -> dict[str, bool]:
         """
         指定されたコレクションタイプを初期化する。
         未指定の場合は全デフォルトコレクションを初期化。
@@ -266,8 +257,9 @@ class ChromaVectorStore(BaseVectorStore):
             except Exception as e:
                 if not _is_collection_not_found(e):
                     logger.error(
-                        "[VECTOR STORE] Failed to read collection '%s' metadata "
-                        "(not a 'not found' condition): %s", config.name, e
+                        "[VECTOR STORE] Failed to read collection '%s' metadata (not a 'not found' condition): %s",
+                        config.name,
+                        e,
                     )
                     return False
                 # 存在しない場合は作成
@@ -278,13 +270,9 @@ class ChromaVectorStore(BaseVectorStore):
 
             # メタデータ込みで取得または作成
             metadata = config.get_metadata()
-            self._collections[config.name] = self.client.get_or_create_collection(
-                name=config.name, metadata=metadata
-            )
+            self._collections[config.name] = self.client.get_or_create_collection(name=config.name, metadata=metadata)
             self._initialized_collections.add(config.name)
-            logger.info(
-                f"[VECTOR STORE] Initialized collection '{config.name}' with space={config.space}"
-            )
+            logger.info(f"[VECTOR STORE] Initialized collection '{config.name}' with space={config.space}")
             return True
         except Exception as e:
             logger.error(f"[VECTOR STORE] Failed to initialize collection '{config.name}': {e}")
@@ -296,9 +284,7 @@ class ChromaVectorStore(BaseVectorStore):
             return None
         if name not in self._collections:
             try:
-                self._collections[name] = self.client.get_or_create_collection(
-                    name=name, metadata=metadata
-                )
+                self._collections[name] = self.client.get_or_create_collection(name=name, metadata=metadata)
             except Exception as e:
                 logger.error(f"[VECTOR STORE] Failed to get/create collection {name}: {e}")
                 return None
@@ -325,9 +311,7 @@ class ChromaVectorStore(BaseVectorStore):
         """ドキュメントをベクトルDBに追加する (ChromaDB のバッチ上限を超える場合は分割)."""
         collection = self.get_collection(collection_name)
         if not collection:
-            logger.warning(
-                f"[VECTOR STORE] Skipping add_documents: Collection '{collection_name}' not available."
-            )
+            logger.warning(f"[VECTOR STORE] Skipping add_documents: Collection '{collection_name}' not available.")
             return
         n = len(ids)
         for start in range(0, n, self._CHROMA_MAX_BATCH):
@@ -412,9 +396,7 @@ class ChromaVectorStore(BaseVectorStore):
         if not collection:
             return
         collection.delete(ids=ids)
-        logger.info(
-            f"[VECTOR STORE] Deleted {len(ids)} documents from collection '{collection_name}'"
-        )
+        logger.info(f"[VECTOR STORE] Deleted {len(ids)} documents from collection '{collection_name}'")
 
     async def clear_collection(self, collection_name: str):
         """コレクションを空にする"""
@@ -453,9 +435,7 @@ class ChromaVectorStore(BaseVectorStore):
         """初期化済みコレクションの一覧を取得"""
         return list(self._initialized_collections)
 
-    def audit_collection_coverage(
-        self, collection_types: list[CollectionType] | None = None
-    ) -> dict[str, bool]:
+    def audit_collection_coverage(self, collection_types: list[CollectionType] | None = None) -> dict[str, bool]:
         """すべてのデフォルト CollectionType を初期化し、成否を返す.
 
         Returns:
@@ -469,9 +449,7 @@ class ChromaVectorStore(BaseVectorStore):
     def _tokenize(text: str) -> list[str]:
         """ドキュメントをトークン化（簡易的な日本語対応：文字単位 + スペース区切り）"""
         # 英数字の単語 + 日本語文字（ひらがな、カタカナ、漢字）
-        tokens = re.findall(
-            r"[a-zA-Z0-9]+|[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+", text.lower()
-        )
+        tokens = re.findall(r"[a-zA-Z0-9]+|[\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FFF]+", text.lower())
         # さらに文字単位でも分割（日本語の部分一致対応）
         char_tokens = list(text.lower())
         return tokens + char_tokens
@@ -549,9 +527,7 @@ class ChromaVectorStore(BaseVectorStore):
             logger.warning(f"[VECTOR STORE] hybrid_search alpha={alpha} out of [0,1], clamping.")
             alpha = max(0.0, min(1.0, alpha))
         # ベクトル検索（より多く取得して後でフィルタリング）
-        vector_results = await self.search_with_score(
-            collection_name, query_embedding, top_k * 3, where, min_score=0.0
-        )
+        vector_results = await self.search_with_score(collection_name, query_embedding, top_k * 3, where, min_score=0.0)
 
         # BM25検索
         bm25_results = []
@@ -565,9 +541,7 @@ class ChromaVectorStore(BaseVectorStore):
             bm25_scores = bm25.get_scores(query_tokens)
 
             # 上位候補を取得
-            top_indices = sorted(
-                range(len(bm25_scores)), key=lambda i: bm25_scores[i], reverse=True
-            )[: top_k * 3]
+            top_indices = sorted(range(len(bm25_scores)), key=lambda i: bm25_scores[i], reverse=True)[: top_k * 3]
 
             # BM25スコアを正規化 (0-1)
             max_bm25 = max(bm25_scores) if bm25_scores else 1.0
@@ -637,39 +611,29 @@ class ChromaVectorStore(BaseVectorStore):
 
         collection = self.get_collection(collection_name)
         if not collection:
-            logger.warning(
-                f"[VECTOR STORE] Collection '{collection_name}' not found for BM25 rebuild"
-            )
+            logger.warning(f"[VECTOR STORE] Collection '{collection_name}' not found for BM25 rebuild")
             return
 
         try:
             # 全ドキュメントを取得
             results = collection.get(include=["documents", "metadatas"])
             if not results["ids"] or len(results["ids"]) == 0:
-                logger.info(
-                    f"[VECTOR STORE] Collection '{collection_name}' is empty, skipping BM25 rebuild"
-                )
+                logger.info(f"[VECTOR STORE] Collection '{collection_name}' is empty, skipping BM25 rebuild")
                 return
 
             documents = results["documents"]
             doc_ids = results["ids"]
 
             self._build_bm25_index(collection_name, documents, doc_ids)
-            logger.info(
-                f"[VECTOR STORE] Rebuilt BM25 index for '{collection_name}' with {len(documents)} documents"
-            )
+            logger.info(f"[VECTOR STORE] Rebuilt BM25 index for '{collection_name}' with {len(documents)} documents")
         except Exception as e:
-            logger.error(
-                f"[VECTOR STORE] Failed to rebuild BM25 index for '{collection_name}': {e}"
-            )
+            logger.error(f"[VECTOR STORE] Failed to rebuild BM25 index for '{collection_name}': {e}")
 
     async def rebuild_bm25_index_async(self, collection_name: str) -> None:
         """``rebuild_bm25_index`` の非同期版. 内部で ``asyncio.to_thread`` を使用."""
         import asyncio
 
         await asyncio.to_thread(self.rebuild_bm25_index, collection_name)
-
-
 
 
 __all__ = [

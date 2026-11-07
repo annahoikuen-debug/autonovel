@@ -108,9 +108,7 @@ class TaskStatusSchema(BaseModel):
     logs: list[str] = Field(default_factory=list)
     error: str | None = None
     result_data: Any | None = None
-    token_usage: dict[str, int] = Field(
-        default_factory=lambda: {"prompt": 0, "completion": 0, "calls": 0}
-    )
+    token_usage: dict[str, int] = Field(default_factory=lambda: {"prompt": 0, "completion": 0, "calls": 0})
     start_time: float = 0.0
 
 
@@ -343,9 +341,7 @@ class ProduceNovelResponse(BaseResponse):
     project_id: int = Field(..., description="プロジェクトID")
     status: str = Field(default="started", description="ステータス")
     message: str = Field(default="", description="メッセージ")
-    token_usage_estimate: dict[str, int] | None = Field(
-        default=None, description="推定トークン使用量"
-    )
+    token_usage_estimate: dict[str, int] | None = Field(default=None, description="推定トークン使用量")
 
 
 class NovelStatusResponse(BaseResponse):
@@ -423,6 +419,7 @@ class BookScoreHistoryResponse(BaseResponse):
 
 class WritingDirectiveSchema(BaseModel):
     """PDCA執筆指示のスキーマ"""
+
     dimension: str
     severity: str
     target_location: str
@@ -431,8 +428,10 @@ class WritingDirectiveSchema(BaseModel):
     rationale: str
     specialist_name: str | None = ""
 
+
 class PDCAHistoryItem(BaseModel):
     """PDCAサイクル内の一ステップ履歴"""
+
     cycle: int
     draft_chars: int
     score: float
@@ -442,8 +441,10 @@ class PDCAHistoryItem(BaseModel):
     directives_count: int
     delta: float
 
+
 class PDCACycleSnapshot(BaseModel):
     """PDCAサイクル実行結果のスナップショット"""
+
     book_id: int
     chapter_number: int
     cycle_number: int
@@ -456,6 +457,7 @@ class PDCACycleSnapshot(BaseModel):
     history: list[PDCAHistoryItem] = Field(default_factory=list)
     converged: bool
     created_at: datetime = Field(default_factory=datetime.now)
+
 
 __all__ = [
     "BaseResponse",

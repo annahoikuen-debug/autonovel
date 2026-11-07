@@ -27,14 +27,10 @@ class CharacterRepository(BaseRepository):
         result = await self.session.execute(select(Character).where(Character.book_id == book_id))
         chars = result.scalars().all()
 
-        return [
-            CharacterDbModel(**self._parse_row(self._to_dict(c), ["registry_data"])) for c in chars
-        ]
+        return [CharacterDbModel(**self._parse_row(self._to_dict(c), ["registry_data"])) for c in chars]
 
     @retry_on_lock()
-    async def create_character(
-        self, book_id: int, name: str, role: str, registry_data: Any
-    ) -> None:
+    async def create_character(self, book_id: int, name: str, role: str, registry_data: Any) -> None:
         char = Character(
             book_id=book_id,
             name=name,

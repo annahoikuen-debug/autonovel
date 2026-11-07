@@ -50,7 +50,9 @@ class BranchMergeService:
         target_branch = await branch_repo.get_branch(request.target_branch_id)
 
         if not source_branch or not target_branch:
-            raise ValueError(f"Source branch {request.source_branch_id} or target branch {request.target_branch_id} not found")
+            raise ValueError(
+                f"Source branch {request.source_branch_id} or target branch {request.target_branch_id} not found"
+            )
 
         try:
             # 1. 解決済み各章の確定更新 (Step 51)
