@@ -4,6 +4,21 @@
 Stripeモックを用いた決済完了からクレジット反映、消費・枯渇ブロックのE2Eテスト
 """
 import pytest
+
+
+# NOTE: webhook 署名検証は STRIPE_WEBHOOK_SECRET 未設定時 400 で拒否される。
+# テストでは署名なし webhook を許可するオプトインを有効化する。
+@pytest.fixture(autouse=True)
+def _allow_unsigned_webhooks():
+    import src.backend.routers.billing_webhook as billing_webhook_module
+
+    original_opt = billing_webhook_module.ALLOW_UNSIGNED_WEBHOOKS
+    original_secret = billing_webhook_module.WEBHOOK_SECRET
+    billing_webhook_module.ALLOW_UNSIGNED_WEBHOOKS = True
+    billing_webhook_module.WEBHOOK_SECRET = ""
+    yield
+    billing_webhook_module.ALLOW_UNSIGNED_WEBHOOKS = original_opt
+    billing_webhook_module.WEBHOOK_SECRET = original_secret
 import pytest_asyncio
 from unittest.mock import MagicMock, patch
 from httpx import AsyncClient, ASGITransport
@@ -13,7 +28,7 @@ from sqlalchemy.pool import StaticPool
 from sqlalchemy import select
 
 from src.backend.server import app
-from src.backend.database import get_db
+from src.backend.database import get_async_db, get_db
 from src.backend.database.models import Base, User
 from src.backend.database.models_billing import (
     CreditTransaction,
@@ -53,8 +68,10 @@ async def setup_db():
         await conn.run_sync(Base.metadata.create_all)
 
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_async_db] = override_get_db
     yield
     app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_async_db, None)
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
@@ -262,7 +279,8 @@ async def test_stripe_webhook_handling(client: AsyncClient, db: AsyncSession, te
     subscription = result.scalar_one_or_none()
     assert subscription is not None
     assert subscription.stripe_subscription_id == "sub_test_123"
-    assert subscription.plan_tier == "price_starter"
+    # NOTE: 現実装は get_tier_for_price_id で正規化した tier を保存する
+    assert subscription.plan_tier == "starter"
     assert subscription.status == "active"
 
 

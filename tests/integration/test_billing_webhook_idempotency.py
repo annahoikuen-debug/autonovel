@@ -1,4 +1,19 @@
 import pytest
+
+
+# NOTE: webhook 署名検証は STRIPE_WEBHOOK_SECRET 未設定時 400 で拒否される。
+# テストでは署名なし webhook を許可するオプトインを有効化する。
+@pytest.fixture(autouse=True)
+def _allow_unsigned_webhooks():
+    import src.backend.routers.billing_webhook as billing_webhook_module
+
+    original_opt = billing_webhook_module.ALLOW_UNSIGNED_WEBHOOKS
+    original_secret = billing_webhook_module.WEBHOOK_SECRET
+    billing_webhook_module.ALLOW_UNSIGNED_WEBHOOKS = True
+    billing_webhook_module.WEBHOOK_SECRET = ""
+    yield
+    billing_webhook_module.ALLOW_UNSIGNED_WEBHOOKS = original_opt
+    billing_webhook_module.WEBHOOK_SECRET = original_secret
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -7,7 +22,7 @@ from sqlalchemy.pool import StaticPool
 from unittest.mock import patch, MagicMock
 
 from src.backend.server import app
-from src.backend.database import get_db
+from src.backend.database import get_async_db, get_db
 from src.backend.database.models import Base, User
 from src.core.container import AppContainer
 
@@ -33,8 +48,10 @@ async def setup_db():
     original_db = AppContainer.db
     AppContainer.db = TestingSessionLocal
     app.dependency_overrides[get_db] = override_get_db
+    app.dependency_overrides[get_async_db] = override_get_db
     yield
     app.dependency_overrides.pop(get_db, None)
+    app.dependency_overrides.pop(get_async_db, None)
     AppContainer.db = original_db
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
