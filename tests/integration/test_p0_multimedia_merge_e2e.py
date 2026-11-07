@@ -25,7 +25,7 @@ from sqlalchemy.pool import StaticPool
 from src.infrastructure.database.models.base_orm import Base
 from src.backend import config
 from src.backend.auth import validate_api_key_or_raise
-from src.backend.database.models import Book, Chapter, Branch
+from src.backend.database.models import Book, User, Chapter, Branch
 from src.backend.database.series_loader import SeriesDataLoader
 from src.backend.multimedia_service import MultimediaService
 from src.backend.routers import branches as branches_router
@@ -126,11 +126,27 @@ def p0_e2e_setup(monkeypatch, tmp_path: Path):
         )
         conn.commit()
 
-    # 初期シードデータ投入 (Book 1, メインブランチ Branch 1, Chapter 1 & 2)
+    # 初期シードデータ投入 (User 1, Book 1, メインブランチ Branch 1, Chapter 1 & 2)
     sync_session = SyncSessionLocal()
     try:
+        # NOTE: books.user_id は users.id への FK のため先に User を作成する
+        sync_session.add(
+            User(
+                id=1,
+                email="seed@example.com",
+                hashed_password="seed",
+                display_name="Seed User",
+                role="admin",
+                status="active",
+                credits=10000,
+            )
+        )
+        sync_session.flush()
+
         book = Book(
             id=1,
+            # NOTE: IDOR 対策で user_id=NULL の book は権限拒否されるため seed に設定
+            user_id=1,
             title="運命の交差点",
             genre="fantasy",
             concept="選択によって分岐する世界",
@@ -181,6 +197,11 @@ def p0_e2e_setup(monkeypatch, tmp_path: Path):
     )
 
     app = FastAPI(title="P0 E2E Test App")
+    # NOTE: 本番 app と同じ RFC 7807 例外ハンドラを登録
+    # （未登録だと NotFoundError が未処理例外になり 404 に変換されない）
+    from src.backend.error_handlers import register_error_handlers
+
+    register_error_handlers(app)
 
     # ルーター登録
     app.include_router(multimedia_router.router, prefix="/multimedia", tags=["multimedia"])
@@ -189,6 +210,15 @@ def p0_e2e_setup(monkeypatch, tmp_path: Path):
     # 依存性オーバーライド
     app.dependency_overrides[validate_api_key_or_raise] = lambda: "test-e2e-key"
     app.dependency_overrides[multimedia_router.get_multimedia_service] = lambda: mm_service
+
+    # NOTE: verify_book_ownership は AppContainer.db() で DB を解決するため、
+    # テスト用 SQLite を差し替える（差し替えないと本 DB を見て NotFound になる）
+    import src.core.container as container_mod
+    from src.core.container import AppContainer as _AppContainer
+
+    container_mod.AppContainer.db = AsyncSessionLocal
+    _AppContainer.db = AsyncSessionLocal
+    original_container_db = None  # restore は teardown で行う
 
     async def override_get_branch_session() -> AsyncGenerator[AsyncSession, None]:
         async with AsyncSessionLocal() as sess:
@@ -207,6 +237,12 @@ def p0_e2e_setup(monkeypatch, tmp_path: Path):
         "mm_service": mm_service,
         "output_dir": output_dir,
     }
+
+    # AppContainer.db を復元（クラス属性を元に戻す）
+    from src.core.container.infra import InfraContainer
+
+    _AppContainer.db = InfraContainer.db
+    container_mod.AppContainer.db = InfraContainer.db
 
     sync_engine.dispose()
 

@@ -121,8 +121,10 @@ async def test_real_db_export_package_via_fixture(real_db_manager) -> None:
         book_id=book_id,
         name="エイダ",
         role="主人公",
-        personality="冷静",
-        ability="論理掌握",
+        # NOTE: 現実装は registry_data JSON から性格・能力を取得する契約
+        registry_data=json.dumps(
+            {"personality": "冷静", "ability": "論理掌握"}, ensure_ascii=False
+        ),
     )
     plot = Plot(
         book_id=book_id,

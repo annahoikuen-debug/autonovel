@@ -48,6 +48,44 @@ def mm_e2e_client(monkeypatch, tmp_path, real_db_manager, mm_auth_user):
     )
     generate_limiter.reset()
 
+    # NOTE: MultimediaService は DB から book / chapter を読むため、
+    # real_db_manager の一時 SQLite に seed を投入する。
+    import src.backend.database as db_module
+
+    with db_module.SessionLocal() as session:
+        from src.backend.database.models import Book, Chapter
+
+        seed_user = User(
+            email="mm-e2e@example.com",
+            hashed_password="x",
+            display_name="MM E2E",
+            role="admin",
+            status="active",
+            credits=10000,
+        )
+        session.add(seed_user)
+        session.flush()
+
+        for bid in (1, 2, 3):
+            session.add(
+                Book(
+                    id=bid,
+                    user_id=seed_user.id,
+                    title=f"MM E2E Book {bid}",
+                    genre="fantasy",
+                )
+            )
+            for ch in (1, 2):
+                session.add(
+                    Chapter(
+                        book_id=bid,
+                        ep_num=ch,
+                        title=f"Chapter {ch}",
+                        content=f"これはテスト用本文です（book={bid}, chapter={ch}）。主人公が旅を続ける。",
+                    )
+                )
+        session.commit()
+
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()

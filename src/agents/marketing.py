@@ -227,7 +227,15 @@ class MarketingAgent(BaseAgent):
                 else:
                     book = result
         if not book and not book_data:
-            raise ValueError("作品が見つかりません。")
+            if self.repo is not None:
+                # repo を渡して book が見つからないのは呼び出し側の誤り
+                raise ValueError("作品が見つかりません。")
+            # repo 未指定（フォールバック意図）の場合は ExportPackageBuilder に
+            # 委譲して DEFAULT_FALLBACK による ZIP を返す
+            # （Step 18: create_export_package(book_id=999) で fallback ZIP が生成される契約）
+            from src.integrations.marketing.export_package import MarketingService
+
+            return await MarketingService(repo=None).create_export_package(book_id=book_id)
 
         branch_id = book.current_branch_id if book and book.current_branch_id else 1
         # book_data 提供時はクライアントの最新ステートを優先して反映
@@ -250,7 +258,7 @@ class MarketingAgent(BaseAgent):
             bible = await self._maybe_await(self.repo.get_latest_bible(book_id))
             plots = await self._maybe_await(
                 # branch_id は作品間で共有されるため book_id も渡す
-                self.repo.get_all_plots(branch_id, branch_id=branch_id, book_id=book_id)
+                self.repo.get_all_plots(book_id, branch_id=branch_id)
             )
 
         # book_data 提供時は repo アクセスを省略しオーバーライド値を使用
