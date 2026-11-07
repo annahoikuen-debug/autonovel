@@ -13,6 +13,7 @@ import ast
 import inspect
 
 import src.agents.audit_agent as m
+import src.agents.audit_agent.gate as _gate_mod
 
 
 def test_audit_agent_module_imports():
@@ -40,7 +41,7 @@ def _outcome(audit_id: str, score: float, *, passed: bool, severity: str, weight
 
 
 def test_evaluate_gate_passes_when_every_audit_passes(monkeypatch):
-    monkeypatch.setattr(m, "is_score_gate_enabled", lambda: True)
+    monkeypatch.setattr(_gate_mod, "is_score_gate_enabled", lambda: True)
     res = m.evaluate_gate([_outcome("a", 95.0, passed=True, severity="none")])
     assert res["requires_regeneration"] is False, res
     assert res["failed_count"] == 0, res
@@ -50,8 +51,8 @@ def test_evaluate_gate_passes_when_every_audit_passes(monkeypatch):
 
 def test_evaluate_gate_requires_regeneration_on_critical_failure(monkeypatch):
     """閾値以上の点数でも critical 失敗があれば再執筆を要求すること。"""
-    monkeypatch.setattr(m, "is_score_gate_enabled", lambda: True)
-    monkeypatch.setattr(m, "is_advisory_strict_guard_enabled", lambda: False)
+    monkeypatch.setattr(_gate_mod, "is_score_gate_enabled", lambda: True)
+    monkeypatch.setattr(_gate_mod, "is_advisory_strict_guard_enabled", lambda: False)
     res = m.evaluate_gate(
         [
             _outcome("a", 100.0, passed=True, severity="none"),
@@ -71,10 +72,10 @@ def test_evaluate_gate_advisory_band_relaxes_medium_only_failures(monkeypatch):
     threshold を既定 70 より上げた場合は strict guard が優先されるため、
     ここでは「手動の厳格化をしていない」ケース（strict guard を切ってある）を検証する。
     """
-    monkeypatch.setattr(m, "is_score_gate_enabled", lambda: True)
-    monkeypatch.setattr(m, "is_advisory_strict_guard_enabled", lambda: False)
-    monkeypatch.setattr(m, "get_gate_threshold", lambda: 90.0)
-    monkeypatch.setattr(m, "get_advisory_threshold", lambda: 80.0)
+    monkeypatch.setattr(_gate_mod, "is_score_gate_enabled", lambda: True)
+    monkeypatch.setattr(_gate_mod, "is_advisory_strict_guard_enabled", lambda: False)
+    monkeypatch.setattr(_gate_mod, "get_gate_threshold", lambda: 90.0)
+    monkeypatch.setattr(_gate_mod, "get_advisory_threshold", lambda: 80.0)
     res = m.evaluate_gate([_outcome("a", 85.0, passed=False, severity="medium")])
     assert res["advisory"] is True, res
     assert res["requires_regeneration"] is False, res
@@ -87,17 +88,17 @@ def test_evaluate_gate_strict_guard_prevents_relaxation(monkeypatch):
     ``strict_guard`` は「gate 閾値 > 既定 70 かつ advisory 閾値は既定 80 のまま」で
     成立する。成立すると advisory 帯は緩和を拒否し、再執筆を要求し続ける。
     """
-    monkeypatch.setattr(m, "is_score_gate_enabled", lambda: True)
-    monkeypatch.setattr(m, "is_advisory_strict_guard_enabled", lambda: True)
-    monkeypatch.setattr(m, "get_gate_threshold", lambda: 99.0)
-    monkeypatch.setattr(m, "get_advisory_threshold", lambda: m.DEFAULT_AUDIT_ADVISORY_THRESHOLD)
+    monkeypatch.setattr(_gate_mod, "is_score_gate_enabled", lambda: True)
+    monkeypatch.setattr(_gate_mod, "is_advisory_strict_guard_enabled", lambda: True)
+    monkeypatch.setattr(_gate_mod, "get_gate_threshold", lambda: 99.0)
+    monkeypatch.setattr(_gate_mod, "get_advisory_threshold", lambda: m.DEFAULT_AUDIT_ADVISORY_THRESHOLD)
     res = m.evaluate_gate([_outcome("a", 85.0, passed=False, severity="medium")])
     assert res["advisory"] is False, res
     assert res["requires_regeneration"] is True, res
 
 
 def test_evaluate_gate_all_or_nothing_mode_ignores_scores(monkeypatch):
-    monkeypatch.setattr(m, "is_score_gate_enabled", lambda: False)
+    monkeypatch.setattr(_gate_mod, "is_score_gate_enabled", lambda: False)
     res = m.evaluate_gate(
         [
             _outcome("a", 100.0, passed=True, severity="none"),
@@ -110,7 +111,7 @@ def test_evaluate_gate_all_or_nothing_mode_ignores_scores(monkeypatch):
 
 def test_evaluate_gate_ignores_non_blocking_outcomes_when_blocking_exist(monkeypatch):
     """blocking が 1 つでもあれば非 blocking はスコア計算から除外されること。"""
-    monkeypatch.setattr(m, "is_score_gate_enabled", lambda: True)
+    monkeypatch.setattr(_gate_mod, "is_score_gate_enabled", lambda: True)
     res = m.evaluate_gate(
         [
             _outcome("blocking", 72.0, passed=True, severity="none"),

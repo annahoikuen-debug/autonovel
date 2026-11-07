@@ -140,7 +140,8 @@
     "src/engine/book_score/mapping.py",
     "src/engine/conflict_report_service.py",
     "src/integrations/cost_guard/analytics.py",
-    "src/llm/service.py"
+    "src/llm/service.py",
+    "src/agents/audit_agent.py"
   ],
   "description": "後方互換 shim の一覧。新しい shim を追加したら必ずここに登録すること。",
   "updated_at": "2026-11-06"
