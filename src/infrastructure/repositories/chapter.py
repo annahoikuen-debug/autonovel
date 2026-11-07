@@ -259,7 +259,7 @@ class ChapterRepository(BaseRepository):
             .where(Chapter.branch_id == target_branch_id)
             .where(Chapter.ep_num == ep_num)
         )
-        return int(result.rowcount or 0)
+        return int(result.rowcount or 0)  # type: ignore[attr-defined]
 
     @retry_on_lock()
     async def update_chapter_content(
@@ -278,7 +278,7 @@ class ChapterRepository(BaseRepository):
         if book_id is not None:
             stmt = stmt.where(Chapter.book_id == book_id)
         result = await self.session.execute(stmt.values(content=content))
-        return int(result.rowcount or 0)
+        return int(result.rowcount or 0)  # type: ignore[attr-defined]
 
     @retry_on_lock()
     async def update_chapter_candidates(
@@ -295,7 +295,7 @@ class ChapterRepository(BaseRepository):
         result = await self.session.execute(
             stmt.values(candidates=json.dumps(candidates, ensure_ascii=False))
         )
-        return int(result.rowcount or 0)
+        return int(result.rowcount or 0)  # type: ignore[attr-defined]
 
     async def get_relevant_past_logs(
         self,

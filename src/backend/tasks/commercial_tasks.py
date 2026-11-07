@@ -27,7 +27,7 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
     logger.info("Execute publication task started for schedule_id=%d", schedule_id)
 
     async def _run() -> dict[str, Any]:
-        from sqlalchemy import select
+        from sqlalchemy import Result, select
         from src.backend.database.models import PublicationScheduleModel
         from src.backend.database.uow import UnitOfWork
         from src.core.container import AppContainer
@@ -62,7 +62,7 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
                 # エピソード範囲からIDリストを抽出
                 # 実際には Chapter モデルから ep_num の範囲で取得する
                 from src.backend.database.models import Chapter
-                ch_result = await uow.session.execute(
+                ch_result: Result[Any] = await uow.session.execute(
                     select(Chapter.id)
                     .where(Chapter.book_id == book_id)
                     .where(Chapter.ep_num >= schedule.episode_range_start)

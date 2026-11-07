@@ -1,5 +1,38 @@
 {
-  "ruff_errors": 90,
-  "mypy_errors": 1122,
-  "format_files": 759
+  "ruff_errors": 85,
+  "mypy_errors": 954,
+  "format_files": 759,
+  "policy": "burn-down",
+  "history": [
+    {
+      "date": "2026-11-08",
+      "mypy_errors": 1122,
+      "ruff_errors": 90,
+      "format_files": 759,
+      "note": "ラチェット導入時の実測。mypy 1122 はその後約6週間固定だった（上限固定の形骸化の証拠）"
+    },
+    {
+      "date": "2026-11-08",
+      "mypy_errors": 965,
+      "ruff_errors": 90,
+      "format_files": 759,
+      "note": "初回バーンダウン: ortools 型解決設定(23件)、IPlotRepository/IWorldBibleRepository Protocol 不備修正(50件+)、verify_book_ownership の AsyncSession 誤用修正(11件)、var-annotated 85件、rowcount 9件"
+    }
+  ],
+  "targets": [
+    {
+      "milestone": "mypy-half",
+      "metric": "mypy_errors",
+      "target": 567,
+      "by": "2026-11-30",
+      "note": "mypy 半減 (1134/2)。主な残山: Column 系 194 件は Mapped[...] 注釈移行で解消する計画"
+    },
+    {
+      "milestone": "mypy-quarter",
+      "metric": "mypy_errors",
+      "target": 284,
+      "by": "2026-12-31",
+      "note": "1/4 化。union-attr (95) の None ガード追加と arg-type の個別修正"
+    }
+  ]
 }

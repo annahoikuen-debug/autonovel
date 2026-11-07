@@ -422,7 +422,7 @@ class EpisodeWriter(BaseAgent):
         Returns:
             解決されたと判断された伏線のIDリスト
         """
-        resolved_ids = []
+        resolved_ids: list[Any] = []
         if not content or not pending_list:
             return resolved_ids
 

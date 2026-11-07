@@ -151,7 +151,7 @@ class SocialInteractionManager:
         """インメモリの関係性履歴をキャラクターペアごとに最大件数に制限（メモリ肥大化防止）(Step 25)"""
         pruned_count = 0
         if not hasattr(self, "_history_store"):
-            self._history_store = {}
+            self._history_store: dict[str, Any] = {}
             return 0
 
         for pair, history_list in list(self._history_store.items()):

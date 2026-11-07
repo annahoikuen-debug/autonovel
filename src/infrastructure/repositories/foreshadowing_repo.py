@@ -10,7 +10,7 @@ import logging
 from datetime import datetime, timezone
 from typing import Any, List, Optional
 
-from sqlalchemy import and_, func, not_, or_, select, update
+from sqlalchemy import Select, and_, func, not_, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.domain.ports.foreshadowing_kpi import ForeshadowingKpiPort
@@ -284,7 +284,7 @@ class DbForeshadowingRepository:
             .values(**values)
         )
         result = await self.db.execute(stmt)
-        if result.rowcount > 0:
+        if result.rowcount > 0:  # type: ignore[attr-defined]
             return True
 
         reason = await self._diagnose_rejection(foreshadowing_id, target_status, resolved_ep)
@@ -379,7 +379,7 @@ class DbForeshadowingRepository:
         Returns:
             {"planted": int, "progressed": int, "resolved": int, "abandoned": int, "active": int}
         """
-        stmt = (
+        stmt: Select[Any] = (
             select(
                 ForeshadowingModel.status,
                 func.count(ForeshadowingModel.id).label("count"),

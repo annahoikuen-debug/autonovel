@@ -20,7 +20,7 @@ class ConfigFileHandler(FileSystemEventHandler):
     def __init__(self, callback, notifier: AppNotifier):
         self.callback = callback
         self.notifier = notifier
-        self.last_modified = {}
+        self.last_modified: dict[str, float] = {}
         self.debounce_delay = 1.0  # 1秒のデバウンス
 
     def on_modified(self, event):

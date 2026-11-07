@@ -6,7 +6,7 @@ FullAutoWorkflow / EasyModePipeline から移植・統合
 from __future__ import annotations
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from src.backend.background import StatusReporter
@@ -696,7 +696,7 @@ class IllustrationPointGenerationStep(WorkflowStep):
                         characters[char['name']] = char
 
             # 3. 重要なシーンを特定して挿絵ポイントを生成
-            illustration_points = []
+            illustration_points: list[Any] = []
 
             # 口絵用の挿絵ポイント（第1話の重要シーン）
             if episodes and len(episodes) > 0:

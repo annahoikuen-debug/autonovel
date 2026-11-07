@@ -1,6 +1,6 @@
 from src.publishing.exporters.text_sanitizer import escape_xhtml_text
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Any
 
 def detect_image_media_type(filename: str = "", data: bytes | None = None) -> str:
     """拡張子およびマジックバイトから画像メディアタイプを自動判定 (Step 44)。"""
@@ -199,8 +199,8 @@ class EpubManifestBuilder:
         spines = spine_items or []
         new_spine = []
         frontmatter_ills = [page_id for pos, idx, page_id in illustration_spine_entries if pos == "frontmatter"]
-        chapter_start_ills = {}  # chapter_index -> list of page_ids
-        chapter_end_ills = {}
+        chapter_start_ills: dict[str, Any] = {}  # chapter_index -> list of page_ids
+        chapter_end_ills: dict[str, Any] = {}
         for pos, idx, page_id in illustration_spine_entries:
             if pos == "chapter_start":
                 chapter_start_ills.setdefault(idx, []).append(page_id)

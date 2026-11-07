@@ -92,7 +92,7 @@ class BookScoreResult:
 
     def all_actionable_diffs(self) -> list[Any]:
         """Return all actionable diffs across all specialists."""
-        diffs = []
+        diffs: list[Any] = []
         for res in self.raw.values():
             diffs.extend(getattr(res, "actionable_diffs", []))
         return diffs
@@ -402,11 +402,11 @@ class AuditAggregator:
             calibrated_overall = overall
             calibrated_by_specialist = by_specialist.copy()
             calibration_meta = {"early_exit": True, "screener_score": screener_score}
-            outliers = []
+            outliers: list[Any] = []
             variance_penalty = 0.0
-            missing = []
+            missing: list[Any] = []
             # We don't have raw results from specialists, so we leave raw empty
-            raw = {}
+            raw: dict[str, Any] = {}
 
             return BookScoreResult(
                 overall=round(overall, 2),

@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import Result, Select, delete, select, update
 
 from src.infrastructure.database.models import Book, Chapter, Plot
 from src.infrastructure.database.errors import retry_on_lock
@@ -129,12 +129,12 @@ class BookRepository(BaseRepository):
             values["version"] = expected_version + 1
         result = await self.session.execute(stmt.values(**values))
         if expected_version is not None:
-            return (result.rowcount or 0) > 0
+            return (result.rowcount or 0) > 0  # type: ignore[attr-defined]
         return True
 
     async def get_book_version(self, book_id: int, user_id: int | None = None) -> int | None:
         """``update_book_cumulative_tension`` の ``expected_version`` 用。"""
-        stmt = select(Book.version).where(Book.id == book_id)
+        stmt: Select[Any] = select(Book.version).where(Book.id == book_id)
         if user_id is not None:
             stmt = stmt.where(Book.user_id == user_id)
         result = await self.session.execute(stmt)
@@ -170,7 +170,7 @@ class BookRepository(BaseRepository):
         """作品名とマーケティングデータを更新する。既存のデータがある場合はマージを試みる。"""
         import traceback
 
-        result = await self.session.execute(select(Book.marketing_data).where(Book.id == book_id, Book.user_id == user_id))
+        result: Result[Any] = await self.session.execute(select(Book.marketing_data).where(Book.id == book_id, Book.user_id == user_id))
         row_val = result.scalar_one_or_none()
         current_data = {}
         if row_val:
@@ -198,7 +198,7 @@ class BookRepository(BaseRepository):
     @retry_on_lock()
     async def recalculate_book_tension(self, book_id: int, user_id: int, branch_id: int = 1) -> int:
         """指定ブランチの全チャプターの tension_delta を合計して累積テンションを再計算し、DBを更新する"""
-        result = await self.session.execute(
+        result: Result[Any] = await self.session.execute(
             select(Chapter.tension_delta).where(Chapter.book_id == book_id, Chapter.user_id == user_id, Chapter.branch_id == branch_id)
         )
         rows = result.scalars().all()
@@ -211,13 +211,13 @@ class BookRepository(BaseRepository):
     @retry_on_lock()
     async def recalculate_book_comfort(self, book_id: int, user_id: int, branch_id: int = 1) -> tuple[int, int]:
         """指定ブランチの全チャプターの qol_delta を合計して累積QOLを再計算し、DBを更新する"""
-        result = await self.session.execute(
+        result: Result[Any] = await self.session.execute(
             select(Chapter.qol_delta).where(Chapter.book_id == book_id, Chapter.user_id == user_id, Chapter.branch_id == branch_id)
         )
         rows = result.scalars().all()
         total_qol = sum(q or 0 for q in rows)
 
-        plot_result = await self.session.execute(
+        plot_result: Result[Any] = await self.session.execute(
             select(Plot.state_integrity_score)
             .where(Plot.book_id == book_id, Plot.branch_id == branch_id)
             .order_by(Plot.ep_num.desc())
@@ -236,7 +236,7 @@ class BookRepository(BaseRepository):
     @retry_on_lock()
     async def recalculate_book_cost(self, book_id: int, user_id: int, branch_id: int = 1) -> float:
         """最新のプロットから代償蓄積スコアを取得し、DBを更新する"""
-        plot_result = await self.session.execute(
+        plot_result: Result[Any] = await self.session.execute(
             select(Plot.cost_score)
             .where(Plot.book_id == book_id, Plot.branch_id == branch_id)
             .where(Plot.status == "expanded")

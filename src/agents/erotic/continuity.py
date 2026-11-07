@@ -199,7 +199,7 @@ class SceneContinuityTracker:
         self, current_ep: int, character_name: str, current_text: str
     ) -> list[str]:
         """戦闘負傷の一貫性をチェックする。"""
-        issues = []
+        issues: list[Any] = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
         if not prev_snapshot:
             return issues
@@ -267,7 +267,7 @@ class SceneContinuityTracker:
         self, current_ep: int, character_name: str, current_text: str
     ) -> list[str]:
         """会話態度の一貫性をチェックする。"""
-        issues = []
+        issues: list[Any] = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
         if not prev_snapshot:
             return issues
@@ -311,7 +311,7 @@ class SceneContinuityTracker:
         self, current_ep: int, character_name: str, current_text: str
     ) -> list[str]:
         """探索発見の一貫性をチェックする。"""
-        issues = []
+        issues: list[Any] = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
         if not prev_snapshot:
             return issues
@@ -349,7 +349,7 @@ class SceneContinuityTracker:
         self, current_ep: int, character_name: str, current_text: str
     ) -> list[str]:
         """移動接続の一貫性をチェックする。"""
-        issues = []
+        issues: list[Any] = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
         if not prev_snapshot:
             return issues
@@ -391,7 +391,7 @@ class SceneContinuityTracker:
         self, current_ep: int, character_name: str, current_text: str
     ) -> list[str]:
         """独白視点の一貫性をチェックする。"""
-        issues = []
+        issues: list[Any] = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
         if not prev_snapshot:
             return issues
@@ -429,7 +429,7 @@ class SceneContinuityTracker:
         self, current_ep: int, character_name: str, current_text: str
     ) -> list[str]:
         """休息回復の一貫性をチェックする。"""
-        issues = []
+        issues: list[Any] = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
         if not prev_snapshot:
             return issues
@@ -509,7 +509,7 @@ class SceneContinuityTracker:
         self, current_ep: int, character_name: str, current_text: str
     ) -> list[str]:
         """伏線が適切に継承または回収されているかを確認する。"""
-        issues = []
+        issues: list[Any] = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
         if not prev_snapshot or not prev_snapshot.foreshadowing_active:
             return issues
@@ -548,7 +548,7 @@ class SceneContinuityTracker:
         self, current_ep: int, character_name: str, current_text: str
     ) -> list[str]:
         """時間帯の不自然な遷移をチェックする。"""
-        issues = []
+        issues: list[Any] = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
         if not prev_snapshot or prev_snapshot.time_of_day == "unknown":
             return issues
@@ -603,7 +603,7 @@ class SceneContinuityTracker:
         self, current_ep: int, character_name: str, current_text: str
     ) -> list[str]:
         """アイテムの所持状態に矛盾がないか確認する。"""
-        issues = []
+        issues: list[Any] = []
         prev_snapshot = self.get_previous_snapshot(current_ep, character_name)
         if not prev_snapshot or not prev_snapshot.items_held:
             return issues
@@ -803,7 +803,7 @@ class ContinuityTracker:
                 )
                 row = cursor.fetchone()
                 if row:
-                    flags = {}
+                    flags: dict[str, Any] = {}
                     try:
                         flags = json.loads(row[5]) if row[5] else {}
                     except Exception:

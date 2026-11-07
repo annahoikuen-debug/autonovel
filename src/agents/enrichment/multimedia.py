@@ -108,7 +108,7 @@ def render_manga_script(segment: SceneSegment, text: str) -> dict:
     pages = []
     panel_idx = 0
     for page_num in range(total_pages):
-        page_panels = []
+        page_panels: list[Any] = []
         for i in range(panels_per_page):
             if panel_idx >= total_panels:
                 break

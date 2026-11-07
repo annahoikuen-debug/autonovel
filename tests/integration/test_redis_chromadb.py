@@ -33,7 +33,8 @@ def test_chromadb_container(chromadb_container):
     import time
 
     chromadb_container.get_container_host_ip()
-    chromadb_container.get_exposed_port(8000)
+    chadb_host = chromadb_container.get_container_host_ip()
+    chadb_port = chromadb_container.get_exposed_port(8000)
 
     # Wait a bit for ChromaDB to fully start up
     time.sleep(3)

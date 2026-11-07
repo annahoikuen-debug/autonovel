@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Any
 from fastapi import HTTPException, status
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.database.models import Book, User
 from src.backend.database.uow import UnitOfWork
@@ -35,7 +36,7 @@ def _tenant_mismatch(book: Any, current_user: Any) -> bool:
 async def verify_book_ownership(
     book_id: int,
     current_user: User,
-    uow: UnitOfWork | None = None,
+    uow: UnitOfWork | AsyncSession | None = None,
 ) -> Book:
     """指定された book_id が current_user に帰属しているか検証する。
 
@@ -74,8 +75,12 @@ async def verify_book_ownership(
             )
         return book
 
-    # uow が既にセッションを持っている場合（コンテキストマネージャ内で
-    # 入手済み）はそれを使い、そうでなければ新規 UnitOfWork を開く。
+    # uow が UnitOfWork の場合は既存セッションを再利用し、AsyncSession が
+    # 直接渡された場合はそのセッションを使う（呼び出し側のセッションを
+    # 無視するとテスト DB ではなく本番 DB を見てしまう実害があった）。
+    # それ以外は新規 UnitOfWork を開く。
+    if isinstance(uow, AsyncSession):
+        return await _check(uow)
     if uow is not None and getattr(uow, "session", None) is not None:
         return await _check(uow.session)
 

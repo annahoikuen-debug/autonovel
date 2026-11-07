@@ -1,5 +1,5 @@
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field as dataclasses_field
 from typing import Dict, Tuple, Optional
 
 # Existing pricing definition
@@ -21,12 +21,11 @@ DEFAULT_PRICING: Dict[str, Tuple[float, float]] = {
 
 @dataclass
 class CostCalculator:
-    pricing: Optional[Dict[str, Tuple[float, float]]] = None
-
-    def __post_init__(self) -> None:
-        # Ensure default pricing is available
-        if self.pricing is None:
-            self.pricing = DEFAULT_PRICING.copy()
+    # NOTE: None を許すと mypy が属性アクセス毎に Optional チェックを要求するため、
+    # dataclass の default として DEFAULT_PRICING を直接束ねる（挙動は同一）。
+    pricing: Dict[str, Tuple[float, float]] = dataclasses_field(
+        default_factory=lambda: DEFAULT_PRICING.copy()
+    )
 
     def estimate_cost_usd(self, input_tokens: int, output_tokens: int, model: Optional[str] = None) -> float:
         """トークン数とモデルから推定コスト（USD）を計算する。"""

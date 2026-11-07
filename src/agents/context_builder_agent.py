@@ -408,7 +408,7 @@ class ContextBuilderAgent(SkillAgent):
 
         # Build SceneFlowHistory for context-aware compression (Step 14)
         # Extract recent scene types from plot history or use defaults
-        recent_scene_types = []  # In a full implementation, this would come from previous episodes
+        recent_scene_types: list[Any] = []  # In a full implementation, this would come from previous episodes
         episode_goal = plot_dict.get("summary", "") or plot_dict.get("title", "") or f"Episode {ep_num}"
         scene_flow = SceneFlowHistory(
             recent_scene_types=recent_scene_types,

@@ -131,7 +131,7 @@ class StructureAuditor(SpecialistAuditor):
 
         # Phase-based keyword coverage
         # Split plot into 4 phases: intro, conflict, climax, resolution
-        phase_keywords = {phase: [] for phase in ["intro", "conflict", "climax", "resolution"]}
+        phase_keywords: dict[str, list[str]] = {phase: [] for phase in ["intro", "conflict", "climax", "resolution"]}
 
         # Simple heuristic: split plot by common delimiters
         plot_parts = re.split(r"[→→、。,\n・]+", str(plot))

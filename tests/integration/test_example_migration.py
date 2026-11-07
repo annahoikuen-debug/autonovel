@@ -48,7 +48,8 @@ def test_example_chromadb_usage(chromadb_container):
 
     # Get connection details from the container
     chromadb_container.get_container_host_ip()
-    chromadb_container.get_exposed_port(8000)
+    chadb_host = chromadb_container.get_container_host_ip()
+    chadb_port = chromadb_container.get_exposed_port(8000)
 
     # Wait a bit for ChromaDB to fully start up (additional safety)
     time.sleep(2)

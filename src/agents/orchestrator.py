@@ -215,7 +215,7 @@ class Orchestrator:
 
         skill_nodes = {s["name"]: s for s in skills_data}
         graph = defaultdict(list)
-        indegree = defaultdict(int)
+        indegree: dict[str, int] = defaultdict(int)
         for skill in skills_data:
             name = skill["name"]
             for dep in skill.get("depends_on", []):
@@ -289,7 +289,7 @@ class Orchestrator:
         from collections import defaultdict, deque
 
         graph = defaultdict(list)
-        indegree = defaultdict(int)
+        indegree: dict[str, int] = defaultdict(int)
         for item in active_items:
             name = item.name
             for dep in item.depends_on:
@@ -391,7 +391,7 @@ class Orchestrator:
         # 元のバージョンを保存
         original_version = self._active_skill_version
 
-        results = {"a": [], "b": []}
+        results: dict[str, Any] = {"a": [], "b": []}
 
         try:
             # バージョンAで実行

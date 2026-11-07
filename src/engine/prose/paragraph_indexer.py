@@ -2,7 +2,7 @@
 Paragraph indexer for splitting prose into indexed blocks.
 """
 
-from typing import List, Dict
+from typing import List, Dict, Any
 import re
 
 class ParagraphIndexer:
@@ -20,7 +20,7 @@ class ParagraphIndexer:
         self.min_chars = min_chars
         self.max_chars = max_chars
 
-    def index_paragraphs(self, text: str) -> List[Dict[str, any]]:
+    def index_paragraphs(self, text: str) -> List[Dict[str, Any]]:
         """
         Split text into paragraphs, assign indices, and return list of dicts.
         Each dict contains: index, text, and character offsets start/end.

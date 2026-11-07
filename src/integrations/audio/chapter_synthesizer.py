@@ -1,3 +1,4 @@
+from typing import Any
 import asyncio
 import logging
 from collections import Counter
@@ -85,7 +86,7 @@ class ChapterAudioSynthesizer:
         tasks = [synthesize_line(line) for line in lines]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        clips = []
+        clips: list[Any] = []
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.warning("Failed to synthesize line %d: %s", lines[i].line_index, result)

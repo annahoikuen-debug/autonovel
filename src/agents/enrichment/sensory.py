@@ -152,7 +152,7 @@ def is_inside_dialogue(text: str, pos: int) -> bool:
 
 def detect_abstract_emotions(text: str, skip_dialogue: bool = True) -> list[EmotionSpan]:
     """テキストから抽象的感情フレーズを検出（Step 32: 会話文内部保護ガード対応）"""
-    spans = []
+    spans: list[Any] = []
 
     for emotion, patterns in ABSTRACT_EMOTION_PATTERNS.items():
         for pattern in patterns:

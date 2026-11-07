@@ -3,6 +3,7 @@ database/repositories/cost.py - コスト記録(CostRecord)操作用リポジト
 """
 
 from __future__ import annotations
+from typing import Any
 
 from sqlalchemy import select
 
@@ -82,7 +83,7 @@ class CostRepository:
         rows = await self.list_by_book(book_id, branch_id)
         total_tokens = sum(r.total_tokens for r in rows)
         total_cost = sum(r.est_cost_usd for r in rows)
-        by_task = {}
+        by_task: dict[str, Any] = {}
         for r in rows:
             by_task.setdefault(r.task_type, {"tokens": 0, "cost": 0.0, "calls": 0})
             by_task[r.task_type]["tokens"] += r.total_tokens

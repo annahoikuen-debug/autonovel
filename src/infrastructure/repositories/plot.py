@@ -6,7 +6,7 @@ database/repo_plot.py - プロット(Plots)データ操作用のリポジトリM
 import json
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, select, update, Select, Result
 
 from src.infrastructure.database.models import Book, Branch, CharacterArc, Foreshadowing, Plot
 from src.infrastructure.database.errors import retry_on_lock
@@ -232,12 +232,12 @@ class PlotRepository(BaseRepository):
     @retry_on_lock()
     async def save_plot(self, branch_id: int, ep_num: int, plot: Any) -> None:
         """Pydanticモデル（PlotEpisode）をデータベースのplotテーブルに一括登録/更新する。"""
-        branch_result = await self.session.execute(
+        branch_result: Result[Any] = await self.session.execute(
             select(Branch.book_id).where(Branch.id == branch_id)
         )
         row = branch_result.fetchone()
         if not row:
-            book_result = await self.session.execute(
+            book_result: Result[Any] = await self.session.execute(
                 select(Book.id).order_by(Book.id.desc()).limit(1)
             )
             latest_book = book_result.scalar_one_or_none()
@@ -504,7 +504,7 @@ class PlotRepository(BaseRepository):
 
     async def get_tension_curve(self, branch_id: int, book_id: int | None = None) -> list[dict[str, Any]]:
         """指定したブランチの全エピソードの緊張感スコアを時系列で取得する"""
-        stmt = select(Plot.ep_num, Plot.tension).where(Plot.branch_id == branch_id)
+        stmt: Select[Any] = select(Plot.ep_num, Plot.tension).where(Plot.branch_id == branch_id)
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
         result = await self.session.execute(stmt.order_by(Plot.ep_num))

@@ -84,7 +84,7 @@ class EnrichmentAgent(SkillAgent):
                 error="drafted_text is required in artifacts",
             )
 
-        enrichment_metadata = {
+        enrichment_metadata: dict[str, Any] = {
             "trivia": [],
             "citations": [],
             "sensory": [],
@@ -628,7 +628,7 @@ class EnrichmentAgent(SkillAgent):
             pos += len(sent) + 1
 
         # 重複除去（位置ベース）
-        unique_claims = []
+        unique_claims: list[Any] = []
         for claim in claims:
             if not any(abs(claim["position"] - c["position"]) < 20 for c in unique_claims):
                 unique_claims.append(claim)
@@ -677,7 +677,7 @@ class EnrichmentAgent(SkillAgent):
         enriched_text = text
         citations_meta = []
         marker_counter = 0
-        source_to_marker = {}  # 同一ソースは同一番号
+        source_to_marker: dict[str, Any] = {}  # 同一ソースは同一番号
 
         for pair in sorted_pairs:
             source_key = (pair["source"]["source"], pair["source"].get("page", ""))

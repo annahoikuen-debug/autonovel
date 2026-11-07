@@ -32,6 +32,9 @@ class SceneTierEvaluator:
             True if the episode is considered a climax (should use Tier 3 model)
         """
         # Get plot data for the book
+        if self.plot_service is None:
+            # If no plot service is wired, default to not climax
+            return False
         plot = await self.plot_service.get_plot_by_book_id(book_id)
         if not plot:
             # If no plot data, default to not climax

@@ -1,7 +1,7 @@
 """World Bible repository interface."""
 
 from __future__ import annotations
-from typing import Protocol, Optional, List, runtime_checkable
+from typing import Any, Dict, Protocol, Optional, List, runtime_checkable
 from src.domain.entities.world_bible import WorldBible, Setting, Lore
 from src.domain.value_objects.ids import NovelId, SettingId, LoreId
 from src.domain.value_objects.metadata import SettingType
@@ -28,11 +28,13 @@ class IWorldBibleRepository(Protocol):
         ...
 
     # Settings
-    async def get_setting(self, setting_id: SettingId) -> Optional[Setting]:
-        """Get setting by ID."""
+    async def get_setting(
+        self, novel_id: NovelId, setting_id: SettingId
+    ) -> Optional[Setting]:
+        """Get setting by ID (scoped to a novel)."""
         ...
 
-    async def save_setting(self, setting: Setting) -> Setting:
+    async def save_setting(self, novel_id: NovelId, setting: Setting) -> Setting:
         """Save setting (insert or update)."""
         ...
 
@@ -54,7 +56,7 @@ class IWorldBibleRepository(Protocol):
         """Count settings in a novel."""
         ...
 
-    async def delete_setting(self, setting_id: SettingId) -> bool:
+    async def delete_setting(self, novel_id: NovelId, setting_id: SettingId) -> bool:
         """Delete setting by ID. Returns True if deleted."""
         ...
 
@@ -67,11 +69,11 @@ class IWorldBibleRepository(Protocol):
         ...
 
     # Lore
-    async def get_lore(self, lore_id: LoreId) -> Optional[Lore]:
-        """Get lore by ID."""
+    async def get_lore(self, novel_id: NovelId, lore_id: LoreId) -> Optional[Lore]:
+        """Get lore by ID (scoped to a novel)."""
         ...
 
-    async def save_lore(self, lore: Lore) -> Lore:
+    async def save_lore(self, novel_id: NovelId, lore: Lore) -> Lore:
         """Save lore (insert or update)."""
         ...
 
@@ -88,7 +90,7 @@ class IWorldBibleRepository(Protocol):
         """Count lore entries in a novel."""
         ...
 
-    async def delete_lore(self, lore_id: LoreId) -> bool:
+    async def delete_lore(self, novel_id: NovelId, lore_id: LoreId) -> bool:
         """Delete lore by ID. Returns True if deleted."""
         ...
 
@@ -112,4 +114,28 @@ class IWorldBibleRepository(Protocol):
 
     async def confirm_setting(self, setting_id: SettingId) -> bool:
         """Mark setting as confirmed. Returns True if updated."""
+        ...
+
+    # Versioning / full-list API (used by BibleDomainService)
+    async def get_all_lore(self, novel_id: NovelId) -> List[Lore]:
+        """Get all lore entries for a novel."""
+        ...
+
+    async def create_setting_snapshot(
+        self,
+        novel_id: NovelId,
+        change_summary: str = "",
+        created_by: Optional[str] = None,
+    ) -> int:
+        """Create a settings version snapshot. Returns snapshot version id."""
+        ...
+
+    async def get_setting_history(self, novel_id: NovelId) -> List[Dict[str, Any]]:
+        """Get setting version history."""
+        ...
+
+    async def restore_setting_version(
+        self, novel_id: NovelId, version_id: int
+    ) -> Optional[WorldBible]:
+        """Restore a previous setting version. None if version not found."""
         ...

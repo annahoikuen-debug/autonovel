@@ -754,7 +754,7 @@ class EbookExporter:
         self.output_dir = output_dir
         # Use metadata's genre or default
         self.genre = metadata.genre or "general"
-        self.preset = {}  # Default empty preset
+        self.preset: dict[str, Any] = {}  # Default empty preset
         self.processor = EbookContentProcessor(self.genre)
 
     def create_metadata(self, series: SeriesResult, **kwargs) -> EbookMetadata:

@@ -491,7 +491,8 @@ class BibleDomainService:
         pending = bible.confirm_pending_setting(field_name)
         if pending:
             await self.bible_repo.save(bible)
-        return pending
+            return pending
+        return None
 
     async def reject_pending_setting(self, novel_id: NovelId, field_name: str) -> Optional[PendingSetting]:
         """Reject a pending setting."""

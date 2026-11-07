@@ -8,7 +8,7 @@ import logging
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import delete, func, select, update, Result
 
 from src.infrastructure.database.models import (
     BackgroundTask,
@@ -145,7 +145,7 @@ class MiscRepository(BaseRepository):
 
     async def get_internal_state(self, key: str) -> Any | None:
         """保存された内部状態を取得する"""
-        result = await self.session.execute(
+        result: Result[Any] = await self.session.execute(
             select(InternalState.value).where(InternalState.key == key)
         )
         row_val = result.scalar_one_or_none()

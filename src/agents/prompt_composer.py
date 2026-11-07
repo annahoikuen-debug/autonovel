@@ -104,7 +104,7 @@ class PromptComposer:
             plot_outline = plot_data.get("detailed_blueprint", "")
             if not plot_outline:
                 plot_outline = plot_data.get("summary", "")
-            character_names = []  # We don't have character names easily, so pass empty list
+            character_names: list[Any] = []  # We don't have character names easily, so pass empty list
             try:
                 context_dict = context_retriever.retrieve_writing_context(
                     book_id=book_id,

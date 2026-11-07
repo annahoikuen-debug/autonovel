@@ -160,7 +160,7 @@ async def recalc_all_book_scores() -> dict[str, Any]:
     """全書籍の BookScore を再計算する（管理者用・並列化対応）"""
     import asyncio
 
-    from sqlalchemy import delete, select
+    from sqlalchemy import Result, delete, select
 
     from src.agents.orchestrator import AgentContext
     from src.backend.database.core import get_db_manager
@@ -175,12 +175,12 @@ async def recalc_all_book_scores() -> dict[str, Any]:
     try:
         db_manager = get_db_manager()
         async with db_manager.get_session() as session:
-            books_result = await session.execute(select(BookModel.id))
+            books_result: Result[Any] = await session.execute(select(BookModel.id))
             book_ids = [row[0] for row in books_result.fetchall()]
 
             targets: list[tuple[int, int]] = []
             for book_id in book_ids:
-                chapters_result = await session.execute(
+                chapters_result: Result[Any] = await session.execute(
                     select(ChapterModel.ep_num).where(ChapterModel.book_id == book_id)
                 )
                 for row in chapters_result.fetchall():

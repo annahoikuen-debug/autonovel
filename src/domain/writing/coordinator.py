@@ -184,8 +184,8 @@ class WritingCoordinator:
                     break  # スコア達成
 
                 # 再生成必要
-                low_dims = score_result.get("low_dimensions", [])
-                actions = score_result.get("regeneration_actions", [])
+                low_dims: list[dict[str, Any]] = score_result.get("low_dimensions", [])
+                actions: list[dict[str, Any]] = score_result.get("regeneration_actions", [])
                 if reporter:
                     reporter.report(
                         f"Ep.{ep}: BookScore {score_result['overall_score']:.1f} 閾値未満、"

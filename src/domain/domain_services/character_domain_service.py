@@ -123,7 +123,7 @@ class CharacterConsistencyChecker:
 
         # Check for duplicate roles in same novel
         all_chars = await self._char_repo.list_by_novel(novel_id)
-        role_counts = defaultdict(int)
+        role_counts: dict[str, int] = defaultdict(int)
         for c in all_chars:
             role_counts[c.role] += 1
 

@@ -4,9 +4,9 @@ from __future__ import annotations
 database/repo_branch.py - ブランチ(Branches)データ操作用のリポジトリMixin
 """
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import select, update
+from sqlalchemy import Result, select, update
 
 from src.infrastructure.database.models import Book, Branch, BranchPlaySession, Chapter, Plot
 
@@ -104,7 +104,7 @@ class BranchRepository(BaseRepository):
 
     async def load_branch_graph(self, branch_id: int) -> dict | None:
         """IF グラフをブランチから読み出し."""
-        result = await self.session.execute(select(Branch.graph_json).where(Branch.id == branch_id))
+        result: Result[Any] = await self.session.execute(select(Branch.graph_json).where(Branch.id == branch_id))
         return result.scalar_one_or_none()
 
     # ------------------------------------------------------------------
@@ -191,4 +191,4 @@ class BranchRepository(BaseRepository):
                 version=expected_version + 1,
             )
         )
-        return (result.rowcount or 0) > 0
+        return (result.rowcount or 0) > 0  # type: ignore[attr-defined]

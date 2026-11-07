@@ -12,10 +12,7 @@ import time
 from typing import Any
 
 from src.agents.audit_agent.config import (
-    DEFAULT_ENABLE_AUDIT_LEGACY_CORE,
-    DEFAULT_ENABLE_AUDIT_ADVISORY_STRICT_GUARD,
     is_audit_legacy_core_enabled,
-    is_advisory_strict_guard_enabled,
     is_async_polish_enabled,
     is_local_patch_enabled,
     is_repair_budget_enabled,
@@ -25,7 +22,6 @@ from src.agents.audit_agent.config import (
 from src.agents.audit_agent.criteria import (
     CORE_AUDIT_CRITERIA,
     UNIFIED_AUDIT_CRITERION,
-    AUDIT_CRITERIA,
     AuditCriterion,
 )
 from src.agents.audit_agent.gate import evaluate_gate as _evaluate_gate

@@ -18,7 +18,7 @@ def run_with_reruns(test_path, reruns=3, timeout_per_run=60):
         except subprocess.TimeoutExpired:
             passed = False
             result = None
-        except Exception:
+        except Exception as e:
             passed = False
             result = None
             # For other exceptions, we treat as failed

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 from sqlalchemy.orm import Session
 import json
 import logging
@@ -68,7 +68,7 @@ def _row_to_episode_result(row) -> EpisodeResult:
     # We'll set defaults: audit_passed = True if audit_score >= 60, rewrite_count = 0, spice_elements = [], needs_human_review = False
     audit_passed = audit_score >= 60.0
     rewrite_count = 0
-    spice_elements = []
+    spice_elements: list[Any] = []
     needs_human_review = False
 
     return EpisodeResult(

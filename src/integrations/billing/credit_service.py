@@ -1,7 +1,7 @@
 import inspect
 import logging
-from typing import Optional
-from sqlalchemy import select, update
+from typing import Optional, Any
+from sqlalchemy import Select, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.backend.database.models_billing import CreditTransaction
 from src.backend.database.models import User
@@ -23,7 +23,7 @@ class CreditService:
 
     async def get_balance(self, user_id: int) -> int:
         """ユーザーの現在のクレジット残高を取得する (users.credits を絶対マスターとする)。"""
-        query = select(User.credits).where(User.id == user_id)
+        query: Select[Any] = select(User.credits).where(User.id == user_id)
         result = await self.db.execute(query)
         balance = result.scalar_one_or_none()
         if balance is None:
@@ -49,7 +49,7 @@ class CreditService:
             .values(credits=User.credits + amount)
         )
         result = await self.db.execute(stmt)
-        if result.rowcount == 0:
+        if result.rowcount == 0:  # type: ignore[attr-defined]
             raise ValueError(f"ユーザーが見つかりません: {user_id}")
 
         new_balance = await self.get_balance(user_id)
@@ -98,7 +98,7 @@ class CreditService:
         )
         result = await self.db.execute(stmt)
 
-        if result.rowcount == 0:
+        if result.rowcount == 0:  # type: ignore[attr-defined]
             # ユーザー不在か残高不足かを判定
             user_exists = (
                 await self.db.execute(select(User.id).where(User.id == user_id))

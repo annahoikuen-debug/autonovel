@@ -124,7 +124,7 @@ def process_footnotes(text: str, platform: str) -> str:
 
 def detect_unsupported_elements(text: str, platform: str) -> List[str]:
     """サポートされていない要素を検出して警告リストを返す"""
-    warnings = []
+    warnings: list[Any] = []
 
     if not text:
         return warnings

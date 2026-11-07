@@ -163,7 +163,7 @@ class _DummySpiceGuard:
 
     def __init__(self, genre: str):
         self.genre = genre
-        self.preset = {}
+        self.preset: dict[str, Any] = {}
 
     def extract_spice(self, text: str) -> list:
         return []

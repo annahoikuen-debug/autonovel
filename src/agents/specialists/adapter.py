@@ -200,7 +200,7 @@ class AuditAggregatorNode:
 
         # Retrieve suggestions and actionable diffs for lowest dimension
         suggestions = []
-        actionable_diffs = []
+        actionable_diffs: list[Any] = []
         if lowest_dim and lowest_dim in score_result.raw:
             lowest_spec_result = score_result.raw[lowest_dim]
             suggestions = lowest_spec_result.suggestions

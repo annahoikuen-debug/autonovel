@@ -177,7 +177,7 @@ class ConflictReportService:
         if not conflicts:
             return "矛盾は検出されませんでした。"
 
-        by_category = {}
+        by_category: dict[str, Any] = {}
         for c in conflicts:
             by_category[c.category] = by_category.get(c.category, 0) + 1
 

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Any
 
 from src.annotations.beat import EmotionalBeat
 from src.pipeline.emotional_residue import EmotionType
@@ -38,7 +38,7 @@ class BeatValidator:
     ) -> ValidationResult:
         """ビートリストを検証"""
         errors = []
-        warnings = []
+        warnings: list[str] = []
         dict_to_use = character_dict or self.character_dict
 
         for beat in beats:
@@ -90,7 +90,7 @@ class BeatValidator:
     def _check_duplicates(self, beats: list[EmotionalBeat], warnings: list[str]) -> None:
         """重複・矛盾チェック"""
         # キー: (episode, scene, source, target, emotion)
-        seen = {}
+        seen: dict[str, Any] = {}
 
         for beat in beats:
             key = (beat.episode, beat.scene, beat.source, beat.target, beat.emotion)
@@ -146,7 +146,7 @@ class BeatValidator:
     ) -> None:
         """異なる感情間での hidden/overt 矛盾をチェック"""
         # ペアごとにグループ化: (episode, scene, source, target) -> list[beats]
-        pairs = {}
+        pairs: dict[str, Any] = {}
         for beat in beats:
             key = (beat.episode, beat.scene, beat.source, beat.target)
             if key not in pairs:

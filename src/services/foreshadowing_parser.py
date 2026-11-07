@@ -85,7 +85,7 @@ def detect_foreshadowing_mentions(
 
 def _extract_snippets(text: str, keyword: str, max_snippets: int = 3, window: int = 40) -> list[str]:
     """キーワード周辺のスニペットを抽出"""
-    snippets = []
+    snippets: list[str] = []
     start = 0
     while len(snippets) < max_snippets:
         idx = text.find(keyword, start)

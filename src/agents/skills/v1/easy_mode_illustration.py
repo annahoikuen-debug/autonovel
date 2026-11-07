@@ -39,7 +39,7 @@ class EasyModeIllustrationSkill(SkillAgent):
 
             # 簡易版: イラスト生成をスキップ（空リスト返却）
             # 本格的な実装が必要な場合は IllustrationAgent を呼び出す
-            illustrations = []
+            illustrations: list[Any] = []
 
             return AgentResult(
                 next_agent=AgentName.MARKETING,

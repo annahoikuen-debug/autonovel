@@ -7,6 +7,7 @@ import logging
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, AsyncIterator
 
+from sqlalchemy import Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if TYPE_CHECKING:
@@ -427,13 +428,13 @@ class SocialRepository:
         deleted_total = 0
         async with self.session_scope() as session:
             # 当該作品の関係性を取得
-            rel_stmt = select(CharacterRelationship.id).where(CharacterRelationship.book_id == book_id)
+            rel_stmt: Select[Any] = select(CharacterRelationship.id).where(CharacterRelationship.book_id == book_id)
             rel_res = await session.execute(rel_stmt)
             rel_ids = rel_res.scalars().all()
 
             for rid in rel_ids:
                 # 当該関係性の最新 keep_latest_per_pair 件のIDを取得
-                keep_stmt = (
+                keep_stmt: Select[Any] = (
                     select(RelationshipHistory.id)
                     .where(RelationshipHistory.relationship_id == rid)
                     .order_by(RelationshipHistory.episode_num.desc(), RelationshipHistory.id.desc())

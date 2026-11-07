@@ -1,7 +1,15 @@
-"""静的解析の「劣化のみ検出」ratchet。
+"""静的解析の「劣化のみ検出」ratchet + 期限付きバーンダウン。
 
 ベースライン JSON に記録された件数を超えたら fail する。
-ベースラインを下げることで改善を追えるが、
+加えて `policy == "burn-down"` の場合、`targets` に定義した
+期限付きマイルストーン（例: mypy 半減を 2026-11-30 まで）を強制する:
+
+* 現在値 > baseline 　　　　　　 → fail（悪化検出）
+* 期限切れ milestone があり、
+  現在値 > target 　　　　　　　 → fail（バーンダウン未達）
+* 現在値 < baseline 　　　　　　 → baseline を自動的に下げる（ratchet）
+* baseline < 期限切れ target の値 → baseline を target まで下げる（強制改善）
+
 「全エラー 0 化」を目的とはしない (PLAN_H1 §9 で対象外と明記)。
 
 対象:
@@ -23,6 +31,7 @@ import json
 import re
 import subprocess
 import sys
+from datetime import date, datetime
 from pathlib import Path
 
 BASELINE = Path("config/ci_lint_baseline.json")
@@ -94,15 +103,38 @@ def run_format() -> int:
 RUNNERS = {"ruff": run_ruff, "mypy": run_mypy, "format": run_format}
 
 
-def _load_baseline() -> dict[str, int]:
+def _load_baseline() -> dict[str, object]:
     if not BASELINE.exists():
         return {}
     return json.loads(BASELINE.read_text(encoding="utf-8"))
 
 
-def _save_baseline(data: dict[str, int]) -> None:
+def _save_baseline(data: dict[str, object]) -> None:
     BASELINE.parent.mkdir(parents=True, exist_ok=True)
-    BASELINE.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+    BASELINE.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def _expired_targets(data: dict[str, object], tool: str) -> list[dict[str, object]]:
+    """当該 tool のメトリクスに対し、期限が過ぎたバーンダウン target を返す。"""
+    if data.get("policy") != "burn-down":
+        return []
+    key = BASELINE_KEYS[tool]
+    today = date.today()
+    expired: list[dict[str, object]] = []
+    for t in data.get("targets", []) or []:
+        if not isinstance(t, dict):
+            continue
+        if t.get("metric") != key:
+            continue
+        try:
+            due = date.fromisoformat(str(t["by"]))
+        except (KeyError, ValueError):
+            continue
+        if due < today:
+            expired.append(t)
+    return expired
 
 
 def check_tool(tool: str, *, update: bool) -> int:
@@ -123,8 +155,30 @@ def check_tool(tool: str, *, update: bool) -> int:
         print(f"{tool}: baseline was missing; recorded {actual}")
         return 0
 
-    base = int(data[key])
-    print(f"{tool}: actual={actual} baseline={base}")
+    base = int(data[key])  # type: ignore[arg-type]
+    status = f"{tool}: actual={actual} baseline={base}"
+
+    # --- バーンダウン target 強制 ---
+    forced_floor = 0
+    for t in _expired_targets(data, tool):
+        target = int(t["target"])
+        forced_floor = max(forced_floor, target)
+        if actual > target:
+            print(f"FAIL: {status} / 期限切れマイルストーン '{t['milestone']}' 未達 "
+                  f"(target={target}, by={t['by']})。"
+                  " 改善するか、期日の延長を baseline の targets で行うこと。",
+                  file=sys.stderr)
+            return 1
+        status += f" target'{t['milestone']}'=達成({target})"
+
+    # baseline が期限切れ target より緩い場合、target まで強制的に下げる
+    if forced_floor > base:
+        data[key] = forced_floor
+        _save_baseline(data)
+        print(f"{status} / baseline を期限切れ target まで強制引き下げ: {base} -> {forced_floor}")
+        return 0
+
+    print(status)
     if actual > base:
         print(
             f"FAIL: {tool} の件数がベースラインより {actual - base} 件増加した。"

@@ -112,7 +112,7 @@ class NetworkXGraphStore(GraphKnowledgeStore):
                 properties={k: v for k, v in data.items() if k not in ("label", "name")},
             ))
 
-        edges = []
+        edges: list[Any] = []
         for u, v, k, data in subgraph.edges(keys=True, data=True):
             if rel_types and data.get("relation_type", "").upper() not in rel_types:
                 continue

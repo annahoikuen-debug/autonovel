@@ -10,7 +10,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import select, Result
 
 from src.backend.auth import get_current_user
 from src.backend.database.models import User
@@ -113,7 +113,7 @@ async def apply_hook_fix(
         # 照合にも book_id を入れておかないと、branch_id を共有する他作品が存在する
         # だけで scalar_one_or_none() が MultipleResultsFound になり 500 になる。
         if uow.session is not None:
-            owner_check = await uow.session.execute(
+            owner_check: Result[Any] = await uow.session.execute(
                 select(Chapter.id)
                 .where(Chapter.book_id == book_id)
                 .where(Chapter.branch_id == branch_id)

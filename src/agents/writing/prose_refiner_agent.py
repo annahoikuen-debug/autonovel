@@ -1,6 +1,6 @@
 from __future__ import annotations
 import time
-from typing import Optional
+from typing import Optional, Any
 from src.models.prose_refinement import ProseRefineResult, RefinementDetail
 from src.engine.prose.few_shot_selector import FewShotSelector
 from src.llm.service import LLMService
@@ -204,7 +204,7 @@ class ProseRefinerAgent:
         refined_text: str
     ) -> list[RefinementDetail]:
         """元テキストと推敲テキストから修正箇所を抽出"""
-        modifications = []
+        modifications: list[Any] = []
 
         # 簡易的な差分検出（実際の実装ではdifflibや専門のライブラリを使用）
         if original_text == refined_text:

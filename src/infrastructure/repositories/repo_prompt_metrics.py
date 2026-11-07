@@ -125,4 +125,4 @@ class PromptMetricsRepository(BaseRepository):
 
         stmt = delete(PromptUsageLog).where(PromptUsageLog.timestamp < cutoff_date)
         result = await self.session.execute(stmt)
-        return result.rowcount
+        return result.rowcount  # type: ignore[attr-defined]

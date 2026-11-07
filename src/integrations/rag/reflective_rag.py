@@ -428,10 +428,10 @@ class ReflectiveRAGService:
         current_query = query
         refined_queries = [query]
         all_history = []
-        initial_candidates = []
+        initial_candidates: list[Any] = []
         initial_count = 0
-        scored = []
-        filtered = []
+        scored: list[Any] = []
+        filtered: list[Any] = []
         final_docs = []
         converged = False
         iteration = 0

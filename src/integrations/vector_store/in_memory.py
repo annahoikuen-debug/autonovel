@@ -312,7 +312,7 @@ class InMemoryFallbackStore(BaseVectorStore):
 
         visited = set([entity])
         frontier = [(entity, 0)]
-        results = []
+        results: list[Any] = []
 
         while frontier and len(results) < limit:
             node, depth = frontier.pop(0)

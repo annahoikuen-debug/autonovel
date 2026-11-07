@@ -181,7 +181,7 @@ def chromadb_container():
 
 
 @pytest.fixture
-def chromadb_client(chadb_container):
+def chromadb_client(chromadb_container):
     """ChromaDB クライアントフィクスチャ (テストごとにインスタンスを提供)."""
     # Wait a bit more for ChromaDB to fully initialize
     time.sleep(2)
@@ -195,8 +195,8 @@ def chromadb_client(chadb_container):
         yield None
         return
 
-    chadb_container.get_container_host_ip()
-    chadb_container.get_exposed_port(8000)
+    chadb_host = chromadb_container.get_container_host_ip()
+    chadb_port = chromadb_container.get_exposed_port(8000)
 
     # Create ChromaDB client
     client = chromadb.HttpClient(host=chadb_host, port=int(chadb_port))

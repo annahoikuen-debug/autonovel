@@ -900,7 +900,7 @@ class TextFormatter:
         force_break_at_period = kanji_rate > 33
 
         lines = [line.strip() for line in text.split("\n")]
-        new_lines = []
+        new_lines: list[str] = []
         narrative_cnt = 0
 
         for line in lines:

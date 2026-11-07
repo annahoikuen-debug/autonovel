@@ -34,7 +34,7 @@ class StateGuard:
             ValidationResult: 検証結果
         """
         errors = []
-        warnings = []
+        warnings: list[str] = []
 
         if project_ctx is None:
             errors.append("プロジェクトコンテキストがNoneです")
@@ -132,7 +132,7 @@ class StateGuard:
             ValidationResult: 検証結果
         """
         errors = []
-        warnings = []
+        warnings: list[str] = []
 
         if not ctx:
             errors.append("執筆コンテキストが空です")

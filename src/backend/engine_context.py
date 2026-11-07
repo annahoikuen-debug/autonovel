@@ -192,8 +192,8 @@ class ContextManager:
         all_past = await self.repo.get_chapters_before(branch_id, end_ep, book_id=book_id)
         recent = all_past[:3]
         cumulative_summary = ""
-        threads = []
-        char_states = {}
+        threads: list[Any] = []
+        char_states: dict[str, Any] = {}
         if all_past:
             try:
                 for chap in all_past[:10]:

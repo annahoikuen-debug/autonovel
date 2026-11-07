@@ -243,6 +243,14 @@ show_error_codes = true
 # チェック対象からも外して CI（クリーンチェックアウト）とローカルの件数を一致させる。
 exclude = ["debug_.*\\.py$"]
 
+# NOTE: ortools 9.15 は py.typed を持つが CpModel のメソッド (Add 等) を
+# インスタンス生成時に動的束縛するため、静的解析では属性が存在しないと
+# 誤検出される（実行時は hasattr(m, "Add") == True）。型を Any にして
+# 誤検出を抑制する（CpModel.Add 等の 23 件がこれに該当）。
+[[tool.mypy.overrides]]
+module = ["ortools.*"]
+follow_imports = "skip"
+
 [tool.ruff]
 line-length = 120
 target-version = "py312"

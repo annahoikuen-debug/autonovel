@@ -546,7 +546,7 @@ def search_neighbors(
     if not settings.ENABLE_GRAPHRAG or not settings.DATABASE_URL.startswith("postgresql"):
         return {"node_name": request.node_name, "neighbors": [], "count": 0}
 
-    neighbors = []
+    neighbors: list[Any] = []
 
     return {
         "node_name": request.node_name,

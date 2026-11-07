@@ -15,6 +15,10 @@ class IPlotRepository(Protocol):
         """Get plot by novel ID."""
         ...
 
+    async def get_by_id(self, plot_id: PlotId) -> Optional[Plot]:
+        """Get plot by its own ID."""
+        ...
+
     async def save(self, plot: Plot) -> Plot:
         """Save plot (insert or update)."""
         ...
