@@ -191,7 +191,9 @@ class TestPlotIntegrityMonitor:
     @pytest.mark.asyncio
     async def test_check_integrity_with_mock_extraction(self, monitor, sample_blueprint, sample_content):
         """モック抽出サービスでの整合性チェック"""
-        with patch("src.agents.audit.extraction_service") as mock_extraction:
+        # NOTE: 実装は src.agents.audit.plot_integrity 側で extraction_service を
+        # 束縛しているため、そちらをパッチする（shim の名前空間をパッチしても効かない）
+        with patch("src.agents.audit.plot_integrity.extraction_service") as mock_extraction:
             # Blueprint側の抽出結果
             bp_entities = [
                 Entity(name="アルス", type="Character", description="主人公", properties={"is_alive": True}),
