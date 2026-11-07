@@ -94,8 +94,11 @@ class PlanStep(WorkflowStep):
             ctx.book_id = book_id
             ctx.title = bible.title
 
-            # 易パラメータ保存 (可視化・遷移用)
+            # 易パラメータ保存 (可視化・遷移用)。
+            # NOTE: 前段（テスト・API 呼び出し側）で設定された官能パラメータ
+            # (enable_erotic / erotic_intensity 等) を破壊しないよう既存値をマージする。
             ctx.easy_parameters = {
+                **(ctx.easy_parameters or {}),
                 "genre": ctx.genre,
                 "archetype": ctx.archetype_key,
                 "style_key": get_style_key(preset),
