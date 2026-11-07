@@ -1,6 +1,14 @@
 """後方互換 shim: 実体は src/publishing/manga/ に移設済み。"""
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.services.manga.__init__ is deprecated; use src.publishing.manga instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import importlib
 import sys
 

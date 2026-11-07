@@ -6,8 +6,16 @@ config/settings.py — 設定統一プロキシレイヤー (非推奨互換モ�
     一元管理されています。新規コードでは `from src.backend.config import settings` を
     使用してください。
 """
-
 from __future__ import annotations
+
+
+import warnings
+
+warnings.warn(
+    "config.settings is deprecated; use src.backend.config.settings instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 import logging
 from functools import lru_cache

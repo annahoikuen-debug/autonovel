@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.models.prompt_version is deprecated; use docs/MOVEMENT_MAPPING.md (移設先一覧) instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 from typing import Any
 
 from pydantic import BaseModel

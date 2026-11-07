@@ -4,8 +4,16 @@
 プライベート属性（_request 等）も含めて全属性をリダイレクトする。
 patch() でのモック置き換えにも対応するため __setattr__ も実装する。
 """
-
 from __future__ import annotations
+
+
+import warnings
+
+warnings.warn(
+    "src.infrastructure.api.api_client is deprecated; use src.infrastructure.external.api_client.py instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 import importlib
 import sys

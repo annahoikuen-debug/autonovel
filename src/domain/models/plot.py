@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.domain.models.plot is deprecated; use docs/MOVEMENT_MAPPING.md (移設先一覧) instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import json
 from typing import Any
 

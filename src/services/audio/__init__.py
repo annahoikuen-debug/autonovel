@@ -1,6 +1,14 @@
 """後方互換 shim: 実体は src/integrations/audio/ に移設済み。"""
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.services.audio.__init__ is deprecated; use src.integrations.audio instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import importlib
 import sys
 

@@ -54,7 +54,7 @@ class UltimateHegemonyEngine(Orchestrator):
         **legacy: Any,
     ) -> None:
         warnings.warn(
-            "UltimateHegemonyEngine is deprecated. Use OrchestratorEngineAdapter or Orchestrator directly.",
+    "src.backend.engine is deprecated; use llm instead",
             DeprecationWarning,
             stacklevel=2,
         )

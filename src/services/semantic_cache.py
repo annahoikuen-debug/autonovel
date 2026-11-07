@@ -1,6 +1,14 @@
 """後方互換 shim: 実体は src/integrations/semantic_cache.py に移設済み。"""
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.services.semantic_cache is deprecated; use src.integrations.semantic_cache.py instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import importlib
 import sys
 

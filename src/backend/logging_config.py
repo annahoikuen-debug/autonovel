@@ -5,8 +5,16 @@ TRACK / F3 ポート化: 正規レイヤー（infrastructure）へ移設し、�
 テストが参照するプライベート名（``_ContextFilter`` 等）も PEP 562 の
 モジュール ``__getattr__`` で引き続き解決できる。
 """
-
 from __future__ import annotations
+
+
+import warnings
+
+warnings.warn(
+    "src.backend.logging_config is deprecated; use src.infrastructure.config.logging_config instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 from src.infrastructure.logging_config import *  # noqa: F403
 from src.infrastructure.logging_config import (  # noqa: F401

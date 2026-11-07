@@ -1,6 +1,14 @@
 """後方互換 shim: 実体は src/integrations/rag/ に移設済み。"""
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.services.rag.__init__ is deprecated; use src.integrations.rag instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import importlib
 import sys
 

@@ -29,6 +29,14 @@ src/core/llm — LLM 統合インターフェース（公式エントリポイ�
 """
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.core.llm.__init__ is deprecated; use docs/MOVEMENT_MAPPING.md (移設先一覧) instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 from typing import TYPE_CHECKING, Any
 
 # --------------------------------------------------------------------------- #

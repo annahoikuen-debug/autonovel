@@ -1,6 +1,14 @@
 """後方互換 shim: 実体は src/engine/context_compression/ に移設済み。"""
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.services.context_compression.__init__ is deprecated; use src.engine.context_compression instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import importlib
 import sys
 

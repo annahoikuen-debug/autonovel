@@ -4,8 +4,16 @@
 サブモジュール（factory, gemini_adapter, mock_adapter 等）への
 直接参照も PEP 562 の __getattr__ で新パスにリダイレクトする。
 """
-
 from __future__ import annotations
+
+
+import warnings
+
+warnings.warn(
+    "src.services.llm.__init__ is deprecated; use src.llm.adapters instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 
 import importlib
 import sys

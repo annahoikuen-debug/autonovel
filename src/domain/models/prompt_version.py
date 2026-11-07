@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.domain.models.prompt_version is deprecated; use docs/MOVEMENT_MAPPING.md (移設先一覧) instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 from datetime import datetime
 from typing import Any
 

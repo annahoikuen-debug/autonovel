@@ -10,7 +10,7 @@ from dependency_injector import containers
 from src.core.container import AppContainer as _AppContainer
 
 warnings.warn(
-    "config.container is deprecated. Please use src.core.container.AppContainer instead.",
+    "config.container is deprecated; use src.core.container.AppContainer instead",
     DeprecationWarning,
     stacklevel=2,
 )

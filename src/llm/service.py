@@ -1,10 +1,18 @@
+from __future__ import annotations
+
+import warnings
+
+warnings.warn(
+    "src.llm.service is deprecated; use docs/MOVEMENT_MAPPING.md (移設先一覧) instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 # services/llm_service.py
 """LLM 統合サービス (後方互換ラッパー)。
 
 src.services.llm.factory.get_llm_adapter への委譲を提供する。
 3レイヤーモデルルータによる用途別最適化も兼ねる。
 """
-from __future__ import annotations
 
 import logging
 from typing import Any

@@ -1,6 +1,14 @@
 """後方互換 shim: 実体は src/engine/prose/ に移設済み。"""
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.services.prose.__init__ is deprecated; use src.engine.prose instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import importlib
 import sys
 

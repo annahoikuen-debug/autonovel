@@ -1,6 +1,14 @@
 """後方互換 shim: 実体は src/engine/anti_ai/ に移設済み。"""
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.services.anti_ai.__init__ is deprecated; use src.engine.anti_ai instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import importlib
 import sys
 

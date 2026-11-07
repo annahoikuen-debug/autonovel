@@ -1,6 +1,14 @@
 """後方互換 shim: 実体は src/publishing/publishing/ に移設済み。"""
 from __future__ import annotations
 
+
+import warnings
+
+warnings.warn(
+    "src.services.publishing.__init__ is deprecated; use src.publishing.publishing instead",
+    DeprecationWarning,
+    stacklevel=2,
+)
 import importlib
 import sys
 
