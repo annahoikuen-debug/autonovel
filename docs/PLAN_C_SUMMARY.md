@@ -203,3 +203,51 @@ config/
 
 既存コードは import を変更せずに動作し続け、新規コードは正規レイヤー
 （`engine` / `publishing` / `integrations` / `llm`）を直接使う状態になった。
+
+---
+
+## 8. lint バジェットのバーンダウン転換（2026-11-08、コミット `215f1266`）
+
+評価で指摘された「mypy 1,122件を約6週間上限固定する形骸化」を解消した。
+
+### 仕組み（config/ci_lint_baseline.json + scripts/ci_lint_ratchet.py）
+
+| ルール | 挙動 |
+|--------|------|
+| 現在値 > baseline | fail（悪化検出・従来どおり） |
+| 現在値 < baseline | baseline を自動的に下げる（ratchet） |
+| 期限切れマイルストーン未達 | **fail**（新規：期限付きバーンダウン強制） |
+| baseline が期限切れ target より緩い | target まで強制引き下げ |
+
+### マイルストーン
+
+| milestone | metric | target | 期限 |
+|-----------|--------|--------|------|
+| mypy-half | mypy_errors | 567 | 2026-11-30 |
+| mypy-quarter | mypy_errors | 284 | 2026-12-31 |
+
+### 第1弾の成果（1,134 → 952、-182件）
+
+- ortools の mypy override（CpModel 動的束縛の誤検出 23件）
+- `IPlotRepository.get_by_id` / `IWorldBibleRepository` novel-scoped API 追加（Protocol 不備 50件+）
+- `verify_book_ownership` が AsyncSession を受けられる拡張（**呼び出し側セッションが無視され本番 DB を見る実バグ修正**、11件）
+- var-annotated 85件・rowcount 9件・None ガード等
+
+### 同時解消
+
+- **format 867 → 0**（ruff format 一括実行、759件の未整形負債消滅）
+- ruff 90 → 85（chromadb fixture の未定義変数等は実バグ修正）
+
+### 残山（mypy-half 達成のための計画）
+
+| 残山 | 件数 | 解消計画 |
+|------|------|---------|
+| Column 系（assignment/arg-type/return-value） | 約190 | `Mapped[T] = Column(...)` 注釈付与（runtime 不変・機械変換可、要テスト検証） |
+| union-attr | 95 | Optional ガード挿入（None 時の契約を個別判断） |
+| arg-type / attr-defined | 250 / 170 | 個別修正（実バグ混在のため慎重に） |
+
+### 注意
+
+- 並行で進行中の巨大ファイル分割（audit_agent / book_score パッケージ化）が
+  `tests/regression/test_t6_plan_completion.py` の S7 完了条件を一時的に NG にしている。
+  分割完了後に再確認すること。
