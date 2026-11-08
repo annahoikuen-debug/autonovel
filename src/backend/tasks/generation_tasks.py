@@ -407,27 +407,29 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
         credit_service = None
         credits_deducted = False
     else:
-        credit_session = database.SessionLocal()
         try:
             user_id = _get_user_id_from_book_id(book_id)
             # テキスト執筆クレジットコスト: COST_PER_EPISODE (1クレジット)
             credit_cost = CreditService.COST_PER_EPISODE
-            # 新しいDBセッションでCreditServiceを初期化
-            credit_service = CreditService(credit_session)
             # クレジットを仮押さえ（即時引き落とし）
             # NOTE: deduct_credits は async のため、Huey 同期ワーカー内で
-            # 専用イベントループを立てて実行する
+            # 専用イベントループを立てて実行する。
+            # CreditService は AsyncSession を必須とするため、非同期セッションを
+            # 生成して渡す（同期 SessionLocal を渡すと await CursorResult で TypeError になる）。
             import asyncio as _asyncio
 
-            _asyncio.run(
-                credit_service.deduct_credits(
-                    user_id=user_id,
-                    amount=credit_cost,
-                    transaction_type="consumption",
-                    description="Chapter generation (easy mode) credit hold",
-                    task_id=str(task_id) if task_id else None,
-                )
-            )
+            async def _deduct():
+                async with database.get_db_manager().get_session() as session:
+                    credit_service = CreditService(session)
+                    await credit_service.deduct_credits(
+                        user_id=user_id,
+                        amount=credit_cost,
+                        transaction_type="consumption",
+                        description="Chapter generation (easy mode) credit hold",
+                        task_id=str(task_id) if task_id else None,
+                    )
+
+            _asyncio.run(_deduct())
             credits_deducted = True
         except Exception as e:
             logger.error(f"Failed to deduct credits for book_id {book_id}: {e}")
@@ -435,9 +437,6 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
             if task_id:
                 _update_task_in_db(str(task_id), "failed")
             return {"error": f"Credit deduction failed: {str(e)}", "text": "", "time": 0}
-        finally:
-            # セッションを確実にクローズ
-            credit_session.close()
 
     try:
         result = _run_async(_generate(payload))
@@ -497,30 +496,32 @@ def generate_chapter_orchestrated_task(payload: dict[str, Any]) -> dict[str, Any
         credit_service = None
         credits_deducted = False
     else:
-        credit_session = database.SessionLocal()
         try:
             user_id = _get_user_id_from_book_id(book_id)
             # テキスト執筆クレジットコスト: COST_PER_EPISODE (1クレジット)
             credit_cost = CreditService.COST_PER_EPISODE
-            # 新しいDBセッションでCreditServiceを初期化
-            credit_service = CreditService(credit_session)
-            # クレジットを仮押さえ（即時引き落とし）
-            credit_service.deduct_credits(
-                user_id=user_id,
-                amount=credit_cost,
-                transaction_type="consumption",
-                description="Chapter generation (orchestrated mode) credit hold",
-                task_id=str(task_id) if task_id else None,
-            )
+            # CreditService は AsyncSession を必須とするため、非同期セッションを
+            # 生成して渡す。
+            import asyncio as _asyncio
+
+            async def _deduct():
+                async with database.get_db_manager().get_session() as session:
+                    credit_service = CreditService(session)
+                    await credit_service.deduct_credits(
+                        user_id=user_id,
+                        amount=credit_cost,
+                        transaction_type="consumption",
+                        description="Chapter generation (orchestrated mode) credit hold",
+                        task_id=str(task_id) if task_id else None,
+                    )
+
+            _asyncio.run(_deduct())
             credits_deducted = True
         except Exception as e:
             logger.error(f"Failed to deduct credits for book_id {book_id}: {e}")
             if task_id:
                 _update_task_in_db(str(task_id), "failed")
             return {"error": f"Credit deduction failed: {str(e)}", "text": "", "time": 0}
-        finally:
-            # セッションを確実にクローズ
-            credit_session.close()
 
     try:
         result = _run_async(_generate_orchestrated(payload))

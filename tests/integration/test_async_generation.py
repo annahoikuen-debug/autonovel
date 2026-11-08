@@ -72,6 +72,12 @@ def test_generation_task_saves_to_specified_book_id(real_db_manager, monkeypatch
 
     # 指定した book_id の本を事前に作成しておく
     specified_book_id = 999
+    # クレジット控除で user_id を参照するため、所有者ユーザーを先に作成
+    from src.backend.database.models import User
+    owner = User(id=1, email="test_owner@example.com", hashed_password="dummy_hash", display_name="テストオーナー", role="author", status="active")
+    repo.session.add(owner)
+    repo._safe_commit()
+
     book = Book(
         id=specified_book_id,
         title="元のタイトル",
@@ -79,6 +85,7 @@ def test_generation_task_saves_to_specified_book_id(real_db_manager, monkeypatch
         concept="元のコンセプト",
         synopsis="元のあらすじ",
         target_eps=10,
+        user_id=1,
     )
     repo.session.add(book)
     repo._safe_commit()
@@ -90,7 +97,7 @@ def test_generation_task_saves_to_specified_book_id(real_db_manager, monkeypatch
 
     # LLM 未実装のため、成功ルートを強制するダミーに差し替え
     async def _fake_generate(payload):  # type: ignore[no-untyped-def]
-        return {"text": "生成された章のテキスト", "time": 10}
+        return {"output": "生成された章のテキスト", "text": "生成された章のテキスト", "time": 10}
 
     monkeypatch.setattr(generation_tasks, "_generate", _fake_generate)
 
@@ -171,7 +178,7 @@ def test_generation_task_creates_new_book_when_book_id_not_provided(real_db_mana
 
     # LLM 未実装のため、成功ルートを強制するダミーに差し替え
     async def _fake_generate(payload):  # type: ignore[no-untyped-def]
-        return {"text": "生成された章のテキスト", "time": 10}
+        return {"output": "生成された章のテキスト", "text": "生成された章のテキスト", "time": 10}
 
     monkeypatch.setattr(generation_tasks, "_generate", _fake_generate)
 
