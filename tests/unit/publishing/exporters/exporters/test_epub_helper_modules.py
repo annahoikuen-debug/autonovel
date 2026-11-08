@@ -30,7 +30,8 @@ class TestRubyParser:
         assert parse_ruby_to_xhtml("漢字《かんじ》") == "<ruby>漢字<rt>かんじ</rt></ruby>"
 
     def test_ruby_with_kana(self):
-        assert "<ruby>々々<rt> Prefecture</rt></ruby>" or True
+        # 以前は `assert "<ruby>..." or True`（関数を呼んでおらず常に真）
+        assert parse_ruby_to_xhtml("｜こおり《ice》") == "<ruby>こおり<rt>ice</rt></ruby>"
         assert "ruby" in parse_ruby_to_xhtml("｜風景《けいこ》")
 
     def test_no_ruby(self):

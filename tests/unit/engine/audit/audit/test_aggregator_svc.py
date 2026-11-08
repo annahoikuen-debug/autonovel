@@ -102,7 +102,9 @@ def test_book_score_result_helpers():
     assert d["calibrated_overall"] == 44.0
     assert d["actionable_diffs_count"] == 1
     assert d["variance_penalty"] == 1.23
-    assert res2.to_dict()["calibrated_overall"] is None or True
+    # calibrated_overall が to_dict() に必ず含まれること（None ではなく実値）
+    # （以前は `is None or True` で常に真だった）
+    assert res2.to_dict()["calibrated_overall"] == 44.0
 
 
 # --------------------------------------------------------------------------

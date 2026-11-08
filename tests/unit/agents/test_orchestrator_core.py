@@ -418,9 +418,26 @@ async def test_dag_wrapper_success_and_failure():
 
 
 def test_register_skills_to_scheduler_noop_without_scheduler():
+    """scheduler 無し／スキル0件のとき、登録が行われず例外も出ないことを検証する。
+
+    以前は `assert True`（常に真）だったので何も検証していなかった。
+    """
     orch = Orchestrator(nodes={})
+    assert orch.dag_scheduler is None
+    orch._register_skills_to_scheduler()  # 例外が出ないこと自体が検証
+    assert orch._skill_instances == {}
+
+    # scheduler が在ってもスキルインスタンスが0件なら register_task は呼ばれない
+    mock_sched = MagicMock()
+    orch.dag_scheduler = mock_sched
     orch._register_skills_to_scheduler()
-    assert True
+    mock_sched.register_task.assert_not_called()
+
+    # スキルが1件在れば登録される（noop 分岐の対偶も検証）
+    skill = MagicMock()
+    orch._skill_instances = {"demo": skill}
+    orch._register_skills_to_scheduler()
+    mock_sched.register_task.assert_called_once_with("demo", skill.run)
 
 
 def test_build_dag_graph():

@@ -25,6 +25,15 @@ FORBIDDEN: list[tuple[str, str]] = [
     (r"^\s*expect\(1\)\.toBe\(1\)", "expect(1).toBe(1)"),
     (r"^\s*expect\(1 \+ 1\)\.toBe\(2\)", "expect(1+1).toBe(2)"),
     (r"as never\b", "as never による fixture 型無効化"),
+    # --- テスト緩和の再レビュー (2026-11-08) で追加 ---
+    # `or True` / `or 1` は常に真になるため、左辺が検証されていないのと同じ。
+    # 6件の見逃しを経てパターンを追加した。
+    (r"assert .*\bor True\b", "assert ... or True（常に真）"),
+    (r"assert .*\bor 1\s*(#.*)?$", "assert ... or 1（常に真）"),
+    # 文字列リテラルだけを assert している（関数呼び出し忘れ）
+    (r'^\s*assert\s+"[^"]*"\s*(or\s+\w+)?\s*(#.*)?$', "assert 文字列リテラルのみ（関数呼び出し忘れ）"),
+    # 両辺が同一表現の or 結合（`"x" in a or "x" in a`）
+    (r'assert\s+(?P<expr>"[^"]*"\s+in\s+\w+(?:\.\w+)*)\s+or\s+(?P=expr)', "両辺同一の or 結合"),
 ]
 
 # 正当な例外として明示的に許可するファイル（理由必須）

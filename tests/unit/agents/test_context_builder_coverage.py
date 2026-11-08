@@ -331,7 +331,11 @@ async def test_execute_with_social_manager_fallback():
                               "social_manager": social_manager})
     result = await agent.execute(ctx)
     wc = result.artifacts["writing_context"]
-    assert "動的心理関係性" in wc or True
+    # social_repo が無い場合の fallback（social_manager から直接取得）が
+    # 文脈に反映されることを検証する。以前は `or True` で常に真だった。
+    assert "動的心理関係性" in wc["char_dynamic_ctx"]
+    assert "アキ" in wc["char_dynamic_ctx"]
+    assert "信頼度=80" in wc["char_dynamic_ctx"]
 
 
 # ============================================================================

@@ -193,7 +193,9 @@ class TestNestedAccess:
 
     def test_get_from_object(self):
         gen = make_generator()
-        assert gen._get_nested_value(WorldBibleCore(), "title") == gen.repo is not None or True
+        # オブジェクト属性からドットパスで値を取得できることを検証
+        # （以前は `... == gen.repo is not None or True` で常に真だった）
+        assert gen._get_nested_value(WorldBibleCore(), "title") == "無題"
 
     def test_get_missing(self):
         gen = make_generator()

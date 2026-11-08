@@ -62,10 +62,10 @@ def test_api_schema_with_schemathesis(contract_client):
 
     # スキーマオブジェクトが正しく作成されていることを確認
     assert schema is not None
-    # スキーマオブジェクトが何らかの操作をサポートしていることを確認
-    # 具体的な属性名はバージョンによって異なる可能性があるため、
-    # 単にオブジェクトが存在し、何らかの方法でパスにアクセスできることを確認する
-    assert hasattr(schema, 'paths') or hasattr(schema, '_raw_schema') or True  # 少なくともオブジェクトは存在する
+    # schemathesis の API オブジェクトは paths を公開する（v3/v4 共通）。
+    # 以前は `or True` で常に真になっていたため検知力がゼロだった。
+    assert hasattr(schema, "paths"), f"schema.paths が無い: {type(schema).__name__}"
+    assert len(schema.paths) > 0, "OpenAPI スキーバにパスが1件も無い"
 
 
 # スキーマフィクスチャ: OpenAPI スキーマを取得し、schemathesis オブジェクトを作成

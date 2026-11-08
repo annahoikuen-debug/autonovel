@@ -465,8 +465,11 @@ class TestRegressionPrevention:
         from src.integrations.age_client import AgeClient
 
         # モジュールのドキュメントストリングに非推奨記述があることを確認
+        # （以前は or の両辺が同一式で、片方が成立すれば常に真だった）
         assert age_client_module.__doc__ is not None
-        assert "deprecated" in age_client_module.__doc__.lower() or "deprecated" in age_client_module.__doc__.lower()
+        assert "deprecated" in age_client_module.__doc__.lower()
+        # 移行先がドキュメントに明記されていること
+        assert "relational memory" in age_client_module.__doc__.lower()
 
         # AgeClient クラスのドキュメントストリングにも非推奨記述があることを確認
         assert AgeClient.__doc__ is not None

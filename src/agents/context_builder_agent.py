@@ -669,6 +669,11 @@ class ContextBuilderAgent(SkillAgent):
     ) -> str:
         """キャラクターの動的状態を整形する。"""
         if not chars:
+            # キャラクターが0体でも social_context（関係性テキスト）は
+            # 受け取り済みなので捨てない。捨てると fallback取得分が
+            # 消えて、呼び出し側が「取得できたのに文脈に無い」状態になる。
+            if social_context and social_context.strip():
+                return social_context.strip()
             return ""
         lines = []
         for char in chars:

@@ -122,8 +122,15 @@ async def test_40ep_commercial_lifecycle():
     # 40話 × 400文字/話 = 16000文字（実際の小説はやや多めだが、テストなのでこの程度でOK）
     assert total_chars > 10000  # 最低限のボリュームチェック
 
-    # テスト完了
-    assert True
+    # 10. 原稿に 40 話すべてが結合されていること（以前は `assert True` で常に真）
+    for i in range(1, 41):
+        assert f"第{i}話" in manuscript, f"原稿に第{i}話が無い"
+    # 目次は 40 話ぶんの項目を持つ
+    toc_lines = [ln for ln in manuscript.splitlines() if ". 第" in ln]
+    assert len(toc_lines) == 40, f"目次が {len(toc_lines)} 話分しかない"
+    # EPUB 入力も 40 話ぶん
+    assert len(_chapters) == 40
+    assert _chapters[0]["title"] == "第1話"
 
 
 if __name__ == "__main__":

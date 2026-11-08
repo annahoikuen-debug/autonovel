@@ -324,15 +324,20 @@ class TestExportAsyncOffload:
 
         request = EbookExportRequest(book_id=1, formats=["epub", "pdf"])
 
+        # 所有権チェックは DB に book が無く NotFoundError になるため、
+        # このテストの主題（スレッドオフロード）だけを検証する。
+        # 以前は `except Exception: pass` がこの失敗を隠し、
+        # `assert ... or True` が検知力をゼロにしていた。
         with patch("src.backend.routers.export.get_multimedia_service", return_value=mock_service):
             with patch("src.backend.routers.export._check_multimedia"):
-                try:
+                with patch(
+                    "src.backend.routers.export.verify_book_ownership",
+                    new_callable=AsyncMock,
+                ):
                     await export_ebook_alias(request, service=mock_service)
-                except Exception:
-                    pass  # 実装依存のオフロード挙動は許容
 
         # service の export_ebook が呼び出されたことのみ検証
-        assert seen_threads or True
+        assert "called" in seen_threads, "mock_service.export_ebook が呼ばれていない"
 
 
 if __name__ == "__main__":
