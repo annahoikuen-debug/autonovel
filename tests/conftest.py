@@ -136,6 +136,12 @@ def real_db_manager(monkeypatch) -> Generator[Session, None, None]:
     previous_url = os.environ.get("DATABASE_URL")
     os.environ["DATABASE_URL"] = test_url
 
+    # alembic/env.py は ALEMBIC_DATABASE_URL を set_main_option() より優先して読む。
+    # DATABASE_URL と同じテストURLを設定し、他テストの副作用（移行済みDBへの
+    # upgrade による table ... already exists）を遮断する。
+    previous_alembic_url = os.environ.get("ALEMBIC_DATABASE_URL")
+    os.environ["ALEMBIC_DATABASE_URL"] = test_url
+
     # core.py のグローバル変数も更新
     db_core.DATABASE_URL = test_url
     db_core._sync_engine = None
@@ -191,6 +197,11 @@ def real_db_manager(monkeypatch) -> Generator[Session, None, None]:
             os.environ.pop("DATABASE_URL", None)
         else:
             os.environ["DATABASE_URL"] = previous_url
+
+        if previous_alembic_url is None:
+            os.environ.pop("ALEMBIC_DATABASE_URL", None)
+        else:
+            os.environ["ALEMBIC_DATABASE_URL"] = previous_alembic_url
         try:
             if db_path.exists():
                 db_path.unlink()

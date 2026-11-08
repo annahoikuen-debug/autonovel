@@ -630,7 +630,7 @@ async def test_rag_build_context(age_session):
 # FastAPI Endpoint Tests
 # ============================================================
 
-def test_graph_api_endpoints(age_container):
+def test_graph_api_endpoints(age_container, monkeypatch):
     """FastAPI エンドポイントテスト."""
     from unittest.mock import AsyncMock
 
@@ -643,9 +643,8 @@ def test_graph_api_endpoints(age_container):
 
     # テスト用DB接続設定
     url = str(age_container.url).replace("postgresql+psycopg2://", "postgresql://")
-    import os
-    os.environ["DATABASE_URL"] = url
-    os.environ["ENABLE_GRAPHRAG"] = "true"
+    monkeypatch.setenv("DATABASE_URL", url)
+    monkeypatch.setenv("ENABLE_GRAPHRAG", "true")
 
     # アプリの再初期化が必要な場合があるため、コンテナごとに新しいクライアント
     # `/api/graph` は `Depends(get_current_user)` を持ち、book_id 単位的所有権検証も
