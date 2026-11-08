@@ -388,12 +388,20 @@ def _run_alembic_upgrade(sync_url: str) -> None:
     # alembic/env.py は `ALEMBIC_DATABASE_URL` があれば set_main_option より優先する。
     # ここを明示しないと、プロセスの DATABASE_URL と別のDBに migration を適用してしまい
     # 「アプリのDBは未移行」という状態が黙って残るため、アプリ側のURLで上書きする。
-    os.environ["ALEMBIC_DATABASE_URL"] = sync_url
+    # プロセス全体を汚染しないよう、元の値を復元する（他テストの副作用防止）。
+    previous_alembic_url = os.environ.get("ALEMBIC_DATABASE_URL")
+    try:
+        os.environ["ALEMBIC_DATABASE_URL"] = sync_url
 
-    cfg = Config(str(ini_path))
-    cfg.set_main_option("script_location", str(ROOT_DIR / "src" / "backend" / "alembic"))
-    cfg.set_main_option("sqlalchemy.url", sync_url.replace("%", "%%"))
-    command.upgrade(cfg, "head")
+        cfg = Config(str(ini_path))
+        cfg.set_main_option("script_location", str(ROOT_DIR / "src" / "backend" / "alembic"))
+        cfg.set_main_option("sqlalchemy.url", sync_url.replace("%", "%%"))
+        command.upgrade(cfg, "head")
+    finally:
+        if previous_alembic_url is None:
+            os.environ.pop("ALEMBIC_DATABASE_URL", None)
+        else:
+            os.environ["ALEMBIC_DATABASE_URL"] = previous_alembic_url
 
 
 def init_db(db_path: str = ""):

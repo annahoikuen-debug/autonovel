@@ -14,8 +14,17 @@ def test_alembic_config_loads():
     assert alembic_cfg.get_main_option("script_location") == "src/backend/alembic"
 
 
-def test_migrations_up_down(sqlite_db_url):
+def test_migrations_up_down(sqlite_db_url, monkeypatch) -> None:
     """SQLite 環境で全マイグレーションが適用・ロールバック可能"""
+    # src/backend/alembic/env.py:20 は ALEMBIC_DATABASE_URL を
+    # config.set_main_option() より優先して読む。
+    # src/backend/database/core.py:_run_alembic_upgrade がプロセス全体に
+    # ALEMBIC_DATABASE_URL を書き込むため、他のテストの副作用で本テストの
+    # URL が上書きされ「移行済みDB」に対して upgrade が走り
+    # table credit_transactions__0033 already exists になる。
+    # 本テストの URL を明示的に固定して他テストの影響を遮断する。
+    monkeypatch.setenv("ALEMBIC_DATABASE_URL", sqlite_db_url)
+
     engine = create_engine(sqlite_db_url)
     alembic_cfg = Config("alembic.ini")
     alembic_cfg.set_main_option("sqlalchemy.url", sqlite_db_url)
