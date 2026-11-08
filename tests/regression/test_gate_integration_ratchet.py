@@ -1,6 +1,6 @@
 """統合テスト失敗数ラケットの基準ファイル 構造健全性テスト.
 
-このテストは「9件の失敗」を機械が判定できる数値として固定し、
+このテストは「0件の失敗（ゲート化完了）」を機械が判定できる数値として固定し、
 以後どのステップでも失敗数が増えると即座に赤くなるための
 背骨となる。
 
@@ -39,7 +39,8 @@ def test_max_failed_is_at_least_gate_target() -> None:
 def test_known_failures_count_and_format() -> None:
     data = _load_baseline()
     failures = data["known_failures"]
-    assert len(failures) == 9, f"known_failures は9件であるべきだが {len(failures)} 件"
+    # ゲート化後は known_failures は空配列（1件も許容しない）
+    assert len(failures) == 0, f"known_failures は空配列であるべきだが {len(failures)} 件"
     for item in failures:
         assert isinstance(item, str)
         assert item.startswith("tests/"), f"'tests/' で始まらない: {item}"

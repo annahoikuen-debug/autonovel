@@ -141,8 +141,7 @@ jobs:
   #
   # 現状: 0 failed / 345 passed / 37 skipped（基準コミット 5496837a）
   # 状態: green —— tests/integration の 0 failed をブランチ保護の必須条件とする。
-  #        再び failed が1件でも出たら、このジョブを continue-on-error: true に戻すのではなく、
-  #        速やかに原因を修正する。「観測モード」への退避は禁止（docs/TEST_GATE_POLICY.md）。
+  #        再び failed が1件でも出たら、速やかに原因を修正する。「観測モード」への退避は禁止（docs/TEST_GATE_POLICY.md）。
   #
   integration:
     runs-on: ubuntu-latest
