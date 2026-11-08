@@ -231,14 +231,15 @@ class WritingCoordinator:
                     style_tag=style_tag,
                 )
 
-            # 最大リトライ後も閾値未満の場合
-            final_score = await self.calculate_book_score(book_id=book_id, chapter_number=ep, phase="writing")
-            if final_score and final_score.get("regeneration_triggered"):
-                if reporter:
-                    reporter.report(
-                        f"Ep.{ep}: 最大リトライ({max_retries})到達、スコア {final_score['overall_score']:.1f} で終了",
-                        "error",
-                    )
+            # 最大リトライ後も閾値未満の場合（リトライが実際に実行された場合のみ）
+            if effective_max_retries > 0:
+                final_score = await self.calculate_book_score(book_id=book_id, chapter_number=ep, phase="writing")
+                if final_score and final_score.get("regeneration_triggered"):
+                    if reporter:
+                        reporter.report(
+                            f"Ep.{ep}: 最大リトライ({max_retries})到達、スコア {final_score['overall_score']:.1f} で終了",
+                            "error",
+                        )
 
         return word_count
 

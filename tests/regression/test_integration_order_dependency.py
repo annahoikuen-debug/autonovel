@@ -39,7 +39,7 @@ def test_migrations_resists_aleembic_env_pollution(tmp_path, monkeypatch) -> Non
     test_url = f"sqlite:///{db_path}"
 
     # 他テストによる汚染をシミュレート（ALEMBIC_DATABASE_URL は process-wide）
-    os.environ["ALEMBIC_DATABASE_URL"] = "sqlite:///polluted_dummy.db"
+    monkeypatch.setenv("ALEMBIC_DATABASE_URL", "sqlite:///polluted_dummy.db")
 
     # test_migrations_up_down と同じ処理：monkeypatch で正しいURLに固定
     monkeypatch.setenv("ALEMBIC_DATABASE_URL", test_url)
