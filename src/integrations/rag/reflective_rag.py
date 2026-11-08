@@ -7,6 +7,7 @@ GraphRAG consistency checks.
 
 from __future__ import annotations
 
+import inspect
 import time
 from collections import Counter
 from dataclasses import dataclass, field
@@ -467,12 +468,14 @@ class ReflectiveRAGService:
                             top_k=self.initial_fetch_k,
                         )
                     else:
-                        candidates = await self.rag_service.search_similar_chunks(
+                        candidates = self.rag_service.search_similar_chunks(
                             session,
                             query=current_query,
                             limit=self.initial_fetch_k,
                             min_score=0.0,
                         )
+                        if inspect.iscoroutine(candidates):
+                            candidates = await candidates
                 except Exception as search_err:
                     import logging
 
@@ -571,7 +574,6 @@ class ReflectiveRAGService:
                         # Prepare documents for reranking
                         rerank_candidates = scored[: self.convergence_config.rerank_top_n]
                         doc_texts = [doc.content for doc, _, _, _, _ in rerank_candidates]
-                        import inspect
 
                         rerank_raw = self.rag_service.rerank_with_cross_encoder(
                             current_query, doc_texts, top_k=min(top_k * 2, len(doc_texts))
