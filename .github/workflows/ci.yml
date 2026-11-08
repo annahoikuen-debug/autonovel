@@ -136,12 +136,15 @@ jobs:
         run: pytest tests/regression/ -v --timeout=120
 
   # ==========================================================================
-  # 統合テスト（観測モード）
+  # 統合テストのゲート化（本計画: plans/PLAN_GATE_INTEGRATION_24STEPS.md）
   # ==========================================================================
-  # tests/integration は現状 54 件の既知失敗（DB レコード前提 fixture の不備等）と
-  # testcontainers 必須テストを含むため、まずは観測モード (continue-on-error) で
-  # CI に組み込み、毎回の失敗リストを可視化する。緑化は別計画で段階的に行う。
-  # 緑化完了後は continue-on-error: false に切り替えてゲート化すること。
+  #
+  # 現状: 9 failed / 336 passed / 37 skipped（基準コミット 90cc7897）
+  # 状態: 未達 —— continue-on-error: true は「観測」ではなく「未達」を意味する。
+  #        9件をゼロにするまで false に切り替えない。切り替え条件は Step 21。
+  #
+  # ★禁止事項: 失敗を「既知失敗」「観測モード」「許容範囲」等と呼び換えて
+  #   ゲートを外すこと。未達は未達と書く。
   integration-observe:
     runs-on: ubuntu-latest
     continue-on-error: true
