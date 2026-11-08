@@ -172,6 +172,19 @@ def test_generation_task_creates_new_book_when_book_id_not_provided(real_db_mana
     repo._safe_commit()
     repo._safe_refresh(existing_book)
 
+    # 既存の book_id=1 に第1話を作成しておく（生成タスクで book_id=None の新規本作成時、
+    # 既存作品が無傷であることを検証するため。content/summary は空で初期化）
+    from sqlalchemy import select as _select
+    existing_chapter = Chapter(
+        book_id=1,
+        ep_num=1,
+        title="",
+        content="",
+        summary="",
+    )
+    repo.session.add(existing_chapter)
+    repo._safe_commit()
+
     # タスクレコードを事前に作成して ID を採番
     task = repo.create_task()
     task_id = task.id
