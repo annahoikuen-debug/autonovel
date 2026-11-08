@@ -26,7 +26,7 @@ AutoNovel は、ブラウザ（React 18 + TypeScript）から FastAPI バック�
 │  Huey Task  │ ◄─────────────────────────► │  AutoWorkflowPipeline   │
 │  キュー      │  (Redisバックエンド)        │  二段階プロット展開       │
 │  (ワーカー)  │                             │  4層圧縮 + Reflective RAG│
-└─────────────┘                             │  8専門オーディター       │
+└─────────────┘                             │  二層ハイブリッド監査   │
         ▲                                   │  Blind Peer Review        │
         │                                   └────────────┬─────────────┘
         │  永続化                                         │

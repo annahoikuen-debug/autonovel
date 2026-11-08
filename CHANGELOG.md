@@ -434,16 +434,16 @@ QA 公開前監査（3サイクル）で見つかった本番阻害バグとセ�
 ### 変更
 - バージョン表記のリリースノート記録のみ（`5.1.0..5.1.1` 間に機能変更のコミットなし）
 
-## [Unreleased] - Phase 2: Blind Peer Review / Specialist Audit / Reflective RAG
+## [Unreleased] - Phase 2: 二層ハイブリッド監査拡張 / Reflective RAG
 
 ガイドライン Phase 2 (Guidelines #1, #3, #7) を実装。創造性・品質・RAG精度を大幅向上。
 
 ### 追加
 - **Blind Peer Review (Guideline #1)**: `src/services/blind_review.py` に `BlindReviewGate` 実装。3案企画ガチャ等で他案出力を参照せず独立採点可能。`EventBus.publish_blind()` で自動マスク適用。
-- **Multi-layer Specialist Audit (Guideline #3)**: 8名の専門オーディター (`src/agents/specialists/`) を並列実行。
-  - Consistency / Creativity / ReaderHook / EmotionCurve / Style / Factual / Structure / Multimodal
+- **二層ハイブリッド監査拡張 (Guideline #3)**: `UnifiedAuditor` による二層監査（第1層 静的ルール解析 0ms/0円 + 第2層 単一LLM定性評価）をベースに、ジャンル・フェーズ別重み (`config/audit_weights.yaml`) による加重集約を拡張。8名専門オーディタークラスは後方互換のため `src/agents/specialists/` に維持。
+  - Consistency / Creativity / ReaderHook / EmotionCurve / Style / Factual / Structure / Multimodal（後方互換クラス）
   - `AuditAggregator` でジャンル・フェーズ別重み (`config/audit_weights.yaml`) による加重集約
-  - `v2` audit skill (`src/agents/skills/v2/audit_skill.py`) が並列起動・再生成フォーカス設定を自動化
+  - `v2` audit skill (`src/agents/skills/v2/audit_skill.py`) が再生成フォーカス設定を自動化
 - **Reflective RAG Screening (Guideline #7)**: `src/services/reflective_rag.py` に反復クエリ精緻化ループ実装。
   - BM25 キーワード抽出 (`rank-bm25` 既存依存流用)
   - GraphRAG 文脈適合性チェック (is_forbidden 属性)
