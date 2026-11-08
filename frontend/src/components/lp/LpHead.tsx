@@ -31,7 +31,7 @@ interface LpHeadProps {
 export const LpHead: React.FC<LpHeadProps> = ({
   title = 'AutoNovel | 条件を入れたら、小説が届く AI 小説執筆プラットフォーム',
   description =
-    '企画から執筆、矛盾診断、納品まで。AI と共に創作する小説制作プラットフォーム。8 専門オーディター監査。無料で始められます。',
+    '企画から執筆、矛盾診断、納品まで。AI と共に創作する小説制作プラットフォーム。二層ハイブリッド監査。無料で始められます。',
   canonicalUrl = `${siteOrigin}/`,
   ogImage = `${siteOrigin}/ogp.svg`,
 }) => {

@@ -72,13 +72,13 @@ export const HeroSection: React.FC = () => {
               data-testid="lp-hero-subhead"
             >
               企画から執筆、矛盾診断、納品まで。AI と共に創作する小説制作プラットフォーム。<br className="hidden sm:block" />
-              8 専門オーディター監査で作品クオリティを保証します。
+              二層ハイブリッド監査で作品クオリティを保証します。
             </p>
 
             {/* 信頼バッジ */}
             <div className="flex flex-wrap gap-3" data-testid="lp-hero-badges">
               <span className="px-3 py-1.5 text-xs font-medium text-brand-textMuted bg-brand-surface border border-brand-border rounded-full">
-                8 専門オーディター監査
+                二層ハイブリッド監査
               </span>
               <span className="px-3 py-1.5 text-xs font-medium text-brand-textMuted bg-brand-surface border border-brand-border rounded-full">
                 EPUB / なろう・カクヨム対応

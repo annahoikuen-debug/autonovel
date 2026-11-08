@@ -43,7 +43,7 @@ export const PricingSection: React.FC = () => {
       credits: '300クレジット/月',
       features: [
         '無制限執筆（クレジット範囲内）',
-        '8 専門オーディター監査',
+        '二層ハイブリッド監査',
         'ZIP 納品パッケージ',
         'メールサポート',
       ],

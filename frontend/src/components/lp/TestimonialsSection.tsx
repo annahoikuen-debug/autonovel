@@ -26,7 +26,7 @@ const TESTIMONIALS: Testimonial[] = [
     genre: 'ファンタジー',
     rating: 5,
     content:
-      'プロット作成が劇的に楽になりました。8 オーディターの矛盾チェックがあるおかげで、長編でも設定のブレが気にならなくなりました。',
+      'プロット作成が劇的に楽になりました。二層ハイブリッド監査のおかげで、長編でも設定のブレが気にならなくなりました。',
     avatar: 'https://ui-avatars.com/api/?name=Sato+Kenta&background=22d3ee&color=fff',
   },
   {
