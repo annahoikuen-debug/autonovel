@@ -1,10 +1,19 @@
 # 統合テスト 9件の緑化と CI ゲート化 実装計画（全24ステップ）
 
-- **作成日**: 2026-11-08
-- **対象ブランチ**: `feature/commercial-lp-phase1`（基準コミット `4aa42338`）
+- **作成日**: 2026-11-08 ／ **最終更新**: 2026-11-08 09:22（並行セッション完了後の再測定）
+- **対象ブランチ**: `feature/commercial-lp-phase1`
+- **基準コミット**: `90cc7897`（作成時の `4aa42338` から **8コミット / 897ファイル**が進んだため全参照を更新済み）
 - **ゴール**: `tests/integration` の失敗9件をゼロにし、`.github/workflows/ci.yml` の
   `integration-observe` を `continue-on-error: false` に切り替えて**本物のゲート**にする。
   9件をゼロにできない場合は「未達」と明記し、**「観測」という言い換えを禁止**する。
+
+> **更新履歴**
+> - 09:22 並行セッションが8コミットを完了し作業ツリーがクリーン化 → 基準コミットを `90cc7897` へ更新。
+>   **失敗9件は8コミット・897ファイルの変更後も完全に同一**（9 failed / 336 passed / 37 skipped）。
+> - 09:22 グループA「バグA」を**仮説から証明へ**（`CreditService.__init__(db: AsyncSession)` 必須 ×
+>   `SessionLocal` が同期 `Session` を返す）。修正方針を確定。
+> - 09:22 全ファイルの行番号を現物に合わせて更新（後述の「行番号対照表」参照）。
+> - 09:22 既存の `tests/regression/test_collection_health_gate.py` を踏襲し、Step 6 の重複作成を廃止。
 
 ---
 
@@ -22,42 +31,65 @@
 ### 0.2 検証コマンド（全ステップ共通）
 
 ```bash
-# 統合（基準: 9 failed / 336 passed / 37 skipped, 約75〜95秒）
+# 統合（基準: 9 failed / 336 passed / 37 skipped, 約80〜95秒）
 .venv/bin/python3 -m pytest tests/integration -q --timeout=180 -p no:cacheprovider \
   -W ignore::DeprecationWarning
 
-# 単体（基準: 8075 passed）
+# 単体（基準: 8075 passed / 37 skipped / 9 xfailed / 3 xpassed, 約6分）
 .venv/bin/python3 -m pytest tests/unit -q -p no:cacheprovider
 
-# 回帰（基準: 620 passed / 8件は既知失敗）
+# 回帰（基準: 627 passed / 3 skipped / 1 xfailed / 既知失敗4件, 約5分20秒）
 .venv/bin/python3 -m pytest tests/regression -q -p no:cacheprovider
 
-# 収集エラーの有無（SyntaxError 混入の検出）
+# 収集エラーの有無（SyntaxError 混入の検出。本格的な検出は既存の
+# tests/regression/test_collection_health_gate.py が担う）
 .venv/bin/python3 -m pytest tests/integration --collect-only -q -p no:cacheprovider
 ```
 
-**判定基準**: どのステップでも「統合 failed 数が前ステップ以下」かつ
-「単体・回帰の passed 数が前ステップ以下でないこと」を満たすこと。
+**判定基準**: どのステップでも
+1. 「統合 failed 数が前ステップ以下」
+2. 「単体 passed数（8075）・回帰 passed 数（627）が前ステップ以下でないこと」
+3. 「回帰の既知失敗が4件を超えないこと」
+4. 「`--collect-only` がエラーを出さないこと」
 
-### 0.3 並行セッションとの競合回避（重要）
+の4つを**すべて**満たすこと。1つでも破れたら**そのステップを失敗として巻き戻す**。
 
-本作業開始時点の調査で、**同一作業ディレクトリで別セッションが同時作業中**であることが確認された。
+### 0.3 並行セッションとの競合（**解済み・経過の記録**）
+
+本計画の作成中、同一作業ディレクトリで別セッションが同時作業していた。
+**2026-11-08 09:22 時点でそのセッションは作業を完了し、8コミットを残して停止した。**
 
 | 時刻 | 起きたこと |
 |---|---|
 | 06:12〜06:18 | 別セッションが52ファイルへ型アノテーションを自動付与 |
 | 06:16:35 | その過程で `src/infrastructure/repositories/foreshadowing_repo.py:383` に **SyntaxError** を混入（`stmt = (` の内側に `stmt: Select[Any] = (` が入れ子になった壊れた編集） |
-| 06:18頃 | 別セッションが `git stash` で52件を退避 → `stash@{0}` に保存済み |
-| 06:16〜 | 未追跡ディレクトリ `src/agents/audit_agent/` を新設（`audit_agent.py` 1439行の分割作業と見られる） |
+| 06:18頃 | 同セッションが `git stash` で52件を退避 |
+| 07:21〜07:22 | `src/engine/audit/` パッケージを整備 |
+| 09:22 調査時 | **作業ツリー完全クリーン（変更0件）・stash 空・稼働プロセスなし**。8コミットを検出 |
 
-**本計画の遵守事項**:
+**検出した8コミット**（`4aa42338..90cc7897`、897ファイル / +12,987 / −11,321）:
 
-- `stash@{0}` と `src/agents/audit_agent/` は**別セッションの所有物**。本計画では一切触らない。
-- 作業開始前に毎回 `git status --short` と `git stash list` を確認し、
-  自分が作っていない変更が増えていたら**作業を止めてユーザーに報告**する。
-- `plans/` 以外のファイルを編集するステップ（Step 4, 9, 10, 13, 15, 18, 19, 22）は、
-  編集対象ファイルが別セッションの編集対象と重ならないことを**編集前に必ず確認**する。
-- SyntaxError 混入の再発防止として、**全ステップの完了条件に `--collect-only` 成功を含める**。
+```
+90cc7897 feat: Tier1 ratchet ベースライン生成 + verify_t6_plan を実装本体に差し替え
+dadd372a docs: lint バーンダウン機構の説明を PLAN_C_SUMMARY に追記
+215f1266 feat: lint バジェットを期限付きバーンダウンに転換 + mypy 1134→952・format 867→0
+abe2b0c2 fix: audit_agent パッケージ分割に伴う patch 先の修正
+23786bbf chore: 未コミット変更をまとめてコミット (shim 警告挿入適用結果等)
+87c1025e refactor: src/engine/book_score/service.py をパッケージ分割 (案A+B)
+cc877a83 refactor: src/agents/audit.py をパッケージ分割 (案A+B)
+be636ebe refactor: src/agents/audit_agent.py をパッケージ分割 (案A+B)
+```
+
+**本計画の遵守事項（引き続き有効）**:
+
+- **各ステップの編集前に `git status --short` を確認する。**
+  自分が作っていない変更があれば**作業を止めてユーザーに報告**する。
+- 再び並行作業が発生した場合の受け入れ条件: **基準コミットの更新と失敗リストの再測定
+  （本計画の Step 1 相当）を先に実施し、計画書を更新してから次に進む。**
+- `--collect-only` が成功することを全ステップの完了条件に含める
+  （SyntaxError 混入の再発検出。ただし**完全な検出は既存の
+  `tests/regression/test_collection_health_gate.py::test_no_collection_errors` が担う**ため、
+  Step 6 ではそれを踏襲し重複作成しない）。
 
 ### 0.4 ローカルと CI の環境差（ゲート化の最大リスク）
 
@@ -72,39 +104,108 @@
 **ローカルで緑でも CI で赤になり得る。** したがって Step 21 でゲート化の前に
 **CI 上での全件緑を実測**しない限り、`continue-on-error: false` へ切り替えない。
 
+**skip 37件の内訳（`-rs` で実測。すべて環境由来であり欠陥ではない）**:
+
+| 件数 | 理由 |
+|---|---|
+| 22 | `testcontainers / Docker daemon not available` |
+| 7 | `Docker daemon が利用できない環境` |
+| 4 | `Docker daemon が利用できない環境では testcontainers テストを実行不可` |
+| 2 | `powershell / pwsh が利用できない環境` |
+| 1 | `real launch disabled by default (use --run-real-launch)` |
+| 1 | `PostgreSQL not available` |
+
+→ **skip 数が減ったことを「改善」と称さない。** Step 24 の最終確認では
+`37 skipped` が維持されていることを確認し、変動があれば理由を特定する。
+
 ---
 
-## 1. 失敗9件の根本原因（調査完了・実測済み）
+## 1. 失敗9件の根本原因（`90cc7897` で再測定・全件同じ）
 
-基準: `4aa42338` で `pytest tests/integration` を3回実行し、**毎回同じ9件**が失敗することを確認。
+基準: `90cc7897`（作成時 `4aa42338` から**8コミット前進**）で
+`pytest tests/integration` を実行し、**以前と完全に同一の9件**が失敗することを確認
+（`9 failed / 336 passed / 37 skipped`）。**根原因は8コミットの影響を受けていない。**
 
-### グループ A: `test_async_generation`（2件）— **実装バグ**
+### 行番号対照表（`4aa42338` → `90cc7897`）
+
+| 参照先 | 旧 | **現行** | 備考 |
+|---|---|---|---|
+| `generation_tasks.py` `_update_task_in_db` 定義 | 334 | **334** | 変わらず |
+| `generation_tasks.py` `DB update failed` ログ | 379 | **385** | |
+| `generation_tasks.py` `generate_chapter_task` | 391 | **391** | 変わらず |
+| `generation_tasks.py` `if book_id is None:`（経路1） | 401 | **401** | |
+| `generation_tasks.py` `_asyncio.run(` | 415 | **422** | |
+| `generation_tasks.py` `Failed to deduct credits`（経路1） | 427 | **433** | |
+| `generation_tasks.py` `if book_id is None:`（経路2） | — | **492** | **orchestrated 版も同一バグ** |
+| `generation_tasks.py` `Failed to deduct credits`（経路2） | — | **517** | |
+| `coordinator.py` `__init__` / `book_score_calculator` | 30/38/53 | **30/38/53** | 変わらず |
+| `coordinator.py` `generate_episodes` | 116 | **116** | 変わらず |
+| `coordinator.py` `if not auto_regenerate or ...` | 151 | **148** | |
+| `coordinator.py` `should_regenerate_full_text()` | 155 | **152** | |
+| `coordinator.py` `PDCAポリシーにより全文再生成...` | 158-162 | **155** | |
+| `coordinator.py` `for retry in range(max_retries)` | 167 | **166** | |
+| `coordinator.py` `book_score_calculator.calculate` | 288 | **283** | |
+| `pdca_controller.py` `max_regenerations` / 判定 | 13 / 29-36 | **13 / 29-36** | 変わらず |
+| `alembic/env.py` `ALEMBIC_DATABASE_URL` | 20 | **20** | 変わらず |
+| `database/core.py` `os.environ[...] = sync_url` | 391 | **391** | 変わらず |
+| `database/core.py` `_SessionLocalProxy` / `SessionLocal` | — | **483-486 / 495** | **バグAの証拠（新規）** |
+| `context_builder_agent.py` `rag_context = []` | 341 | **347** | |
+| `context_builder_agent.py` `if reflective_rag is not None` | 342 | **348** | |
+| `context_builder_agent.py` `retrieve_with_reflection` | 351 | **354** | |
+| `context_builder_agent.py` `iscoroutine` | 355 | **360** | |
+| `context_builder_agent.py` `Reflective RAG retrieval failed` | 366 | **374** | |
+| `context_builder_agent.py` `Context compression failed` | 443 | **452** | |
+| `foreshadowing/service.py` `get_unresolved` | 67 | **68** | |
+| `repository.py` `update_task_status` | 285 | **290** | |
+| `credit_service.py` `__init__(self, db: AsyncSession)` | 19 | **19** | **バグAの証拠（新規）** |
+| `conftest.py` `real_db_manager` / `sqlite_db_url` | 117 / 208 | **117 / 208** | 変わらず |
+| `test_graphrag_age.py` `os.environ[...]` | 647-648 | **647-648** | 変わらず |
+| `test_migrations.py` `test_migrations_up_down` | — | **17** | |
+| `ci.yml` コメント / ジョブ / `continue-on-error` / ステップ | 139-144 / 145 / 147 / 191 | **同一** | 変わらず |
+| `unified_auditor.py` degraded 周辺 | 31 / 49 / 104-130 | **31 / 50 / 104-127** | 50 に1行ずれ |
+
+### グループ A: `test_async_generation`（2件）— **実装バグ（バグAは証明済み）**
 
 ```
-E AssertionError: assert 'pending' == 'completed'          (line 124)
-E assert None is not None                                  (line 228)
+E AssertionError: assert 'pending' == 'completed'          (test内 line 124)
+E assert None is not None                                  (test内 line 228)
 
-ERROR generation_tasks.py:427 Failed to deduct credits for book_id 999:
+ERROR generation_tasks.py:433 Failed to deduct credits for book_id 999:
      object CursorResult can't be used in 'await' expression
-ERROR generation_tasks.py:379 DB update failed for task_id=... status=failed
+ERROR generation_tasks.py:385 DB update failed for task_id=... status=failed
 ```
 
 **連鎖の構造**:
 
-1. **バグA**: `src/backend/tasks/generation_tasks.py:415` の
-   `_asyncio.run(credit_service.deduct_credits(...))` が、
-   **同期 `SessionLocal()` を生成した `CreditService` を `await` している**。
-   同期 `Session.execute()` は `CursorResult` を返すので `await` すると
-   `TypeError: object CursorResult can't be used in 'await' expression` になる。
+1. **バグA（証明済み）**: `src/backend/tasks/generation_tasks.py:422` の
+   `_asyncio.run(credit_service.deduct_credits(...))` に渡っているのは
+   `database.SessionLocal()`（L406 付近）だが、その実体は
+   - `src/backend/database/core.py:483-486` の `_SessionLocalProxy.__call__` が
+     `_get_sync_engine_and_factory()` の **同期 `sessionmaker`** を返す
+   - `src/backend/database/core.py:495` `SessionLocal = _SessionLocalProxy()`
+
+   一方 `src/integrations/billing/credit_service.py:19` は
+   **`def __init__(self, db: AsyncSession)`** — 非同期セッションが**型として必須**。
+   - つまり **同期 `Session` が `AsyncSession` の位置に渡っている**。
+   - `deduct_credits`（L72, async）が `await session.execute(...)` すると、
+     同期 `Session.execute()` の戻り値 `CursorResult` を `await` することになり
+     `TypeError: object CursorResult can't be used in 'await' expression` になる。
    → クレジット控除が失敗する。
-2. 失敗ハンドラが `_update_task_in_db(task_id, "failed")` を呼ぶが、
-3. **バグB**: それも `generation_tasks.py:379` で失敗してロールバックする。
+
+2. 失敗ハンドラが `_update_task_in_db(task_id, "failed")`（L434 付近）を呼ぶが、
+
+3. **バグB**: それも `generation_tasks.py:385` で失敗してロールバックする。
    → ステータスが更新されず、**最初のまま `pending` のまま残る**。
 
+**⚠️ 修正対象は2経路**: `generation_tasks.py` には同じ構造が **2箇所**ある。
+- **経路1**: `generate_chapter_task`（L391、`if book_id is None:` L401、`_asyncio.run` L422、ログ L433）
+- **経路2**: orchestrated 版タスク（`if book_id is None:` L492、ログ L517）
+
+  **片方だけ直すと残りが壊れる。両方直す。**
+
 **なぜ1つ目のテストは通るのか**: `test_generation_task_persists_and_cleans_up` は
-`book_id` を payload に含めないため、クレジット控除ブロック（`if book_id is None:` の else 分）
-がスキップされ、正常系に到達する。**`book_id` を渡した2つのテストだけが落ちる**という
-観測と完全に整合する。
+`book_id` を payload に含めないため、クレジット控除ブロックの else 分がスキップされ、
+正常系に到達する。**`book_id` を渡した2つのテストだけが落ちる**という観測と完全に整合する。
 
 ### グループ B: `test_book_score_feedback_loop`（2件）— **実装バグ**
 
@@ -114,7 +215,7 @@ E assert 1 == 4                       (line 131) ← writer.generate_episodes �
 ```
 
 **原因**: `src/generation/pdca_controller.py:13` の既定値 `max_regenerations: int = 0`。
-`src/domain/writing/coordinator.py:155` が
+`src/domain/writing/coordinator.py:152` が
 
 ```python
 if not self.pdca_controller.should_regenerate_full_text():
@@ -122,10 +223,23 @@ if not self.pdca_controller.should_regenerate_full_text():
 ```
 
 と先に抜けるため、**`auto_regenerate=True, max_retries=3` を明示指定しても
-再生成ループ（`coordinator.py:167` の `for retry in range(max_retries)`）に一切到達しない**。
+再生成ループ（`coordinator.py:166` の `for retry in range(max_retries)`）に一切到達しない**。
 
 → `writer.generate_episodes` は初回の1回のみ、`book_score_calculator.calculate` は0回。
 **呼び出し側の明示指定が無言で無視される**のは実装側の不備と判定する。
+
+**現行コードの該当行（`90cc7897` 時点）**:
+- `coordinator.py:148` `if not auto_regenerate or self.book_score_calculator is None:`
+- `coordinator.py:152` `if not self.pdca_controller.should_regenerate_full_text():`
+- `coordinator.py:155` `PDCAポリシーにより全文再生成ループは無効化されています`
+- `coordinator.py:166` `for retry in range(max_retries):`
+- `coordinator.py:283` `score = await self.book_score_calculator.calculate(`
+
+**パッケージ分割の影響（新規）**: `src/engine/book_score/service.py` は
+`src/engine/book_score/` パッケージに分割済み（`calculator.py` / `config.py` / `constants.py` /
+`mapping.py` / `models.py` / `service.py`）。テストは
+`from src.engine.book_score.service import BookScoreCalculator`（`test_book_score_feedback_loop.py:10`）
+で import しており**経路は維持されている**。修正時はこの import を壊さないこと。
 
 ### グループ C: `test_audit_aggregator_pipeline`（1件）— **正当性の確認が必要**
 
@@ -136,11 +250,23 @@ E assert <AgentName.WRITING: 'writing'> == <AgentName.ILLUSTRATION: 'illustratio
 **原因**: LLM 未設定のため `src/agents/specialists/unified_auditor.py` が
 `degraded=True`（「評価そのものが成立していない」）を返し、
 品質ゲートが不合格として `ILLUSTRATION` に進めず `WRITING` へ戻す。
-コード中のコメント（`unified_auditor.py:31,49`）はこの挙動を**意図的**と明記している。
+コード中のコメント（`unified_auditor.py:31, 50`）はこの挙動を**意図的**と明記している。
+
+**パッケージ分割の影響（新規・Step 15/16 に重要）**:
+- `src/agents/audit_agent.py` → **shim 化済み**（実体は `src/agents/audit_agent/` パッケージ、
+  `DeprecationWarning` 付き。`docs/SHIM_REMOVAL_PLAN.md` Phase R3 で削除予定）
+- `src/agents/audit.py` → **shim 化済み**（実体は `src/agents/audit/` パッケージ）
+- 本テストが import する `src.agents.specialists.adapter.AuditAggregatorNode` と
+  `src.agents.orchestrator.AgentContext/AgentName` は**ファイルのまま存在**
+- `src/engine/audit/aggregator.py` は `src/engine/audit/` パッケージ内のファイルとして存在
+- `src/agents/specialists/unified_auditor.py` は**ファイルのまま存在**（L31 / L50 / L104-127）
+
+→ **修正対象のパスは現行のまま**。shim 経由の再エクスポートを経由して
+import を書き換える必要はない。
 
 → ここは「実装バグか正当か」を **Step 15 で判定する**。
 正当と証明できればテスト側の setup（LLM をスタブ化して degraded を回避させる）を直す。
-**ただし期待値（`next_agent == ILLUSTRATION`）は緩和しない。**
+**ただし期待値（`next_agent == ILLUSTRATION`、`test_audit_aggregator_pipeline.py:45`）は緩和しない。**
 
 ### グループ D: `test_migrations`（1件）— **環境汚染（順序依存）**
 
@@ -172,10 +298,14 @@ E assert 0 > 0   where 0 = len([])     (line 104)
 
 `writing_context["rag_context"]` が空。
 `sample_candidates` の score は 0.95 / 0.92 / 0.88 で全て `relevance_threshold=0.5` を上回るため、
-単純な閾値フィルタでは空にならない。`src/agents/context_builder_agent.py:341-367` の
-`retrieve_with_reflection` 呼び出しが例外を送出し
-`except Exception`（line 366）で握り潰されている可能性が高い。
+単純な閾値フィルタでは空にならない。`src/agents/context_builder_agent.py:347-374` の
+`retrieve_with_reflection`（L354）呼び出しが例外を送出し
+`except Exception`（**L374**、ログ文字列 `Reflective RAG retrieval failed`）で
+握り潰されている可能性が高い。
 **Step 17 で実測して原因を確定させる。**
+
+**参考**: 同じファイル L452 には `Context compression failed: 'NoneType' object has no attribute 'compress'`
+という別の警告も出ており、**圧縮側の故障と混同しない**こと（今回の失敗とは別経路）。
 
 ### グループ F: `test_relational_memory_e2e`（2件）— **要診断**
 
@@ -184,8 +314,9 @@ E assert 0 == 1   where 0 = len([])     (line 210)  ← check_and_resolve が0�
 E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播していない
 ```
 
-- **line 210**: `src/engine/foreshadowing/service.py:67-69` が
-  `unresolved = await self.repo.get_unresolved(book_id)` で空なら即 `return []`。
+- **line 210**: `src/engine/foreshadowing/service.py:68` の
+  `unresolved = await self.repo.get_unresolved(book_id)`（`def check_and_resolve` は L42）で
+  空なら即 `return []`（L68-69 付近）。
   伏線の「設置」が repo に届いていない、または status フィルタに掛かっていると推定。
 - **line 389**: テストは `build_context` が DB 例外を伝播すると期待しているが、
   実装側が `try/except` で握り潰している。**テストのコメントは
@@ -209,13 +340,18 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
 
 **手順**:
 1. `git status --short` / `git stash list` / `git log --oneline -1` を実行し、
-   自分が作っていない変更がないことを確認する。あれば**ここで作業を止めて報告**。
+   自分が作っていない変更がないことを確認する。あれば**ここで作業を止めて報告**
+   （0.3 の「再発時の受け入れ条件」に従い、基準コミットの更新と失敗リストの再測定を行う）。
 2. 失敗9件のリストをコマンドで取得し、計画書の付録 A に貼り付ける:
    ```bash
    .venv/bin/python3 -m pytest tests/integration -q --timeout=180 -p no:cacheprovider \
      -W ignore::DeprecationWarning 2>&1 | grep "^FAILED" | tee /tmp/opencode/baseline_failed.txt
    ```
-3. 付録 A に「基準: 9 failed / 336 passed / 37 skipped」「基準コミット `4aa42338`」を明記。
+3. 付録 A に「基準: 9 failed / 336 passed / 37 skipped」
+   「**基準コミット `90cc7897`**」を明記する。
+   **着手時点で `git log --oneline -1` が `90cc7897` でなければ、
+   そのコミットを新しい基準とし、失敗リストが同一9件であることを再確認してから進む。**
+   9件が変わっていた場合は**この計画の Step 1 〜根原因セクションを更新する**こと。
 
 **リグレッション防止テスト**: このステップ自体にテストはない。
 代わりに **Step 2 のラチェット基準ファイル**がこのスナップショットを永続化する。
@@ -233,7 +369,7 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
 1. `config/integration_failure_baseline.json` を新規作成:
    ```json
    {
-     "baseline_commit": "4aa42338",
+     "baseline_commit": "90cc7897",
      "max_failed": 9,
      "known_failures": [
        "tests/integration/test_async_generation.py::test_generation_task_saves_to_specified_book_id",
@@ -275,9 +411,11 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
 **手順**:
 1. `.github/workflows/ci.yml` の `integration-observe` ジョブ上のコメント
    （L139-144、`# 統合テスト（観測モード）` のヘッダを含む）を書き換える。
-   現行文:
+   現行文（`90cc7897` 時点・**8コミット変更後も不変**であることを確認済み）:
    ```
-   # tests/integration は現状 54 件の既知失敗（...）と
+   # 統合テスト（観測モード）
+   # ==========================================================================
+   # tests/integration は現状 54 件の既知失敗（DB レコード前提 fixture の不備等）と
    # testcontainers 必須テストを含むため、まずは観測モード (continue-on-error) で
    # CI に組み込み、毎回の失敗リストを可視化する。緑化は別計画で段階的に行う。
    # 緑化完了後は continue-on-error: false に切り替えてゲート化すること。
@@ -286,7 +424,7 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
    ```
    # 統合テストのゲート化（本計画: plans/PLAN_GATE_INTEGRATION_24STEPS.md）
    #
-   # 現状: 9 failed / 336 passed / 37 skipped（基準コミット 4aa42338）
+   # 現状: 9 failed / 336 passed / 37 skipped（基準コミット 90cc7897）
    # 状態: 未達 —— continue-on-error: true は「観測」ではなく「未達」を意味する。
    #        9件をゼロにするまで false に切り替えない。切り替え条件は Step 21。
    #
@@ -399,22 +537,37 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
 
 **目的**: グループ D のような**順序依存バグを将来再発しても即座に検知する**。
 
+**⚠️ 既存資産の活用（`90cc7897` 時点の調査で判明）**:
+`tests/regression/test_collection_health_gate.py` が既に存在し、
+**collection 自体の健全性**を検証している:
+- `test_no_collection_errors()`（L135）— collection error でセッション全体が中断するのを防ぐ
+- `test_collection_actually_collects_a_meaningful_number()`（L154）— 収集数の急落を検出
+- `test_collection_seconds_within_budget()`（L183）— 収集時間の予算
+
+→ **この3本は本計画では再作成しない。** 0.3 の「`--collect-only` 成功」要件は
+**この既存テストが担う**。Step 6 で新しく作るのは**順序依存（環境変数汚染）だけ**を狙うテスト。
+
 **手順**:
 1. `tests/regression/test_integration_order_dependency.py` を作成:
-   - 対象テスト（現在は `test_migrations_up_down`）を **`tests/integration` 全体の後**に
-     単独で再実行し、単独でも緑であることを検証する。
+   - 対象テスト（現在は `test_migrations_up_down`、`tests/integration/test_migrations.py:17`）を
+     **`tests/integration` 全体の後**に単独で再実行し、単独でも緑であることを検証する。
    - 実装方針: `subprocess` で `python -m pytest <target> -q` を起動し、
      事前に「汚染になり得るテスト」を走らせる。
    - **現実的な代替案（推奨）**: プロセス内で `ALEMBIC_DATABASE_URL` 等の
      危険な環境変数を人為的に汚染してから対象テストを実行し、隔離が機能していることを検証する。
      （完全な順序依存の再現は CI でしか安定しないため）
 2. このテストは **Step 4・5 の隔離が壊れると即赤になる**ようにする。
+3. **既存の `test_collection_health_gate.py` と役割が重複していないこと**を確認し、
+   重複する断言を書かない（テストの冗長化は「検知力の向上」ではなく保守コストの増加）。
 
 **リグレッション防止テスト**: 本テスト自体がそれである。
+（collection 健全性は既存 `test_collection_health_gate.py` が担当）
 
 **完了条件**:
 ```bash
 .venv/bin/python3 -m pytest tests/regression/test_integration_order_dependency.py -q -p no:cacheprovider
+.venv/bin/python3 -m pytest tests/regression/test_collection_health_gate.py -q -p no:cacheprovider
+# → どちらも passed
 ```
 
 ---
@@ -436,9 +589,10 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
 
 ### Phase 2: `test_async_generation` の緑化（Step 8〜11）
 
-#### Step 8 — グループ A の2バグを実測で確定 ★
+#### Step 8 — グループ A の残る不明点（バグB）を実測で確定 ★
 
-**目的**: 修正の当たり所を推測で決めない。
+**目的**: **バグAは証明済み**（0/1章のグループA参照）のため、Step 8 の残る任務は
+**(a) バグAを現物ログで再確認**、**(b) バグBの本当の原因を特定**の2つ。
 
 **手順**:
 1. 個別実行してエラーを捕捉:
@@ -448,22 +602,29 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
      -q -p no:cacheprovider -W ignore::DeprecationWarning --tb=long 2>&1 \
      | grep -E "WARNING|ERROR|assert"
    ```
-2. 確認すべき点:
-   - **バグA**: `object CursorResult can't be used in 'await' expression` が
-     `generation_tasks.py:427` のログで出ること
-   - **バグB**: 続けて `generation_tasks.py:379 DB update failed ... status=failed` が出ること
-   - `CreditService.__init__` に渡っている `credit_session` が同期 `Session` であること
-   - `database.SessionLocal` が同期/非同期どちらのセッションファクトリかを確認する
-     （`src/backend/database/core.py`）
-3. **バグB の本当の原因を特定する**: `_update_task_in_db` の failed 経路だけが落ちる理由を、
-   `repo.update_task_status`（`repository.py:285`、同期・`self.session.get`）と
-   `database.SessionLocal()` の実体（同期 or 非同期）の不一致から特定する。
-   ここが特定できなければ Step 10 は手当てだけで終わる。
+2. **(a) バグAの再確認**:
+   - `object CursorResult can't be used in 'await' expression` が
+     `generation_tasks.py:433` のログで出ること
+   - 続けて `generation_tasks.py:385 DB update failed ... status=failed` が出ること
+   - **経路2（orchestrated 版, L492/L517）でも同様のログが出ること**
+     → 両経路を Step 9 で直す根拠になる
+3. **(b) バグBの特定（ここが未解決）**: `_update_task_in_db` の failed 経路だけが
+   落ちる理由を特定する。押さえる材料:
+   - `src/backend/tasks/generation_tasks.py:334` `_update_task_in_db` 定義
+   - `src/backend/database/repository.py:290` `update_task_status`（同期・`self.session.get`）
+   - `src/backend/database/core.py:483-486` `_SessionLocalProxy` → **同期 `Session` を返す**
+   - **仮説**: 同期 `Session` を使っているのに、直前の `_asyncio.run(...)` が
+     **同じアセンブリ/ブロックで例外を送出しており、セッションやエンジンの状態が汚染されている**。
+     あるいは `credit_session`（`finally` でクローズされる前）と
+     `_update_task_in_db` 内の新規 `database.SessionLocal()` が **SQLite の書込ロックで衝突**している。
+   - **検証方法**: `logger.exception` のスタックトレース全文を `-o log_cli=true` で取得し、
+     実際にどのSQL/どの行で落ちているかを特定する。
+   **ここが特定できなければ Step 10 は手当てだけで終わる。**
 
 **リグレッション防止テスト**: このステップ自体にテストはない（診断専用）。
-確定した原因は Step 11 のテストで固定する。
+確定した原因は Step 10 のテストで固定する。
 
-**完了条件**: 付録 C に「バグAの原因」「バグBの原因」を1行ずつ書ける。
+**完了条件**: 付録 C に「バグA（証明済み・再確認結果）」「バグBの原因」を1行ずつ書ける。
 
 ---
 
@@ -472,26 +633,36 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
 **目的**: `book_id` を渡す全経路が正常に完走するようにする。
 
 **手順**:
-1. `src/backend/tasks/generation_tasks.py:415` 周辺を修正する。
-   方向性は次のいずれか（**Step 8 の診断結果で決める**）:
-   - **(i)** `CreditService` に**非同期セッション**を渡す
-     （`database.AsyncSessionLocal` 等、実体に応じて正しいものを選ぶ）
-   - **(ii)** `deduct_credits` の呼び出しを**完全に同期化**する
-     （同期版の内部実装を呼ぶ。`credit_service.py:75` の async 版内部で使っている
-     セッションが同期なら、`_asyncio.run` ごと不要になる可能性が高い）
-   - **(iii)** `_asyncio.run` の中で**専用の非同期エンジン/セッション**を生成して注入する
-2. **注意**: ここは本番の課金経路。**片側だけ直して他経路（`deduct_credits_for_text_writing`
-   等）を壊さないこと**。`src/integrations/billing/credit_service.py` の
-   `deduct_credits` / `deduct_credits_for_text_writing` / `deduct_credits_for_illustration`
-   の3つが同じ不整合を持っていないか確認する。
-3. エラーログが消えていることを確認する。
+1. **修正対象は2経路**（0/1章「⚠️ 修正対象は2経路」参照）:
+   - **経路1**: `src/backend/tasks/generation_tasks.py:422` の `_asyncio.run(`（`generate_chapter_task`）
+   - **経路2**: 同ファイルの orchestrated 版（L492 の `if book_id is None:` 以降、
+     `Failed to deduct credits` は L517）
+   **片方だけ直すと残りが壊れる。両方直す。**
+2. **確定済みの機構**: `CreditService.__init__(self, db: AsyncSession)`（`credit_service.py:19`）に
+   同期 `Session`（`SessionLocal()` = `_SessionLocalProxy`）が渡されている。
+   → **方向性は (i) が本命**:
+   - **(i)【推奨】`CreditService` に**非同期セッション**を渡す**。
+     非同期セッションの入手先候補: `src/backend/database/core.py:221`
+     `async_sessionmaker(bind=self.engine, class_=AsyncSession, expire_on_commit=False)` /
+     `DatabaseManager.get_session()`（L223）。`_asyncio.run` の中で生成するなら
+     **エンジンのライフサイクルに注意**（イベントループごとに engine を作り直さないこと）。
+   - (ii) `deduct_credits` の呼び出しを完全に同期化する
+     （`credit_service.py` 内の実装が同期セッション前提なら `_asyncio.run` 自体が不要になる）
+   - (iii) `_asyncio.run` 内で専用の非同期セッションを生成して注入する
+   **Step 8 の(b)診断結果と矛盾しない方を選ぶ。**
+3. **注意**: ここは本番の課金経路。`src/integrations/billing/credit_service.py` の
+   `deduct_credits`（L72）/ `deduct_credits_for_text_writing`（L121）/
+   `deduct_credits_for_illustration`（L139）の3つが同じ不整合を持っていないか確認する。
+4. エラーログ（L433 / L517）が消えていることを確認する。
 
 **リグレッション防止テスト**: `tests/regression/test_credit_deduct_async_contract.py` を作成:
-- `CreditService.deduct_credits` に渡すセッションが**非同期セッションである**ことを
-  契約として検証する（`inspect.iscoroutinefunction(session.execute)` または
-  セッションの型を検査）。
-- または、モックの同期 `Session` を渡した場合に **例外ではなく明示的なエラー**になることを確認。
+- `CreditService` に渡すセッションが**非同期セッションである**ことを契約として検証する
+  （`isinstance(db, AsyncSession)`、または `session.execute` がコルーチンを返すことを検査）。
+- 同期 `Session` を渡した場合は **例外ではなく明示的な入力検証エラー**になることを確認
+  （黙って `await CursorResult` で落ちない）。
 - **この契約テストが破れたら、`await CursorResult` のバグが再発したことを意味する。**
+- **2経路（`generate_chapter_task` と orchestrated 版）の両方**に適用されることを検証する
+  （片側だけの修正を検出できるようにする）。
 
 **完了条件**:
 ```bash
@@ -508,10 +679,13 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
 **これは observability の欠陥**であり、本番でも「タスクが永久に pending のまま」になる障害に直結する。
 
 **手順**:
-1. `src/backend/tasks/generation_tasks.py:373-379` の `_update_task_in_db` を修正する。
+1. `src/backend/tasks/generation_tasks.py:334` の `_update_task_in_db`
+   （失敗ログは **L385**）を修正する。
    - `except Exception: session.rollback(); logger.exception(...)` が**失敗を握り潰している**。
-   - **最低限**: このログに `task_id` と `status` だけでなく**例外の型とメッセージ**を残す。
-   - **本質**: なぜ `update_task_status` が落ちるのか（Step 8 の診断結果）を直す。
+   - **最低限**: このログ（L385）に `task_id` と `status` だけでなく
+     **例外の型とメッセージ**を残す。
+   - **本質**: なぜ `update_task_status`（`repository.py:290`）が落ちるのか
+     （Step 8 の(b)診断結果）を直す。
 2. **二重防御**: `_update_task_in_db` 内で1回失敗したら、
    **新しいセッションで再試行**するフォールバックを実装する
    （`session.close()` 後に `database.SessionLocal()` を作り直して再実行）。
@@ -551,16 +725,21 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
 
 **手順**:
 1. `src/generation/pdca_controller.py` 全文を読む。
-   - `max_regenerations: int = 0`（L13）
-   - `should_regenerate_full_text()`（L29-36）: `return self._regeneration_count < self.max_regenerations`
-2. `src/domain/writing/coordinator.py:38,53` で `WritingService.__init__` が
-   `pdca_controller` をどう初期化しているか（外部注入 or 既定生成）を確認する。
+   - `max_regenerations: int = 0`（**L13**）
+   - `should_regenerate_full_text()`（**L29-36**）: `return self._regeneration_count < self.max_regenerations`
+2. `src/domain/writing/coordinator.py` で `WritingService` が `pdca_controller` を
+   **どう初期化しているか**を確認する。**現物は次で確定済み**:
+   - **L40** `pdca_controller: Any = None,`（`__init__` の引数、既定は None）
+   - **L56** `self.pdca_controller = pdca_controller or PDCAController()` ←
+     **注入されなければ `max_regenerations=0` の既定インスタンスが使われる**
+   - L13 `from src.generation.pdca_controller import PDCAController`
+   → テストは `pdca_controller` を渡していないため、既定の `max_regenerations=0` が効く。
 3. 個別実行でログを確認し、
-   `PDCAポリシーにより全文再生成ループは無効化されています`（`coordinator.py:158-162`）
+   `PDCAポリシーにより全文再生成ループは無効化されています`（**`coordinator.py:155`**）
    の info レポートが出ていることを確認する。**これが出ていれば原因確定**。
 
-**完了条件**: 付録 C に「`WritingService` が `max_regenerations=0` のコントローラを
-どう受け取っているか」を書ける。
+**完了条件**: 付録 C に「`coordinator.py:56` の既定生成が
+`max_regenerations=0` を選んでいること」を書ける。
 
 ---
 
@@ -621,19 +800,27 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
 
 **手順**:
 1. 次を読む:
-   - `src/agents/specialists/unified_auditor.py:25-60, 100-130`（degraded の定義とゲート）
+   - `src/agents/specialists/unified_auditor.py`（**L31 / L50 / L104-127**、degraded の定義とゲート）
    - `src/engine/audit/aggregator.py`（`next_agent` を返す経路）
    - `tests/integration/test_audit_aggregator_pipeline.py` 全文
-2. **判定基準**:
+     （期待値は **L45** `assert result.next_agent == AgentName.ILLUSTRATION`）
+2. **パッケージ分割済みである点に注意**（1章 グループC参照）:
+   `src/agents/audit_agent.py` と `src/agents/audit.py` は **shim 化済み**。
+   実体は `src/agents/audit_agent/`・`src/agents/audit/` パッケージ。
+   **本テストが import する `specialists.adapter` / `orchestrator` はファイルのまま**なので、
+   import 文の書き換えは不要。shim の `DeprecationWarning` はテスト結果に影響しない
+   （`-W ignore::DeprecationWarning` を使っているため）。
+3. **判定基準**:
    - LLM 未設定時に「評価が成立しない→合格扱いにせず戻す」が
-     **コメントで意図的に書かれている**なら、それは**正当な防御**と判定する。
+     **コメントで意図的に書かれている**（`unified_auditor.py:31, 50`）なら、
+     それは**正当な防御**と判定する。
    - その場合、**実装は直さず、テストの setup を直す**:
      LLM 依存部分をスタブ化して `degraded=False` を返すようにし、
      **正常系（`next_agent == ILLUSTRATION`）を実際に検証できるようにする**。
      → 期待値は緩和しない（`ILLUSTRATION` のまま）。
    - もし「LLM 未設定でも degraded なのに合格扱いになる」等の
      **防御がすり抜ける経路**があれば、それは実装バグなので実装を直す。
-3. **判断材料を付録 C に必ず残す**（後から「なぜテストを直したのか」を説明できるように）。
+4. **判断材料を付録 C に必ず残す**（後から「なぜテストを直したのか」を説明できるように）。
 
 **完了条件**: 付録 C に「正当と判定した理由」または「実装バグと判定した理由」を書ける。
 
@@ -673,22 +860,43 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
      tests/integration/test_reflective_rag_context_builder.py::test_context_builder_with_reflective_rag_success \
      -q -p no:cacheprovider -W ignore::DeprecationWarning --tb=long --log-cli-level=WARNING
    ```
-   `src/agents/context_builder_agent.py:366-367` の
-   `Reflective RAG retrieval failed: {e}` が出ているかを確認する。
-2. 押さえる候補（コード読了で済むものから）:
-   - `src/agents/context_builder_agent.py:341-367` の `retrieve_with_reflection` 呼び出し
-     （`inspect.iscoroutine` 対応は既にある）
-   - `src/integrations/rag/reflective_rag.py:469` の `search_similar_chunks` 呼び出し
-     （L477 に `except` があり空の可能性）
-   - `reflective_rag.py:492,590` の `score >= relevance_threshold` フィルタ
+   **出るべきログ（`90cc7897` 時点の現行行）**:
+   - `src/agents/context_builder_agent.py:374`
+     `Reflective RAG retrieval failed: {e}`
+   - `src/integrations/rag/reflective_rag.py:648`
+     `Unexpected error in retrieve_with_reflection: {e}`
+     ← **L644-651 の巨大な `except Exception` 安全フォールバック**
+   - `reflective_rag.py:479` `search_similar_chunks error: {search_err}`
+   **どれが出ているかで原因の経路が決まる。まずここを取りに行く。**
+
+2. **押さえる候補（`90cc7897` の現行行に更新済み）**:
+   - `src/agents/context_builder_agent.py:347-374` の `retrieve_with_reflection` 呼び出し
+     （`rag_context = []` L347 / `if reflective_rag is not None` L348 /
+     呼び出し L354 / `iscoroutine` L360 / 例外握り潰し **L374**）
+   - `src/integrations/rag/reflective_rag.py:470` の `search_similar_chunks` 呼び出し
+     （**L476** に `except`、**L479** に warning）
+   - `reflective_rag.py:494`（初回）と **L597**（リフレクション後の再フィルタ）の
+     `score >= relevance_threshold`
      （score は 0.95/0.92/0.88 なので通過するはず → **通過後に例外**の可能性が高い）
+   - **`reflective_rag.py:644-651` の安全フォールバックが最重要候補**:
+     ```python
+     except Exception as e:
+         logging.getLogger(__name__).warning(f"Unexpected error in retrieve_with_reflection: {e}")
+         final_docs = initial_candidates[:top_k] if initial_candidates else []
+     ```
+     → **例外が起きた上に `initial_candidates` が空なら `[]` を返す**。
+     テストが `len(rag_docs) == 0` で落ちるのと完全に整合する。
    - `retrieve_with_reflection` 内の**リフレクションループ**（`max_iter=2`）が
      LLM を呼んでいないか。LLM 未設定ならそこで落ちている可能性が高い。
+   - L609 / L627 / L635 / L640 の `final_docs` 代入がどれで決まるかを追う
+     （`scored` が空だと `final_docs = []` になり得る）。
+
 3. **CI との差に注意**: CI は `AUTONOVEL_RAG_MODE=memory` / `RAG_FALLBACK_MODE=memory`。
    ローカルは未設定。**この差が原因なら、テストが環境依存**であり、
    テスト側で環境変数を固定する（Step 5 の後始末対象に追加済みのものを活かす）。
 
-**完了条件**: 付録 C に空になる本当の原因を1行で書ける。
+**完了条件**: 付録 C に空になる本当の原因を1行で書ける
+（例: 「L644 のフォールバックに到達し、`initial_candidates` が空だった」等）。
 
 ---
 
@@ -721,7 +929,7 @@ E Failed: DID NOT RAISE Exception       (line 389)  ← 例外が伝播してい
 
 **手順**:
 1. **症状1（line 210, `assert 0 == 1`）**:
-   - `src/engine/foreshadowing/service.py:67-69`:
+   - `src/engine/foreshadowing/service.py:68`（`def check_and_resolve` は L42）:
      `unresolved = await self.repo.get_unresolved(book_id)` が空なら即 `return []`。
    - テストの「設置（Step 1〜4）」が実際に repo に保存されているかを、
      `get_unresolved` のクエリ条件（status フィルタ / book_id / user_id）と突き合わせる。
@@ -924,6 +1132,8 @@ Step 21 が通らないまま Step 22 を実行しては**ならない**。
 
 ## 3. ステップ一覧と期待される失敗数の推移
 
+**基準: `90cc7897` で 9 failed / 336 passed / 37 skipped**（以降の数値はすべてこの起点から）
+
 | Step | 内容 | 期待 failed 数 | タイプ |
 |---|---|---|---|
 | 1 | 現状スナップショット固定 | 9 | 準備 |
@@ -961,7 +1171,7 @@ Step 23 は Step 2 の `test_gate_integration_ratchet.py` を拡張するため�
 
 | リスク | 影響 | 対策 |
 |---|---|---|
-| **並行セッションとの競合** | 自分の修正が上書き・消される | 0.3 の遵守事項。編集前に `git status` 確認。`stash@{0}` / `src/agents/audit_agent/` は触らない |
+| **並行セッションとの競合** | 自分の修正が上書き・消される | 0.3 の遵守事項（**解済みだが再発時は「基準更新→再測定→計画更新」が必須**）。編集前に `git status` 確認 |
 | **ローカル緑 ≠ CI 赤** | ゲート化後ブランチが赤くなり続ける | Step 21 を**絶対の通過条件**にする。通らなければ 24 のフォールバック |
 | **SyntaxError の再発** | 収集エラーで全件落ちる | 全ステップの完了条件に `--collect-only` 成功を含める（0.3） |
 | **課金経路の回帰**（Step 9） | 本番の課金が壊れる | `credit_service.py` の3メソッドを一括確認。回帰テストを併設 |
@@ -976,9 +1186,12 @@ Step 23 は Step 2 の `test_gate_integration_ratchet.py` を拡張するため�
 ### 付録 A: ベースライン（Step 1 で記録）
 
 ```
-基準コミット: 4aa42338
+基準コミット: 90cc7897
 実行: .venv/bin/python3 -m pytest tests/integration -q --timeout=180 -p no:cacheprovider
-結果: 9 failed / 336 passed / 37 skipped（3回実行すべて同一）
+結果: 9 failed / 336 passed / 37 skipped
+
+※ 作成時 4aa42338 でも同一の9件。並行セッションの8コミット
+  （897ファイル / +12,987 / −11,321）を経ても失敗リストは不変。
 
 FAILED tests/integration/test_async_generation.py::test_generation_task_saves_to_specified_book_id
 FAILED tests/integration/test_async_generation.py::test_generation_task_creates_new_book_when_book_id_not_provided
@@ -991,8 +1204,21 @@ FAILED tests/integration/test_relational_memory_e2e.py::TestRelationalMemoryE2E:
 FAILED tests/integration/test_relational_memory_e2e.py::TestRelationalMemoryE2E::test_error_handling_in_pipeline
 ```
 
-**単体**: 8075 passed / **回帰**: 620 passed（既知失敗8件: `conftest_fixtures`, `docs_router_count`,
-`subprocess_encoding_gate`, `tier_quality_gate`×4, `v5_version_consistency`）
+**skip 37件の内訳**: Docker/testcontainers 由来 33（22+7+4）/ powershell 2 / real launch 1 / PostgreSQL 1
+
+**単体（`90cc7897` で再測定）**: `8075 passed, 37 skipped, 9 xfailed, 3 xpassed`（6分04秒）
+
+**回帰（`90cc7897` で再測定）**: `4 failed, 627 passed, 3 skipped, 1 xfailed`（5分19秒）
+
+> ⚠️ **既知失敗が 8件 → 4件に減った**（`tier_quality_gate`×4 が緑化）。
+> 0.2 の検証コマンドには**この再測定値（627 passed / 既知失敗4件）**を反映済み。
+> **現行の正: 627 passed / 既知失敗4件**:
+> 1. `tests/regression/test_conftest_fixtures.py::test_conftest_mock_llm_adapter_fixture`
+> 2. `tests/regression/test_docs_router_count_matches_reality.py::test_readme_router_module_count_matches_reality`
+> 3. `tests/regression/test_subprocess_encoding_gate.py::TestSubprocessEncodingIsExplicit::test_no_pytest_subprocess_call_without_encoding`
+> 4. `tests/regression/test_v5_version_consistency.py::test_documents_referenced_by_readme_exist`
+>
+> → **本計画が新設する12本のリグレッションテストは、この4件とは別に全緑であること。**
 
 ### 付録 B: 各 Phase の結果（実装時に記録）
 

@@ -1,0 +1,16 @@
+{
+  "baseline_commit": "90cc7897",
+  "max_failed": 9,
+  "known_failures": [
+    "tests/integration/test_async_generation.py::test_generation_task_saves_to_specified_book_id",
+    "tests/integration/test_async_generation.py::test_generation_task_creates_new_book_when_book_id_not_provided",
+    "tests/integration/test_audit_aggregator_pipeline.py::test_audit_aggregator_pipeline_integration",
+    "tests/integration/test_book_score_feedback_loop.py::test_writing_service_regeneration_loop_success",
+    "tests/integration/test_book_score_feedback_loop.py::test_writing_service_regeneration_max_retries",
+    "tests/integration/test_migrations.py::test_migrations_up_down",
+    "tests/integration/test_reflective_rag_context_builder.py::test_context_builder_with_reflective_rag_success",
+    "tests/integration/test_relational_memory_e2e.py::TestRelationalMemoryE2E::test_foreshadowing_lifecycle_plant_to_resolve",
+    "tests/integration/test_relational_memory_e2e.py::TestRelationalMemoryE2E::test_error_handling_in_pipeline"
+  ],
+  "gate_target_failed": 0
+}
