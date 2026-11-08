@@ -43,7 +43,7 @@ Copy-Item .env.example .env
 # 必要に応じて .env の LLM_PROVIDER 等を編集
 ```
 
-> **ショートカット**: `アプリ起動_ローカル.bat` をダブルクリックすれば
+> **ショートカット**: `scripts/start_local.ps1` を実行すれば
 > 上記 1〜5 と DB 初期化・3 プロセス起動がすべて自動実行されます。
 
 ---

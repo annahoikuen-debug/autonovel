@@ -190,7 +190,7 @@
 ```json
 {
   "success": true,
-  "redirect_url": "/studio/book_xxx",
+  "redirect_url": "/app/studio/{book_id}",
   "state_token": "token-uuid"
 }
 ```
@@ -335,8 +335,7 @@
 
 | テストファイル | 対象 |
 |---------------|------|
-| `tests/unit/test_easy_mode_router.py` | ルーター関数のユニットテスト (16 tests) |
-| `tests/test_easy_mode_api.py` | API統合テスト (9 tests、E2Eフロー含む) |
+| `tests/unit/test_easy_mode_router.py` | ルーター関数のユニットテスト |
 | `tests/test_gacha_digest_service.py` | ガチャ・ダイジェストサービス単体テスト |
 | `frontend/tests/integration/easyModeFlow.test.tsx` | フロントエンドAPIクライアント層テスト |
 
@@ -344,7 +343,7 @@
 
 ```bash
 # バックエンド
-python -m pytest tests/unit/test_easy_mode_router.py tests/test_easy_mode_api.py -v --no-cov
+python -m pytest tests/unit/test_easy_mode_router.py tests/test_gacha_digest_service.py -v --no-cov
 
 # フロントエンド
 cd frontend && npx vitest run tests/integration/easyModeFlow.test.tsx

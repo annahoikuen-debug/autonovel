@@ -10,9 +10,9 @@ AutoNovel ローカルの起動手順・起動できないときの対処・起�
 
 | 方法 | 手順 | 向いている場面 |
 |---|---|---|
-| **ローカル（推奨）** | `アプリ起動_ローカル.bat` をダブルクリック | SQLite + ローカルファイル。依存极少で最快 |
-| Docker | `アプリ起動.bat` をダブルクリック | PostgreSQL / Redis / ChromaDB が必要なとき |
-| 停止 | `アプリ停止.bat` | 両方ともこれ |
+| **ローカル（推奨）** | `scripts/start_local.ps1` を実行 | SQLite + ローカルファイル。依存极少で最快 |
+| Docker | `docker compose up` | PostgreSQL / Redis / ChromaDB が必要なとき |
+| 停止 | `scripts/stop_local.ps1` | 両方ともこれ |
 
 ローカル起動では次の 3 つが同時に立ち上がります。
 
@@ -31,7 +31,7 @@ AutoNovel ローカルの起動手順・起動できないときの対処・起�
 
 ## 2. 起動できないときはまずこれ
 
-**`起動診断.bat` をダブルクリックしてください。**
+**`scripts/doctor.ps1` を実行してください。**
 （= `powershell -ExecutionPolicy Bypass -File scripts/doctor.ps1`）
 
 10 項目を自動チェックし、原因と修正コマンドを表示します。
@@ -77,7 +77,7 @@ py -m pip install -e ".[dev]"
 
 > `start_local.ps1` は「実際に import できるか」を判定して Python を選びます。
 > ディレクトリがあるだけの空の `.venv` を優先してしまう事故を防ぐためです。
-> 壊れた `.venv` は `アプリ起動_ローカル.bat -RecreateVenv` で作り直せます。
+> 壊れた `.venv` は `scripts/start_local.ps1 -RecreateVenv` で作り直せます。
 
 ### 3.3 `'vite' が内部または外部コマンドとして認識されていません`
 
@@ -94,7 +94,7 @@ npm install
 
 ### 3.4 `MemoryError` と同時に uvicorn が落ちる
 
-メモリ不足です。`起動診断.bat` のセクション 7 で空きメモリを確認してください。
+メモリ不足です。`scripts/doctor.ps1` のセクション 7 で空きメモリを確認してください。
 
 - 他アプリ（ブラウザ、IDE）を閉じる
 - ページファイルが「システム管理」 Off なら On にする

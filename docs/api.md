@@ -214,10 +214,8 @@ CI の `test` ジョブ（`pytest tests/regression/`）で行う。app の route
 `docs/openapi.json` の path 集合の不一致を検出する。
 （WebSocket ルートと `include_in_schema=False` のエイリアスは仕様書に出ないため対象外。）
 
-> 2026-10-02 実測: 本ファイルは「CI が差分を検知する」と記載していたが、
-> 実際の CI にそのチェックは存在せず、`docs/openapi.json` は
-> **version 5.0.3 / 213 paths** のまま 6.0.0 / 240 paths より古い状態だった。
-> 上記のテスト追加と再生成で、記述と実態を一致させた。
+`docs/openapi.json` は OpenAPI 3.1 仕様書（info.version: 6.0.0、paths: 251）として
+`scripts/generate_openapi.py` により生成・同期されている。
 
 ---
 

@@ -203,7 +203,7 @@ flowchart TB
     end
 
     subgraph API["🐍 FastAPI (port 8200)"]
-        R["API ルーター群（45 モジュール）<br/>books / episodes / export / graph / billing など"]
+        R["API ルーター群（49 モジュール）<br/>books / episodes / export / graph / billing など"]
         WS["WebSocket<br/>本文のストリーミング"]
         GUARD["JWT / RBAC / レートリミット"]
     end
@@ -247,7 +247,7 @@ flowchart TB
 | 層 | 採用技術 | 役割 |
 |---|---|---|
 | フロントエンド | React 18 / TypeScript / Vite / TipTap | 3 つの入口・編集・設定・矛盾診断 |
-| API | FastAPI 0.141 / WebSocket | 45 個の API ルーター、ストリーミング配信 |
+| API | FastAPI 0.141 / WebSocket | 49 個の API ルーター、ストリーミング配信 |
 | タスクキュー | Huey（SQLite / Redis 7） | 長時間生成をバックグラウンドで処理 |
 | パイプライン | `AutoWorkflowPipeline` | 執筆・監査・書き出しの統合編成 |
 | 永続化 | SQLAlchemy 2.0 / Alembic / PostgreSQL 16 | 作品・話・設定・監査結果 |
@@ -287,7 +287,7 @@ flowchart TB
 2. ブラウザで **<http://localhost:5173>** が開きます
 3. 停止するときは **`scripts\stop_local.ps1`** を PowerShell で実行（PID ファイル → ポート → コマンドラインの 3 段構えで安全に解放）
 
-> **起動しないときは [`起動診断.bat`](起動診断.bat) を先に実行してください。**
+> **起動しないときは [`起動診断`](scripts/doctor.ps1) を先に実行してください。**
 > Python・依存関係・`.env`・DB・ポート・メモリ・import 時間を一括で診断し、
 > 原因と修正コマンドを表示します。
 
@@ -516,7 +516,7 @@ export_1.zip
 | **マルチメディア** | シーン画像・立ち絵・表紙の生成（機能ガード付き）、音声合成、1 シート 24 コマのマンガ生成 |
 | **納品** | ZIP 納品パッケージ、投稿サイト整形、EPUB 3 書き出し、データダンプ JSON |
 | **拡張** | Stripe Webhook 決済・クレジット、JWT / RBAC 認証、`PluginRegistry` 動的プラグイン、OpenTelemetry / Sentry 監視 |
-| **プリセット** | 異世界転生・転生チート・VRMMO・ダンジョン管理等 9 種類のジャンルテンプレ（世界観・キャラクター・文体・タイトル・フック・テンション設定つき） |
+| **プリセット** | 異世界転生・転生チート・VRMMO・ダンジョン管理等 10 種類のジャンルテンプレ（世界観・キャラクター・文体・タイトル・フック・テンション設定つき） |
 
 ---
 
@@ -541,6 +541,8 @@ export_1.zip
 | `HUEY_BACKEND` | タスクキュー（`sqlite` / `redis`） | `sqlite` |
 | `JWT_SECRET_KEY` | 本番必須。JWT の署名キー | ─ |
 | `CORS_ORIGINS` | 本番必須。許可オリジン | ─ |
+| `VITE_SITE_URL` | フロントエンド本番オリジン（canonical / OGP 用）。未設定時は相対パス | ─ |
+| `VITE_API_BASE_URL` | API ベース URL | `http://localhost:8200` |
 
 > `LLM_PROVIDER=mock` のままでも全画面を操作できます（生成結果はダミー）。実モデルを扱うときは `.env` に API キーを設定し、**API と Huey ワーカーの両方**を再起動してください。
 
@@ -631,8 +633,9 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 > 実行点は `run()` の1箇所に集約済みで、上記のコストは**1話1回**のものです。
 > 回帰防止: `tests/unit/writing/test_episode_finalize_called_once.py`
 >
-> **1話全体の LLM 呼出回数**は 10 回（実測・目標 4-5回は**未達**）、
-> うち 5 回（50%）が監査フェーズです。詳細は `docs/STATUS.md` §5 参照。
+> **1話全体の LLM 呼出回数**は実測で変動（ダイジェスト生成が有効時は +1 回）、
+> うち監査フェーズの第2層 LLM 定性評価は **1 回**です（第1層静的ルール解析は LLM 呼出なし）。
+> 詳細は `docs/STATUS.md` §5 参照。
 >
 > 1話あたりのコスト内訳は `scripts/report_episode_cost.py --db <sqlite> --json` で出力できます。
 
@@ -655,13 +658,13 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 
 ## ⚠️ トラブルシューティング
 
-まず **[`起動診断.bat`](起動診断.bat)**（= `scripts/doctor.ps1`）を実行してください。
+まず **[起動診断](scripts/doctor.ps1)**（= `scripts/doctor.ps1`）を実行してください。
 10 項目を自動チェックして原因と修正コマンドを表示します。
 詳細な症状別対処は [docs/STARTUP_TROUBLESHOOTING.md](docs/STARTUP_TROUBLESHOOTING.md)。
 
 | 現象 | 原因 | 対処法 |
 |---|---|---|
-| 3 つのサービスが何も言われずに即死する | 依存・パス・環境の問題（詳細は `logs/*.err.log` に出ています） | `起動診断.bat` を実行 |
+| 3 つのサービスが何も言われずに即死する | 依存・パス・環境の問題（詳細は `logs/*.err.log` に出ています） | `scripts/doctor.ps1` を実行 |
 | `ModuleNotFoundError: No module named 'fastapi'` | 起動に使う Python にバックエンド依存が無い | `py -m pip install -e ".[dev]"` |
 | `'vite' が内部または外部コマンドとして認識されていません` | `npm install` が中断され `node_modules\.bin\vite.cmd` が無い | `cd frontend; npm install` |
 | uvicorn が `MemoryError` で落ちる | 空きメモリ不足／ページファイルが固定 | 他アプリを閉じる、ページファイルをシステム管理に、`-NoWorker` でワーカーを止める |
