@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import logging
+from types import SimpleNamespace
 from typing import Any, Optional
 
 from src.agents.orchestrator import AgentContext, AgentName, AgentResult
@@ -344,11 +345,22 @@ class AuditAggregatorNode:
                 "creativity": report.qualitative.overall_score,
                 "multimodal": 80.0,
             }
+            # save_specialist_results は raw 各値の .score / .feedback を参照するため、
+            # by_sp の float 値を属性保持オブジェクトに変換して raw に入れる。
+            by_sp_raw = {
+                k: SimpleNamespace(
+                    score=v,
+                    feedback={},
+                    suggestions=[],
+                    actionable_diffs=[],
+                )
+                for k, v in by_sp.items()
+            }
             score_result = BookScoreResult(
                 overall=report.final_score,
                 by_specialist=by_sp,
                 missing=[],
-                raw={},
+                raw=by_sp_raw,
             )
 
             # Include weight variant in score result for metrics

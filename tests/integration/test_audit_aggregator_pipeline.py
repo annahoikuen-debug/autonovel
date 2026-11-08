@@ -7,6 +7,30 @@ from src.agents.orchestrator import AgentContext, AgentName
 from src.agents.specialists.adapter import AuditAggregatorNode
 
 
+class _StubLLM:
+    """UnifiedAuditor へ渡すスタブ LLM。
+
+    品質ゲートの degraded=True は「LLM 未設定＝評価不能」という
+    正当な防御（unified_auditor.py:31,50）であるため、本テストでは
+    スタブを渡して正常系（ILLUSTRATION への遷移）を検証する。
+    期待値（next_agent == ILLUSTRATION、8 specialist すべて検出）は緩和しない。
+    """
+
+    async def generate(self, prompt: str, temperature: float = 0.2) -> str:
+        return (
+            '{"overall_score": 85, "hook_score": 85, "emotional_score": 85, '
+            '"character_consistency": 85, "style_score": 85, "factual_score": 85, '
+            '"structure_score": 85, "multimodal_score": 85}'
+        )
+
+    async def generate_text(self, prompt: str, temperature: float = 0.2) -> str:
+        return (
+            '{"overall_score": 85, "hook_score": 85, "emotional_score": 85, '
+            '"character_consistency": 85, "style_score": 85, "factual_score": 85, '
+            '"structure_score": 85, "multimodal_score": 85}'
+        )
+
+
 @pytest.mark.asyncio
 async def test_audit_aggregator_pipeline_integration():
     """Verify that AuditAggregator runs all 8 specialists and produces valid audit artifacts."""
@@ -14,7 +38,7 @@ async def test_audit_aggregator_pipeline_integration():
     mock_repo = MagicMock()
     mock_repo.session = mock_session
 
-    node = AuditAggregatorNode(repo=mock_repo)
+    node = AuditAggregatorNode(repo=mock_repo, llm=_StubLLM())
     ctx = AgentContext(
         book_id=10,
         branch_id=1,
