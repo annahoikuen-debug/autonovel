@@ -517,7 +517,7 @@ async def trigger_audio_synthesis(
             )
             chap = result.scalar_one_or_none()
             if chap:
-                chapter_text = chap.content or ""
+                chapter_text = chap.content or ""  # type: ignore[assignment]
 
     if not chapter_text:
         raise HTTPException(status_code=400, detail="Chapter text is empty")
@@ -591,7 +591,7 @@ async def stream_audio_file(
             raise HTTPException(status_code=404, detail="Audio asset file not found")
 
         # アセットが属する作品の所有者を確認する
-        await verify_book_ownership(audio.book_id, current_user, session)
+        await verify_book_ownership(audio.book_id, current_user, session)  # type: ignore[arg-type]
 
         return FileResponse(
             Path(audio.file_path),

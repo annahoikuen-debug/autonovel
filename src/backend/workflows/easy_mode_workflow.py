@@ -39,12 +39,12 @@ class EasyModeWorkflow(BaseWorkflow):
             "compressed_context": compressed_context,
             "updated_at": datetime.now().isoformat(),
         }
-        await self.repo.set_state(f"easy_mode_checkpoint_{book_id}", checkpoint_data)
+        await self.repo.set_state(f"easy_mode_checkpoint_{book_id}", checkpoint_data)  # type: ignore[union-attr]
         logger.debug(f"Checkpoint saved for book {book_id}: episode {last_completed_ep}")
 
     async def _load_checkpoint(self, book_id: int) -> tuple[int, dict[str, Any] | None]:
         """チェックポイントを読み込む。返り値: (last_completed_ep, compressed_context)"""
-        checkpoint_data = await self.repo.get_state(f"easy_mode_checkpoint_{book_id}")
+        checkpoint_data = await self.repo.get_state(f"easy_mode_checkpoint_{book_id}")  # type: ignore[union-attr]
         if checkpoint_data:
             last_completed_ep = checkpoint_data.get("last_completed_ep", 0)
             compressed_context = checkpoint_data.get("compressed_context")
@@ -103,7 +103,7 @@ class EasyModeWorkflow(BaseWorkflow):
         if book_id is not None and start_ep == 1:  # デフォルト値の場合のみ自動調整
             try:
                 # 既存のエピソード数を取得
-                chapters = await self.repo.chapters.get_all_non_anchor_chapters(book_id)
+                chapters = await self.repo.chapters.get_all_non_anchor_chapters(book_id)  # type: ignore[union-attr]
                 if chapters:
                     max_completed_ep = max(ch.ep_num for ch in chapters)
                     if max_completed_ep > 0:
@@ -145,7 +145,7 @@ class EasyModeWorkflow(BaseWorkflow):
         )
 
         adapter = ProgressReporterAdapter(reporter, is_easy_mode=True)
-        result = await pipeline.execute(ctx, self.engine, adapter)
+        result = await pipeline.execute(ctx, self.engine, adapter)  # type: ignore[arg-type]
 
         # 4. チェックポイントを保存（成功時のみ）
         res_status = getattr(result, "status", None) or (result.get("status") if isinstance(result, dict) else None)

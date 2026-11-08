@@ -24,7 +24,7 @@ class PlotAgent(SkillAgent):
         self,
         repo: "IRepository" = None,
         pm: "IPromptManager" = None,
-        generate_json: Callable[..., Awaitable[Any]] = None,
+        generate_json: Callable[..., Awaitable[Any]] | None = None,
         plot_expander: Optional["IPlotExpander"] = None,
         auditor: Any | None = None,
         uow_factory: Callable[[], Any] | None = None,
@@ -121,6 +121,8 @@ class PlotAgent(SkillAgent):
             system_overrides=system_overrides,
         )
 
+        if self.generate_json is None:
+            raise RuntimeError("generate_json が設定されていません。")
         result = await self.generate_json(
             prompt=prompt,
             response_schema=PlotEpisode,
@@ -317,6 +319,9 @@ class PlotAgent(SkillAgent):
             return []
 
         try:
+            if self._uow_factory is None:
+                logger.warning("_uow_factory が設定されていません。スキップします。")
+                return []
             async with self._uow_factory():
                 if reporter:
                     reporter.report(f"💾 データベースを更新中... (第{start_ep}話以降のアーカイブ/保存)", "info")
@@ -440,6 +445,9 @@ class PlotAgent(SkillAgent):
         if reporter:
             reporter.report(f"プロット展開を開始します... (対象話数: {ep_nums})", "info")
 
+        if self._plot_expander is None:
+            logger.warning("_plot_expander が設定されていません。")
+            return []
         results = await self._plot_expander.expand_plots(
             book_id=book_id,
             target_ep_list=ep_nums,

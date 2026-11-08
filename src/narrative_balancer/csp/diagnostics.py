@@ -16,7 +16,7 @@ def explain_infeasibility(
     mid_ep = config.midpoint_episode
     if mid_ep in partial_state.confirmed_beats:
         b = partial_state.confirmed_beats[mid_ep]
-        if b.tension < config.midpoint_min_tension:
+        if b.tension is not None and b.tension < config.midpoint_min_tension:
             conflicts.append(
                 ConflictClause(
                     constraint_name="MidpointDisasterTension",
@@ -29,7 +29,7 @@ def explain_infeasibility(
     lost_ep = config.all_is_lost_episode
     if lost_ep in partial_state.confirmed_beats:
         b = partial_state.confirmed_beats[lost_ep]
-        if b.tension > config.all_is_lost_max_tension:
+        if b.tension is not None and b.tension > config.all_is_lost_max_tension:
             conflicts.append(
                 ConflictClause(
                     constraint_name="AllIsLostTrough",
@@ -46,7 +46,7 @@ def explain_infeasibility(
         if ep2 == ep1 + 1:
             t1 = partial_state.confirmed_beats[ep1].tension
             t2 = partial_state.confirmed_beats[ep2].tension
-            if abs(t2 - t1) > 4.0:
+            if t1 is not None and t2 is not None and abs(t2 - t1) > 4.0:
                 conflicts.append(
                     ConflictClause(
                         constraint_name="TensionPhysicsDelta",

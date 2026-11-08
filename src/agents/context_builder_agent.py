@@ -437,13 +437,12 @@ class ContextBuilderAgent(SkillAgent):
                 c_res = await c_res
             if c_res and hasattr(c_res, "final_context_text"):
                 compressed_context = c_res.final_context_text
+                layer4 = getattr(c_res, "layer4", None)
                 compression_stats = {
                     "reduction_ratio": getattr(c_res, "overall_reduction_ratio", 0.0),
                     "final_tokens": getattr(c_res, "final_token_count", 0),
                     "from_cache": getattr(c_res, "from_cache", False),
-                    "scene_type": getattr(c_res, "layer4", None).scene_type
-                    if getattr(c_res, "layer4", None)
-                    else s_type,
+                    "scene_type": layer4.scene_type if layer4 is not None else s_type,
                     "scene_weights": scene_weights,
                 }
         except Exception as e:

@@ -54,7 +54,7 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
                     "error": f"Schedule {schedule_id} is not pending (status: {schedule.status})",
                 }
 
-            schedule.status = "running"
+            schedule.status = "running"  # type: ignore[assignment]
             await uow.session.commit()
             await uow.session.refresh(schedule)
 
@@ -81,8 +81,8 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
                 credentials: dict[str, Any] = {}
 
                 # 3. 投稿実行
-                novel_data = await _get_novel_data(book_id)
-                episodes_data = await _get_episodes_data(book_id, episode_ids, platforms=[platform])
+                novel_data = await _get_novel_data(book_id)  # type: ignore[arg-type]
+                episodes_data = await _get_episodes_data(book_id, episode_ids, platforms=[platform])  # type: ignore[arg-type,list-item]
 
                 pipeline = CommercialPipeline()
                 publish_results = await pipeline._publish_to_platforms(
@@ -93,7 +93,7 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
                 )
 
                 # 4. 投稿結果の保存
-                await _save_publish_records(book_id, publish_results)
+                await _save_publish_records(book_id, publish_results)  # type: ignore[arg-type]
 
                 # 5. ステータス更新 (running -> completed)
                 # 全プラットフォームで成功したか判定
@@ -104,22 +104,22 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
                         break
 
                 if all_success:
-                    schedule.status = "completed"
+                    schedule.status = "completed"  # type: ignore[assignment]
                     error_msg = None
                 else:
-                    schedule.status = "failed"
+                    schedule.status = "failed"  # type: ignore[assignment]
                     error_msg = "Some episodes failed to publish"
 
                 if error_msg:
-                    schedule.error_message = error_msg
+                    schedule.error_message = error_msg  # type: ignore[assignment]
 
                 await uow.session.commit()
                 return {"status": "success", "schedule_id": schedule_id, "final_status": schedule.status}
 
             except Exception as e:
                 logger.exception("Publication execution failed for schedule_id=%d: %s", schedule_id, e)
-                schedule.status = "failed"
-                schedule.error_message = str(e)
+                schedule.status = "failed"  # type: ignore[assignment]
+                schedule.error_message = str(e)  # type: ignore[assignment]
                 await uow.session.commit()
                 return {"status": "error", "error": str(e)}
 

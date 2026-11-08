@@ -107,7 +107,7 @@ class ContextManager:
                 plot_list = plots if isinstance(plots, list) else [plots]
                 search_area = " ".join(
                     [
-                        (p.detailed_blueprint or "") + " " + (p.summary or "") + " " + (p.script_content or "")
+                        str(p.detailed_blueprint or "") + " " + str(p.summary or "") + " " + str(p.script_content or "")
                         for p in plot_list
                     ]
                 )
@@ -116,8 +116,8 @@ class ContextManager:
                     for c in all_chars
                     if c.name
                     and (
-                        c.name in search_area
-                        or c.name in recent_ctx
+                        str(c.name) in search_area  # type: ignore[operator]
+                        or str(c.name) in recent_ctx  # type: ignore[operator]
                         or any(role in (c.role or "") for role in ["主人公", "ヒロイン", "悪役", "ライバル"])
                     )
                 ]
@@ -127,7 +127,7 @@ class ContextManager:
 
         plot_list = plots if isinstance(plots, list) else [plots]
         search_area = " ".join(
-            [(p.detailed_blueprint or "") + " " + (p.summary or "") + " " + (p.script_content or "") for p in plot_list]
+            [str(p.detailed_blueprint or "") + " " + str(p.summary or "") + " " + str(p.script_content or "") for p in plot_list]
         )
 
         lines = []
@@ -135,13 +135,13 @@ class ContextManager:
             if not c.name:
                 continue
             is_important = any(role in (c.role or "") for role in ["主人公", "ヒロイン", "悪役", "ライバル"])
-            if (c.name in search_area) or (c.name in recent_ctx) or is_important:
+            if (str(c.name) in search_area) or (str(c.name) in recent_ctx) or is_important:
                 reg = self._parse_character_registry(c)
                 lines.append(
                     f"■ {c.name} ({c.role})\n"
                     f"  - Personality/Ability: {reg.get('personality', '')} / {reg.get('ability', '')}\n"
                     f"  - IronConst: {reg.get('iron_constraint') or reg.get('iron_const') or ''}\n"
-                    f"  - State: {char_states.get(c.name, '通常')}\n"
+                    f"  - State: {char_states.get(str(c.name), '通常')}\n"
                 )
         return "\n".join(lines) if lines else "キャラクター情報なし"
 
@@ -310,18 +310,18 @@ class ContextManager:
         # 検索範囲を拡大
         plot_list = plots if isinstance(plots, list) else [plots]
         search_area = " ".join(
-            [(p.detailed_blueprint or "") + " " + (p.summary or "") + " " + (p.script_content or "") for p in plot_list]
+            [str(p.detailed_blueprint or "") + " " + str(p.summary or "") + " " + str(p.script_content or "") for p in plot_list]
         )
-        active_char_names = [c.name for c in all_chars if c.name and c.name in search_area]
+        active_char_names = [str(c.name) for c in all_chars if c.name and str(c.name) in search_area]
 
         # 基本コンテキスト
         base_past_ctx = await self.build_past_context(book_id, ep_num, active_char_names=active_char_names)
 
         # RAGによる動的検索の追加
         if isinstance(plots, list):
-            query = " ".join([p.detailed_blueprint or "" for p in plots])
+            query = " ".join([str(p.detailed_blueprint or "") for p in plots])
         else:
-            query = plots.detailed_blueprint or ""
+            query = str(plots.detailed_blueprint or "")
 
         rag_ctx = await self.repo.get_relevant_past_logs(branch_id, ep_num, query_text=query, book_id=book_id)
 
@@ -422,7 +422,7 @@ class ContextManager:
         ep_num: int,
         plot: PlotDbModel,
         chars: list[Any],
-        active_constraints: list[dict] = None,
+        active_constraints: list[dict[Any, Any]] | None = None,
         pacing_instruction: str = "",
     ) -> ContextData:
         """提案6: データの構造を不変入力、システム設定、状態出力に明確に分割したモデルを返す"""

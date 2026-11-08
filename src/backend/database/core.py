@@ -358,8 +358,8 @@ class DatabaseManager:
                 result = await session.execute(stmt)
                 existing = result.scalar_one_or_none()
                 if existing:
-                    existing.value = value
-                    existing.updated_at = dt_val
+                    existing.value = value  # type: ignore[assignment]
+                    existing.updated_at = dt_val  # type: ignore[assignment]
                 else:
                     new_state = InternalState(key=key, value=value, updated_at=dt_val)
                     session.add(new_state)

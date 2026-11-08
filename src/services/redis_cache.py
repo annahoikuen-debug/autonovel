@@ -16,7 +16,7 @@ try:
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
-    redis: Any = None
+    _redis_fallback: Any = None
 from src.backend.config import settings as _app_settings
 
 logger = logging.getLogger(__name__)
@@ -88,7 +88,7 @@ class RedisCacheService:
             return json.dumps(value, ensure_ascii=False)
         return json.dumps(value, ensure_ascii=False, default=str)
 
-    def _deserialize(self, data: str) -> Any:
+    def _deserialize(self, data: str | bytes) -> Any:
         """値をデシリアライズ."""
         try:
             return json.loads(data)

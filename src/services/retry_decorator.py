@@ -319,15 +319,16 @@ def with_llm_retry():
                         if fail_count >= 2:
                             from config import MODEL_STABLE_FALLBACK
 
-                            try:
-                                from config import MODEL_ULTRA_STABLE
-                            except ImportError:
-                                MODEL_ULTRA_STABLE = MODEL_STABLE_FALLBACK
+                            import config as _config_module
 
-                            if state.model_name != MODEL_ULTRA_STABLE and (
+                            _ultra_stable = (
+                                getattr(_config_module, "MODEL_ULTRA_STABLE", None) or MODEL_STABLE_FALLBACK
+                            )
+
+                            if state.model_name != _ultra_stable and (
                                 state.attempt >= 2 or state.model_name == MODEL_STABLE_FALLBACK
                             ):
-                                state.model_name = MODEL_ULTRA_STABLE if MODEL_ULTRA_STABLE else "gemini-3.1-flash-lite"
+                                state.model_name = _ultra_stable if _ultra_stable else "gemini-3.1-flash-lite"
                                 logger.warning(
                                     "[Gemini FALLBACK] Persistent 5xx. Switching to ULTRA_STABLE: %s",
                                     state.model_name,

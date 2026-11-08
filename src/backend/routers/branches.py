@@ -201,7 +201,7 @@ async def list_branches(
     """書籍配下の全ブランチをツリー順に取得."""
     async with UnitOfWork(AppContainer.db()) as uow:
         await verify_book_ownership(book_id, current_user, uow)
-        repo = BranchRepository(uow.session)
+        repo = BranchRepository(uow.session)  # type: ignore[arg-type]
         branches = await repo.get_branch_tree(book_id)
         return [_to_response(b) for b in branches]
 
@@ -214,7 +214,7 @@ async def get_branch_tree(
     """書籍の全ブランチをツリー構造（ノードとエッジ）で取得."""
     async with UnitOfWork(AppContainer.db()) as uow:
         await verify_book_ownership(book_id, current_user, uow)
-        repo = BranchRepository(uow.session)
+        repo = BranchRepository(uow.session)  # type: ignore[arg-type]
         branches = await repo.get_branch_tree(book_id)
 
         # ノードとエッジに変換

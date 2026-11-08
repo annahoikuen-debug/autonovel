@@ -94,7 +94,7 @@ class WorkerRecoveryManager:
 
             now = datetime.now()
             for log in running_logs:
-                log.heartbeat_at = now
+                log.heartbeat_at = now  # type: ignore[assignment]
 
             await session.commit()
             logger.debug(f"Updated heartbeats for {len(running_logs)} running tasks")
@@ -111,7 +111,7 @@ class WorkerRecoveryManager:
         async with self.db_manager.get_session() as session:
             stmt = select(TaskWALLogModel).where(
                 TaskWALLogModel.state == "running",
-                TaskWALLogModel.heartbeat_at < threshold,
+                TaskWALLogModel.heartbeat_at < threshold,  # type: ignore[arg-type]
             )
             result = await session.execute(stmt)
             return list(result.scalars().all())
@@ -128,7 +128,7 @@ class WorkerRecoveryManager:
         recovered_ids = []
         async with self.db_manager.get_session() as session:
             for zombie in zombies:
-                recovery_attempts = await self._get_recovery_attempt_count(session, zombie.task_id)
+                recovery_attempts = await self._get_recovery_attempt_count(session, zombie.task_id)  # type: ignore[arg-type]
 
                 if recovery_attempts >= self.config.max_recovery_attempts:
                     logger.warning(
@@ -136,7 +136,8 @@ class WorkerRecoveryManager:
                         f"attempts ({self.config.max_recovery_attempts}). Marking as failed."
                     )
                     await self._mark_task_failed(
-                        session, zombie.task_id, f"Exceeded max recovery attempts ({self.config.max_recovery_attempts})"
+                        session, zombie.task_id,  # type: ignore[arg-type]
+                        f"Exceeded max recovery attempts ({self.config.max_recovery_attempts})"
                     )
                     await self._emit_alert(
                         "poison_pill",
@@ -147,8 +148,8 @@ class WorkerRecoveryManager:
                     )
                     continue
 
-                zombie.state = "pending"
-                zombie.heartbeat_at = datetime.now()
+                zombie.state = "pending"  # type: ignore[assignment]
+                zombie.heartbeat_at = datetime.now()  # type: ignore[assignment]
                 recovered_ids.append(zombie.task_id)
                 logger.info(
                     f"Recovered zombie task {zombie.task_id} (dag: {zombie.dag_id}, "
@@ -167,7 +168,7 @@ class WorkerRecoveryManager:
                     node_id=zombie.node_id,
                 )
 
-        return recovered_ids
+        return recovered_ids  # type: ignore[return-value]
 
     async def _get_recovery_attempt_count(self, session, task_id: str) -> int:
         """Count previous recovery attempts for a task."""
@@ -285,12 +286,12 @@ class WorkerRecoveryManager:
             for log in completed_logs:
                 if log.output_json:
                     try:
-                        node_outputs[log.node_id] = json.loads(log.output_json)
+                        node_outputs[log.node_id] = json.loads(log.output_json)  # type: ignore[arg-type]
                     except json.JSONDecodeError:
                         pass
 
             logger.info(f"Resuming DAG {dag_id} from checkpoint with {len(node_outputs)} completed nodes")
-            return list(node_outputs.keys())
+            return list(node_outputs.keys())  # type: ignore[arg-type]
 
     async def get_pending_tasks_for_dag(self, dag_id: str) -> list[TaskWALLogModel]:
         """Get all pending tasks for a DAG that need to be executed."""

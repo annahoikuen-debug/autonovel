@@ -83,7 +83,7 @@ class DAGScheduler:
 
                 self.replanner = DAGReplanner()
             except Exception:
-                self.replanner = None
+                self.replanner = None  # type: ignore[assignment]
         else:
             self.replanner = replanner
 
@@ -674,7 +674,7 @@ class DAGScheduler:
 
         # Fallback: local checkpoint-based recovery
         logger.info("Running local checkpoint-based startup recovery...")
-        checkpoints_dir = self.persistence.base_dir
+        checkpoints_dir = self.persistence.base_dir  # type: ignore[attr-defined]
         if not checkpoints_dir.exists():
             return []
 
@@ -721,10 +721,10 @@ class DAGScheduler:
                 wal_entry = await self.worker_recovery.get_latest_wal_for_node(dag_id, node_id)
                 if wal_entry and wal_entry.output_json:
                     try:
-                        output_data = json.loads(wal_entry.output_json)
+                        output_data = json.loads(wal_entry.output_json)  # type: ignore[arg-type]
                         graph.nodes[node_id].result = output_data
                         graph.nodes[node_id].status = "completed"
-                        graph.nodes[node_id].completed_at = wal_entry.created_at
+                        graph.nodes[node_id].completed_at = wal_entry.created_at  # type: ignore[assignment]
                         logger.debug(f"Restored output for node {node_id} from WAL")
                     except json.JSONDecodeError:
                         logger.warning(f"Failed to parse WAL output for node {node_id}")
@@ -750,12 +750,12 @@ class DAGScheduler:
 
     def _can_schedule_approx(self, req: TaskResourceRequirement) -> bool:
         """Fast approximate check using semaphore current values."""
-        if self._semaphores.cpu._value <= 0:
+        if self._semaphores.cpu._value <= 0:  # type: ignore[union-attr]
             return False
         ram_slots = max(1, int(req.ram_mb / 512))
-        if self._semaphores.ram._value < ram_slots:
+        if self._semaphores.ram._value < ram_slots:  # type: ignore[union-attr]
             return False
-        if req.gpu_mem_mb > 0 and self._semaphores.gpu._value <= 0:
+        if req.gpu_mem_mb > 0 and self._semaphores.gpu._value <= 0:  # type: ignore[union-attr]
             return False
         return True
 

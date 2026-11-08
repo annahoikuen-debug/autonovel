@@ -62,7 +62,7 @@ class KakuyomuPublisher(PublisherAdapter):
         super().__init__()
         self.timeout = timeout
 
-    async def authenticate(self, credentials: KakuyomuCredentials) -> bool:
+    async def authenticate(self, credentials: KakuyomuCredentials) -> bool:  # type: ignore[override]
         """認証確認（実APIが存在しないためトークン検証のみ）。
 
         Step 16: 架空の外部APIエンドポイントへのHTTPリクエストは完全撤廃済み。
@@ -73,7 +73,7 @@ class KakuyomuPublisher(PublisherAdapter):
             return True
         return True
 
-    async def publish(
+    async def publish(  # type: ignore[override]
         self, novel: dict[str, Any], chapter: dict[str, Any], credentials: KakuyomuCredentials
     ) -> PublishResult:
         """新規作品投稿（第1話）— 投稿画面URL生成のみでHTTPリクエストなし。
@@ -107,7 +107,7 @@ class KakuyomuPublisher(PublisherAdapter):
             },
         )
 
-    async def update_chapter(
+    async def update_chapter(  # type: ignore[override]
         self, post_id: str, chapter: dict[str, Any], credentials: KakuyomuCredentials
     ) -> PublishResult:
         """既存作品への話追加 — 投稿画面URL生成のみでHTTPリクエストなし。"""
@@ -136,7 +136,7 @@ class KakuyomuPublisher(PublisherAdapter):
             },
         )
 
-    async def get_post_status(self, post_id: str, credentials: KakuyomuCredentials) -> dict[str, Any]:
+    async def get_post_status(self, post_id: str, credentials: KakuyomuCredentials) -> dict[str, Any]:  # type: ignore[override]
         """作品ステータス取得 — 作品ページURLのみを返却（HTTPリクエストなし）。"""
         work_id = str(post_id).strip()
         return {

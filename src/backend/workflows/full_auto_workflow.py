@@ -51,7 +51,7 @@ class FullAutoWorkflow(BaseWorkflow):
         )
 
         adapter = ProgressReporterAdapter(reporter, is_easy_mode=False)
-        result = await pipeline.execute(ctx, self.engine, adapter)
+        result = await pipeline.execute(ctx, self.engine, adapter)  # type: ignore[arg-type]
 
         # 3. 既存インターフェース互換の dict に変換
         return map_context_to_fullauto_result(ctx, result)

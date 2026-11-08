@@ -211,7 +211,7 @@ class PipelineProcessRequest(BaseModel):
 class PipelineBatchRequest(BaseModel):
     """パイプラインバッチ処理リクエスト."""
 
-    chapters: list[PipelineProcessRequest] = Field(..., min_items=1)
+    chapters: list[PipelineProcessRequest] = Field(..., min_length=1)
     continue_on_error: bool = Field(True, description="エラー時に継続")
 
 
@@ -328,7 +328,7 @@ async def get_graph_data(
                 GraphEdgeSchema(
                     source=f"character_{rel.source_char_id}",
                     target=f"character_{rel.target_char_id}",
-                    type=rel.relation_type,
+                    type=rel.relation_type,  # type: ignore[arg-type]
                     properties={"description": rel.description} if rel.description else {},
                 )
             )

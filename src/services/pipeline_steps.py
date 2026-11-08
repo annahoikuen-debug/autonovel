@@ -120,6 +120,7 @@ class PlanStep(WorkflowStep):
                         reset_value=ProjectContext.get_setting("catharsis_reset_value", 0),
                     )
                     catharsis_pattern = wave_analyzer.analyze(tension_history)
+                    catharsis_points = catharsis_pattern.catharsis_points  # type: ignore[attr-defined]
 
                     if hasattr(bible, "model_dump"):
                         bible_dict = bible.model_dump()
@@ -127,15 +128,15 @@ class PlanStep(WorkflowStep):
                         bible_dict = dict(bible) if not isinstance(bible, dict) else bible
 
                     bible_dict["catharsis_pattern"] = catharsis_pattern.model_dump()
-                    bible_dict["catharsis_positions"] = catharsis_pattern.catharsis_points
+                    bible_dict["catharsis_positions"] = catharsis_points
 
                     ctx.catharsis_pattern = catharsis_pattern.model_dump()
-                    ctx.catharsis_positions = catharsis_pattern.catharsis_points
+                    ctx.catharsis_positions = catharsis_points
                     ctx.easy_parameters["catharsis_pattern"] = catharsis_pattern.model_dump()
-                    ctx.easy_parameters["catharsis_positions"] = catharsis_pattern.catharsis_points
+                    ctx.easy_parameters["catharsis_positions"] = catharsis_points
 
                     reporter.report(
-                        f"📊 カタルシスパターン分析完了: {len(catharsis_pattern.catharsis_points)}個のカタルシス点を検出",
+                        f"📊 カタルシスパターン分析完了: {len(catharsis_points)}個のカタルシス点を検出",
                         "info",
                     )
                 except Exception as e:
@@ -165,7 +166,7 @@ class PlanStep(WorkflowStep):
             ):
                 return False
 
-            if reporter.state.should_stop():
+            if reporter.state is not None and reporter.state.should_stop():
                 return False
             return True
         except Exception as e:
@@ -224,7 +225,7 @@ class WriteStep(WorkflowStep):
             ctx.chars_count = chars_count
             ctx.failed_episodes = failed_episodes
 
-            if reporter.state.should_stop():
+            if reporter.state is not None and reporter.state.should_stop():
                 return False
             return True
         except Exception as e:
@@ -265,15 +266,18 @@ class CatharsisAnalysisStep(WorkflowStep):
                 reset_value=ProjectContext.get_setting("catharsis_reset_value", 0),
             )
             catharsis_pattern = wave_analyzer.analyze(tension_history)
+            catharsis_points = catharsis_pattern.catharsis_points  # type: ignore[attr-defined]
+            pattern_type = catharsis_pattern.pattern_type  # type: ignore[attr-defined]
+            amplitude = catharsis_pattern.amplitude  # type: ignore[attr-defined]
 
             ctx.catharsis_pattern = catharsis_pattern.model_dump()
-            ctx.catharsis_positions = catharsis_pattern.catharsis_points
+            ctx.catharsis_positions = catharsis_points
             ctx.easy_parameters["catharsis_pattern"] = catharsis_pattern.model_dump()
-            ctx.easy_parameters["catharsis_positions"] = catharsis_pattern.catharsis_points
+            ctx.easy_parameters["catharsis_positions"] = catharsis_points
 
             reporter.report(
-                f"📊 カタルシス分析完了: {len(catharsis_pattern.catharsis_points)}点検出 "
-                f"(タイプ: {catharsis_pattern.pattern_type}, 振幅: {catharsis_pattern.amplitude:.1f})",
+                f"📊 カタルシス分析完了: {len(catharsis_points)}点検出 "
+                f"(タイプ: {pattern_type}, 振幅: {amplitude:.1f})",
                 "info",
             )
             return True
@@ -309,7 +313,7 @@ class AuditRewriteStep(WorkflowStep):
         episode_details = []
 
         for ep_num in range(1, ctx.target_eps + 1):
-            if reporter.state.should_stop():
+            if reporter.state is not None and reporter.state.should_stop():
                 return False
 
             reporter.update_progress(2, 4, f"STEP 3/4: 第{ep_num}話 監査・リライト中... ({ep_num}/{ctx.target_eps})")
@@ -818,8 +822,8 @@ class ForeshadowingRegistrationStep(WorkflowStep):
                 hang_volume=volume,
                 hang_episode=episode,
                 hang_chapter=chapter,
-                hang_type=hang_type,
-                importance=importance,
+                hang_type=hang_type,  # type: ignore[arg-type]
+                importance=importance,  # type: ignore[arg-type]
             )
             foreshadowings.append(fs)
 

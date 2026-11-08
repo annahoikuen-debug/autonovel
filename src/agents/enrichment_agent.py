@@ -773,7 +773,7 @@ class EnrichmentAgent(SkillAgent):
         enriched_text = text
         citations_meta = []
         marker_counter = 0
-        source_to_marker: dict[str, Any] = {}  # 同一ソースは同一番号
+        source_to_marker: dict[tuple[Any, Any], Any] = {}  # 同一ソースは同一番号
 
         for pair in sorted_pairs:
             source_key = (pair["source"]["source"], pair["source"].get("page", ""))

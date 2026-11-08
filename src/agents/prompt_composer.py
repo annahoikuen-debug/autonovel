@@ -84,7 +84,7 @@ class PromptComposer:
 
         plot_data = context.get("plot", {})
         if not plot_data.get("detailed_blueprint"):
-            if hasattr(self.agent, "logger"):
+            if self.agent is not None and hasattr(self.agent, "logger"):
                 self.agent.logger.warning(f"Ep.{ep_num}: detailed_blueprint is empty. Writing may be low quality.")
 
         script_text = context.get("script", "")
@@ -109,7 +109,7 @@ class PromptComposer:
                 )
                 foreshadowing_context = context_retriever.format_context_for_prompt(context_dict)
             except Exception as e:
-                if hasattr(self.agent, "logger"):
+                if self.agent is not None and hasattr(self.agent, "logger"):
                     self.agent.logger.warning(f"Ep.{ep_num}: Failed to get foreshadowing context: {e}")
                 foreshadowing_context = ""
         prompt = await getattr(self.agent, "prompt_manager").build_final_writing_prompt(
@@ -162,7 +162,7 @@ class PromptComposer:
             emotion_instruction = tmpl.render(character_flaw=char_flaw)
             prompt = emotion_instruction + "\n\n" + prompt
         except Exception as e:
-            if hasattr(self.agent, "logger"):
+            if self.agent is not None and hasattr(self.agent, "logger"):
                 self.agent.logger.warning("Failed to render raw_emotion_instruction: %s", e)
 
         return prompt
@@ -270,7 +270,7 @@ class PromptComposer:
             )
             records = await repo.get_unresolved(book_id)
         except Exception as e:
-            if hasattr(self.agent, "logger"):
+            if self.agent is not None and hasattr(self.agent, "logger"):
                 self.agent.logger.warning(f"Ep.{ep_num}: 未回収伏線（背景）の取得に失敗: {e}")
             return []
         return [

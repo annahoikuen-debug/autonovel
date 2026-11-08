@@ -37,10 +37,10 @@ class PlanningService:
 
     async def create_hegemony_plan(
         self,
-        genre: str = None,
-        keywords: str = None,
-        style_key: str = None,
-        concept: str = None,
+        genre: str | None = None,
+        keywords: str | None = None,
+        style_key: str | None = None,
+        concept: str | None = None,
         title: str = "",
         cheat_scale: int = 4,
         growth_curve: str = "最初からカンスト(無双)",
@@ -82,7 +82,7 @@ class PlanningService:
         arcs: list[Any],
         genre: str = "",
         target_eps: int = 10,
-    ) -> dict[str, float]:
+    ) -> dict[str, Any]:
         """企画アウトラインから BookScore を予測する（構造スコア・読者体験スコア中心）。
 
         単一アーク構成の評価。3案比較時はこのメソッドを各案に対して呼び出す。

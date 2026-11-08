@@ -64,8 +64,8 @@ class SpiceGuardAdapter:
         if self.preset_name is None:
             logger.warning("GENRE_REGISTRY に %r が無い。既定プリセット 'zarma' を使う", genre)
             self.preset_name = "zarma"
-        self._guard = None
-        self._preset = None
+        self._guard: Any = None
+        self._preset: Any = None
 
     def _ensure_guard(self) -> None:
         """遅延初期化"""
@@ -73,12 +73,12 @@ class SpiceGuardAdapter:
             try:
                 from src.easy_mode.spice_guard import create_spice_guard
 
-                self._guard = create_spice_guard(self.preset_name)
+                self._guard = create_spice_guard(self.preset_name)  # type: ignore[arg-type]
                 self._preset = self._guard.preset
             except Exception as e:
                 logger.warning(f"SpiceGuard init failed for preset={self.preset_name}: {e}")
                 # フォールバック: ダミーガード
-                self._guard = _DummySpiceGuard(self.preset_name)
+                self._guard = _DummySpiceGuard(self.preset_name)  # type: ignore[arg-type]
 
     def extract_spice(self, text: str) -> list[SpiceElement]:
         """テキストから尖り要素を抽出"""

@@ -600,7 +600,7 @@ class BookScoreCalculator:
 
                     settings = json.loads(bible.settings) if isinstance(bible.settings, str) else bible.settings
                     if isinstance(settings, dict):
-                        period = settings.get("period", settings.get("時代", "medieval"))
+                        period = settings.get("period", settings.get("時代", "medieval")) or "medieval"
                         # 時代考証: アナクロニズム検出
                         anachronisms = self._get_anachronisms(period)
                         found_anachronisms = [a for a in anachronisms if a in text]

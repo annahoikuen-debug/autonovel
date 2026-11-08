@@ -32,9 +32,9 @@ class ForeshadowingEntity:
         description: str,
         introduced_in_ep: int,
         target_resolution_ep: Optional[int] = None,
-        related_characters: list[str] = None,
-        keywords: list[str] = None,
-        metadata: dict[str, Any] = None,
+        related_characters: list[str] | None = None,
+        keywords: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> "ForeshadowingEntity":
         return cls(
             foreshadow_id=str(uuid.uuid4())[:8],
@@ -119,9 +119,9 @@ class LongFormContextRetriever:
 
         if self.chroma_client is None:
             # モック/テスト用のインメモリ実装
-            from src.integrations.vector_store.in_memory import InMemoryVectorStore
+            from src.integrations.vector_store.in_memory import InMemoryFallbackStore
 
-            self.chroma_client = InMemoryVectorStore()
+            self.chroma_client = InMemoryFallbackStore()
 
         collection_name = f"novel_foreshadowings_book_{book_id}"
         try:
@@ -207,7 +207,7 @@ class LongFormContextRetriever:
         book_id: int,
         current_ep: int,
         plot_outline: str,
-        character_names: list[str] = None,
+        character_names: list[str] | None = None,
     ) -> dict[str, Any]:
         """執筆に必要な背景知識をワンストップで提供"""
         character_names = character_names or []

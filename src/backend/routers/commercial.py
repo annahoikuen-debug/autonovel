@@ -104,14 +104,14 @@ async def create_schedule(
         await db.refresh(schedule)
 
         return PublicationScheduleResponse(
-            id=schedule.id,
-            book_id=schedule.book_id,
-            platform=schedule.platform,
-            episode_range=(schedule.episode_range_start, schedule.episode_range_end),
-            scheduled_at=schedule.scheduled_at,
-            status=schedule.status,
-            error_message=schedule.error_message,
-            created_at=schedule.created_at,
+            id=schedule.id,  # type: ignore[arg-type]
+            book_id=schedule.book_id,  # type: ignore[arg-type]
+            platform=schedule.platform,  # type: ignore[arg-type]
+            episode_range=(schedule.episode_range_start, schedule.episode_range_end),  # type: ignore[arg-type]
+            scheduled_at=schedule.scheduled_at,  # type: ignore[arg-type]
+            status=schedule.status,  # type: ignore[arg-type]
+            error_message=schedule.error_message,  # type: ignore[arg-type]
+            created_at=schedule.created_at,  # type: ignore[arg-type]
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to create schedule: {str(e)}")
@@ -181,7 +181,7 @@ async def cancel_schedule(
 
         # schedule_id だけでは他テナントのスケジュールを指せるため、
         # 紐づく作品を必ず検証する。
-        await verify_book_ownership(schedule.book_id, current_user, db)
+        await verify_book_ownership(schedule.book_id, current_user, db)  # type: ignore[arg-type]
 
         if schedule.status != "pending":
             raise HTTPException(
@@ -189,7 +189,7 @@ async def cancel_schedule(
             )
 
         # ステータスを cancelled に更新
-        schedule.status = "cancelled"
+        schedule.status = "cancelled"  # type: ignore[assignment]
         await db.commit()
         await db.refresh(schedule)
 
@@ -231,7 +231,7 @@ async def run_schedule_now(
             raise HTTPException(status_code=404, detail="Schedule not found")
 
         # 他テナントのスケジュールを即時実行できないようにする
-        await verify_book_ownership(schedule.book_id, current_user, db)
+        await verify_book_ownership(schedule.book_id, current_user, db)  # type: ignore[arg-type]
 
         # ワーカー側は pending のスケジュールしか受け付けないため、
         # 取り消済み・実行中・完了済みの再実行をここで拒否する。

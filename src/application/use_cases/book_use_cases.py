@@ -68,6 +68,7 @@ class BookUseCases:
         """ユーザーの作品一覧を取得"""
         uow = self._get_uow()
         _ = uow  # トランザクションコンテキスト確保のため取得
+        assert self.book_repository is not None
         books = await self.book_repository.get_all_books(user_id=user_id)
         return [BookDTO.from_orm(b).to_dict() for b in books]
 
@@ -75,6 +76,7 @@ class BookUseCases:
         """指定されたIDの作品を取得（所有権または管理者権限を検証）"""
         uow = self._get_uow()
         _ = uow
+        assert self.book_repository is not None
         b = await self.book_repository.get_book(book_id=book_id, user_id=current_user.id)
         if not b:
             other_book = await self.book_repository.get_book_by_id(book_id)
@@ -92,6 +94,7 @@ class BookUseCases:
         """新規作品を作成"""
         uow = self._get_uow()
         _ = uow
+        assert self.book_repository is not None
         book_id = await self.book_repository.create_book(
             user_id=current_user.id,
             title=payload.title,
@@ -112,6 +115,7 @@ class BookUseCases:
         """作品を削除"""
         uow = self._get_uow()
         _ = uow
+        assert self.book_repository is not None
         b = await self.book_repository.get_book(book_id=book_id, user_id=current_user.id)
         if not b:
             other_book = await self.book_repository.get_book_by_id(book_id)
@@ -128,12 +132,13 @@ class BookUseCases:
     async def get_book_score_history(self, book_id: int) -> dict[str, Any]:
         """スコア履歴を取得"""
         uow = await self._get_uow()
-        book = await self.book_repository.get_book(book_id)
+        assert self.book_repository is not None
+        book = await self.book_repository.get_book(book_id)  # type: ignore[call-arg]
         if not book:
             raise NotFoundError("Book not found", resource_type="Book", resource_id=str(book_id))
 
-        history = await uow.book_scores.get_history_for_book(book_id)
-        all_benchmarks = await uow.book_scores.get_genre_benchmarks()
+        history = await uow.book_scores.get_history_for_book(book_id)  # type: ignore[attr-defined]
+        all_benchmarks = await uow.book_scores.get_genre_benchmarks()  # type: ignore[attr-defined]
         genre_benchmark = all_benchmarks.get(book.genre) if all_benchmarks else None
 
         return {
@@ -159,7 +164,7 @@ class BookUseCases:
     async def get_pdca_cycles(self, book_id: int, chapter_number: int) -> list[dict[str, Any]]:
         """PDCA履歴を取得"""
         uow = await self._get_uow()
-        snapshots = await uow.pdca_history.get_by_chapter(book_id, chapter_number)
+        snapshots = await uow.pdca_history.get_by_chapter(book_id, chapter_number)  # type: ignore[attr-defined]
 
         return [
             {

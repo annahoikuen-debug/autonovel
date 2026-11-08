@@ -38,7 +38,7 @@ class GraphStore(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def delete_edge(self, source: str, target: str, beat_id: str = None) -> bool:
+    def delete_edge(self, source: str, target: str, beat_id: str | None = None) -> bool:
         """エッジ削除（beat_id指定時は該当のみ削除）"""
         ...
 
@@ -111,7 +111,7 @@ class InMemoryGraphStore(GraphStore):
         """全エッジを取得 (デバッグ用)。"""
         return {k: list(v) for k, v in self._edges.items()}
 
-    def delete_edge(self, source: str, target: str, beat_id: str = None) -> bool:
+    def delete_edge(self, source: str, target: str, beat_id: str | None = None) -> bool:
         """エッジ削除（beat_id指定時は該当のみ削除、未指定なら全削除）"""
         key = (source, target)
         if key not in self._edges:
@@ -248,7 +248,7 @@ class KuzuGraphStore(GraphStore):
             )
         return path
 
-    def delete_edge(self, source: str, target: str, beat_id: str = None) -> bool:
+    def delete_edge(self, source: str, target: str, beat_id: str | None = None) -> bool:
         """エッジ削除（beat_id指定時は該当のみ削除）"""
         if not self._available:
             return False

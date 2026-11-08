@@ -92,11 +92,11 @@ class RefineEroticWorkflow(BaseWorkflow):
         _ = kwargs.get("platform_preset", "kakuyomu_romance")
 
         if reporter:
-            reporter.set_message("螳倩・遐皮｣ｨ繧帝幕蟋倶ｸｭ...")
-            reporter.add_log(f"蟇ｾ雎｡菴懷刀: {book_id}, 隧ｱ謨ｰ: {ep_num}, 蠑ｷ蠎ｦ: {intensity}")
+            reporter.set_message("螳倩・遐皮｣ｨ繧帝幕蟋倶ｸｭ...")  # type: ignore[attr-defined]
+            reporter.add_log(f"蟇ｾ雎｡菴懷刀: {book_id}, 隧ｱ謨ｰ: {ep_num}, 蠑ｷ蠎ｦ: {intensity}")  # type: ignore[attr-defined]
 
         # 1. 隧ｲ蠖薙メ繝｣繝励ち繝ｼ縺ｮ譛ｬ譁・ｒ蜿門ｾ・
-        async with self.repo as uow:
+        async with self.repo as uow:  # type: ignore[union-attr, attr-defined]
             chapter = await uow.chapters.get_chapter(branch_id, ep_num, book_id=book_id)
             if not chapter:
                 raise ValueError(f"Chapter not found for book_id {book_id}, ep_num {ep_num}")
@@ -131,10 +131,10 @@ class RefineEroticWorkflow(BaseWorkflow):
             # (existing謨ｴ蜷域ｧ繝√ぉ繝・け驛ｨ蛻・弍逵∫払...)
             if not is_ok:
                 for issue in issues:
-                    reporter.add_log(f"笞・・謨ｴ蜷域ｧ隴ｦ蜻・ {issue}")
+                    reporter.add_log(f"笞・・謨ｴ蜷域ｧ隴ｦ蜻・ {issue}")  # type: ignore[union-attr, attr-defined]
             if not afterglow_ok:
                 for issue in afterglow_issues:
-                    reporter.add_log(f"笞・・afterglow蜩∬ｳｪ隴ｦ蜻・ {issue}")
+                    reporter.add_log(f"笞・・afterglow蜩∬ｳｪ隴ｦ蜻・ {issue}")  # type: ignore[union-attr, attr-defined]
 
             # 4. 譛ｬ譁・ｒ譖ｴ譁ｰ
             chapter.content = refined_content
@@ -146,13 +146,13 @@ class RefineEroticWorkflow(BaseWorkflow):
             await uow.session.commit()
 
         if reporter:
-            reporter.add_log("豈泌湊陦ｨ迴ｾ縺ｮ譁・ｭｦ逧・､画鋤繧貞ｮ御ｺ・＠縺ｾ縺励◆")
+            reporter.add_log("豈泌湊陦ｨ迴ｾ縺ｮ譁・ｭｦ逧・､画鋤繧貞ｮ御ｺ・＠縺ｾ縺励◆")  # type: ignore[attr-defined]
             if not (is_ok and afterglow_ok):
                 if not is_ok:
-                    reporter.add_log("謨ｴ蜷域ｧ繝√ぉ繝・け縺失敗")
+                    reporter.add_log("謨ｴ蜷域ｧ繝√ぉ繝・け縺失敗")  # type: ignore[attr-defined]
                 if not afterglow_ok:
-                    reporter.add_log("afterglow蜩∬ｳｪ隧穂ｾ｡繝√ぉ繝・け縺失敗")
-            reporter.set_message("螳倩・遐皮｣ｨ繧貞ｮ御ｺ・＠縺ｾ縺励◆┊縺ｾ縺励◆")
+                    reporter.add_log("afterglow蜩∬ｳｪ隧穂ｾ｡繝√ぉ繝・け縺失敗")  # type: ignore[attr-defined]
+            reporter.set_message("螳倩・遐皮｣ｨ繧貞ｮ御ｺ・＠縺ｾ縺励◆┊縺ｾ縺励◆")  # type: ignore[attr-defined]
 
         return {
             "success": True,

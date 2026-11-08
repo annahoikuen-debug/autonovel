@@ -95,7 +95,7 @@ class WritingGraphManager:
             self.checkpointer = MemorySaver()
         self.workflow = self._build_graph()
         # メタデータ保持用
-        self._checkpoint_metadata: dict[str, Any] = {}
+        self._checkpoint_metadata: dict[int, Any] = {}
         # 品質メトリクス収集（ジャンル別トレンド分析用）
         from .quality_metrics import QualityMetricsCollector
 
@@ -678,7 +678,7 @@ class WritingGraphManager:
         """最終化ノード - チェックポイントメタデータ記録対応"""
         logger.info(f"LangGraph: Finalizing Ep.{state.get('ep_num')}")
 
-        ep_num = state.get("ep_num")
+        ep_num: int = state.get("ep_num", 0)
         # v5.0 メタデータ記録（レイテンシ・反復数）
         start_time = state.get("start_time", time.time())
         latency_sec = time.time() - start_time
@@ -816,7 +816,7 @@ class WritingGraphManager:
 
         if self.workflow is None:
             # LangGraph 非依存のフォールバック: ノードを順次実行
-            state: dict[str, Any] = dict(initial_state)
+            state: WritingGraphState = WritingGraphState(dict(initial_state))
             state.update(await self.node_prepare(state))
             state.update(await self.node_drafting(state))
             state.update(await self.node_audit(state))

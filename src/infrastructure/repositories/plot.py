@@ -179,8 +179,8 @@ class PlotRepository(BaseRepository):
         plot_obj.summary = summary  # type: ignore[assignment]
         plot_obj.detailed_blueprint = detailed_blueprint  # type: ignore[assignment]
         plot_obj.next_hook = (
-            json.dumps(next_hook, ensure_ascii=False) if isinstance(next_hook, (dict, list)) else (next_hook or "{}")
-        )  # type: ignore[assignment]
+            json.dumps(next_hook, ensure_ascii=False) if isinstance(next_hook, (dict, list)) else (next_hook or "{}")  # type: ignore[assignment]
+        )
         plot_obj.tension = tension  # type: ignore[assignment]
         plot_obj.tension_delta = tension_delta  # type: ignore[assignment]
         plot_obj.catharsis = catharsis  # type: ignore[assignment]
@@ -188,15 +188,15 @@ class PlotRepository(BaseRepository):
         plot_obj.is_catharsis = is_catharsis  # type: ignore[assignment]
         plot_obj.catharsis_type = catharsis_type  # type: ignore[assignment]
         plot_obj.scenes = (
-            json.dumps(scenes, ensure_ascii=False) if isinstance(scenes, (list, dict)) else (scenes or "[]")
-        )  # type: ignore[assignment]
+            json.dumps(scenes, ensure_ascii=False) if isinstance(scenes, (list, dict)) else (scenes or "[]")  # type: ignore[assignment]
+        )
         plot_obj.status = status  # type: ignore[assignment]
         plot_obj.misunderstanding_gap = misunderstanding_gap  # type: ignore[assignment]
         plot_obj.lite_model_director_notes = lite_model_director_notes  # type: ignore[assignment]
         plot_obj.script_content = script_content  # type: ignore[assignment]
         plot_obj.current_chain_phase = current_chain_phase  # type: ignore[assignment]
         plot_obj.resolution_style = resolution_style  # type: ignore[assignment]
-        plot_obj.is_plot_twist = is_plot_twist
+        plot_obj.is_plot_twist = is_plot_twist  # type: ignore[assignment]
         plot_obj.burned_cost_or_loot = burned_cost_or_loot  # type: ignore[assignment]
         plot_obj.antagonist_status = antagonist_status  # type: ignore[assignment]
         plot_obj.thematic_milestone = thematic_milestone  # type: ignore[assignment]
@@ -205,8 +205,8 @@ class PlotRepository(BaseRepository):
         plot_obj.healed_fields = (
             json.dumps(healed_fields, ensure_ascii=False)
             if isinstance(healed_fields, list)
-            else (healed_fields or "[]")
-        )  # type: ignore[assignment]
+            else (healed_fields or "[]")  # type: ignore[assignment]
+        )
         plot_obj.is_micro_catharsis = is_micro_catharsis  # type: ignore[assignment]
         plot_obj.information_asymmetry_level = information_asymmetry_level  # type: ignore[assignment]
         plot_obj.cost_score = cost_score  # type: ignore[assignment]
@@ -216,7 +216,7 @@ class PlotRepository(BaseRepository):
         plot_obj.is_locked = is_locked  # type: ignore[assignment]
         plot_obj.is_simulation = is_simulation  # type: ignore[assignment]
         plot_obj.simulation_id = sim_id  # type: ignore[assignment]
-        plot_obj.candidates = candidates
+        plot_obj.candidates = candidates  # type: ignore[assignment]
         plot_obj.erotic_intensity = erotic_intensity  # type: ignore[assignment]
 
     @retry_on_lock()
@@ -354,7 +354,7 @@ class PlotRepository(BaseRepository):
 
     @retry_on_lock()
     async def delete_plots_from(self, branch_id: int, start_ep: int, book_id: int | None = None) -> None:
-        stmt = delete(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num >= start_ep)
+        stmt = delete(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num >= start_ep)  # type: ignore[arg-type]
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
         await self.session.execute(stmt)
@@ -363,7 +363,7 @@ class PlotRepository(BaseRepository):
         self, branch_id: int, ep_num: int, book_id: int | None = None
     ) -> PlotDbModel | None:
         """ep_num より前の最新プロットを1件取得（直前プロットの状態参照用）"""
-        stmt = select(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num < ep_num)
+        stmt = select(Plot).where(Plot.branch_id == branch_id).where(Plot.ep_num < ep_num)  # type: ignore[arg-type]
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
         result = await self.session.execute(stmt.order_by(Plot.ep_num.desc()).limit(1))
@@ -429,7 +429,7 @@ class PlotRepository(BaseRepository):
         """伏線の回収エピソードを登録し、ステータスを recovered に更新する"""
         await self.session.execute(
             update(Foreshadowing)
-            .where(Foreshadowing.fw_id == fw_id)
+            .where(Foreshadowing.fw_id == fw_id)  # type: ignore[attr-defined]
             .values(recovery_ep=recovery_ep, status="recovered", note=note)
         )
 
@@ -439,10 +439,10 @@ class PlotRepository(BaseRepository):
             select(Foreshadowing)
             .where(Foreshadowing.book_id == book_id)
             .where(Foreshadowing.branch_id == branch_id)
-            .where(Foreshadowing.status == "pending")
-            .order_by(Foreshadowing.placement_ep)
+            .where(Foreshadowing.status == "pending")  # type: ignore[attr-defined]
+            .order_by(Foreshadowing.placement_ep)  # type: ignore[attr-defined]
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_all_foreshadowings(self, book_id: int, branch_id: int = 1) -> list[Foreshadowing]:
         """全ての伏線一覧を取得する"""
@@ -450,13 +450,13 @@ class PlotRepository(BaseRepository):
             select(Foreshadowing)
             .where(Foreshadowing.book_id == book_id)
             .where(Foreshadowing.branch_id == branch_id)
-            .order_by(Foreshadowing.placement_ep)
+            .order_by(Foreshadowing.placement_ep)  # type: ignore[attr-defined]
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_tension_curve(self, branch_id: int, book_id: int | None = None) -> list[dict[str, Any]]:
         """指定したブランチの全エピソードの緊張感スコアを時系列で取得する"""
-        stmt: Select[Any] = select(Plot.ep_num, Plot.tension).where(Plot.branch_id == branch_id)
+        stmt: Select[Any] = select(Plot.ep_num, Plot.tension).where(Plot.branch_id == branch_id)  # type: ignore[assignment]
         if book_id is not None:
             stmt = stmt.where(Plot.book_id == book_id)
         result = await self.session.execute(stmt.order_by(Plot.ep_num))
@@ -479,9 +479,9 @@ class PlotRepository(BaseRepository):
         result = await self.session.execute(
             select(CharacterArc).where(
                 CharacterArc.book_id == book_id,
-                CharacterArc.branch_id == branch_id,
+                CharacterArc.branch_id == branch_id,  # type: ignore[attr-defined]
                 CharacterArc.character_id == character_id,
-                CharacterArc.ep_num == ep_num,
+                CharacterArc.ep_num == ep_num,  # type: ignore[attr-defined]
             )
         )
         arc_obj = result.scalar_one_or_none()
@@ -489,11 +489,11 @@ class PlotRepository(BaseRepository):
             arc_obj = CharacterArc(branch_id=branch_id, character_id=character_id, ep_num=ep_num)
             self.session.add(arc_obj)
 
-        arc_obj.book_id = book_id
-        arc_obj.state_summary = state_summary
-        arc_obj.arc_delta = arc_delta
-        arc_obj.trigger_event = trigger_event
-        arc_obj.confidence = confidence
+        arc_obj.book_id = book_id  # type: ignore[assignment]
+        arc_obj.state_summary = state_summary  # type: ignore[attr-defined]
+        arc_obj.arc_delta = arc_delta  # type: ignore[attr-defined]
+        arc_obj.trigger_event = trigger_event  # type: ignore[attr-defined]
+        arc_obj.confidence = confidence  # type: ignore[attr-defined]
 
     async def get_character_arc_history(self, book_id: int, branch_id: int, character_id: int) -> list[CharacterArc]:
         """特定のキャラクターの全エピソードにおけるアーク履歴を取得する
@@ -505,11 +505,11 @@ class PlotRepository(BaseRepository):
         result = await self.session.execute(
             select(CharacterArc)
             .where(CharacterArc.book_id == book_id)
-            .where(CharacterArc.branch_id == branch_id)
+            .where(CharacterArc.branch_id == branch_id)  # type: ignore[attr-defined]
             .where(CharacterArc.character_id == character_id)
-            .order_by(CharacterArc.ep_num)
+            .order_by(CharacterArc.ep_num)  # type: ignore[attr-defined]
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_latest_character_arc(
         self, book_id: int, branch_id: int, character_id: int, ep_num: int
@@ -521,10 +521,10 @@ class PlotRepository(BaseRepository):
         result = await self.session.execute(
             select(CharacterArc)
             .where(CharacterArc.book_id == book_id)
-            .where(CharacterArc.branch_id == branch_id)
+            .where(CharacterArc.branch_id == branch_id)  # type: ignore[attr-defined]
             .where(CharacterArc.character_id == character_id)
-            .where(CharacterArc.ep_num < ep_num)
-            .order_by(CharacterArc.ep_num.desc())
+            .where(CharacterArc.ep_num < ep_num)  # type: ignore[attr-defined]
+            .order_by(CharacterArc.ep_num.desc())  # type: ignore[attr-defined]
             .limit(1)
         )
         return result.scalar_one_or_none()

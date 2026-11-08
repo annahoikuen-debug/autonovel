@@ -58,7 +58,7 @@ class BookRepository(BaseRepository):
         )
         self.session.add(book)
         await self.session.flush()
-        return book.id
+        return book.id  # type: ignore[return-value]
 
     async def get_book(self, book_id: int, user_id: int | None = None) -> BookDbModel | None:
         stmt = select(Book).where(Book.id == book_id)

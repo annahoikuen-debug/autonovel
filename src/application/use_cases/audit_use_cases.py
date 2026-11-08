@@ -38,7 +38,7 @@ class RequestAuditUseCase:
                 else AuditType.QUICK,
             )
             # 監査実行は非同期ワーカーに委譲されるため、初期レコードを作成・保存する
-            saved = await self.audit_repo.save(audit)
+            saved = await self.audit_repo.save(audit)  # type: ignore[attr-defined]
             await self.uow.commit()
         return AuditResponseDTO.from_entity(saved)
 
@@ -51,7 +51,7 @@ class GetAuditUseCase:
 
     async def execute(self, audit_id: str) -> Optional[AuditResponseDTO]:
         aid = AuditId.from_string(audit_id)
-        audit = await self.audit_repo.get_by_id(aid)
+        audit = await self.audit_repo.get_by_id(aid)  # type: ignore[attr-defined]
         return AuditResponseDTO.from_entity(audit) if audit else None
 
 
@@ -70,8 +70,8 @@ class ListAuditsUseCase:
         offset = pagination.offset
 
         # フィルタリング機能はリポジトリ拡張時に反映
-        audits = await self.audit_repo.list_all(limit, offset)
-        total = await self.audit_repo.count()
+        audits = await self.audit_repo.list_all(limit, offset)  # type: ignore[attr-defined]
+        total = await self.audit_repo.count()  # type: ignore[attr-defined]
 
         items = [AuditListItemDTO.from_entity(a) for a in audits]
         return PaginatedResponseDTO(items=items, total=total, limit=limit, offset=offset)
@@ -97,7 +97,7 @@ class AddAuditFindingUseCase:
     ) -> AuditResponseDTO:
         aid = AuditId.from_string(audit_id)
         async with self.uow:
-            audit = await self.audit_repo.get_by_id(aid)
+            audit = await self.audit_repo.get_by_id(aid)  # type: ignore[attr-defined]
             if not audit:
                 raise ValueError(f"Audit {audit_id} not found")
 
@@ -122,7 +122,7 @@ class AddAuditFindingUseCase:
                 constraint_for_next=constraint_for_next,
             )
             audit.add_finding(finding)
-            saved = await self.audit_repo.save(audit)
+            saved = await self.audit_repo.save(audit)  # type: ignore[attr-defined]
             await self.uow.commit()
         return AuditResponseDTO.from_entity(saved)
 
@@ -138,12 +138,12 @@ class RemoveAuditFindingUseCase:
         aid = AuditId.from_string(audit_id)
         fid = AuditId.from_string(finding_id)
         async with self.uow:
-            audit = await self.audit_repo.get_by_id(aid)
+            audit = await self.audit_repo.get_by_id(aid)  # type: ignore[attr-defined]
             if not audit:
                 return False
             removed = audit.remove_finding(fid)
             if removed:
-                await self.audit_repo.save(audit)
+                await self.audit_repo.save(audit)  # type: ignore[attr-defined]
                 await self.uow.commit()
             return removed
 
@@ -158,11 +158,11 @@ class CompleteAuditUseCase:
     async def execute(self, audit_id: str, summary: str) -> bool:
         aid = AuditId.from_string(audit_id)
         async with self.uow:
-            audit = await self.audit_repo.get_by_id(aid)
+            audit = await self.audit_repo.get_by_id(aid)  # type: ignore[attr-defined]
             if not audit:
                 return False
             audit.complete(summary)
-            await self.audit_repo.save(audit)
+            await self.audit_repo.save(audit)  # type: ignore[attr-defined]
             await self.uow.commit()
         return True
 

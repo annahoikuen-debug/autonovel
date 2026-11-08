@@ -745,7 +745,7 @@ class Orchestrator:
 
                 next_agent_val = (
                     result.next_agent.value
-                    if hasattr(result.next_agent, "value")
+                    if result.next_agent is not None and hasattr(result.next_agent, "value")
                     else (str(result.next_agent) if result.next_agent is not None else None)
                 )
 
@@ -785,7 +785,7 @@ class Orchestrator:
                                 if idx + 1 < len(node_keys):
                                     next_node_after_current = node_keys[idx + 1]
                                 break
-                        current = next_node_after_current
+                        current = str(next_node_after_current) if next_node_after_current is not None else None  # type: ignore[assignment]
                         continue
                     # Update artifacts with backtrack info
                     # Note: we are already updating artifacts with result.artifacts above, but we want to add specific backtrack info
@@ -798,8 +798,11 @@ class Orchestrator:
                         {
                             "from_node": current_agent_name,
                             "to_node": result.next_agent.value
-                            if hasattr(result.next_agent, "value")
-                            else str(result.next_agent),
+                            if result.next_agent is not None
+                            and hasattr(result.next_agent, "value")
+                            else str(result.next_agent)
+                            if result.next_agent is not None
+                            else None,
                             "reason": "audit_failed",
                             "count": current_count,
                         }
@@ -815,15 +818,18 @@ class Orchestrator:
                                     "ep_num": ctx.ep_num,
                                     "from": current_agent_name,
                                     "to": result.next_agent.value
-                                    if hasattr(result.next_agent, "value")
-                                    else str(result.next_agent),
+                                    if result.next_agent is not None
+                                    and hasattr(result.next_agent, "value")
+                                    else str(result.next_agent)
+                                    if result.next_agent is not None
+                                    else None,
                                     "count": current_count,
                                 },
                                 correlation_id=self.correlation_id,
                             )
                         )
                     # Set current to the next_agent for backtrack
-                    current = result.next_agent
+                    current = str(result.next_agent) if result.next_agent is not None else None  # type: ignore[assignment]
                     continue
                 if result.error:
                     # エラーが発生しても次のスキルへ継続するオプション（artifacts にエラー情報を残す）
@@ -840,9 +846,9 @@ class Orchestrator:
                                 correlation_id=self.correlation_id,
                             )
                         )
-                    current = result.next_agent
+                    current = str(result.next_agent) if result.next_agent is not None else None  # type: ignore[assignment]
                     continue
-                current = result.next_agent
+                current = str(result.next_agent) if result.next_agent is not None else None  # type: ignore[assignment]
 
             except Exception as e:
                 # 予期しない例外も捕捉し、継続可能にする

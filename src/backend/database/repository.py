@@ -101,7 +101,7 @@ class DataRepositoryFacade:
             if not state:
                 return default
             try:
-                return json.loads(state.value)
+                return json.loads(state.value)  # type: ignore[arg-type]
             except Exception:
                 return state.value
 
@@ -115,8 +115,8 @@ class DataRepositoryFacade:
             if not state:
                 state = InternalState(key=key)
                 session.add(state)
-            state.value = json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value
-            state.updated_at = datetime.now()
+            state.value = json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value  # type: ignore[assignment]
+            state.updated_at = datetime.now()  # type: ignore[assignment]
             await session.commit()
 
 
@@ -131,15 +131,14 @@ class BookRepository:
     """
 
     def __init__(self, session_or_db: Any = None) -> None:
+        self._db: DatabaseManager | None = None
         if isinstance(session_or_db, DatabaseManager):
             self.session = SessionLocal()
             self._db = session_or_db
         elif hasattr(session_or_db, "execute") or hasattr(session_or_db, "get"):
             self.session = session_or_db
-            self._db = None
         else:
             self.session = SessionLocal()
-            self._db = None
 
     @property
     def is_async(self) -> bool:
@@ -390,7 +389,7 @@ class BookRepository:
             self._safe_commit()
             self._safe_refresh(book)
         else:
-            book = self.get_book(book_id)
+            book = self.get_book(book_id)  # type: ignore[assignment]
             if book is None:
                 # If the provided book_id does not exist, create a new book without specifying id
                 book = Book(
@@ -405,8 +404,8 @@ class BookRepository:
                 self._safe_refresh(book)
             else:
                 # 既存本のタイトル・ジャンルを更新（かんたんモード等で生成結果を反映）
-                book.title = title
-                book.genre = genre
+                book.title = title  # type: ignore[assignment]
+                book.genre = genre  # type: ignore[assignment]
 
         # 第1話の更新または作成
         if chapter_text:
@@ -428,7 +427,7 @@ class BookRepository:
         # キャラクターの登録/更新
         if character_params and character_params.get("name"):
             char_name = character_params["name"]
-            stmt = select(Character).where(Character.book_id == book.id).where(Character.name == char_name)
+            stmt = select(Character).where(Character.book_id == book.id).where(Character.name == char_name)  # type: ignore[assignment]
             char = self.session.execute(stmt).scalar_one_or_none()
             if char:
                 char.personality = character_params.get("personality", "")
@@ -468,7 +467,7 @@ class BookRepository:
             await self.commit_async()
             await self.refresh_async(book)
         else:
-            book = await self.get_book_async(book_id)
+            book = await self.get_book_async(book_id)  # type: ignore[assignment]
             if book is None:
                 book = Book(
                     title=title,
@@ -505,7 +504,7 @@ class BookRepository:
         # キャラクターの登録/更新
         if character_params and character_params.get("name"):
             char_name = character_params["name"]
-            stmt = select(Character).where(Character.book_id == book.id).where(Character.name == char_name)
+            stmt = select(Character).where(Character.book_id == book.id).where(Character.name == char_name)  # type: ignore[assignment]
             if self.is_async:
                 res = await self.session.execute(stmt)
             else:

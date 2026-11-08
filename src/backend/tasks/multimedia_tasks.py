@@ -50,3 +50,48 @@ def generate_asset_pack_task(
             "error": str(exc),
             "file_count": 0,
         }
+
+
+@huey.task(retries=2, retry_delay=10)
+def synthesize_chapter_audio_task(
+    book_id: int,
+    episode_num: int,
+    chapter_text: str | None = None,
+    characters: list[str] | None = None,
+) -> dict[str, Any]:
+    """指定章の音声合成 Huey タスク (Step 19)。
+
+    直接呼び出し時も ``huey.api.Result`` (``.id`` 持ち) が返るため、
+    ルータ側で ``getattr(task, "id", ...)`` として利用できる。
+    """
+    import asyncio as _asyncio
+
+    from src.integrations.audio.chapter_synthesizer import ChapterAudioSynthesizer
+
+    text = chapter_text or ""
+
+    async def _run() -> Any:
+        synthesizer = ChapterAudioSynthesizer()
+        return await synthesizer.synthesize_chapter(
+            book_id=book_id,
+            episode_num=episode_num,
+            chapter_text=text,
+            characters=characters,
+        )
+
+    try:
+        result = _asyncio.run(_run())
+        return {
+            "task_id": str(episode_num),
+            "asset_id": 0,
+            "file_path": result.get("file_path", ""),
+            "metadata": result,
+        }
+    except Exception as exc:
+        logger.warning(
+            "synthesize_chapter_audio_task failed for book %s episode %s: %s",
+            book_id,
+            episode_num,
+            exc,
+        )
+        return {"task_id": str(episode_num), "error": str(exc)}

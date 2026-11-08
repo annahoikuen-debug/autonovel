@@ -86,11 +86,11 @@ class DefaultPlotExpander:
 
         skeletons = batch.episodes
         for sk in skeletons:
-            existing = await self.repo.get_plot(branch_id, sk.ep_num, branch_id=branch_id, book_id=book_id)
+            existing = await self.repo.get_plot(branch_id, sk.ep_num, book_id=book_id)  # type: ignore[arg-type]
             if existing is None:
                 dummy_micro = PlotMicroBlueprint(ep_num=sk.ep_num)
                 partial_plot = merge_macro_and_micro(sk, dummy_micro)
-                await self.repo.save_plot(book_id, sk.ep_num, partial_plot)
+                await self.repo.create_or_replace_plot(book_id, sk.ep_num, partial_plot)
 
         if reporter:
             reporter.report(f"大局プロット骨子生成完了: {len(skeletons)}話分", "info")
@@ -112,7 +112,7 @@ class DefaultPlotExpander:
 
         chars_summary = ""
         try:
-            chars = await self.repo.get_characters(book_id)
+            chars = await self.repo.get_all_characters(book_id)
             if chars:
                 char_lines = []
                 for c in chars:
@@ -146,7 +146,7 @@ class DefaultPlotExpander:
             micro_bp = PlotMicroBlueprint.model_validate(metadata)
 
         merged_plot = merge_macro_and_micro(skeleton, micro_bp)
-        await self.repo.save_plot(book_id, ep_num, merged_plot)
+        await self.repo.create_or_replace_plot(book_id, ep_num, merged_plot)
 
         if reporter:
             reporter.report(f"第{ep_num}話: 詳細演出ビート展開完了", "info")
@@ -161,9 +161,9 @@ class DefaultPlotExpander:
         reporter: IReporter | None = None,
     ) -> PlotEpisode:
         """指定話数の詳細プロットが存在することを保証する（完全冪等）"""
-        existing = await self.repo.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
-        if existing and hasattr(existing, "scenes") and len(existing.scenes) >= 3:
-            return existing
+        existing = await self.repo.get_plot(branch_id, ep_num, book_id=book_id)  # type: ignore[arg-type]
+        if existing and hasattr(existing, "scenes") and len(existing.scenes or []) >= 3:
+            return existing  # type: ignore[return-value]
 
         skeleton: EpisodeMacroSkeleton
         if existing and hasattr(existing, "extract_macro_skeleton"):
@@ -252,7 +252,7 @@ class DefaultPlotExpander:
         async def _process_single(ep_num: int) -> Any | None:
             async with sem:
                 try:
-                    existing = await self.repo.get_plot(branch_id, ep_num, branch_id=branch_id, book_id=book_id)
+                    existing = await self.repo.get_plot(branch_id, ep_num, book_id=book_id)  # type: ignore[arg-type]
                     if existing and not force:
                         if (
                             hasattr(existing, "detailed_blueprint")
@@ -282,7 +282,7 @@ class DefaultPlotExpander:
                         return None
 
                     plot = plots[0]
-                    await self.repo.save_plot(book_id, ep_num, plot)
+                    await self.repo.create_or_replace_plot(book_id, ep_num, plot)
                     if reporter:
                         reporter.report(f"Ep.{ep_num}: プロット生成完了", "info")
                     return plot

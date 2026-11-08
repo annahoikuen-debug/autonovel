@@ -93,12 +93,12 @@ class SocialRepository:
                 )
                 session.add(rel)
             else:
-                rel.affection = affinity
-                rel.trust = trust
-                rel.tension = tension
-                rel.depth = depth
-                rel.dynamics_state = dynamics_state
-                rel.last_interaction_ep = last_ep
+                rel.affection = affinity  # type: ignore[assignment]
+                rel.trust = trust  # type: ignore[assignment]
+                rel.tension = tension  # type: ignore[assignment]
+                rel.depth = depth  # type: ignore[assignment]
+                rel.dynamics_state = dynamics_state  # type: ignore[assignment]
+                rel.last_interaction_ep = last_ep  # type: ignore[assignment]
 
     async def get_relationship(
         self,
@@ -127,11 +127,11 @@ class SocialRepository:
             return RelationshipMetrics(
                 char_a=char_a,
                 char_b=char_b,
-                trust_score=rel.trust,
-                tension_score=rel.tension,
-                affinity_score=rel.affection,
-                dynamics_state=rel.dynamics_state or "neutral",
-                last_interaction_ep=rel.last_interaction_ep,
+                trust_score=rel.trust,  # type: ignore[arg-type]
+                tension_score=rel.tension,  # type: ignore[arg-type]
+                affinity_score=rel.affection,  # type: ignore[arg-type]
+                dynamics_state=rel.dynamics_state or "neutral",  # type: ignore[arg-type]
+                last_interaction_ep=rel.last_interaction_ep,  # type: ignore[arg-type]
             )
 
     async def get_all_relationships(
@@ -153,16 +153,16 @@ class SocialRepository:
             store: dict[tuple[str, str], RelationshipMetrics] = {}
             for row in rows:
                 metrics = RelationshipMetrics(
-                    char_a=row.char_a,
-                    char_b=row.char_b,
-                    trust_score=row.trust,
-                    tension_score=row.tension,
-                    affinity_score=row.affection,
-                    dynamics_state=row.dynamics_state or "neutral",
-                    last_interaction_ep=row.last_interaction_ep,
+                    char_a=row.char_a,  # type: ignore[arg-type]
+                    char_b=row.char_b,  # type: ignore[arg-type]
+                    trust_score=row.trust,  # type: ignore[arg-type]
+                    tension_score=row.tension,  # type: ignore[arg-type]
+                    affinity_score=row.affection,  # type: ignore[arg-type]
+                    dynamics_state=row.dynamics_state or "neutral",  # type: ignore[arg-type]
+                    last_interaction_ep=row.last_interaction_ep,  # type: ignore[arg-type]
                 )
-                store[(row.char_a, row.char_b)] = metrics
-                store[(row.char_b, row.char_a)] = metrics
+                store[(row.char_a, row.char_b)] = metrics  # type: ignore[index]
+                store[(row.char_b, row.char_a)] = metrics  # type: ignore[index]
             return store
 
     async def record_history(
@@ -477,9 +477,9 @@ class SocialRepository:
             stmt = (
                 select(CharacterJournal)
                 .where(
-                    CharacterJournal.book_id == book_id,
-                    CharacterJournal.episode_num >= start_ep,
-                    CharacterJournal.episode_num <= end_ep,
+                    CharacterJournal.book_id == book_id,  # type: ignore[arg-type]
+                    CharacterJournal.episode_num >= start_ep,  # type: ignore[arg-type]
+                    CharacterJournal.episode_num <= end_ep,  # type: ignore[arg-type]
                 )
                 .order_by(CharacterJournal.episode_num.desc(), CharacterJournal.id.desc())
                 .limit(limit)

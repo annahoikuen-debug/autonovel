@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import logging
 import secrets
-from typing import Callable
+from typing import Callable, Awaitable
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -136,7 +136,7 @@ class GlobalAuthMiddleware(BaseHTTPMiddleware):
     - 検証失敗時は 401 Unauthorized を返却
     """
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Response]) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         path = request.url.path
 
         # 1. 開発/テスト用バイパス (AUTH_DISABLED=True またはテスト時の dependency_overrides)

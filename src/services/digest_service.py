@@ -61,7 +61,7 @@ class DigestService:
             session.add(book)
             await session.flush()
             await session.commit()
-            return book.id
+            return book.id  # type: ignore[return-value]
 
     async def _save_digest_db(
         self,
@@ -120,10 +120,7 @@ class DigestService:
 
 上記作品の全体あらすじ（300文字程度）と全10話の章構成プロットを作成してください。
 """
-            synopsis_text = await self.llm_service.generate_text(
-                purpose="planning",
-                prompt=synopsis_prompt,
-            )
+            synopsis_text = await self.llm_service.generate(synopsis_prompt)
 
             ep1_prompt = f"""
 タイトル: {title}
@@ -138,8 +135,8 @@ class DigestService:
 物語のクライマックス（見せ場）のプレビュー描写（800文字程度）を執筆してください。
 """
 
-            ep1_task = self.llm_service.generate_text(purpose="writing", prompt=ep1_prompt)
-            climax_task = self.llm_service.generate_text(purpose="climax", prompt=climax_prompt)
+            ep1_task = self.llm_service.generate(ep1_prompt)
+            climax_task = self.llm_service.generate(climax_prompt)
 
             # return_exceptions=True: 片方の失敗で他方の結果が破棄されるのを防ぐ。
             # 部分失敗は下の except で明示的に扱う。
@@ -186,10 +183,7 @@ class DigestService:
                 "出力してください。各提案は 1 行 (40 文字以内) で。\n\n"
                 f"--- 章本文 ---\n{chapter[:800]}\n--- 提案 ---"
             )
-            res = await self.llm_service.generate_text(
-                purpose="suggestions",
-                prompt=prompt,
-            )
+            res = await self.llm_service.generate(prompt)
             lines = [ln.strip("- ・*").strip() for ln in (res or "").splitlines() if ln.strip()]
             if not lines:
                 return [f"続行: {chapter[:100]}…", "調査が必要な未確認な要素を指摘"]

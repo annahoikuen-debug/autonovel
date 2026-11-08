@@ -58,7 +58,7 @@ class EpisodeWritingWorkflow(BaseWorkflow):
 
         if pipeline_mode:
             chars_count, failed = await writing.generate_episodes_pipeline(
-                book_id, write_from, write_to, passion, word_count, reporter=reporter, mode=mode
+                book_id, write_from, write_to, passion, word_count, reporter=reporter, is_easy_mode=False
             )
             # 執筆完了後にプリフェッチを実行して次のエピソード生成を高速化
             await self._trigger_prefetch(book_id, write_to, reporter)
@@ -78,10 +78,8 @@ class EpisodeWritingWorkflow(BaseWorkflow):
                 write_to,
                 passion,
                 word_count,
-                do_refine,
                 reporter=reporter,
-                env_state=env_state,
-                mode=mode,
+                is_easy_mode=False,
             )
             # 執筆完了後にプリフェッチを実行して次のエピソード生成を高速化
             await self._trigger_prefetch(book_id, write_to, reporter)
@@ -153,7 +151,7 @@ class EpisodeWritingWorkflow(BaseWorkflow):
             prefetch_tasks.add(task)
             task.add_done_callback(prefetch_tasks.discard)
 
-            reporter.report(f"🚀 Prefetch triggered for ep{next_ep}-ep{next_ep + 2} (background)", "debug")
+            reporter.report(f"🚀 Prefetch triggered for ep{next_ep}-ep{next_ep + 2} (background)", "info")
             logger.info(f"[PREFETCH] Triggered for book_id={book_id}, ep{next_ep}-ep{next_ep + 2}")
         except Exception as e:
             # プリフェッチ失敗は致命的なエラーではなくログ出力のみ

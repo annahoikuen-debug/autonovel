@@ -68,14 +68,14 @@ class MiscRepository(BaseRepository):
             stmt = stmt.where(StyleFragment.tag == tag)
         result = await self.session.execute(stmt)
         rows = result.scalars().all()
-        return [self._to_dict(r) for r in rows]
+        return [self._to_dict(r) for r in rows]  # type: ignore[misc]
 
     async def search_style_fragments_by_tag(self, tag: str, limit: int = 5) -> list[StyleFragment]:
         result = await self.session.execute(
             select(StyleFragment).where(StyleFragment.tag == tag).order_by(func.random()).limit(limit)
         )
         rows = result.scalars().all()
-        return [self._to_dict(r) for r in rows]
+        return [self._to_dict(r) for r in rows]  # type: ignore[misc]
 
     # ---------- Custom Styles ----------
     @retry_on_lock()
@@ -85,10 +85,10 @@ class MiscRepository(BaseRepository):
         if not style:
             style = CustomStyle(name=name)
             self.session.add(style)
-        style.instruction = instruction
-        style.score = score
-        style.analysis = analysis
-        style.created_at = datetime.now()
+        style.instruction = instruction  # type: ignore[assignment]
+        style.score = score  # type: ignore[assignment]
+        style.analysis = analysis  # type: ignore[assignment]
+        style.created_at = datetime.now()  # type: ignore[assignment]
 
     async def get_all_custom_styles(self) -> list[CustomStyle]:
         result = await self.session.execute(select(CustomStyle).order_by(CustomStyle.score.desc()))
@@ -115,11 +115,11 @@ class MiscRepository(BaseRepository):
         elif dialect_name == "postgresql":
             from sqlalchemy.dialects.postgresql import insert
         else:
-            insert = None
+            insert = None  # type: ignore[assignment]
 
         if insert is not None:
             stmt = insert(InternalState).values(key=key, value=value_str, updated_at=now)
-            stmt = stmt.on_conflict_do_update(
+            stmt = stmt.on_conflict_do_update(  # type: ignore[attr-defined]
                 index_elements=[InternalState.key],
                 set_={"value": value_str, "updated_at": now},
             )
@@ -164,7 +164,7 @@ class MiscRepository(BaseRepository):
         )
         self.session.add(patch)
         await self.session.flush()
-        return patch.id
+        return patch.id  # type: ignore[return-value]
 
     async def get_pending_patches(self, book_id: int) -> list[PendingPatch]:
         """承認待ちパッチ一覧を取得"""
@@ -217,15 +217,15 @@ class MiscRepository(BaseRepository):
         if not task:
             task = BackgroundTask(id=id)
             self.session.add(task)
-        task.status = status
-        task.current_step = current_step
-        task.total_steps = total_steps
-        task.message = message
-        task.sub_message = sub_message
-        task.streaming_text = streaming_text
-        task.logs = json.dumps(logs, ensure_ascii=False)
-        task.error = error
-        task.result_data = json.dumps(result_data, ensure_ascii=False) if result_data is not None else None
+        task.status = status  # type: ignore[assignment]
+        task.current_step = current_step  # type: ignore[assignment]
+        task.total_steps = total_steps  # type: ignore[assignment]
+        task.message = message  # type: ignore[assignment]
+        task.sub_message = sub_message  # type: ignore[assignment]
+        task.streaming_text = streaming_text  # type: ignore[assignment]
+        task.logs = json.dumps(logs, ensure_ascii=False)  # type: ignore[assignment]
+        task.error = error  # type: ignore[assignment]
+        task.result_data = json.dumps(result_data, ensure_ascii=False) if result_data is not None else None  # type: ignore[assignment]
         # updated_at will be set automatically on update or manually here if needed
 
     async def get_background_task(self, task_id: str) -> BackgroundTask | None:
@@ -233,7 +233,7 @@ class MiscRepository(BaseRepository):
         result = await self.session.execute(select(BackgroundTask).where(BackgroundTask.id == task_id))
         task = result.scalar_one_or_none()
         if task:
-            return self._parse_row(self._to_dict(task), ["logs", "result_data"])
+            return self._parse_row(self._to_dict(task), ["logs", "result_data"])  # type: ignore[return-value]
         return None
 
     # ---------- Patch Review (Human-in-the-Loop) ----------

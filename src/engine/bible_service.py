@@ -255,10 +255,10 @@ class WorldBibleGenerator:
 
     async def create_hegemony_plan(
         self,
-        genre: str = None,
-        keywords: str = None,
-        style_key: str = None,
-        concept: str = None,
+        genre: str | None = None,
+        keywords: str | None = None,
+        style_key: str | None = None,
+        concept: str | None = None,
         title: str = "",
         cheat_scale: int = 4,
         growth_curve: str = "最初からカンスト(無双)",
@@ -268,7 +268,7 @@ class WorldBibleGenerator:
         initial_plot_limit: int = 3,
         enable_erotic: bool = False,
         erotic_intensity: int = 2,
-        config: PlanningConfig = None,
+        config: PlanningConfig | None = None,
         reporter=None,
     ) -> tuple[int, WorldBible]:
         """
@@ -280,10 +280,10 @@ class WorldBibleGenerator:
             from src.models.planning_config import PlanningConfig
 
             config = PlanningConfig(
-                genre=genre,
-                keywords=keywords,
-                style_key=style_key,
-                concept=concept,
+                genre=genre or "",
+                keywords=keywords or "",
+                style_key=style_key or "",
+                concept=concept or "",
                 title=title,
                 cheat_scale=cheat_scale,
                 growth_curve=growth_curve,
@@ -334,7 +334,7 @@ class WorldBibleGenerator:
             config.title = bible_core.title
 
         bible_core.genre = config.genre
-        bible_core.style_key = config.style_key
+        bible_core.style_key = config.style_key  # type: ignore[assignment]
         bible_core.keywords = config.keywords
         bible_core.engine_key = config.engine_key
         bible_core.world_settings.tension_threshold = config.tension_threshold

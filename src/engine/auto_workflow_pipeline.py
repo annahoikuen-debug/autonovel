@@ -59,7 +59,7 @@ class AutoWorkflowPipeline:
         adapter.report("🚀 全自動モード開始！", "info")
 
         for step in self.steps:
-            success = await step.execute(ctx, engine, adapter)
+            success = await step.execute(ctx, engine, adapter)  # type: ignore[arg-type]
             if not success:
                 status = "stopped" if adapter.state.should_stop() else "failed"
                 if isinstance(step, PlanStep) and not adapter.state.should_stop():
@@ -123,8 +123,8 @@ def create_full_auto_pipeline(
         PackageStep(),
     ]
     # None を除外
-    steps = [s for s in steps if s is not None]
-    return AutoWorkflowPipeline(steps)
+    active_steps: list[WorkflowStep] = [s for s in steps if s is not None]
+    return AutoWorkflowPipeline(active_steps)
 
 
 def create_easy_mode_pipeline(
@@ -151,8 +151,8 @@ def create_easy_mode_pipeline(
         MarketingStep() if enable_marketing else None,
         PackageStep(),
     ]
-    steps = [s for s in steps if s is not None]
-    pipeline = AutoWorkflowPipeline(steps)
+    active_steps: list[WorkflowStep] = [s for s in steps if s is not None]
+    pipeline = AutoWorkflowPipeline(active_steps)
     # パイプライン固有のデフォルト設定は呼び出し側で Context に設定
     return pipeline
 
@@ -168,7 +168,7 @@ def create_custom_pipeline(
         return AutoWorkflowPipeline(steps)
 
     # オプションベースで動的構築
-    step_list = []
+    step_list: list[WorkflowStep] = []
     if step_options.get("inference", True):
         step_list.append(InferenceStep())
     if step_options.get("plan", True):

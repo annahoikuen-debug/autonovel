@@ -114,7 +114,7 @@ async def require_api_key(
 
     # Validate the extracted token
     result = validate_api_key_sync(token)
-    if result is False:
+    if isinstance(result, bool):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or missing API Key",

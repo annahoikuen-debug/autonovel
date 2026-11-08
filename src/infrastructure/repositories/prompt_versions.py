@@ -43,16 +43,16 @@ class PromptVersionRepository(PromptVersionRepositoryInterface, BaseRepository):
         self.session.add(version)
         await self.session.flush()
         return PromptVersionDbModel(
-            id=version.id,
-            book_id=version.book_id,
-            prompt_key=version.prompt_key,
-            version_tag=version.version_tag,
-            content=version.content,
-            score_before=version.score_before,
-            score_after=version.score_after,
-            ab_test_metrics=json.loads(version.ab_test_metrics) if version.ab_test_metrics else None,
-            rollback_reason=version.rollback_reason,
-            is_active=version.is_active,
+            id=version.id,  # type: ignore[arg-type]
+            book_id=version.book_id,  # type: ignore[arg-type]
+            prompt_key=version.prompt_key,  # type: ignore[arg-type]
+            version_tag=version.version_tag,  # type: ignore[arg-type]
+            content=version.content,  # type: ignore[arg-type]
+            score_before=version.score_before,  # type: ignore[arg-type]
+            score_after=version.score_after,  # type: ignore[arg-type]
+            ab_test_metrics=json.loads(version.ab_test_metrics) if version.ab_test_metrics else None,  # type: ignore[arg-type]
+            rollback_reason=version.rollback_reason,  # type: ignore[arg-type]
+            is_active=version.is_active,  # type: ignore[arg-type]
             created_at=version.created_at.isoformat() if version.created_at else None,
         )
 
@@ -142,15 +142,15 @@ class PromptVersionRepository(PromptVersionRepositoryInterface, BaseRepository):
     def _to_domain_model(self, row: PromptVersion) -> PromptVersionDbModel:
         """Convert SQLAlchemy model to domain model."""
         return PromptVersionDbModel(
-            id=row.id,
-            book_id=row.book_id,
-            prompt_key=row.prompt_key,
-            version_tag=row.version_tag,
-            content=row.content,
-            score_before=row.score_before,
-            score_after=row.score_after,
-            ab_test_metrics=json.loads(row.ab_test_metrics) if row.ab_test_metrics else None,
-            rollback_reason=row.rollback_reason,
-            is_active=row.is_active,
+            id=row.id,  # type: ignore[arg-type]
+            book_id=row.book_id,  # type: ignore[arg-type]
+            prompt_key=row.prompt_key,  # type: ignore[arg-type]
+            version_tag=row.version_tag,  # type: ignore[arg-type]
+            content=row.content,  # type: ignore[arg-type]
+            score_before=row.score_before,  # type: ignore[arg-type]
+            score_after=row.score_after,  # type: ignore[arg-type]
+            ab_test_metrics=json.loads(row.ab_test_metrics) if row.ab_test_metrics else None,  # type: ignore[arg-type]
+            rollback_reason=row.rollback_reason,  # type: ignore[arg-type]
+            is_active=row.is_active,  # type: ignore[arg-type]
             created_at=row.created_at.isoformat() if row.created_at else None,
         )

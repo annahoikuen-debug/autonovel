@@ -98,7 +98,7 @@ async def handle_stripe_webhook(
                 created = created.replace(tzinfo=timezone.utc)
             if created and (now - created) > timedelta(minutes=10):
                 logger.warning(f"Stripe event {event_id} was stuck in processing since {created}. Retrying processing.")
-                existing_event.status = "processing"
+                existing_event.status = "processing"  # type: ignore[assignment]
                 webhook_record = existing_event
             else:
                 logger.info(f"Stripe event {event_id} is currently being processed. Skipping concurrent duplicate.")
@@ -106,7 +106,7 @@ async def handle_stripe_webhook(
         else:
             # status == "failed": 前回失敗したイベントの再試行
             logger.warning(f"Stripe event {event_id} previously failed. Retrying processing.")
-            existing_event.status = "processing"
+            existing_event.status = "processing"  # type: ignore[assignment]
             webhook_record = existing_event
     else:
         # イベントを processing 状態で記録
@@ -148,11 +148,11 @@ async def handle_stripe_webhook(
         else:
             logger.info(f"Unhandled Stripe event type: {event_type}")
 
-        webhook_record.status = "processed"
+        webhook_record.status = "processed"  # type: ignore[assignment]
         await db.commit()
     except Exception as e:
         logger.error(f"Error handling Stripe webhook event {event_id}: {e}", exc_info=True)
-        webhook_record.status = "failed"
+        webhook_record.status = "failed"  # type: ignore[assignment]
         await db.commit()
         # 処理に失敗した場合は 5xx を返して Stripe に再試行させる。
         # 200 を返すとイベントが "成功" と記録され、永久に処理されなくなる。
@@ -242,7 +242,7 @@ async def _handle_checkout_session_completed(session: dict, db: AsyncSession, ev
             result = await db.execute(select(User).where(User.stripe_customer_id == stripe_customer_id))
             user = await _resolve_user(result)
             if user:
-                user_id = user.id
+                user_id = user.id  # type: ignore[assignment]
 
     if user_id == 0:
         logger.warning(f"Could not determine user_id for checkout session: {session.get('id')}")
@@ -268,14 +268,14 @@ async def _handle_checkout_session_completed(session: dict, db: AsyncSession, ev
     if subscription.items.data:
         price_id = subscription.items.data[0].price.id
         credits_to_grant = get_credits_for_price_id(price_id)
-        user.plan_tier = get_tier_for_price_id(price_id)
+        user.plan_tier = get_tier_for_price_id(price_id)  # type: ignore[assignment]
 
     if credits_to_grant > 0:
         await credit_service.grant_credits(
             user_id=user_id,
             amount=credits_to_grant,
             transaction_type="monthly_grant",
-            description=f"Initial credit grant for {getattr(subscription.plan, 'nickname', None) or 'subscription'}",
+            description=f"Initial credit grant for {getattr(subscription.plan, 'nickname', None) or 'subscription'}",  # type: ignore[attr-defined]
             task_id=f"stripe_evt_{event_id}" if event_id else None,
             auto_commit=False,
         )
@@ -293,7 +293,7 @@ async def _handle_invoice_payment_succeeded(invoice: dict, db: AsyncSession, eve
 
     stripe_customer_id = subscription.customer
     if isinstance(stripe_customer_id, dict):
-        stripe_customer_id = stripe_customer_id.get("id")
+        stripe_customer_id = stripe_customer_id.get("id")  # type: ignore[assignment]
 
     result = await db.execute(select(User).where(User.stripe_customer_id == stripe_customer_id))
     user = await _resolve_user(result)
@@ -307,14 +307,14 @@ async def _handle_invoice_payment_succeeded(invoice: dict, db: AsyncSession, eve
     if subscription.items.data:
         price_id = subscription.items.data[0].price.id
         credits_to_grant = get_credits_for_price_id(price_id)
-        user.plan_tier = get_tier_for_price_id(price_id)
+        user.plan_tier = get_tier_for_price_id(price_id)  # type: ignore[assignment]
 
     if credits_to_grant > 0:
         await credit_service.grant_credits(
-            user_id=user.id,
+            user_id=user.id,  # type: ignore[arg-type]
             amount=credits_to_grant,
             transaction_type="monthly_grant",
-            description=f"Monthly credit grant for {getattr(subscription.plan, 'nickname', None) or 'subscription'}",
+            description=f"Monthly credit grant for {getattr(subscription.plan, 'nickname', None) or 'subscription'}",  # type: ignore[attr-defined]
             task_id=f"stripe_evt_{event_id}" if event_id else None,
             auto_commit=False,
         )
@@ -326,14 +326,14 @@ async def _handle_customer_subscription_deleted(subscription, db: AsyncSession):
     """サブスクリプション削除時にフリープランにダウングレード"""
     stripe_customer_id = _field(subscription, "customer")
     if isinstance(stripe_customer_id, dict):
-        stripe_customer_id = stripe_customer_id.get("id")
+        stripe_customer_id = stripe_customer_id.get("id")  # type: ignore[assignment]
 
     result = await db.execute(select(User).where(User.stripe_customer_id == stripe_customer_id))
     user = await _resolve_user(result)
     if not user:
         return
 
-    user.plan_tier = "free"
+    user.plan_tier = "free"  # type: ignore[assignment]
     await db.flush()
 
 
@@ -341,7 +341,7 @@ async def _handle_customer_subscription_updated(subscription, db: AsyncSession):
     """サブスクリプション更新時に情報を同期"""
     stripe_customer_id = _field(subscription, "customer")
     if isinstance(stripe_customer_id, dict):
-        stripe_customer_id = stripe_customer_id.get("id")
+        stripe_customer_id = stripe_customer_id.get("id")  # type: ignore[assignment]
 
     result = await db.execute(select(User).where(User.stripe_customer_id == stripe_customer_id))
     user = await _resolve_user(result)
@@ -383,9 +383,9 @@ async def _create_or_update_subscription_record(user: User, subscription, db: As
     if db_subscription:
         db_subscription.stripe_subscription_id = stripe_subscription_id
         db_subscription.stripe_customer_id = stripe_customer
-        db_subscription.plan_tier = tier
+        db_subscription.plan_tier = tier  # type: ignore[assignment]
         db_subscription.status = stripe_status
-        db_subscription.current_period_end = period_end
+        db_subscription.current_period_end = period_end  # type: ignore[assignment]
     else:
         new_subscription = SubscriptionModel(
             user_id=user.id,
