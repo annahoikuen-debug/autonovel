@@ -1245,7 +1245,9 @@ _(未記入)_
 
 ### 付録 E: 最終ステータス（Step 24 で記録）
 
-- 状態: **完了**（2026-11-08 実装完了）
+- 状態: **完了**（2026-11-08 実装完了、CI 実測済み）
 - 理由: 全9件の統合テスト失敗を緑化し、CI 上で `continue-on-error: false` に切り替え
-- 解除条件: Step 21 の CI 実測で 0 failed が確認され、Step 22 が完了したこと
-- コミット: `64308c18` (continue-on-error: false 切り替え), `020c19b0` (テスト修正)
+- Step 21: **CI 実測で 0 failed を確認**（GitHub Actions `integration` ジョブ: success）
+- Step 22: **`continue-on-error: false` 切り替え完了**、ジョブ名 `integration-observe` → `integration`
+- コミット: `64308c18` (continue-on-error: false 切り替え), `020c19b0` (テスト修正), `3b4b6db9` (ドキュメント更新)
+- ブランチ: `feature/commercial-lp-phase1`、リモート: `origin` にプッシュ済み
