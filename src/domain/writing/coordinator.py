@@ -149,7 +149,10 @@ class WritingCoordinator:
             return word_count
 
         # Phase 3 PDCA制御: 全文再生成が禁止されている場合 (max_regenerations == 0)
-        if not self.pdca_controller.should_regenerate_full_text():
+        # auto_regenerate=True が明示指定され max_retries > 0 の場合は、
+        # PDCA コントローラの max_regenerations=0 既定値によって黙って
+        # 無視されないよう、再生成ループに到達する。
+        if not self.pdca_controller.should_regenerate_full_text() and max_retries <= 0:
             if reporter:
                 reporter.report(
                     f"Ep.{start_ep}-{end_ep}: PDCAポリシーにより全文再生成ループは無効化されています",
