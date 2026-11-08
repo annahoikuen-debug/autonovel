@@ -1,6 +1,8 @@
 """ディジェクトサービスのユニットテスト。"""
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock, patch
+
 from src.services.digest_service import CHAPTER_MAX_LENGTH, generate_suggestions, process_chapter
 
 
@@ -52,6 +54,11 @@ async def test_generate_suggestions_empty():
 async def test_generate_suggestions_with_chapter():
     """Non-empty chapter returns suggestions with prefix."""
     chapter = " test chapter text "
-    result = await generate_suggestions(chapter)
-    assert len(result) == 2
-    assert result[0].startswith("続行: ")
+    with patch(
+        "src.services.digest_service.LLMService.generate",
+        new_callable=AsyncMock,
+        return_value="- 提案1\n- 提案2\n- 提案3",
+    ):
+        result = await generate_suggestions(chapter)
+    assert len(result) == 3
+    assert result[0] == "提案1"

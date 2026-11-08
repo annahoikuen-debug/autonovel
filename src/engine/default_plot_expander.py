@@ -14,7 +14,9 @@ import logging
 from typing import Any
 
 from config.constants import MODEL_PLOT_EXPANSION, MODEL_PLANNING, MODEL_FAST_EXPANSION
+from config.story_spine import resolve_spine
 from src.core.interfaces import IReporter, IRepository
+from src.llm.adapters.prompts import build_spine_section, build_spine_summary, get_spine_quality
 from src.models.plot import (
     UltraFastPlotBatch,
     EpisodeMacroSkeleton,
@@ -33,12 +35,23 @@ class DefaultPlotExpander:
     大局骨子の一括生成(Macro)と執筆直前の詳細ビートJIT展開(Micro)をサポートする。
     """
 
-    def __init__(self, repo: IRepository, pm: Any, llm: Any):
+    def __init__(
+        self,
+        repo: IRepository,
+        pm: Any,
+        llm: Any,
+        pattern_key: str = "exile_rise",
+        length_key: str = "web_volume",
+        market_key: str = "web",
+    ):
         self.repo = repo
         self.pm = pm
         self.llm = llm
         self.model_planning = MODEL_PLANNING
         self.model_fast = MODEL_FAST_EXPANSION
+        self.pattern_key = pattern_key
+        self.length_key = length_key
+        self.market_key = market_key
 
     async def expand_macro_skeletons(
         self,
@@ -67,7 +80,24 @@ class DefaultPlotExpander:
         bible_dict = bible.model_dump() if hasattr(bible, "model_dump") else (bible if isinstance(bible, dict) else {})
         bible_json_str = json.dumps(bible_dict, ensure_ascii=False)
 
-        prompt = await self.pm.build_macro_plot_skeleton_prompt(bible_json_str, target_ep_list, book_id=book_id)
+        # STORY_SPINE: bible から構造キーを読み出し（未設定ならコンストラクタのデフォルト値）
+        pattern_key = bible_dict.get("pattern_key") or self.pattern_key
+        length_key = bible_dict.get("length_key") or self.length_key
+        market_key = bible_dict.get("market_key") or self.market_key
+
+        # Spine を解決（失敗してもNoneにフォールバック＝fail-open）
+        spine = None
+        try:
+            spine = resolve_spine(pattern_key, length_key, market_key, len(target_ep_list))
+        except Exception as e:
+            logger.debug(f"Spine resolution skipped for macro: {e}")
+
+        spine_quality = get_spine_quality()
+
+        prompt = await self.pm.build_macro_plot_skeleton_prompt(
+            bible_json_str, target_ep_list, book_id=book_id,
+            spine=spine, spine_quality=spine_quality,
+        )
 
         res = await self.llm.generate_json(
             self.model_planning,
@@ -123,11 +153,36 @@ class DefaultPlotExpander:
         except Exception as e:
             logger.debug(f"Failed to fetch characters for micro expansion: {e}")
 
+        # STORY_SPINE: bible から構造キーを読み出し（未設定ならコンストラクタのデフォルト値）
+        bible = None
+        try:
+            bible = await self.repo.get_latest_bible(book_id)
+        except Exception as e:
+            logger.debug(f"Failed to fetch bible for micro expansion: {e}")
+        bible_dict = (
+            bible.model_dump() if hasattr(bible, "model_dump") else (bible if isinstance(bible, dict) else {})
+        ) if bible else {}
+        pattern_key = bible_dict.get("pattern_key") or self.pattern_key
+        length_key = bible_dict.get("length_key") or self.length_key
+        market_key = bible_dict.get("market_key") or self.market_key
+
+        # Spine を解決（失敗してもNoneにフォールバック＝fail-open）
+        # total_eps は十分大きな値（100）を設定し、任意の ep_num に対応するbeatを取得できるようにする。
+        # 計算量は beat 数（<=34）だけに比例し、話数には比例しない。
+        spine = None
+        try:
+            spine = resolve_spine(pattern_key, length_key, market_key, 100)
+        except Exception as e:
+            logger.debug(f"Spine resolution skipped for micro ep{ep_num}: {e}")
+
+        spine_quality = get_spine_quality()
+
         prompt = await self.pm.build_micro_scene_expander_prompt(
             macro_skeleton=skeleton,
             previous_ending_text=previous_ending_text[-500:].strip() if previous_ending_text else "",
             characters_summary=chars_summary,
             book_id=book_id,
+            spine=spine, spine_quality=spine_quality,
         )
 
         res = await self.llm.generate_json(

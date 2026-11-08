@@ -55,7 +55,7 @@ async def test_episode_writing_workflow_pipeline_success(harness):
             do_refine=do_refine,
             env_state=env_state,
             pipeline_mode=pipeline_mode,
-            mode="final",
+            is_easy_mode=False,
         )
 
         # Assertions
@@ -65,7 +65,7 @@ async def test_episode_writing_workflow_pipeline_success(harness):
 
         # Verify writing service call
         mock_writing.generate_episodes_pipeline.assert_called_once_with(
-            book_id, write_from, write_to, passion, word_count, reporter=reporter, mode="final"
+            book_id, write_from, write_to, passion, word_count, reporter=reporter, is_easy_mode=False
         )
 
         # Verify audit enqueue
@@ -114,7 +114,7 @@ async def test_episode_writing_workflow_standard_success(harness):
             do_refine=do_refine,
             env_state=env_state,
             pipeline_mode=pipeline_mode,
-            mode="final",
+            is_easy_mode=False,
         )
 
         assert result["chars_count"] == 5000
@@ -126,9 +126,7 @@ async def test_episode_writing_workflow_standard_success(harness):
             write_to,
             passion,
             word_count,
-            do_refine,
             reporter=reporter,
-            env_state=env_state,
-            mode="final",
+            is_easy_mode=False,
         )
         mock_enqueue.assert_called_once_with(book_id, write_from, write_to)

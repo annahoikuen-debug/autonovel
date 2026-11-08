@@ -182,10 +182,8 @@ class EpubManifestBuilder:
                     illustration_spine_entries.append(("chapter_start", ill.chapter_index or 0, page_id))
                 elif ill.position == "chapter_end":
                     illustration_spine_entries.append(("chapter_end", ill.chapter_index or 0, page_id))
-
-        # Build manifest items including illustrations (avoid duplicates with manifest_items)
-        existing_ids = {it["id"] for it in items}
         all_items = list(items)
+        existing_ids = {it["id"] for it in items}
         for it in illustration_manifest_items:
             if it["id"] not in existing_ids:
                 all_items.append(it)
@@ -202,13 +200,13 @@ class EpubManifestBuilder:
         spines = spine_items or []
         new_spine = []
         frontmatter_ills = [page_id for pos, idx, page_id in illustration_spine_entries if pos == "frontmatter"]
-        chapter_start_ills: dict[str, Any] = {}  # chapter_index -> list of page_ids
-        chapter_end_ills: dict[str, Any] = {}
+        chapter_start_ills: dict[int, Any] = {}  # chapter_index -> list of page_ids
+        chapter_end_ills: dict[int, Any] = {}
         for pos, idx, page_id in illustration_spine_entries:
             if pos == "chapter_start":
-                chapter_start_ills.setdefault(str(idx), []).append(page_id)
+                chapter_start_ills.setdefault(idx, []).append(page_id)
             elif pos == "chapter_end":
-                chapter_end_ills.setdefault(str(idx), []).append(page_id)
+                chapter_end_ills.setdefault(idx, []).append(page_id)
 
         # Iterate through original spine items and insert illustrations
         for ref in spines:
@@ -217,12 +215,12 @@ class EpubManifestBuilder:
                 chap_idx = int(ref[2:])
                 # Insert chapter_start illustrations before this chapter
                 if chap_idx in chapter_start_ills:
-                    for p_id in chapter_start_ills[str(chap_idx)]:
+                    for p_id in chapter_start_ills[chap_idx]:
                         new_spine.append(f'<itemref idref="{p_id}" />')
                 new_spine.append(f'<itemref idref="{ref}" />')
                 # Insert chapter_end illustrations after this chapter
                 if chap_idx in chapter_end_ills:
-                    for p_id in chapter_end_ills[str(chap_idx)]:
+                    for p_id in chapter_end_ills[chap_idx]:
                         new_spine.append(f'<itemref idref="{p_id}" />')
             else:
                 new_spine.append(f'<itemref idref="{ref}" />')

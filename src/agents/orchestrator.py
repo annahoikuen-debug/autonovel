@@ -734,13 +734,14 @@ class Orchestrator:
                     )
                 )
 
-            node = self.nodes.get(current) or self.nodes.get(agent_key)
+            node = self.nodes.get(current) or self.nodes.get(agent_key)  # type: ignore[assignment]
             if node is None:
                 raise RuntimeError(f"Agent node not registered: {agent_key}")
+            assert node is not None
 
             # フォールトトレラント: 個別スキル失敗を捕捉し、次のスキルへ継続可能にする
             try:
-                result = await node(ctx)
+                result = await node(ctx)  # type: ignore[operator]
                 ctx.artifacts.update(result.artifacts)
 
                 next_agent_val = (
@@ -785,7 +786,7 @@ class Orchestrator:
                                 if idx + 1 < len(node_keys):
                                     next_node_after_current = node_keys[idx + 1]
                                 break
-                        current = str(next_node_after_current) if next_node_after_current is not None else None  # type: ignore[assignment]
+                        current = next_node_after_current  # type: ignore[assignment]
                         continue
                     # Update artifacts with backtrack info
                     # Note: we are already updating artifacts with result.artifacts above, but we want to add specific backtrack info
@@ -829,7 +830,7 @@ class Orchestrator:
                             )
                         )
                     # Set current to the next_agent for backtrack
-                    current = str(result.next_agent) if result.next_agent is not None else None  # type: ignore[assignment]
+                    current = result.next_agent  # type: ignore[assignment]
                     continue
                 if result.error:
                     # エラーが発生しても次のスキルへ継続するオプション（artifacts にエラー情報を残す）
@@ -846,9 +847,9 @@ class Orchestrator:
                                 correlation_id=self.correlation_id,
                             )
                         )
-                    current = str(result.next_agent) if result.next_agent is not None else None  # type: ignore[assignment]
+                    current = result.next_agent  # type: ignore[assignment]
                     continue
-                current = str(result.next_agent) if result.next_agent is not None else None  # type: ignore[assignment]
+                current = result.next_agent  # type: ignore[assignment]
 
             except Exception as e:
                 # 予期しない例外も捕捉し、継続可能にする

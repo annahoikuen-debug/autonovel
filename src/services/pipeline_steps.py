@@ -120,7 +120,7 @@ class PlanStep(WorkflowStep):
                         reset_value=ProjectContext.get_setting("catharsis_reset_value", 0),
                     )
                     catharsis_pattern = wave_analyzer.analyze(tension_history)
-                    catharsis_points = catharsis_pattern.catharsis_points  # type: ignore[attr-defined]
+                    catharsis_points = catharsis_pattern.catharsis_indices
 
                     if hasattr(bible, "model_dump"):
                         bible_dict = bible.model_dump()
@@ -266,9 +266,9 @@ class CatharsisAnalysisStep(WorkflowStep):
                 reset_value=ProjectContext.get_setting("catharsis_reset_value", 0),
             )
             catharsis_pattern = wave_analyzer.analyze(tension_history)
-            catharsis_points = catharsis_pattern.catharsis_points  # type: ignore[attr-defined]
-            pattern_type = catharsis_pattern.pattern_type  # type: ignore[attr-defined]
-            amplitude = catharsis_pattern.amplitude  # type: ignore[attr-defined]
+            catharsis_points = catharsis_pattern.catharsis_indices
+            pattern_type = getattr(catharsis_pattern, "pattern_type", "unknown")
+            amplitude = getattr(catharsis_pattern, "amplitude", 0.0)
 
             ctx.catharsis_pattern = catharsis_pattern.model_dump()
             ctx.catharsis_positions = catharsis_points

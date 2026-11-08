@@ -1,4 +1,5 @@
 import pytest
+from unittest.mock import AsyncMock, patch
 
 from src.services.digest_service import generate_suggestions, process_chapter
 
@@ -20,6 +21,11 @@ async def test_generate_suggestions():
     suggestions_empty = await generate_suggestions("")
     assert len(suggestions_empty) >= 1
 
-    suggestions_filled = await generate_suggestions("主人公は新たな街に到着した。")
+    with patch(
+        "src.services.digest_service.LLMService.generate",
+        new_callable=AsyncMock,
+        return_value="主人公は新たな街に到着した。冒険が始まる。",
+    ):
+        suggestions_filled = await generate_suggestions("主人公は新たな街に到着した。")
     assert len(suggestions_filled) >= 1
     assert "主人公は新たな街に到着した。" in suggestions_filled[0]

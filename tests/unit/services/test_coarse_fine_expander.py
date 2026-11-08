@@ -15,8 +15,9 @@ def mock_repo():
     repo = MagicMock()
     repo.get_latest_bible = AsyncMock(return_value={"title": "テスト作品", "genre": "ファンタジー"})
     repo.get_plot = AsyncMock(return_value=None)
-    repo.save_plot = AsyncMock(return_value=None)
+    repo.create_or_replace_plot = AsyncMock(return_value=None)
     repo.get_characters = AsyncMock(return_value=[])
+    repo.get_all_characters = AsyncMock(return_value=[])
     repo.get_chapter = AsyncMock(return_value=None)
     return repo
 
@@ -54,7 +55,7 @@ class TestCoarseFineExpander:
         assert len(skeletons) == 2
         assert skeletons[0].ep_num == 1
         assert skeletons[1].ep_num == 2
-        assert mock_repo.save_plot.call_count == 2
+        assert mock_repo.create_or_replace_plot.call_count == 2
 
     @pytest.mark.asyncio
     async def test_expand_single_micro(self, mock_repo, mock_pm, mock_llm):
@@ -87,7 +88,7 @@ class TestCoarseFineExpander:
         assert merged_plot.title == "骨子タイトル"
         assert merged_plot.tension == 70
         assert len(merged_plot.scenes) == 3
-        assert mock_repo.save_plot.call_count == 1
+        assert mock_repo.create_or_replace_plot.call_count == 1
 
     @pytest.mark.asyncio
     async def test_ensure_detailed_plot_cache_hit(self, mock_repo, mock_pm, mock_llm):

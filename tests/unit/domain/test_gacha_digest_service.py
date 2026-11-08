@@ -86,14 +86,14 @@ async def test_digest_suggestions_uses_llm():
     from src.services.digest_service import DigestService
 
     fake_llm = MagicMock()
-    fake_llm.generate_text = AsyncMock(
+    fake_llm.generate = AsyncMock(
         return_value="- 主人公の内面をもっと描写する\n- 伏線を 1 つ追加する\n- 設定を練る"
     )
 
     svc = DigestService(llm_service=fake_llm, db=MagicMock())
     res = await svc.generate_suggestions("テスト章本文です。")
 
-    fake_llm.generate_text.assert_awaited_once()
+    fake_llm.generate.assert_awaited_once()
     assert len(res) >= 1
     # 各要素に「- 」や「・」が付いていたら除去されている
     for line in res:
@@ -106,12 +106,12 @@ async def test_digest_suggestions_empty_chapter_falls_back():
     from src.services.digest_service import DigestService
 
     fake_llm = MagicMock()
-    fake_llm.generate_text = AsyncMock()
+    fake_llm.generate = AsyncMock()
 
     svc = DigestService(llm_service=fake_llm, db=MagicMock())
     res = await svc.generate_suggestions("")
 
-    fake_llm.generate_text.assert_not_awaited()
+    fake_llm.generate.assert_not_awaited()
     assert res == ["続行: (空章のため先頭から再開)", "調査が必要な未確認な要素を指摘"]
 
 
@@ -120,7 +120,7 @@ async def test_digest_suggestions_llm_failure_falls_back():
     from src.services.digest_service import DigestService
 
     fake_llm = MagicMock()
-    fake_llm.generate_text = AsyncMock(side_effect=RuntimeError("LLM down"))
+    fake_llm.generate = AsyncMock(side_effect=RuntimeError("LLM down"))
 
     svc = DigestService(llm_service=fake_llm, db=MagicMock())
     res = await svc.generate_suggestions("なんらかの章本文")
