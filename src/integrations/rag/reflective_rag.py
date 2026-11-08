@@ -467,7 +467,7 @@ class ReflectiveRAGService:
                             top_k=self.initial_fetch_k,
                         )
                     else:
-                        candidates = self.rag_service.search_similar_chunks(
+                        candidates = await self.rag_service.search_similar_chunks(
                             session,
                             query=current_query,
                             limit=self.initial_fetch_k,
