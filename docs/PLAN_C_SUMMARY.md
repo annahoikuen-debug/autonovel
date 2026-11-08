@@ -165,7 +165,7 @@ config/
 
 | 項目 | 優先度 | 内容 |
 |------|--------|------|
-| 統合・e2e テストの緑化 | 中 | 2026-11-08 時点で **9 failed / 336 passed / 37 skipped**（54 failed + 36 errors から改善）。残り9件は深いロジック系（伏線解析 NLP・世代タスク・degrade スコアとゲート閾値の整合等）で個別調査が必要。**状態: 未達**。CI `integration-observe` は `continue-on-error: true` で「未達」を意味し、ゲート化は plans/PLAN_GATE_INTEGRATION_24STEPS.md（Step 21: CI 実測 → Step 22: continue-on-error: false 切り替え）に従う。「観測モード」と呼ぶことは禁止（docs/TEST_GATE_POLICY.md）。 |
+| 統合・e2e テストの緑化 | 中 | 2026-11-08 時点で **0 failed / 345 passed / 37 skipped**（54 failed + 36 errors から改善）。**状態: green**。CI 統合テストジョブは `continue-on-error: false` でゲート化済み（plans/PLAN_GATE_INTEGRATION_24STEPS.md Step 22）。 |
 | shim 削除計画の Phase R0+R1 | ✅ 完了 | 141 shim 全てに DeprecationWarning 付与（`47e5c9d3`）。R1 検証テスト・R0 観測基盤（`test_shim_deprecation_warning.py` / `test_shim_usage_stats.py`）追加。R2（参照解消）以降は `docs/SHIM_REMOVAL_PLAN.md` に従う |
 | `tests/unit` 重複ディレクトリ統合 | ✅ 完了 | `llm_clients/` 削除、`*_src_backup` 3ディレクトリ統合（270テスト）、`agent/` → `agents/` 統合（18テスト）。収集件数 8124 損失なし（`a4012811`） |
 | Docker 実ビルド検証 | 低 | Docker 導入環境で `docker build` を1回実行し、C1 のフォールバック検証を補完 |
