@@ -12,6 +12,8 @@ from src.backend.observability.foreshadowing_ports import (
 )
 from src.engine.episode_context import EpisodeContextBuilder
 from src.engine.foreshadowing.service import ForeshadowingService
+from src.engine.foreshadowing.kpi import ForeshadowingKpiService
+from src.models.writing_metadata import WritingMetadata, ForeshadowingReport
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
 from src.backend.database.models_foreshadowing import ForeshadowingModel
 from src.backend.database.models import Character as CharacterModel
@@ -200,10 +202,24 @@ class TestRelationalMemoryE2E:
         )
 
         # ForeshadowingService.check_and_resolve を呼び出し
+        # LLM 共生成メタデータ（この話で聖剣エクスカリバーが回収された旨）を渡すことで、
+        # EnsembleJudge のスコアリングが RESOLVED 閾値に達する。
+        writing_metadata = WritingMetadata(
+            episode_number=3,
+            foreshadowings=[
+                ForeshadowingReport(
+                    foreshadowing_id=1,
+                    action="resolved",
+                    rationale="本文中で聖剣エクスカリバーが言及・回収された",
+                    excerpt="伝説の聖剣エクスカリバー",
+                )
+            ],
+        )
         resolved_titles = await foreshadowing_service.check_and_resolve(
             book_id=1,
             episode_num=3,
             draft_text=draft_text_ep3,
+            writing_metadata=writing_metadata,
         )
 
         # 検証: 伏線が自動的に resolved に更新される

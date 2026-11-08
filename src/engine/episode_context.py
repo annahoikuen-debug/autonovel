@@ -192,8 +192,9 @@ class EpisodeContextBuilder:
                 if hasattr(scalars_res, "all"):
                     return list(scalars_res.all())
             return []
-        except Exception:
-            return []
+        except Exception as e:
+            logger.exception("_safe_execute failed: %s", e)
+            raise
 
     async def _build_layer1_bible(self, book_id: int) -> dict[str, Any]:
         """Layer 1: バイブル（キャラクター・世界観設定）を構築"""

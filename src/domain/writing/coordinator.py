@@ -14,6 +14,11 @@ from src.generation.pdca_controller import PDCAController
 
 logger = logging.getLogger(__name__)
 
+# max_retries が呼び出し側で明示指定されたかどうかを区別するためのセンティネル。
+# デフォルト値 3 と明示指定 3 を区別できないため、未指定時に PDCA コントローラの
+# 判断に従うよう区別する。
+_MAX_RETRIES_UNSET = object()
+
 
 class ChapterImportNotAvailableError(NotImplementedError):
     """手書き原稿のインポート機能が利用できないことを示す。
@@ -125,7 +130,7 @@ class WritingCoordinator:
         branch_id: int = 1,
         style_tag: Any = None,
         auto_regenerate: bool = True,
-        max_retries: int = 3,
+        max_retries: int | object = _MAX_RETRIES_UNSET,
     ) -> int:
         """
         単発のエピソード執筆を実行する。
@@ -149,10 +154,13 @@ class WritingCoordinator:
             return word_count
 
         # Phase 3 PDCA制御: 全文再生成が禁止されている場合 (max_regenerations == 0)
-        # auto_regenerate=True が明示指定され max_retries > 0 の場合は、
-        # PDCA コントローラの max_regenerations=0 既定値によって黙って
-        # 無視されないよう、再生成ループに到達する。
-        if not self.pdca_controller.should_regenerate_full_text() and max_retries <= 0:
+        # max_retries が呼び出し側で明示指定された場合は、PDCA コントローラの
+        # max_regenerations=0 既定値によって黙って無視されないよう、再生成ループに到達する。
+        # max_retries が未指定（デフォルト）の場合は PDCA コントローラの判断に従う。
+        if (
+            max_retries is _MAX_RETRIES_UNSET
+            and not self.pdca_controller.should_regenerate_full_text()
+        ):
             if reporter:
                 reporter.report(
                     f"Ep.{start_ep}-{end_ep}: PDCAポリシーにより全文再生成ループは無効化されています",
@@ -164,9 +172,16 @@ class WritingCoordinator:
                     await self._apply_single_shot_polish(book_id, ep, branch_id, reporter)
             return word_count
 
-        # 自動再生成ループ (max_regenerations > 0 の場合のみ到達)
+        # 明示指定された max_retries を有効値として使用（未指定時は PDCA 既定）
+        effective_max_retries = (
+            self.pdca_controller.max_regenerations
+            if max_retries is _MAX_RETRIES_UNSET
+            else max_retries
+        )
+
+        # 自動再生成ループ (max_regenerations > 0 または max_retries > 0 の場合のみ到達)
         for ep in range(start_ep, end_ep + 1):
-            for retry in range(max_retries):
+            for retry in range(effective_max_retries):
                 score_result = await self.calculate_book_score(
                     book_id=book_id,
                     chapter_number=ep,
