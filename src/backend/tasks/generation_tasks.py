@@ -380,9 +380,26 @@ def _update_task_in_db(
                     logger.warning("Auto saving generated book failed: %s", save_err)
         else:
             repo.update_task_status(task_id, status)
-    except Exception:
+    except Exception as e:
         session.rollback()
-        logger.exception("DB update failed for task_id=%s status=%s", task_id, status)
+        logger.exception(
+            "DB update failed for task_id=%s status=%s error=%s: %s",
+            task_id, status, type(e).__name__, e,
+        )
+        # 二重防御: 新しいセッションでステータス更新を再試行し、
+        # 「タスクが永久に pending のままになる」observability 欠陥を防ぐ。
+        try:
+            retry_session = database.SessionLocal()
+            try:
+                retry_repo = BookRepository(retry_session)
+                retry_repo.update_task_status(task_id, status)
+            finally:
+                retry_session.close()
+        except Exception as retry_err:
+            logger.error(
+                "DB update retry also failed for task_id=%s status=%s error=%s: %s",
+                task_id, status, type(retry_err).__name__, retry_err,
+            )
     finally:
         session.close()
 
