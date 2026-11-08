@@ -83,8 +83,9 @@ async def test_auto_regenerate_true_triggers_score_calculation() -> None:
     mock_calculator.calculate.side_effect = [
         low_score,   # 1回目: 低スコア → 再生成トリガー
         high_score,  # 2回目: 高スコア → ループ終了
-        high_score,  # 予備（_trigger_pdca_rewrite 内で計算が走る場合の保険）
-        high_score,
+        high_score,  # 3回目: 再生成後の再評価（max_retries=3 の安全側）
+        # 以前は high_score を4個（予備2個）並べていたが、4回目以降の過剰呼び出しを
+        # 見逃す（緩和）ため削除。呼び出し回数は3回に厳密化する。
     ]
 
     await service.generate_episodes(
@@ -94,9 +95,9 @@ async def test_auto_regenerate_true_triggers_score_calculation() -> None:
         auto_regenerate=True, max_retries=3,
     )
 
-    # auto_regenerate=True なら calculate は最低1回呼ばれる
-    assert mock_calculator.calculate.call_count >= 1, (
-        f"calculate が呼ばれていません: call_count={mock_calculator.calculate.call_count}"
+    # auto_regenerate=True なら calculate は低スコア1回＋高スコア2回で3回呼ばれる
+    assert mock_calculator.calculate.call_count == 3, (
+        f"calculate の呼び出し回数が3回ではない: call_count={mock_calculator.calculate.call_count}"
     )
     # writer も初回 + 再生成 で2回呼ばれる
     assert mock_writer.generate_episodes.call_count == 2, (

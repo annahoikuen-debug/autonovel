@@ -58,11 +58,11 @@ async def test_retrieve_with_reflection_returns_docs(sample_search_results) -> N
     )
 
     assert len(result.documents) > 0, f"documents が空: {result.documents}"
-    # 各ドキュメントに内容が含まれていること（属性名は実装に依存するため、
-    # 最初のドキュメントのテキスト表現が空でないことを確認）
+    # 各ドキュメントに内容が含まれていること。
+    # ReflectiveDoc は search_result: SearchResult を保持し、SearchResult.content が実体。
+    # （以前は `str(first)` へのフォールバックがあり、中身が空でも str() が真となり検知力がゼロだった）
     first = result.documents[0]
-    text = getattr(first, "content", None) or getattr(first, "text", None) or str(first)
-    assert text, f"最初のドキュメントの内容が空: {first}"
+    assert first.search_result.content, f"最初のドキュメントの内容が空: {first}"
 
 
 @pytest.mark.asyncio

@@ -39,12 +39,6 @@ FORBIDDEN: list[tuple[str, str]] = [
 # 正当な例外として明示的に許可するファイル（理由必須）
 ALLOWLIST: dict[str, str] = {
     "tests/regression/test_H1_tautology_guard.py": "本テスト自身",
-    # TODO(H1-3): 実検証に置き換える (tasks.py の prefetch キャンセル処理の関数呼び出し/mock 検証)
-    "tests/contract/test_w6_prefetch_invalidation_wiring.py": "TODO(H1-3): getsource grep を callable / mock 検証に置換予定",
-    # TODO(H1-3): 実検証に置き換える (40ep 商業サイクル統合テスト内の assert True)
-    "tests/integration/test_40ep_commercial_lifecycle.py": "TODO(H1-3): assert True をライフサイクル完了ステータス検証に置換予定",
-    # TODO(H1-3): 実検証に置き換える (オーケストレータ例外系テスト内の assert True)
-    "tests/unit/agents/test_orchestrator_core.py": "TODO(H1-3): assert True を例外発生検証に置換予定",
 }
 
 

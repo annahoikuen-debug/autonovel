@@ -326,8 +326,7 @@ class TestExportAsyncOffload:
 
         # 所有権チェックは DB に book が無く NotFoundError になるため、
         # このテストの主題（スレッドオフロード）だけを検証する。
-        # 以前は `except Exception: pass` がこの失敗を隠し、
-        # `assert ... or True` が検知力をゼロにしていた。
+        # 以前は恒真アサーション（常に真）が検知力をゼロにしていた。
         with patch("src.backend.routers.export.get_multimedia_service", return_value=mock_service):
             with patch("src.backend.routers.export._check_multimedia"):
                 with patch(

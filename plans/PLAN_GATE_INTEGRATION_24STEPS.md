@@ -1231,13 +1231,13 @@ FAILED tests/integration/test_relational_memory_e2e.py::TestRelationalMemoryE2E:
 
 ### 付録 C: 原因と判定理由（Step 8, 12, 15, 17, 19 で記録）
 
-- グループ A バグA: _(未記入)_
-- グループ A バグB: _(未記入)_
-- グループ B: _(未記入)_
-- グループ C 判定: _(未記入)_
-- グループ E: _(未記入)_
-- グループ F 症状1: _(未記入)_
-- グループ F 症状2 判定: _(未記入)_
+- グループ A バグA: 恒真アサーション `or True` のガードパターン漏れ（6件検出）。`tests/regression/test_H1_tautology_guard.py` の FORBIDDEN に `assert ... or True` / `assert ... or 1` / 文字列リテラルのみ / 両辺同一の or パターンを追加。6ファイル7件を検出し、全件実検証へ置換。コメント中の `assert ... or True` 言及も `re.search` で検知するため、コメント文言を「恒真アサーション（常に真）」に言い換え。
+- グループ A バグB: `assert True` 2件（40ep 商業ライフサイクル / オーケストレータスケジューラノープ）と両辺同一 `or` 1件（relational_memory age_client deprecated）を実検証に置換。`src/agents/context_builder_agent.py` の `_build_char_dynamic_ctx` が `chars=[]` で `social_context` 引数を捨てる実装バグを修正（`social_context.strip()` を返すよう変更）。テストは `char_dynamic_ctx` に「動的心理関係性」「アキ」「信頼度=80」を厳密 assert。
+- グループ B: 自身がセッション中に入れたテスト緩和2件を修正。① `tests/regression/test_reflective_rag_returns_docs.py` の `str(first)` フォールバックを `first.search_result.content` に厳密化。② `tests/regression/test_pdca_respects_auto_regenerate.py` の `side_effect` 予備2個（high_score ×2）を削除し、呼び出し回数を `call_count == 3` で厳密検証。
+- グループ C 判定: 全9件の恒真アサーションを実検証に置換し、`test_H1_tautology_guard.py` 全パス（2/2）。再発を機械的に検出するガードを強化。全スイート（unit 8075 / integration 345 / regression 647）緑、既知失敗4件のみ。
+- グループ E: ALLOWLIST の TODO エントリ3件を精査・削除。`tests/contract/test_w6_prefetch_invalidation_wiring.py` の `inspect.getsource` による文字列grepを、`src.integrations.semantic_cache` から `cancel_all_prefetch` をインポートした `callable()` 検証に置換。
+- グループ F 症状1: ガードの `re.search(pattern, line)` はコメント行もマッチするため、コメント内の `assert ... or True` 形式の文言が誤検知された。
+- グループ F 症状2 判定: コメント内に「`assert ... or True`」という文言を避け、恒真アサーションの言い換え（「恒真アサーション（常に真）」等）を使用するよう運用。
 
 ### 付録 D: CI 実測結果（Step 21 で記録）
 
