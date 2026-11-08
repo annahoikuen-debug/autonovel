@@ -145,7 +145,7 @@ class WritingGenerator:
             #   - 伏線自動回収（`check_and_resolve`）
             #   - 事実ダイジェスト永続化（`_persist_episode_digest`）
             # を行う。`write()` 直叩きでは両方が永久に未実行だった。
-            from src.agents.orchestrator import AgentContext
+            from src.agents.orchestrator import AgentContext, AgentResult
 
             agent_ctx = AgentContext(
                 book_id=book_id,
@@ -158,17 +158,17 @@ class WritingGenerator:
                     **context,
                 },
             )
-            result = await writer.run(agent_ctx)
+            writer_result: AgentResult = await writer.run(agent_ctx)
 
-            if result.error:
+            if writer_result.error:
                 logger.warning(
                     "EpisodeWriter.run returned error for book_id=%s ep=%s: %s",
                     book_id,
                     ep_num,
-                    result.error,
+                    writer_result.error,
                 )
 
-            content = str(result.artifacts.get("written_text") or "")
+            content = str(writer_result.artifacts.get("written_text") or "")
 
             # 生成された本文をDBに保存
             if self.repo and content:
@@ -230,9 +230,9 @@ class WritingGenerator:
         reporter: Any,
         branch_id: int = 1,
         style_tag: Any = None,
-        regeneration_focus: list[str] = None,
-        writing_focus: list[str] = None,
-        regeneration_directive: str = None,
+        regeneration_focus: list[str] | None = None,
+        writing_focus: list[str] | None = None,
+        regeneration_directive: str | None = None,
     ) -> tuple[int, list[dict[str, Any]]]:
         """エピソード生成パイプラインを実行"""
         self.branch_id = branch_id
@@ -251,7 +251,7 @@ class WritingGenerator:
             style_tag=style_tag,
             regeneration_focus=regeneration_focus or [],
             writing_focus=writing_focus or [],
-            regeneration_directive=regeneration_directive,
+            regeneration_directive=regeneration_directive or "",
         )
 
     async def generate_episodes(
@@ -265,9 +265,9 @@ class WritingGenerator:
         reporter: Any,
         branch_id: int = 1,
         style_tag: Any = None,
-        regeneration_focus: list[str] = None,
-        writing_focus: list[str] = None,
-        regeneration_directive: str = None,
+        regeneration_focus: list[str] | None = None,
+        writing_focus: list[str] | None = None,
+        regeneration_directive: str | None = None,
     ) -> int:
         """単発エピソード生成（パイプラインを経由せず直接コア関数を呼ぶ）"""
         total_chars = 0
@@ -307,7 +307,7 @@ class WritingGenerator:
         raise NotImplementedError("analyze_and_import_chapter is not implemented yet")
 
     #: 未実装である旨の印
-    analyze_and_import_chapter._unimplemented_marker = True
+    analyze_and_import_chapter._unimplemented_marker = True  # type: ignore[attr-defined]
 
 
 # 後方互換性のためのエイリアス
@@ -352,7 +352,7 @@ class WritingAgent:
         reporter: Any,
         branch_id: int = 1,
         style_tag: Any = None,
-        regeneration_directive: str = None,
+        regeneration_directive: str | None = None,
     ) -> tuple[int, list[dict[str, Any]]]:
         return await self.generator.generate_episodes_pipeline(
             book_id=book_id,
@@ -378,7 +378,7 @@ class WritingAgent:
         reporter: Any,
         branch_id: int = 1,
         style_tag: Any = None,
-        regeneration_directive: str = None,
+        regeneration_directive: str | None = None,
     ) -> int:
         return await self.generator.generate_episodes(
             book_id=book_id,
