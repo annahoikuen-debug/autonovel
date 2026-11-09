@@ -136,9 +136,15 @@ def build_spine_section(spine=None, quality: str | None = None, ep_num: int = 1)
     )
 
 
-def build_spine_summary(spine, max_items: int = 12) -> str:
-    """作品全体の構造を1行に圧縮する（プロンプトの構造確定フェーズ用）。"""
+def build_spine_summary(spine, max_items: int = 12, quality: Optional[str] = None) -> str:
+    """作品全体の構造を1行に圧縮する（プロンプトの構造確定フェーズ用）。
+
+    `quality="off"` のときは空文字を返し、既存プロンプトとのバイト同一性を保証する。
+    `quality=None` の場合は従来どおり常に summary を返す（後方互換）。
+    """
     if spine is None or not getattr(spine, "beats", None):
+        return ""
+    if quality == "off":
         return ""
     parts = []
     for b in spine.beats[:max_items]:

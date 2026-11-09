@@ -4,8 +4,10 @@ from typing import Any
 # 1MトークンあたりのUSD単価 (2026年時点想定)
 MODEL_PRICING = {
     "gemini-2.0-flash": {"input": 0.10, "output": 0.40, "cached_input": 0.025},
+    "gemini-3.5-flash-lite": {"input": 0.035, "output": 0.12, "cached_input": 0.008},
     "claude-3-5-haiku": {"input": 0.80, "output": 4.00, "cached_input": 0.08},
     "claude-3-5-sonnet": {"input": 3.00, "output": 15.00, "cached_input": 0.30},
+    "gemma-4-31b-it": {"input": 0.07, "output": 0.21, "cached_input": 0.018},
     "gpt-4o-mini": {"input": 0.15, "output": 0.60, "cached_input": 0.075},
 }
 

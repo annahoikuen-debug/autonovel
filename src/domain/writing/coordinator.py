@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
+from src.audit.calibration_store import get_cliche_max, get_gate_threshold
 from src.audit.pipeline import AuditPipeline
 from src.domain.ports.auditor import IAuditor
 from src.domain.ports.pdca_runner import IPDCARunner
@@ -41,7 +42,7 @@ class WritingCoordinator:
         ctx_mgr: Any = None,
         reporter_factory: Any = None,
         book_score_calculator: Any = None,
-        score_threshold: float = 70.0,
+        score_threshold: float | None = None,
         pdca_controller: Any = None,
         audit_pipeline: Any = None,
         local_polisher: Any = None,
@@ -56,7 +57,7 @@ class WritingCoordinator:
         self.ctx_mgr = ctx_mgr
         self.reporter_factory = reporter_factory
         self.book_score_calculator = book_score_calculator
-        self.score_threshold = score_threshold
+        self.score_threshold = score_threshold if score_threshold is not None else get_gate_threshold()
         # Phase 3 コア軽量化: 全文再生成0回、局所パッチ最大1回のデフォルト
         self.pdca_controller = pdca_controller or PDCAController()
         self.audit_pipeline = audit_pipeline or AuditPipeline()
@@ -113,7 +114,7 @@ class WritingCoordinator:
 
         return {
             "quantitative_score": round(score, 1),
-            "is_acceptable": score >= 70.0 and len(meta.get("cliches", [])) < 3,
+            "is_acceptable": score >= get_gate_threshold() and len(meta.get("cliches", [])) < get_cliche_max(),
             "warnings": warnings,
             "meta": meta,
         }

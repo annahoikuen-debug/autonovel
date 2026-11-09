@@ -3,12 +3,16 @@ import json
 import logging
 import re
 from typing import Any
+from hashlib import sha256
+
+from src.audit.calibration_store import get_cliche_max, get_gate_threshold, get_weights
 from src.engine.auditors.rule_based_metrics import (
     calculate_sentence_rhythm,
     calculate_dialogue_ratio,
     detect_ai_cliches,
     evaluate_cliffhanger_ending,
 )
+from src.infrastructure.database.models.audit_run import AuditRun
 from src.models.unified_audit import UnifiedAuditReport, QualitativeAudit, ConflictItemSchema
 
 logger = logging.getLogger(__name__)
@@ -239,16 +243,31 @@ class UnifiedAuditor:
         text: str,
         character_profiles: str = "",
         plot_spec: str = "",
+        db_session: Any = None,
+        book_id: int = 0,
+        ep_num: int = 0,
     ) -> UnifiedAuditReport:
-        """二層ハイブリッド監査を実行し総合判定を下す"""
+        """二層ハイブリッド監査を実行し総合判定を下す
+
+        Args:
+            db_session: SQLAlchemy セッション。指定時は監査結果を AuditRun に
+                永続化する（fail-open：書き込み失敗はログのみ、監査結果には影響しない）。
+            book_id / ep_num: AuditRun に記録する作品・話番号。0 は未設定。
+        """
         q_score, meta = self.audit_quantitative(text)
         qual, degraded = await self._audit_qualitative_with_status(text, character_profiles, plot_spec)
 
-        # 総合得点 = 定量40% + 定性60%
-        final = (q_score * 0.4) + (qual.overall_score * 0.6)
+        # 総合得点 = 定量40% + 定性60% (SSOT: config/audit_calibration.yaml)
+        q_weight, qual_weight = get_weights()
+        final = (q_score * q_weight) + (qual.overall_score * qual_weight)
         # 定量スコアだけで合格させないよう、定性評価が成立しなかった場合は
         # 必ず不合格とする（fail-closed）。
-        is_ok = (not degraded) and final >= 70.0 and len(meta["cliches"]) < 3
+        # 閾値とAI定型上限も SSOT から読み込む。
+        is_ok = (
+            not degraded
+            and final >= get_gate_threshold()
+            and len(meta["cliches"]) < get_cliche_max()
+        )
         conflicts = self._build_conflicts(meta, qual)
 
         if degraded:
@@ -270,6 +289,19 @@ class UnifiedAuditor:
                 )
             )
 
+        # M0: 監査実行記録を永続化（fail-open。書き込み失敗はログのみ）。
+        await self._persist_audit_run(
+            text=text,
+            q_score=q_score,
+            qual=qual,
+            meta=meta,
+            is_ok=is_ok,
+            final=final,
+            db_session=db_session,
+            book_id=book_id,
+            ep_num=ep_num,
+        )
+
         return UnifiedAuditReport(
             is_acceptable=is_ok,
             final_score=round(final, 1),
@@ -279,3 +311,54 @@ class UnifiedAuditor:
             dialogue_ratio=meta["dialogue_ratio"],
             conflicts=conflicts,
         )
+
+    async def _persist_audit_run(
+        self,
+        *,
+        text: str,
+        q_score: float,
+        qual: QualitativeAudit,
+        meta: dict[str, Any],
+        is_ok: bool,
+        final: float,
+        db_session: Any | None,
+        book_id: int,
+        ep_num: int,
+    ) -> None:
+        """監査結果を AuditRun に永続化する（fail-open）。
+
+        書き込みに失敗しても監査結果を返す側に影響を与えない。
+        """
+        if db_session is None:
+            return
+
+        try:
+            run = AuditRun(
+                book_id=book_id,
+                ep_num=ep_num,
+                q_rhythm=float(meta.get("rhythm_score", 0.0)),
+                q_dialogue=float(meta.get("dialogue_ratio", 0.0)),
+                q_cliffhanger=float(meta.get("cliffhanger_score", 0.0)),
+                q_cliche_count=int(len(meta.get("cliches", []))),
+                qual_hook=float(qual.hook_score),
+                qual_emotional=float(qual.emotional_score),
+                qual_character=float(qual.character_consistency),
+                qual_overall=float(qual.overall_score),
+                final_score=float(final),
+                is_passed=bool(is_ok),
+                gate_version="1.0",
+                model_name=getattr(self.llm, "model_name", None) or type(self.llm).__name__,
+                prompt_version="1.0",
+                temperature=0.2,
+                judge_mode="single",
+                text_hash=sha256(text.encode("utf-8")).hexdigest(),
+                text_snapshot=text,
+            )
+            db_session.add(run)
+            db_session.commit()
+        except Exception as e:
+            logger.error("AuditRun 永続化に失敗しました（fail-open）: %r", e)
+            try:
+                db_session.rollback()
+            except Exception:
+                pass

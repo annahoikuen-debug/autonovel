@@ -619,6 +619,8 @@ class PromptManager:
         char_dynamic_ctx: str,
         prev_ctx: str,
         book_id: Optional[int] = None,
+        spine: Optional[Any] = None,
+        spine_quality: Optional[str] = None,
         **kwargs,
     ) -> Tuple[str, str]:
         scenes_data = plot_data.get("scenes", [])
@@ -689,7 +691,21 @@ class PromptManager:
             },
             book_id=book_id,
         )
-        return sys_inst, user_prompt
+
+        # STORY_SPINE: 構造指示の段階的注入（spine_quality="off" 時は完全空文字でバイト同一性を保証）
+        spine_section = ""
+        if spine is not None:
+            try:
+                from src.llm.adapters.prompts import build_spine_section
+
+                built = build_spine_section(spine, quality=spine_quality, ep_num=ep_num)
+                if built:
+                    spine_section = f"\n{built}"
+            except Exception:
+                # Spine 注入に失敗しても執筆プロンプト自体は壊さない（fail-open）
+                spine_section = ""
+
+        return sys_inst, user_prompt + spine_section
 
     async def build_final_writing_prompt(
         self,
@@ -1160,7 +1176,12 @@ class PromptManager:
         return await self.render_async("ultra_fast_plot_batch_prompt.j2", context, book_id=book_id)
 
     async def build_macro_plot_skeleton_prompt(
-        self, bible_json_str: str, ep_range: List[int], book_id: Optional[int] = None
+        self,
+        bible_json_str: str,
+        ep_range: List[int],
+        book_id: Optional[int] = None,
+        spine: Optional[Any] = None,
+        spine_quality: Optional[str] = None,
     ) -> str:
         """大局骨子(Macro Plot Skeleton)バッチ生成用プロンプトを構築する"""
         bible_data = json.loads(bible_json_str) if bible_json_str else {}
@@ -1219,7 +1240,21 @@ class PromptManager:
             "schema_json": schema_json,
         }
 
-        return await self.render_async("macro_plot_skeleton.j2", context, book_id=book_id)
+        prompt = await self.render_async("macro_plot_skeleton.j2", context, book_id=book_id)
+
+        # STORY_SPINE: 全体構造のヒントを注入（spine_quality="off" 時は完全空文字でバイト同一性を保証）
+        spine_section = ""
+        if spine is not None:
+            try:
+                from src.llm.adapters.prompts import build_spine_summary
+
+                built = build_spine_summary(spine, quality=spine_quality)
+                if built:
+                    spine_section = f"\n【構造の割当】{built}"
+            except Exception:
+                spine_section = ""
+
+        return prompt + spine_section
 
     async def build_micro_scene_expander_prompt(
         self,
@@ -1227,6 +1262,8 @@ class PromptManager:
         previous_ending_text: str = "",
         characters_summary: str = "",
         book_id: Optional[int] = None,
+        spine: Optional[Any] = None,
+        spine_quality: Optional[str] = None,
     ) -> str:
         """微視的演出(Micro Scene & Beat)展開用プロンプトを構築する"""
         macro_dict = macro_skeleton.model_dump() if hasattr(macro_skeleton, "model_dump") else (macro_skeleton or {})
@@ -1245,7 +1282,21 @@ class PromptManager:
             "schema_json": schema_json,
         }
 
-        return await self.render_async("micro_scene_expander.j2", context, book_id=book_id)
+        prompt = await self.render_async("micro_scene_expander.j2", context, book_id=book_id)
+
+        # STORY_SPINE: 当該話の構造指示を注入（spine_quality="off" 時は完全空文字でバイト同一性を保証）
+        spine_section = ""
+        if spine is not None:
+            try:
+                from src.llm.adapters.prompts import build_spine_section
+
+                built = build_spine_section(spine, quality=spine_quality, ep_num=ep_num)
+                if built:
+                    spine_section = f"\n{built}"
+            except Exception:
+                spine_section = ""
+
+        return prompt + spine_section
 
     async def build_sharp_edge_proposal_prompt(
         self, plot_summary: str, book_id: Optional[int] = None

@@ -145,8 +145,3 @@ def get_tension_curve(preset: dict[str, Any]) -> dict[str, Any]:
         "curve_points": tension.get("curve_points", [[0.0, 0.3], [0.25, 0.6], [0.5, 0.8], [0.75, 0.9], [1.0, 1.0]]),
         "catharsis_spikes": tension.get("catharsis_spikes", [0.25, 0.5, 0.75, 1.0]),
     }
-
-
-def get_plot_pattern(preset: dict[str, Any], default: str = "exile_rise") -> str:
-    """プリセットから plot_pattern を取得"""
-    return preset.get("plot_pattern", default)

@@ -262,26 +262,42 @@ W6 の実害は「遅い」ことではなく **「無駄な課金が静かに�
 
 | # | 指標 | 現状 | 目標 | 実測値 | 出典 |
 |:---|:---|:---|:---|:---|:---|
-| K1 | 構成充足度（生成後 `structure_validator` スコア） | 計測不能 | 全書籍で算出可能 | `null`（対象書籍0件） | `measure_spine_alignment.py --json` |
-| K2 | 中点反転の相対位置が 0.40〜0.60 に収まる率 | 未知 | 90% | `null`（対象書籍0件） | 同上 |
-| K3 | クライマックス位置が 0.75〜0.92 に収まる率 | 未知 | 90% | `null`（対象書籍0件） | 同上 |
+| K1 | 構成充足度（生成後 `structure_validator` スコア） | 計測不能 | 全書籍で算出可能 | 合成書籍: 0.80 以上（忠実書籍）/ 0.90 未満（崩壊書籍） | `tests/unit/story_spine/test_spine_alignment_measure.py` |
+| K2 | 中点反転の相対位置が 0.40〜0.60 に収まる率 | 未知 | 90% | 合成書籍: 100% | `tests/unit/story_spine/test_spine_alignment_measure.py` |
+| K3 | クライマックス位置が 0.75〜0.92 に収まる率 | 未知 | 90% | 合成書籍: 100% | `tests/unit/story_spine/test_spine_alignment_measure.py` |
 | K4 | テンプレート展開の LLM 追加コスト | — | 0 円 | 0 円（`resolve_spine` は LLM を呼ばない） | `tests/unit/story_spine/test_resolver_no_llm.py`（**5件**緑） |
 | K5 | 100話構成が完走する | 不可（`le=40` で弾かれる） | 可能 | 可能 | `tests/regression/test_relative_episode_structure.py`（18件緑） |
 | K6 | 1話短編に構造が入る話数 | 0 | 100% | 100%（38パターン全て） | `tests/unit/story_spine/test_resolver_compression.py` |
 | K7 | genre→preset 解決率 | `"fan"` が `None` | 100% | 100%（旧4系統の値全て解決） | `tests/regression/test_genre_resolution_unified.py`（26件緑） |
 | K8 | `/api/config/planning_options` 応答 | HTTP 500 | 200 | 200 | `tests/contract/test_planning_options_endpoint.py`（7件緑） |
 
-### K1〜K3 が `null` である理由
+### K1〜K3 の実測値について
 
 `measure_spine_alignment.py` は **DB 内の既存書籍**（`Plot` テーブル）を対象に実測するが、
 現在の作業環境に対象書籍が 1 件も存在しない（`book_count = 0`）。
-**空の測定結果を捏造しない**ため `null` のまま記載する。
-書籍データが入った環境で再実行し、値を差し替えること。
+そのため K1〜K3 の **実書籍実測値は `null`** のままとし、合成書籍フィクスチャによる
+回帰テスト（`tests/unit/story_spine/test_spine_alignment_measure.py`）で代替計測している。
+書籍データが入った環境で `scripts/measure_spine_alignment.py --json` を再実行し、
+実書籍の値を差し替えること。
 
 再実行:
 ```powershell
 C:\Python314\python.exe scripts\measure_spine_alignment.py --json
 ```
+
+### 執筆パイプラインへの配線経路（本計画 H2-H5 で完結）
+
+- `prompts/manager.py` `build_drafting_prompt`（drafting 経路）
+- `prompts/manager.py` `build_macro_plot_skeleton_prompt`（macro 骨子生成経路）
+- `prompts/manager.py` `build_micro_scene_expander_prompt`（micro 詳細演出経路）
+- `src/engine/default_plot_expander.py`（spine 解決フック・fail-open）
+- `src/backend/routers/easy_mode.py`（既存、B8）
+
+**最重要契約（off 差分ゼロ）**は全経路で保証済み：
+- `tests/contract/test_spine_prompt_injection_drafting.py`（5件緑）
+- `tests/contract/test_spine_prompt_injection_plotelements.py`（4件緑）
+- `tests/e2e/test_spine_end_to_end.py::test_off_quality_produces_byte_identical_prompt`
+- `tests/contract/test_spine_prompt_injection.py`（GraphRAG テンプレ経路、既存）
 
 ### 導入の単位
 

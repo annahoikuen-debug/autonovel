@@ -1,0 +1,39 @@
+version: 1
+gate:
+  mode: percentile
+  absolute_threshold: 70.0
+  advisory_threshold: 80.0
+  percentile:
+    window: 200
+    lower_pct: 30
+    fallback_to_absolute: true
+  cliche_max: 3
+  weights:
+    quantitative: 0.4
+    qualitative: 0.6
+  mode_switched_at: '2026-11-09T13:05:28.191772+00:00'
+pairwise:
+  enabled: false
+  shadow_enabled: false
+  anchor_count: 3
+panel:
+  enabled: false
+  judges:
+  - family: gemini
+    model: gemini-3.5-flash-lite
+    purpose: audit
+    weight: 1.0
+  - family: anthropic
+    model: claude-3-5-haiku
+    purpose: audit
+    weight: 1.0
+  - family: openai
+    model: gpt-4o-mini
+    purpose: audit
+    weight: 1.0
+score_calibration:
+  priors_source: builtin
+bias_correction:
+  enabled: false
+  config_path: config/llm_bias_correction.yaml
+evaluator_version: '1.0'

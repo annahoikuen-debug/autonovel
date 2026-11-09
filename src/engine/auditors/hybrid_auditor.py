@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import time
 from typing import List, Optional
+
+from src.audit.calibration_store import get_cliche_max, get_gate_threshold
 from src.agents.specialists.unified_auditor import UnifiedAuditor
 from src.domain.schemas.audit import (
     IntegratedAuditReport,
@@ -46,7 +48,7 @@ class TwoTierAuditor:
                         )
                     )
 
-        static_passed = len(issues) == 0 and len(meta.get("cliches", [])) < 3
+        static_passed = len(issues) == 0 and len(meta.get("cliches", [])) < get_cliche_max()
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
 
         static_res = StaticAuditResult(
@@ -64,7 +66,9 @@ class TwoTierAuditor:
             suggested_patch=qual_model.actionable_patch or "",
         )
 
-        final_decision = "pass" if (static_passed and qual_res.score >= 70) else "patch_required"
+        final_decision = "pass" if (
+            static_passed and qual_res.score >= get_gate_threshold()
+        ) else "patch_required"
 
         return IntegratedAuditReport(
             static_audit=static_res,

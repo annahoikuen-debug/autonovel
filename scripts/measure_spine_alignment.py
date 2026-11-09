@@ -162,7 +162,12 @@ def measure(pattern_keys: tuple[str, ...] = DEFAULT_PATTERNS) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description="STORY_SPINE 効果測定")
     parser.add_argument("--json", action="store_true", help="機械可読な JSON で出力")
-    parser.add_argument("--pattern", action="append", help="测定するパターン（複数可）")
+    parser.add_argument("--pattern", action="append", help="測定するパターン（複数可）")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="閾値（K2/K3 in_band_rate >= 0.90）未達時に exit 1 を返す（CI 常設用。合成書籍のみ対象）",
+    )
     args = parser.parse_args()
 
     patterns = tuple(args.pattern) if args.pattern else DEFAULT_PATTERNS
@@ -177,6 +182,19 @@ def main() -> int:
         print(f"K3 クライマックス: {payload['k3_climax']}")
         if payload["book_count"] == 0:
             print("※ 対象書籍が0件です。DB を設定して再実行してください。")
+
+    if args.check:
+        violations = []
+        k2 = payload["k2_midpoint"]
+        k3 = payload["k3_climax"]
+        if k2 is None or (k2.get("in_band_rate") or 0) < 0.90:
+            violations.append("K2 中点反転 in_band_rate < 0.90")
+        if k3 is None or (k3.get("in_band_rate") or 0) < 0.90:
+            violations.append("K3 クライマックス in_band_rate < 0.90")
+        if violations:
+            print("CHECK FAILED:", "; ".join(violations), file=sys.stderr)
+            return 1
+        print("CHECK PASSED: K2/K3 in_band_rate >= 0.90")
     return 0
 
 
