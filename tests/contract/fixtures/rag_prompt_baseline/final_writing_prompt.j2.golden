@@ -1,6 +1,11 @@
 本文開始前に [thought_process] を出力せよ:
 1. シーンごとの緩急の峻別 2. 目標文字数配分 3. 読者の情緒を破壊する一文 4. 五感情報の優先順位 5. 冒頭・末尾のフック戦略
 
+{%- if pinned_head -%}
+【最重要の確定事実・必守事項】(執筆前に必ず遵守)
+{{ pinned_head }}
+{%- endif -%}
+
 {% if emotional_context %}
 【直前話からの引き継ぎ感情】
 {{ emotional_context }}
@@ -74,6 +79,11 @@
 ■ 目標文字数: {{ target_word_count }} 字以上
 {{ tone_inst }}
 {% include "style_inheritance_notes.j2" ignore missing %}
+
+{% if pinned_tail %}
+【執筆直前の再確認】(以下に矛盾する描写を書かないこと)
+{{ pinned_tail }}
+{% endif %}
 
 --- 出力形式 ---
 [thought_process]
