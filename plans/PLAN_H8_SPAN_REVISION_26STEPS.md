@@ -336,3 +336,15 @@ def apply_quote_patches(
 | F | F3 ドキュメント | ✅ | `docs/STATUS.md` §10、`plans/PLAN_H8_SPAN_REVISION_26STEPS.md` 本書 |
 
 テスト合計: H8 新規 33 件 + 既存テストすべて緑。リグレッションなし（8 件の失敗は stash 検証により事前からのものと確認）。
+
+### 復旧記録(2026-11-10)
+
+セッション中断による一時的なファイル状態不整合(マージコンフリクトマーカー残留)が発生したが、実査の結果**統合コードは全て保持されている**ことを確認した:
+
+- 全統合コード存在確認: `agent.py`(quote_patch/lessons フック) / `config.py`(フラグ 2 種) / `metrics.py`(メトリクス 5 種) / `unified_audit.py` / `unified_audit_prompt.py` / `unified_auditor.py` / `prose_refiner_agent.py`(fail-closed) / `writing_langgraph.py` / `models.py` / `context_builder_agent.py` / `prompt_composer.py` / `manager.py` / `final_writing_prompt.j2` — いずれも H8 コード在籍
+- マージコンフリクト解消: `prompt_composer.py` / `manager.py` / `final_writing_prompt.j2` — R5 `rag_context_block` + H8 `lessons_block` + M1 `pinned_head/pinned_tail` の共存で解決
+- golden fixture 更新(コミット `f7059cbc`): `rag_prompt_baseline` / `lessons_prompt_baseline` 両方を現行テンプレート(3416 bytes, R5+H8+M1 同期済)に更新 → `test_rag_prompt_injection::test_off_template_is_byte_identical_to_golden` 修正
+- 最終テスト結果: **363 passed / 1 skipped**(リグレッション 0)
+- 実装コミット: `717b2afa`(H8 本体 71 ファイル) / `f7059cbc`(golden 更新 2 ファイル)
+
+**残存フェーズ F1-F3 の運用詳細計画**: `plans/PLAN_H8F_ROLLOUT_12STEPS.md` を新設。

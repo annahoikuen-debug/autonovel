@@ -76,7 +76,7 @@
 | **C** | 監査出力の structured 化 | ✅ 完了 | `src/agents/prompts/unified_audit_prompt.py`（`actionable_patch` を `original_quote`/`replacement`/`rationale` オブジェクト化）、`src/models/unified_audit.py`（`actionable_quote`/`actionable_replacement` 追加）、`src/agents/specialists/unified_auditor.py`（構造化パース・`_build_conflicts` 接続） |
 | **D** | fail-closed 化 | ✅ 完了 | `src/agents/writing/prose_refiner_agent.py`（LLM 欠如時 `response = prompt` を削除、`RuntimeError` 送出→原文返却） |
 | **E** | 教訓メモリ（Reflexion 型） | ✅ 完了 | `src/backend/database/models_lessons.py`（新規、`AuditLessonModel`）、`src/backend/alembic/versions/0035_audit_lessons.py`（新規）、`src/audit/lesson_store.py`（新規、`AuditLessonRepository`/`AuditLessonService`）、`src/agents/context_builder_agent.py`（`audit_lessons_ctx` 取得）、`src/agents/prompt_composer.py`（`lessons_block`/`_format_audit_lessons`）、`prompts/manager.py`（`lessons_block` コンテキスト渡し）、`prompts/templates/narrative/final_writing_prompt.j2`（`{% if lessons_block %}` ガード内注入） |
-| **F** | 検証・ロールアウト | ✅ 完了（フラグ既定OFF） | 実装・テスト完了。フラグ `ENABLE_AUDIT_QUOTE_PATCH` / `ENABLE_AUDIT_LESSONS` とも既定 OFF（off=現行挙動・バイト同一契約）。提案 9 の評価基盤で before/after 測定後、ON 切替を判断 |
+| **F** | 検証・ロールアウト | ✅ 完了（フラグ既定OFF） | 実装・テスト完了。フラグ `ENABLE_AUDIT_QUOTE_PATCH` / `ENABLE_AUDIT_LESSONS` とも既定 OFF（off=現行挙動・バイト同一契約）。**F1-F3 の運用詳細は `plans/PLAN_H8F_ROLLOUT_12STEPS.md` へ移管**（Shadow 計測 → AB 検証 → 既定値判定の 12 ステップ） |
 
 ### テスト（リグレッション防止）
 
@@ -109,6 +109,7 @@
 |:---|:---|
 | `plans/PLAN_R5_RAG_WIRING_24STEPS.md` | 提案 5 の詳細実装計画（24 ステップ・テスト計画込み） |
 | `plans/PLAN_H8_SPAN_REVISION_26STEPS.md` | 提案 8 の詳細実装計画（26 ステップ・テスト計画込み） |
+| `plans/PLAN_H8F_ROLLOUT_12STEPS.md` | 提案 8 のフラグ運用ロールアウト計画（Shadow 計測・AB 検証・既定値判定・12 ステップ） |
 | `docs/STATUS.md` §8 | 提案 5 実装前の baseline 記録（SSOT） |
 | `docs/STATUS.md` §10 | 提案 8 実装前の baseline 記録（SSOT） |
 | `docs/rag_setup.md` §8 | 提案 5 の新規環境変数・配線概要・契約 |
