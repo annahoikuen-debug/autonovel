@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.database.models_digest import EpisodeDigestModel
+from src.engine.context_compression.rollup_config import RollupConfig
 
 logger = logging.getLogger("digest_service")
 
@@ -182,9 +183,11 @@ class EpisodeDigestService:
         self,
         repo: Optional[EpisodeDigestRepository] = None,
         llm: Any = None,
+        cfg: Optional[RollupConfig] = None,
     ):
         self.repo = repo
         self.llm = llm
+        self.cfg = cfg or RollupConfig.from_env()
 
     async def summarize_and_save(
         self,
@@ -205,5 +208,16 @@ class EpisodeDigestService:
                 episode_num=episode_num,
                 digest_text=digest_text,
             )
+            # Step 14: この話を含む章・巻 rollup を stale にし、
+            # 次回の digest 保存時に再生成トリガとする（retake 追従）。
+            if self.cfg.rollup_enabled:
+                from src.engine.context_compression.rollup_repository import (
+                    DigestRollupRepository,
+                )
+
+                rollup_repo = DigestRollupRepository(self.repo.db)
+                await rollup_repo.mark_stale_for_episode(
+                    book_id, episode_num, self.cfg
+                )
 
         return digest_text

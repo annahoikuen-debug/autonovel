@@ -819,6 +819,10 @@ class PromptManager:
             # v5.3: 契約伏線とメタデータ出力スキーマの配線
             "contract_foreshadowings": contract_foreshadowings,
             "foreshadowing_contract_context": foreshadowing_contract_context,
+            # PLAN_M1 Step 16: 重要事実の両端配置（Lost in the Middle 対策）
+            # flag off 時は空文字（現行出力と同一）。
+            "pinned_head": kwargs.get("pinned_head", ""),
+            "pinned_tail": kwargs.get("pinned_tail", ""),
             "episode_number": ep_num,
         }
 

@@ -119,7 +119,11 @@ class EpisodeContextBuilder:
         is_last = False
 
         layer1_bible = await self._build_layer1_bible(book_id)
-        layer2_summary = await self._build_layer2_summary(book_id, ep_num)
+        # Phase 2 Step 10/11: 階層Layer2を優先し、rollup未登録・無効時は
+        # legacyのフラット1話要約 (_build_layer2_summary) にフォールバック。
+        layer2_summary = await self._build_layer2_hierarchical(book_id, ep_num)
+        if not layer2_summary.get("text"):
+            layer2_summary = await self._build_layer2_summary(book_id, ep_num)
         layer3_raw = previous_episode_text or ""
 
         context = {
@@ -433,3 +437,166 @@ class EpisodeContextBuilder:
                 1 for f in foreshadowing_list if _target_of(f) is not None and _target_of(f) < current_ep
             ),
         }
+
+    # ── Phase 2 Step 10: Layer2 階層組立 (巻 > 章 > 話) ──────────────
+
+    async def _build_layer2_hierarchical(
+        self, book_id: int, current_ep: int, max_chars: int | None = None
+    ) -> dict[str, Any]:
+        """Layer2 を巻要約 > 章要約 > 直近digest の階層構造で構築 (PLAN_M1 Step 10).
+
+        `RollupConfig.rollup_enabled` が False または `self.db` が None の場合は
+        空結果を返し、呼び出し側 (Step 11) で legacy フォールバック
+        (`_build_layer2_summary`) を使用する。
+
+        戻り値のキーは `_build_layer2_summary` と同一。
+        """
+        from src.engine.context_compression.rollup_config import RollupConfig
+        from src.engine.context_compression.rollup_repository import DigestRollupRepository
+
+        cfg = RollupConfig.from_env()
+        if not cfg.rollup_enabled or self.db is None:
+            return {
+                "text": "",
+                "layer2_chars": 0,
+                "episode_summaries": [],
+                "unresolved_foreshadowings": [],
+                "last_episode_summary": "",
+                "token_estimate": 0,
+                "history_chars": 0,
+                "foreshadowing_chars": 0,
+                "foreshadowing_omitted": 0,
+                "foreshadowing_overdue": 0,
+            }
+
+        budget = max_chars if max_chars is not None else self.LAYER2_MAX_CHARS
+        history_budget = int(budget * self.HISTORY_BUDGET_RATIO)
+        foreshadowing_budget = int(budget * self.FORESHADOWING_BUDGET_RATIO)
+
+        repo = DigestRollupRepository(self.db)
+
+        # ── 1) 巻要約 (level=volume): 全巻を start_ep 昇順で ──
+        volume_rollups = await repo.get_rollups(book_id, "volume")
+
+        # ── 2) 章要約 (level=block): 現在巻のものを優先 ──
+        block_rollups = await repo.get_rollups(book_id, "block")
+
+        # ── 3) 直近 digests ──
+        digests = await self._load_episode_digests(book_id, current_ep)
+
+        # 優先順に history テキストを組み立て (巻 > 章 > 直近)
+        history_parts: list[str] = []
+        used = 0
+
+        for r in volume_rollups:
+            line = f"【巻{r.start_ep}〜{r.end_ep}話】{r.digest_text}"
+            cost = len(line) + 1
+            if used + cost <= history_budget:
+                history_parts.append(line)
+                used += cost
+
+        block_per_volume = cfg.episodes_per_block * cfg.blocks_per_volume
+        current_volume_start = ((current_ep - 1) // block_per_volume) * block_per_volume + 1
+        for r in block_rollups:
+            if r.start_ep < current_volume_start:
+                continue  # 過去巻は巻要約でカバー
+            line = f"【章{r.start_ep}〜{r.end_ep}話】{r.digest_text}"
+            cost = len(line) + 1
+            if used + cost <= history_budget:
+                history_parts.append(line)
+                used += cost
+
+        for ep, text in sorted(digests.items()):
+            if ep >= current_ep:
+                continue
+            line = f"第{ep}話: {text}"
+            cost = len(line) + 1
+            if used + cost <= history_budget:
+                history_parts.append(line)
+                used += cost
+
+        history_text = "\n".join(history_parts) if history_parts else "(過去エピソード要約なし)"
+        history_section = f"【過去エピソード要約】\n{history_text}"
+        if len(history_section) > history_budget:
+            history_section = history_section[:history_budget].rstrip() + "……（以下略）"
+
+        # ── 4) 未回収伏線セクション（_build_layer2_summary と同一ロジック）──
+        foreshadowing_list = await self._safe_execute(
+            select(ForeshadowingModel)
+            .where(ForeshadowingModel.book_id == book_id)
+            .where(ForeshadowingModel.status.in_(["planted", "progressed"]))
+            .order_by(ForeshadowingModel.planted_episode)
+        )
+
+        def _target_of(f: Any) -> int | None:
+            target = getattr(f, "target_episode", None)
+            return target if isinstance(target, int) else None
+
+        def _fs_line(f: Any) -> str:
+            overdue = " ⚠期限超過" if _target_of(f) is not None and _target_of(f) < current_ep else ""
+            return (
+                f"  - 「{f.title}」（第{f.planted_episode}話設置"
+                f"{f', 第{f.target_episode}話回収目標' if f.target_episode else ''}"
+                f"{overdue}）"
+            )
+
+        fs_header = "\n\n【未回収伏線一覧】\n"
+        summary_reserve = 48
+        available = max(0, foreshadowing_budget - len(fs_header) - summary_reserve)
+
+        def _is_overdue(f: Any) -> bool:
+            return _target_of(f) is not None and _target_of(f) < current_ep
+
+        ordered = sorted(foreshadowing_list, key=lambda f: (0 if _is_overdue(f) else 1, _target_of(f) or 10**9))
+        total_overdue = sum(1 for f in foreshadowing_list if _is_overdue(f))
+
+        kept: list[str] = []
+        used_fs = 0
+        for f in ordered:
+            line = _fs_line(f)
+            cost = len(line) + 1
+            if used_fs + cost <= available:
+                kept.append(line)
+                used_fs += cost
+        omitted_count = len(ordered) - len(kept)
+        omitted_overdue = total_overdue - sum(1 for f in ordered[: len(kept)] if _is_overdue(f))
+
+        fs_body = "\n".join(kept) if kept else "(なし)"
+        if omitted_count:
+            fs_body += f"\n……他{omitted_count}件の未回収伏線あり（うち期限超過{omitted_overdue}件）……"
+        elif total_overdue:
+            fs_body += f"\n※ うち期限超過の伏線が{total_overdue}件あります。"
+        fs_section = fs_header + fs_body
+
+        last_episode_summary = ""
+        # 直前話の本文サマリ（digests から最新）
+        if digests:
+            last_ep = max(digests.keys())
+            last_episode_summary = digests[last_ep][:200]
+
+        summary_text = history_section + fs_section
+
+        return {
+            "episode_summaries": history_parts,
+            "unresolved_foreshadowings": [
+                {
+                    "id": f.id,
+                    "title": f.title,
+                    "planted_episode": f.planted_episode,
+                    "target_episode": f.target_episode,
+                    "status": f.status,
+                }
+                for f in foreshadowing_list
+            ],
+            "text": summary_text,
+            "last_episode_summary": last_episode_summary,
+            "token_estimate": len(summary_text) // 2,
+            "layer2_chars": len(summary_text),
+            "history_chars": len(history_section),
+            "foreshadowing_chars": len(fs_section),
+            "foreshadowing_omitted": omitted_count,
+            "foreshadowing_overdue": sum(
+                1 for f in foreshadowing_list if _target_of(f) is not None and _target_of(f) < current_ep
+            ),
+        }
+

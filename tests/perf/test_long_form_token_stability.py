@@ -6,8 +6,13 @@
 安定収束（フラット化）することを検証する。
 """
 import time
+from unittest.mock import AsyncMock, MagicMock
+
+import pytest
 
 from src.engine.context_compression.rolling_memory import RollingMemoryBuilder
+
+from src.engine.episode_context import EpisodeContextBuilder  # noqa: E402
 
 
 def test_rolling_memory_token_stability_20_episodes():
@@ -111,3 +116,152 @@ def test_rolling_memory_long_form_plateau_100_episodes():
     # ハードリミット絶対遵守検証
     for ep, tokens in enumerate(token_counts, start=1):
         assert tokens <= builder.max_total_tokens, f"Ep {ep} exceeded max tokens: {tokens}"
+
+
+class TestEpisodeContextBuilderTokenStability:
+    """EpisodeContextBuilder（実経路）の長編トークン安定性テスト (PLAN_M1 Step 1).
+
+    3層ローリング記憶の実本番経路 `src/engine/episode_context.py` において、
+    1〜100話でも Layer2 の文字数が LAYER2_MAX_CHARS (4000) に収まり、
+    中盤の事実が省略マーカーで圧縮されることを検証する。
+
+    このテストは PLAN_M1 Phase 0 の characterization テストであり、
+    以降の全フェーズで「現行挙動の回帰防止」基準線となる。
+    """
+
+    @pytest.fixture
+    def mock_db(self):
+        """モック AsyncSession。db.execute のみをモック化する。"""
+        db = AsyncMock()
+        db.execute = AsyncMock()
+        return db
+
+    @pytest.fixture
+    def digests_99(self):
+        """ep1〜ep99 のダイジェスト（各120字、合計11880字 > LAYER2_MAX_CHARS=4000）。
+
+        中盤の事実が Layer2 で省略・圧縮されることを検証するため、
+        100話分を超える量を用意する。
+        """
+        return {
+            ep: (
+                f"第{ep}話: 主人公は新たな仲間と出会い、遺跡の鍵を入手した。"
+                f"魔物との戦闘を経て、次なる目的地へ向かう。"
+            )
+            for ep in range(1, 100)
+        }
+
+    async def _run_layer2(self, mock_db, digests, ep_num: int, rollup_enabled: bool = False) -> dict:
+        """指定話数で Layer2 サマリを構築して返す（モック DB 経由）。
+
+        `db.execute` の SQL クエリ構築をモックする代わりに、
+        `_load_episode_digests` と `_safe_execute` を直接モック化し、
+        Layer2 の文字数クランプ・省略マーカー挙動にフォーカスする。
+
+        `rollup_enabled=True` のときは `ENABLE_DIGEST_ROLLUP=1` を想定し、
+        `get_rollups` は空（rollup 未登録）を返すので、digests から
+        history を組み立てるコードパスを検証する。
+        """
+        from src.engine.episode_context import EpisodeContextBuilder
+
+        builder = EpisodeContextBuilder(db=mock_db)
+
+        # digests を直接返すようにモック化（db.execute の SQL 構築を回避）。
+        builder._load_episode_digests = AsyncMock(return_value=dict(digests))
+
+        # _build_layer1_bible はキャラ設定のみ。空リストで十分。
+        builder._build_layer1_bible = AsyncMock(
+            return_value={"characters": [], "text": "キャラクター設定なし", "token_estimate": 0}
+        )
+
+        # chapter_list は digests に基づく MagicMock リスト。
+        # _brief は chapter_list をループしながら digests を参照するため、
+        # chapter_list が空だと digests が無視されてしまう。
+        chapter_models = [
+            MagicMock(ep_num=ep, content=digests.get(ep, f"第{ep}話本文"))
+            for ep in range(1, ep_num)
+        ]
+
+        # _safe_execute は _build_layer2_summary の chapter / foreshadowing 取得に使われる。
+        # str(select(...)) に "chapter" が含まれるかで分岐し、
+        # chapter クエリには chapter_models を、foreshadowing クエリには空リストを返す。
+        async def _safe_execute_side_effect(query):
+            if "chapter" in str(query).lower():
+                return chapter_models
+            return []
+
+        builder._safe_execute = AsyncMock(side_effect=_safe_execute_side_effect)
+
+        # db.execute は rollup_enabled=True 時に get_rollups(volume), get_rollups(block) の
+        # 2回呼ばれる。rollup 未登録を想定し空リストを返す。
+        def _make_result(models):
+            scalars = MagicMock()
+            scalars.all = MagicMock(return_value=models)
+            result = MagicMock()
+            result.scalars = MagicMock(return_value=scalars)
+            return result
+
+        if rollup_enabled:
+            result_empty = _make_result([])
+            mock_db.execute = AsyncMock(side_effect=[result_empty, result_empty])
+
+        ctx = await builder.build_context(book_id=1, ep_num=ep_num)
+        return ctx["layer2_summary"]
+
+    @pytest.mark.asyncio
+    async def test_layer2_chars_stays_under_limit_1_to_100_episodes(
+        self, mock_db, digests_99
+    ):
+        """1〜100話すべてで layer2_chars が LAYER2_MAX_CHARS (4000) に収まる。"""
+        max_chars = 0
+        for ep in range(1, 101):
+            summary = await self._run_layer2(mock_db, digests_99, ep)
+            max_chars = max(max_chars, summary["layer2_chars"])
+            assert summary["layer2_chars"] <= EpisodeContextBuilder.LAYER2_MAX_CHARS, (
+                f"Ep {ep}: layer2_chars={summary['layer2_chars']} exceeds "
+                f"{EpisodeContextBuilder.LAYER2_MAX_CHARS}"
+            )
+        print(f"\n[Max layer2_chars over 1-100 ep]: {max_chars}")
+
+    @pytest.mark.asyncio
+    async def test_layer2_with_rollup_stays_under_limit_1_to_100_episodes(
+        self, mock_db, digests_99, monkeypatch
+    ):
+        """rollup_enabled=True でも 1〜100話すべてで layer2_chars ≤ LAYER2_MAX_CHARS。
+
+        rollup 未登録（get_rollups 空）でも digests から history を組み立て、
+        4000字クランプ内に収まることを検証する（PLAN_M1 Step 13）。
+        """
+        monkeypatch.setenv("ENABLE_DIGEST_ROLLUP", "1")
+        max_chars = 0
+        for ep in range(1, 101):
+            summary = await self._run_layer2(mock_db, digests_99, ep, rollup_enabled=True)
+            max_chars = max(max_chars, summary["layer2_chars"])
+            assert summary["layer2_chars"] <= EpisodeContextBuilder.LAYER2_MAX_CHARS, (
+                f"Ep {ep}: layer2_chars={summary['layer2_chars']} exceeds "
+                f"{EpisodeContextBuilder.LAYER2_MAX_CHARS}"
+            )
+        print(f"\n[Max layer2_chars with rollup over 1-100 ep]: {max_chars}")
+
+    @pytest.mark.asyncio
+    async def test_omission_marker_appears_when_window_exceeded(
+        self, mock_db, digests_99
+    ):
+        """中間省略マーカーの出現条件を現行コードの実態に合わせて検証。
+
+        `_build_layer2_summary` は `chapter_list[2:-10]` のスライスを
+        `omitted` とするため、`omitted` が非空になるのは
+        `len(chapter_list) >= 13`（ep_num >= 14）から。
+        これは現行コードの characterizion（回帰防止基準線）として固定する。
+        """
+        for ep in [1, 5, 10, 13, 14, 50, 100]:
+            summary = await self._run_layer2(mock_db, digests_99, ep)
+            chapter_count = len(range(1, ep))
+            if ep <= 13:
+                assert "……" not in summary["text"], (
+                    f"Ep {ep}: unexpected omission marker (chapter_list={chapter_count})"
+                )
+            else:
+                assert "……" in summary["text"], (
+                    f"Ep {ep}: missing omission marker (chapter_list={chapter_count})"
+                )

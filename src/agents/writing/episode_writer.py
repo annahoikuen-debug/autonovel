@@ -19,6 +19,7 @@ from src.backend.observability.foreshadowing_ports import (
 from src.llm.service import LLMService
 from src.integrations.rag.context_retriever import ForeshadowingEntity
 from src.engine.foreshadowing.service import ForeshadowingService
+from src.engine.context_compression.rollup_config import RollupConfig
 from src.engine.prose.social_reaction_generator import SocialReactionGenerator
 from src.models.writing_metadata import WritingMetadata
 from src.engine.prose.novel_output_splitter import NovelOutputSplitter
@@ -614,5 +615,71 @@ class EpisodeWriter(BaseAgent):
                 draft_text=written_text,
             )
             logger.info(f"Ep.{ep_num}: 事実ダイジェスト保存完了 ({len(digest)}字)")
+
+            # --- ロールアップ生成 (PLAN_M1 Step 8) ---
+            # 階層的要約フラグ有効時かつ章/巻境界の話数で、階層的要約を生成・保存する。
+            # 失敗しても執筆パイプラインは継続（fail-open）。
+            try:
+                rollup_cfg = RollupConfig.from_env()
+                if rollup_cfg.rollup_enabled:
+                    from src.engine.context_compression.rollup_repository import (
+                        DigestRollupRepository,
+                    )
+                    from src.engine.context_compression.rollup_generator import (
+                        RollupGenerator,
+                    )
+
+                    rollup_repo = DigestRollupRepository(session)
+                    generator = RollupGenerator(rollup_cfg, llm=self.llm)
+
+                    # 現在話までの全 digest を取得（ep < ep_num）
+                    digest_records = await EpisodeDigestRepository(session).get_digests(
+                        book_id
+                    )
+                    member_digests = {
+                        int(r.episode_num): (r.digest_text or "")
+                        for r in digest_records
+                        if int(r.episode_num) < ep_num
+                    }
+
+                    # 章ロールアップ（章境界: 10話ごと）
+                    if generator.should_generate_block(ep_num):
+                        start_ep = ep_num - rollup_cfg.episodes_per_block + 1
+                        block_digests = {
+                            ep: text
+                            for ep, text in member_digests.items()
+                            if start_ep <= ep <= ep_num
+                        }
+                        block_text = await generator.generate_block_rollup(
+                            book_id, (start_ep, ep_num), block_digests
+                        )
+                        if block_text:
+                            await rollup_repo.upsert_rollup(
+                                book_id, "block", start_ep, ep_num, block_text
+                            )
+
+                    # 巻ロールアップ（巻境界: 50話ごと = 10話×5章）
+                    if generator.should_generate_volume(ep_num):
+                        block_per_volume = (
+                            rollup_cfg.episodes_per_block * rollup_cfg.blocks_per_volume
+                        )
+                        start_ep = ep_num - block_per_volume + 1
+                        block_rollups = await rollup_repo.get_rollups(
+                            book_id, "block"
+                        )
+                        volume_blocks = [
+                            (r.start_ep, r.end_ep, r.digest_text)
+                            for r in block_rollups
+                            if start_ep <= r.start_ep and r.end_ep <= ep_num
+                        ]
+                        volume_text = await generator.generate_volume_rollup(
+                            book_id, volume_blocks
+                        )
+                        if volume_text:
+                            await rollup_repo.upsert_rollup(
+                                book_id, "volume", start_ep, ep_num, volume_text
+                            )
+            except Exception as e:
+                logger.warning(f"Ep.{ep_num}: ロールアップ生成でエラー: {e}")
         except Exception as e:
             logger.warning(f"Ep.{ep_num}: 事実ダイジェスト保存でエラー: {e}")

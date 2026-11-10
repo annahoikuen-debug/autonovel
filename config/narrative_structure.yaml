@@ -1,0 +1,56 @@
+# PLAN_S1 N6: 物語構造ゲート (NarrativeStructureGate) の SSOT 設定
+#
+# 優先順位: 環境変数 NARRATIVE_STRUCTURE_GATE > このファイル > コード内デフォルト
+# (改善 #9 の config/audit_calibration.yaml と同一パターン)
+#
+# mode:
+#   "off"     - ゲートを一切実行しない (既定。現行パイプラインとバイト単位で同一動作 / PLAN_S1 P1)
+#   "warn"    - 違反を検出してログ・reporter に報告するが、生成プロットは一切変更しない
+#   "enforce" - 違反検出のうえ、テンション値のみ補正して保存する (P6: tension 以外の上書き禁止)
+# ※ YAML 1.1 では bare の off/on がブールにパースされるためクォート必須。
+version: 1
+mode: "off"
+
+# CSP 物理則の制約定数 (0-10 スケール基準)。
+# src/narrative_balancer/csp/tension_constraints.py TensionPhysicsConstraintBuilder の
+# デフォルト (max_step_delta=4 / 3話ローリング合計>=6) と同一値を SSOT として共有する。
+# マクロ骨子スキーマは 0-100 スケールのため、ゲート内部で 1/10 換算して比較する。
+max_step_delta: 4
+rolling_min_sum: 6
+rolling_window: 3
+
+# enforce 実行時に balancer へ渡す設定 (config/arbitrator.yaml と共通の既定値)
+gate_timeout_seconds: 10.0
+
+# enforce でも上書きを禁止する骨子フィールド (P6)。
+# 数理エンジンが LLM が設計した物語構造 (ビート種別・要約・登場人物) を
+# 書き換えないための保証リスト。ゲートは tension のみを書き戻す。
+enforce_overwrite_forbidden:
+  - beat_type
+  - summary
+  - characters
+  - is_defeat
+  - title
+  - foreshadowing_plan
+
+# 感情チェーンフェーズ → narrative_balancer ビート種別 (BeatType) の対応表。
+# 未知フェーズは SETUP にフォールバックする。
+# 第1グループ: EpisodeMacroSkeleton.current_chain_phase の実際の語彙
+#   (src/models/base.py normalize_chain_phase の出力値)
+# 第2グループ: src/domain/entities/plot.py ChainPhase (Enum) の語彙 (後方互換)
+beat_type_mapping:
+  Friction: SETUP
+  Prep: RISING
+  Discovery: BATTLE
+  Hate: DISASTER
+  Payoff: PAYOFF
+  Bonding: RECOVERY
+  Fulfillment: RESOLUTION
+  Turn: RISING
+  CounterTurn: BATTLE
+  Resolution: RESOLUTION
+  Catharsis: PAYOFF
+  MicroCatharsis: RECOVERY
+
+# テンション欠損 (None/NaN) 時のフォールバック値 (0-10 スケール)
+default_tension: 5.0

@@ -9,6 +9,9 @@ from typing import Any, TYPE_CHECKING
 if TYPE_CHECKING:
     from src.domain.entities.scene import Scene
 
+from src.engine.context_compression.pinned_facts import PinnedFactsGenerator
+from src.engine.context_compression.rollup_config import RollupConfig
+
 
 class PromptComposer:
     """プロンプトを構築するユーティリティクラス"""
@@ -112,6 +115,36 @@ class PromptComposer:
                 if self.agent is not None and hasattr(self.agent, "logger"):
                     self.agent.logger.warning(f"Ep.{ep_num}: Failed to get foreshadowing context: {e}")
                 foreshadowing_context = ""
+        # 背景（継続中）の未回収伏線を1回だけ取得し、背景ブロックと
+        # 期限超過伏線の抽出の双方で共有する（PLAN_M1 Step 16）。
+        unresolved_foreshadowings = await self._load_unresolved_foreshadowings(
+            book_id, ep_num, context
+        )
+
+        # PLAN_M1 Step 16: 重要事実の両端配置（Lost in the Middle 対策）
+        # flag off 時は pinned_head / pinned_tail とも空文字（現行出力と同一）。
+        pinned_head = ""
+        pinned_tail = ""
+
+        # pinned_edges_enabled フラグが有効な場合のみ、両端事実を生成する。
+        # LLM は使わず、契約伏線・期限超過伏線・前話 digest から抽出する。
+        rollup_cfg = RollupConfig.from_env()
+        if rollup_cfg.pinned_edges_enabled:
+            three_layer = context.get("three_layer_context") or {}
+            layer2_summary = three_layer.get("layer2_summary") or {}
+            prev_digest_text = layer2_summary.get("text", "") if isinstance(layer2_summary, dict) else ""
+            pinned = PinnedFactsGenerator(rollup_cfg).generate(
+                contract_foreshadowings=context.get("contract_foreshadowings") or [],
+                overdue_foreshadowings=[
+                    f for f in unresolved_foreshadowings
+                    if isinstance(f, dict) and f.get("target_episode") is not None
+                    and f.get("target_episode", 0) < ep_num
+                ],
+                prev_digest_text=prev_digest_text,
+            )
+            pinned_head = pinned.head
+            pinned_tail = pinned.tail
+
         prompt = await getattr(self.agent, "prompt_manager").build_final_writing_prompt(
             ep_num=ep_num,
             plot_data=plot_data,
@@ -132,7 +165,10 @@ class PromptComposer:
             three_layer_ctx=self._format_three_layer_context(context.get("three_layer_context")),
             # v5.3 / Step 29: 背景（継続中）の未回収伏線。契約伏線と重複排除して
             # PromptManager 側で上限・省略サマリを行う。
-            unresolved_foreshadowings=await self._load_unresolved_foreshadowings(book_id, ep_num, context),
+            unresolved_foreshadowings=unresolved_foreshadowings,
+            # PLAN_M1 Step 16: 重要事実の両端配置（Lost in the Middle 対策）
+            pinned_head=pinned_head,
+            pinned_tail=pinned_tail,
         )
 
         regeneration_directive = context.get("regeneration_directive")
