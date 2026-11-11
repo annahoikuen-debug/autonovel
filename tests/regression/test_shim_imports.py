@@ -18,7 +18,6 @@ KNOWN_SHIMS = [
     # 案Aで移動した生成物系（shim ではなく .gitkeep のみだが、念のため）
     # 既存の shim（案B 以前から存在するもの）
     ("config.erotic_vocabulary", ["METAPHOR_BANK", "get_vocabulary_for_tier"]),
-    ("config.container", ["Container", "get_container"]),
     ("src.api.health", ["router"]),
     ("src.services.llm.circuit_breaker", ["CircuitBreaker", "LLMCircuitBreaker"]),
     ("src.backend.config", ["settings", "Settings", "ROOT_DIR"]),

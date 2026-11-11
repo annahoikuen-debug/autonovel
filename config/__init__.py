@@ -4,7 +4,7 @@ config パッケージ
 """
 
 # 1. 分割された定数群のインポート
-from .archetypes_new import (
+from src.config.archetypes_new import (
     ARCHETYPE_KEY_ALIASES,
     CHEAT_DESCRIPTIONS,
     COST_DESCRIPTIONS,
@@ -17,7 +17,7 @@ from .archetypes_new import (
     WIZARD_GENRE_OPTIONS,
     resolve_archetype_key,
 )
-from .constants import (
+from src.config.constants import (
     ACTOR_CRITIC_ENABLED,
     ACTOR_CRITIC_MAX_ITERATIONS,
     ACTOR_CRITIC_SEVERITY_THRESHOLD,
@@ -72,7 +72,7 @@ from .erotic_vocabulary import (
     VOCABULARY_TIERS,
     get_vocabulary_for_tier,
 )
-from .models import GlobalConfigModel
+from schemas.config import GlobalConfigModel
 
 # 2. project_context から新しいシステム中枢クラスと定数を上書きエクスポート
 from .project_context import PROMPT_TEMPLATES, get_config, set_config

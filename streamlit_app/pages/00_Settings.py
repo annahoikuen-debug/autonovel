@@ -57,7 +57,7 @@ def load_config():
         from config.project_context import get_config
         return get_config()
     except Exception:
-        from config.models import GlobalConfigModel
+        from schemas.config import GlobalConfigModel
         return GlobalConfigModel.default()
 
 def save_all_settings():
@@ -474,7 +474,7 @@ def main():
     with col_reset:
         if st.button("🔄 デフォルトに戻す", use_container_width=True):
             try:
-                from config.models import GlobalConfigModel
+                from schemas.config import GlobalConfigModel
                 from config.project_context import set_config
                 set_config(GlobalConfigModel.default())
                 st.success("デフォルト設定に戻しました")

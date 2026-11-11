@@ -1,7 +1,7 @@
 """削除した定義が復活していないことの回帰テスト。"""
 
 import config
-import config.archetypes_new as archetypes_new
+import src.config.archetypes_new as archetypes_new
 from config.story_spine import PATTERNS
 from src.models.beat_sheet import EpisodeBeat
 

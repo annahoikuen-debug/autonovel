@@ -102,7 +102,7 @@ def test_episode_one_is_the_only_allowed_literal():
 
 def test_episode_constants_removed():
     """8話固定の EP_* 定数が残っていないこと。"""
-    import config.constants as c
+    import src.config.constants as c
 
     for name in ("EP_HUMILIATION", "EP_TRIGGER", "EP_MUSOU_START", "EP_FINAL", "EP_CLIMAX"):
         assert not hasattr(c, name), f"{name} がまだ残っている"

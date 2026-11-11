@@ -104,7 +104,7 @@ async def get_planning_options():
     ImportError で HTTP 500 を返していた。構造テンプレートの供給元は
     STORY_SPINE（`config/story_spine/`）に一本化する。
     """
-    from config.archetypes_new import EASY_GENRES, STORY_ARCHETYPES
+    from src.config.archetypes_new import EASY_GENRES, STORY_ARCHETYPES
     from config.story_spine import BEAT_VOCABULARY, CARDS, LENGTHS, MARKETS, PATTERNS
     from config.story_spine.genre_registry import genre_payload
     from src.config import STYLE_DEFINITIONS

@@ -3,7 +3,7 @@ config/project_context.py の整合性とリグレッション防止テスト
 """
 
 from config.project_context import ProjectContext, get_config
-from config.models import GlobalConfigModel
+from schemas.config import GlobalConfigModel
 
 
 def test_project_context_imports_and_get_config():

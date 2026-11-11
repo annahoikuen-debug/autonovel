@@ -10,7 +10,7 @@ import json
 
 import pytest
 
-from config.archetypes_new import STORY_ARCHETYPES
+from src.config.archetypes_new import STORY_ARCHETYPES
 from config.story_spine import CARDS, LENGTHS, MARKETS, PATTERNS
 from config.story_spine.beat import BEAT_VOCABULARY
 from src.backend.routers.misc import get_planning_options

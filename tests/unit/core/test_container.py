@@ -28,7 +28,7 @@ def test_app_container_override():
 
 def test_legacy_config_container_compatibility():
     """config.container の後方互換ラッパーの検証。"""
-    from config.container import Container, get_container
+    from src.core.container import Container, get_container
 
     c1 = get_container()
     assert c1 is not None

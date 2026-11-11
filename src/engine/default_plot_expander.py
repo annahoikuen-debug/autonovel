@@ -13,7 +13,7 @@ import json
 import logging
 from typing import Any
 
-from config.constants import MODEL_PLOT_EXPANSION, MODEL_PLANNING, MODEL_FAST_EXPANSION
+from src.config.constants import MODEL_PLOT_EXPANSION, MODEL_PLANNING, MODEL_FAST_EXPANSION
 from config.story_spine import resolve_spine
 from src.core.interfaces import IReporter, IRepository
 from src.llm.adapters.prompts import get_spine_quality

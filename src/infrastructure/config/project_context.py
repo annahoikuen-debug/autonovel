@@ -20,10 +20,10 @@ import logging
 import os
 from typing import Any, Dict, Optional
 
-from config.constants import (
+from src.config.constants import (
     BASE_DIR,
 )
-from config.models import GlobalConfigModel
+from schemas.config import GlobalConfigModel
 
 logger = logging.getLogger(__name__)
 

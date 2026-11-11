@@ -9,7 +9,7 @@ import logging
 
 from pydantic import BaseModel, Field, field_validator
 
-from config.sharp_edge_vocabulary import SHARP_EDGE_TYPES
+from src.config.sharp_edge_vocabulary import SHARP_EDGE_TYPES
 
 logger = logging.getLogger(__name__)
 

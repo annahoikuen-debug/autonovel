@@ -25,12 +25,12 @@ except ImportError:
         return None
 
 
-from config.constants import (
+from src.config.constants import (
     SAFE_APPEND_MODE_DEFAULT,
     SAFE_APPEND_MODE_OPTIONS,
 )
-from config.models import GlobalConfigModel
-from config.project_context import (
+from schemas.config import GlobalConfigModel
+from src.infrastructure.config.project_context import (
     GlobalConfig,
     get_config,
     set_config,
