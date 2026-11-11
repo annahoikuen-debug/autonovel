@@ -49,7 +49,6 @@ CONFIG_IMPORT_PATHS = [
     ("config.constants", None),
     ("config.domain_profile_manager", None),
     ("config.emotional_hook_vocabulary", None),
-    ("config.imagen_models", None),
     ("config.platform_censorship_rules", None),
     ("config.sharp_edge_vocabulary", None),
     # 旧パス（shim、維持必須）- 第2バッチ
@@ -100,7 +99,6 @@ def test_no_orphan_config_files():
         "config/constants.py",
         "config/domain_profile_manager.py",
         "config/emotional_hook_vocabulary.py",
-        "config/imagen_models.py",
         "config/platform_censorship_rules.py",
         "config/sharp_edge_vocabulary.py",
         "config/cors_config.py",

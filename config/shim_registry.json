@@ -7,7 +7,6 @@
     "config/constants.py",
     "config/domain_profile_manager.py",
     "config/emotional_hook_vocabulary.py",
-    "config/imagen_models.py",
     "config/platform_censorship_rules.py",
     "config/sharp_edge_vocabulary.py",
     "config/cors_config.py",

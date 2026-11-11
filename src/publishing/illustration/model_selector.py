@@ -5,7 +5,7 @@ AUTO の場合はコンテキスト（種別・安全レベル）から自動選
 モデルIDは src 内に持たず、必ず config.imagen_models を経由する。
 """
 
-from config.imagen_models import get_imagen_model_id, select_imagen_model
+from src.config.imagen_models import get_imagen_model_id, select_imagen_model
 from src.models.illustration import IllustrationModel, IllustrationRequest
 
 
@@ -38,7 +38,7 @@ def is_r15(safety) -> bool:
 def resolve_model_id(model: IllustrationModel) -> str:
     """明示的tierキーを実モデルIDへ変換（AUTOはデフォルトtierへ）。"""
     if _model_value(model) == "auto":
-        from config.imagen_models import DEFAULT_IMAGEN_TIER
+        from src.config.imagen_models import DEFAULT_IMAGEN_TIER
 
         return get_imagen_model_id(DEFAULT_IMAGEN_TIER)
     return get_imagen_model_id(_model_value(model))

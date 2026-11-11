@@ -4,7 +4,7 @@ import os
 import time
 from typing import Any
 
-from config.imagen_models import get_imagen_model_id
+from src.config.imagen_models import get_imagen_model_id
 from src.models.illustration import SafetyLevel
 
 logger = logging.getLogger(__name__)
