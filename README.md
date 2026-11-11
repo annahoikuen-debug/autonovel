@@ -645,6 +645,25 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
   ```
   （この場合 `episode_digests` への書き込みは行われず、Layer2 は本文冒頭100字へ
   フォールバックします。）
+
+### 階層的逐次要約メモリ (PLAN_M1)
+
+長編執筆（30話〜）で Layer2 の中盤事実喪失を解消するため、**話→章(ブロック)→巻のツリー状逐次要約**を導入しました（デフォルトはオフ。既存出力とバイト同一）。
+
+| 環境変数 | 既定 | 意味 |
+|---|---|---|
+| `ENABLE_DIGEST_ROLLUP` | `0` | 章/巻ロールアップ生成の ON/OFF |
+| `ENABLE_PINNED_FACTS_EDGES` | `0` | 重要事実をプロンプト両端に配置 (Lost in the Middle 対策) |
+| `DIGEST_COD_ROUNDS` | `1` | 要約パス数 (1=現行, 2=Chain-of-Density 圧縮) |
+| `DIGEST_EPISODES_PER_BLOCK` | `10` | 章境界の話数 |
+| `DIGEST_BLOCKS_PER_VOLUME` | `5` | 巻境界のブロック数 |
+
+- `ENABLE_DIGEST_ROLLUP=1` で、10話ごとに章要約（≤300字）、50話ごとに巻要約（≤800字）を自動生成し、Layer2 に巻>章>直近digest の順で配置します。
+- `ENABLE_PINNED_FACTS_EDGES=1` で、期限超過伏線・本話契約伏線・不可逆状態変化をプロンプト先頭（必守）と末尾（再確認）に配置します。
+- `DIGEST_COD_ROUNDS=2` で Chain-of-Density 型の 2-pass 要約を有効化できます（コスト +1 call/話。既定はオフ）。
+
+詳細設計: `plans/PLAN_M1_HIERARCHICAL_MEMORY_27STEPS.md`、ドキュメント: `docs/compression_module.md` §5、ベンチマーク: `benchmarks/hierarchical_memory_bench.py`。
+
 - 伏線回収判定（`ForeshadowingService.check_and_resolve`）は **LLM 呼び出し0回** です
   （アンサンブル判定のみ）。ここだけはコストに影響しません。
 

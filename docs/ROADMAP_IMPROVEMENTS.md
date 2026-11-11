@@ -27,7 +27,7 @@
 | **4** | 階層的逐次要約メモリへの刷新 | 未着手 | 提案 4 は Plan 未作成 | 1話独立要約・4000字打ち切り・lost in the middle 対策なし |
 | **6** | 静的ルール監査の学術指標化 | 未着手 | 提案 6 は Plan 未作成 | 7句定型リスト・標準偏差のみリズムスコア |
 | **7** | 物語構造制御の一本化と本番配線 | 未着手 | `plans/PLAN_S1_STRUCTURE_CONTROL_WIRING_27STEPS.md`（構造制御関連） | SPINE_QUALITY=off 既定・narrative_balancer 未配線のまま |
-| **8** | 改稿ループの部分編集統一とフィードバック永続化 | **完了** | `plans/PLAN_H8_SPAN_REVISION_26STEPS.md` | quote_patch（検証付き逐語引用置換）・audit_lessons（話横断教訓メモリ）・fail-closed prose_refiner・26 ステップ・33 新規テスト、リグレッション 0 |
+| **8** | 改稿ループの部分編集統一とフィードバック永続化 | **完了** | `plans/PLAN_H8_SPAN_REVISION_26STEPS.md` / `plans/PLAN_H8F_ROLLOUT_12STEPS.md` | quote_patch（検証付き逐語引用置換）・audit_lessons（話横断教訓メモリ）・fail-closed prose_refiner・33 新規テスト、リグレッション 0。AB 検証実施済み（解決率 +87%・破壊 0）→ D1/D2 は実パイプライン AB 待ちで既定 OFF 維持・D3 (`MIN_OCCURRENCES`) は実測により既定 2 に変更 |
 
 **推奨実装順**: 9（完了）→ 5（完了）→ 8（完了）→ 1 → 2 → 3 → 4 → 6 → 7（工数・リスク勘案）
 

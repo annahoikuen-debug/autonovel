@@ -775,3 +775,34 @@ Phase 1 (短期・高影響度) 完了: スキル駆動型エージェントア�
 ## [0.1.0] - 初期リリース
 
 FastAPI + SQLAlchemy + Huey の最小構成。easy_mode ルータープロトタイプ、Book/Chapter/Character/Plot/Bible モデル定義。
+
+## [7.1.0] - 2026-11-11 - 階層的逐次要約メモリ (PLAN_M1)
+
+長編執筆（30話〜）で Layer2 の中盤事実喪失を解消する、**話→章→巻のツリー状逐次要約**と**プロンプト両端配置 (Lost in the Middle 対策)** を導入。
+
+### 追加
+- `src/engine/context_compression/rollup_config.py`: ロールアップ設定の SSOT (8 つの env 読み取りフィールド)
+- `src/engine/context_compression/rollup_repository.py`: `DigestRollupRepository` (upsert / get / find_stale / mark_stale)
+- `src/engine/context_compression/rollup_generator.py`: `RollupGenerator` (章/巻ロールアップ生成、fail-open、CoD 2 pass 対応)
+- `src/engine/context_compression/pinned_facts.py`: `PinnedFactsGenerator` (LLM 0 回で head/tail 事実抽出)
+- `src/backend/alembic/versions/0035_digest_rollups.py`: `digest_rollups` テーブル (block / volume)
+- `src/backend/database/models_rollup.py`: `DigestRollupModel` ORM
+- `benchmarks/hierarchical_memory_bench.py`: flag off/on の事実保持率・Layer2 文字数・LLM コスト比較ベンチ
+- テスト: `tests/regression/test_long_form_fact_retention.py` (T18: 中盤の事実保持)、`tests/unit/engine/context_compression/test_fact_density.py` (T16: 情報密度)、`tests/perf/test_v6_llm_call_budget.py` (T17: ロールアップコスト予算)、`tests/e2e/test_hierarchical_memory_e2e.py` (T14: E2E)、`tests/unit/agents/test_pinned_facts_placement.py` (T13: 位置不変)
+
+### 変更
+- `src/engine/episode_context.py`: `_build_layer2_hierarchical` (巻>章>直近digest) + legacy フォールバック + stale rollup 再生成 (Step 14)
+- `src/engine/context_compression/digest_service.py`: `cod_rounds` パラメータ追加 (既定 1 = 現行同一)、stale マーキングフック
+- `src/agents/writing/episode_writer.py`: `_persist_episode_digest` に rollup 生成・stale 再生成を配線 (try/except fail-open)
+- `src/agents/prompt_composer.py`: `pinned_head` / `pinned_tail` を `build_final_writing_prompt` に配線
+- `prompts/manager.py`: `pinned_head` / `pinned_tail` を context 辞書に展開
+- `prompts/templates/narrative/final_writing_prompt.j2`: thought_process 直後に head ブロック、目標文字数直後に tail ブロックを追加
+- `src/backend/database/core.py`: `command.upgrade(cfg, "heads")` で複数 head に対応
+- `tests/regression/test_tenant_fk_integrity.py`: head 2 つまで許容 (0035_digest_rollups と 0035_audit_lessons の並存)
+
+### 設定 (すべてデフォルト off で既存出力とバイト同一)
+- `ENABLE_DIGEST_ROLLUP=0` / `ENABLE_PINNED_FACTS_EDGES=0` / `DIGEST_COD_ROUNDS=1`
+
+### テスト結果
+- PLAN_M1 関連テスト: 全緑 (T1–T18)
+- 既存テスト全体: 緑維持 (PLAN_M1 無関係の既存失敗 6 件は変更前から)

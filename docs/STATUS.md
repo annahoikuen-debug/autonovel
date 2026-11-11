@@ -383,3 +383,44 @@ C:\Python314\python.exe scripts\measure_spine_alignment.py --json
 | 契約（off 差分ゼロ） | H8 関連の contract テスト無し | `tests/contract/` 参照 |
 
 **Plan H8 目標**: `quote_patch`（`original_quote` 必須の検証付き置換）と `audit_lessons`（話横断教訓メモリ）を追加。**フラグ全 OFF では改稿・教訓経路の挙動をバイト単位で変えない**（`tests/contract/test_h8_quote_patch_contract.py` / `test_h8_lessons_prompt_injection.py` で保証）。フラグ ON 後は提案9の評価基盤でパッチ採用率・再合格率・同 dimension 再発率を before/after 測定する。
+
+---
+
+### 11. H8 フラグ AB 検証結果と既定値判定（PLAN_H8F O7-O9 実施・2026-11-11）
+
+合成データセット（3 プリセット × 20 話 = 60 話、structured diff 98 件うち不良差分 20 件、`var/ab_datasets/h8/`・コミット対象外）を用い、`try_local_patch` / `AuditLessonService` の実コード経路で LLM なしの決定論的 AB を実施した。
+
+#### quote_patch AB（D1）
+
+| ケース型 | 条件 A (flag=0 追記互換) | 条件 B (flag=1 quote_patch) | 差 |
+|:---|:---|:---|:---|
+| whitespace-shift（LLM が半角空白で quote、n=60） | 戦略 none・解決率 **0%** | 戦略 quote_patch 52/60・解決率 **87%** | **+87%** |
+| legacy-only（legacy 文字列のみ、n=60） | 戦略 actionable_patch 60・解決率 0% | 戦略 quote_patch_legacy 60・解決率 0% | ±0% |
+| 段落破壊 | 0 件 | **0 件**（SpanPatchApplier 保証の実測） | — |
+
+採用率: 52/(52+8) = **87%**（基準 ≥60% を達成）。ただし**再合格率とコスト増は実 LLM 生成 AB が必要なため未測定** → 判定条件を満たさず。
+
+知見: whitespace-shift ケース（SafeReplacer 逐語一致が不発するケース）で quote_patch が解決率 0%→87% に改善。legacy 文字列のみでは TargetedDiagnostic が指摘対象段落を特定できず解決率 0% — structured `original_quote` 必須化（H8 Phase C）の設計判断を実測で裏付け。
+
+#### lessons AB（D2/D3）
+
+| 指標 | 条件 B (`MIN_OCCURRENCES=1`) | 条件 C (`=2`) |
+|:---|:---|:---|
+| 注入件数 | 5 | 3 |
+| ノイズ（ワンオフ一時的失敗の混入） | 2 件 | **0 件** |
+| 反復 dimension カバレッジ | 100% | 100% |
+| 注入ブロック文字数（上限 800） | 195 字 | 124 字 |
+
+メカニズム実測: 14 失敗イベント → 4 教訓に重複統合（occurrences 分布 {7:1, 3:1, 2:2}）、`AUDIT_LESSON_ACTIVE_MAX` エビクション動作（active=10 上限・archived=6）、fail-open（session 未取得 / DB 破損で監査フロー継続）確認。ただし**再発率低下は実 LLM 生成 AB が必要なため未測定** → 判定条件を満たさず。
+
+#### 判定（PLAN_H8F O9）
+
+| 決定 | 判定 | 根拠 |
+|:---|:---|:---|
+| `ENABLE_AUDIT_QUOTE_PATCH` | **既定 OFF 維持** | 採用率 87%・破壊 0 と部分証拠は良好だが、再合格率・コストが未測定。実パイプライン AB 後に再判定 |
+| `ENABLE_AUDIT_LESSONS` | **既定 OFF 維持** | メカニズム動作確認済みだが、再発率低下が未測定。同上 |
+| `AUDIT_LESSON_MIN_OCCURRENCES` | **既定 1 → 2 に変更** | カバレッジ 100% 維持のままワンオフノイズ 2 件 → 0 件（O8 実測） |
+
+**再判定条件**: 実パイプライン（実 LLM）で PLAN_H8F O7/O8 の手順を 3 プリセット × 20 話で再実行し、O9 の判定表を全項目埋めた時点で再判定する。ロールバックは flag 1 本（`ENABLE_AUDIT_QUOTE_PATCH=0` / `ENABLE_AUDIT_LESSONS=0`）で旧挙動に戻る（`tests/contract/test_v6_audit_surgical_patch.py` フラグマトリクスで常時検証）。
+
+**運用上の修正**（本判定に伴う実装）: `record_audit_revision` / `record_audit_lesson` / `record_audit_lessons_injected` をパイプラインに配線（AB 計測に必須）、`AUDIT_LESSON_ACTIVE_MAX` を `lesson_store._enforce_active_max` に接続（エビクションが環境変数に従うよう修正）、`0035_audit_lessons` の分岐を解消（`down_revision=0035_digest_rollups`、複数 head による `alembic upgrade head` 失敗の修正）。

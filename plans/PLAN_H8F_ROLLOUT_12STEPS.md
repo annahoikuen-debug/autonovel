@@ -206,7 +206,19 @@ H8 の実装は完了し、全テスト緑(363 passed / 1 skipped)である。�
 
 | Phase | ステップ | 状態 | 実施結果 |
 |:---|:---|:---:|:---|
-| O1 | O1-O3 | ⬜ | 未着手 |
-| O2 | O4-O5 | ⬜ | 未着手 |
-| O3 | O6-O8 | ⬜ | 未着手 |
-| O4 | O9-O12 | ⬜ | 未着手 |
+| O1 | O1 全テスト緑 | ✅ | 190 passed / 1 skipped（H8 関連 13 ファイル）→ 統合後 196 passed |
+| O1 | O2 マイグレーション往復 | ✅ | **複数 head を検出・修正**（`0035_audit_lessons` の分岐解消、down_revision=0035_digest_rollups）。upgrade → downgrade 0034 → re-upgrade 往復成功、列 12 件・インデックス 5 本確認 |
+| O1 | O3 メトリクス露出 | ✅ | 4 メトリクス露出確認。**配線ギャップを検出・修正**: `record_audit_revision` / `record_audit_lesson` / `record_audit_lessons_injected` をパイプラインに接続（agent.py quote_patch 経路・lesson フック・prompt_composer 注入箇所） |
+| O2 | O4 lessons Shadow | ✅ | 14 失敗イベント → 4 教訓に統合（occurrences 分布 {7:1, 3:1, 2:2}）。**エビクション不発を検出・修正**（`AUDIT_LESSON_ACTIVE_MAX` が lesson_store に未接続 → 接続後 active=10 上限・archived=6 で動作）。fail-open 両ケース確認 |
+| O2 | O5 quote_patch 静的確認 | ✅ | flag ON/OFF 両方で契約テスト 23 件緑。`test_local_patch_is_preferred_over_full_rewrite` に flag 固定を追加（legacy 文字列は flag ON 時 quote_patch_legacy に再解釈されるため） |
+| O3 | O6 データセット | ✅ | 3 プリセット × 20 話 = 60 話・diff 98 件（うち不良 20）。`var/ab_datasets/h8/`（コミット対象外） |
+| O3 | O7 quote_patch AB | ✅ | whitespace-shift: 解決率 0%→**87%**（採用 52/60・破壊 0）。legacy-only: 60/60 適用だが解決率 0%（TargetedDiagnostic 限界 → structured original_quote 必須性を実測で裏付け）。メトリクス実働確認 |
+| O3 | O8 lessons AB | ✅ | 条件 C (`MIN_OCC=2`) がカバレッジ 100%・ノイズ 0・ブロック 124 字。B (=1) はノイズ 2 件 |
+| O4 | O9 判定 | ✅ | D1 **既定 OFF 維持**（再合格率・コスト未測定）/ D2 **既定 OFF 維持**（再発率未測定）/ D3 **既定 1→2 変更**（O8 実測） |
+| O4 | O10 flag 既定変更 | ✅ | `get_lesson_min_occurrences` 既定 1→2、`DEFAULT_MIN_OCCURRENCES` 2、`.env.example` に H8 フラグ説明追記 |
+| O4 | O11 ドキュメント | ✅ | `docs/STATUS.md` §11 に AB 結果表・判定・再判定条件・ロールバック手順を記録 |
+| O4 | O12 完了報告 | ✅ | 本実施記録 + ROADMAP 更新 + コミット |
+
+**結論**: D1/D2 は P1 原則（判定不通なら既定 OFF 維持・根拠文書化）に従い OFF 維持。実パイプライン AB（実 LLM 生成 3 プリセット × 20 話）完了後に O9 判定表を再適用して再判定する。D3 のみ実測に基づき既定 2 に変更。
+
+**運用で発見・修正した実装ギャップ**: メトリクス配線 3 箇所 / `AUDIT_LESSON_ACTIVE_MAX` 接続 / alembic 分岐解消 / flag 固定テスト 1 件。いずれも AB 計測の正確性に直結する修正。

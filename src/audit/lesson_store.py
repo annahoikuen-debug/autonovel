@@ -29,8 +29,8 @@ DEFAULT_INJECT_MAX_ITEMS = 5
 DEFAULT_INJECT_BLOCK_MAX_CHARS = 800
 #: 教訓 1 件の最大文字数。
 DEFAULT_LESSON_MAX_CHARS = 200
-#: 注入に必要な最小発生回数（1 で即時注入）。
-DEFAULT_MIN_OCCURRENCES = 1
+#: 注入に必要な最小発生回数（1 で即時注入）。PLAN_H8F O8 実測により既定 2。
+DEFAULT_MIN_OCCURRENCES = 2
 
 
 class AuditLessonRepository:

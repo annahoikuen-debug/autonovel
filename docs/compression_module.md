@@ -88,3 +88,77 @@ writing_service = container.writing_service()
 - E2E テスト: `tests/e2e/test_full_novel_with_compression.py`
 
 全テストは CI パイプラインで自動実行されます。
+
+---
+
+## 5. 階層的逐次要約メモリ (Hierarchical Sequential Summary Memory)
+
+AutoNovel の長編執筆（30話〜）において、Layer2 の「1話ごとの独立100字ダイジェスト＋中間省略マーカー」が中盤の確定事実を失う問題を解消するため、**話→章(ブロック)→巻のツリー状逐次要約**を導入しました。さらに重要情報をプロンプト両端へ配置し、Lost in the Middle 対策を行います。
+
+### 5.1 概要
+
+| 項目 | 現行 (flag off) | 改修後 (flag on) |
+|---|---|---|
+| Layer2 の構成 | flat な1話要約リスト + 中間省略マーカー | 巻要約 > 章要約 > 直近話ダイジェスト |
+| 中盤の事実 | 話数>10 で省略され永久喪失 | 章要約に圧縮され保持 |
+| 重要情報の位置 | プロンプト中央 | 先頭(必守) + 末尾(再確認) の両端 |
+| 要約密度 | 1 pass、100字固定 | Chain-of-Density 型 (2 pass 選択可能) |
+| ロールアップ生成 | なし | 章境界(+1 LLM call/10話)・巻境界(+1/50話) |
+
+### 5.2 フィーチャーフラグ
+
+すべて `src/engine/context_compression/rollup_config.py` (SSOT) で管理：
+
+| 設定 | 環境変数 | 既定 | 意味 |
+|---|---|---|---|
+| `rollup_enabled` | `ENABLE_DIGEST_ROLLUP` | `0` | ロールアップ全体の ON/OFF |
+| `episodes_per_block` | `DIGEST_EPISODES_PER_BLOCK` | `10` | 章(ブロック)境界の話数 |
+| `blocks_per_volume` | `DIGEST_BLOCKS_PER_VOLUME` | `5` | 巻境界 (50話/巻) |
+| `pinned_edges_enabled` | `ENABLE_PINNED_FACTS_EDGES` | `0` | 両端配置 ON/OFF (Lost in the Middle 対策) |
+| `cod_rounds` | `DIGEST_COD_ROUNDS` | `1` | 要約パス数 (1=現行, 2=CoD) |
+| `block_digest_chars` | `DIGEST_BLOCK_MAX_CHARS` | `300` | 章要約上限 |
+| `volume_digest_chars` | `DIGEST_VOLUME_MAX_CHARS` | `800` | 巻要約上限 |
+| `pinned_max_chars` | `PINNED_FACTS_MAX_CHARS` | `300` | pinned head 最大文字数 |
+| `pinned_tail_max_chars` | `PINNED_FACTS_TAIL_MAX_CHARS` | `300` | pinned tail 最大文字数 |
+
+### 5.3 アーキテクチャ
+
+```
+Layer 1 (バイブル): キャラクター・世界観設定（不変）
+Layer 2 (階層要約):
+  ├─ 巻要約 (level=volume): 全巻の確定事実
+  ├─ 章要約 (level=block): 現在巻の確定事実
+  └─ 直近ダイジェスト: 現在章の1話 + 最初2話
+Layer 3 (直前文脈): 直前1エピソードの生テキスト
+```
+
+### 5.4 フェーズ別リリース計画 (PLAN_M1 Step 27)
+
+1. **Week 1**: `ENABLE_DIGEST_ROLLUP=1` — rollup 生成のみ有効化。Layer2 は現行参照。
+2. **Week 2**: `ENABLE_PINNED_FACTS_EDGES=1` — 両端配置有効化。
+3. **Week 3**: `ENABLE_DIGEST_ROLLUP=1` で Layer2 階層組立を本体有効化。
+4. **Week 4**: `DIGEST_COD_ROUNDS=2` の A/B 結果を見て採否判断。
+
+各段階で1週間バーンし、監査スコアの劣化を監視。ロールバックは該当 env を 0 に戻すだけ。
+
+### 5.5 テスト
+
+| # | テストファイル | 種別 | 守るもの |
+|---|---|---|---|
+| T1 | `tests/perf/test_long_form_token_stability.py` | perf | 実経路の文字数不変性 |
+| T2 | `tests/regression/test_hierarchical_memory_golden.py` | golden | flag off で現行プロンプトとバイト同一 |
+| T3 | `tests/unit/engine/context_compression/test_rollup_config.py` | unit | 設定 SSOT・env 上書き |
+| T4 | `tests/regression/test_no_hardcoded_thresholds.py` | regression | マジックナンバー再導入禁止 |
+| T6 | `tests/unit/engine/context_compression/test_rollup_repository.py` | unit | upsert 冪等・UNIQUE |
+| T7 | `tests/unit/engine/context_compression/test_rollup_generator.py` | unit | 境界判定・tier1・fail-open |
+| T10 | `tests/unit/services/test_episode_context_hierarchy.py` | unit | 層順序・優先クランプ・legacy 同一 |
+| T11 | `tests/unit/engine/context_compression/test_rollup_staleness.py` | unit | retake 追従 (stale→再生成→解消) |
+| T12 | `tests/unit/engine/context_compression/test_pinned_facts.py` | unit | 両端事実の抽出順・上限 |
+| T13 | `tests/unit/agents/test_pinned_facts_placement.py` | regression | プロンプト内位置不変 |
+| T14 | `tests/e2e/test_hierarchical_memory_e2e.py` | e2e | rollup/pinned が実プロンプトへ届く |
+| T15 | `tests/unit/engine/context_compression/test_rollup_cod.py` | unit | Cod rounds=1 現行同一 / rounds=2 呼び出し回数 |
+| T16 | `tests/unit/engine/context_compression/test_fact_density.py` | unit | 圧縮後の情報密度 |
+| T17 | `tests/perf/test_v6_llm_call_budget.py` | perf | コスト予算 +1/10話 上限 |
+| T18 | `tests/regression/test_long_form_fact_retention.py` | regression | **中盤の事実保持 (提案4 の価値)** |
+
+ベンチマーク: `benchmarks/hierarchical_memory_bench.py` (flag off/on の事実保持率・Layer2 文字数・LLM コストを比較)

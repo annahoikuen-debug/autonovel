@@ -37,7 +37,7 @@ def test_alembic_has_single_head():
                         except ValueError:
                             pass
     heads = revisions - down
-    # 0035_digest_rollups（PLAN_M1）と 0035_audit_lessons（別計画）が並存するため、
-    # head は 2 つまでを許容する（head 分岐の不在は下位 0031〜0034 の単一チェーンで担保済み）。
-    assert len(heads) <= 2, f"Alembic の head が {len(heads)} 個ある（2 超過は想定外）: {sorted(heads)}"
-    assert "0035_digest_rollups" in heads, "PLAN_M1 の 0035_digest_rollups が head に含まれていない"
+    # 0035_audit_lessons が 0035_digest_rollups の後継 (down_revision 参照) なので、
+    # head は 1 つ (0035_audit_lessons)。PLAN_M1 の 0035_digest_rollups はチェーンの中間。
+    assert len(heads) == 1, f"Alembic の head が {len(heads)} 個ある: {sorted(heads)}"
+    assert "0035_audit_lessons" in heads, "head に 0035_audit_lessons が含まれていない"

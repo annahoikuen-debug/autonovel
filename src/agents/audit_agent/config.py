@@ -161,8 +161,12 @@ def get_lesson_max_chars() -> int:
 
 
 def get_lesson_min_occurrences() -> int:
-    """注入に必要な最小発生回数（``AUDIT_LESSON_MIN_OCCURRENCES``、既定 1）。"""
-    return _env_int("AUDIT_LESSON_MIN_OCCURRENCES", 1)
+    """注入に必要な最小発生回数（``AUDIT_LESSON_MIN_OCCURRENCES``、既定 2）。
+
+    PLAN_H8F O8 の AB 実測に基づき既定を 2 に変更（カバレッジ 100% 維持のまま
+    ワンオフ一時的失敗のノイズ混入を排除）。以前の既定は 1。
+    """
+    return _env_int("AUDIT_LESSON_MIN_OCCURRENCES", 2)
 
 
 def _env_int(name: str, default: int) -> int:
