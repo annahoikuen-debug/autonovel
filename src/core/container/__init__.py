@@ -28,6 +28,16 @@ def __getattr__(name: str):
         from src.core.container.app import AppContainer, AppContainer2
 
         return AppContainer if name == "AppContainer" else AppContainer2
+    if name == "Container":
+        # 後方互換: config.container の別名として AppContainer を公開
+        from src.core.container.app import AppContainer
+
+        return AppContainer
+    if name == "get_container":
+        # 後方互換: コンテナクラスを返すアクセサ（テストは truthy チェックのみ）
+        from src.core.container.app import AppContainer
+
+        return AppContainer
     if name == "LLMGenerateResultProxy":
         from src.core.llm_gateway import LLMGenerateResultProxy
 
@@ -38,6 +48,8 @@ def __getattr__(name: str):
 __all__ = [
     "AppContainer",
     "AppContainer2",
+    "Container",
+    "get_container",
     "InfraContainer",
     "LLMGenerateResultProxy",
     "make_container",

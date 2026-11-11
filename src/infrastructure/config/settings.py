@@ -360,6 +360,10 @@ class Settings(BaseSettings):
     MULTI_LAYER_AUDIT_ENABLED: bool = True
     RAG_REFLECTION_ENABLED: bool = True
 
+    # PLAN_H8 / PLAN_H8F: AB 検証判定待ちのため既定 OFF。
+    ENABLE_AUDIT_QUOTE_PATCH: bool = False
+    ENABLE_AUDIT_LESSONS: bool = False
+
     @property
     def cors_origin_list(self) -> list[str]:
         """CORS origins をリスト形式で取得する。"""
