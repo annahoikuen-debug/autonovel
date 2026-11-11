@@ -1486,7 +1486,7 @@ class PromptManager:
     async def _build_forbidden_section(self, book_id: Optional[int] = None) -> str:
         import random
 
-        from config import FORBIDDEN_SUMMARY_PATTERNS, FORBIDDEN_WORD_REPLACEMENTS
+        from src.domain.styles import FORBIDDEN_SUMMARY_PATTERNS, FORBIDDEN_WORD_REPLACEMENTS
 
         if not FORBIDDEN_WORD_REPLACEMENTS and not FORBIDDEN_SUMMARY_PATTERNS:
             return ""

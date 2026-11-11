@@ -14,8 +14,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 ROOT = Path(__file__).resolve().parents[2]
 GRAPH_PATH = ROOT / "var" / "import_graph.json"
 GENERATE_SCRIPT = ROOT / "scripts" / "generate_import_graph.py"

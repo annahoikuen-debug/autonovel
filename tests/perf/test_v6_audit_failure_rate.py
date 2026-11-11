@@ -141,7 +141,7 @@ def build_corpus(n: int = CORPUS_SIZE, seed: int = CORPUS_SEED) -> list[EpisodeS
                     ensure_ascii=False,
                 ),
                 edges=[
-                    # NOTE: edge_type は config.sharp_edge_vocabulary.SHARP_EDGE_TYPES
+                    # NOTE: edge_type は src.domain.sharp_edge_vocabulary.SHARP_EDGE_TYPES
                     # の 4 種のみ有効。DeAIAuditor.audit は emotional_hook を
                     # 自作するが同値は未登録のため必ず ValidationError になる
                     # （src バグ。audit.py:741 参照／本テストでは回避）。

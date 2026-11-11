@@ -16,6 +16,7 @@ from __future__ import annotations
 import ast
 import importlib
 import json
+from functools import lru_cache
 from pathlib import Path
 
 import pytest
@@ -60,8 +61,14 @@ registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
 REGISTERED: set[str] = set(registry.get("shims", []))
 
 
+@lru_cache(maxsize=1)
 def _strict_import_modules() -> set[str]:
-    """追跡済み .py 全ファイルから ast で import 対象モジュールを収集する。"""
+    """追跡済み .py 全ファイルから ast で import 対象モジュールを収集する。
+
+    collection 時に毎回 2780 ファイルを read+ast.parse すると
+    collection が +6〜10s 増大し、collection speed ゲート（30s 予算）を超過するため、
+    初回呼び出し時にのみ実行し結果をキャッシュする。
+    """
     import subprocess
 
     result = subprocess.run(
@@ -93,9 +100,6 @@ def _strict_import_modules() -> set[str]:
     return modules
 
 
-_IMPORTED_MODULES = _strict_import_modules()
-
-
 @pytest.mark.parametrize("shim_path", REMOVED_SHIMS)
 def test_removed_shim_file_does_not_exist(shim_path):
     """削除済み shim ファイルが存在しないこと。"""
@@ -123,7 +127,7 @@ def test_removed_shim_has_no_referencing_source(shim_path):
     fee262b1 類の事故（参照解消を飛ばした削除）を検出する。
     """
     mod = shim_path[:-3].replace("/", ".")
-    referencing = sorted(m for m in _IMPORTED_MODULES if m == mod or m.startswith(mod + "."))
+    referencing = sorted(m for m in _strict_import_modules() if m == mod or m.startswith(mod + "."))
     assert not referencing, (
         f"{shim_path} ({mod}) を参照するソースがまだ残っている: {referencing}\n"
         "削除前に全参照を新パスへ置換すること。"

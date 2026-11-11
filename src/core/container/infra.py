@@ -1,6 +1,6 @@
 """
 InfraContainer - インフラストラクチャ層のDIコンテナ
-config.container.Container の責務を引き継ぎ、DB・設定・ベクトルストア等を提供する。
+src.core.container.AppContainer の責務を引き継ぎ、DB・設定・ベクトルストア等を提供する。
 """
 
 from __future__ import annotations

@@ -47,7 +47,7 @@ def fast_executor(monkeypatch):
 
 def _patch_project_context(side_effect=None):
     return patch(
-        "config.project_context.ProjectContext.get_setting",
+        "src.infrastructure.config.project_context.ProjectContext.get_setting",
         side_effect=side_effect or (lambda k, d=None: d),
     )
 

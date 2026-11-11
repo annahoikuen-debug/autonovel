@@ -57,17 +57,6 @@ from src.config.constants import (
     STRESS_HATE_GAIN_BASE,
 )
 
-# `from config import constants` で src.config.constants を参照できるようにする
-from src.config import constants
-
-# テスト・後方互換コードから `config.FORBIDDEN_*` / `config.project_context` として
-# 参照されるため、shim 削除後も属性として束縛しておく。
-from src.domain.styles import (
-    FORBIDDEN_SUMMARY_PATTERNS,
-    FORBIDDEN_WORD_REPLACEMENTS,
-)
-import src.infrastructure.config.project_context as project_context
-
 # 3. Streamlit アダプター（必要に応じてクライアントがインポート）
 # from .streamlit_adapter import StreamlitConfig
 # 4. サブモジュールのエクスポート
@@ -100,8 +89,4 @@ __all__ = [
     "get_vocabulary_for_tier",
     "get_preset",
     "get_preset_names",
-    "constants",
-    "FORBIDDEN_SUMMARY_PATTERNS",
-    "FORBIDDEN_WORD_REPLACEMENTS",
-    "project_context",
 ]

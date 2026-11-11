@@ -55,7 +55,7 @@ dependencies = [
     # 画像処理 (漫画組版・品質ゲート・挿絵生成が src/services/manga/*.py と
     # src/services/illustration/base.py で遅延 import する)
     "Pillow>=10.0.0",
-    # 設定の永続化 (config/project_context.py:124 / config/streamlit_adapter.py:112 が
+    # 設定の永続化 (src/infrastructure/config/project_context.py が
     # TOML 書き出しに使う。settings の SSOT なので欠けると UI 保存が無言で失敗する)
     "tomli_w>=1.0.0",
     # トークン圧縮のキーワード抽出 (src/services/compression/layer1_keywords.py:34 が
@@ -267,11 +267,6 @@ ignore = ["E501", "E402"]
 "**/__init__.py" = ["E402", "F401"]
 # `__all__` に列挙済みの import は ruff が再エクスポートと判定できない。
 "**/api.py" = ["E402", "F401"]
-# TRACK-N N2: config/erotic_*.py は src/nsfw/ への移設に伴う後方互換 shim。
-# `from src.nsfw.xxx import *` による再エクスポートが主目的のため、
-# star import 由来の F403/F405 は意図的（実体は src/nsfw/ 側で管理する）。
-"config/erotic_*.py" = ["F403", "F405"]
-
 # T6 Step 10 の残存（2026-09-29 時点、652件 → W系1646件は解消済み）:
 #   F401 483 / F841 59 / F811 36 / E741 21 / F821 19 / E712 17
 #   F541 9 / E701 6 / E711 1 / F403 1

@@ -1,4 +1,4 @@
-from config import constants
+from src.config import constants
 
 
 def test_episode_constants_are_gone():

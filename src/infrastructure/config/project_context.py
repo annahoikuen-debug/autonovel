@@ -5,7 +5,7 @@ ProjectContext.get_setting(key, default) を用いて、
 config/base.py に定義された定数や動的設定値に一元アクセスする。
 
 使用例:
-    from config.project_context import ProjectContext
+    from src.infrastructure.config.project_context import ProjectContext
     model = ProjectContext.get_setting("model_writing")
     is_fast = ProjectContext.get_setting("fail_fast_mode", False)
 

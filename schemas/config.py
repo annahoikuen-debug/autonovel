@@ -8,8 +8,8 @@ schemas/config.py — SSOT: グローバル設定モデル
 補足（設定系の入口の整理 / 改善案2）:
   - 環境変数ベースの設定 SSOT は `src.backend.config.Settings`（.env / env var）。
   - ランタイムで可変な設定モデル SSOT が本ファイルの `GlobalConfigModel`
-    （settings.toml → Pydantic）。`config.settings.ConfigManager` がロードする。
-  - 旧 `config/settings.py`・`config/project_context.py` は後方互換レイヤとして残存。
+    （settings.toml → Pydantic）。`src.infrastructure.config.settings.ConfigManager` がロードする。
+  - 旧 `config/settings.py`・`config/project_context.py` は削除済み（`src.config.*` / `src.infrastructure.config.*` へ移設）。
 
 デフォルト値は本番運用値（旧 project_context.py 由来）を採用しています。
 """
