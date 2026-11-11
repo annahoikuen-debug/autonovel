@@ -7,7 +7,6 @@
     "config/constants.py",
     "config/domain_profile_manager.py",
     "config/emotional_hook_vocabulary.py",
-    "config/platform_censorship_rules.py",
     "config/sharp_edge_vocabulary.py",
     "config/logging_config.py",
     "config/project_context.py",
