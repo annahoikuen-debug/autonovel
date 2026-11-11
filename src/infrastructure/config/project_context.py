@@ -11,7 +11,7 @@ config/base.py に定義された定数や動的設定値に一元アクセス�
 
 注意:
     このモジュールは Streamlit に依存しません。
-    Streamlit UI との連携が必要な場合は config.streamlit_adapter を使用してください。
+    Streamlit UI との連携が必要な場合は src.interfaces.streamlit_adapter を使用してください。
 """
 
 from __future__ import annotations
@@ -90,7 +90,7 @@ class GlobalConfig:
     """
     アプリケーション全体の設定を管理する基底クラス。
     Streamlit に依存しない純粋な設定アクセスを提供する。
-    Streamlit 連携が必要な場合は config.streamlit_adapter.StreamlitConfig を使用。
+    Streamlit 連携が必要な場合は src.interfaces.streamlit_adapter.StreamlitConfig を使用。
     """
 
     def __init__(self):

@@ -62,7 +62,7 @@ def is_openai_compatible(model_name: str) -> bool:
 def select_model(purpose: str = "writing") -> str:
     """目的に応じたモデル名を返す。
 
-    環境変数や `config.streamlit_adapter` の上書き設定があればそちらを優先。
+    環境変数や `src.interfaces.streamlit_adapter` の上書き設定があればそちらを優先。
     既知の「用途」でなければ、渡された文字列をそのままモデルIDとして返す。
     """
     # 用途でない（リテラルのモデルID等）場合はそのまま返す

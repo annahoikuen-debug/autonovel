@@ -73,13 +73,6 @@ from .erotic_vocabulary import (
     get_vocabulary_for_tier,
 )
 from .models import GlobalConfigModel
-from .narrative import (
-    ANTI_PATTERNS,
-    AUDIT_TRIGGER_KEYWORDS,
-    CHARACTER_EXPANSION_THEMES,
-    ROUTINE_VARIATIONS,
-    TRAGEDY_VARIATIONS,
-)
 
 # 2. project_context から新しいシステム中枢クラスと定数を上書きエクスポート
 from .project_context import PROMPT_TEMPLATES, get_config, set_config

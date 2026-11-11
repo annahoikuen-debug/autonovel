@@ -179,19 +179,5 @@
       "todo": "TODO(R3-10)"
     }
   },
-  "mentions": {
-    "config/emotional_hook_vocabulary.py": [
-      "tests/regression/test_config_unification_complete.py"
-    ],
-    "config/logging_config.py": [
-      "tests/regression/test_config_unification_complete.py"
-    ],
-    "config/narrative.py": [
-      "tests/regression/test_config_unification_complete.py"
-    ],
-    "config/streamlit_adapter.py": [
-      "src/infrastructure/config/project_context.py",
-      "src/llm/model_router.py"
-    ]
-  }
+  "mentions": {}
 }
