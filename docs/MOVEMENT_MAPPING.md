@@ -56,13 +56,13 @@
 
 | Step | 移動元 | 移動先 | シム残し場所 | ステータス |
 |------|--------|--------|-------------|-----------|
-| 21 | `config/container.py` | `src/core/container/`（既に移設済み） | `config/container.py`（shim 維持） | 未着手 |
-| 22 | `config/settings.py` | `src/infrastructure/config/settings.py` | `config/settings.py` | 未着手 |
-| 23 | `config/` の残り Python コードの棚卸し | `docs/CONFIG_UNIFICATION_PLAN.md` | — | 未着手 |
-| 24 | `config/` の実体 Python → `src/config/`（第1バッチ） | `src/config/` | 各 `config/X.py` | 未着手 |
-| 25 | `config/` の実体 Python → `src/infrastructure/config/`（第2バッチ） | `src/infrastructure/config/` | 各 `config/X.py` | 未着手 |
-| 26 | `config/` の残り Python → `src/domain/`, `src/interfaces/`（第3バッチ） | `src/domain/`, `src/interfaces/` | 各 `config/X.py` | 未着手 |
-| 27 | config 統合の総合リグレッションテスト | `tests/regression/test_config_unification_complete.py` | — | 未着手 |
+| 21 | `config/container.py` | `src/core/container/`（既に移設済み） | `削除済み（R3-1）` | 完了 |
+| 22 | `config/settings.py` | `src/infrastructure/config/settings.py` | `削除済み（R3-1）` | 完了 |
+| 23 | `config/` の残り Python コードの棚卸し | `docs/CONFIG_UNIFICATION_PLAN.md` | — | 完了 |
+| 24 | `config/` の実体 Python → `src/config/`（第1バッチ） | `src/config/` | 削除済み（R3-1） | 完了 |
+| 25 | `config/` の実体 Python → `src/infrastructure/config/`（第2バッチ） | `src/infrastructure/config/` | 削除済み（R3-1） | 完了 |
+| 26 | `config/` の残り Python → `src/domain/`, `src/interfaces/`（第3バッチ） | `src/domain/`, `src/interfaces/` | 削除済み（R3-1） | 完了 |
+| 27 | config 統合の総合リグレッションテスト | `tests/regression/test_config_unification_complete.py` | — | 完了 |
 
 ---
 

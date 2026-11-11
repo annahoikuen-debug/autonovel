@@ -23,34 +23,34 @@
 
 | 移動元 | 移動先 | シム |
 |--------|--------|------|
-| `config/archetypes.py` | `src/config/archetypes.py` | `config/archetypes.py` |
-| `config/archetypes_new.py` | `src/config/archetypes_new.py` | `config/archetypes_new.py` |
-| `config/constants.py` | `src/config/constants.py` | `config/constants.py` |
-| `config/domain_profile_manager.py` | `src/config/domain_profile_manager.py` | `config/domain_profile_manager.py` |
-| `config/emotional_hook_vocabulary.py` | `src/config/emotional_hook_vocabulary.py` | `config/emotional_hook_vocabulary.py` |
+| `config/archetypes.py` | `src/config/archetypes.py` | `config/archetypes.py`（削除済み R3-1） |
+| `config/archetypes_new.py` | `src/config/archetypes_new.py` | `config/archetypes_new.py`（削除済み R3-1） |
+| `config/constants.py` | `src/config/constants.py` | `config/constants.py`（削除済み R3-1） |
+| `config/domain_profile_manager.py` | `src/config/domain_profile_manager.py` | `config/domain_profile_manager.py`（削除済み R3-1） |
+| `config/emotional_hook_vocabulary.py` | `src/config/emotional_hook_vocabulary.py` | `config/emotional_hook_vocabulary.py`（削除済み R3-1） |
 | `config/image_models.py` | `src/config/image_models.py` | `config/image_models.py`（削除済み R3-1） |
 | `config/imagen_models.py` | `src/config/imagen_models.py` | `config/imagen_models.py`（削除済み R3-1） |
 | `config/platform_censorship_rules.py` | `src/config/platform_censorship_rules.py` | `config/platform_censorship_rules.py`（削除済み R3-1） |
-| `config/sharp_edge_vocabulary.py` | `src/config/sharp_edge_vocabulary.py` | `config/sharp_edge_vocabulary.py` |
+| `config/sharp_edge_vocabulary.py` | `src/config/sharp_edge_vocabulary.py` | `config/sharp_edge_vocabulary.py`（削除済み R3-1） |
 
 #### 第2バッチ: `src/infrastructure/config/` へ移動 (Step 25)
 
 | 移動元 | 移動先 | シム |
 |--------|--------|------|
-| `config/cors_config.py` | `src/infrastructure/config/cors_config.py` | `config/cors_config.py` |
-| `config/file_watcher.py` | `src/infrastructure/config/file_watcher.py` | `config/file_watcher.py` |
-| `config/logging_config.py` | `src/infrastructure/config/logging_config.py` | `config/logging_config.py` |
-| `config/project_context.py` | `src/infrastructure/config/project_context.py` | `config/project_context.py` |
-| `config/validator.py` | `src/infrastructure/config/validator.py` | `config/validator.py` |
+| `config/cors_config.py` | `src/infrastructure/config/cors_config.py` | `config/cors_config.py`（削除済み R3-1） |
+| `config/file_watcher.py` | `src/infrastructure/config/file_watcher.py` | `config/file_watcher.py`（削除済み R3-1） |
+| `config/logging_config.py` | `src/infrastructure/config/logging_config.py` | `config/logging_config.py`（削除済み R3-1） |
+| `config/project_context.py` | `src/infrastructure/config/project_context.py` | `config/project_context.py`（削除済み R3-1） |
+| `config/validator.py` | `src/infrastructure/config/validator.py` | `config/validator.py`（削除済み R3-1） |
 
 #### 第3バッチ: `src/domain/` や `src/interfaces/` へ移動 (Step 26)
 
 | 移動元 | 移動先 | シム |
 |--------|--------|------|
-| `config/models.py` | `src/domain/models/` または `src/domain/schemas/` | `config/models.py` |
-| `config/narrative.py` | `src/domain/narrative.py` | `config/narrative.py` |
-| `config/styles.py` | `src/domain/styles.py` | `config/styles.py` |
-| `config/streamlit_adapter.py` | `src/interfaces/streamlit_adapter.py` | `config/streamlit_adapter.py` |
+| `config/models.py` | `src/domain/models/` または `src/domain/schemas/` | `config/models.py`（削除済み R3-1） |
+| `config/narrative.py` | `src/domain/narrative.py` | `config/narrative.py`（削除済み R3-1） |
+| `config/styles.py` | `src/domain/styles.py` | `config/styles.py`（削除済み R3-1） |
+| `config/streamlit_adapter.py` | `src/interfaces/streamlit_adapter.py` | `config/streamlit_adapter.py`（削除済み R3-1） |
 
 ---
 

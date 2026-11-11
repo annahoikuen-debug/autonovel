@@ -2,6 +2,14 @@
 
 本プロジェクトの変更履歴。[Semantic Versioning](https://semver.org/lang/ja/) に準拠。
 
+## [Unreleased]
+
+### 破壊的変更（開発環境・内部 API）
+
+- **config/ 旧パス shim の全削除（Phase R3-1）**: `config/` 配下の後方互換 shim をすべて削除。旧パス `config.X` からの import は `ModuleNotFoundError` になる。移行先は `docs/CONFIG_UNIFICATION_PLAN.md` および `docs/MOVEMENT_MAPPING.md`（Phase 3）を参照。
+  - 主な移行先: `src.config.*` / `src.infrastructure.config.*` / `src.domain.*` / `src.interfaces.*` / `src.nsfw.*`
+  - R2 ゲート（旧パス参照ゼロ）を `tests/regression/test_shim_reference_gate.py` で機械強制し、削除検出テスト `tests/regression/test_shim_removal_detection.py` で旧パス import 不可を担保
+
 ## [7.0.0] - 2026-11-11 - 公開前ハードニング（セキュリティ・データ整合性）
 
 公開前の多角監査で見つかった欠陥をまとめて修正した。個別（約 60 件）の内訳ではなく、

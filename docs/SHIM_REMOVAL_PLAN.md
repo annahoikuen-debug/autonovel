@@ -16,7 +16,7 @@
 | カテゴリ | 件数 | 代表例 | 状態 |
 |---------|------|--------|------|
 | services ルートファイル shim | 46 | `src/services/rag_service.py` → `src/integrations/rag/rag_service.py` | import * 方式 |
-| config shim（ルート config/） | 28 | `config/container.py` → `src/core/container/` | 一部 warnings.warn 付き |
+| config shim（ルート config/） | 0（元 28、全削除済み） | `config/container.py` → `src/core/container/` | 全削除済み（R3-1 完了） |
 | services サブパッケージ shim | 27 | `src/services/anti_ai/__init__.py` → `src/engine/anti_ai/` | import * + `__getattr__` |
 | LLM shim (src/services/llm/) | 20 | `src/services/llm/factory.py` → `src/llm/adapters/factory.py` | 個別 shim ファイル |
 | その他（core 移設・API 等） | 20 | `src/core/llm_clients/__init__.py`、`src/api/dashboard.py` 等 | 混在 |
@@ -99,17 +99,19 @@ def test_shim_emits_deprecation_warning(shim_path):
 | 第4弾 | LLM shim + その他 | 40 | 最後に削除（外部ツール・ドキュメントの参照が残りやすい） |
 
 **削除時の実装手順（各バッチ共通）**:
-1. 旧パス参照数がゼロであることを確認（Phase R2 の棚卸しコマンド）
-2. shim ファイルを `git rm`
-3. `config/shim_registry.json` から該当エントリを除去
-4. **削除検出テスト**を `tests/regression/test_shim_removal_<batch>.py` に追加:
+1. `pytest tests/regression/test_shim_reference_gate.py -q` が green であること（該当 shim の baseline エントリが無いこと = Phase R2 参照解消完了）
+2. `pytest tests/regression/test_shim_removal_detection.py` の `REMOVED_SHIMS` に当該 shim を追加する
+3. 旧パス参照数がゼロであることを確認（Phase R2 の棚卸しコマンド）
+4. shim ファイルを `git rm`
+5. `config/shim_registry.json` から該当エントリを除去
+6. **削除検出テスト**を `tests/regression/test_shim_removal_detection.py` に追加:
    ```python
    def test_removed_shims_no_longer_importable():
        """削除済み shim が旧パスで import されないこと（意図的な破壊を CI が検知）。"""
        with pytest.raises(ModuleNotFoundError):
            importlib.import_module("src.services.rag_service")
    ```
-5. `docs/MOVEMENT_MAPPING.md` のステータスを「削除済み」に更新
+7. `docs/MOVEMENT_MAPPING.md` のステータスを「削除済み」に更新
 
 **完了条件**: 各バッチで CI 全緑（unit + regression + integration-observe）。
 
@@ -140,8 +142,8 @@ def test_shim_emits_deprecation_warning(shim_path):
 |-------|------|-----------|
 | R0 | shim 使用統計の観測基盤 | 未着手 |
 | R1 | DeprecationWarning 全面付与（134件） | 未着手 |
-| R2 | 旧パス参照解消（カテゴリ別ゼロ化） | 未着手 |
-| R3-1 | config shim 28件削除 | 未着手 |
+| R2 | 旧パス参照解消（カテゴリ別ゼロ化） | 完了（config カテゴリ / services 系は未完了） |
+| R3-1 | config shim 23件削除（元計画 28件） | 完了 |
 | R3-2 | services サブパッケージ shim 27件削除 | 未着手 |
 | R3-3 | services ルートファイル shim 46件削除 | 未着手 |
 | R3-4 | LLM + その他 shim 40件削除 | 未着手 |
