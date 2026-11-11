@@ -1,7 +1,7 @@
 """
 formatters/erotic_censor.py
 プラットフォーム別の伏字（shading）変換フォーマッター。
-リファクタリング済み: 固定dict → config/platform_censorship_rules.py 参照
+リファクタリング済み: 固定dict → src/config/platform_censorship_rules.py 参照
 """
 
 from typing import Dict, List
@@ -9,14 +9,14 @@ from typing import Dict, List
 from config.erotic_direct_mappings import DIRECT_TO_METAPHOR
 from config.erotic_platform_presets import get_preset
 from config.erotic_vocabulary import get_vocabulary_for_tier
-from config.platform_censorship_rules import get_censorship_rules
+from src.config.platform_censorship_rules import get_censorship_rules
 
 
 def apply_censorship(text: str, preset_name: str = "kakuyomu_romance") -> str:
     """
     プリセットに基づいて伏字変換を適用する。
 
-    変換ルールは config/platform_censorship_rules.py で管理される。
+    変換ルールは src/config/platform_censorship_rules.py で管理される。
     """
     preset = get_preset(preset_name)
     mode = preset.get("censorship_mode", "heavy")
