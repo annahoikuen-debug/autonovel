@@ -2,7 +2,7 @@
 
 AUTO の場合はコンテキスト（種別・安全レベル）から自動選択し、
 それ以外は明示されたtierキーをカタログから解決する。
-モデルIDは src 内に持たず、必ず config.imagen_models を経由する。
+モデルIDは src 内に持たず、必ず src.config.imagen_models を経由する。
 """
 
 from src.config.imagen_models import get_imagen_model_id, select_imagen_model

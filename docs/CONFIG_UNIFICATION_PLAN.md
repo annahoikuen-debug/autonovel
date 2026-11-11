@@ -28,9 +28,9 @@
 | `config/constants.py` | `src/config/constants.py` | `config/constants.py` |
 | `config/domain_profile_manager.py` | `src/config/domain_profile_manager.py` | `config/domain_profile_manager.py` |
 | `config/emotional_hook_vocabulary.py` | `src/config/emotional_hook_vocabulary.py` | `config/emotional_hook_vocabulary.py` |
-| `config/image_models.py` | `src/config/image_models.py` | `config/image_models.py` |
-| `config/imagen_models.py` | `src/config/imagen_models.py` | `config/imagen_models.py` |
-| `config/platform_censorship_rules.py` | `src/config/platform_censorship_rules.py` | `config/platform_censorship_rules.py` |
+| `config/image_models.py` | `src/config/image_models.py` | `config/image_models.py`（削除済み R3-1） |
+| `config/imagen_models.py` | `src/config/imagen_models.py` | `config/imagen_models.py`（削除済み R3-1） |
+| `config/platform_censorship_rules.py` | `src/config/platform_censorship_rules.py` | `config/platform_censorship_rules.py`（削除済み R3-1） |
 | `config/sharp_edge_vocabulary.py` | `src/config/sharp_edge_vocabulary.py` | `config/sharp_edge_vocabulary.py` |
 
 #### 第2バッチ: `src/infrastructure/config/` へ移動 (Step 25)

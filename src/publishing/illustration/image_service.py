@@ -19,7 +19,7 @@ class ImageService:
     """Google GenAI Imagen API 連携サービス。
 
     デフォルトは fast tier を使用し、表紙・挿絵・キャラクターイラストの
-    生成を担う。モデルIDは config.imagen_models を介して解決する。
+    生成を担う。モデルIDは src.config.imagen_models を介して解決する。
     """
 
     def __init__(

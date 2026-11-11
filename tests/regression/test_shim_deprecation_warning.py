@@ -23,7 +23,7 @@ SHIMS: list[str] = registry["shims"]
 
 
 def test_registry_exists_and_non_empty():
-    """shim registry が存在し、141 件（現行）であること。"""
+    """shim registry が存在し、非空（移行に伴い件数は変動する）であること。"""
     assert REGISTRY_PATH.exists(), "config/shim_registry.json が存在しない"
     assert len(SHIMS) > 0, "shim registry が空"
 
