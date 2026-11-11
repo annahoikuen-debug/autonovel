@@ -463,11 +463,17 @@ def test_severity_weighting_actually_affects_score() -> None:
 
 
 def test_local_patch_is_preferred_over_full_rewrite(monkeypatch: pytest.MonkeyPatch) -> None:
-    """重篤失敗でも、局所パッチが適用できる場合は全文再執筆しないこと。"""
+    """重篤失敗でも、局所パッチが適用できる場合は全文再執筆しないこと。
+
+    本テストは追記互換経路（``actionable_patch``）の契約を検証するため
+    ``ENABLE_AUDIT_QUOTE_PATCH=0`` を明示固定する（H8 flag ON 時は
+    legacy 文字列が ``quote_patch_legacy`` 段落置換に再解釈されるため）。
+    """
     monkeypatch.setattr(
         "src.agents.audit_agent.agent.is_audit_legacy_core_enabled", lambda: False
     )
     monkeypatch.setenv("ENABLE_AUDIT_UNIFIED_BLOCKING", "true")
+    monkeypatch.setenv("ENABLE_AUDIT_QUOTE_PATCH", "0")
 
     class _PatchableReport:
         is_acceptable = False

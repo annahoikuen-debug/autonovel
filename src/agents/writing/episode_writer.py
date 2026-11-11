@@ -711,6 +711,40 @@ class EpisodeWriter(BaseAgent):
                             await rollup_repo.upsert_rollup(
                                 book_id, "volume", start_ep, ep_num, volume_text
                             )
+
+                    # Step 14: stale な rollup をメンバ digest から再生成（retake 追従）
+                    # digest 更新で失効した章/巻 rollup を、次の digest 保存時に復旧する。
+                    stale_rollups = await rollup_repo.find_stale(book_id)
+                    for stale_r in stale_rollups:
+                        if stale_r.level == "block":
+                            block_digests = {
+                                int(r.episode_num): (r.digest_text or "")
+                                for r in digest_records
+                                if stale_r.start_ep <= int(r.episode_num) <= stale_r.end_ep
+                            }
+                            block_text = await generator.generate_block_rollup(
+                                book_id, (stale_r.start_ep, stale_r.end_ep), block_digests
+                            )
+                            if block_text:
+                                await rollup_repo.upsert_rollup(
+                                    book_id, "block", stale_r.start_ep,
+                                    stale_r.end_ep, block_text, stale_at=None,
+                                )
+                        elif stale_r.level == "volume":
+                            block_rollups = await rollup_repo.get_rollups(book_id, "block")
+                            volume_blocks = [
+                                (r.start_ep, r.end_ep, r.digest_text)
+                                for r in block_rollups
+                                if stale_r.start_ep <= r.start_ep and r.end_ep <= stale_r.end_ep
+                            ]
+                            volume_text = await generator.generate_volume_rollup(
+                                book_id, volume_blocks
+                            )
+                            if volume_text:
+                                await rollup_repo.upsert_rollup(
+                                    book_id, "volume", stale_r.start_ep,
+                                    stale_r.end_ep, volume_text, stale_at=None,
+                                )
             except Exception as e:
                 logger.warning(f"Ep.{ep_num}: ロールアップ生成でエラー: {e}")
         except Exception as e:

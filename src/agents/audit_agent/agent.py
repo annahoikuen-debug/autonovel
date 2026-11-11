@@ -666,8 +666,15 @@ class AuditAgent(SkillAgent):
                 )
 
         if patches:
+            import time as _time
+
+            _started = _time.perf_counter()
             result = apply_quote_patches(drafted_text, patches)
+            _duration = _time.perf_counter() - _started
             if result.applied_count > 0:
+                from src.backend.observability.metrics import record_audit_revision
+
+                record_audit_revision("quote_patch", "applied", _duration)
                 return {
                     "strategy": "quote_patch",
                     "text": result.text,
@@ -675,6 +682,9 @@ class AuditAgent(SkillAgent):
                     "paragraph_index": None,
                     "triage_level": getattr(plan, "level", ""),
                 }
+            from src.backend.observability.metrics import record_audit_revision
+
+            record_audit_revision("quote_patch", "rejected", _duration)
 
         # 2. legacy actionable_patch -> paragraph-level replacement (quote_patch_legacy)
         qualitative = getattr(unified_report, "qualitative", None)
@@ -701,6 +711,9 @@ class AuditAgent(SkillAgent):
             [QuotePatch(original_quote=quote, replacement=actionable)],
         )
         if result.applied_count > 0:
+            from src.backend.observability.metrics import record_audit_revision
+
+            record_audit_revision("quote_patch_legacy", "applied")
             return {
                 "strategy": "quote_patch_legacy",
                 "text": result.text,
@@ -708,6 +721,9 @@ class AuditAgent(SkillAgent):
                 "paragraph_index": target_index,
                 "triage_level": getattr(plan, "level", ""),
             }
+        from src.backend.observability.metrics import record_audit_revision
+
+        record_audit_revision("quote_patch_legacy", "rejected")
         return None
 
     async def _record_lessons(
@@ -730,11 +746,15 @@ class AuditAgent(SkillAgent):
         try:
             repo = AuditLessonRepository(session)
             service = AuditLessonService(repo)
-            await service.record_from_audit(
+            recorded = await service.record_from_audit(
                 book_id=book_id,
                 episode_num=ep_num,
                 failed_audits=failed_audits or [],
             )
+            from src.backend.observability.metrics import record_audit_lesson
+
+            for lesson in recorded:
+                record_audit_lesson("record", getattr(lesson, "dimension", "unknown"))
         except Exception:
             logger.warning("lesson store 記録に失敗（監査フローは継続）", exc_info=True)
 
@@ -756,7 +776,12 @@ class AuditAgent(SkillAgent):
         try:
             repo = AuditLessonRepository(session)
             service = AuditLessonService(repo)
-            await service.graduate_dimensions(book_id, passed_dimensions)
+            graduated = await service.graduate_dimensions(book_id, passed_dimensions)
+            from src.backend.observability.metrics import record_audit_lesson
+
+            if graduated:
+                for dimension in passed_dimensions:
+                    record_audit_lesson("graduate", str(dimension))
         except Exception:
             logger.warning("lesson store 卒業に失敗（監査フローは継続）", exc_info=True)
 

@@ -7,6 +7,8 @@
 * add-only（既存列・既存テーブルに触れない）。存在ガード付きで冪等。
 * books への FK は ondelete="CASCADE"。
 * status/index はクエリ頻度の高い (book_id, status, dimension) に配置。
+* down_revision: 0035_digest_rollups (PLAN_M1) と 0034 から分岐していたため
+  線形化した（複数 head による `alembic upgrade head` 失敗の解消）。
 """
 
 from __future__ import annotations
@@ -16,7 +18,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0035_audit_lessons"
-down_revision = "0034_tasks_user_id"
+down_revision = "0035_digest_rollups"
 branch_labels = None
 depends_on = None
 

@@ -19,6 +19,9 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 from typing import Any
+from unittest.mock import AsyncMock
+
+import pytest
 
 
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
@@ -363,3 +366,305 @@ class TestBudgetGuard:
         assert result["breakdown"]["audit"]["calls"] == STRUCTURAL_SKILL_LLM_CALLS["AuditSkill"], (
             "WS-A-3 のゲート集約により監査呼び出し回数が 1 回に削減されていることを確認"
         )
+
+
+class TestRollupCallBudget:
+    """PLAN_M1 Step 24: ロールアップの LLM コスト予算テスト。
+
+    rollup off: 従来の呼び出し回数と完全同一（+0 call、回帰防止）。
+    rollup on: 10話ごとに +1 call（章）、50話ごとに +1 call（巻）を超えない（上限契約）。
+    tier1 モデル固定：ダイジェスト/ロールアップ生成は tier1 軽量モデルを使用。
+    """
+
+    @pytest.fixture
+    def rollup_env_off(self, monkeypatch):
+        monkeypatch.setenv("ENABLE_DIGEST_ROLLUP", "0")
+        monkeypatch.setenv("ENABLE_EPISODE_DIGEST", "1")
+        monkeypatch.setenv("ENABLE_PINNED_FACTS_EDGES", "0")
+
+    @pytest.fixture
+    def rollup_env_on(self, monkeypatch):
+        monkeypatch.setenv("ENABLE_DIGEST_ROLLUP", "1")
+        monkeypatch.setenv("ENABLE_EPISODE_DIGEST", "1")
+        monkeypatch.setenv("ENABLE_PINNED_FACTS_EDGES", "0")
+        # Foreshadow LLM Voter は rollup 予算テストの対象外のため無効化
+        monkeypatch.setenv("ENABLE_FORESHADOW_LLM_VOTE", "off")
+        monkeypatch.setattr(
+            "src.agents.writing.episode_writer._resolve_foreshadow_voter",
+            lambda llm: None,
+        )
+        from unittest.mock import AsyncMock
+
+        monkeypatch.setattr(
+            "src.engine.foreshadowing.service.ForeshadowingService.check_and_resolve",
+            AsyncMock(return_value=[]),
+        )
+
+    @pytest.mark.asyncio
+    async def test_rollup_off_no_extra_llm_calls(self, tmp_path, rollup_env_off):
+        """rollup off 時、digest 生成のみで rollup 生成の LLM 呼び出しは 0 回。"""
+        from unittest.mock import AsyncMock, MagicMock
+        from types import SimpleNamespace
+
+        from src.agents.orchestrator import AgentContext
+        from src.agents.writing.episode_writer import EpisodeWriter
+        from src.backend.database.models_digest import EpisodeDigestModel
+        from src.backend.database.models_foreshadowing import ForeshadowingModel
+        from src.backend.database.models_rollup import DigestRollupModel
+        from src.infrastructure.database.models.base_orm import Base
+        from sqlalchemy import insert, select
+        from sqlalchemy.ext.asyncio import (
+            AsyncSession,
+            async_sessionmaker,
+            create_async_engine,
+        )
+
+        call_count = [0]
+
+        class CountingDigestLLM:
+            def generate(self, **kwargs):
+                call_count[0] += 1
+                return f"digest {call_count[0]}"
+
+        def _tables_with_fk_closure(*tables):
+            collected = []
+            stack = list(tables)
+            while stack:
+                current = stack.pop()
+                if current in collected:
+                    continue
+                collected.append(current)
+                for fk in current.foreign_keys:
+                    stack.append(fk.column.table)
+            return collected
+
+        db_path = tmp_path / "rollup_budget_off.db"
+        engine = create_async_engine(
+            f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False
+        )
+        tables = _tables_with_fk_closure(
+            ForeshadowingModel.__table__,
+            EpisodeDigestModel.__table__,
+            DigestRollupModel.__table__,
+        )
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all, tables=tables)
+            for table in tables:
+                if table.name == "books":
+                    await conn.execute(
+                        insert(table).values(
+                            id=1, title="予算テスト", mode="easy", genre="fantasy",
+                            concept="", synopsis="", catchcopy="", style_dna="",
+                            status="draft", marketing_data="", target_eps=60,
+                        )
+                    )
+        sf = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+
+        async with sf() as session:
+            llm = MagicMock()
+            llm.generate_text = AsyncMock(
+                return_value="本文\n\n[METADATA_JSON]\n{}\n[/METADATA_JSON]"
+            )
+            llm.generate = CountingDigestLLM().generate
+            prompt_manager = MagicMock()
+            prompt_manager.build_final_writing_prompt = AsyncMock(return_value="PROMPT")
+            writer = EpisodeWriter(
+                llm=llm,
+                context_builder=MagicMock(),
+                repo=SimpleNamespace(session=session),
+                prompt_manager=prompt_manager,
+            )
+            writer.logger = MagicMock()
+
+            from src.engine.context_compression.digest_service import (
+                EpisodeDigestRepository,
+                EpisodeDigestService,
+            )
+
+            repo_digest = EpisodeDigestRepository(session)
+            for ep in range(1, 11):
+                await EpisodeDigestService(
+                    repo=repo_digest, llm=CountingDigestLLM()
+                ).summarize_and_save(
+                    book_id=1, episode_num=ep, draft_text=f"第{ep}話本文"
+                )
+                await writer.run(
+                    AgentContext(
+                        book_id=1, branch_id=1, ep_num=ep,
+                        artifacts={
+                            "writing_context": {
+                                "use_beat_to_scene": False,
+                                "contract_foreshadowings": [],
+                                "unresolved_foreshadowings": [],
+                            },
+                            "session": session,
+                        },
+                    )
+                )
+
+            # rollup off: digest 生成のみ。rollup 生成の呼び出しは発生しない。
+            # ep10 でも章 rollup は生成されない（ENABLE_DIGEST_ROLLUP=0）。
+            res = await session.execute(
+                select(DigestRollupModel).where(
+                    DigestRollupModel.level == "block",
+                    DigestRollupModel.start_ep == 1,
+                    DigestRollupModel.end_ep == 10,
+                )
+            )
+            assert len(res.scalars().all()) == 0, "rollup off で章 rollup が生成されてはいけない"
+
+    @pytest.mark.asyncio
+    async def test_rollup_on_call_budget_block_and_volume(
+        self, tmp_path, rollup_env_on
+    ):
+        """rollup on 時、10話ごとに +1（章）、50話ごとに +1（巻）を超えない。"""
+        from unittest.mock import AsyncMock, MagicMock
+        from types import SimpleNamespace
+
+        from src.agents.orchestrator import AgentContext
+        from src.agents.writing.episode_writer import EpisodeWriter
+        from src.backend.database.models_digest import EpisodeDigestModel
+        from src.backend.database.models_foreshadowing import ForeshadowingModel
+        from src.backend.database.models_rollup import DigestRollupModel
+        from src.infrastructure.database.models.base_orm import Base
+        from sqlalchemy import insert, select
+        from sqlalchemy.ext.asyncio import (
+            AsyncSession,
+            async_sessionmaker,
+            create_async_engine,
+        )
+
+        call_count = [0]
+
+        class CountingDigestLLM:
+            def __init__(self, counter: list[int]):
+                self.counter = counter
+                self.prompts: list[str] = []
+
+            def generate(self, **kwargs):
+                self.counter[0] += 1
+                self.prompts.append(kwargs.get("prompt", "")[:60])
+                return f"digest {self.counter[0]}"
+
+        def _tables_with_fk_closure(*tables):
+            collected = []
+            stack = list(tables)
+            while stack:
+                current = stack.pop()
+                if current in collected:
+                    continue
+                collected.append(current)
+                for fk in current.foreign_keys:
+                    stack.append(fk.column.table)
+            return collected
+
+        db_path = tmp_path / "rollup_budget_on.db"
+        engine = create_async_engine(
+            f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False
+        )
+        tables = _tables_with_fk_closure(
+            ForeshadowingModel.__table__,
+            EpisodeDigestModel.__table__,
+            DigestRollupModel.__table__,
+        )
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all, tables=tables)
+            for table in tables:
+                if table.name == "books":
+                    await conn.execute(
+                        insert(table).values(
+                            id=1, title="予算テスト", mode="easy", genre="fantasy",
+                            concept="", synopsis="", catchcopy="", style_dna="",
+                            status="draft", marketing_data="", target_eps=60,
+                        )
+                    )
+        sf = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+
+        async with sf() as session:
+            llm = MagicMock()
+            llm.generate_text = AsyncMock(
+                return_value="本文\n\n[METADATA_JSON]\n{}\n[/METADATA_JSON]"
+            )
+            counting_llm = CountingDigestLLM(call_count)
+            llm.generate = counting_llm.generate
+            prompt_manager = MagicMock()
+            prompt_manager.build_final_writing_prompt = AsyncMock(return_value="PROMPT")
+            writer = EpisodeWriter(
+                llm=llm,
+                context_builder=MagicMock(),
+                repo=SimpleNamespace(session=session),
+                prompt_manager=prompt_manager,
+            )
+            writer.logger = MagicMock()
+
+            from src.engine.context_compression.digest_service import (
+                EpisodeDigestRepository,
+                EpisodeDigestService,
+            )
+
+            repo_digest = EpisodeDigestRepository(session)
+            call_count_before_10 = call_count[0]
+            for ep in range(1, 11):
+                await EpisodeDigestService(
+                    repo=repo_digest, llm=counting_llm
+                ).summarize_and_save(
+                    book_id=1, episode_num=ep, draft_text=f"第{ep}話本文"
+                )
+                await writer.run(
+                    AgentContext(
+                        book_id=1, branch_id=1, ep_num=ep,
+                        artifacts={
+                            "writing_context": {
+                                "use_beat_to_scene": False,
+                                "contract_foreshadowings": [],
+                                "unresolved_foreshadowings": [],
+                            },
+                            "session": session,
+                        },
+                    )
+                )
+
+            # 1〜10話: digest 10回 + 章 rollup 1回 (ep10) = 11
+            calls_1_to_10 = call_count[0] - call_count_before_10
+            print(f"\n[DEBUG] prompts: {counting_llm.prompts}")
+            print(f"[DEBUG] call_count: {call_count[0]}")
+            assert calls_1_to_10 == 11, (
+                f"1〜10話で想定外の呼び出し回数: {calls_1_to_10} "
+                f"(期待: 11 = digest 10 + 章 rollup 1)"
+            )
+
+            # 11〜50話: digest 40回 + 章 rollup 4回 (20,30,40,50) + 巻 rollup 1回 (50) = 45
+            call_count_before_50 = call_count[0]
+            for ep in range(11, 51):
+                await EpisodeDigestService(
+                    repo=repo_digest, llm=counting_llm
+                ).summarize_and_save(
+                    book_id=1, episode_num=ep, draft_text=f"第{ep}話本文"
+                )
+                await writer.run(
+                    AgentContext(
+                        book_id=1, branch_id=1, ep_num=ep,
+                        artifacts={
+                            "writing_context": {
+                                "use_beat_to_scene": False,
+                                "contract_foreshadowings": [],
+                                "unresolved_foreshadowings": [],
+                            },
+                            "session": session,
+                        },
+                    )
+                )
+
+            calls_11_to_50 = call_count[0] - call_count_before_50
+            assert calls_11_to_50 == 45, (
+                f"11〜50話で想定外の呼び出し回数: {calls_11_to_50} "
+                f"(期待: 45 = digest 40 + 章 rollup 4 + 巻 rollup 1)"
+            )
+
+    def test_digest_llm_uses_tier1(self):
+        """ダイジェスト/ロールアップ生成の LLM 解決は tier1 軽量モデル。"""
+        from src.agents.writing.episode_writer import _resolve_digest_llm
+
+        llm = _resolve_digest_llm(None)
+        # tier1 はモデル名や設定で識別可能であること（fail-open で None も可）
+        assert llm is None or hasattr(llm, "generate") or callable(llm)

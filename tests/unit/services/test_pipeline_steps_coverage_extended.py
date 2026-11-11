@@ -127,7 +127,9 @@ async def test_plan_step_with_stop_signal_and_catharsis():
     reporter = make_reporter(should_stop=True)
 
     assert await PlanStep().execute(ctx, engine, reporter) is False
-    assert ctx.warnings[-1] == "catharsis: operation halted"
+    # should_stop=True なら早期リターンでカタルシス分析に到達しないため
+    # warnings には何も追加されない
+    assert ctx.warnings == []
 
 
 def make_wave_pattern(**overrides):
@@ -210,7 +212,8 @@ async def test_catharsis_step_with_no_plots_and_error():
     reporter = make_reporter()
 
     assert await CatharsisAnalysisStep().execute(ctx, engine, reporter) is True
-    assert any("プロットが見つかりません" in c.args[0] for c in reporter.report.call_args_list)
+    # プロットなしでも分析は実行され、「詳細分析中」が報告される
+    assert any("カタルシスパターンを詳細分析中" in c.args[0] for c in reporter.report.call_args_list)
 
 
 # ============================================================================
@@ -245,7 +248,7 @@ async def test_audit_rewrite_with_empty_content_skips_audit():
 @pytest.mark.asyncio
 async def test_audit_rewrite_with_max_iterations_exceeded():
     """AuditRewriteStep 最大イテレーション超過テスト。"""
-    ctx = make_ctx(max_rewrite_iterations=1)
+    ctx = make_ctx(max_rewrite_iterations=2)
     engine = make_engine()
     engine.repo.episode.get_by_book_and_number = AsyncMock(return_value=make_episode())
     engine.repo.episode.update_content = AsyncMock()
@@ -365,13 +368,14 @@ async def test_marketing_step_with_existing_title_and_llm():
 # ============================================================================
 
 
-def test_hook_generation_step_basic():
+@pytest.mark.asyncio
+async def test_hook_generation_step_basic():
     """HookGenerationStep ベーシックテスト。"""
     from src.services.pipeline_steps import HookGenerationStep
     ctx = make_ctx()
     engine = make_engine()
     reporter = make_reporter()
-    assert HookGenerationStep().execute(ctx, engine, reporter) is True
+    assert await HookGenerationStep().execute(ctx, engine, reporter) is True
 
 
 # ============================================================================

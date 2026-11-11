@@ -347,3 +347,80 @@ async def test_rollup_llm_call_count_budget(tmp_path, monkeypatch):
 
             # ep10 で rollup 生成 (+1 call) → 合計 10 (digest) + 1 (rollup) = 11
             assert call_count[0] == 11, f"expected 11 LLM calls, got {call_count[0]}"
+
+
+@pytest.mark.asyncio
+async def test_retake_triggers_stale_rollup_regeneration(tmp_path, monkeypatch):
+    """Step 23/14: ep3 の digest 更新(retake) → 章rollupがstale → 次回保存で再生成 → stale解消。"""
+    monkeypatch.setenv("ENABLE_DIGEST_ROLLUP", "1")
+    monkeypatch.setenv("ENABLE_EPISODE_DIGEST", "1")
+
+    async with _real_db(tmp_path) as sf:
+        async with sf() as session:
+            writer = _make_writer(session, 10)
+
+            # 1〜10話の digest を事前保存 (ep10 は run() で生成)
+            from src.engine.context_compression.digest_service import (
+                EpisodeDigestRepository,
+                EpisodeDigestService,
+            )
+
+            repo_digest = EpisodeDigestRepository(session)
+            for ep in range(1, 10):
+                await EpisodeDigestService(
+                    repo=repo_digest, llm=_make_digest_llm(ep)
+                ).summarize_and_save(
+                    book_id=BOOK_ID, episode_num=ep, draft_text=f"第{ep}話本文"
+                )
+
+            writing_context = {
+                "use_beat_to_scene": False,
+                "contract_foreshadowings": [],
+                "unresolved_foreshadowings": [],
+            }
+            await writer.run(_agent_ctx(10, writing_context))
+
+            # 章 rollup (1-10) が1件存在し、stale ではない
+            res = await session.execute(
+                select(DigestRollupModel).where(
+                    DigestRollupModel.level == "block",
+                    DigestRollupModel.start_ep == 1,
+                    DigestRollupModel.end_ep == 10,
+                )
+            )
+            rollups = res.scalars().all()
+            assert len(rollups) == 1
+            assert rollups[0].stale_at is None
+
+            # Step 23-2: ep3 の digest を retake で更新 → 章 rollup (1-10) が stale になる
+            await EpisodeDigestService(
+                repo=repo_digest, llm=_make_digest_llm(3)
+            ).summarize_and_save(
+                book_id=BOOK_ID, episode_num=3, draft_text="第3話: 更新後の本文（竜の鱗を入手）"
+            )
+
+            res = await session.execute(
+                select(DigestRollupModel).where(
+                    DigestRollupModel.level == "block",
+                    DigestRollupModel.start_ep == 1,
+                    DigestRollupModel.end_ep == 10,
+                )
+            )
+            rollups = res.scalars().all()
+            assert len(rollups) == 1
+            assert rollups[0].stale_at is not None, "retake で stale がセットされていない"
+
+            # Step 23-3: ep11 の run() で stale な章 rollup が再生成され stale が解消
+            # ep11 の digest は事前保存しておく（ep11 は run() で生成されるため不要だが、スタイル合わせ）
+            await writer.run(_agent_ctx(11, writing_context))
+
+            res = await session.execute(
+                select(DigestRollupModel).where(
+                    DigestRollupModel.level == "block",
+                    DigestRollupModel.start_ep == 1,
+                    DigestRollupModel.end_ep == 10,
+                )
+            )
+            rollups = res.scalars().all()
+            assert len(rollups) == 1
+            assert rollups[0].stale_at is None, "再生成後に stale が解消されていない"

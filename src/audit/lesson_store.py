@@ -83,7 +83,13 @@ class AuditLessonRepository:
             return existing
 
         # active 上限チェック：超過分は最古から archived へ
-        await self._enforce_active_max(book_id)
+        try:
+            from src.agents.audit_agent.config import get_lesson_active_max
+
+            max_active = get_lesson_active_max()
+        except Exception:
+            max_active = DEFAULT_ACTIVE_MAX
+        await self._enforce_active_max(book_id, max_active=max_active)
 
         record = AuditLessonModel(
             book_id=book_id,

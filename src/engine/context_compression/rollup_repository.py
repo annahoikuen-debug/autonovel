@@ -50,8 +50,9 @@ class DigestRollupRepository:
         if existing:
             existing.digest_text = digest_text
             existing.updated_at = now
-            if stale_at is not None:
-                existing.stale_at = stale_at
+            # stale_at は常に上書き（None でクリア、値で設定）。
+            # Step 14 で stale 解消時に stale_at=None を渡すため。
+            existing.stale_at = stale_at
             await self.db.flush()
             return existing
 

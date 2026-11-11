@@ -169,7 +169,7 @@ class PromptComposer:
             # Plan R5 B2: RAG コンテキストを執筆プロンプトへ注入（fail-open: 空なら空文字）
             rag_context_block=self._format_rag_context(context.get("rag_context", [])),
             # Plan H8 E5: 監査失敗教訓を執筆プロンプトへ注入（fail-open: 空なら空文字）
-            lessons_block=self._format_audit_lessons(context.get("audit_lessons_ctx", [])),
+            lessons_block=self._record_lessons_injection(book_id, context.get("audit_lessons_ctx", [])),
             # PLAN_M1 Step 16: 重要事実の両端配置（Lost in the Middle 対策）
             pinned_head=pinned_head,
             pinned_tail=pinned_tail,
@@ -327,6 +327,29 @@ class PromptComposer:
         if len(lines) == 1:
             return ""
         return "\n".join(lines)
+
+    def _record_lessons_injection(
+        self,
+        book_id: int | None,
+        lessons: Any,
+        max_items: int | None = None,
+        block_max_chars: int | None = None,
+    ) -> str:
+        """H8 E5/O3: 教訓ブロックを整形し、注入文字数をメトリクスに記録する。
+
+        `_format_audit_lessons` の結果をそのまま返す（fail-open）。
+        ブロックが非空かつ `book_id` が既知のときのみ
+        `audit_lessons_injected_chars` を記録する（flag OFF 時は無音）。
+        """
+        block = self._format_audit_lessons(lessons, max_items=max_items, block_max_chars=block_max_chars)
+        if block and book_id is not None:
+            try:
+                from src.backend.observability.metrics import record_audit_lessons_injected
+
+                record_audit_lessons_injected(book_id, len(block))
+            except Exception:
+                pass  # メトリクス失敗は執筆を妨げない（P2 fail-open）
+        return block
 
     def _format_audit_lessons(
         self,
