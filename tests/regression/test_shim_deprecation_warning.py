@@ -62,8 +62,9 @@ def test_shim_warning_messages_do_not_self_reference():
 def test_shim_emits_deprecation_warning_dynamically():
     """動的検証（代表サンプリング）: subprocess import 時に DeprecationWarning が出る。"""
     # import 済み可能性が低い代表的 shim を 3 件選ぶ
+    # config.* は Phase R3-1 (Step 9-13) で全件削除対象のため、services 系から選ぶ
     candidates = [
-        "config.archetypes",
+        "src.services.llm.circuit_breaker",
         "src.services.book_score_service",
         "src.services.rag_service",
     ]
