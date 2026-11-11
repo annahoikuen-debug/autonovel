@@ -7,7 +7,7 @@ Commercial Prompts Registry
 
 from typing import Any, Dict, List, Optional
 
-from config.archetypes import (
+from src.config.archetypes import (
     COMMERCIAL_ROLE_DESCRIPTIONS,
 )
 

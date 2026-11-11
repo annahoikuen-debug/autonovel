@@ -60,7 +60,7 @@ from .constants import (
 # 3. Streamlit アダプター（必要に応じてクライアントがインポート）
 # from .streamlit_adapter import StreamlitConfig
 # 4. サブモジュールのエクスポート
-from .domain_profile_manager import DomainProfileManager, DomainProfileService
+from src.config.domain_profile_manager import DomainProfileManager, DomainProfileService
 
 # 官能/NSFWモジュール
 from .erotic_pacing import EroticBeat, EroticCurve
@@ -76,22 +76,6 @@ from .models import GlobalConfigModel
 
 # 2. project_context から新しいシステム中枢クラスと定数を上書きエクスポート
 from .project_context import PROMPT_TEMPLATES, get_config, set_config
-from .styles import (
-    DAILY_MICRO_HOOKS,
-    FORBIDDEN_SUMMARY_PATTERNS,
-    FORBIDDEN_WORD_REPLACEMENTS,
-    NARRATIVE_PROPS,
-    RULE_SET_A_NEG,
-    RULE_SET_A_RULES,
-    RULE_SET_B_NEG,
-    RULE_SET_B_RULES,
-    RULE_SET_C_NEG,
-    RULE_SET_C_RULES,
-    RULE_SET_D_NEG,
-    RULE_SET_D_RULES,
-    STYLE_DEFINITIONS,
-    STYLE_REFINEMENT_DIRECTIONS,
-)
 
 __all__ = [
     "GlobalConfigModel",

@@ -44,17 +44,12 @@ CONFIG_IMPORT_PATHS = [
     ("src.domain.styles", None),
     ("src.interfaces.streamlit_adapter", None),
     # 旧パス（shim、維持必須）- 第1バッチ
-    ("config.archetypes", None),
     ("config.archetypes_new", None),
     ("config.constants", None),
-    ("config.domain_profile_manager", None),
     ("config.sharp_edge_vocabulary", None),
     ("config.project_context", None),
-    ("config.validator", None),
-    ("config.settings", ["settings", "Settings"]),
     # 旧パス（shim、維持必須）- 第3バッチ
     ("config.models", None),
-    ("config.styles", None),
     # 旧パス（shim、維持必須）- 既存
     ("config.container", ["Container", "get_container"]),
     # erotic shims（既存、維持必須）

@@ -39,9 +39,9 @@ def get_config() -> GlobalConfigModel:
         # config/settings.py の ConfigManager を唯一のエントリポイントとして使用
         # (SSOT: settings.toml → Pydantic 検証 → 明示的環境変数マージ)
         try:
-            from config.settings import ConfigManager
+            from schemas.config import GlobalConfigModel
 
-            _global_config = ConfigManager.get_config()
+            _global_config = GlobalConfigModel.load()
         except Exception as e:
             logger.critical(f"設定ファイルのバリデーションに失敗しました: {str(e)}")
             raise SystemExit("設定ファイルのバリデーションに失敗しました。アプリケーションを終了します。")

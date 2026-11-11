@@ -405,7 +405,7 @@ class PromptManager:
         book_id: Optional[int] = None,
     ) -> str:
         style_inst = await self.build_style_instruction(style_key, book_id=book_id)
-        from config.styles import get_rule_set
+        from src.domain.styles import get_rule_set
 
         rule_set_content = get_rule_set(write_rule_type)
 
@@ -653,7 +653,7 @@ class PromptManager:
         write_rule_type = kwargs.get("write_rule_type", "RULE_SET_A")
         style_inst = await self.build_style_instruction(style_key, book_id=book_id)
 
-        from config.styles import get_rule_set
+        from src.domain.styles import get_rule_set
 
         rule_set_content = get_rule_set(write_rule_type)
 

@@ -8,7 +8,7 @@ from typing import Protocol
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-from config.validator import ConfigValidator
+from src.infrastructure.config.validator import ConfigValidator
 
 
 class AppNotifier(Protocol):

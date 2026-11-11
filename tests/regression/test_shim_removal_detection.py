@@ -35,6 +35,11 @@ REMOVED_SHIMS: list[str] = [
     "config/logging_config.py",
     "config/narrative.py",
     "config/streamlit_adapter.py",
+    "config/archetypes.py",
+    "config/styles.py",
+    "config/validator.py",
+    "config/domain_profile_manager.py",
+    "config/settings.py",
 ]
 
 registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))

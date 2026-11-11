@@ -304,7 +304,7 @@ class GlobalConfigModel(BaseModel):
 
         logger.debug(f"[LOAD] Call stack: {''.join(traceback.format_stack()[:-1])}")
 
-        from config.validator import ConfigValidator
+        from src.infrastructure.config.validator import ConfigValidator
 
         validated = ConfigValidator.validate_all()
         result = validated["settings"]

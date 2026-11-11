@@ -1,16 +1,11 @@
 {
   "shims": [
     "config/container.py",
-    "config/settings.py",
-    "config/archetypes.py",
     "config/archetypes_new.py",
     "config/constants.py",
-    "config/domain_profile_manager.py",
     "config/sharp_edge_vocabulary.py",
     "config/project_context.py",
-    "config/validator.py",
     "config/models.py",
-    "config/styles.py",
     "src/schemas/__init__.py",
     "config/erotic_direct_mappings.py",
     "config/erotic_pacing.py",

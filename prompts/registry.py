@@ -46,10 +46,10 @@ class PromptRegistry:
 
         # キャッシュ用ストレージ (template_name -> CachedTemplate)
         self._template_cache: OrderedDict[str, CachedTemplate] = OrderedDict()
-        from config.settings import ConfigManager
+        from schemas.config import GlobalConfigModel
 
         # 設定ファイルから最大キャッシュサイズを取得
-        self._cache_max_size = ConfigManager.get_config().prompt_cache_max_size
+        self._cache_max_size = GlobalConfigModel.load().prompt_cache_max_size
 
         # メトリクス追跡用（_update_cache_lru から消さないこと。
         # 以前は LRU 更新のたびに self._metrics = {} が走り、キャッシュヒット

@@ -10,21 +10,6 @@
       "reason": "旧パス参照がテスト 2 ファイルに残存（Phase R2 未完了）",
       "todo": "TODO(R3-11)"
     },
-    "config/settings.py": {
-      "files": [
-        "prompts/registry.py",
-        "src/infrastructure/config/project_context.py"
-      ],
-      "reason": "旧パス参照が prompts と infrastructure/config に残存（Phase R2 未完了）",
-      "todo": "TODO(R3-10)"
-    },
-    "config/archetypes.py": {
-      "files": [
-        "prompts/commercial_prompts.py"
-      ],
-      "reason": "旧パス参照が prompts/commercial_prompts.py に残存（Phase R2 未完了）",
-      "todo": "TODO(R3-10)"
-    },
     "config/archetypes_new.py": {
       "files": [
         "src/backend/routers/misc.py",
@@ -44,13 +29,6 @@
       ],
       "reason": "旧パス参照が 4 ファイルに残存（Phase R2 未完了）",
       "todo": "TODO(R3-11)"
-    },
-    "config/domain_profile_manager.py": {
-      "files": [
-        "src/engine/bible_service.py"
-      ],
-      "reason": "旧パス参照が src/engine/bible_service.py に残存（Phase R2 未完了）",
-      "todo": "TODO(R3-10)"
     },
     "config/sharp_edge_vocabulary.py": {
       "files": [
@@ -162,21 +140,6 @@
       ],
       "reason": "旧パス参照が 18 ファイルに残存。config/ の shim 中最大参照数（Phase R2 未完了）",
       "todo": "TODO(R3-12)"
-    },
-    "config/validator.py": {
-      "files": [
-        "schemas/config.py",
-        "src/infrastructure/config/file_watcher.py"
-      ],
-      "reason": "旧パス参照が 2 ファイルに残存（Phase R2 未完了）",
-      "todo": "TODO(R3-10)"
-    },
-    "config/styles.py": {
-      "files": [
-        "prompts/manager.py"
-      ],
-      "reason": "旧パス参照が prompts/manager.py に残存（Phase R2 未完了）",
-      "todo": "TODO(R3-10)"
     }
   },
   "mentions": {}

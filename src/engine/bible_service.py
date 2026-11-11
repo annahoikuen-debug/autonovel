@@ -22,7 +22,7 @@ from src.models import (
 from src.models.planning_config import PlanningConfig
 
 try:
-    from config.domain_profile_manager import DomainProfileService
+    from src.config.domain_profile_manager import DomainProfileService
 except ImportError:
     from src.config.domain_profile_manager import DomainProfileService  # type: ignore
 
