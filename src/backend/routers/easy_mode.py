@@ -382,6 +382,10 @@ async def generate_content(
             "content_length_limit": input_data.content_length_limit,
             "target_episodes": input_data.target_episodes,
             "style_override": input_data.style_override,
+            # PLAN_S1 R2 / F1B H7: per-book spine 適用レベル。
+            # execute_generation が payload.get("spine_quality") で消費する
+            # （easy_mode.py:160、None = 構造指示なし / バイト同一）。
+            "spine_quality": input_data.spine_quality,
             "llm_config": (
                 input_data.llm_config.model_dump()
                 if input_data.llm_config and hasattr(input_data.llm_config, "model_dump")

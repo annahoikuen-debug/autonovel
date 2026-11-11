@@ -149,10 +149,19 @@ class PlanStep(WorkflowStep):
             if getattr(ctx, "use_coarse_fine_plot", True) and hasattr(engine, "plot_expander") and engine.plot_expander:
                 if hasattr(engine.plot_expander, "expand_macro_skeletons"):
                     try:
+                        # PLAN_S1 O1: プリセット tension curve をマクロ展開へ渡す。
+                        # preset が実質空 (読み込み失敗等) の場合は get_tension_curve の
+                        # 内蔵既定曲線を出さず None 通し (PLAN_S1 Q7 契約)。
+                        tension_curve = None
+                        if preset and preset.get("tension"):
+                            from src.services.preset_loader import get_tension_curve
+
+                            tension_curve = get_tension_curve(preset).get("curve_points")
                         skeletons = await engine.plot_expander.expand_macro_skeletons(
                             book_id=book_id,
                             target_ep_list=list(range(1, ctx.target_eps + 1)),
                             reporter=reporter,
+                            tension_curve=tension_curve,
                         )
                         ctx.easy_parameters["macro_skeletons_count"] = len(skeletons)
                     except Exception as e:

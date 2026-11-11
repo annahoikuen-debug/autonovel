@@ -122,6 +122,60 @@ def is_span_patch_enabled() -> bool:
     return _env_flag("ENABLE_AUDIT_SPAN_PATCH", True)
 
 
+def is_quote_patch_enabled() -> bool:
+    """H8: 検証付き quote 置換パッチ（``ENABLE_AUDIT_QUOTE_PATCH``、既定 OFF）。
+
+    OFF の場合は従来どおり ``actionable_patch`` を末尾追記する。
+    ON の場合は ``original_quote`` 必須の置換を先に試行し、不成立なら
+    従来の追記へフォールバックする。
+    """
+    return _env_flag("ENABLE_AUDIT_QUOTE_PATCH", False)
+
+
+def is_lesson_enabled() -> bool:
+    """H8: 教訓メモリ（``ENABLE_AUDIT_LESSONS``、既定 OFF）。
+
+    OFF の場合は教訓の記録・注入を行わず、現行挙動とバイト同一にする。
+    """
+    return _env_flag("ENABLE_AUDIT_LESSONS", False)
+
+
+def get_lesson_active_max() -> int:
+    """book あたり active 教訓の上限（``AUDIT_LESSON_ACTIVE_MAX``、既定 20）。"""
+    return _env_int("AUDIT_LESSON_ACTIVE_MAX", 20)
+
+
+def get_lesson_inject_max_items() -> int:
+    """注入する教訓の最大件数（``AUDIT_LESSON_INJECT_MAX_ITEMS``、既定 5）。"""
+    return _env_int("AUDIT_LESSON_INJECT_MAX_ITEMS", 5)
+
+
+def get_lesson_block_max_chars() -> int:
+    """注入ブロック全体の最大文字数（``AUDIT_LESSON_BLOCK_MAX_CHARS``、既定 800）。"""
+    return _env_int("AUDIT_LESSON_BLOCK_MAX_CHARS", 800)
+
+
+def get_lesson_max_chars() -> int:
+    """教訓 1 件の最大文字数（``AUDIT_LESSON_MAX_CHARS``、既定 200）。"""
+    return _env_int("AUDIT_LESSON_MAX_CHARS", 200)
+
+
+def get_lesson_min_occurrences() -> int:
+    """注入に必要な最小発生回数（``AUDIT_LESSON_MIN_OCCURRENCES``、既定 1）。"""
+    return _env_int("AUDIT_LESSON_MIN_OCCURRENCES", 1)
+
+
+def _env_int(name: str, default: int) -> int:
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        logger.warning("%s=%r を int に解釈できないため既定値 %s を使います", name, raw, default)
+        return default
+
+
 def is_async_polish_enabled() -> bool:
     """検証付き ``polish_span`` の利用（``ENABLE_AUDIT_POLISH_ASYNC``、既定 ON, W4 Step 8）。"""
     return _env_flag("ENABLE_AUDIT_POLISH_ASYNC", True)

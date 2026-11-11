@@ -47,6 +47,8 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
     setContentLengthLimit,
     targetEpisodes,
     setTargetEpisodes,
+    spineQuality,
+    setSpineQuality,
     llmConfig,
     setLlmConfig,
     selectedBookId,
@@ -302,6 +304,8 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
           setTargetEpisodes={setTargetEpisodes}
           contentLengthLimit={contentLengthLimit}
           setContentLengthLimit={setContentLengthLimit}
+          spineQuality={spineQuality}
+          setSpineQuality={setSpineQuality}
           currentChapterText={currentChapterText}
           setCurrentChapterText={setCurrentChapterText}
           onMessage={onMessage ?? (() => { })}

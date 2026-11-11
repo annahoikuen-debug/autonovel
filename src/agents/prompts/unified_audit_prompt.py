@@ -28,6 +28,10 @@ UNIFIED_AUDIT_PROMPT_TEMPLATE = """\
   "character_consistency": <キャラ心理葛藤・口調・Truth Ledger遵守度 (0-100)>,
   "overall_score": <定性総合得点 (0-100)>,
   "critique": "<70字以内の的確なアドバイス>",
-  "actionable_patch": "<重大な欠陥がある場合のみ、1段落の置換案。問題なければnull>"
+  "actionable_patch": {{
+    "original_quote": "<本文からの逐語引用（400字以内・必須）>",
+    "replacement": "<差し替え後文章>",
+    "rationale": "<書き換え理由>"
+  }} | null
 }}
 """

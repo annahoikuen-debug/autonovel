@@ -46,6 +46,14 @@
 
 {{ three_layer_ctx }}
 {% endif %}
+{% if rag_context_block %}
+
+{{ rag_context_block }}
+{% endif %}
+{% if lessons_block %}
+
+{{ lessons_block }}
+{% endif %}
 
 【指令】
 {% if density_level == 'Extreme' %}

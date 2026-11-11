@@ -22,7 +22,9 @@ class QualitativeAudit(BaseModel):
     character_consistency: float = Field(..., ge=0.0, le=100.0, description="キャラ言動の一貫性")
     overall_score: float = Field(..., ge=0.0, le=100.0, description="定性総合評価")
     critique: str = Field(default="", description="主要講評")
-    actionable_patch: str | None = Field(default=None, description="推奨局所修正パッチ")
+    actionable_patch: str | None = Field(default=None, description="推奨局所修正パッチ（従来互換・文字列）")
+    actionable_quote: str | None = Field(default=None, description="H8: 置換対象の逐語引用（400字以内）")
+    actionable_replacement: str | None = Field(default=None, description="H8: 差し替え後文章")
 
 
 class UnifiedAuditReport(BaseModel):

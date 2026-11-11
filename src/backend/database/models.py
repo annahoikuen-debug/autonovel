@@ -22,6 +22,7 @@ from src.backend.database.models_billing import (  # noqa: F401
     Subscription,
 )
 from src.backend.database.models_digest import EpisodeDigestModel  # noqa: F401
+from src.backend.database.models_lessons import AuditLessonModel  # noqa: F401
 from src.backend.database.models_foreshadowing import ForeshadowingModel  # noqa: F401
 from src.backend.database.models_relation import CharacterRelationModel  # noqa: F401
 

@@ -41,6 +41,35 @@ def _is_episode_digest_enabled() -> bool:
     return raw not in ("0", "false", "no", "off")
 
 
+def _resolve_foreshadow_voter(llm: Any) -> Any:
+    """PLAN_S1 P2: 伏線 LLM 第 4 投票 (shadow / mainline 時のみ) を構築する。
+
+    - 既定 (``ENABLE_FORESHADOW_LLM_VOTE`` 未設定) は **None を返し LLM 0 回**
+      (P1 契約: 現行の EnsembleJudge 3 票動作を完全に維持する)。
+    - shadow / mainline のときのみ、tier1 (軽量) モデルで動く
+      ``ForeshadowingLLMVoter`` を構築する (ダイジェストと同一のコスト方針)。
+    """
+    if llm is None:
+        return None
+    try:
+        from src.engine.foreshadowing.vote_config import get_vote_mode
+
+        if get_vote_mode() == "off":
+            return None
+    except Exception as exc:  # noqa: BLE001 - 設定読み込み失敗時は無効 (fail-open)
+        logger.debug(f"Foreshadow vote config unavailable, voter disabled: {exc}")
+        return None
+
+    try:
+        from src.engine.foreshadowing.llm_voter import ForeshadowingLLMVoter
+
+        digest_llm = _resolve_digest_llm(llm)
+        return ForeshadowingLLMVoter(digest_llm)
+    except Exception as exc:  # noqa: BLE001
+        logger.debug(f"Foreshadow voter construction failed, disabled: {exc}")
+        return None
+
+
 def _resolve_digest_llm(llm: Any) -> Any:
     """ダイジェスト生成用に tier1（軽量）モデルを割り当てる。
 
@@ -375,7 +404,10 @@ class EpisodeWriter(BaseAgent):
                     metrics_port=BackendForeshadowingMetricsPort(),
                     kpi_port=BackendForeshadowingKpiPort(),
                 )
-                foreshadowing_service = ForeshadowingService(foreshadowing_repo)
+                foreshadowing_service = ForeshadowingService(
+                    foreshadowing_repo,
+                    llm_voter=_resolve_foreshadow_voter(getattr(self, "llm", None)),
+                )
                 resolved_titles = await foreshadowing_service.check_and_resolve(
                     book_id=book_id,
                     episode_num=ep_num,

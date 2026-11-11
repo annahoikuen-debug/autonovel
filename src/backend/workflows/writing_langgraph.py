@@ -592,11 +592,31 @@ class WritingGraphManager:
             logger.info(
                 f"v5.0 1-Patch PDCA: Applying focused single-patch instead of full rewrite for Ep.{state['ep_num']}"
             )
-            healed_content = state["draft_content"] + "\n\n" + actionable_patch
+            draft_content = state["draft_content"]
+            # H8: actionable_patch が structured (original_quote / replacement) なら検証付き置換、
+            # それ以外（レガシー文字列）は従来の追記へフォールバック（デッドパス後方互換）。
+            if isinstance(actionable_patch, dict) and actionable_patch.get("original_quote"):
+                from src.audit.span_revision import QuotePatch, apply_quote_patches
+
+                qp_result = apply_quote_patches(
+                    draft_content,
+                    [
+                        QuotePatch(
+                            original_quote=str(actionable_patch["original_quote"]),
+                            replacement=str(actionable_patch.get("replacement", "")),
+                            rationale=actionable_patch.get("rationale", ""),
+                        )
+                    ],
+                )
+                healed_content = qp_result.text if qp_result.applied_count > 0 else draft_content
+                causal_reason = "healed_via_quote_patch" if qp_result.applied_count > 0 else "healed_via_actionable_patch"
+            else:
+                healed_content = draft_content + "\n\n" + str(actionable_patch)
+                causal_reason = "healed_via_actionable_patch"
             return {
                 "draft_content": healed_content,
                 "is_causal_ok": True,
-                "causal_reason": "healed_via_actionable_patch",
+                "causal_reason": causal_reason,
             }
 
         blueprint = state["context"]["plot"].detailed_blueprint

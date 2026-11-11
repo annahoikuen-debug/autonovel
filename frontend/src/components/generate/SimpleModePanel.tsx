@@ -3,6 +3,7 @@ import { Modal } from "../common/Modal";
 import { Button } from "../common/Button";
 import type { CharacterParams as Character } from "../../types";
 import type { GenerationState } from "../../types";
+import type { SpineQualityLevel } from "../../types/easyMode";
 import { GENRE_OPTIONS, FALLBACK_GENRE_OPTIONS, GenreOption } from "../../constants/genres";
 import { fetchStylePresets } from "../../api/styleApi";
 import type { StylePresetSummary } from "../../types/style";
@@ -56,6 +57,9 @@ export interface SimpleModePanelProps {
   setContentLengthLimit?: React.Dispatch<React.SetStateAction<number>>;
   currentChapterText?: string;
   setCurrentChapterText?: React.Dispatch<React.SetStateAction<string>>;
+  /** PLAN_S1 R2 / F1B H7: 構造テンプレート適用レベル（既定 off） */
+  spineQuality?: SpineQualityLevel;
+  setSpineQuality?: React.Dispatch<React.SetStateAction<SpineQualityLevel>>;
   onMessage?: (msg: string) => void;
   onRunGacha?: () => void;
   onRunDigest?: () => void;
@@ -84,6 +88,10 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
   const setTargetEpisodes = props.setTargetEpisodes ?? setLocalEpisodes;
   const contentLengthLimit = props.contentLengthLimit ?? localContentLength;
   const setContentLengthLimit = props.setContentLengthLimit ?? setLocalContentLength;
+  // PLAN_S1 R2 / F1B H7: 構造テンプレート適用レベル（props 未指定時はローカル既定 off）
+  const [localSpineQuality, setLocalSpineQuality] = useState<SpineQualityLevel>("off");
+  const spineQuality = props.spineQuality ?? localSpineQuality;
+  const setSpineQuality = props.setSpineQuality ?? setLocalSpineQuality;
   const currentChapterText = props.currentChapterText ?? localChapterText;
   const setCurrentChapterText = props.setCurrentChapterText ?? setLocalChapterText;
 
@@ -252,6 +260,30 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
           </div>
         </div>
       )}
+
+      {/* PLAN_S1 R2 / F1B H7: 構造テンプレート適用レベル */}
+      <div className="form-group">
+        <label className="label" htmlFor="spine-quality-select">
+          📐 構造テンプレートの適用レベル
+        </label>
+        <select
+          id="spine-quality-select"
+          data-testid="spine-quality-select"
+          className="input"
+          value={spineQuality}
+          onChange={(e) => setSpineQuality(e.target.value as SpineQualityLevel)}
+        >
+          <option value="off">使わない（AIに完全おまかせ）</option>
+          <option value="soft">参考にする（構造のヒントとして提示）</option>
+          <option value="hard">厳密に従う（各話の役割を必須指示にする）</option>
+        </select>
+        <span
+          data-testid="spine-quality-note"
+          style={{ fontSize: "0.75rem", color: "var(--text-muted, #888)", display: "block", marginTop: "4px" }}
+        >
+          テンプレートは初期値です。AI の創作がこれを必ずしも踏襲するとは限りません。
+        </span>
+      </div>
 
       {/* 目標話数入力 */}
       <div className="form-group">

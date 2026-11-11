@@ -89,7 +89,7 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
     from src.agents.marketing import MarketingAgent
     from src.services.llm.factory import get_llm_adapter
     from src.publishing.illustration.image_service import ImageService
-    from src.services.reflective_rag import ReflectiveRAGService
+    from src.integrations.rag.factory import build_reflective_rag
     from src.integrations.rag.rag_service import rag_service
     from src.engine.compression.compressor import FourLayerCompressor
     from src.engine.compression.models import CompressionConfig
@@ -183,7 +183,8 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
     from src.backend.database.social_repository import SocialRepository
 
     social_repo = SocialRepository(session)
-    reflective_rag = ReflectiveRAGService(rag_service=rag_service)
+    # Plan R5 C2: ReflectiveRAGService は factory 経由で構築（hybrid / HyDE フラグの一元管理）。
+    reflective_rag = build_reflective_rag(rag_service=rag_service, llm_adapter=llm_adapter)
     compressor = FourLayerCompressor(config=CompressionConfig())
     social_manager = SocialInteractionManager(llm_adapter=llm_adapter, social_repo=social_repo)
 

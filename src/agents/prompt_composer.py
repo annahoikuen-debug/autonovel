@@ -166,10 +166,39 @@ class PromptComposer:
             # v5.3 / Step 29: 背景（継続中）の未回収伏線。契約伏線と重複排除して
             # PromptManager 側で上限・省略サマリを行う。
             unresolved_foreshadowings=unresolved_foreshadowings,
+            # Plan R5 B2: RAG コンテキストを執筆プロンプトへ注入（fail-open: 空なら空文字）
+            rag_context_block=self._format_rag_context(context.get("rag_context", [])),
+            # Plan H8 E5: 監査失敗教訓を執筆プロンプトへ注入（fail-open: 空なら空文字）
+            lessons_block=self._format_audit_lessons(context.get("audit_lessons_ctx", [])),
             # PLAN_M1 Step 16: 重要事実の両端配置（Lost in the Middle 対策）
             pinned_head=pinned_head,
             pinned_tail=pinned_tail,
         )
+
+        # PLAN_M1 Step 16: 重要事実の両端配置（Lost in the Middle 対策）
+        # flag off 時は pinned_head / pinned_tail とも空文字（現行出力と同一）。
+        pinned_head = ""
+        pinned_tail = ""
+
+        # pinned_edges_enabled フラグが有効な場合のみ、両端事実を生成する。
+        # LLM は使わず、契約伏線・期限超過伏線・前話 digest から抽出する。
+        if RollupConfig.from_env().pinned_edges_enabled:
+            three_layer = context.get("three_layer_context") or {}
+            layer2_summary = three_layer.get("layer2_summary") or {}
+            prev_digest_text = layer2_summary.get("text", "") if isinstance(layer2_summary, dict) else ""
+            pinned = PinnedFactsGenerator(RollupConfig.from_env()).generate(
+                contract_foreshadowings=context.get("contract_foreshadowings") or [],
+                overdue_foreshadowings=[
+                    f for f in (context.get("unresolved_foreshadowings") or [])
+                    if isinstance(f, dict) and f.get("target_episode") is not None
+                    and f.get("target_episode", 0) < ep_num
+                ],
+                prev_digest_text=prev_digest_text,
+            )
+            pinned_head = pinned.head
+            pinned_tail = pinned.tail
+
+        regeneration_directive = context.get("regeneration_directive")
 
         regeneration_directive = context.get("regeneration_directive")
         if regeneration_directive:
@@ -226,6 +255,133 @@ class PromptComposer:
                 f"（第{f.get('planted_episode', '?')}話設置"
                 f"{f'・第{target}話回収予定' if target else ''}）"
             )
+        if len(lines) == 1:
+            return ""
+        return "\n".join(lines)
+
+    @staticmethod
+    def _format_rag_context(
+        rag_context: Any,
+        max_chars: int | None = None,
+        top_k: int | None = None,
+    ) -> str:
+        """Reflective RAG で取得した文書を執筆プロンプト用に整形する。
+
+        fail-open: 入力が None / 空 / 不正でも空文字を返し、例外は投げない。
+        `is_forbidden=True` の文書は除外（RAG 側の安全ガードに従う）。
+        スコア降順・上位 top_k に絞り、max_chars を超える分は行境界でカットする。
+
+        Args:
+            rag_context: list[dict | SearchResult] 各要素は content / score / metadata を持つ。
+            max_chars: 注入テキストの上限文字数（ヘッダ含む）。None なら settings の既定。
+            top_k: 注入する文書の上限件数。None なら settings の既定。
+
+        Returns:
+            シーンプロンプトへ挿入可能なテキスト。空なら ""。
+        """
+        from src.backend.config import settings
+
+        if max_chars is None:
+            max_chars = settings.RAG_CONTEXT_MAX_CHARS
+        if top_k is None:
+            top_k = settings.RAG_CONTEXT_TOP_K
+
+        if not rag_context:
+            return ""
+
+        docs: list[tuple[str, float]] = []
+        for item in rag_context:
+            try:
+                if isinstance(item, dict):
+                    content = item.get("content", "") or ""
+                    score = float(item.get("score", item.get("similarity", 0.0)) or 0.0)
+                    meta = item.get("metadata", {}) or {}
+                else:
+                    content = getattr(item, "content", "") or ""
+                    score = float(
+                        getattr(item, "score", None) or getattr(item, "similarity", None) or 0.0
+                    )
+                    meta = getattr(item, "metadata", {}) or {}
+            except Exception:
+                continue
+            if not content or not content.strip():
+                continue
+            if isinstance(meta, dict) and meta.get("is_forbidden") is True:
+                continue
+            docs.append((content.strip(), score))
+
+        if not docs:
+            return ""
+
+        docs.sort(key=lambda x: x[1], reverse=True)
+        docs = docs[:top_k]
+
+        header = "【関連する過去の設定・描写】"
+        lines: list[str] = [header]
+        for content, score in docs:
+            line = f"- (score {score:.2f}) {content}"
+            if len("\n".join(lines) + "\n" + line) > max_chars:
+                break
+            lines.append(line)
+
+        if len(lines) == 1:
+            return ""
+        return "\n".join(lines)
+
+    def _format_audit_lessons(
+        self,
+        lessons: Any,
+        max_items: int | None = None,
+        block_max_chars: int | None = None,
+    ) -> str:
+        """H8 E5: 監査失敗教訓を執筆プロンプト用に整形する。
+
+        fail-open: 入力が None / 空 / 不正でも空文字を返し、例外は投げない。
+        `max_items` 件・`block_max_chars` 文字で打ち切り、プロンプト肥大化を防ぐ。
+
+        Returns:
+            シーンプロンプトへ挿入可能なテキスト。空なら ""。
+        """
+        from src.agents.audit_agent.config import (
+            get_lesson_block_max_chars,
+            get_lesson_inject_max_items,
+        )
+
+        if max_items is None:
+            max_items = get_lesson_inject_max_items()
+        if block_max_chars is None:
+            block_max_chars = get_lesson_block_max_chars()
+
+        if not lessons:
+            return ""
+
+        try:
+            items = list(lessons)[:max_items]
+        except (TypeError, AttributeError):
+            return ""
+
+        if not items:
+            return ""
+
+        header = "【過去話の失敗教訓（執筆時に最優先で回避）】"
+        lines: list[str] = [header]
+        for lesson in items:
+            try:
+                if not isinstance(lesson, dict):
+                    continue
+                dimension = str(lesson.get("dimension", ""))
+                text = str(lesson.get("lesson_text", "")).strip()
+                occurrences = lesson.get("occurrences", 1)
+                last_seen = lesson.get("last_seen_episode", "?")
+                if not text:
+                    continue
+                line = f"- [{dimension}] {text} （第{last_seen}話に発生・{occurrences}回目）"
+                if len("\n".join(lines) + "\n" + line) > block_max_chars:
+                    break
+                lines.append(line)
+            except Exception:
+                continue
+
         if len(lines) == 1:
             return ""
         return "\n".join(lines)

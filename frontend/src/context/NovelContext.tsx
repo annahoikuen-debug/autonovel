@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef, useCallb
 import { CharacterParams, GenerationState, ChapterItem, ActiveAuditHighlight, BookItem } from "../types";
 import { LineScore } from "../types/quality";
 import { LLMConfigOverride } from "../types/easyMode";
+import type { SpineQualityLevel } from "../types/easyMode";
 import { GeneratedPlotStructure } from "../types/reversePlot";
 import { fetchBooks, fetchBookById } from "../api/books";
 import { fetchChapters, StoredChapter } from "../api/chapters";
@@ -27,6 +28,9 @@ interface NovelContextType {
   setContentLengthLimit: React.Dispatch<React.SetStateAction<number>>;
   targetEpisodes: number;
   setTargetEpisodes: React.Dispatch<React.SetStateAction<number>>;
+  /** PLAN_S1 R2 / F1B H7: per-book の STORY_SPINE 適用レベル（既定 off = 注入なし） */
+  spineQuality: SpineQualityLevel;
+  setSpineQuality: React.Dispatch<React.SetStateAction<SpineQualityLevel>>;
   llmConfig: LLMConfigOverride;
   setLlmConfig: React.Dispatch<React.SetStateAction<LLMConfigOverride>>;
   applySuggestion: (suggestion: string) => void;
@@ -104,6 +108,8 @@ const [currentChapterText, setCurrentChapterText] = useState<string>(
 
   const [contentLengthLimit, setContentLengthLimit] = useState<number>(2000);
   const [targetEpisodes, setTargetEpisodes] = useState<number>(10);
+  // PLAN_S1 R2 / F1B H7: 構造テンプレートの適用レベル。既定 off（プロンプト差分ゼロ）。
+  const [spineQuality, setSpineQuality] = useState<SpineQualityLevel>("off");
   const [llmConfig, setLlmConfig] = useState<LLMConfigOverride>(() => {
     try {
       const saved = localStorage.getItem("autonovel_llm_config");
@@ -275,6 +281,8 @@ const [currentChapterText, setCurrentChapterText] = useState<string>(
         setContentLengthLimit,
         targetEpisodes,
         setTargetEpisodes,
+        spineQuality,
+        setSpineQuality,
         llmConfig,
         setLlmConfig,
         applySuggestion,

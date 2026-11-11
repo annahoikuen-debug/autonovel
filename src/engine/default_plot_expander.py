@@ -16,7 +16,7 @@ from typing import Any
 from config.constants import MODEL_PLOT_EXPANSION, MODEL_PLANNING, MODEL_FAST_EXPANSION
 from config.story_spine import resolve_spine
 from src.core.interfaces import IReporter, IRepository
-from src.llm.adapters.prompts import build_spine_section, build_spine_summary, get_spine_quality
+from src.llm.adapters.prompts import get_spine_quality
 from src.models.plot import (
     UltraFastPlotBatch,
     EpisodeMacroSkeleton,
@@ -59,8 +59,14 @@ class DefaultPlotExpander:
         target_ep_list: list[int],
         reporter: IReporter | None = None,
         branch_id: int | None = None,
+        tension_curve: list[list[float]] | None = None,
     ) -> list[EpisodeMacroSkeleton]:
-        """大局骨子(Macro Skeleton)を一括バッチ生成してDBに保存する"""
+        """大局骨子(Macro Skeleton)を一括バッチ生成してDBに保存する
+
+        PLAN_S1 O1: ``tension_curve`` (進行度 0-1 × テンション 0-1 のペア列) を受け取り、
+        マクロ生成プロンプトへの参考注入 (O2) と構造ゲートの逸脱指標 (O3) に使用する。
+        None (プリセット未選択) なら現行と完全同一の動作。
+        """
         if not target_ep_list:
             return []
 
@@ -94,9 +100,16 @@ class DefaultPlotExpander:
 
         spine_quality = get_spine_quality()
 
+        # PLAN_S1 O2: プリセット tension curve をプロンプトへ参考注入する。
+        # None (プリセット未選択 / off) のときは kwarg 自体を渡さない
+        # (duck-typed な prompt manager 実装との後方互換 / F1B H2-H4 パターン準拠)。
+        prompt_kwargs: dict[str, Any] = {}
+        if tension_curve is not None:
+            prompt_kwargs["tension_curve"] = tension_curve
         prompt = await self.pm.build_macro_plot_skeleton_prompt(
             bible_json_str, target_ep_list, book_id=book_id,
             spine=spine, spine_quality=spine_quality,
+            **prompt_kwargs,
         )
 
         res = await self.llm.generate_json(
@@ -115,6 +128,23 @@ class DefaultPlotExpander:
             batch = PlotMacroBatch.model_validate(metadata)
 
         skeletons = batch.episodes
+
+        # PLAN_S1 N3: 物語構造ゲート (narrative_balancer 本番配線)。
+        # 既定 mode=off では完全 no-op (ゲート生成すら行わない / P1)。
+        # warn: CSP 物理則違反を検出して報告。enforce: tension のみ補正してから保存。
+        # O3: tension_curve があれば逸脱指標 (advisory) を報告に含める。
+        # P3 fail-open: ゲート層のいかなる失敗も執筆を止めない。
+        try:
+            from src.engine.structure_gate import NarrativeStructureGate, get_gate_mode
+
+            if get_gate_mode() != "off":
+                if tension_curve is not None:
+                    NarrativeStructureGate().run(skeletons, reporter=reporter, tension_curve=tension_curve)
+                else:
+                    NarrativeStructureGate().run(skeletons, reporter=reporter)
+        except Exception as gate_exc:  # noqa: BLE001
+            logger.debug(f"Structure gate skipped: {gate_exc}")
+
         for sk in skeletons:
             existing = await self.repo.get_plot(branch_id, sk.ep_num, book_id=book_id)  # type: ignore[arg-type]
             if existing is None:
@@ -184,6 +214,35 @@ class DefaultPlotExpander:
             book_id=book_id,
             spine=spine, spine_quality=spine_quality,
         )
+
+        # PLAN_S1 N4: micro 経路のテンション差分検証。
+        # 直前話 tension との |Δ| が SSOT の max_step_delta (0-100 換算) を超え、
+        # かつゲート mode が warn 以上のとき、micro プロンプトに補正指示 1 行を追記する。
+        # off (既定) では何も追記しない (バイト同一契約 / P1)。
+        try:
+            from src.engine.structure_gate import get_gate_mode, get_settings
+
+            if get_gate_mode() != "off":
+                gate_settings = get_settings()
+                prev_plot = None
+                if ep_num > 1:
+                    try:
+                        prev_plot = await self.repo.get_plot(branch_id, ep_num - 1, book_id=book_id)  # type: ignore[arg-type]
+                    except Exception as repo_exc:
+                        logger.debug(f"Prev plot fetch skipped for tension delta: {repo_exc}")
+                prev_tension = getattr(prev_plot, "tension", None)
+                cur_tension = int(getattr(skeleton, "tension", 50) or 50)
+                if isinstance(prev_tension, (int, float)):
+                    delta_limit = gate_settings.max_step_delta_macro
+                    if abs(cur_tension - int(prev_tension)) > delta_limit:
+                        prompt += (
+                            "\n\n【テンション補正指示】直前話のテンションが "
+                            f"{int(prev_tension)} に対し本話の目標が {cur_tension} と変化が大きすぎます"
+                            f"(許容差 ±{int(delta_limit)})。"
+                            "本話の演出ビートは直前話ラストとの落差を緩和する構成にしてください。"
+                        )
+        except Exception as gate_exc:  # noqa: BLE001
+            logger.debug(f"Micro tension delta directive skipped: {gate_exc}")
 
         res = await self.llm.generate_json(
             self.model_fast,

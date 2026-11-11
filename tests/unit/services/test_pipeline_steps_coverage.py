@@ -278,7 +278,7 @@ async def test_catharsis_step_success_with_plots():
         assert await CatharsisAnalysisStep().execute(ctx, engine, reporter) is True
 
     assert ctx.easy_parameters["catharsis_pattern"] == ctx.catharsis_pattern
-    assert ctx.catharsis_positions == []
+    assert ctx.catharsis_positions == [2]
     assert any("カタルシス分析完了" in c.args[0] for c in reporter.report.call_args_list)
 
 

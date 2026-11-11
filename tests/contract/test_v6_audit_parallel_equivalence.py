@@ -29,6 +29,12 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
+# 本契約テストはレガシーコア監査（_fast_screener / _logical_auditor / _deai_auditor /
+# _ability_checker / _plot_monitor）をモックで差し替えて挙動を検証するため、
+# ENABLE_AUDIT_LEGACY_CORE=true を必須とする。デフォルトは UnifiedAuditor のみ
+# 初期化され、レガシーコア属性が None のまま AttributeError になるため。
+os.environ["ENABLE_AUDIT_LEGACY_CORE"] = "true"
+
 from src.agents.audit_agent import (  # noqa: E402
     CORE_AUDIT_CRITERIA,
     AuditAgent,
@@ -165,9 +171,7 @@ def test_parallel_and_serial_audit_results_identical() -> None:
 
     serial, parallel = asyncio.run(_scenario())
 
-    assert [s["audit_id"] for s in serial] == [c.audit_id for c in CORE_AUDIT_CRITERIA] + [
-        "unified_qualitative"
-    ], "監査IDの並びが CORE_AUDIT_CRITERIA と一致していない"
+    assert [s["audit_id"] for s in serial] == [c.audit_id for c in CORE_AUDIT_CRITERIA], "監査IDの並びが CORE_AUDIT_CRITERIA と一致していない"
     assert serial == parallel, (
         "並列化で判定結果が変わった:\n"
         f"serial  ={serial}\n"
@@ -201,7 +205,7 @@ def test_audit_events_all_emitted() -> None:
 
     phase = [e for e in events if e["event"] == "audit.audit.phase_completed"]
     assert len(phase) == 1, "phase_completed が 1 回だけ発火していない"
-    assert set(phase[0]["audit_ids"]) == expected | {"unified_qualitative"}
+    assert set(phase[0]["audit_ids"]) == expected
 
 
 # ---------------------------------------------------------------------------

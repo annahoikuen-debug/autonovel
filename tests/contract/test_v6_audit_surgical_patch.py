@@ -146,12 +146,49 @@ async def test_span_patch_disabled_returns_none_like_before(monkeypatch: pytest.
     assert out is None
 
 
-async def test_span_patch_disabled_falls_back_to_actionable(monkeypatch: pytest.MonkeyPatch) -> None:
-    """span を OFF にすると、修正前の挙動（actionable_patch 追記）へ戻る。"""
+async def test_span_patch_disabled_returns_none_like_before(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ENABLE_AUDIT_SPAN_PATCH", "0")
     agent = AuditAgent()
     agent._audit_llm = _RewritingLLM("その名を古代の魔道書と記す。")
-    report = _Report(actionable="追記すべき文章")
+
+    out = await agent.try_local_patch(
+        TEXT,
+        unified_report=None,
+        failed_outcomes=[
+            {"audit_id": "deai", "severity": "medium", "error": None, "feedback": "古代の魔導書"}
+        ],
+    )
+    assert out is None
+
+
+@pytest.mark.parametrize(
+    "span_flag,quote_flag,expected_strategies",
+    [
+        # H8 contract: flag 2 本の組み合わせ
+        ("0", "0", {"actionable_patch"}),          # 両方 OFF → 従来の追記（ロールバック契約）
+        ("0", "1", {"quote_patch", "quote_patch_legacy", "actionable_patch", None}),  # quote ON → 置換試行
+        ("1", "1", {"span_polish"}),                # span が優先（既存の優先順位維持）
+    ],
+)
+async def test_span_quote_flag_matrix(
+    monkeypatch: pytest.MonkeyPatch,
+    span_flag: str,
+    quote_flag: str,
+    expected_strategies: set[str | None],
+) -> None:
+    """span / quote フラグの組み合わせに応じた戦略選択契約。"""
+    monkeypatch.setenv("ENABLE_AUDIT_SPAN_PATCH", span_flag)
+    monkeypatch.setenv("ENABLE_AUDIT_QUOTE_PATCH", quote_flag)
+    agent = AuditAgent()
+    agent._audit_llm = _RewritingLLM("その名を古代の魔道書と記す。")
+    report = _Report(
+        conflicts=[
+            # 本文に存在しない文字列 → SafeReplacer は不発。quote_patch / span_polish / actionable_patch の
+            # フラグ依存経路を検証するために意図的に不一致にする。
+            _Conflict(current_value="存在しないテキスト", suggested_value="置換後")
+        ],
+        actionable="追記すべき文章",
+    )
 
     out = await agent.try_local_patch(
         TEXT,
@@ -160,8 +197,18 @@ async def test_span_patch_disabled_falls_back_to_actionable(monkeypatch: pytest.
             {"audit_id": "deai", "severity": "medium", "error": None, "feedback": "古代の魔導書"}
         ],
     )
-    assert out is not None and out["strategy"] == "actionable_patch"
-    assert out["text"].endswith("追記すべき文章")
+
+    strat = None if out is None else out.get("strategy")
+    assert strat in expected_strategies, f"strategy={strat} not in {expected_strategies}, events={agent.drain_events()}"
+
+    # 追記契約：quote_patch / quote_patch_legacy / span_polish は「末尾追記」を行わない
+    if strat in ("quote_patch", "quote_patch_legacy", "span_polish"):
+        assert out is not None
+        assert not out["text"].endswith("追記すべき文章"), f"{strat} が追記を行っている: {out['text']!r}"
+
+    # actionable_patch のときだけ従来どおりの追記
+    if strat == "actionable_patch":
+        assert out["text"].endswith("追記すべき文章")
 
 
 async def test_failed_outcomes_defaults_to_none_for_backward_compatibility() -> None:

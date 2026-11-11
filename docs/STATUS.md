@@ -307,3 +307,79 @@ C:\Python314\python.exe scripts\measure_spine_alignment.py --json
 - 段階適用: `SPINE_QUALITY` 環境変数（`off`（既定）/ `soft` / `hard`）
   **`off` では生成プロンプトがバイト単位で従来と同一**であることを
   `tests/e2e/test_spine_end_to_end.py::test_off_quality_produces_byte_identical_prompt` が保証する。
+
+---
+
+### 8. RAG 検索パイプライン baseline（Plan R5 実装前）
+
+| 項目 | 現状（baseline） | 根拠 |
+|:---|:---|:---|
+| `RAG_CONTEXT_INJECTION`（執筆プロンプト注入） | **未実装／OFF**。`context_builder_agent.py` が組み立てる `rag_context` / `compressed_context` は `prompt_composer.compose_writing_prompt` で消費されず、執筆プロンプトに届かない（dead-letter） | `src/agents/context_builder_agent.py:347-474` / `src/agents/prompt_composer.py:115-136` |
+| 検索戦略 | **dense（ベクトル）単一**。`ReflectiveRAGService` は `hybrid_retriever=None` で生成。BM25/RRF（`compute_rrf_scores` k=60）は定義のみで未接続 | `src/backend/tasks/generation_tasks.py:186` / `src/integrations/rag/reflective_rag.py:465-472` |
+| HyDE | **LLM 不使用の固定テンプレート**。擬似文書ではなく規則ベース文面 | `src/integrations/rag/query_reformulator.py:77-96` |
+| リランカー | **`none`**（Noop）。既定モデル `cross-encoder/ms-marco-MiniLM-L-6-v2` は英語専用で日本語小説に不適 | `src/infrastructure/config/settings.py:309-310` / `src/integrations/rag/reranker.py:97-104` |
+| エピソード検索クエリ | `f"{character_name} ep{N}"` の貧弱キーワード | `src/integrations/rag/rag_service.py:872-875` |
+| Prometheus メトリクス | RAG 専用メトリクス無し（既存 `reflective_rag_*` のみ） | `src/backend/observability/metrics.py:500-523` |
+| 契約（off 差分ゼロ） | 現時点では RAG 関連の contract テスト無し | `tests/contract/` 参照 |
+
+**Plan R5 目標**: 上記をすべて実装・接続し、**フラグ全 OFF では執筆プロンプトがバイト単位で変わらない**（`tests/contract/test_rag_prompt_injection.py` で保証）。フラグ ON 後は提案9の評価基盤で `character_consistency` の人手相関・コスト・レイテンシを before/after 測定する。
+
+---
+
+### 9. 物語構造制御の本番配線（Plan S1 実装・2026-11-10）
+
+精査レポート改善提案 #7 の実装。計画書: `plans/PLAN_S1_STRUCTURE_CONTROL_WIRING_27STEPS.md`。
+
+#### 9.1 配線済みの構造制御経路
+
+| 経路 | 実装 | 既定挙動 | SSOT |
+|:---|:---|:---|:---|
+| マクロ骨子 構造ゲート | `src/engine/structure_gate.py` `NarrativeStructureGate` → `expand_macro_skeletons` に hook（`src/engine/default_plot_expander.py`） | **off（何もしない / ゲート生成すらしない）** | `config/narrative_structure.yaml` + env `NARRATIVE_STRUCTURE_GATE` |
+| micro 展開 tension 差分指示 | `expand_single_micro` 内で直前話 tension との差分を検査し、warn 以上で補正指示 1 行を追記 | off（追記なし・バイト同一） | 同上 |
+| プリセット tension curve | `pipeline_steps.py` PlanStep → `get_tension_curve(preset)` → マクロプロンプトへ「参考曲線」注入（O2）＋ ゲート逸脱指標（O3・advisory） | preset 未選択時は None 通し（内蔵既定曲線は出さない） | `src/presets/*/tension/` |
+| 伏線回収 LLM 第 4 投票 | `src/engine/foreshadowing/llm_voter.py`（マスキング・temp 0.2・±500字窓 ≤3000字）→ `ForeshadowingService(llm_voter=...)` | **off（LLM 0 回・現行配点 35/40/25 を完全維持）** | `config/audit_calibration.yaml` `foreshadowing:` + env `ENABLE_FORESHADOW_LLM_VOTE`（off/shadow/mainline） |
+| CLI balance | `src/cli/main.py` → 各パッケージ CLI（dsp/csp/grammar）へ委譲。ghost import を解消 | 常時有効 | — |
+
+#### 9.2 段階解禁ゲート（R1 — 全て満たさないと次の段階へ進まない）
+
+| 段階 | 内容 | 解禁ゲート |
+|:---|:---|:---|
+| ① | spine `soft`（新規書籍のみ） | F1B の K1-K3 合成書籍実測維持 ＋ `tests/contract/test_spine_prompt_injection_*.py` 全緑 |
+| ② | gate `warn`（全書籍・副作用ゼロ） | ① の継続 ＋ `NARRATIVE_STRUCTURE_GATE=warn` で 1 作品（40話）生成し **テンション違反率 ≤ 10% を実測記録** |
+| ③ | gate `enforce`（新規書籍のみ・tension のみ補正） | ② の実測 ＋ `tests/contract/test_structure_gate_off_contract.py` 全緑 ＋ 補正後残余違反が実測で減少 |
+| ④ | 伏線投票 `mainline`（SSOT 配点 35/30/20/15） | `ENABLE_FORESHADOW_LLM_VOTE=shadow` の記録で **一致率 ≥ 0.70** ＋ metadata 過大申告率が有意（`python -m scripts.analyze_foreshadow_vote_agreement`）。**過大申告が無ければ mainline 化は見送り** |
+
+#### 9.3 回帰テスト（全て LLM 0 回・インメモリ/モック）
+
+- `tests/contract/test_structure_gate_off_contract.py` — off で挙動バイト同一・fail-open
+- `tests/contract/test_tension_curve_injection.py` — curve None でバイト同一・spine 優先
+- `tests/unit/narrative_balancer/test_structure_gate_wiring.py` / `test_structure_gate_failopen.py` — 換算・決定論・LLM 0 回・fail-open
+- `tests/unit/engine/test_structure_gate_macro_hook.py` / `test_micro_tension_delta.py` — 配線順序・補正指示
+- `tests/config/test_narrative_structure_setting.py` — SSOT 契約・ハードコード再導入防止（AST）
+- `tests/unit/engine/foreshadowing/`（`test_llm_voter.py` / `test_ensemble_four_votes.py` / `test_vote_shadow_recording.py`）— fail-open・マスキング・legacy 判定同一性・shadow 記録
+- `tests/unit/narrative_balancer/test_cli_balance_imports.py` — CLI 委譲契約
+
+#### 9.4 既知の残作業
+
+- ~~F1B H7（Studio/wizard への per-book spine 選択 UI）~~ → **2026-11-10 完装**。
+  `SimpleModePanel` に 3 択セレクタ（既定 off・「テンプレートは初期値」注記付き）。
+  `NovelContext.spineQuality` → `useNovelGeneration` / `useStreamingWriter` の payload
+  （off は送信しない）→ `EasyModeInput.spine_quality` → `execute_generation` で消費。
+  バックエンドの `None` は env 既定 `SPINE_QUALITY` に倒れる（従来互換）。
+- R1-②/③/④ の実測は運用（1 作品分の shadow/warn 生成）が必要
+
+---
+
+### 10. 改稿（パッチ / 教訓）baseline（Plan H8 実装前）
+
+| 項目 | 現状（baseline） | 根拠 |
+|:---|:---|:---|
+| 改稿パッチ方式 | `UnifiedAuditor.actionable_patch` は**本文末尾へ追記**（`drafted_text + "\n\n" + actionable_patch`）。置換ではないため文脈矛盾が残留しうる | `src/agents/audit_agent/agent.py:704-722` / `src/backend/workflows/writing_langgraph.py:585-600`（デッドパス） |
+| ProseRefinerAgent fail-open | LLM 未設定時に `response = prompt` — **プロンプト文字列自体が本文に混入する** | `src/agents/writing/prose_refiner_agent.py:167-168` |
+| actionable_patch schema | 単一文字列のみ。置換対象 `original_quote` は非要求（`improved_suggestion` と `original_quote` を持つ `ActionableDiff` は 8専門家のみ） | `src/models/unified_audit.py:25` / `src/agents/prompts/unified_audit_prompt.py:31` |
+| 監査失敗教訓 | **話横断で永続化されない**。`failed_audits` は artifacts 内で 1 話のみ。同一失敗が次話以降で再発する | `src/agents/audit_agent/agent.py:1058-1132` |
+| 設定フラグ | 無し（`ENABLE_AUDIT_QUOTE_PATCH` / `ENABLE_AUDIT_LESSONS` 未定義） | `src/agents/audit_agent/config.py` grep 確認 |
+| Prometheus メトリクス | 改稿・教訓専用メトリクス無し | `src/backend/observability/metrics.py` grep 確認 |
+| 契約（off 差分ゼロ） | H8 関連の contract テスト無し | `tests/contract/` 参照 |
+
+**Plan H8 目標**: `quote_patch`（`original_quote` 必須の検証付き置換）と `audit_lessons`（話横断教訓メモリ）を追加。**フラグ全 OFF では改稿・教訓経路の挙動をバイト単位で変えない**（`tests/contract/test_h8_quote_patch_contract.py` / `test_h8_lessons_prompt_injection.py` で保証）。フラグ ON 後は提案9の評価基盤でパッチ採用率・再合格率・同 dimension 再発率を before/after 測定する。

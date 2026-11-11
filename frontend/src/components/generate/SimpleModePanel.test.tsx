@@ -129,7 +129,7 @@ describe('SimpleModePanel カード選択', () => {
   });
 
   it('カード選択で style_key と chars_per_ep が反映される', async () => {
-    // style_key の 반영先は startGeneration / startStreaming に渡る引数
+    // style_key の 반映先は startGeneration / startStreaming に渡る引数
     // （SimpleModePanel.tsx:451,462）なので、その出力で観測する。
     //
     // なお「文体の雰囲気」select dropdown で hot_blooded を直接見ることはできない。
@@ -158,5 +158,40 @@ describe('SimpleModePanel カード選択', () => {
     expect(startGeneration).toHaveBeenCalledWith('hot_blooded');
     fireEvent.click(screen.getByTestId('btn-streaming-generate'));
     expect(startStreaming).toHaveBeenCalledWith('hot_blooded');
+  });
+});
+
+describe('SimpleModePanel 構造テンプレート適用レベル（PLAN_S1 R2 / F1B H7・I6）', () => {
+  beforeEach(() => vi.unstubAllGlobals());
+
+  it('既定選択が "off" であること', async () => {
+    setup(REAL_API_CARDS);
+    const select = await screen.findByTestId('spine-quality-select') as HTMLSelectElement;
+    expect(select.value).toBe('off');
+  });
+
+  it('「テンプレートは初期値」の注記が表示されること', async () => {
+    setup(REAL_API_CARDS);
+    const note = await screen.findByTestId('spine-quality-note');
+    expect(note.textContent).toContain('テンプレートは初期値');
+  });
+
+  it('選択レベルが props (setSpineQuality) に反映されること', async () => {
+    // ペイロードへの反映は useNovelGeneration / useStreamingWriter が担うため、
+    // ここでは状態更新の伝播（setSpineQuality 呼び出し）を検証する。
+    const setSpineQuality = vi.fn();
+    setup(REAL_API_CARDS, { spineQuality: 'off', setSpineQuality });
+    const select = await screen.findByTestId('spine-quality-select');
+    fireEvent.change(select, { target: { value: 'soft' } });
+    expect(setSpineQuality).toHaveBeenCalledWith('soft');
+    fireEvent.change(select, { target: { value: 'hard' } });
+    expect(setSpineQuality).toHaveBeenCalledWith('hard');
+  });
+
+  it('選択肢は off / soft / hard の 3 択のみであること', async () => {
+    setup(REAL_API_CARDS);
+    const select = await screen.findByTestId('spine-quality-select');
+    const values = Array.from(select.querySelectorAll('option')).map((o) => o.value);
+    expect(values).toEqual(['off', 'soft', 'hard']);
   });
 });

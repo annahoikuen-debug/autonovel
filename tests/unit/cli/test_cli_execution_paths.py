@@ -25,45 +25,72 @@ def _ns(**kw):
 
 
 class TestCmdBalance:
+    """PLAN_S1 N1: 統一 CLI ``balance`` は各パッケージ CLI へ委譲する。
+
+    旧実装 (存在しない ``src.narrative_balancer.*_balancer`` モジュールの import) の
+    テストは N1 で意味を失ったため、委譲契約のテストに置き換えた。
+    """
+
     def test_unknown_type(self, capsys):
         assert cmd_balance(_ns(type="nope")) == 1
         assert "Unknown balancer type" in capsys.readouterr().err
 
     def test_import_error(self, capsys, monkeypatch):
-        # 存在しないモジュールを注入して ImportError を起こす
-        monkeypatch.setitem(sys.modules, "src.narrative_balancer.dsp_balancer", None)
-        assert cmd_balance(_ns(type="dsp")) == 1
+        # 委譲先のパッケージ CLI import を失敗させる
+        monkeypatch.setitem(sys.modules, "src.narrative_balancer.dsp.cli", None)
+        assert cmd_balance(_ns(type="dsp", input="in.json", output="out.json")) == 1
         assert "not available" in capsys.readouterr().err
 
-    @pytest.mark.parametrize("kind,modname", [
-        ("dsp", "src.narrative_balancer.dsp_balancer"),
-        ("csp", "src.narrative_balancer.csp_balancer"),
-        ("grammar", "src.narrative_balancer.grammar_balancer"),
-    ])
-    def test_each_type_runs(self, capsys, monkeypatch, kind, modname):
-        created = {}
+    @pytest.mark.parametrize(
+        "kind,expected_flag",
+        [
+            ("dsp", "--input"),
+            ("csp", "--state"),
+            ("grammar", "--input"),
+        ],
+    )
+    def test_each_type_delegates_with_correct_args(self, capsys, monkeypatch, kind, expected_flag):
+        """委譲先 CLI に正しい引数名 (dsp/grammar=--input, csp=--state) で渡ること。"""
+        recorded: dict = {}
 
-        class FakeBalancer:
-            def run(self):
-                created["ran"] = True
-                return "R"
+        def fake_main(argv):
+            recorded["argv"] = list(argv)
+            return 0
 
-        module = types.ModuleType(modname)
-        module.__dict__[kind.capitalize() + "Balancer"] = lambda: FakeBalancer()
-        monkeypatch.setitem(sys.modules, modname, module)
-        assert cmd_balance(_ns(type=kind)) == 0
-        assert created.get("ran")
-        assert f"[balance:{kind}]" in capsys.readouterr().out
+        cli_path = f"src.narrative_balancer.{kind}.cli"
+        module = types.ModuleType(cli_path)
+        module.main = fake_main
+        monkeypatch.setitem(sys.modules, cli_path, module)
+        rc = cmd_balance(_ns(type=kind, input="in.json", output="out.json", config=None))
+        assert rc == 0
+        argv = recorded["argv"]
+        assert expected_flag in argv
+        assert "--output" in argv
+        assert "in.json" in argv and "out.json" in argv
 
-    def test_balancer_without_run(self, capsys, monkeypatch):
-        class NoRun:
-            pass
+    def test_config_passthrough_for_dsp_and_csp(self, capsys, monkeypatch):
+        """--config は dsp / csp にのみパススルーされること (grammar は非対応)。"""
+        calls: list[list[str]] = []
 
-        module = types.ModuleType("src.narrative_balancer.dsp_balancer")
-        module.DspBalancer = NoRun
-        monkeypatch.setitem(sys.modules, "src.narrative_balancer.dsp_balancer", module)
-        assert cmd_balance(_ns(type="dsp")) == 0
-        assert "completed: None" in capsys.readouterr().out
+        def make_fake(recorder):
+            def fake_main(argv):
+                recorder.append(list(argv))
+                return 0
+
+            return fake_main
+
+        for kind in ("dsp", "csp", "grammar"):
+            calls.clear()
+            cli_path = f"src.narrative_balancer.{kind}.cli"
+            module = types.ModuleType(cli_path)
+            module.main = make_fake(calls)
+            monkeypatch.setitem(sys.modules, cli_path, module)
+            rc = cmd_balance(_ns(type=kind, input="i", output="o", config="c.yaml"))
+            assert rc == 0
+            if kind in ("dsp", "csp"):
+                assert "--config" in calls[0] and "c.yaml" in calls[0]
+            else:
+                assert "--config" not in calls[0]
 
 
 class TestCmdExport:

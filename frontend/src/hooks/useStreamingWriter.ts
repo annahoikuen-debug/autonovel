@@ -61,6 +61,7 @@ export function useStreamingWriter(options?: UseStreamingWriterOptions) {
     setGenerationState,
     contentLengthLimit,
     targetEpisodes,
+    spineQuality,
     llmConfig,
   } = useNovelContext();
   const [isStreaming, setIsStreaming] = useState(false);
@@ -163,6 +164,8 @@ export function useStreamingWriter(options?: UseStreamingWriterOptions) {
               target_episodes: targetEpisodes || 1,
               // 画面で選んだ文体プリセット（従来は渡せず、選択が反映されなかった）
               ...(styleKey && styleKey !== "auto" ? { style_override: { style_id: styleKey } } : {}),
+              // PLAN_S1 R2 / F1B H7: 構造テンプレート適用レベル（off は送信しない）
+              ...(spineQuality && spineQuality !== "off" ? { spine_quality: spineQuality } : {}),
               ...( (llmConfig && (llmConfig.api_key || llmConfig.provider)) ? { llm_config: llmConfig } : {} ),
             },
             controller.signal

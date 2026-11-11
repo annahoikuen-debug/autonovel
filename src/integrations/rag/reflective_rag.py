@@ -7,6 +7,7 @@ GraphRAG consistency checks.
 
 from __future__ import annotations
 
+import asyncio
 import inspect
 import time
 from collections import Counter
@@ -19,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.integrations.rag.rag_service import GraphRAGService, SearchResult
 from src.integrations.vector_store import BaseVectorStore
 from src.engine.nlp.japanese_tokenizer import JapaneseTokenizer
+from src.backend.config import settings
 from src.integrations.rag.query_reformulator import QueryReformulator, QueryReformulationMode
 
 try:
@@ -139,6 +141,9 @@ class ReflectiveRAGService:
         self.tokenizer = tokenizer or JapaneseTokenizer()
         self.hybrid_retriever = hybrid_retriever
         self.query_reformulator = query_reformulator or QueryReformulator()
+        # Plan R5 C2/C3: hybrid_retriever に注入する現在の DB セッション。
+        # retrieve_with_reflection の冒頭で attach_session_to_hybrid によりセットされる。
+        self._session: Any = None
         self.top_k = top_k
         self.max_iter = max_iter
         self.relevance_threshold = relevance_threshold
@@ -463,10 +468,50 @@ class ReflectiveRAGService:
 
                 try:
                     if self.hybrid_retriever is not None:
-                        candidates = self.hybrid_retriever.search(
+                        # Plan R5 C2/C3: hybrid_retriever の dense/sparse に現在の DB セッションを注入し、
+                        # CPU-bound の BM25 検索を to_thread で実行してイベントループをブロックしない。
+                        hybrid = self.hybrid_retriever
+                        dense = getattr(hybrid, "dense_retriever", None)
+                        if dense is not None:
+                            dense.session = session
+                        sparse = getattr(hybrid, "sparse_retriever", None)
+                        if sparse is not None:
+                            sparse.session = session
+                        candidates = await asyncio.to_thread(
+                            hybrid.search,
                             query=current_query,
                             top_k=self.initial_fetch_k,
                         )
+                    elif settings.RAG_HYDE_MODE == "llm" and getattr(
+                        self.query_reformulator, "llm_adapter", None
+                    ) is not None:
+                        # Plan R5 D2: HyDE 2-query RRF。元クエリと LLM 生成の擬似文書の両方で
+                        # dense 検索し、compute_rrf_scores で融合する。失敗時は元クエリ単一に倒す。
+                        try:
+                            hypothetical = await self.query_reformulator.generate_hypothetical_chunk_async(
+                                current_query,
+                                genre="fantasy",
+                                timeout_seconds=settings.RAG_HYDE_TIMEOUT_SECONDS,
+                            )
+                            queries = [current_query, hypothetical]
+                        except Exception:
+                            queries = [current_query]
+
+                        merged: dict[str, Any] = {}
+                        for q in queries:
+                            docs = self.rag_service.search_similar_chunks(
+                                session,
+                                query=q,
+                                limit=self.initial_fetch_k,
+                                min_score=0.0,
+                            )
+                            if inspect.iscoroutine(docs):
+                                docs = await docs
+                            for d in docs:
+                                did = getattr(d, "id", None) or getattr(d, "doc_id", None)
+                                if did and did not in merged:
+                                    merged[did] = d
+                        candidates = list(merged.values())[: self.initial_fetch_k]
                     else:
                         candidates = self.rag_service.search_similar_chunks(
                             session,
@@ -494,7 +539,14 @@ class ReflectiveRAGService:
                     combined = 0.6 * cos_sim + 0.4 * ctx_fit
                     scored.append((doc, combined, cos_sim, ctx_fit, ctx_fit_result))
 
-                filtered = [(d, s, c, f, r) for d, s, c, f, r in scored if s >= relevance_threshold]
+                # Plan R5 C4: hybrid は RRF 正規化スコア (0-1) で cosine 閾値 (0.5) と意味が異なるため、
+                # hybrid 有効時は RAG_HYBRID_MIN_SCORE を使う（dense 単一時は従来の relevance_threshold）。
+                effective_threshold = (
+                    settings.RAG_HYBRID_MIN_SCORE
+                    if self.hybrid_retriever is not None
+                    else relevance_threshold
+                )
+                filtered = [(d, s, c, f, r) for d, s, c, f, r in scored if s >= effective_threshold]
 
                 # Compute convergence metrics
                 top_scores = [s for _, s, _, _, _ in scored[:top_k]]
@@ -589,6 +641,10 @@ class ReflectiveRAGService:
                             if idx in rerank_map:
                                 # Blend original combined score with cross-encoder score
                                 new_combined = 0.5 * combined + 0.5 * rerank_map[idx]
+                                try:
+                                    doc.metadata["rerank_score"] = rerank_map[idx]
+                                except Exception:
+                                    pass
                                 new_scored.append((doc, new_combined, cos_sim, ctx_fit, ctx_fit_result))
                             else:
                                 new_scored.append((doc, combined, cos_sim, ctx_fit, ctx_fit_result))
@@ -596,7 +652,14 @@ class ReflectiveRAGService:
                         new_scored.extend(scored[self.convergence_config.rerank_top_n :])
                         scored = new_scored
                         # Re-filter after reranking
-                        filtered = [(d, s, c, f, r) for d, s, c, f, r in scored if s >= relevance_threshold]
+                        # Plan R5 C4: hybrid は RRF 正規化スコア (0-1) で cosine 閾値 (0.5) と意味が異なるため、
+                        # hybrid 有効時は RAG_HYBRID_MIN_SCORE を使う（dense 単一時は従来の relevance_threshold）。
+                        effective_threshold = (
+                            settings.RAG_HYBRID_MIN_SCORE
+                            if self.hybrid_retriever is not None
+                            else relevance_threshold
+                        )
+                        filtered = [(d, s, c, f, r) for d, s, c, f, r in scored if s >= effective_threshold]
                         # Update negative documents after reranking
                         neg_documents = [d for d, s, c, f, r in scored if s < relevance_threshold]
                         all_history[-1]["reranked"] = True

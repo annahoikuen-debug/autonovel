@@ -670,8 +670,15 @@ class GraphRAGService:
         """Cross-Encoder Reranker で再ランキング."""
         if not documents:
             return []
-        reranker = self.get_reranker()
-        return await reranker.rerank(query, documents, top_k)
+        start = time.perf_counter()
+        try:
+            reranker = self.get_reranker()
+            return await reranker.rerank(query, documents, top_k)
+        finally:
+            from src.backend.observability.metrics import record_rag_rerank_latency
+
+            backend = (settings.RERANKER_BACKEND or "none").lower()
+            record_rag_rerank_latency("unknown", backend, time.perf_counter() - start)
 
     def _estimate_tokens(self, text: str) -> int:
         """概算トークン数（日本語: 文字数/1.5, 英語: 単語数*1.3）."""

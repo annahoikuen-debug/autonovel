@@ -396,7 +396,9 @@ def _run_alembic_upgrade(sync_url: str) -> None:
         cfg = Config(str(ini_path))
         cfg.set_main_option("script_location", str(ROOT_DIR / "src" / "backend" / "alembic"))
         cfg.set_main_option("sqlalchemy.url", sync_url.replace("%", "%%"))
-        command.upgrade(cfg, "head")
+        # 複数 head（例: 0035_digest_rollups と 0035_audit_lessons の並存）に対応するため
+        # "heads" を指定し、全 head を適用する。
+        command.upgrade(cfg, "heads")
     finally:
         if previous_alembic_url is None:
             os.environ.pop("ALEMBIC_DATABASE_URL", None)

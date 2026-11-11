@@ -33,6 +33,23 @@ panel:
     weight: 1.0
 score_calibration:
   priors_source: builtin
+# PLAN_S1 P3: 伏線回収 LLM 第 4 投票の配点・閾値 SSOT
+# mode: "off" (既定・LLM 0 回) / "shadow" (記録のみ・現行配点 35/40/25) / "mainline" (第 4 票加算)
+# weights は mainline 時の配点 (合計 100)。閾値は現行値を維持。
+foreshadowing:
+  mode: "off"
+  weights:
+    contract: 35
+    metadata: 30
+    syntax: 20
+    llm_vote: 15
+  thresholds:
+    resolved: 75
+    progressed: 35
+  no_metadata_thresholds:
+    resolved: 55
+    progressed: 15
+  temperature: 0.2
 bias_correction:
   enabled: false
   config_path: config/llm_bias_correction.yaml

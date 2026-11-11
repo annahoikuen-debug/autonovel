@@ -105,7 +105,7 @@ class TestPlanStep:
         with patch("src.backend.engine_narrative.WavePatternAnalyzer") as wave_cls, \
              patch("config.project_context.ProjectContext") as pc:
             pattern = MagicMock()
-            pattern.catharsis_points = [1, 2]
+            pattern.catharsis_indices = [1, 2]
             pattern.model_dump.return_value = {"pattern_type": "x"}
             wave_cls.return_value.analyze.return_value = pattern
             pc.get_setting.return_value = 65
@@ -321,7 +321,7 @@ class TestCatharsisAnalysisStep:
         with patch("src.backend.engine_narrative.WavePatternAnalyzer") as wave_cls, \
              patch("config.project_context.ProjectContext") as pc:
             pattern = MagicMock()
-            pattern.catharsis_points = [3]
+            pattern.catharsis_indices = [3]
             pattern.model_dump.return_value = {"a": 1}
             wave_cls.return_value.analyze.return_value = pattern
             pc.get_setting.side_effect = lambda k, d: d

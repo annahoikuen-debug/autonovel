@@ -7,10 +7,19 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from src.integrations.rag.query_composer import QueryComposer
+
 from src.agents.skill_base import SkillAgent
 from src.agents.orchestrator import AgentContext, AgentResult, AgentName
 from src.engine.compression.models import ProtectedContext, SceneFlowHistory
 from src.engine.episode_context import EpisodeContextBuilder
+
+from src.agents.audit_agent.config import (
+    get_lesson_inject_max_items,
+    get_lesson_min_occurrences,
+    is_lesson_enabled,
+)
+from src.audit.lesson_store import AuditLessonRepository, AuditLessonService
 
 # T6 Step 2: `if hasattr(self, "logger")` は `SkillAgent` に属性が無いため恒久的に
 # False であり、警告を無言化していた。モジュールレベル `logger` を単一の解決先とする。
@@ -346,8 +355,15 @@ class ContextBuilderAgent(SkillAgent):
         # Step 21 & 62: 反射的検索 (Reflective RAG) の実行（シーン意図の注入）
         rag_context = []
         if reflective_rag is not None:
-            query = plot_dict.get("summary") or plot_dict.get("title") or f"episode {ep_num} context"
-            scene_intent = plot_dict.get("summary", "")
+            # Plan R5 C5: 貧弱クエリ f"{name} ep{N}" を脱し、プロット/シーン/前話末尾から合成
+            _qc = QueryComposer()
+            _qc_result = _qc.compose_episode_query(
+                plot_summary=plot_dict.get("summary") or "",
+                scenes=plot_dict.get("scenes") or [],
+                previous_tail=prev_ctx or "",
+            )
+            query = _qc_result["query"]
+            scene_intent = query
             try:
                 import inspect
 
@@ -460,6 +476,30 @@ class ContextBuilderAgent(SkillAgent):
         else:
             foreshadowing_source = plot_dict.get("foreshadowings", [])
 
+        # H8 E5: 監査失敗教訓を取得（fail-open: セッション未取得/flag OFF 時は空リスト）
+        audit_lessons_ctx: list[Any] = []
+        if session is not None and book_id is not None and is_lesson_enabled():
+            try:
+                lesson_repo = AuditLessonRepository(session)
+                lesson_service = AuditLessonService(lesson_repo)
+                lessons = await lesson_service.get_active_lessons(
+                    book_id=book_id,
+                    limit=get_lesson_inject_max_items(),
+                    min_occurrences=get_lesson_min_occurrences(),
+                )
+                audit_lessons_ctx = [
+                    {
+                        "dimension": l.dimension,
+                        "lesson_text": l.lesson_text,
+                        "severity": l.severity,
+                        "occurrences": l.occurrences,
+                        "last_seen_episode": l.last_seen_episode,
+                    }
+                    for l in lessons
+                ]
+            except Exception:
+                logger.warning("audit_lessons_ctx 取得に失敗（空リストで継続）", exc_info=True)
+
         return {
             "plot": plot_dict,
             "target_word_count": target_word_count,
@@ -478,6 +518,8 @@ class ContextBuilderAgent(SkillAgent):
             "contract_foreshadowings": contract_foreshadowings,
             # Step 7: 3層ローリング記憶をコンテキストに注入
             "three_layer_context": three_layer_context,
+            # H8 E5: 監査失敗教訓（fail-open: セッション未取得/flag OFF 時は空リスト）
+            "audit_lessons_ctx": audit_lessons_ctx,
         }
 
     async def _load_db_foreshadowings(

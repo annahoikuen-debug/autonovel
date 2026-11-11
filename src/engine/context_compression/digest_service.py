@@ -23,10 +23,52 @@ MAX_DIGEST_LENGTH = 150
 TARGET_DIGEST_LENGTH = 100
 
 
+async def _call_digest_llm(llm: Any, prompt: str) -> str:
+    """digest 用 LLM 呼び出し（generate / ainvoke / predict / callable 対応）。
+
+    失敗時は空文字を返す（fail-open）。
+    """
+    if llm is None:
+        return ""
+    try:
+        if hasattr(llm, "generate"):
+            res = llm.generate(prompt=prompt, temperature=0.1)
+            if inspect.isawaitable(res):
+                res = await res
+        elif hasattr(llm, "ainvoke"):
+            res = await llm.ainvoke(prompt)
+        elif hasattr(llm, "predict"):
+            res = llm.predict(prompt)
+            if inspect.isawaitable(res):
+                res = await res
+        elif callable(llm):
+            res = llm(prompt)
+            if inspect.isawaitable(res):
+                res = await res
+        else:
+            return ""
+    except Exception as e:  # noqa: BLE001
+        logger.warning(f"LLM generation failed for digest: {e}")
+        return ""
+
+    if isinstance(res, str):
+        return res
+    if hasattr(res, "text"):
+        return res.text
+    if hasattr(res, "content"):
+        return str(res.content)
+    if isinstance(res, dict) and "content" in res:
+        return str(res["content"])
+    # どの属性も持たない（例: int 42 など）場合は空文字を返し、
+    # generate_episode_digest 側のフォールバック抽出に任せる（元挙動と同一）。
+    return ""
+
+
 async def generate_episode_digest(
     llm: Any,
     draft_text: str,
     ep_num: int,
+    cod_rounds: int = 1,
 ) -> str:
     """エピソード本文から後続話に影響する「確定した客観的事実」のみを100文字程度で要約抽出する。
 
@@ -34,6 +76,8 @@ async def generate_episode_digest(
         llm: LLMクライアント（generate, ainvoke, predict, または呼び出し可能オブジェクト）
         draft_text: 対象エピソードの本文テキスト
         ep_num: 対象エピソードの話数
+        cod_rounds: Chain-of-Density 圧縮パス数。1 で現行の 1 pass と同一。
+            2 以上で、1 pass 目の要約をさらに圧縮するパスを (cod_rounds-1) 回追加。
 
     Returns:
         150字以内の確定事実ダイジェスト文字列
@@ -51,45 +95,20 @@ async def generate_episode_digest(
         f"【客観的事実ダイジェスト（100字以内）】"
     )
 
-    digest_text = ""
+    digest_text = await _call_digest_llm(llm, prompt)
 
-    if llm is not None:
-        try:
-            # 1. llm.generate(prompt=..., temperature=0.1)
-            if hasattr(llm, "generate"):
-                res = llm.generate(prompt=prompt, temperature=0.1)
-                if inspect.isawaitable(res):
-                    res = await res
-                if isinstance(res, str):
-                    digest_text = res
-                elif hasattr(res, "text"):
-                    digest_text = res.text
-                elif hasattr(res, "content"):
-                    digest_text = str(res.content)
-                elif isinstance(res, dict) and "content" in res:
-                    digest_text = str(res["content"])
-            # 2. llm.ainvoke(prompt)
-            elif hasattr(llm, "ainvoke"):
-                res = await llm.ainvoke(prompt)
-                if hasattr(res, "content"):
-                    digest_text = str(res.content)
-                else:
-                    digest_text = str(res)
-            # 3. llm.predict(prompt)
-            elif hasattr(llm, "predict"):
-                res = llm.predict(prompt)
-                if inspect.isawaitable(res):
-                    res = await res
-                digest_text = str(res)
-            # 4. callable
-            elif callable(llm):
-                res = llm(prompt)
-                if inspect.isawaitable(res):
-                    res = await res
-                digest_text = str(res)
-        except Exception as e:
-            logger.warning(f"LLM generation failed for episode {ep_num} digest: {e}")
-            digest_text = ""
+    # CoD 2 回目以降: 既存要約をさらに圧縮して密度を高める
+    for _ in range(max(0, cod_rounds - 1)):
+        if not digest_text or not digest_text.strip():
+            break
+        compress_prompt = (
+            f"以下は既に要約されたテキストです。\n"
+            f"冗長な表現や接続詞を省き、情報密度を高めて、"
+            f"{TARGET_DIGEST_LENGTH}字以内で日本語に圧縮してください。\n\n"
+            f"【要約テキスト】\n{digest_text}\n\n"
+            f"【圧縮要約（{TARGET_DIGEST_LENGTH}字以内）】"
+        )
+        digest_text = await _call_digest_llm(llm, compress_prompt)
 
     # フォールバック抽出: LLMが使えないか失敗した場合は文末のキー事実を簡易抽出
     if not digest_text or not digest_text.strip():
@@ -194,12 +213,14 @@ class EpisodeDigestService:
         book_id: int,
         episode_num: int,
         draft_text: str,
+        cod_rounds: int = 1,
     ) -> str:
         """エピソード本文から事実ダイジェストを生成し、DBに保存する。"""
         digest_text = await generate_episode_digest(
             llm=self.llm,
             draft_text=draft_text,
             ep_num=episode_num,
+            cod_rounds=cod_rounds,
         )
 
         if self.repo is not None:

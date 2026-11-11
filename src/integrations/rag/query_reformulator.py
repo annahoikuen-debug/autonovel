@@ -6,6 +6,7 @@ and generates hypothetical document embeddings (HyDE) to prevent semantic drift.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Any, Literal
 
@@ -94,3 +95,38 @@ class QueryReformulator:
             "これらは古くから体系化された伝承や記録として残されており、"
             "登場人物たちの行動や劇中の対立に直接影響を及ぼす。"
         )
+
+    async def generate_hypothetical_chunk_async(
+        self,
+        query: str,
+        genre: str = "fantasy",
+        keywords: list[str] | None = None,
+        timeout_seconds: float = 1.5,
+    ) -> str:
+        """LLM ベースで擬似文書（HyDE）を生成する。
+
+        失敗・タイムアウト時はルールベーステンプレートへフォールバックし、
+        執筆を止めない（fail-open）。
+        """
+        if self.llm_adapter and hasattr(self.llm_adapter, "generate"):
+            try:
+                kw_part = f"特に{'、'.join(keywords[:3])}に関する記述。" if keywords else ""
+                prompt = (
+                    "あなたは小説の世界観設定記録を書く編集者です。\n"
+                    f"検索クエリ: {query}\n"
+                    f"関連キーワード: {kw_part}\n"
+                    "上記クエリに関連する、300 字前後の擬似的な世界観設定記述を"
+                    "物語文調（地の文・設定資料調）で 1 段落生成してください。"
+                )
+                try:
+                    res = await asyncio.wait_for(
+                        self.llm_adapter.generate(prompt), timeout=timeout_seconds
+                    )
+                except TypeError:
+                    # 同期 generate の可能性
+                    res = self.llm_adapter.generate(prompt)
+                if isinstance(res, str) and res.strip():
+                    return res.strip()
+            except Exception:
+                pass
+        return self.generate_hypothetical_chunk(query, genre=genre, keywords=keywords)

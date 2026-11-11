@@ -152,6 +152,22 @@ class UnifiedAuditor:
             data = json.loads(json_match.group(0))
             if not isinstance(data, dict):
                 raise ValueError(f"JSON のトップレベルが dict ではありません: {type(data)!r}")
+
+            # H8: LLM が actionable_patch を構造化オブジェクト
+            # {"original_quote":..., "replacement":..., "rationale":...} で返す場合に対応。
+            # QualitativeAudit.actionable_patch は str | None（後方互換）のため、
+            # 構造化オブジェクトを actionable_quote / actionable_replacement に分解する。
+            raw_patch = data.get("actionable_patch")
+            if isinstance(raw_patch, dict):
+                data["actionable_quote"] = str(raw_patch.get("original_quote", "") or "") or None
+                data["actionable_replacement"] = (
+                    str(raw_patch.get("replacement", "") or "") or None
+                )
+                data["actionable_patch"] = None  # 文字列互換フィールドはクリア（structured 優先）
+            elif raw_patch is not None:
+                # 従来の文字列のみ → actionable_quote へ退避（quote_patch 経路で利用）
+                data["actionable_quote"] = str(raw_patch)
+
             return QualitativeAudit(**data), False
         except Exception as e:
             logger.error(f"UnifiedAuditor LLM response parse failed: {e!r}")
@@ -223,15 +239,23 @@ class UnifiedAuditor:
                 )
             )
 
-        # 4. 定性評価からの推奨パッチ
-        if qual.actionable_patch:
+        # 4. 定性評価からの推奨パッチ（H8: structured actionable_quote / replacement 優先、
+        # 従来の actionable_patch 文字列は後方互換でフォールバック）
+        patch_quote = qual.actionable_quote or ""
+        patch_replacement = qual.actionable_replacement or ""
+        if not patch_quote and qual.actionable_patch:
+            # 従来の文字列のみ: quote は不明なので replacement を suggested_value に、
+            # current_value は空（SafeReplacer はスキップ、quote_patch_legacy が段落置換で拾う）
+            patch_replacement = qual.actionable_patch
+        if patch_quote or patch_replacement:
             conflicts.append(
                 ConflictItemSchema(
                     category="hook" if qual.hook_score < 70 else "character",
                     severity="high" if qual.overall_score < 70 else "medium",
                     title="AI編集者による推奨パッチ",
                     description=qual.critique or "文章の引き込みと一貫性を強化するためのパッチです。",
-                    suggested_value=qual.actionable_patch,
+                    current_value=patch_quote,
+                    suggested_value=patch_replacement,
                     confidence=0.90,
                 )
             )

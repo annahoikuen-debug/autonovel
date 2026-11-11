@@ -123,6 +123,38 @@ pytest -m perf tests/perf/ -v -s
 | `NARRATIVE_MEMORY` | 物語構造 RAG |
 | `EPISODE_MEMORY` | エピソード本文 RAG |
 
+## 8. Plan R5: 執筆プロンプトへの検索結果注入 (2026-11-10 実装)
+
+執筆パイプラインで組み立てられていた `rag_context` が執筆プロンプトに届いていなかった (dead-letter) ギャップを埋め、dense + BM25 (RRF k=60) のハイブリッド検索・HyDE・多言語リランカーを配線する。
+
+### 8.1 新規環境変数 (`.env`)
+
+| 変数 | 既定 | 意味 |
+|---|---|---|
+| `RAG_CONTEXT_INJECTION` | `false` | 執筆プロンプトへ RAG コンテキストを注入するか。`false` で既存挙動をバイト同一維持 |
+| `RAG_CONTEXT_MAX_CHARS` | `800` | 注入テキストの上限文字数 |
+| `RAG_CONTEXT_TOP_K` | `5` | 注入する文書の上限件数 |
+| `RAG_HYBRID_ENABLED` | `false` | dense + BM25 を RRF で融合するか。`false` で dense 単一 |
+| `RAG_BM25_MAX_DOCS` | `5000` | book スコープの BM25 索引化チャンク上限。超過で dense フォールバック |
+| `RAG_HYDE_MODE` | `template` | `off`/`template`(既定・規則ベース)/`llm`(擬似文書生成) |
+| `RAG_HYDE_TIMEOUT_SECONDS` | `1.5` | HyDE LLM 呼び出しのタイムアウト |
+| `RAG_HYBRID_MIN_SCORE` | `0.1` | hybrid 時の初期フィルタ閾値 (RRF 正規化スコア用) |
+
+`RERANKER_BACKEND` の既定は `none` のまま。`simple` / `cross_encoder` は A/B 比較後、`docs/STATUS.md` の Plan R5 F3 判定で既定変更を検討。
+
+### 8.2 配線概要
+
+1. `context_builder_agent.py` でプロット/シーン/前話末尾から `QueryComposer` (LLM 0回・決定論) が検索クエリを合成 (`f"{name} ep{N}"` の貧弱クエリを置換)。
+2. `ReflectiveRAGService` は `src/integrations/rag/factory.py` `build_reflective_rag()` 経由で構築。`RAG_HYBRID_ENABLED` 時は `HybridRetriever` (dense GraphRAG + BM25 `EpisodeBM25Index`, RRF k=60) を組み立てる。BM25 は `asyncio.to_thread` で実行しイベントループをブロックしない。
+3. `RAG_HYDE_MODE=llm` 時は元クエリ + LLM 生成擬似文書の 2 クエリで dense 検索し RRF 融合 (D2)。失敗・タイムアウトは元クエリ単一にフォールバック。
+4. リランク結果は `SearchResult.metadata["rerank_score"]` に記録。`cross_encoder` 未導入時は Noop にフォールバック (fail-open)。
+5. `PromptComposer._format_rag_context` で整理 (スコア降順・top_k・is_forbidden 除外・max_chars 上限) し、`final_writing_prompt.j2` の `{% if rag_context_block %}` ガード付きセクションとして three_layer_ctx の直後に注入。
+
+### 8.3 契約
+
+- フラグ全 OFF (既定) → 執筆プロンプトがバイト単位で不変 (`tests/contract/test_rag_prompt_injection.py`)。
+- 検索/整形/リランクの任何の失敗 → 執筆継続、`rag_context=[]` (`tests/regression/test_rag_fail_open.py`)。
+
 監査 CLI:
 
 ```bash

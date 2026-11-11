@@ -20,6 +20,7 @@ from src.models.writing_metadata import WritingMetadata
 from src.engine.foreshadowing.ensemble_judge import EnsembleJudge
 from src.engine.foreshadowing.kpi import ForeshadowingKpiService
 from src.engine.foreshadowing.rescheduler import ForeshadowingRescheduler
+from src.engine.foreshadowing.vote_config import VoteMode
 from src.engine.nlp.foreshadowing_predicate_analyzer import ForeshadowingPredicateAnalyzer
 
 logger = logging.getLogger(__name__)
@@ -36,9 +37,22 @@ class ForeshadowingService:
         self,
         repo: DbForeshadowingRepository,
         predicate_analyzer: Optional[ForeshadowingPredicateAnalyzer] = None,
+        llm_voter: Optional[Any] = None,
     ):
+        """伏線回収サービスを初期化する。
+
+        Args:
+            repo: 伏線リポジトリ
+            predicate_analyzer: 構文解析器 (既定で生成)
+            llm_voter: PLAN_S1 P2 — 任意の LLM 第 4 投票
+                (``src.engine.foreshadowing.llm_voter.ForeshadowingLLMVoter``)。
+                **既定 None = LLM 0 回で現行配点の完全後方互換** (P1 契約)。
+                モードは ``vote_config.get_vote_mode()`` で決める:
+                off → 呼ばない / shadow → 記録のみ / mainline → 配点に加算。
+        """
         self.repo = repo
         self.predicate_analyzer = predicate_analyzer or ForeshadowingPredicateAnalyzer()
+        self.llm_voter = llm_voter
 
     async def check_and_resolve(
         self,
@@ -114,6 +128,10 @@ class ForeshadowingService:
     ) -> Optional[str]:
         """伏線1本の判定・更新・延期を行う。回収された場合はタイトルを返す。"""
         f_id = getattr(f, "id", None)
+        if f_id is None:
+            # 呼び出し元 (check_and_resolve) も None id を除外するが、
+            # 型契約としてもここで隔離する (PLAN_S1: mypy 整流)
+            return None
         target_ep = getattr(f, "target_episode", None)
         # 契約済み = 今回のビートシートでIDが明示されたか、
         # あるいは「回収予定話数が本話」か。
@@ -142,13 +160,70 @@ class ForeshadowingService:
             text=draft_text,
         )
 
+        # PLAN_S1 P2/P4: 任意の LLM 第 4 投票 (既定 off = 呼ばない / LLM 0 回)。
+        # - shadow : 判定に加算せず JSONL に記録 (P4)
+        # - mainline : SSOT 配点 (35/30/20/15) で第 4 票を加算
+        # いかなる失敗も None 投票に倒れ、回収処理は継続する (P3 fail-open)。
+        llm_vote = None
+        vote_mode: VoteMode = "off"
+        try:
+            from src.engine.foreshadowing.vote_config import build_judge_params, get_vote_mode
+
+            vote_mode = get_vote_mode()
+        except Exception as vote_cfg_exc:  # noqa: BLE001
+            logger.debug(f"vote config load skipped: {vote_cfg_exc}")
+            vote_mode = "off"
+
+        if vote_mode != "off" and self.llm_voter is not None:
+            try:
+                llm_vote = await self.llm_voter.vote(
+                    foreshadowing_id=f_id,
+                    foreshadowing_title=getattr(f, "title", "") or "",
+                    foreshadowing_description=getattr(f, "description", "") or "",
+                    keywords=keywords,
+                    draft_text=draft_text,
+                    episode_num=episode_num,
+                )
+            except Exception as vote_exc:  # noqa: BLE001 - P3: 投票失敗は None 扱い
+                logger.debug(f"Foreshadowing LLM vote failed (id={f_id}): {vote_exc}")
+                llm_vote = None
+
+        judge_weights, judge_thresholds = (None, None)
+        try:
+            from src.engine.foreshadowing.vote_config import build_judge_params
+
+            judge_weights, judge_thresholds = build_judge_params(vote_mode)
+        except Exception as params_exc:  # noqa: BLE001
+            logger.debug(f"judge params skipped (legacy weights): {params_exc}")
+
         # Ensemble voting
         judgment = EnsembleJudge.evaluate(
             foreshadowing_id=f_id,
             is_contracted=is_contracted,
             metadata_report=meta_report,
             syntax_analysis=syntax_analysis,
+            llm_vote=llm_vote,
+            weights=judge_weights,
+            thresholds=judge_thresholds,
         )
+
+        # PLAN_S1 P4: shadow モードでは LLM 票を記録する (判定への加算はしない)
+        if vote_mode == "shadow":
+            try:
+                from src.engine.foreshadowing.vote_shadow import record_vote_shadow
+
+                record_vote_shadow(
+                    book_id=book_id,
+                    episode_num=episode_num,
+                    foreshadowing_id=f_id,
+                    foreshadowing_title=getattr(f, "title", "") or "",
+                    llm_action=getattr(llm_vote, "action", None),
+                    judgment_status=judgment.status,
+                    metadata_action=getattr(meta_report, "action", None) if meta_report else None,
+                    syntax_score=judgment.score_breakdown.syntax_score,
+                )
+            except Exception as shadow_exc:  # noqa: BLE001
+                logger.debug(f"vote shadow recording skipped: {shadow_exc}")
 
         prior_status = str(getattr(f, "status", "") or "planted")
         resolved_title: Optional[str] = None

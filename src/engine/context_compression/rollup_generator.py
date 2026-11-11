@@ -94,13 +94,20 @@ class RollupGenerator:
         ep_range: Tuple[int, int],
         member_digests: Dict[int, str],
         llm: Any = None,
+        cod_rounds: Optional[int] = None,
     ) -> Optional[str]:
         """メンバの1話ダイジェストから章要約を生成（≤ block_digest_chars 字）。
 
         Returns:
             章要約テキスト。LLM 未設定・失敗時は None。
+
+        Chain-of-Density (CoD):
+            cod_rounds=1 で現行の 1 pass と同一。
+            cod_rounds>=2 で、1 pass 目の要約を入力としてさらに圧縮するパスを
+            (cod_rounds-1) 回追加し、情報密度を高める。
         """
         effective_llm = llm or self.llm
+        rounds = cod_rounds if cod_rounds is not None else self.cfg.cod_rounds
         if not member_digests or effective_llm is None:
             return None
 
@@ -120,6 +127,19 @@ class RollupGenerator:
                 f"【章要約（{self.cfg.block_digest_chars}字以内）】"
             )
             digest_text = await self._call_llm(prompt)
+
+            # CoD 2 回目以降: 既存要約をさらに圧縮して密度を高める
+            for _ in range(max(0, rounds - 1)):
+                if not digest_text or not digest_text.strip():
+                    break
+                compress_prompt = (
+                    f"以下は既に要約されたテキストです。\n"
+                    f"冗長な表現や接続詞を省き、情報密度を高めて、"
+                    f"{self.cfg.block_digest_chars}字以内で日本語に圧縮してください。\n\n"
+                    f"【要約テキスト】\n{digest_text}\n\n"
+                    f"【圧縮要約（{self.cfg.block_digest_chars}字以内）】"
+                )
+                digest_text = await self._call_llm(compress_prompt)
         finally:
             self.llm = original_llm
 
@@ -136,12 +156,19 @@ class RollupGenerator:
         book_id: int,
         block_rollups: List[Tuple[int, int, str]],
         llm: Any = None,
+        cod_rounds: Optional[int] = None,
     ) -> Optional[str]:
         """章ロールアップから巻要約を生成（≤ volume_digest_chars 字）。
 
         `block_rollups` は (start_ep, end_ep, digest_text) のリスト。
+
+        Chain-of-Density (CoD):
+            cod_rounds=1 で現行の 1 pass と同一。
+            cod_rounds>=2 で、1 pass 目の要約を入力としてさらに圧縮するパスを
+            (cod_rounds-1) 回追加し、情報密度を高める。
         """
         effective_llm = llm or self.llm
+        rounds = cod_rounds if cod_rounds is not None else self.cfg.cod_rounds
         if not block_rollups or effective_llm is None:
             return None
 
@@ -161,6 +188,19 @@ class RollupGenerator:
                 f"【巻要約（{self.cfg.volume_digest_chars}字以内）】"
             )
             digest_text = await self._call_llm(prompt)
+
+            # CoD 2 回目以降: 既存要約をさらに圧縮して密度を高める
+            for _ in range(max(0, rounds - 1)):
+                if not digest_text or not digest_text.strip():
+                    break
+                compress_prompt = (
+                    f"以下は既に要約されたテキストです。\n"
+                    f"冗長な表現や接続詞を省き、情報密度を高めて、"
+                    f"{self.cfg.volume_digest_chars}字以内で日本語に圧縮してください。\n\n"
+                    f"【要約テキスト】\n{digest_text}\n\n"
+                    f"【圧縮要約（{self.cfg.volume_digest_chars}字以内）】"
+                )
+                digest_text = await self._call_llm(compress_prompt)
         finally:
             self.llm = original_llm
 

@@ -165,7 +165,13 @@ class ProseRefinerAgent:
                     prompt=prompt, temperature=0.3, max_tokens=2000, model="gemini-2.0-flash"
                 )
             else:
-                response = prompt
+                # H8: LLM メソッドが何も無い場合、プロンプト文字列を本文として返す
+                # fail-open は原文破壊の原因になるため禁止。例外を送出し、
+                # 呼び出し側 (refine() の except) で原文を返却する（fail-closed）。
+                raise RuntimeError(
+                    "llm_service に generate_text / generate / ainvoke のいずれも無い: "
+                    f"{type(self.llm_service).__name__}"
+                )
 
             if hasattr(response, "text"):
                 return str(response.text).strip()

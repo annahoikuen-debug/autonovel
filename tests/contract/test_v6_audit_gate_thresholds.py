@@ -462,8 +462,12 @@ def test_severity_weighting_actually_affects_score() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_local_patch_is_preferred_over_full_rewrite() -> None:
+def test_local_patch_is_preferred_over_full_rewrite(monkeypatch: pytest.MonkeyPatch) -> None:
     """重篤失敗でも、局所パッチが適用できる場合は全文再執筆しないこと。"""
+    monkeypatch.setattr(
+        "src.agents.audit_agent.agent.is_audit_legacy_core_enabled", lambda: False
+    )
+    monkeypatch.setenv("ENABLE_AUDIT_UNIFIED_BLOCKING", "true")
 
     class _PatchableReport:
         is_acceptable = False
@@ -493,7 +497,7 @@ def test_local_patch_is_preferred_over_full_rewrite() -> None:
     )
 
     class _AlwaysFailCausal:
-        def extract_keywords(self, text: str) -> list[str]:
+        async def extract_keywords(self, text: str) -> list[str]:
             return []
 
         async def check_integrity(self, **kwargs: Any):
@@ -502,6 +506,7 @@ def test_local_patch_is_preferred_over_full_rewrite() -> None:
     agent._plot_monitor = _AlwaysFailCausal()
     agent._unified_auditor = _UnifiedWithPatch()
     agent._unified_auditor_resolved = True
+    agent._audit_llm = None  # span_patch は LLM を使うため、このテストでは無効化し actionable_patch 経路を検証
 
     result = asyncio.run(agent.execute(_ctx(agent)))
 
@@ -513,8 +518,12 @@ def test_local_patch_is_preferred_over_full_rewrite() -> None:
     assert result.artifacts["patched_text"].endswith("雨の音だけが響いていた。")
 
 
-def test_safe_replace_patch_is_preferred() -> None:
+def test_safe_replace_patch_is_preferred(monkeypatch: pytest.MonkeyPatch) -> None:
     """SafeReplacer で置換できる場合は strategy=safe_replace になること。"""
+    monkeypatch.setattr(
+        "src.agents.audit_agent.agent.is_audit_legacy_core_enabled", lambda: False
+    )
+    monkeypatch.setenv("ENABLE_AUDIT_UNIFIED_BLOCKING", "true")
 
     class _Conflict:
         current_value = "Certainly, the rain fell."
@@ -544,7 +553,7 @@ def test_safe_replace_patch_is_preferred() -> None:
     )
 
     class _AlwaysFailCausal:
-        def extract_keywords(self, text: str) -> list[str]:
+        async def extract_keywords(self, text: str) -> list[str]:
             return []
 
         async def check_integrity(self, **kwargs: Any):
@@ -553,6 +562,7 @@ def test_safe_replace_patch_is_preferred() -> None:
     agent._plot_monitor = _AlwaysFailCausal()
     agent._unified_auditor = _UnifiedWithConflict()
     agent._unified_auditor_resolved = True
+    agent._audit_llm = None  # span_patch は LLM を使うため、このテストでは無効化
 
     ctx = _ctx(agent)
     ctx.artifacts["drafted_text"] = "Certainly, the rain fell. 長い夜だった。"

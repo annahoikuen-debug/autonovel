@@ -65,7 +65,8 @@ async def test_unified_auditor_actionable_patch_conflict():
     auditor = UnifiedAuditor(llm_gateway=mock_llm)
     report = await auditor.audit("彼はゆっくりと歩き始めた。")
     assert report.is_acceptable is False
-    patch_conflicts = [c for c in report.conflicts if c.suggested_value == "「待て！」背後から鋭い叫び声が響いた。"]
+    patch_conflicts = [c for c in report.conflicts if c.current_value == "「待て！」背後から鋭い叫び声が響いた。"]
     assert len(patch_conflicts) == 1
     assert patch_conflicts[0].category == "hook"
+    assert patch_conflicts[0].suggested_value == ""
 

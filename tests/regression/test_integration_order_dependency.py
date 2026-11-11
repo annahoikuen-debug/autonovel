@@ -52,7 +52,8 @@ def test_migrations_resists_aleembic_env_pollution(tmp_path, monkeypatch) -> Non
     Base.metadata.create_all(engine)
 
     cfg = _alembic_cfg(test_url)
-    command.upgrade(cfg, "head")
+    # 複数 head（0035_digest_rollups 等の並存）に対応するため "heads" を指定
+    command.upgrade(cfg, "heads")
 
     inspector = inspect(engine)
     tables = inspector.get_table_names()

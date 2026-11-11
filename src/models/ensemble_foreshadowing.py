@@ -5,31 +5,38 @@ from pydantic import BaseModel, Field
 
 
 class EnsembleScoreBreakdown(BaseModel):
-    """Detailed score breakdown across the 3 non-LLM ensemble components."""
+    """Detailed score breakdown across the 3 non-LLM ensemble components (+ optional LLM vote)."""
 
     contract_score: int = Field(
         default=0,
         ge=0,
         le=35,
-        description="Beat-sheet contract score (0 or 35 points)",
+        description="Beat-sheet contract score (0 or contract-weight points)",
     )
     metadata_score: int = Field(
         default=0,
         ge=0,
         le=40,
-        description="LLM writing metadata self-report score (0, 20, or 40 points)",
+        description="LLM writing metadata self-report score (legacy max 40 / mainline 30)",
     )
     syntax_score: int = Field(
         default=0,
         ge=0,
         le=25,
-        description="Local syntactic morphology score (0 to 25 points)",
+        description="Local syntactic morphology score (legacy max 25 / mainline 20)",
+    )
+    # PLAN_S1 P3: 任意の LLM 第 4 票 (mainline 時 最大 15 / shadow・off 時 0)
+    llm_vote_score: int = Field(
+        default=0,
+        ge=0,
+        le=15,
+        description="PLAN_S1 P3: 4th vote from the masked LLM verifier (0 in off/shadow mode)",
     )
     total_score: int = Field(
         default=0,
         ge=0,
         le=100,
-        description="Sum of all three scores (0 to 100 points)",
+        description="Sum of all vote scores (0 to 100 points)",
     )
 
 

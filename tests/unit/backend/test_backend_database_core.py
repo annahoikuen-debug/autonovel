@@ -291,7 +291,7 @@ def test_run_alembic_upgrade_invokes_command(tmp_path, monkeypatch):
     monkeypatch.setattr("alembic.config.Config", _Cfg)
     monkeypatch.setattr(alembic.command, "upgrade", lambda cfg, rev: calls.setdefault("rev", rev))
     core._run_alembic_upgrade("sqlite:///x%y.db")
-    assert calls["rev"] == "head"
+    assert calls["rev"] == "heads"
     assert calls["sqlalchemy.url"] == "sqlite:///x%%y.db"
 
 

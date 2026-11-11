@@ -307,7 +307,16 @@ class Settings(BaseSettings):
     RAG_FALLBACK_MODE: Literal["memory", "error"] = "memory"
     RAG_BATCH_SIZE: int = 64
     RERANKER_BACKEND: Literal["none", "simple", "cross_encoder"] = "none"
-    RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    RERANKER_MODEL: str = "BAAI/bge-reranker-v2-m3"
+    # Plan R5: 検索パイプライン実結線（フラグ全 OFF では既存挙動をバイト同一で維持）
+    RAG_CONTEXT_INJECTION: bool = False
+    RAG_CONTEXT_MAX_CHARS: int = 800
+    RAG_CONTEXT_TOP_K: int = 5
+    RAG_HYBRID_ENABLED: bool = False
+    RAG_BM25_MAX_DOCS: int = 5000
+    RAG_HYDE_MODE: Literal["off", "template", "llm"] = "template"
+    RAG_HYDE_TIMEOUT_SECONDS: float = 1.5
+    RAG_HYBRID_MIN_SCORE: float = 0.1
     CHROMA_DB_PATH: str = Field(default_factory=lambda: str(STORAGE_DIR / "chroma_db"))
     CHROMA_HOST: str = ""
     CHROMA_PORT: int = 8000

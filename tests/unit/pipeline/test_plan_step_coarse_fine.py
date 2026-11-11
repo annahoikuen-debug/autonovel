@@ -67,10 +67,14 @@ async def test_plan_step_executes_macro_expansion(mock_engine, mock_reporter):
     result = await step.execute(ctx, mock_engine, mock_reporter)
 
     assert result is True
+    from unittest.mock import ANY
+
     mock_engine.plot_expander.expand_macro_skeletons.assert_awaited_once_with(
         book_id=ctx.book_id,
         target_ep_list=[1, 2, 3],
         reporter=mock_reporter,
+        # PLAN_S1 O1: プリセット tension curve (テスト環境ではプリセット既定の曲線)
+        tension_curve=ANY,
     )
 
 

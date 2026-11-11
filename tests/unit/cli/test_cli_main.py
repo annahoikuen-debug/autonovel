@@ -28,9 +28,9 @@ class TestParser:
     def test_subcommands_registered(self):
         parser = build_parser()
         # parse_args で各サブコマンドの func が解決されること
-        # export は --book-id が必須なのでダミー値を渡す
+        # export は --book-id が必須、balance は --input/--output が必須 (PLAN_S1 N1)
         cases: list[tuple[str, list[str]]] = [
-            ("balance", []),
+            ("balance", ["--input", "in.json", "--output", "out.json"]),
             ("export", ["--book-id", "1"]),
             ("init-db", []),
             ("check-env", []),
@@ -47,13 +47,24 @@ class TestParser:
 
     def test_balance_type_choices(self):
         parser = build_parser()
-        args = parser.parse_args(["balance", "--type", "csp"])
+        args = parser.parse_args(
+            ["balance", "--type", "csp", "--input", "in.json", "--output", "out.json"]
+        )
         assert args.type == "csp"
 
     def test_balance_default_type(self):
         parser = build_parser()
-        args = parser.parse_args(["balance"])
+        args = parser.parse_args(
+            ["balance", "--input", "in.json", "--output", "out.json"]
+        )
         assert args.type == "dsp"
+
+    def test_balance_requires_input_output(self, capsys):
+        """PLAN_S1 N1: --input/--output が必須であること。"""
+        parser = build_parser()
+        with pytest.raises(SystemExit):
+            parser.parse_args(["balance"])
+        capsys.readouterr()
 
     def test_export_requires_book_id(self, capsys):
         parser = build_parser()

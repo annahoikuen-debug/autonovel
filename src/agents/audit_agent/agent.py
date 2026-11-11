@@ -9,12 +9,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from typing import Any
+from typing import Any, Sequence
 
 from src.agents.audit_agent.config import (
     is_audit_legacy_core_enabled,
     is_async_polish_enabled,
+    is_lesson_enabled,
     is_local_patch_enabled,
+    is_quote_patch_enabled,
     is_repair_budget_enabled,
     is_span_patch_enabled,
     is_unified_auditor_blocking,
@@ -35,11 +37,18 @@ from src.agents.audit import (
     PlotIntegrityMonitor,
 )
 from src.audit.repair_planner import plan_repair
+from src.audit.span_revision import QuotePatch, apply_quote_patches
 from src.audit.static_rules import StaticRuleAuditor
+from src.audit.lesson_store import AuditLessonRepository, AuditLessonService
 from src.generation.pdca_controller import PDCAController
 from src.services.learning_data_service import LearningDataService
 
 logger = logging.getLogger(__name__)
+
+# H8: 卒業判定に使う標準 audit_id セット（criteria.py と整合）。
+STANDARD_AUDIT_IDS = frozenset(
+    {"fast_screen", "logical_consistency", "deai", "ability_consistency", "causal_integrity", "unified_qualitative"}
+)
 
 # ---------------------------------------------------------------------------
 # AuditAgent クラス
@@ -249,11 +258,13 @@ class AuditAgent(SkillAgent):
             auditor = self._resolve_unified_auditor()
             if auditor is None:
                 return ("degraded", "UnifiedAuditor に LLM が設定されていません")
-            return await auditor.audit(
+            report = await auditor.audit(
                 text=drafted_text,
                 character_profiles=str(writing_context.get("characters_json", "")),
                 plot_spec=str(writing_context.get("plot", {}).get("detailed_blueprint", "")),
             )
+            self.last_unified_report = report
+            return report
 
         return [(UNIFIED_AUDIT_CRITERION, _unified)]
 
@@ -625,6 +636,130 @@ class AuditAgent(SkillAgent):
             "triage_level": plan.level,
         }
 
+    async def _try_quote_patch(
+        self,
+        drafted_text: str,
+        unified_report: Any,
+        plan: Any,
+    ) -> dict[str, Any] | None:
+        """H8: 検証付き quote 置換パッチ。
+
+        1. ``unified_report.conflicts`` の ``current_value`` / ``suggested_value`` 対から
+           ``QuotePatch`` を組み立て ``apply_quote_patches`` で試行。
+        2. 不成立かつレガシー ``actionable_patch`` 文字列があり、
+           ``plan.targets[0]`` で特定できる段落がある場合は、その段落全体を
+           ``actionable_patch`` で置換する（``quote_patch_legacy``）。
+           ``SpanPatchApplier.validate`` を通過しない限り原文を破壊しない。
+        """
+        # 1. structured diffs from conflicts (current_value -> suggested_value)
+        patches: list[QuotePatch] = []
+        for conflict in getattr(unified_report, "conflicts", []) or []:
+            current = str(getattr(conflict, "current_value", "") or "").strip()
+            suggested = str(getattr(conflict, "suggested_value", "") or "").strip()
+            if current and suggested and current != suggested and len(current) <= 400:
+                patches.append(
+                    QuotePatch(
+                        original_quote=current,
+                        replacement=suggested,
+                        rationale=f"audit conflict: {getattr(conflict, 'category', 'unknown')}",
+                    )
+                )
+
+        if patches:
+            result = apply_quote_patches(drafted_text, patches)
+            if result.applied_count > 0:
+                return {
+                    "strategy": "quote_patch",
+                    "text": result.text,
+                    "replacements": result.applied_count,
+                    "paragraph_index": None,
+                    "triage_level": getattr(plan, "level", ""),
+                }
+
+        # 2. legacy actionable_patch -> paragraph-level replacement (quote_patch_legacy)
+        qualitative = getattr(unified_report, "qualitative", None)
+        actionable = str(getattr(qualitative, "actionable_patch", "") or "").strip()
+        if not actionable:
+            return None
+
+        targets = tuple(getattr(plan, "targets", ()) or ())
+        if not targets:
+            return None
+
+        from src.engine.prose.paragraph_indexer import ParagraphIndexer
+
+        paragraphs = ParagraphIndexer().index_paragraphs(drafted_text)
+        by_index = {p["index"]: p for p in paragraphs if p.get("start", -1) >= 0}
+        target_index = int(targets[0])
+        span = by_index.get(target_index)
+        if span is None or span.get("end", -1) <= span.get("start", -1):
+            return None
+
+        quote = drafted_text[span["start"] : span["end"]]
+        result = apply_quote_patches(
+            drafted_text,
+            [QuotePatch(original_quote=quote, replacement=actionable)],
+        )
+        if result.applied_count > 0:
+            return {
+                "strategy": "quote_patch_legacy",
+                "text": result.text,
+                "replacements": result.applied_count,
+                "paragraph_index": target_index,
+                "triage_level": getattr(plan, "level", ""),
+            }
+        return None
+
+    async def _record_lessons(
+        self,
+        book_id: int,
+        ep_num: int,
+        failed_audits: list[dict[str, Any]] | None,
+    ) -> None:
+        """H8: 監査失敗の教訓を lesson_store に記録する（fail-open）。
+
+        セッション未取得・レコード失敗時はログ出力のみで、
+        監査フロー自体を妨げない（P2 原則）。
+        """
+        if not is_lesson_enabled():
+            return
+        session = getattr(self.repo, "session", None)
+        if session is None:
+            logger.debug("lesson store: session 未取得のため記録をスキップ")
+            return
+        try:
+            repo = AuditLessonRepository(session)
+            service = AuditLessonService(repo)
+            await service.record_from_audit(
+                book_id=book_id,
+                episode_num=ep_num,
+                failed_audits=failed_audits or [],
+            )
+        except Exception:
+            logger.warning("lesson store 記録に失敗（監査フローは継続）", exc_info=True)
+
+    async def _graduate_lessons(
+        self,
+        book_id: int,
+        passed_dimensions: Sequence[str] | None,
+    ) -> None:
+        """H8: 合格 dimension の教訓を graduated に更新する（fail-open）。
+
+        Reflexion ループの「成功で経験を更新する」側。同 dimension が
+        再発しなければ教訓は自然に卒業し、次話注入から外れる。
+        """
+        if not is_lesson_enabled() or not passed_dimensions:
+            return
+        session = getattr(self.repo, "session", None)
+        if session is None:
+            return
+        try:
+            repo = AuditLessonRepository(session)
+            service = AuditLessonService(repo)
+            await service.graduate_dimensions(book_id, passed_dimensions)
+        except Exception:
+            logger.warning("lesson store 卒業に失敗（監査フローは継続）", exc_info=True)
+
     async def try_local_patch(
         self,
         drafted_text: str,
@@ -700,6 +835,28 @@ class AuditAgent(SkillAgent):
                 )
                 return span_result
             span_rejected = True
+
+        # H8: 検証付き quote 置換パッチ（ENABLE_AUDIT_QUOTE_PATCH=ON のみ）。
+        # SafeReplacer / span_polish で解決できなかった structured diff を
+        # place-based 置換で試行。不成立なら従来の actionable_patch 追記へ。
+        if is_quote_patch_enabled():
+            try:
+                quote_result = await self._try_quote_patch(drafted_text, unified_report, plan)
+            except Exception:
+                logger.warning("quote パッチに失敗しました", exc_info=True)
+                quote_result = None
+            if quote_result is not None:
+                self._repair_budget.record_local_patch()
+                self.emit_event(
+                    "audit.patch.applied",
+                    {
+                        "strategy": quote_result["strategy"],
+                        "replacements": quote_result["replacements"],
+                        "text_length": len(quote_result["text"]),
+                        "triage_level": plan_level,
+                    },
+                )
+                return quote_result
 
         qualitative = getattr(unified_report, "qualitative", None)
         actionable = str(getattr(qualitative, "actionable_patch", "") or "").strip()
@@ -1028,6 +1185,10 @@ class AuditAgent(SkillAgent):
 
             if not gate["requires_regeneration"]:
                 # 軽微な失敗は続行する（ユーザー確認と PatchReview は残す）
+                # H8: 全 dimension 合格のため、失敗していなかった dimension の教訓を graduated に更新
+                failed_ids = {str(a.get("audit_id")) for a in (failed_audits or [])}
+                passed_dimensions = [aid for aid in STANDARD_AUDIT_IDS if aid not in failed_ids]
+                await self._graduate_lessons(book_id, passed_dimensions)
                 self.emit_event(
                     "audit.completed",
                     {
@@ -1059,6 +1220,8 @@ class AuditAgent(SkillAgent):
             # Orchestrator の max_backtracks_per_node=3 だと1話あたり最大4回
             # 全文書きする。1話1回に封じ込める。
             if is_repair_budget_enabled() and not self._repair_budget.should_regenerate_full_text():
+                # H8: 教訓を記録（失敗の話横断再発防止）
+                await self._record_lessons(book_id, ep_num, failed_audits)
                 self.emit_event(
                     "audit.completed",
                     {
@@ -1098,6 +1261,8 @@ class AuditAgent(SkillAgent):
 
             # W4 Step 10/11: Branch D を通った分だけ予算を消費し、観測イベントを出す。
             self._repair_budget.record_full_regeneration()
+            # H8: 教訓を記録（失敗の話横断再発防止）
+            await self._record_lessons(book_id, ep_num, failed_audits)
             self.emit_event(
                 "audit.regeneration.full",
                 {"attempt": self._repair_budget.regeneration_count},

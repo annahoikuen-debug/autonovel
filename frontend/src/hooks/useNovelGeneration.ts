@@ -69,6 +69,7 @@ export function useNovelGeneration(
     setGenerationState,
     contentLengthLimit,
     targetEpisodes,
+    spineQuality,
     llmConfig,
   } = useNovelContext();
   const isCancelledRef = useRef<boolean>(false);
@@ -123,6 +124,9 @@ export function useNovelGeneration(
         // 画面で選んだ文体プリセット。従来は SimpleModePanel のローカル state に
         // 留まっており生成に届いていなかった（選んだ設定が効かない）。
         ...(styleKey ? { style_override: { style_id: styleKey } } : {}),
+        // PLAN_S1 R2 / F1B H7: per-book の構造テンプレート適用レベル。
+        // "off"（既定）では送信しない（バックエンド既定 None = 注入なし = 差分ゼロ）。
+        ...(spineQuality && spineQuality !== "off" ? { spine_quality: spineQuality } : {}),
         ...( (llmConfig && (llmConfig.api_key || llmConfig.provider)) ? { llm_config: llmConfig } : {} ),
       });
 

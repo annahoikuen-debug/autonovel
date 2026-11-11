@@ -37,31 +37,33 @@ def cmd_version(_args: argparse.Namespace) -> int:
 
 
 def cmd_balance(args: argparse.Namespace) -> int:
-    """物質バランサー（dsp / csp / grammar）を実行する。"""
+    """物語バランサー（dsp / csp / grammar）を実行する（各パッケージ CLI に委譲）。
+
+    PLAN_S1 N1: 実在しない ``src.narrative_balancer.*_balancer`` モジュールへの
+    import を、各パッケージが提供する実在の CLI（独自にテスト済み）への委譲に置き換えた。
+    引数名の差異（dsp/grammar は ``--input``、csp は ``--state``）はここで吸収する。
+    """
     balancer_type = args.type
+    config_args = ["--config", args.config] if getattr(args, "config", None) else []
     try:
         if balancer_type == "dsp":
-            from src.narrative_balancer.dsp_balancer import DspBalancer
+            from src.narrative_balancer.dsp.cli import main as dsp_main
 
-            balancer = DspBalancer()
-        elif balancer_type == "csp":
-            from src.narrative_balancer.csp_balancer import CspBalancer
+            return dsp_main(["--input", args.input, "--output", args.output, *config_args])
+        if balancer_type == "csp":
+            from src.narrative_balancer.csp.cli import main as csp_main
 
-            balancer = CspBalancer()
-        elif balancer_type == "grammar":
-            from src.narrative_balancer.grammar_balancer import GrammarBalancer
+            return csp_main(["--state", args.input, "--output", args.output, *config_args])
+        if balancer_type == "grammar":
+            from src.narrative_balancer.grammar.cli import main as grammar_main
 
-            balancer = GrammarBalancer()
-        else:
-            print(f"[ERROR] Unknown balancer type: {balancer_type}", file=sys.stderr)
-            return 1
+            return grammar_main(["--input", args.input, "--output", args.output])
     except ImportError as exc:
         print(f"[ERROR] Balancer module not available: {exc}", file=sys.stderr)
         return 1
 
-    result = balancer.run() if hasattr(balancer, "run") else None
-    print(f"[balance:{balancer_type}] completed: {result}")
-    return 0
+    print(f"[ERROR] Unknown balancer type: {balancer_type}", file=sys.stderr)
+    return 1
 
 
 def cmd_export(args: argparse.Namespace) -> int:
@@ -136,6 +138,24 @@ def build_parser() -> argparse.ArgumentParser:
         choices=["dsp", "csp", "grammar"],
         default="dsp",
         help="balancer type (default: dsp)",
+    )
+    balance_parser.add_argument(
+        "--input",
+        "-i",
+        required=True,
+        help="Path to input beats JSON file (array of beats or object with 'beats' key)",
+    )
+    balance_parser.add_argument(
+        "--output",
+        "-o",
+        required=True,
+        help="Path to write balanced beats JSON file",
+    )
+    balance_parser.add_argument(
+        "--config",
+        "-c",
+        default=None,
+        help="Path to YAML configuration file (dsp / csp only)",
     )
     balance_parser.set_defaults(func=cmd_balance)
 

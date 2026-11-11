@@ -262,6 +262,38 @@ async def test_pinned_facts_in_prompt_when_enabled(tmp_path, monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_flag_off_pinned_is_empty(tmp_path, monkeypatch):
+    """ENABLE_PINNED_FACTS_EDGES=0 時、pinned_head / pinned_tail は空（現行出力と同一）。"""
+    monkeypatch.setenv("ENABLE_DIGEST_ROLLUP", "0")
+    monkeypatch.setenv("ENABLE_EPISODE_DIGEST", "1")
+    monkeypatch.setenv("ENABLE_PINNED_FACTS_EDGES", "0")
+
+    async with _real_db(tmp_path) as sf:
+        async with sf() as session:
+            writer = _make_writer(session, EPISODE_NUMBER)
+
+            # 契約伏線があっても flag off なら pinned は空
+            writing_context = {
+                "use_beat_to_scene": False,
+                "contract_foreshadowings": [{"id": 1, "title": "竜の鱗の行方"}],
+                "unresolved_foreshadowings": [
+                    {"id": 2, "title": "期限切れ伏線", "planted_episode": 1,
+                     "target_episode": 5, "status": "planted"}
+                ],
+            }
+            await writer.run(_agent_ctx(EPISODE_NUMBER, writing_context))
+
+            call_args = writer.prompt_manager.build_final_writing_prompt.call_args
+            assert call_args is not None, "build_final_writing_prompt 未呼び出し"
+            kwargs = call_args.kwargs
+            pinned_head = kwargs.get("pinned_head", "")
+            pinned_tail = kwargs.get("pinned_tail", "")
+
+            assert pinned_head == "", f"flag off で pinned_head が空でない: {pinned_head}"
+            assert pinned_tail == "", f"flag off で pinned_tail が空でない: {pinned_tail}"
+
+
+@pytest.mark.asyncio
 async def test_rollup_llm_call_count_budget(tmp_path, monkeypatch):
     """rollup 生成の LLM 呼び出しが想定回数を超えない (+1/10話, +1/50話)。"""
     monkeypatch.setenv("ENABLE_DIGEST_ROLLUP", "1")

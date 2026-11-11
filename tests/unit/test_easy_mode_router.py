@@ -175,6 +175,85 @@ async def test_generate_content_success(monkeypatch, dummy_session, dummy_reques
     assert "test-huey-id" in response.suggestions[0]
     assert "tasks_enqueued" in called_metrics
 
+
+@pytest.mark.asyncio
+async def test_generate_content_passes_spine_quality(monkeypatch, dummy_session, dummy_request):
+    """PLAN_S1 R2 / F1B H7: spine_quality がタスク payload まで透過されること。
+
+    壊れ方: EasyModeInput にフィールドが無い（Pydantic が捨てる）/
+    params への転送漏れで execute_generation の payload.get("spine_quality")
+    が常に None になる → このテストが赤になる。
+    """
+    patch_dependencies(monkeypatch)
+    import src.backend.tasks.generation_tasks as gen_tasks_mod
+
+    captured: dict = {}
+
+    class DummyTaskResult:
+        def __init__(self):
+            self.id = "test-huey-id"
+
+    def fake_task(params):
+        captured["params"] = params
+        return DummyTaskResult()
+
+    monkeypatch.setattr(gen_tasks_mod, "generate_chapter_orchestrated_task", fake_task)
+
+    valid_input = easy_mode.EasyModeInput(
+        chapter_history=["prev chapter"],
+        current_chapter="current content",
+        character_params={"name": "hero"},
+        content_length_limit=1000,
+        spine_quality="soft",
+    )
+    await easy_mode.generate_content(valid_input, request=dummy_request, session=dummy_session)
+    assert captured["params"].get("spine_quality") == "soft"
+
+    # 未指定（既定）は None → execute_generation 側で env 既定（off）に倒れる
+    captured.clear()
+    no_spine_input = easy_mode.EasyModeInput(
+        chapter_history=["prev chapter"],
+        current_chapter="current content",
+        character_params={"name": "hero"},
+        content_length_limit=1000,
+    )
+    await easy_mode.generate_content(no_spine_input, request=dummy_request, session=dummy_session)
+    assert captured["params"].get("spine_quality") is None
+
+
+def test_easy_mode_input_spine_quality_validation():
+    """spine_quality は off/soft/hard のみ許容（不正値は 422 相当で拒否）。"""
+    from pydantic import ValidationError
+
+    for level in ("off", "soft", "hard"):
+        model = easy_mode.EasyModeInput(
+            current_chapter="x", character_params={"name": "h"}, spine_quality=level
+        )
+        assert model.spine_quality == level
+
+    with pytest.raises(ValidationError):
+        easy_mode.EasyModeInput(
+            current_chapter="x", character_params={"name": "h"}, spine_quality="typo"
+        )
+
+
+def test_stream_query_input_maps_spine_quality():
+    """StreamQueryInput → EasyModeInput 変換でも spine_quality が維持されること。"""
+    from src.domain.entities.easy_mode import StreamQueryInput
+
+    query = StreamQueryInput(
+        current_chapter="content",
+        character_name="hero",
+        content_length_limit=1000,
+        spine_quality="hard",
+    )
+    converted = query.to_easy_mode_input()
+    assert converted.spine_quality == "hard"
+
+    # 未指定は None
+    default_query = StreamQueryInput(current_chapter="c")
+    assert default_query.to_easy_mode_input().spine_quality is None
+
 @pytest.mark.asyncio
 async def test_generate_content_stream(monkeypatch, dummy_session, dummy_request):
     """StreamQueryInput を含むストリーミング用モデルの存在と動作を検証する。

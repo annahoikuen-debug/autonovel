@@ -108,12 +108,30 @@ class PlotIntegrityChecker:
         return issues
 
     def _check_continuity_between(self, prev: Plot, current: Plot) -> List[str]:
-        """Check continuity between two consecutive plots."""
+        """Check continuity between two consecutive plots.
+
+        NOTE (PLAN_S1 N5): 本チェッカーは**本番執筆パイプラインから未接続**である
+        (本番パイプラインはドメイン ``Plot`` を永続化しない)。本番の構造検査は
+        ``src/engine/structure_gate.py`` (NarrativeStructureGate) が担う。
+        閾値は物語構造 SSOT (``config/narrative_structure.yaml`` / CSP 物理則) に
+        統合した (旧ハードコード 50 → max_step_delta の 0-100 換算、既定 40)。
+        """
         issues = []
 
+        tension_limit = 50.0  # SSOT 取得失敗時のレガシー値 (fail-open)
+        try:
+            from src.engine.structure_gate import get_settings
+
+            tension_limit = get_settings().max_step_delta_macro
+        except Exception:  # noqa: BLE001 - SSOT が読めない環境でも検査自体は継続
+            pass
+
         tension_diff = abs(current.tension_score.value - prev.tension_score.value)
-        if tension_diff > 50:
-            issues.append(f"Large tension jump: {prev.tension_score.value} -> {current.tension_score.value}")
+        if tension_diff > tension_limit:
+            issues.append(
+                f"Large tension jump: {prev.tension_score.value} -> {current.tension_score.value}"
+                f" (limit: {tension_limit:g})"
+            )
 
         if prev.status == PlotStatus.COMPLETED and current.status == PlotStatus.PLANNED:
             pass

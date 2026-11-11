@@ -18,6 +18,14 @@ export interface LLMConfigOverride {
   model_embedding?: string;
 }
 
+/**
+ * PLAN_S1 R2 / F1B H7: STORY_SPINE 構造テンプレートの適用レベル。
+ *
+ * バックエンドの `EasyModeInput.spine_quality`（Literal["off","soft","hard"]）と対応。
+ * 既定 "off" = 構造指示を注入しない（生成プロンプト差分ゼロ契約）。
+ */
+export type SpineQualityLevel = "off" | "soft" | "hard";
+
 export interface EasyModeInput {
     chapter_history: string[];
     current_chapter: string;
@@ -33,6 +41,16 @@ export interface EasyModeInput {
     style_override?: Record<string, unknown>;
     llm_config?: LLMConfigOverride;
     book_id?: number;
+    /**
+     * PLAN_S1 R2 / F1B H7: STORY_SPINE 構造テンプレートの適用レベル。
+     *
+     * - "off"（既定）: 構造指示を注入しない（プロンプト差分ゼロ）
+     * - "soft": 構造の参考として注入
+     * - "hard": その話で果たすべき duty として注入
+     *
+     * 未指定（undefined）はバックエンドで None になり、注入なしと同じ扱い。
+     */
+    spine_quality?: SpineQualityLevel | null;
 }
 
 export interface GenerationResponse {

@@ -697,6 +697,7 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 | [docs/legal/TERMS_OF_SERVICE.md](docs/legal/TERMS_OF_SERVICE.md) | 利用規約 |
 | [docs/openapi.json](docs/openapi.json) | OpenAPI 仕様（自動生成） |
 | [plans/PLAN_J1_REMAINING_36STEPS.md](plans/PLAN_J1_REMAINING_36STEPS.md) | 設計・ロードマップ（36ステップ計画書） |
+| [docs/ROADMAP_IMPROVEMENTS.md](docs/ROADMAP_IMPROVEMENTS.md) | 論文根拠に基づく 9 つの改善提案の実装ロードマップ（提案 5 実装完了記録含む） |
 
 > **バージョンの正となるのは 1 か所だけ**です：`pyproject.toml` の `project.version`。
 > `frontend/package.json`・`docker-compose.prod.yml`・`src/cli/main.py`・`src/backend/__init__.py` はすべてそれに追随し、

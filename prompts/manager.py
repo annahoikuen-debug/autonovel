@@ -819,6 +819,10 @@ class PromptManager:
             # v5.3: 契約伏線とメタデータ出力スキーマの配線
             "contract_foreshadowings": contract_foreshadowings,
             "foreshadowing_contract_context": foreshadowing_contract_context,
+            # Plan R5 B3: RAG コンテキスト注入ブロック（RAG_CONTEXT_INJECTION=OFF / 空なら空文字＝出力不変）
+            "rag_context_block": kwargs.get("rag_context_block", ""),
+            # Plan H8 E5: 監査失敗教訓注入ブロック（ENABLE_AUDIT_LESSONS=OFF / 空なら空文字＝出力不変）
+            "lessons_block": kwargs.get("lessons_block", ""),
             # PLAN_M1 Step 16: 重要事実の両端配置（Lost in the Middle 対策）
             # flag off 時は空文字（現行出力と同一）。
             "pinned_head": kwargs.get("pinned_head", ""),
@@ -1186,6 +1190,7 @@ class PromptManager:
         book_id: Optional[int] = None,
         spine: Optional[Any] = None,
         spine_quality: Optional[str] = None,
+        tension_curve: Optional[List[List[float]]] = None,
     ) -> str:
         """大局骨子(Macro Plot Skeleton)バッチ生成用プロンプトを構築する"""
         bible_data = json.loads(bible_json_str) if bible_json_str else {}
@@ -1258,7 +1263,31 @@ class PromptManager:
             except Exception:
                 spine_section = ""
 
-        return prompt + spine_section
+        # PLAN_S1 O2: プリセット tension curve を「参考」として spine の後に注入。
+        # tension_curve=None (プリセット未選択) では何も連結しない = バイト同一 (P1)。
+        # spine との衝突時は構造の割当 (spine duty) を優先する旨を明記する。
+        curve_section = ""
+        if tension_curve:
+            try:
+                curve_lines: List[str] = []
+                for point in tension_curve:
+                    if isinstance(point, (list, tuple)) and len(point) >= 2:
+                        progress = float(point[0])
+                        target = float(point[1])
+                        curve_lines.append(f"・進行度 {progress:.2f} → tension {int(round(max(0.0, min(1.0, target)) * 100))}")
+                if curve_lines:
+                    joined = "\n".join(curve_lines)
+                    curve_section = (
+                        f"\n\n【目標テンション曲線（参考）】\n"
+                        f"ジャンルプリセットが示す進行度ごとの目標テンションです。"
+                        f"第{ep_range[0]}話〜第{ep_range[-1]}話を進行度 0.0〜1.0 に対応させて、"
+                        f"各話の tension を設計してください。\n"
+                        f"※ 本曲線は参考値です。構造の割当（上記）が指定する役割を優先してください。\n{joined}"
+                    )
+            except Exception:
+                curve_section = ""
+
+        return prompt + spine_section + curve_section
 
     async def build_micro_scene_expander_prompt(
         self,

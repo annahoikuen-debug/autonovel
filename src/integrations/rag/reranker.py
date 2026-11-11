@@ -95,10 +95,18 @@ class CrossEncoderReranker:
 
 
 def build_default_reranker() -> Reranker:
-    """``settings.RERANKER_BACKEND`` に応じた Reranker を生成する."""
+    """``settings.RERANKER_BACKEND`` に応じた Reranker を生成する.
+
+    cross_encoder 指定時でもモデルのロードに失敗した場合は Noop にフォールバックし、
+    執筆パイプラインを止めない（fail-open）。
+    """
     backend = (settings.RERANKER_BACKEND or "none").lower()
     if backend == "cross_encoder":
-        return CrossEncoderReranker()
+        try:
+            return CrossEncoderReranker()
+        except Exception as e:
+            logger.warning(f"CrossEncoderReranker 初期化失敗、Noop にフォールバック: {e}")
+            return NoopReranker()
     if backend == "simple":
         return SimpleReranker()
     return NoopReranker()

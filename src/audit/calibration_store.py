@@ -48,6 +48,16 @@ DEFAULT_CALIBRATION: dict[str, Any] = {
         "enabled": False,
         "config_path": "config/llm_bias_correction.yaml",
     },
+    # PLAN_S1 P3: 伏線回収 LLM 第 4 投票の配点・閾値 SSOT。
+    # mode: off (既定・LLM 0 回) / shadow (記録のみ・現行配点) / mainline (第 4 票を加算)。
+    # weights は mainline 時の配点。shadow 期間中は legacy 配点 (35/40/25) を使用する。
+    "foreshadowing": {
+        "mode": "off",
+        "weights": {"contract": 35, "metadata": 30, "syntax": 20, "llm_vote": 15},
+        "thresholds": {"resolved": 75, "progressed": 35},
+        "no_metadata_thresholds": {"resolved": 55, "progressed": 15},
+        "temperature": 0.2,
+    },
     "evaluator_version": "1.0",
 }
 
@@ -62,6 +72,8 @@ ENV_TO_PATH: dict[str, tuple[str, ...]] = {
     "ENABLE_PAIRWISE_SHADOW": ("pairwise", "shadow_enabled"),
     "ENABLE_PANEL": ("panel", "enabled"),
     "EVALUATOR_VERSION": ("evaluator_version",),
+    # PLAN_S1 P2: 伏線 LLM 投票モード (off / shadow / mainline)
+    "ENABLE_FORESHADOW_LLM_VOTE": ("foreshadowing", "mode"),
 }
 
 

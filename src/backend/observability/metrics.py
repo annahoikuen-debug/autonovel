@@ -522,6 +522,124 @@ reflective_rag_query_refinements_total = Counter(
     ["book_id"],
 )
 
+# ===================== RAG (Plan R5): 検索パイプライン実結線メトリクス =====================
+# 執筆プロンプトへの RAG コンテキスト注入量・検索レイテンシ・ハイブリッド候補数・
+# リランクレイテンシを可視化し、提案9 の評価基盤と合わせて before/after を測る。
+# flag 全 OFF (既定) ではこれらのメトリクスは記録されない（無音）ため、
+# 既存書籍の観測に影響を与えない。
+
+rag_context_injected_chars = Histogram(
+    "rag_context_injected_chars",
+    "Character count of RAG context injected into writing prompt per episode",
+    ["book_id"],
+    buckets=[0, 100, 200, 400, 800, 1600, 3200, 6400],
+)
+
+rag_retrieval_latency_seconds = Histogram(
+    "rag_retrieval_latency_seconds",
+    "RAG retrieval latency per episode (dense+sparse+HyDE+reflection)",
+    ["book_id", "strategy"],  # strategy: dense | hybrid | hyde | reflection
+    buckets=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0],
+)
+
+rag_hybrid_candidates = Gauge(
+    "rag_hybrid_candidates",
+    "Number of candidate documents from hybrid (dense+sparse) retrieval before rerank",
+    ["book_id"],
+)
+
+rag_rerank_latency_seconds = Histogram(
+    "rag_rerank_latency_seconds",
+    "RAG rerank latency per episode",
+    ["book_id", "backend"],  # backend: none | simple | cross_encoder
+    buckets=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
+)
+
+rag_retrieval_errors_total = Counter(
+    "rag_retrieval_errors_total",
+    "Total RAG retrieval/rerank/injection errors swallowed by fail-open path",
+    ["book_id", "stage"],  # stage: retrieval | rerank | injection | hyde
+)
+
+
+def record_rag_context_injected(book_id: int | str, chars: int) -> None:
+    """執筆プロンプトに注入された RAG コンテキストの文字数を記録。"""
+    rag_context_injected_chars.labels(book_id=str(book_id)).observe(chars)
+
+
+def record_rag_retrieval_latency(book_id: int | str, strategy: str, duration: float) -> None:
+    """RAG 検索レイテンシを記録。"""
+    rag_retrieval_latency_seconds.labels(book_id=str(book_id), strategy=strategy).observe(duration)
+
+
+def record_rag_hybrid_candidates(book_id: int | str, count: int) -> None:
+    """ハイブリッド検索候補数を記録。"""
+    rag_hybrid_candidates.labels(book_id=str(book_id)).set(count)
+
+
+def record_rag_rerank_latency(book_id: int | str, backend: str, duration: float) -> None:
+    """リランクレイテンシを記録。"""
+    rag_rerank_latency_seconds.labels(book_id=str(book_id), backend=backend).observe(duration)
+
+
+def record_rag_retrieval_error(book_id: int | str, stage: str) -> None:
+    """RAG パイプラインの失敗（fail-open で握り潰される）を記録。"""
+    rag_retrieval_errors_total.labels(book_id=str(book_id), stage=stage).inc()
+
+
+# ===================== H8: 改稿(パッチ/教訓)メトリクス =====================
+# 執筆プロンプトへの教訓注入量・パッチ適用・不採用を可視化し、
+# 提案9 の評価基盤と合わせて before/after を測る。
+# flag 全 OFF (既定) ではこれらのメトリクスは記録されない（無音）ため、
+# 既存書籍の観測に影響を与えない。
+
+audit_revision_total = Counter(
+    "audit_revision_total",
+    "Total audit revision patch attempts by strategy and outcome",
+    ["strategy", "outcome"],  # strategy: safe_replace|span_polish|quote_patch|local_polish|full_regen | outcome: applied|rejected|not_found
+)
+
+audit_revision_duration_seconds = Histogram(
+    "audit_revision_duration_seconds",
+    "Audit revision patch duration in seconds",
+    ["strategy"],
+    buckets=[0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
+)
+
+audit_lessons_total = Counter(
+    "audit_lessons_total",
+    "Total audit lessons recorded by book",
+    ["action", "dimension"],  # action: record|graduate|archive
+)
+
+audit_lessons_injected_chars = Histogram(
+    "audit_lessons_injected_chars",
+    "Character count of audit lessons injected into writing prompt per episode",
+    ["book_id"],
+    buckets=[0, 100, 200, 400, 800, 1600],
+)
+
+
+def record_audit_revision(strategy: str, outcome: str, duration: float | None = None) -> None:
+    """改稿パッチの適用/不採用を記録。
+    strategy: safe_replace|span_polish|quote_patch|local_polish|full_regen
+    outcome: applied|rejected|not_found
+    """
+    audit_revision_total.labels(strategy=strategy, outcome=outcome).inc()
+    if duration is not None:
+        audit_revision_duration_seconds.labels(strategy=strategy).observe(duration)
+
+
+def record_audit_lesson(action: str, dimension: str) -> None:
+    """教訓メモリのレコード（record/graduate/archive）を記録。"""
+    audit_lessons_total.labels(action=action, dimension=dimension).inc()
+
+
+def record_audit_lessons_injected(book_id: int | str, chars: int) -> None:
+    """執筆プロンプトに注入された教訓の文字数を記録。"""
+    audit_lessons_injected_chars.labels(book_id=str(book_id)).observe(chars)
+
+
 # ===================== TRACK-C C1: LLM コスト最適化メトリクス =====================
 # 1話あたり・監査フェーズあたりの LLM 呼出回数を可視化し、
 # 監査モデルの階層化・キャッシュ効果を KPI として追跡する。

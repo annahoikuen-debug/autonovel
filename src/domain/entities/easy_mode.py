@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -49,6 +49,13 @@ class EasyModeInput(BaseModel):
     )
     start_ep: int = Field(default=1, ge=1, le=50, description="開始話数")
     end_ep: int | None = Field(default=None, ge=1, le=50, description="終了話数（未指定時はtarget_episodesまで）")
+    # PLAN_S1 R2 / F1B H7: per-book の spine 適用レベル (off/soft/hard)。
+    # None (未指定) = 環境変数 SPINE_QUALITY ではなく「off 扱い」で
+    # プロンプトに構造指示を注入しない（バイト同一契約を維持）。
+    spine_quality: Literal["off", "soft", "hard"] | None = Field(
+        default=None,
+        description="STORY_SPINE 構造テンプレートの適用レベル。未指定 = 注入なし",
+    )
 
 
 class StreamQueryInput(BaseModel):
@@ -66,6 +73,8 @@ class StreamQueryInput(BaseModel):
     character_ability: str | None = None
     character_genre: str | None = None
     content_length_limit: int | None = Field(default=None, ge=1, le=10000)
+    # PLAN_S1 R2 / F1B H7: ストリーム経路でも per-book spine レベルを受け付ける
+    spine_quality: Literal["off", "soft", "hard"] | None = None
 
     def to_easy_mode_input(self) -> EasyModeInput:
         """クエリ入力を EasyModeInput に変換する。"""
@@ -80,6 +89,7 @@ class StreamQueryInput(BaseModel):
             current_chapter=self.current_chapter or "",
             character_params=char,
             content_length_limit=self.content_length_limit or 2000,
+            spine_quality=self.spine_quality,
         )
 
 
