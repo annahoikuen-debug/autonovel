@@ -54,7 +54,7 @@ SAFETY_OPTIONS = {
 
 def load_config():
     try:
-        from config.project_context import get_config
+        from src.infrastructure.config.project_context import get_config
         return get_config()
     except Exception:
         from schemas.config import GlobalConfigModel
@@ -63,7 +63,7 @@ def load_config():
 def save_all_settings():
     """全設定を保存"""
     try:
-        from config.project_context import get_config, set_config
+        from src.infrastructure.config.project_context import get_config, set_config
 
         cfg = get_config()
 
@@ -475,7 +475,7 @@ def main():
         if st.button("🔄 デフォルトに戻す", use_container_width=True):
             try:
                 from schemas.config import GlobalConfigModel
-                from config.project_context import set_config
+                from src.infrastructure.config.project_context import set_config
                 set_config(GlobalConfigModel.default())
                 st.success("デフォルト設定に戻しました")
                 st.rerun()

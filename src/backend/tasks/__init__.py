@@ -27,7 +27,7 @@ def _apply_config_overrides(config_dict: dict | None) -> None:
     if not config_dict:
         return
     try:
-        from config.project_context import ProjectContext
+        from src.infrastructure.config.project_context import ProjectContext
 
         for key in _CONFIG_OVERRIDE_KEYS:
             if key in config_dict and config_dict[key] not in (None, ""):

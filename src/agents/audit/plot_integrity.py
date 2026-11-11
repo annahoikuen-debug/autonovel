@@ -501,7 +501,7 @@ class PlotIntegrityMonitor:
                 )
             detail = "\n".join(detail_lines)
 
-            from config.project_context import ProjectContext
+            from src.infrastructure.config.project_context import ProjectContext
 
             max_gap = ProjectContext.get_setting("FORSHADOWING_MAX_GAP_CHAPTERS", 5)
 

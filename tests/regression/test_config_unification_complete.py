@@ -44,7 +44,6 @@ CONFIG_IMPORT_PATHS = [
     ("src.domain.styles", None),
     ("src.interfaces.streamlit_adapter", None),
     # 旧パス（shim、維持必須）- 第1バッチ
-    ("config.project_context", None),
     # 旧パス（shim、維持必須）- 既存
     # erotic shims（既存、維持必須）
     ("config.erotic_vocabulary", ["METAPHOR_BANK"]),

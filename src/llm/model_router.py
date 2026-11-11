@@ -72,7 +72,7 @@ def select_model(purpose: str = "writing") -> str:
     # 設定から取得を試みる (SSOT: GlobalConfigModel / settings.toml)
     key = f"model_{purpose}"
     try:
-        from config.project_context import get_config
+        from src.infrastructure.config.project_context import get_config
 
         value = getattr(get_config(), key, None)
         if value:

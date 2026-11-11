@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from config.project_context import GlobalConfig
+from src.infrastructure.config.project_context import GlobalConfig
 from src.backend.auth import get_current_user
 from src.backend.database.models import User
 from src.backend.rate_limit import generate_limiter

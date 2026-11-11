@@ -70,7 +70,7 @@ class PromptVersionManager:
             # contentをGlobalConfig("optimized_prompt_patch")に同期
             ver = await uow.prompt_versions.get_prompt_version(version_id)
             if ver:
-                from config.project_context import GlobalConfig
+                from src.infrastructure.config.project_context import GlobalConfig
 
                 GlobalConfig().set("optimized_prompt_patch", ver.content)
                 logger.info(f"Activated prompt version {ver.version_tag} for key {prompt_key}")
@@ -116,13 +116,13 @@ class PromptVersionManager:
                         # 直近のロールバックされていない正常なバージョンをアクティブにする
                         fallback_ver = previous_candidates[0]
                         await uow.prompt_versions.set_active_prompt_version(book_id, prompt_key, fallback_ver.id)
-                        from config.project_context import GlobalConfig
+                        from src.infrastructure.config.project_context import GlobalConfig
 
                         GlobalConfig().set("optimized_prompt_patch", fallback_ver.content)
                         logger.info(f"Successfully rolled back to version {fallback_ver.version_tag}")
                     else:
                         # 候補がない場合はデフォルト（空文字列）に戻す
-                        from config.project_context import GlobalConfig
+                        from src.infrastructure.config.project_context import GlobalConfig
 
                         GlobalConfig().set("optimized_prompt_patch", "")
                         logger.info("No fallback prompt version found. Reverted to default empty prompt.")

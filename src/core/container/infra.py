@@ -10,7 +10,7 @@ import os
 
 from dependency_injector import containers, providers
 
-from config.project_context import GlobalConfig
+from src.infrastructure.config.project_context import GlobalConfig
 from schemas.config import GlobalConfigModel
 from src.backend.config import settings
 from src.backend.database.core import DatabaseManager

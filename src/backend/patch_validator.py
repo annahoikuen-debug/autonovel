@@ -5,7 +5,7 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from config.project_context import GlobalConfigModel
+from src.infrastructure.config.project_context import GlobalConfigModel
 
 logger = logging.getLogger(__name__)
 

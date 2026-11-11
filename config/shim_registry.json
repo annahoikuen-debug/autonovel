@@ -1,6 +1,5 @@
 {
   "shims": [
-    "config/project_context.py",
     "src/schemas/__init__.py",
     "config/erotic_direct_mappings.py",
     "config/erotic_pacing.py",

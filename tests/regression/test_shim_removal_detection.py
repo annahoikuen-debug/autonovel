@@ -40,6 +40,7 @@ REMOVED_SHIMS: list[str] = [
     "config/validator.py",
     "config/domain_profile_manager.py",
     "config/settings.py",
+    "config/project_context.py",
     "config/archetypes_new.py",
     "config/constants.py",
     "config/container.py",

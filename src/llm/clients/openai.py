@@ -68,7 +68,7 @@ class OpenAIApiClient(BaseLLMClient):
                 "OpenAI / Gemma integration requires the 'openai' python package. Please install it with 'pip install openai'."
             )
 
-        from config.project_context import ProjectContext
+        from src.infrastructure.config.project_context import ProjectContext
 
         base_url = ProjectContext.get_setting("openai_base_url") or "https://api.openai.com/v1"
         api_key = ProjectContext.get_setting("openai_api_key") or "dummy"

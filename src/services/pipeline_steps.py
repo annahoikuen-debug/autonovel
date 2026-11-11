@@ -108,7 +108,7 @@ class PlanStep(WorkflowStep):
             # カタルシスパターン情報保存 (FullAuto 由来)
             if ctx.enable_catharsis_analysis:
                 try:
-                    from config.project_context import ProjectContext
+                    from src.infrastructure.config.project_context import ProjectContext
                     from src.backend.engine_narrative import WavePatternAnalyzer
 
                     # branch_id は作品間で共有されるため book_id も渡す（既定ブランチ 1）
@@ -264,7 +264,7 @@ class CatharsisAnalysisStep(WorkflowStep):
         try:
             reporter.report("📊 カタルシスパターンを詳細分析中...", "info")
 
-            from config.project_context import ProjectContext
+            from src.infrastructure.config.project_context import ProjectContext
             from src.backend.engine_narrative import WavePatternAnalyzer
 
             plots = await engine.repo.plot.get_all_plots(1, book_id=ctx.book_id)

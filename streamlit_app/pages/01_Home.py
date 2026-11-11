@@ -55,7 +55,7 @@ SAFETY_OPTIONS = {
 
 def load_config() -> GlobalConfigModel:
     try:
-        from config.project_context import get_config
+        from src.infrastructure.config.project_context import get_config
         return get_config()
     except Exception:
         return GlobalConfigModel.default()
@@ -86,7 +86,7 @@ def reset_to_defaults():
     """デフォルト設定にリセット（設定ページで使用）"""
     default_cfg = GlobalConfigModel.default()
     try:
-        from config.project_context import set_config
+        from src.infrastructure.config.project_context import set_config
         set_config(default_cfg)
     except Exception:
         pass

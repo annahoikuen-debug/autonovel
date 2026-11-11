@@ -69,29 +69,6 @@
       ],
       "reason": "旧パス参照が tests/integration/test_erotic_workflow.py に残存（Phase R2 未完了）",
       "todo": "TODO(R3-13)"
-    },
-    "config/project_context.py": {
-      "files": [
-        "src/agents/audit/logical_auditor.py",
-        "src/agents/audit/plot_integrity.py",
-        "src/backend/engine_critique.py",
-        "src/backend/patch_validator.py",
-        "src/backend/prompt_version_manager.py",
-        "src/backend/routers/patches.py",
-        "src/backend/routers/prompt_versions.py",
-        "src/backend/tasks/__init__.py",
-        "src/backend/workflows/writing_langgraph.py",
-        "src/core/container/infra.py",
-        "src/llm/clients/openai.py",
-        "src/llm/model_router.py",
-        "src/services/pipeline_steps.py",
-        "streamlit_app/pages/00_Settings.py",
-        "streamlit_app/pages/01_Home.py",
-        "tests/config/test_project_context_integrity.py",
-        "tests/unit/backend/test_writing_langgraph_coverage.py"
-      ],
-      "reason": "旧パス参照が 18 ファイルに残存。config/ の shim 中最大参照数（Phase R2 未完了）",
-      "todo": "TODO(R3-12)"
     }
   },
   "mentions": {}

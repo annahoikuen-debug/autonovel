@@ -162,7 +162,7 @@ class LogicalAuditor:
     async def analyze_tension_wave(self, book_id: int, ep_range: tuple = (1, 9999)) -> Any:
         """作品のtension履歴からNarrativeWavePatternを生成する"""
         try:
-            from config.project_context import ProjectContext
+            from src.infrastructure.config.project_context import ProjectContext
             from src.models.audit import NarrativeWavePattern
 
             if self.repo is None:

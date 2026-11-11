@@ -75,7 +75,7 @@ from .erotic_vocabulary import (
 from schemas.config import GlobalConfigModel
 
 # 2. project_context から新しいシステム中枢クラスと定数を上書きエクスポート
-from .project_context import PROMPT_TEMPLATES, get_config, set_config
+from src.infrastructure.config.project_context import PROMPT_TEMPLATES, get_config, set_config
 
 __all__ = [
     "GlobalConfigModel",

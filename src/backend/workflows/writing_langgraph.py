@@ -265,7 +265,7 @@ class WritingGraphManager:
 
         # v5.0: 最大反復回数を1回に制限（全文再生成の多重ループ廃止）
         try:
-            from config.project_context import ProjectContext
+            from src.infrastructure.config.project_context import ProjectContext
 
             base_max_ac_iter = min(ProjectContext.get_setting("actor_critic_max_iterations", 1), 1)
         except (ImportError, Exception):
@@ -439,7 +439,7 @@ class WritingGraphManager:
             return {"review_status": "timeout"}
 
         # タイムアウト設定 (デフォルト 24時間)
-        from config.project_context import ProjectContext
+        from src.infrastructure.config.project_context import ProjectContext
 
         timeout_seconds = ProjectContext.get_setting("patch_review_timeout_seconds", 86400)
         poll_interval = ProjectContext.get_setting("patch_review_poll_interval_seconds", 10)
@@ -789,7 +789,7 @@ class WritingGraphManager:
         """初期状態を生成（フォールバック・LangGraph共通）"""
         # v5.0: 最大反復回数を1回にハード制限
         try:
-            from config.project_context import ProjectContext
+            from src.infrastructure.config.project_context import ProjectContext
 
             base_max = min(ProjectContext.get_setting("actor_critic_max_iterations", 1), 1)
         except (ImportError, Exception):

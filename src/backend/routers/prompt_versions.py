@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from config.project_context import GlobalConfig
+from src.infrastructure.config.project_context import GlobalConfig
 from src.backend.auth import get_current_user
 from src.backend.database import UnitOfWork
 from src.backend.database.models import User

@@ -326,7 +326,7 @@ async def test_node_review_wait_statuses(status_value, expected):
     mgr = WritingGraphManager(manager)
     with pytest.MonkeyPatch.context() as m:
         # ProjectContext は関数内 import されるため config 側をパッチする
-        import config.project_context as project_context
+        import src.infrastructure.config.project_context as project_context
         m.setattr(project_context.ProjectContext, "get_setting",
                   staticmethod(lambda key, default=None: 0.01 if "poll" in key else 1))
         result = await mgr.node_review_wait(make_state(patch_review_id=5))
@@ -339,7 +339,7 @@ async def test_node_review_wait_error_and_timeout():
     manager.repo.misc.get_patch_review = AsyncMock(side_effect=RuntimeError("db"))
     mgr = WritingGraphManager(manager)
     with pytest.MonkeyPatch.context() as m:
-        import config.project_context as project_context
+        import src.infrastructure.config.project_context as project_context
         m.setattr(project_context.ProjectContext, "get_setting",
                   staticmethod(lambda key, default=None: 0.01 if "poll" in key else 1))
         result = await mgr.node_review_wait(make_state(patch_review_id=5))
