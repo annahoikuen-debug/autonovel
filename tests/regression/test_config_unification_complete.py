@@ -51,9 +51,6 @@ CONFIG_IMPORT_PATHS = [
     ("config.emotional_hook_vocabulary", None),
     ("config.platform_censorship_rules", None),
     ("config.sharp_edge_vocabulary", None),
-    # 旧パス（shim、維持必須）- 第2バッチ
-    ("config.cors_config", None),
-    ("config.file_watcher", None),
     ("config.logging_config", None),
     ("config.project_context", None),
     ("config.validator", None),
@@ -101,8 +98,6 @@ def test_no_orphan_config_files():
         "config/emotional_hook_vocabulary.py",
         "config/platform_censorship_rules.py",
         "config/sharp_edge_vocabulary.py",
-        "config/cors_config.py",
-        "config/file_watcher.py",
         "config/logging_config.py",
         "config/project_context.py",
         "config/validator.py",

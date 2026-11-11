@@ -9,8 +9,6 @@
     "config/emotional_hook_vocabulary.py",
     "config/platform_censorship_rules.py",
     "config/sharp_edge_vocabulary.py",
-    "config/cors_config.py",
-    "config/file_watcher.py",
     "config/logging_config.py",
     "config/project_context.py",
     "config/validator.py",
