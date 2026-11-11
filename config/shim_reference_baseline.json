@@ -1,0 +1,197 @@
+{
+  "baseline_commit": "b560213baf4936ff133b07258dddba5c709535c5",
+  "scan_note": "git ls-files で全追跡 .py を走査する（ルート手動列挙禁止）",
+  "violations": {
+    "config/container.py": {
+      "files": [
+        "tests/unit/core/test_container.py",
+        "tests/unit/test_container.py"
+      ],
+      "reason": "旧パス参照がテスト 2 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-11)"
+    },
+    "config/settings.py": {
+      "files": [
+        "prompts/registry.py",
+        "src/infrastructure/config/project_context.py"
+      ],
+      "reason": "旧パス参照が prompts と infrastructure/config に残存（Phase R2 未完了）",
+      "todo": "TODO(R3-10)"
+    },
+    "config/archetypes.py": {
+      "files": [
+        "prompts/commercial_prompts.py"
+      ],
+      "reason": "旧パス参照が prompts/commercial_prompts.py に残存（Phase R2 未完了）",
+      "todo": "TODO(R3-10)"
+    },
+    "config/archetypes_new.py": {
+      "files": [
+        "src/backend/routers/misc.py",
+        "src/config/archetypes.py",
+        "tests/contract/test_planning_options_contract.py",
+        "tests/unit/story_spine/test_removed_definitions.py"
+      ],
+      "reason": "旧パス参照が 4 ファイルに残存。src/config/archetypes.py はレイヤー違反（新パスが旧パスに依存）",
+      "todo": "TODO(R3-11)"
+    },
+    "config/constants.py": {
+      "files": [
+        "src/engine/default_plot_expander.py",
+        "src/infrastructure/config/project_context.py",
+        "src/interfaces/streamlit_adapter.py",
+        "tests/regression/test_relative_episode_structure.py"
+      ],
+      "reason": "旧パス参照が 4 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-11)"
+    },
+    "config/domain_profile_manager.py": {
+      "files": [
+        "src/engine/bible_service.py"
+      ],
+      "reason": "旧パス参照が src/engine/bible_service.py に残存（Phase R2 未完了）",
+      "todo": "TODO(R3-10)"
+    },
+    "config/sharp_edge_vocabulary.py": {
+      "files": [
+        "src/backend/engine_plot.py",
+        "src/models/sharp_edge.py"
+      ],
+      "reason": "旧パス参照が 2 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-11)"
+    },
+    "config/erotic_direct_mappings.py": {
+      "files": [
+        "formatters/erotic_censor.py",
+        "src/engine/prompts/erotic_specialist.py"
+      ],
+      "reason": "旧パス参照が 2 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-13)"
+    },
+    "config/erotic_pacing.py": {
+      "files": [
+        "src/backend/workflows/refine_erotic_workflow.py",
+        "src/engine/prompts/erotic_specialist.py",
+        "tests/integration/test_erotic_workflow.py",
+        "tests/regression/test_nsfw_opt_in.py",
+        "tests/unit/easy_mode/test_erotic_specialist_prompts.py"
+      ],
+      "reason": "旧パス参照が 5 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-13)"
+    },
+    "config/erotic_parameters.py": {
+      "files": [
+        "src/agents/erotic/curve.py",
+        "src/engine/prompts/erotic_specialist.py"
+      ],
+      "reason": "旧パス参照が 2 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-13)"
+    },
+    "config/erotic_platform_presets.py": {
+      "files": [
+        "formatters/erotic_censor.py",
+        "src/engine/prompts/erotic_specialist.py",
+        "tests/integration/test_erotic_workflow.py"
+      ],
+      "reason": "旧パス参照が 3 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-13)"
+    },
+    "config/erotic_thresholds.py": {
+      "files": [
+        "src/domain/services/erotic_afterglow_evaluator.py",
+        "src/domain/services/erotic_diversity_score.py",
+        "src/engine/audit/service.py"
+      ],
+      "reason": "旧パス参照が 3 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-13)"
+    },
+    "config/erotic_video_patterns.py": {
+      "files": [
+        "src/engine/prompts/erotic_specialist.py"
+      ],
+      "reason": "旧パス参照が src/engine/prompts/erotic_specialist.py に残存（Phase R2 未完了）",
+      "todo": "TODO(R3-13)"
+    },
+    "config/erotic_vocabulary.py": {
+      "files": [
+        "formatters/erotic_censor.py",
+        "src/engine/prompts/erotic_specialist.py",
+        "tests/integration/test_erotic_workflow.py"
+      ],
+      "reason": "旧パス参照が 3 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-13)"
+    },
+    "config/erotic_vocabulary_ext.py": {
+      "files": [
+        "tests/integration/test_erotic_workflow.py"
+      ],
+      "reason": "旧パス参照が tests/integration/test_erotic_workflow.py に残存（Phase R2 未完了）",
+      "todo": "TODO(R3-13)"
+    },
+    "config/models.py": {
+      "files": [
+        "src/infrastructure/config/project_context.py",
+        "src/interfaces/streamlit_adapter.py",
+        "streamlit_app/pages/00_Settings.py",
+        "streamlit_app/pages/01_Home.py",
+        "tests/config/test_project_context_integrity.py"
+      ],
+      "reason": "旧パス参照が 5 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-11)"
+    },
+    "config/project_context.py": {
+      "files": [
+        "src/agents/audit/logical_auditor.py",
+        "src/agents/audit/plot_integrity.py",
+        "src/backend/engine_critique.py",
+        "src/backend/patch_validator.py",
+        "src/backend/prompt_version_manager.py",
+        "src/backend/routers/patches.py",
+        "src/backend/routers/prompt_versions.py",
+        "src/backend/tasks/__init__.py",
+        "src/backend/workflows/writing_langgraph.py",
+        "src/core/container/infra.py",
+        "src/interfaces/streamlit_adapter.py",
+        "src/llm/clients/openai.py",
+        "src/llm/model_router.py",
+        "src/services/pipeline_steps.py",
+        "streamlit_app/pages/00_Settings.py",
+        "streamlit_app/pages/01_Home.py",
+        "tests/config/test_project_context_integrity.py",
+        "tests/unit/backend/test_writing_langgraph_coverage.py"
+      ],
+      "reason": "旧パス参照が 18 ファイルに残存。config/ の shim 中最大参照数（Phase R2 未完了）",
+      "todo": "TODO(R3-12)"
+    },
+    "config/validator.py": {
+      "files": [
+        "schemas/config.py",
+        "src/infrastructure/config/file_watcher.py"
+      ],
+      "reason": "旧パス参照が 2 ファイルに残存（Phase R2 未完了）",
+      "todo": "TODO(R3-10)"
+    },
+    "config/styles.py": {
+      "files": [
+        "prompts/manager.py"
+      ],
+      "reason": "旧パス参照が prompts/manager.py に残存（Phase R2 未完了）",
+      "todo": "TODO(R3-10)"
+    }
+  },
+  "mentions": {
+    "config/emotional_hook_vocabulary.py": [
+      "tests/regression/test_config_unification_complete.py"
+    ],
+    "config/logging_config.py": [
+      "tests/regression/test_config_unification_complete.py"
+    ],
+    "config/narrative.py": [
+      "tests/regression/test_config_unification_complete.py"
+    ],
+    "config/streamlit_adapter.py": [
+      "src/infrastructure/config/project_context.py",
+      "src/llm/model_router.py"
+    ]
+  }
+}
