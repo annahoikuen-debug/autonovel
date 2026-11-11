@@ -1,0 +1,972 @@
+[
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 1,
+  "drafted_text": "zarma世界の朝は静かだった。1話の幕開けである。\n\n一筋の光が差し込んだ。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 2,
+  "drafted_text": "zarma世界の朝は静かだった。2話の幕開けである。\n\n言葉を失った。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "言葉を失った。",
+    "replacement": "喉が張りつめ、声が出せなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 3,
+  "drafted_text": "zarma世界の朝は静かだった。3話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n胸の奥底で何かが震えた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 4,
+  "drafted_text": "zarma世界の朝は静かだった。4話の幕開けである。\n\n胸の奥底で何かが震えた。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n胸の奥底で何かが震えた。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 5,
+  "drafted_text": "zarma世界の朝は静かだった。5話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 6,
+  "drafted_text": "zarma世界の朝は静かだった。6話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n一筋の光が差し込んだ。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 7,
+  "drafted_text": "zarma世界の朝は静かだった。7話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 8,
+  "drafted_text": "zarma世界の朝は静かだった。8話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n一筋の光が差し込んだ。\n\n胸の奥底で何かが震えた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 9,
+  "drafted_text": "zarma世界の朝は静かだった。9話の幕開けである。\n\n胸の奥底で何かが震えた。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 10,
+  "drafted_text": "zarma世界の朝は静かだった。10話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n一筋の光が差し込んだ。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 11,
+  "drafted_text": "zarma世界の朝は静かだった。11話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n一筋の光が差し込んだ。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 12,
+  "drafted_text": "zarma世界の朝は静かだった。12話の幕開けである。\n\n予感を禁じ得なかった。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 13,
+  "drafted_text": "zarma世界の朝は静かだった。13話の幕開けである。\n\n言葉を失った。\n\n言葉を失った。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "言葉を失った。",
+    "replacement": "喉が張りつめ、声が出せなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 14,
+  "drafted_text": "zarma世界の朝は静かだった。14話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 15,
+  "drafted_text": "zarma世界の朝は静かだった。15話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n胸の奥底で何かが震えた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 16,
+  "drafted_text": "zarma世界の朝は静かだった。16話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n胸の奥底で何かが震えた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 17,
+  "drafted_text": "zarma世界の朝は静かだった。17話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 18,
+  "drafted_text": "zarma世界の朝は静かだった。18話の幕開けである。\n\n胸の奥底で何かが震えた。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n胸の奥底で何かが震えた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 19,
+  "drafted_text": "zarma世界の朝は静かだった。19話の幕開けである。\n\n予感を禁じ得なかった。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 1,
+  "preset": "zarma",
+  "ep_num": 20,
+  "drafted_text": "zarma世界の朝は静かだった。20話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n言葉を失った。\n\n一筋の光が差し込んだ。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "言葉を失った。",
+    "replacement": "喉が張りつめ、声が出せなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 1,
+  "drafted_text": "aku_reijo世界の朝は静かだった。1話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 2,
+  "drafted_text": "aku_reijo世界の朝は静かだった。2話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n運命の歯車が回り始めた。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 3,
+  "drafted_text": "aku_reijo世界の朝は静かだった。3話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n胸の奥底で何かが震えた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 4,
+  "drafted_text": "aku_reijo世界の朝は静かだった。4話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n一筋の光が差し込んだ。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 5,
+  "drafted_text": "aku_reijo世界の朝は静かだった。5話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 6,
+  "drafted_text": "aku_reijo世界の朝は静かだった。6話の幕開けである。\n\n一筋の光が差し込んだ。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 7,
+  "drafted_text": "aku_reijo世界の朝は静かだった。7話の幕開けである。\n\n運命の歯車が回り始めた。\n\n運命の歯車が回り始めた。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 8,
+  "drafted_text": "aku_reijo世界の朝は静かだった。8話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n予感を禁じ得なかった。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 9,
+  "drafted_text": "aku_reijo世界の朝は静かだった。9話の幕開けである。\n\n運命の歯車が回り始めた。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 10,
+  "drafted_text": "aku_reijo世界の朝は静かだった。10話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 11,
+  "drafted_text": "aku_reijo世界の朝は静かだった。11話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 12,
+  "drafted_text": "aku_reijo世界の朝は静かだった。12話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n運命の歯車が回り始めた。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 13,
+  "drafted_text": "aku_reijo世界の朝は静かだった。13話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n言葉を失った。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "言葉を失った。",
+    "replacement": "喉が張りつめ、声が出せなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 14,
+  "drafted_text": "aku_reijo世界の朝は静かだった。14話の幕開けである。\n\n予感を禁じ得なかった。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 15,
+  "drafted_text": "aku_reijo世界の朝は静かだった。15話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n胸の奥底で何かが震えた。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 16,
+  "drafted_text": "aku_reijo世界の朝は静かだった。16話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n運命の歯車が回り始めた。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 17,
+  "drafted_text": "aku_reijo世界の朝は静かだった。17話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n胸の奥底で何かが震えた。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 18,
+  "drafted_text": "aku_reijo世界の朝は静かだった。18話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n胸の奥底で何かが震えた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 19,
+  "drafted_text": "aku_reijo世界の朝は静かだった。19話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 2,
+  "preset": "aku_reijo",
+  "ep_num": 20,
+  "drafted_text": "aku_reijo世界の朝は静かだった。20話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n言葉を失った。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "言葉を失った。",
+    "replacement": "喉が張りつめ、声が出せなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 1,
+  "drafted_text": "slow_life世界の朝は静かだった。1話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n胸の奥底で何かが震えた。\n\n「行くのか」「ああ、行くしかない」\n\n言葉を失った。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "言葉を失った。",
+    "replacement": "喉が張りつめ、声が出せなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 2,
+  "drafted_text": "slow_life世界の朝は静かだった。2話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 3,
+  "drafted_text": "slow_life世界の朝は静かだった。3話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 4,
+  "drafted_text": "slow_life世界の朝は静かだった。4話の幕開けである。\n\n胸の奥底で何かが震えた。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n一筋の光が差し込んだ。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 5,
+  "drafted_text": "slow_life世界の朝は静かだった。5話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n一筋の光が差し込んだ。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 6,
+  "drafted_text": "slow_life世界の朝は静かだった。6話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n胸の奥底で何かが震えた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 7,
+  "drafted_text": "slow_life世界の朝は静かだった。7話の幕開けである。\n\n胸の奥底で何かが震えた。\n\n一筋の光が差し込んだ。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "胸の奥底で何かが震えた。",
+    "replacement": "肋骨の内側が、小さくきしんだ。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 8,
+  "drafted_text": "slow_life世界の朝は静かだった。8話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 9,
+  "drafted_text": "slow_life世界の朝は静かだった。9話の幕開けである。\n\n一筋の光が差し込んだ。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n一筋の光が差し込んだ。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 10,
+  "drafted_text": "slow_life世界の朝は静かだった。10話の幕開けである。\n\n言葉を失った。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n予感を禁じ得なかった。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "言葉を失った。",
+    "replacement": "喉が張りつめ、声が出せなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 11,
+  "drafted_text": "slow_life世界の朝は静かだった。11話の幕開けである。\n\n言葉を失った。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "言葉を失った。",
+    "replacement": "喉が張りつめ、声が出せなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 12,
+  "drafted_text": "slow_life世界の朝は静かだった。12話の幕開けである。\n\n運命の歯車が回り始めた。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n予感を禁じ得なかった。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 13,
+  "drafted_text": "slow_life世界の朝は静かだった。13話の幕開けである。\n\n一筋の光が差し込んだ。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 14,
+  "drafted_text": "slow_life世界の朝は静かだった。14話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n一筋の光が差し込んだ。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 15,
+  "drafted_text": "slow_life世界の朝は静かだった。15話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 16,
+  "drafted_text": "slow_life世界の朝は静かだった。16話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n「行くのか」「ああ、行くしかない」\n\n予感を禁じ得なかった。\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "本文に存在しない架空の文。",
+    "replacement": "どんな文章でもよい",
+    "rationale": "不良差分 (quote 不存在)"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 17,
+  "drafted_text": "slow_life世界の朝は静かだった。17話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 18,
+  "drafted_text": "slow_life世界の朝は静かだった。18話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n一筋の光が差し込んだ。\n\n予感を禁じ得なかった。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "予感を禁じ得なかった。",
+    "replacement": "嫌な結末しか、浮かんでこなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 19,
+  "drafted_text": "slow_life世界の朝は静かだった。19話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ },
+ {
+  "book_id": 3,
+  "preset": "slow_life",
+  "ep_num": 20,
+  "drafted_text": "slow_life世界の朝は静かだった。20話の幕開けである。\n\n王都の石畳は冷たく、靴音がよく響く。\n\n運命の歯車が回り始めた。\n\n一筋の光が差し込んだ。\n\n「行くのか」「ああ、行くしかない」\n\n剣を握る手のひらに、汗が滲んだ。\n\n夜が明ける前の一番暗い时刻、彼らは門を出た。",
+  "structured_diffs": [
+   {
+    "original_quote": "運命の歯車が回り始めた。",
+    "replacement": "事態は、もう止まらなかった。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   },
+   {
+    "original_quote": "一筋の光が差し込んだ。",
+    "replacement": "扉の隙間から、埃の舞う光が落ちた。",
+    "rationale": "AI 定型表現の五感描写への変換"
+   }
+  ]
+ }
+]
