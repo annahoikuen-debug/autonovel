@@ -25,7 +25,7 @@ def test_erotic_generation_rejected_when_nsfw_disabled(monkeypatch) -> None:
     """ENABLE_NSFW=false では官能生成経路が拒否される (デフォルト拒否)。"""
     from src.backend.config import settings
     from src.engine.prompts.erotic_specialist import EroticSpecialist
-    from config.erotic_pacing import EroticCurve
+    from src.nsfw.erotic_pacing import EroticCurve
 
     monkeypatch.setattr(settings, "ENABLE_NSFW", False)
     assert settings.is_nsfw_enabled() is False
@@ -42,7 +42,7 @@ def test_erotic_generation_allowed_when_nsfw_enabled(monkeypatch) -> None:
     """ENABLE_NSFW=true では官能生成経路が通る (オプトイン)。"""
     from src.backend.config import settings
     from src.engine.prompts.erotic_specialist import EroticSpecialist
-    from config.erotic_pacing import EroticCurve
+    from src.nsfw.erotic_pacing import EroticCurve
 
     monkeypatch.setattr(settings, "ENABLE_NSFW", True)
     assert settings.is_nsfw_enabled() is True

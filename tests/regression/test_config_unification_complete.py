@@ -46,7 +46,6 @@ CONFIG_IMPORT_PATHS = [
     # 旧パス（shim、維持必須）- 第1バッチ
     # 旧パス（shim、維持必須）- 既存
     # erotic shims（既存、維持必須）
-    ("config.erotic_vocabulary", ["METAPHOR_BANK"]),
 ]
 
 

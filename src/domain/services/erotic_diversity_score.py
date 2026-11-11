@@ -11,7 +11,7 @@ F4 フェーズ: src/services/erotic_diversity_score.py から domain/services �
 import math
 from collections import Counter
 
-from config.erotic_thresholds import (
+from src.nsfw.erotic_thresholds import (
     DIVERSITY_SCORE_PASS,
     DIVERSITY_SCORE_WARN,
 )

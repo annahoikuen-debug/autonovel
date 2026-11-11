@@ -6,7 +6,7 @@ src/backend/workflows/refine_erotic_workflow.py
 import logging
 from typing import Any
 
-from config.erotic_pacing import EroticCurve
+from src.nsfw.erotic_pacing import EroticCurve
 from src.shared.utils import StatusReporter
 
 from .base_workflow import BaseWorkflow

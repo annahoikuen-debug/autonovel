@@ -2,7 +2,7 @@ import logging
 from typing import Any
 
 from src.agents.audit import AbilityConsistencyChecker, DeAIAuditor, FastPlotScreener
-from config.erotic_thresholds import MAX_CONSECUTIVE_PEAK_EPISODES
+from src.nsfw.erotic_thresholds import MAX_CONSECUTIVE_PEAK_EPISODES
 
 logger = logging.getLogger(__name__)
 

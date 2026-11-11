@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from config.erotic_pacing import EroticCurve
+from src.nsfw.erotic_pacing import EroticCurve
 from src.engine.prompts.erotic_specialist import EroticSpecialist
 
 

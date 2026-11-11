@@ -3,9 +3,9 @@ tests/test_erotic_workflow.py
 官能ワークフローのユニットテスト。
 """
 
-from config.erotic_pacing import EroticCurve
-from config.erotic_platform_presets import get_preset, get_preset_names
-from config.erotic_vocabulary import get_vocabulary_for_tier
+from src.nsfw.erotic_pacing import EroticCurve
+from src.nsfw.erotic_platform_presets import get_preset, get_preset_names
+from src.nsfw.erotic_vocabulary import get_vocabulary_for_tier
 from formatters.erotic_censor import apply_censorship
 from src.agents.erotic_integrity import EroticIntegrityChecker
 from src.engine.prompts.erotic_specialist import EroticSpecialist
@@ -91,7 +91,7 @@ def test_diversity_classify():
 
 
 def test_diversity_check():
-    from config.erotic_vocabulary import METAPHOR_BANK
+    from src.nsfw.erotic_vocabulary import METAPHOR_BANK
 
     result = check_diversity("瞳を星の瞬きに例える 声が風鈴の音に例える", METAPHOR_BANK)
     assert "score" in result
@@ -160,7 +160,7 @@ def test_density_controller_suggest_next():
 
 # Step 33: 語彙ティア最小数確認テスト
 def test_full_tier_minimum_vocabulary():
-    from config.erotic_vocabulary import get_vocabulary_for_tier
+    from src.nsfw.erotic_vocabulary import get_vocabulary_for_tier
 
     full = get_vocabulary_for_tier("full")
     assert len(full["metaphors"]) >= 30, f"metaphors: {len(full['metaphors'])}"
@@ -169,7 +169,7 @@ def test_full_tier_minimum_vocabulary():
 
 
 def test_intense_tier_accessible():
-    from config.erotic_vocabulary_ext import get_vocabulary_for_tier_ext
+    from src.nsfw.erotic_vocabulary_ext import get_vocabulary_for_tier_ext
 
     intense = get_vocabulary_for_tier_ext("intense")
     assert len(intense["metaphors"]) >= len(get_vocabulary_for_tier("full")["metaphors"])

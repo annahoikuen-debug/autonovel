@@ -6,15 +6,15 @@ import logging
 from string import Template
 from typing import Any, Optional
 
-from config.erotic_direct_mappings import get_combined_mappings
-from config.erotic_pacing import EroticBeat, EroticCurve
+from src.nsfw.erotic_direct_mappings import get_combined_mappings
+from src.nsfw.erotic_pacing import EroticBeat, EroticCurve
 from prompts.erotic.safety_manifest import get_safety_prefix
 from src.services.safe_replace import SafeReplacer
 
 logger = logging.getLogger(__name__)
 
-from config.erotic_parameters import EroticParameters
-from config.erotic_video_patterns import VIDEO_PATTERNS, get_all_pattern_instructions
+from src.nsfw.erotic_parameters import EroticParameters
+from src.nsfw.erotic_video_patterns import VIDEO_PATTERNS, get_all_pattern_instructions
 
 
 SENSORY_PRIORITY = {
@@ -60,8 +60,8 @@ class EroticSpecialist:
             params: オプション。EroticParametersインスタンス。
                 指定された場合、詳細パラメータを使用したプロンプトを生成する。
         """
-        from config.erotic_platform_presets import get_preset
-        from config.erotic_vocabulary import get_vocabulary_for_tier
+        from src.nsfw.erotic_platform_presets import get_preset
+        from src.nsfw.erotic_vocabulary import get_vocabulary_for_tier
         from prompts.erotic.scene_templates import get_template_for_phase
 
         # === Step 11 追加: YAMLプリセットがあれば優先使用 ===

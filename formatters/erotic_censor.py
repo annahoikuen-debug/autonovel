@@ -6,9 +6,9 @@ formatters/erotic_censor.py
 
 from typing import Dict, List
 
-from config.erotic_direct_mappings import DIRECT_TO_METAPHOR
-from config.erotic_platform_presets import get_preset
-from config.erotic_vocabulary import get_vocabulary_for_tier
+from src.nsfw.erotic_direct_mappings import DIRECT_TO_METAPHOR
+from src.nsfw.erotic_platform_presets import get_preset
+from src.nsfw.erotic_vocabulary import get_vocabulary_for_tier
 from src.config.platform_censorship_rules import get_censorship_rules
 
 

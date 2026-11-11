@@ -1,14 +1,6 @@
 {
   "shims": [
     "src/schemas/__init__.py",
-    "config/erotic_direct_mappings.py",
-    "config/erotic_pacing.py",
-    "config/erotic_parameters.py",
-    "config/erotic_platform_presets.py",
-    "config/erotic_thresholds.py",
-    "config/erotic_video_patterns.py",
-    "config/erotic_vocabulary.py",
-    "config/erotic_vocabulary_ext.py",
     "src/api/health.py",
     "src/api/dashboard.py",
     "src/api/conflicts.py",

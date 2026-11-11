@@ -46,6 +46,14 @@ REMOVED_SHIMS: list[str] = [
     "config/container.py",
     "config/models.py",
     "config/sharp_edge_vocabulary.py",
+    "config/erotic_direct_mappings.py",
+    "config/erotic_pacing.py",
+    "config/erotic_parameters.py",
+    "config/erotic_platform_presets.py",
+    "config/erotic_thresholds.py",
+    "config/erotic_video_patterns.py",
+    "config/erotic_vocabulary.py",
+    "config/erotic_vocabulary_ext.py",
 ]
 
 registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))

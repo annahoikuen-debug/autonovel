@@ -63,9 +63,9 @@ from src.config.constants import (
 from src.config.domain_profile_manager import DomainProfileManager, DomainProfileService
 
 # 官能/NSFWモジュール
-from .erotic_pacing import EroticBeat, EroticCurve
-from .erotic_platform_presets import PLATFORM_PRESETS, get_preset, get_preset_names
-from .erotic_vocabulary import (
+from src.nsfw.erotic_pacing import EroticBeat, EroticCurve
+from src.nsfw.erotic_platform_presets import PLATFORM_PRESETS, get_preset, get_preset_names
+from src.nsfw.erotic_vocabulary import (
     METAPHOR_BANK,
     ONOMATOPOEIA_BANK,
     PSYCHOLOGY_TEMPLATES,

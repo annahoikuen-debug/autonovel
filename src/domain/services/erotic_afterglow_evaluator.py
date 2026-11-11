@@ -6,7 +6,7 @@ F4 フェーズ: src/services/erotic_afterglow_evaluator.py から domain/servic
 旧パスは後方互換のため shim として残す。
 """
 
-from config.erotic_thresholds import AFTERGLOW_MIN_CHARS, AFTERGLOW_MIN_PARAGRAPHS
+from src.nsfw.erotic_thresholds import AFTERGLOW_MIN_CHARS, AFTERGLOW_MIN_PARAGRAPHS
 
 
 class AfterglowEvaluator:
