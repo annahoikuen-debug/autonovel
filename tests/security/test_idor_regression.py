@@ -58,6 +58,20 @@ NO_OWNERSHIP_NEEDED: set[str] = {
     "stream_writing",
     # TODO(H1-2): system.py の再計算・改善優先度エンドポイントの認証・所有権検証
     "system",
+    # admin_phase2: book_id を受けるのは `/admin/rag/reflection_stats`
+    #   (admin_phase2.py:226) の 1 ハンドラだけで、
+    #   (1) router レベルの `dependencies=[Depends(require_api_key)]`
+    #       (admin_phase2.py:157-161) で API Key 認証を通過する
+    #   (2) 返り値は `total_calls=0` 等の**ハードコードされた集計スタブ**で、
+    #       本文・設定・プロット等の所有権対象データを一切返さない
+    #   (3) ユーザーではなくサービス（API Key）が呼ぶ管理用エンドポイントで、
+    #       フロントからも参照されない（生成物 api.generated.ts のみ）
+    #   ため、per-book 所有権ガードは適用しない。
+    #   なお `require_api_key` は `AUTH_MARKERS` にも追加したので、
+    #   「認証が無いのに book_id を扱う」側のゲートは admin_phase2 を通していない。
+    # TODO(H1-2): このスタブが実データを返すようにする／削除するなら、
+    #   本エントリも同時に削除すること（openapi.json と api.generated.ts の再生成を伴う）。
+    "admin_phase2",
 }
 
 NO_AUTH_NEEDED: set[str] = {
@@ -72,7 +86,24 @@ NO_AUTH_NEEDED: set[str] = {
     "system",
 }
 
-AUTH_MARKERS = ("get_current_user", "enforce_book_ownership", "requires_book_ownership")
+# 「この router には認証依存が実在する」と判定できる依存関数の集まり。
+#
+# `require_api_key` / `require_admin_user_or_key` も本物の認証依存である
+# （src/backend/auth.py:99 / :130 ともに、AUTH_DISABLED でない限り
+# API Key 不在・不一致で 401 を返す）。router レベルの
+# `dependencies=[Depends(require_api_key)]` で守っているルータ
+# （admin_phase2 / health / tasks 等）はハンドラに `get_current_user` が
+# 現れないため、ここに含めないと「認証が無い」と誤判定される。
+#
+# NOTE: 認証要件を緩めたのではなく、**正しく認識しただけ**。
+#   認証依存を一切持たない router は従来どおりここに一致せず赤のまま。
+AUTH_MARKERS = (
+    "get_current_user",
+    "enforce_book_ownership",
+    "requires_book_ownership",
+    "require_api_key",
+    "require_admin_user_or_key",
+)
 
 # 所有権ガードの実装は router ごとに異なる:
 #   - verify_book_ownership : owner_guard.py の標準ガード

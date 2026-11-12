@@ -61,9 +61,46 @@ def _router_paths(module_name: str) -> set[str]:
     return paths
 
 
-# metrics は server.py の独立 /metrics エンドポイントと役割が重複するため
-# 「意図的にマウントしない」ことが文書化されている。
-ALLOWLIST = {"metrics"}
+# 意図的にマウントしない router。
+#
+# 「マウントされていない」ことを理由として目を閉じるのではなく、
+# 例外は必ず「理由 + TODO(H1-N)」を伴わせる（§9）。
+# metrics は server.py の独立 /metrics エンドポイントと役割が重複するため、
+# agent_memory / conflicts / dashboard は下記のとおり。
+ALLOWLIST: dict[str, str] = {
+    "metrics": (
+        "src/backend/routers/metrics.py の全パスは src/interfaces/api/metrics.py の"
+        "ファクトリ経由で server.py の独立 /metrics エンドポイントと役割が重複しており、"
+        "二重マウントはエンドポイントの二重公開になる。"
+        "TODO(H1-2): ファクトリ実体と旧 router のどちらを残すか統合可否を判断する"
+    ),
+    "agent_memory": (
+        "一度もマウントされた履歴が無く（wiring.py の RouterMount 一覧に無く、"
+        "git log -S agent_memory -- wiring/server/app_factory も空）、"
+        "フロントからも参照されないため 404 リスクが無い。"
+        "さらに Depends 認証依存が 1 件も無いため、マウントすると"
+        "未認証エンドポイントの公開になる。"
+        "検証は tests/integration/api/test_agent_memory_api.py が"
+        "src/api/agent_memory.py の再エクスポート経由で直接実施している。"
+        "TODO(H1-2): マウントして認証を付けるか、削除するかを判断する"
+    ),
+    "conflicts": (
+        "一度もマウントされた履歴が無く、フロントからも参照されないため"
+        "404 リスクが無い。Depends 認証依存が 1 件も無いため、"
+        "マウントすると未認証エンドポイントの公開になる。"
+        "検証は tests/integration/api/test_conflict_resolution.py が"
+        "src/api/conflicts.py の再エクスポート経由で直接実施している。"
+        "TODO(H1-2): マウントして認証を付けるか、削除するかを判断する"
+    ),
+    "dashboard": (
+        "一度もマウントされた履歴が無く、フロントからも参照されないため"
+        "404 リスクが無い。Depends 認証依存が 1 件も無いため、"
+        "マウントすると未認証エンドポイントの公開になる。"
+        "検証は tests/integration/api/test_dashboard.py が"
+        "src/api/dashboard.py の再エクスポート経由で直接実施している。"
+        "TODO(H1-2): マウントして認証を付けるか、削除するかを判断する"
+    ),
+}
 
 # plugin_registry によって条件付きマウントされる router。
 # プラグインを無効にした環境（testing プロファイルなど）では app に現れない。
@@ -76,16 +113,31 @@ CONDITIONAL_MOUNTS = {
     ),
 }
 
-_SKIP = ALLOWLIST | set(CONDITIONAL_MOUNTS)
+_SKIP = set(ALLOWLIST) | set(CONDITIONAL_MOUNTS)
+
+
+def _assert_reasons(entries: dict[str, str], kind: str) -> None:
+    """allowlist エントリに「理由 + TODO(H1-N)」が在ることを要求する（§9）。"""
+    for name, reason in entries.items():
+        assert reason.strip(), f"{name} の {kind} に理由が無い"
+        assert "TODO(H1-" in reason, (
+            f"{name} の {kind} に TODO(H1-N) の番号が無い（§9: 数値外れ禁止）"
+        )
+
+
+def test_allowlist_entries_have_a_reason():
+    """マウントしない例外（ALLOWLIST）にも理由と TODO 番号を書く（§9）。
+
+    理由なしの allowlist は「目を閉じる場所」にしかならない。
+    2026-10-03 の公開前監査で、理由が書かれていない allowlist が
+    IDOR を隠していた実績があるため、例外は必ず理由付きでなければならない。
+    """
+    _assert_reasons(ALLOWLIST, "ALLOWLIST")
 
 
 def test_conditional_mounts_have_a_reason():
     """条件付きマウントを allowlist に挙げたなら、理由と TODO 番号を書く（§9）。"""
-    for name, reason in CONDITIONAL_MOUNTS.items():
-        assert reason.strip(), f"{name} の CONDITIONAL_MOUNTS に理由が無い"
-        assert "TODO(H1-" in reason, (
-            f"{name} の CONDITIONAL_MOUNTS に TODO(H1-N) の番号が無い（§9: 数値外れ禁止）"
-        )
+    _assert_reasons(CONDITIONAL_MOUNTS, "CONDITIONAL_MOUNTS")
 
 
 def _app_paths() -> set[str]:
