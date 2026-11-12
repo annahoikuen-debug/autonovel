@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "AutoNovel Backend",
-    "version": "6.0.0"
+    "version": "7.0.0"
   },
   "paths": {
     "/easy_mode/generate": {
@@ -6063,7 +6063,7 @@
           "tasks"
         ],
         "summary": "Get Dag Status",
-        "description": "Step 57: Get DAG workflow status, progress, and node execution states.",
+        "description": "Step 57: Get DAG workflow status, progress, and node execution states.\n\n所有権の判定が出来ないため管理者/API Key に限定する（P1）:\n- DAGGraph に owner / book_id フィールドが無く、checkpoint から\n  所有者を導出できない\n- dag_id は `novel_b{book_id}_ep{ep}` と `orch_{correlation_id}` の\n  2 形式があり、正規表現では全形式をカバーできない\n- 返り値に node の error 文字列・実行時間が含まれるため、\n  任意ユーザーに開示しない\nTODO(H1-2): DAGGraph に owner_id を持ち、checkpoint に永続化して\n  per-owner の照合を行う（設計は plans/PLAN_SECURITY_GATE_AND_DEBT_2026-11.md §4-3）。",
         "operationId": "get_dag_status_api_tasks_dag__dag_id__get",
         "security": [
           {
@@ -6078,6 +6078,16 @@
             "schema": {
               "type": "string",
               "title": "Dag Id"
+            }
+          },
+          {
+            "name": "Authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "",
+              "title": "Authorization"
             }
           }
         ],
@@ -16327,6 +16337,23 @@
             ],
             "title": "End Ep",
             "description": "終了話数（未指定時はtarget_episodesまで）"
+          },
+          "spine_quality": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "off",
+                  "soft",
+                  "hard"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Spine Quality",
+            "description": "STORY_SPINE 構造テンプレートの適用レベル。未指定 = 注入なし"
           }
         },
         "type": "object",
@@ -17399,7 +17426,7 @@
           "version": {
             "type": "string",
             "title": "Version",
-            "default": "6.0.0"
+            "default": "7.0.0"
           },
           "timestamp": {
             "type": "string",
@@ -19161,7 +19188,31 @@
               }
             ],
             "title": "Actionable Patch",
-            "description": "推奨局所修正パッチ"
+            "description": "推奨局所修正パッチ（従来互換・文字列）"
+          },
+          "actionable_quote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actionable Quote",
+            "description": "H8: 置換対象の逐語引用（400字以内）"
+          },
+          "actionable_replacement": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actionable Replacement",
+            "description": "H8: 差し替え後文章"
           }
         },
         "type": "object",

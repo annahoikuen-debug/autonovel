@@ -23,8 +23,15 @@ def _pyproject_version() -> str:
     return str(data["project"]["version"])
 
 
-def test_pyproject_version_is_v6():
-    assert _pyproject_version() == "6.0.0"
+def test_pyproject_version_is_current_release():
+    """pyproject.toml の version が SemVer 形式であること。
+
+    固定版数（"6.0.0"）へのハードコードをやめ、SSOT（pyproject.toml）の版数を
+    正とする。版数と CHANGELOG 先頭エントリの一致は
+    test_changelog_top_entry_matches_pyproject で担保する。
+    """
+    version = _pyproject_version()
+    assert re.fullmatch(r"\d+\.\d+\.\d+", version), f"SemVer 形式でない: {version}"
 
 
 def test_readme_badge_matches_pyproject():

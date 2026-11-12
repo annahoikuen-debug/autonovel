@@ -7382,7 +7382,7 @@ export interface components {
             status: components["schemas"]["HealthStatus"];
             /**
              * Version
-             * @default 6.0.0
+             * @default 7.0.0
              */
             version: string;
             /** Timestamp */

@@ -14,11 +14,11 @@
 
 | 項目 | 値 | 根拠 |
 |:---|:---|:---|
-| `pyproject.toml` の `project.version`（唯一の正） | **6.0.0** | `pyproject.toml:3` |
-| CLI `autonovel --version` | 6.0.0 | `src/cli/main.py` |
-| backend `__version__` | 6.0.0 | `src/backend/__init__.py` |
-| frontend | 6.0.0 | `frontend/package.json` |
-| 直近のリリースノート | `[6.0.0] - 2026-09-28` | `CHANGELOG.md` |
+| `pyproject.toml` の `project.version`（唯一の正） | **7.0.0** | `pyproject.toml:3` |
+| CLI `autonovel --version` | 7.0.0 | `src/cli/main.py` |
+| backend `__version__` | 7.0.0 | `src/backend/__init__.py` |
+| frontend | 7.0.0 | `frontend/package.json` |
+| 直近のリリースノート | `[7.0.0] - 2026-11-13` | `CHANGELOG.md` |
 
 **「v5.2.1」とは何か**: マンガ/low-cost パイプライン統合として記録されたリリースノート上の版（`CHANGELOG.md`）。
 現在のコードはすでに 5.3.0（長編耐性・伏線ステートマシン実体化）へ進んでいるため、
