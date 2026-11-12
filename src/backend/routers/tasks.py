@@ -80,8 +80,22 @@ async def get_task_status(
 
 
 @router.get("/dag/{dag_id}")
-async def get_dag_status(dag_id: str):
-    """Step 57: Get DAG workflow status, progress, and node execution states."""
+async def get_dag_status(
+    dag_id: str,
+    _current_user: User = Depends(require_admin_user_or_key),
+):
+    """Step 57: Get DAG workflow status, progress, and node execution states.
+
+    所有権の判定が出来ないため管理者/API Key に限定する（P1）:
+    - DAGGraph に owner / book_id フィールドが無く、checkpoint から
+      所有者を導出できない
+    - dag_id は `novel_b{book_id}_ep{ep}` と `orch_{correlation_id}` の
+      2 形式があり、正規表現では全形式をカバーできない
+    - 返り値に node の error 文字列・実行時間が含まれるため、
+      任意ユーザーに開示しない
+    TODO(H1-2): DAGGraph に owner_id を持ち、checkpoint に永続化して
+      per-owner の照合を行う（設計は plans/PLAN_SECURITY_GATE_AND_DEBT_2026-11.md §4-3）。
+    """
     from src.backend.tasks.dag_persistence import FileSystemDAGPersistence
     from src.backend.tasks.dag_scheduler import DAGScheduler
 
