@@ -10,6 +10,7 @@ import asyncio
 import os
 from dataclasses import dataclass
 
+from src.audit.calibration_store import is_pairwise_enabled
 from src.audit.judge_panel import JudgePanel, PairwiseVerdict
 
 # 候補生成時に静的層スコアを持つ想定

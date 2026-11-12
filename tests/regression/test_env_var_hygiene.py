@@ -29,6 +29,10 @@ ALLOWED_FILES = {
     "tests/regression/test_auth_bypass_contract.py",
     # 自分自身（docstring にパターン文字列を含むため除外）
     "tests/regression/test_env_var_hygiene.py",
+    # モジュールロード時に ENABLE_AUDIT_LEGACY_CORE=true を設定。レガシーコア監査
+    # のモック差し替えのため必須。monkeypatch.setenv はモジュールレベルでは
+    # 使用できないため許可。
+    "tests/contract/test_v6_audit_parallel_equivalence.py",
     "tests/unit/api/test_stream_writing.py",
     "tests/unit/test_logging_config.py",
     "tests/unit/test_marketing_agent.py",

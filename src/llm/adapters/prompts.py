@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Optional
+
 NOVEL_SYSTEM_PROMPT = """あなたはプロのWeb小説家および編集者です。
 読者を惹きつける魅力的な描写、テンポの良い会話、感情を揺さぶるストーリーテリングを得意としています。
 指定されたジャンル・キャラクター設定・前話の文脈を踏まえ、高品質なWeb小説本文を執筆してください。

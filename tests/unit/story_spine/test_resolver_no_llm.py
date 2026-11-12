@@ -48,9 +48,9 @@ def test_full_matrix_makes_no_llm_call(no_llm):
     from config.story_spine import LENGTHS, MARKETS, PATTERNS
     from src.services.spine_resolver import resolve_spine
 
-    for p, l, m in itertools.product(PATTERNS, LENGTHS, MARKETS):
-        lo, hi = LENGTHS[l]["eps_range"]
-        assert resolve_spine(p, l, m, (lo + hi) // 2).beats
+    for p, length_key, m in itertools.product(PATTERNS, LENGTHS, MARKETS):
+        lo, hi = LENGTHS[length_key]["eps_range"]
+        assert resolve_spine(p, length_key, m, (lo + hi) // 2).beats
 
 
 def test_resolve_spine_is_deterministic():
