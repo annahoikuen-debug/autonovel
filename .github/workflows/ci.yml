@@ -226,3 +226,13 @@ jobs:
         working-directory: .
         run: python scripts/export_planning_options.py --check
 
+      - name: OpenAPI スナップショットの鮮度確認
+        working-directory: .
+        run: |
+          python scripts/generate_openapi.py --output /tmp/openapi_generated.json
+          if ! diff -q docs/openapi.json /tmp/openapi_generated.json > /dev/null 2>&1; then
+            echo "docs/openapi.json が最新のAPI定義と一致しません。"
+            echo "scripts/generate_openapi.py を実行して docs/openapi.json を更新してください。"
+            exit 1
+          fi
+
