@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { AUTH_TOKEN_STORAGE_KEY, readAuthToken, clearAuthToken } from '../api/client';
+import { apiFetch, AUTH_TOKEN_STORAGE_KEY, readAuthToken, clearAuthToken } from '../api/client';
 
 interface User {
   id: number;
@@ -46,10 +46,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // 失敗は握りつぶしてローカルの消去は必ず実行する (fire-and-forget)。
     const accessToken = readAuthToken();
     if (accessToken) {
-      void fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }).catch(() => undefined);
+      // apiFetch が readAuthToken() から自動的に Authorization ヘッダを付与し、
+      // 30s タイムアウト・ネットワークエラー映射・401 時のトークン除去を行う。
+      void apiFetch('/api/auth/logout', { method: 'POST' }).catch(() => undefined);
     }
     setToken(null);
     setUser(null);
@@ -64,11 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async () => {
     try {
-      const response = await fetch('/api/auth/me', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      const response = await apiFetch('/api/auth/me');
       if (!response.ok) {
         throw new Error('Failed to fetch profile');
       }
@@ -80,12 +75,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('/api/auth/login', {
+    const response = await apiFetch('/api/auth/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password }),
     });
     if (!response.ok) {
       throw new Error(await readErrorMessage(response, "ログインに失敗しました"));
@@ -97,12 +89,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (email: string, password: string, display_name: string) => {
-    const response = await fetch('/api/auth/register', {
+    const response = await apiFetch('/api/auth/register', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ email, password, display_name })
+      body: JSON.stringify({ email, password, display_name }),
     });
     if (!response.ok) {
       throw new Error(await readErrorMessage(response, "登録に失敗しました"));
