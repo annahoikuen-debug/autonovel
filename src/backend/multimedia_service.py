@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import uuid
 import zipfile
 from collections.abc import Sequence
@@ -40,6 +41,18 @@ from src.easy_mode.phase3.media_mix import (
 from src.easy_mode import SeriesResult
 
 logger = logging.getLogger(__name__)
+
+
+def sanitize_filename(name: str) -> str:
+    """ファイル名に安全でない文字を除去・置換し、パストラバーサルを防ぐ (H14)。
+
+    - ディレクトリ区切り文字 (/ \) をアンダースコアに置換
+    - .. を除去
+    - 制御文字を除去
+    """
+    name = re.sub(r"[\\/\x00-\x1f]", "_", name)
+    name = name.replace("..", "__")
+    return name.strip(" .")
 
 
 def _extract_preset(series: SeriesResult) -> dict[str, Any]:
@@ -394,7 +407,7 @@ class MultimediaService:
 
         results: dict[str, str] = {}
         for fmt in formats:
-            base = f"{series.title}_ep{len(series.episodes)}"
+            base = f"{sanitize_filename(series.title)}_ep{len(series.episodes)}"
             fname = f"{base}.{fmt}"
             path = out_dir / fname
             try:
