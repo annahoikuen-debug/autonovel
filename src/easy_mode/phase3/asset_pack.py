@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from src.easy_mode.phase3.ebook_export import EbookExporter, create_ebook_exporter
+from src.easy_mode.phase3.ebook_export import EbookExporter, EbookMetadata, create_ebook_exporter
 from src.easy_mode.phase3.if_routes import IFRouteGenerator, IFRouteGraph
 from src.easy_mode.phase3.media_mix import (
     MediaFormat,
@@ -78,14 +78,19 @@ class AssetPackGenerator:
         self.media_exporter: MediaMixExporter | None = None
         self.ebook_exporter: EbookExporter | None = None
 
-    def _init_components(self, series: SeriesResult):
+    def _init_components(self, series: SeriesResult, output_dir: Path):
         """コンポーネント初期化"""
         if self.if_generator is None:
             self.if_generator = IFRouteGenerator(self.genre, self.preset)
         if self.media_exporter is None:
             self.media_exporter = create_media_mix_exporter(self.genre, self.preset)
         if self.ebook_exporter is None:
-            self.ebook_exporter = create_ebook_exporter(self.genre, self.preset)
+            # H13: create_ebook_exporter は (EbookMetadata, output_dir) を要求する。
+            # 文字列を渡すと AttributeError でクラッシュするため、EbookMetadata を生成して渡す。
+            self.ebook_exporter = create_ebook_exporter(
+                EbookMetadata(title=series.title, genre=series.genre or "general"),
+                output_dir,
+            )
 
     def generate_pack(
         self,
@@ -100,7 +105,7 @@ class AssetPackGenerator:
         **kwargs,
     ) -> Path:
         """資産化パック生成"""
-        self._init_components(series)
+        self._init_components(series, output_dir)
 
         pack_id = pack_id or f"pack_{series.title}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         pack_id = pack_id.replace(" ", "_").replace("/", "_")
@@ -435,7 +440,10 @@ class AssetPackGenerator:
         files = {}
 
         if self.ebook_exporter is None:
-            self.ebook_exporter = create_ebook_exporter(self.genre, self.preset)
+            self.ebook_exporter = create_ebook_exporter(
+                EbookMetadata(title=series.title, genre=series.genre or "general"),
+                output_dir,
+            )
 
         if ebook_formats is None:
             ebook_formats = ["epub", "pdf"]
