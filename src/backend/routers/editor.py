@@ -16,6 +16,7 @@ from src.backend.auth import get_current_user
 from src.backend.database import get_db
 from src.backend.database.models import User
 from src.backend.rate_limit import generate_limiter
+from src.backend.security.owner_guard import verify_book_ownership
 from src.models.editor import (
     AskBibleRequest,
     AskBibleResponse,
@@ -66,6 +67,7 @@ async def ask_bible(
 ) -> AskBibleResponse:
     """GraphRAG（ベクトル検索 + ナレッジグラフ）を活用した世界観設定資料・過去章 Q&A"""
     await generate_limiter.check(request)
+    await verify_book_ownership(req.book_id, current_user)
     try:
         return await editorial_service.ask_bible(session, req)
     except Exception as e:
@@ -82,6 +84,7 @@ async def audit_consistency(
 ) -> ConsistencyAuditResponse:
     """執筆中の本文と設定情報とのリアルタイム矛盾診断"""
     await generate_limiter.check(request)
+    await verify_book_ownership(req.book_id, current_user)
     try:
         return await editorial_service.audit_consistency(session, req)
     except Exception as e:
@@ -120,6 +123,7 @@ async def generate_next_beats(
 ) -> NextBeatsResponse:
     """直前までの本文から、王道・サスペンス・心情の3つの展開バリエーションを並列生成"""
     await generate_limiter.check(request)
+    await verify_book_ownership(req.book_id, current_user)
     try:
         return await next_beats_service.generate_three_beats(req)
     except Exception as e:

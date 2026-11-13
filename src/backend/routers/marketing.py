@@ -25,6 +25,7 @@ async def generate_marketing(
 ):
     await generate_limiter.check(request)
     await validate_api_key_or_raise(req.api_key)
+    await verify_book_ownership(req.book_id, current_user)
     import time
 
     task_id = f"marketing_{int(time.time())}"
