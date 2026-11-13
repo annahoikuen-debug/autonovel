@@ -1,6 +1,7 @@
 import logging
 import secrets
 import time
+import uuid
 import urllib.parse
 from typing import Any
 
@@ -417,11 +418,13 @@ async def generate_content(
         # タスクをキューに投入 (Huey 非同期タスク呼び出し)
         from src.backend.tasks.generation_tasks import generate_chapter_orchestrated_task
 
-        task_result = generate_chapter_orchestrated_task(params)
-        huey_task_id = str(task_result.id)
+        # H9: Huey 投入前に task_id を生成し DB 行を先に作成する。
+        # Huey は enqueue 時に引数をシリアライズするため、投入後に
+        # params["task_id"] を書き戻してもワーカー側には反映されない。
+        huey_task_id = str(uuid.uuid4())
         params["task_id"] = huey_task_id
 
-        # DB レコードを作成
+        # DB レコードを先に作成（ワーカーが _update_task_in_db で更新できるように）
         # user_id を必ず渡すこと。渡さない（NULL）と、同一エンドポイントの
         # `/status/{task_id}` が `_assert_task_ownership` で自分のタスクを拒否する。
         repo = BookRepository(session)
@@ -429,6 +432,9 @@ async def generate_content(
             await repo.create_task_async(task_id=huey_task_id, status="running", user_id=owner_id)
         else:
             repo.create_task(task_id=huey_task_id, status="running", user_id=owner_id)
+
+        # タスクをキューに投入
+        task_result = generate_chapter_orchestrated_task(params)
 
         metrics.increment("tasks_enqueued")
         logger.info("Enqueued generation task: task_id=%s", huey_task_id)

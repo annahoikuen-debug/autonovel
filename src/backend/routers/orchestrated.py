@@ -14,6 +14,7 @@ import json
 import logging
 import os
 import re
+import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
@@ -113,14 +114,16 @@ async def generate_orchestrated(
         # リクエストを dict に変換
         params: dict[str, Any] = input_data.model_dump()
 
-        # Huey 非同期タスクとして投入
-        task_result = generate_chapter_orchestrated_task(params)
-        huey_task_id = str(task_result.id)
+        # H9: Huey 投入前に task_id を生成し DB 行を先に作成する。
+        huey_task_id = str(uuid.uuid4())
         params["task_id"] = huey_task_id
 
-        # DB レコードを作成
+        # DB レコードを先に作成（ワーカーが _update_task_in_db で更新できるように）
         repo = BookRepository(session)
         repo.create_task(task_id=huey_task_id, status="running", user_id=current_user.id)
+
+        # Huey 非同期タスクとして投入
+        task_result = generate_chapter_orchestrated_task(params)
 
         metrics.increment("orchestrated_tasks_enqueued")
         logger.info("Enqueued orchestrated generation task: task_id=%s", huey_task_id)
