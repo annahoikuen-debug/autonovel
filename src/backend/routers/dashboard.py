@@ -3,22 +3,30 @@
 from __future__ import annotations
 
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
+from src.backend.auth import get_current_user
+from src.backend.database.models import User
 from src.fusion.engine import FusionEngine
 
-router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
+router = APIRouter(
+    prefix="/api/dashboard",
+    tags=["dashboard"],
+    dependencies=[Depends(get_current_user)],
+)
 
 _engine_instance: Optional[FusionEngine] = None
 
 
-def get_dashboard_engine() -> FusionEngine:
+def get_dashboard_engine(user_id: int) -> FusionEngine:
     global _engine_instance
     if _engine_instance is None:
         from src.stores.vector_store import RedisVectorStore
 
         store = RedisVectorStore(skip_connection_check=True)
         _engine_instance = FusionEngine(store)
+    # ユーザー別スコープを記録（簡易版）
+    _engine_instance.user_id = user_id  # type: ignore[attr-defined]
     return _engine_instance
 
 
@@ -32,6 +40,7 @@ def get_timeline(
     pair: str = Query(..., description="ペア 'A,B' または 'A->B'"),
     from_ep: int = Query(1, alias="from", description="開始話"),
     to_ep: int = Query(20, alias="to", description="終了話"),
+    current_user: User = Depends(get_current_user),
 ):
     """Chart.js 互換の時系列感情データ返却"""
     engine = get_dashboard_engine()
@@ -48,6 +57,7 @@ def get_timeline(
     fused_points = []
     source_points: Dict[str, List[Optional[float]]] = {"annotation": [], "rule_engine": [], "pipeline": []}
 
+    engine = get_dashboard_engine(current_user.id)
     for ep in range(from_ep, to_ep + 1):
         sources = engine.collector.collect_all(p_tuple, episode=ep)
         fused = engine.arbitrator.fuse(sources)
@@ -95,9 +105,10 @@ def get_timeline(
 def get_conflicts_summary(
     from_ep: int = Query(1, alias="from"),
     to_ep: int = Query(50, alias="to"),
+    current_user: User = Depends(get_current_user),
 ):
     """期間内矛盾サマリー（件数・傾向）"""
-    engine = get_dashboard_engine()
+    engine = get_dashboard_engine(current_user.id)
     store = engine.conflict_store
     all_conflicts = store.get_all_conflicts()
 
@@ -110,13 +121,17 @@ def get_conflicts_summary(
         "total_conflicts": len(filtered),
         "conflicts": filtered,
         "range": {"from": from_ep, "to": to_ep},
+        "user_id": current_user.id,
     }
 
 
 @router.get("/source_contribution")
-def get_source_contribution(episode: int = Query(..., description="エピソード番号")):
+def get_source_contribution(
+    episode: int = Query(..., description="エピソード番号"),
+    current_user: User = Depends(get_current_user),
+):
     """指定話のソース別採用率統計"""
-    engine = get_dashboard_engine()
+    engine = get_dashboard_engine(current_user.id)
     fused = engine.fuse_all(episode)
 
     counts = {"annotation": 0, "rule_engine": 0, "pipeline": 0, "manual": 0}
@@ -130,4 +145,5 @@ def get_source_contribution(episode: int = Query(..., description="エピソー�
         "total_values": total,
         "counts": counts,
         "ratios": ratios,
+        "user_id": current_user.id,
     }

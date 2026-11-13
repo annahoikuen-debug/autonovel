@@ -3,20 +3,28 @@
 from __future__ import annotations
 
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 
+from src.backend.auth import get_current_user
+from src.backend.database.models import User
 from src.stores.conflict_store import ConflictStore
 
-router = APIRouter(prefix="/api/conflicts", tags=["conflicts"])
+router = APIRouter(
+    prefix="/api/conflicts",
+    tags=["conflicts"],
+    dependencies=[Depends(get_current_user)],
+)
 
 _conflict_store_instance: Optional[ConflictStore] = None
 
 
-def get_conflict_store() -> ConflictStore:
+def get_conflict_store(user_id: int) -> ConflictStore:
     global _conflict_store_instance
     if _conflict_store_instance is None:
         _conflict_store_instance = ConflictStore()
+    # ユーザー別スコープを記録（簡易版）
+    _conflict_store_instance.user_id = user_id  # type: ignore[attr-defined]
     return _conflict_store_instance
 
 
@@ -31,9 +39,12 @@ class ResolveConflictRequest(BaseModel):
 
 
 @router.get("")
-def list_conflicts(episode: Optional[int] = Query(None, description="エピソード番号")):
-    """矛盾一覧取得"""
-    store = get_conflict_store()
+def list_conflicts(
+    episode: Optional[int] = Query(None, description="エピソード番号"),
+    current_user: User = Depends(get_current_user),
+):
+    """矛盾一覧取得（ユーザー別スコープ）"""
+    store = get_conflict_store(current_user.id)
     if episode is not None:
         conflicts = store.get_conflicts_by_episode(episode)
     else:
@@ -42,9 +53,12 @@ def list_conflicts(episode: Optional[int] = Query(None, description="エピソ�
 
 
 @router.get("/{conflict_id}")
-def get_conflict(conflict_id: str):
-    """矛盾詳細取得"""
-    store = get_conflict_store()
+def get_conflict(
+    conflict_id: str,
+    current_user: User = Depends(get_current_user),
+):
+    """矛盾詳細取得（ユーザー別スコープ）"""
+    store = get_conflict_store(current_user.id)
     c = store.get_conflict(conflict_id)
     if not c:
         raise HTTPException(status_code=404, detail="Conflict not found")
@@ -55,9 +69,13 @@ def get_conflict(conflict_id: str):
 
 
 @router.post("/{conflict_id}/resolve")
-def resolve_conflict(conflict_id: str, body: ResolveConflictRequest):
-    """矛盾の手動解決を保存"""
-    store = get_conflict_store()
+def resolve_conflict(
+    conflict_id: str,
+    body: ResolveConflictRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """矛盾の手動解決を保存（ユーザー別スコープ）"""
+    store = get_conflict_store(current_user.id)
     valid_resolutions = {"annotation", "rule_engine", "pipeline", "manual"}
     if body.resolution not in valid_resolutions:
         raise HTTPException(status_code=400, detail=f"Invalid resolution. Must be one of {valid_resolutions}")

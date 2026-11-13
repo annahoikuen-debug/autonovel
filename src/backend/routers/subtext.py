@@ -25,7 +25,11 @@ from src.pipeline.generation import GenerationPipeline
 
 logger = logging.getLogger("backend.routers.subtext")
 
-router = APIRouter(prefix="/subtext", tags=["subtext"])
+router = APIRouter(
+    prefix="/subtext",
+    tags=["subtext"],
+    dependencies=[Depends(get_current_user)],
+)
 
 # Singleton instances for API
 engine_instance = SubtextEngine.create_default()
