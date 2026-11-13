@@ -52,7 +52,6 @@ class BookScoreResponse(BaseModel):
 async def produce_novel(
     req: ProduceNovelRequest,
     current_user: User = Depends(get_current_user),
-    api_key: str = Depends(require_api_key),
 ):
     """作品全話生成を開始するエンドポイント"""
     # プロジェクト作成
