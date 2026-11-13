@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import shutil
 import zipfile
 from dataclasses import dataclass, field
@@ -24,6 +25,13 @@ from src.easy_mode.phase3.media_mix import (
 from src.easy_mode import SeriesResult
 
 logger = logging.getLogger(__name__)
+
+
+def sanitize_filename(name: str) -> str:
+    """ファイル名に安全でない文字を除去・置換し、パストラバーサルを防ぐ (H14)。"""
+    name = re.sub(r"[\\/\x00-\x1f]", "_", name)
+    name = name.replace("..", "__")
+    return name.strip(" .")
 
 
 @dataclass
@@ -245,7 +253,7 @@ class AssetPackGenerator:
 
         # 各話別テキスト
         for ep in series.episodes:
-            ep_path = output_dir / f"ep{ep.episode_num:03d}_{ep.title}.txt"
+            ep_path = output_dir / f"ep{ep.episode_num:03d}_{sanitize_filename(ep.title)}.txt"
             ep_content = f"{ep.title}\n\n{ep.content}\n\n--- \n文字数: {ep.word_count}\n監査スコア: {ep.audit_score}\n"
             ep_path.write_text(ep_content, encoding="utf-8")
             files[f"ep{ep.episode_num:03d}_{ep.title}.txt"] = f"第{ep.episode_num}話テキスト"
@@ -455,7 +463,7 @@ class AssetPackGenerator:
             logger.warning("Cover image not found, generating without cover")
 
         for fmt in ebook_formats:
-            output_path = output_dir / f"{series.title}.{fmt}"
+            output_path = output_dir / f"{sanitize_filename(series.title)}.{fmt}"
             try:
                 if fmt == "epub":
                     _ = self.ebook_exporter.export_epub(series, output_path, cover_image_path=cover_path, **kwargs)
