@@ -12,7 +12,8 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 
-from src.backend.auth import require_api_key
+from src.backend.auth import get_current_user, require_api_key
+from src.backend.database.models import User
 from src.services import resilience
 
 
@@ -45,10 +46,18 @@ _llm_circuit_breaker = None
 
 
 @router.get("/api/system/models/info")
-async def get_models_info() -> dict[str, Any]:
-    """サーバー既定のモデル構成および利用可能プロバイダ一覧を返す。"""
+async def get_models_info(
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """サーバー既定のモデル構成および利用可能プロバイダ一覧を返す。
+
+    configured_keys は管理者のみに開示し、一般ユーザーには
+    プロバイダ設定の有無を隠蔽する（Step 19）。
+    """
     from src.backend.config import settings
     from src.llm.model_router import _DEFAULTS
+
+    is_admin = getattr(current_user, "role", None) == "admin"
 
     return {
         "status": "success",
@@ -61,10 +70,10 @@ async def get_models_info() -> dict[str, Any]:
             "embedding": settings.EMBEDDING_MODEL or "text-embedding-3-small",
         },
         "configured_keys": {
-            "gemini": bool(settings.GEMINI_API_KEY or settings.get_gemini_api_key()),
-            "openai": bool(settings.OPENAI_API_KEY),
-            "anthropic": bool(settings.ANTHROPIC_API_KEY),
-            "openrouter": bool(settings.OPENROUTER_API_KEY),
+            "gemini": bool(settings.GEMINI_API_KEY or settings.get_gemini_api_key()) if is_admin else False,
+            "openai": bool(settings.OPENAI_API_KEY) if is_admin else False,
+            "anthropic": bool(settings.ANTHROPIC_API_KEY) if is_admin else False,
+            "openrouter": bool(settings.OPENROUTER_API_KEY) if is_admin else False,
         },
         "available_providers": ["gemini", "openai", "openai_compatible", "mock"],
     }

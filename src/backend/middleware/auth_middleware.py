@@ -78,8 +78,17 @@ STREAM_TOKEN_SEGMENT = "token"
 
 
 def _matches_public_prefix(path: str) -> bool:
-    """path が公開プレフィックスのいずれかに該当するか（スラッシュ境界を考慮）。"""
+    """path が公開プレフィックスのいずれかに該当するか（スラッシュ境界を考慮）。
+
+    本番環境では /docs /redoc プレフィックスを公開対象から除外する（Step 19）。
+    """
+    # 本番環境では Swagger UI 用プレフィックスを非公開にする
+    excluded_prefixes = set()
+    if settings.APP_ENV == "production":
+        excluded_prefixes = {"/docs", "/redoc"}
     for prefix in PUBLIC_PREFIXES:
+        if prefix in excluded_prefixes:
+            continue
         if path == prefix:
             return True
         if prefix.endswith("/"):
@@ -114,9 +123,21 @@ def _extract_stream_book_id(path: str) -> int | None:
 
 
 def is_public_path(path: str) -> bool:
-    """公開パスとして無認証で通してもよいか."""
+    """公開パスとして無認証で通してもよいか.
+
+    本番環境（APP_ENV=production）では、内部情報を含む
+    /metrics /docs /redoc /openapi.json を公開対象から除外する。
+    """
     normalized = path.rstrip("/")
     if normalized in PUBLIC_EXACT_PATHS:
+        # 本番環境では内部情報露出パスを非公開にする（Step 19）
+        if settings.APP_ENV == "production" and normalized in {
+            "/metrics",
+            "/docs",
+            "/redoc",
+            "/openapi.json",
+        }:
+            return False
         return True
     return _matches_public_prefix(path)
 
