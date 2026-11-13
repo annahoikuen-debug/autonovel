@@ -185,13 +185,14 @@ const [currentChapterText, setCurrentChapterText] = useState<string>(
     return () => { cancelled = true; };
   }, [selectedBookId]);
 
-  // llmConfig 変更時に localStorage へ同期
+  // llmConfig 変更時に sessionStorage へ同期（APIキー等の秘密情報を
+  // localStorage に永続化しない。XSS 被害時の窃取範囲を最小化するため H7 で変更）
   useEffect(() => {
     try {
       if (llmConfig && Object.keys(llmConfig).length > 0) {
-        localStorage.setItem("autonovel_llm_config", JSON.stringify(llmConfig));
+        sessionStorage.setItem("autonovel_llm_config", JSON.stringify(llmConfig));
       } else {
-        localStorage.removeItem("autonovel_llm_config");
+        sessionStorage.removeItem("autonovel_llm_config");
       }
     } catch {
       // ignore storage error
