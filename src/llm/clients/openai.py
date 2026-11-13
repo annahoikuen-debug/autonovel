@@ -162,10 +162,15 @@ class OpenAIApiClient(BaseLLMClient):
                 raise LLMTemporaryError(f"OpenAI Rate Limit: {e}") from e
             raise e
 
-        full_text = response.choices[0].message.content or ""
+        full_text = ""
+        usage_metadata = None
+        if response.choices:
+            full_text = response.choices[0].message.content or ""
+            # C2: usage は Choice ではなくトップレベルの response.usage に存在する
+            # (openai SDK 3.x: Choice フィールドは finish_reason/index/logprobs/message のみ)
+            usage_metadata = getattr(response, "usage", None)
         duration = time.time() - start_time
 
-        usage_metadata = response.choices[0].usage
         prompt_tokens = usage_metadata.prompt_tokens if usage_metadata else 0
         completion_tokens = usage_metadata.completion_tokens if usage_metadata else 0
         # SDK が total_tokens を返す場合はそれを優先する。無い場合のみ導出する。
