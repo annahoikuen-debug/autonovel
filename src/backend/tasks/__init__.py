@@ -81,6 +81,10 @@ async def _process_outbox_events_async():
 
     for event in events:
         try:
+            # H11: 配送（Chroma への add/delete）を先に実行。
+            # 失敗時は mark_outbox_event_processed を呼ばず、リトライ可能な状態に保つ。
+            process_vector_event(event)
+            # 配送成功後に done マーク
             async with UnitOfWork(db=db) as event_uow:
                 await event_uow.mark_outbox_event_processed(event.id)
         except Exception as e:
