@@ -20,6 +20,13 @@ from formatters.erotic_censor import check_content_policy
 logger = logging.getLogger(__name__)
 
 
+def sanitize_filename(name: str) -> str:
+    """ファイル名に安全でない文字を除去・置換し、パストラバーサルを防ぐ (H14)。"""
+    name = re.sub(r"[\\/\x00-\x1f]", "_", name)
+    name = name.replace("..", "__")
+    return name.strip(" .")
+
+
 def _collect_series_text(series: SeriesResult) -> str:
     """シリーズの書き出し対象本文（プロローグ・各話・エピローグ）を連結して返す。"""
     parts: list[str] = []
@@ -800,7 +807,7 @@ class EbookExporter:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         results = {}
-        base_name = f"{series.title}_ep{len(series.episodes)}"
+        base_name = f"{sanitize_filename(series.title)}_ep{len(series.episodes)}"
 
         for fmt in formats:
             output_path = output_dir / f"{base_name}.{fmt}"
