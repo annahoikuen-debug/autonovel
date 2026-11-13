@@ -10,6 +10,7 @@ htmlcov/
 # environments & secrets
 .env
 .env.local
+config/settings.toml
 .venv*/
 env*/
 venv*/

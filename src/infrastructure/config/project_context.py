@@ -27,6 +27,12 @@ from schemas.config import GlobalConfigModel
 
 logger = logging.getLogger(__name__)
 
+
+def _is_secret_key(key: str) -> bool:
+    """設定キーが秘密情報（APIキー・シークレット等）かを判定する。"""
+    k = key.lower()
+    return "api_key" in k or "secret" in k or "password" in k or "token" in k
+
 # ==========================================
 # グローバル設定オブジェクトとアクセサ
 # ==========================================
@@ -75,7 +81,9 @@ class ProjectContext:
         if hasattr(cfg, key):
             setattr(cfg, key, value)
             set_config(cfg)
-            logger.info(f"[ProjectContext] 設定を上書きしました: {key} = {value!r}")
+            # H5: APIキー等の秘密情報をプレーンログに出力しない
+            display_value = "***" if _is_secret_key(key) else value
+            logger.info(f"[ProjectContext] 設定を上書きしました: {key} = {display_value!r}")
         else:
             logger.warning(f"[ProjectContext] Unknown config key: {key}")
 
@@ -126,7 +134,12 @@ class GlobalConfig:
             # Pydanticモデルを辞書に変換し、セクション分けして保存
             data = config_model.model_dump()
 
-            # 簡易的に [general] セクションに全てまとめる
+            # H5: APIキー等の秘密情報は TOML ファイルに永続化しない
+            # （config/settings.toml が git 追跡下にあるため、コミットによる秘密鍵漏洩を防ぐ）
+            for secret_key in list(data.keys()):
+                if _is_secret_key(secret_key):
+                    data.pop(secret_key, None)
+
             toml_data = {"general": data}
 
             with open(settings_path, "wb") as f:
