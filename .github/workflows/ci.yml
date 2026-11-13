@@ -42,6 +42,24 @@ jobs:
       - name: ruff (statistics for trend)
         run: ruff check src tests config scripts --statistics --output-format=concise || true
 
+      - name: README 静的解析ベースライン整合性チェック
+        working-directory: .
+        run: |
+          python3 -c "
+import json, re, sys
+with open('config/ci_lint_baseline.json') as f:
+    baseline = json.load(f)
+with open('README.md') as f:
+    readme = f.read()
+expected = f'ruff={baseline[\"ruff_errors\"]} / mypy={baseline[\"mypy_errors\"]} / format={baseline[\"format_files\"]}'
+if expected not in readme:
+    print(f'README.md のベースライン値が不一致です。')
+    print(f'期待値: {expected}')
+    print(f'config/ci_lint_baseline.json を更新した場合は README.md も更新してください。')
+    sys.exit(1)
+print(f'README ベースライン整合 OK: {expected}')
+"
+
   # ==========================================================================
   # リリース整合性ゲート（ continue-on-error: false = 本当の gate ）
   # ==========================================================================
