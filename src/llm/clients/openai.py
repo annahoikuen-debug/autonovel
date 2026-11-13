@@ -57,6 +57,7 @@ class OpenAIApiClient(BaseLLMClient):
         response_schema: Any = None,
         temp: float = 1.0,
         max_retries: int = 5,
+        max_tokens: int = 2000,  # H17: 合成上限を設定し、リトライ5回込みでの無制限課金を防ぐ
         stream_callback: Callable[[str], None] | None = None,
         retry_state: RetryState | None = None,
         nsfw_mode: bool = False,
@@ -135,6 +136,7 @@ class OpenAIApiClient(BaseLLMClient):
                     top_p=top_p,
                     response_format=response_format,
                     extra_body=extra_body if extra_body else None,
+                    max_tokens=max_tokens,
                 )
         except TimeoutError as e:
             raise TimeoutError(f"OpenAI API timed out after 120s: {e}")
