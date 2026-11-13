@@ -333,6 +333,7 @@ class GeminiApiClient(BaseLLMClient):
         config = genai_types.GenerateContentConfig(
             temperature=current_temp,
             system_instruction=system_instruction,
+            max_output_tokens=2000,  # H17: 無制限課金を防ぐ合成上限（リトライ5回込みで上限を設定）
         )
 
         # NSFWモード時のみセーフティフィルターを緩和

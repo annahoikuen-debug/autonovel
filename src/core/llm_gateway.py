@@ -107,11 +107,28 @@ class LLMGenerateResultProxy:
 
     @staticmethod
     def _usage_metric(usage: Any, key: str, default: int = 0) -> int:
+        """usage オブジェクトからトークン数を取得する。
+
+        クライアント実装により属性名が異なるため、複数の候補を試す。
+        - openai MockUsage: prompt_token_count / candidates_token_count
+        - dict 形式: key 直接参照
+        - 生の openai/genai オブジェクト: prompt_tokens / completion_tokens
+        """
         if usage is None:
             return default
         if isinstance(usage, dict):
             return usage.get(key, default)
-        return getattr(usage, key, default)
+        # 主キーとエイリアスキーの両方を試す
+        aliases = {
+            "prompt_tokens": ["prompt_token_count"],
+            "completion_tokens": ["candidates_token_count"],
+        }
+        keys_to_try = [key] + aliases.get(key, [])
+        for k in keys_to_try:
+            val = getattr(usage, k, None)
+            if val is not None:
+                return val
+        return default
 
     async def generate_json(
         self,
