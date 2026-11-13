@@ -83,6 +83,7 @@ def mock_repo():
 
     repo.plot.get_plot = repo.get_plot
     repo.plot.save_plot = repo.save_plot
+    repo.create_or_replace_plot = AsyncMock()
     return repo
 
 
@@ -112,7 +113,15 @@ async def test_e2e_3episodes_sqlite(mock_repo, mock_reporter):
 
     async def mock_generate_json(model, prompt, response_schema=None, **kwargs):
         if response_schema == PlotMacroBatch:
-            return PlotMacroBatch(episodes=skeletons_data)
+            # expand_macro_skeletons が渡した target_ep_list に合わせて
+            # 骨子をフィルタリング（1話ずつ ensure_detailed_plot を呼ぶため）
+            target_ep_list = [1]
+            if mock_pm.build_macro_plot_skeleton_prompt.call_args:
+                args = mock_pm.build_macro_plot_skeleton_prompt.call_args
+                if len(args[0]) > 1 and isinstance(args[0][1], list):
+                    target_ep_list = list(args[0][1])
+            filtered = [s for s in skeletons_data if s.ep_num in target_ep_list]
+            return PlotMacroBatch(episodes=filtered)
         elif response_schema == PlotMicroBlueprint:
             current_ep_counter[0] += 1
             ep_target = current_ep_counter[0]

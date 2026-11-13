@@ -3,6 +3,7 @@
 ベンチマーク閾値を超えた場合に失敗し、速度劣化を検知する。
 """
 import time
+import asyncio
 import pytest
 
 from src.integrations.age_client import AgeClient
@@ -165,10 +166,10 @@ def test_pipeline_single_chapter_performance(db_session):
          patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
          patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
         start = _now_ms()
-        result = pipeline.process_chapter_knowledge(db_session, 999, text)
+        result = asyncio.run(pipeline.process_chapter_knowledge(db_session, 999, text))
         elapsed = _now_ms() - start
 
-    assert result["success"] is True
+    assert result.success is True
     assert elapsed < THRESHOLDS["pipeline_single_chapter_ms"], \
         f"Pipeline single chapter took {elapsed:.0f}ms, threshold {THRESHOLDS['pipeline_single_chapter_ms']}ms"
 

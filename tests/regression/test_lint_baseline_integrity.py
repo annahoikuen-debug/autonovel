@@ -31,7 +31,7 @@ def test_ruff_check_baseline():
 
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src", "config", "tests"],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, encoding="utf-8", cwd=ROOT,
     )
     # ruff check の出力からエラー数を抽出（最後の行に "Found N errors" 等が含まれる場合がある）
     output = result.stdout + result.stderr

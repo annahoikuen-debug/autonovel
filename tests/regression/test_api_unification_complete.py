@@ -80,7 +80,7 @@ def test_ruff_clean_api():
     """src/backend/routers/, src/api/, src/interfaces/api/ が ruff check を通る。"""
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src/backend/routers", "src/api", "src/interfaces/api"],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, encoding="utf-8", cwd=ROOT,
     )
     assert result.returncode == 0, \
         f"ruff check 失敗:\n{result.stdout}\n{result.stderr}"

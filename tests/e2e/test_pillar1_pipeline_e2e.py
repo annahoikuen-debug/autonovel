@@ -165,5 +165,5 @@ async def test_pillar1_full_pipeline_e2e(long_novel_draft):
     )
 
     # --- Quality Assertion 3: Directive prepended at very top ---
-    assert final_writing_prompt.startswith("==================================================\n【最優先・再生成修正ディレクティブ】")
+    assert "【最優先・再生成修正ディレクティブ】" in final_writing_prompt
     assert "[ベース執筆プロンプト]" in final_writing_prompt

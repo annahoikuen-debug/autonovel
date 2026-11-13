@@ -74,6 +74,7 @@ class TestBalanceCommandWiring:
             [sys.executable, "-m", "src.cli.main", "balance", "--help"],
             capture_output=True,
             text=True,
+            encoding="utf-8",
             timeout=60,
         )
         assert result.returncode == 0

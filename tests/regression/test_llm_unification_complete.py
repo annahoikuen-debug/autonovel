@@ -70,7 +70,7 @@ def test_ruff_clean_llm():
     """src/llm/, src/core/llm/, src/services/llm/ が ruff check を通る。"""
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src/llm", "src/core/llm", "src/services/llm"],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True, text=True, encoding="utf-8", cwd=ROOT,
     )
     assert result.returncode == 0, \
         f"ruff check 失敗:\n{result.stdout}\n{result.stderr}"

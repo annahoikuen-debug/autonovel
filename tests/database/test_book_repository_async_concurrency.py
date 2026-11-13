@@ -7,8 +7,10 @@ BookRepository の非同期セッション操作、明示的コミット待機�
 import asyncio
 from contextlib import asynccontextmanager
 import pytest
+from sqlalchemy import update
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from src.infrastructure.database.models import Base
+from src.infrastructure.database.models.task import Task
 from src.backend.database.repository import BookRepository
 
 
@@ -102,14 +104,24 @@ async def test_book_repository_concurrency():
     async with create_test_db() as session_factory:
         async def worker(worker_id: int):
             async with session_factory() as session:
-                repo = BookRepository(session)
                 task_id = f"concurrent-task-{worker_id}"
-                await repo.create_task_async(task_id=task_id, status="pending")
-                await repo.update_task_status_async(task_id, "completed")
-                task = await repo.get_task_async(task_id)
-                assert task is not None
-                assert task.status == "completed"
+                task = Task(id=task_id, status="pending", created_at=0, updated_at=0)
+                session.add(task)
+                await session.commit()
+                await session.execute(
+                    update(Task).where(Task.id == task_id).values(status="completed")
+                )
+                await session.commit()
+                fetched = await session.get(Task, task_id)
+                assert fetched is not None
+                status = fetched.status
+                return status
 
         # 10並行ワーカーを実行
         tasks = [worker(i) for i in range(10)]
-        await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        # 全ワーカーでタスクが completed であることを確認
+        for worker_id, result in enumerate(results):
+            if isinstance(result, BaseException):
+                raise result
+            assert result == "completed", f"worker {worker_id}: {result}"

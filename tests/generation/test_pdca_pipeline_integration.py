@@ -26,7 +26,9 @@ async def test_writing_coordinator_pdca_skips_full_regeneration_and_applies_sing
     mock_writer.generate_episodes = AsyncMock(return_value=500)
     mock_repo = MagicMock()
     mock_score_calculator = MagicMock()
-    mock_score_calculator.calculate_score = AsyncMock()
+    mock_score_calculator.calculate = AsyncMock(return_value=MagicMock(
+        overall_score=80.0, structure_score=80.0, coherency_score=80.0
+    ))
 
     dummy_ep = DummyEpisode("昔々ある所に、お爺さんとお婆さんが住んでいました。毎日平和でした。")
     mock_repo.get_episode_by_number.return_value = dummy_ep
@@ -70,7 +72,6 @@ async def test_writing_coordinator_pdca_skips_full_regeneration_and_applies_sing
         reporter=reporter,
         branch_id=1,
         auto_regenerate=True,
-        max_retries=3,
     )
 
     # 1. Full text regeneration score calculation was NEVER called (skipped)

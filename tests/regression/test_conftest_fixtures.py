@@ -17,6 +17,12 @@ def test_conftest_mock_llm_adapter_fixture(mock_llm_adapter, llm_mocker):
     assert mock_llm_adapter is not None
     assert llm_mocker is not None
     # get_llm_adapter がモックを返すこと
-    from src.services.llm.factory import get_llm_adapter
+    # conftest の mock_llm_adapter フィクスチャ (autouse) が
+    # src.llm.adapters.factory.get_llm_adapter をモンキーパッチするため、
+    # そのアダプタと同一オブジェクトが返されることを確認する。
+    from src.llm.adapters.factory import get_llm_adapter
     adapter = get_llm_adapter("test-model")
-    assert adapter is mock_llm_adapter
+    assert adapter is mock_llm_adapter, (
+        f"get_llm_adapter が conftest の mock_llm_adapter と異なるオブジェクトを返した: "
+        f"{type(adapter)} != {type(mock_llm_adapter)}"
+    )
