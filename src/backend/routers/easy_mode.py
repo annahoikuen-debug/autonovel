@@ -635,10 +635,18 @@ async def export_with_data_endpoint(
     payload: ExportRequestPayload,
     book_id: int = 1,
     session=Depends(database.get_db),
+    current_user: Any = Depends(get_current_user),
 ) -> Response:
-    """クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする"""
+    """クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする
+
+    認証済みユーザー本人の作品のみエクスポート・上書きできる（C1: 他者の book_id を
+    推測して差し替えパッケージを取得/上書きできないようにする）。
+    """
     logger.info("Export with custom data requested: book_id=%s title=%s", book_id, payload.title)
     metrics.increment("exports_attempted")
+
+    # C1: 他者の book_id での書き換えを防ぐため所有権を事前に検証する
+    await verify_book_ownership(book_id, current_user)
 
     repo = BookRepository(session)
     # DBにも永続化
