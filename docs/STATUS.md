@@ -1,7 +1,7 @@
 # AutoNovel 現況ステータス（SSOT）
 
-最終更新: 2026-09-30
-対象: ワークツリー（`E:\ssssad\autonovel`）の実コード
+最終更新: 2026-11-13
+対象: ワークツリー（`/home/annahoikuen/autonovel`）の実コード
 
 > 本ドキュメントが**現在の実装状況の唯一の正（SSOT）**です。
 > ルートの `IMPROVEMENT_SUMMARY.md` / `IMPLEMENTATION_SUMMARY*.md` / `FINAL_SUMMARY.md` などは

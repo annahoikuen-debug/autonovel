@@ -18,10 +18,11 @@
 [![Type Checked: mypy](https://img.shields.io/badge/type%20checked-mypy-blue)](https://mypy-lang.org/)
 [![Vitest](https://img.shields.io/badge/tested_with-vitest-729B1B?logo=vitest&logoColor=white)](https://vitest.dev/)
 
-> **静的解析ゲートの実態（2026-11-01 時点）**
-> `ruff` / `mypy` / `ruff format` は **劣化検出 ratchet 化済み**（`scripts/ci_lint_ratchet.py` が
+> **静的解析ゲートの実態（2026-11-13 時点）**
+> `ruff` / `mypy` / `ruff format` は **劣化検出 ratchet + バーンダウン化済み**（`scripts/ci_lint_ratchet.py` が
 > `config/ci_lint_baseline.json` を超えたら CI を落とす hard gate）。
-> 現在のベースライン値：`ruff=100` / `mypy=1122` / `format=759`（`config/ci_lint_baseline.json`）。
+> 現在のベースライン値：`ruff=85` / `mypy=952` / `format=0`（`config/ci_lint_baseline.json`、policy: burn-down）。
+> mypy は 1122 → 952 に削減中（2026-11-30 までに半減目標 567）。
 > エラー数 0 化は別計画（PLAN_H1 §9 N1）の対象外であり、
 > 上記バッジは「エラーがない」ではなく「ゲートが機能している」ことを意味しない。
 >
@@ -704,7 +705,7 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 | [CHANGELOG.md](CHANGELOG.md) | 変更履歴（Semantic Versioning 準拠） |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | コントリビューション手順 |
 | [SECURITY.md](SECURITY.md) | 脆弱性の報告手順 |
-| [docs/README.md](docs/README.md) | ドキュメントインデックス（78ファイルの入口） |
+| [docs/README.md](docs/README.md) | ドキュメントインデックス（104 Markdownファイルの入口） |
 | [docs/FAQ.md](docs/FAQ.md) | よくある質問（Q&A）— 著作権・料金・投稿・R18・データ保存・解約 |
 | [docs/architecture.md](docs/architecture.md) | 4層アーキテクチャ設計（domain/application/infrastructure/interfaces） |
 | [docs/compression_module.md](docs/compression_module.md) | 4層圧縮モジュール（FourLayerCompressor）の詳細設計 |
