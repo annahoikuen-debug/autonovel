@@ -387,14 +387,26 @@ async def generate_content(
             # （easy_mode.py:160、None = 構造指示なし / バイト同一）。
             "spine_quality": input_data.spine_quality,
             "llm_config": (
-                input_data.llm_config.model_dump()
-                if input_data.llm_config and hasattr(input_data.llm_config, "model_dump")
-                else input_data.llm_config
+                {
+                    k: v
+                    for k, v in (
+                        input_data.llm_config.model_dump()
+                        if input_data.llm_config
+                        and hasattr(input_data.llm_config, "model_dump")
+                        else input_data.llm_config
+                        or {}
+                    ).items()
+                    if k != "api_key"  # H4: サーバー/ユーザー API キーをキューに平文永続化しない
+                }
+                if input_data.llm_config
+                else None
             ),
             "book_id": input_data.book_id,
             "start_ep": input_data.start_ep,
             "end_ep": input_data.end_ep,
-            "compressor": FourLayerCompressor(config=CompressionConfig()),
+            # "compressor": FourLayerCompressor(...) は削除。
+            # 生オブジェクトは JSON シリアライザではキューに乗せられず、
+            # また API キー流出リスクにもなる。ワーカー側で必要なら再構築する。
             # 所有者 ID。 Huey の結果 dict には所有者が含まれないため、
             # `/status/{task_id}` は `_assert_task_ownership(result, ...)` で
             # 判定できず、自分のタスクなのに fail-closed で拒否されてしまう。

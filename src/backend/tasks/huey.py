@@ -2,16 +2,32 @@
 
 from __future__ import annotations
 
+import json
 import logging
 from pathlib import Path
 from typing import Any
 
 from huey import RedisHuey, SqliteHuey
-from huey.serializer import JSONSerializer
+from huey.serializer import Serializer
 
 from src.backend.config import settings
 
 logger = logging.getLogger(__name__)
+
+
+class HueyJSONSerializer(Serializer):
+    """Huey タスクペイロード用 JSON シリアライザ。
+
+    pickle ではなく JSON を使用し、任意の Python オブジェクトを
+    デシリアライズすることによる RCE リスクを排除する (H4)。
+    """
+
+    def serialize(self, value) -> bytes:
+        return json.dumps(value, default=str, ensure_ascii=False).encode("utf-8")
+
+    def deserialize(self, data: bytes):
+        return json.loads(data.decode("utf-8"))
+
 
 # Step 37: バックエンド初期化と耐障害設定
 if settings.HUEY_BACKEND == "redis":
@@ -20,7 +36,7 @@ if settings.HUEY_BACKEND == "redis":
             "autonovel",
             url=settings.REDIS_URL,
             results=True,
-            serializer=JSONSerializer(),  # H4: pickle ではなく JSON を使用し、RCE リスクを排除
+            serializer=HueyJSONSerializer(),  # H4: pickle ではなく JSON を使用し、RCE リスクを排除
             connection_pool_kwargs={"socket_timeout": 2.0, "socket_connect_timeout": 2.0},
         )
         # 接続確認 (遅延接続エラーを事前検知)
@@ -29,7 +45,7 @@ if settings.HUEY_BACKEND == "redis":
         logger.warning("Failed to initialize RedisHuey, falling back to SqliteHuey: %s", e)
         sqlite_path = Path(settings.HUEY_SQLITE_PATH)
         sqlite_path.parent.mkdir(parents=True, exist_ok=True)
-        huey = SqliteHuey("autonovel", filename=str(sqlite_path), results=True, serializer=JSONSerializer())  # H4
+        huey = SqliteHuey("autonovel", filename=str(sqlite_path), results=True, serializer=HueyJSONSerializer())  # H4
 else:
     sqlite_path = Path(settings.HUEY_SQLITE_PATH)
     sqlite_path.parent.mkdir(parents=True, exist_ok=True)
@@ -37,7 +53,7 @@ else:
         "autonovel",
         filename=str(sqlite_path),
         results=True,
-        serializer=JSONSerializer(),  # H4
+        serializer=HueyJSONSerializer(),  # H4
     )
 
 # ワーカー上でキュー経由で実行（immediate=False）
