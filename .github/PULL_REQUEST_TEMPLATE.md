@@ -19,3 +19,13 @@
 - [ ] ドキュメントコメントは必要に応じて更新したか
 - [ ] セキュリティ上の懸念はないか
 - [ ] パフォーマンスへの影響は評価したか
+
+## ドキュメント更新チェックリスト（必須）
+コード変更とドキュメント更新はセットで実施してください。以下の変更がある場合は対応するドキュメントも更新し、チェックを入れてください。
+
+- [ ] **APIエンドポイントの追加・変更・削除** → `docs/api.md`、`docs/openapi.json`（`scripts/generate_openapi.py` で再生成）、`docs/easy_mode_api.md`
+- [ ] **料金プランの追加・変更・削除** → `src/config/billing_plans.py`、`frontend/src/components/lp/PricingSection.tsx`、`docs/FAQ.md`、`README.md` の料金表
+- [ ] **環境変数の追加・変更・削除** → `README.md` の「環境変数リファレンス」、`.env.example`
+- [ ] **新機能・機能削除** → `README.md` の「機能一覧」、`docs/` の該当ページ、LP の該当セクション
+- [ ] **バグ修正で仕様と異なる動作があった場合** → `docs/STATUS.md`（SSOT）の対象項目を更新
+- [ ] **ドキュメント自体のみの変更** → リンク切れ・誤字・古い記述がないか確認

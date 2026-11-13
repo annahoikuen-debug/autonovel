@@ -9,17 +9,18 @@
 
 import React from 'react';
 import { FaqItem } from './FaqItem';
+import { useNavigate } from 'react-router-dom';
 
 const FAQS = [
   {
     question: 'AI で生成した小説の著作権は誰に帰属しますか？',
     answer:
-      'AutoNovel で生成されたコンテンツの著作権は、利用者（あなた）に帰属します。AI は支援ツールとして機能し、生成物の権利を主張することはありません。',
+      '利用者（あなた）に帰属します。AI は支援ツールとして機能し、生成物の権利を主張することはありません。',
   },
   {
     question: '無料プランと有料プランの違いは何ですか？',
     answer:
-      '無料プランはかんたん執筆を月 5 本まで、基本機能を体験できます。有料プラン（スターター・プロ）は無制限執筆、二層ハイブリッド監査、ZIP 納品、優先サポートなどを利用できます。',
+      '無料プランはかんたん執筆を月 5 本まで。有料プラン（スターター・プロ・エンタープライズ）は無制限執筆、二層ハイブリッド監査、ZIP 納品、優先サポートを利用できます。',
   },
   {
     question: 'なろう・カクヨムに直接投稿できますか？',
@@ -27,28 +28,19 @@ const FAQS = [
       'EPUB 形式およびなろう・カクヨム形式への自動整形出力に対応しています。出力したファイルを各投稿サイトにアップロードしてご利用ください。',
   },
   {
-    question: 'R18 表現は生成できますか？',
-    answer:
-      '年齢制限に応じたフィルタリング設定が可能です。R18 表現の生成は設定で制御でき、プラットフォームのガイドラインに準拠した利用をお願いします。',
-  },
-  {
-    question: 'データはどこに保存されますか？',
-    answer:
-      'ユーザーデータは暗号化されたデータベースに保存されます。プライバシーポリシーに基づき、第三者に提供することはありません。',
-  },
-  {
     question: '解約はいつでもできますか？',
     answer:
       'はい、いつでも解約可能です。解約後も現在の課金期間終了まで有料機能をご利用いただけます。',
   },
-  {
-    question: 'サポートは受けられますか？',
-    answer:
-      'スタンダードプラン以上ではメールサポートを、プロプランでは優先サポートを提供しています。ドキュメントとヘルプセンターもご利用いただけます。',
-  },
 ];
 
 export const FaqSection: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleViewAll = () => {
+    navigate('/faq');
+  };
+
   return (
     <section
       id="lp-faq-section"
@@ -72,7 +64,7 @@ export const FaqSection: React.FC = () => {
           </p>
         </div>
 
-        {/* FAQ アコーディオンリスト */}
+        {/* FAQ アコーディオンリスト（上位4項目、詳細は /faq へ） */}
         <div
           className="space-y-3"
           data-testid="lp-faq-list"
@@ -85,6 +77,34 @@ export const FaqSection: React.FC = () => {
               answer={faq.answer}
             />
           ))}
+        </div>
+
+        {/* 全項目導線 */}
+        <div className="mt-10 pt-8 border-t border-brand-border text-center">
+          <p className="text-brand-textMuted mb-4">
+            全 7 項目の詳細な回答はドキュメントをご覧ください。
+          </p>
+          <button
+            type="button"
+            onClick={handleViewAll}
+            className="inline-flex items-center gap-2 text-brand-accent font-medium hover:underline transition-colors"
+            data-testid="lp-faq-view-all"
+          >
+            全 FAQ を見る →
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M13 19l-7-7 7-7"
+              />
+            </svg>
+          </button>
         </div>
       </div>
     </section>

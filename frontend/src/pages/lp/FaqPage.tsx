@@ -4,6 +4,7 @@
  * ファイル: frontend/src/pages/lp/FaqPage.tsx
  *
  * 役割: よくある質問を SPA として表示。LP の FAQ セクションからの詳細導線先。
+ * 詳細な回答は docs/FAQ.md を SSOT（唯一の正）として参照。
  */
 
 import React from 'react';
@@ -69,6 +70,23 @@ export const FaqPage: React.FC = () => {
         <p className="text-brand-textMuted mb-10">
           AutoNovel の利用に関するよくある質問と回答です。
         </p>
+
+        {/* docs/FAQ.md への導線（SSOT） */}
+        <div className="mb-8 p-4 bg-brand-surface border border-brand-border rounded-lg">
+          <p className="text-sm text-brand-textMuted mb-2">
+            <span className="font-bold text-brand-text">📘 詳細な回答:</span>{' '}
+            より詳しい回答や最新情報は、ドキュメントをご参照ください。
+          </p>
+          <a
+            href="docs/FAQ.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-brand-accent font-medium hover:underline"
+            data-testid="lp-faq-docs-link"
+          >
+            docs/FAQ.md を開く →
+          </a>
+        </div>
 
         <div className="space-y-4" data-testid="lp-faq-section">
           {FAQS.map((item, index) => (
