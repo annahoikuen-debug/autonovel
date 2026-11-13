@@ -3,7 +3,7 @@
 
 PYTHON ?= python3
 
-.PHONY: help install dev test lint lint-layers typecheck openapi frontend-test frontend-lint run dev-up dev-down prod-up prod-down clean verify test-unit test-integration test-contract test-perf test-migration format-check check-migrations
+.PHONY: help install dev test lint lint-layers typecheck openapi frontend-test frontend-lint run dev-up dev-down prod-up prod-down clean verify test-unit test-integration test-contract test-perf test-migration format-check check-migrations test-security
 
 help:  ## 利用可能ターゲット一覧を表示
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -16,6 +16,9 @@ dev: install  ## 開発用インストール (バック + フロント)
 
 test:  ## pytest を実行 (バックエンド)
 	$(PYTHON) -m pytest -q --tb=short -m "not integration and not perf and not slow"
+
+test-security:  ## セキュリティ・リグレッションテストを実行
+	$(PYTHON) -m pytest tests/security -q --timeout=120
 
 lint:  ## ruff チェック
 	$(PYTHON) -m ruff check src tests config scripts
