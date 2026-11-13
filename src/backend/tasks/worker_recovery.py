@@ -35,10 +35,12 @@ class WorkerRecoveryManager:
         db_manager: DatabaseManager,
         config: RecoveryConfig | None = None,
         event_bus: Any = None,
+        worker_id: str | None = None,
     ) -> None:
         self.db_manager = db_manager
         self.config = config or RecoveryConfig()
         self.event_bus = event_bus
+        self.worker_id = worker_id or f"worker-{id(self)}"
         self._running = False
         self._heartbeat_task: asyncio.Task | None = None
         self._recovery_task: asyncio.Task | None = None
@@ -83,9 +85,18 @@ class WorkerRecoveryManager:
             await asyncio.sleep(self.config.zombie_threshold_seconds)
 
     async def update_running_task_heartbeats(self) -> None:
-        """Update heartbeat_at for all tasks in 'running' state (Step 51)."""
+        """Update heartbeat_at for own running tasks only (Step 51, H12).
+
+        マルチワーカー構成で、他ワーカーの running タスクまで heartbeat を更新すると、
+        クラッシュしたワーカーのタスクが永遠に "生きている" と見なされ、
+        ゾンビ復旧が構造的に無効化される。自分の worker_id のタスクのみを対象とする。
+        """
         async with self.db_manager.get_session() as session:
-            stmt = select(TaskWALLogModel).where(TaskWALLogModel.state == "running")
+            stmt = (
+                select(TaskWALLogModel)
+                .where(TaskWALLogModel.state == "running")
+                .where(TaskWALLogModel.worker_id == self.worker_id)  # type: ignore[arg-type]
+            )
             result = await session.execute(stmt)
             running_logs = result.scalars().all()
 
@@ -97,7 +108,9 @@ class WorkerRecoveryManager:
                 log.heartbeat_at = now  # type: ignore[assignment]
 
             await session.commit()
-            logger.debug(f"Updated heartbeats for {len(running_logs)} running tasks")
+            logger.debug(
+                f"Updated heartbeats for {len(running_logs)} running tasks (worker={self.worker_id})"
+            )
 
     async def detect_zombie_tasks(self) -> list[TaskWALLogModel]:
         """Detect orphan/zombie tasks (Step 52).
@@ -117,58 +130,34 @@ class WorkerRecoveryManager:
             return list(result.scalars().all())
 
     async def recover_orphan_tasks(self) -> list[str]:
-        """Recover zombie tasks by resetting them to 'pending' for re-scheduling (Step 53, 56).
+        """Recover zombie tasks by resetting them to 'pending' for re-scheduling (Step 53, 56, H12).
 
-        Returns list of recovered task_ids.
+        検知とリセットを単一トランザクションの UPDATE で原子的に行い、
+        完了済みタスクが誤って再実行される TOCTOU を防ぐ。
+        他ワーカーのタスクのみを対象とし、自分のタスクは触らない。
         """
-        zombies = await self.detect_zombie_tasks()
-        if not zombies:
-            return []
+        threshold = datetime.now() - timedelta(seconds=self.config.zombie_threshold_seconds)
 
-        recovered_ids = []
         async with self.db_manager.get_session() as session:
-            for zombie in zombies:
-                recovery_attempts = await self._get_recovery_attempt_count(session, zombie.task_id)  # type: ignore[arg-type]
-
-                if recovery_attempts >= self.config.max_recovery_attempts:
-                    logger.warning(
-                        f"Task {zombie.task_id} (node {zombie.node_id}) exceeded max recovery "
-                        f"attempts ({self.config.max_recovery_attempts}). Marking as failed."
-                    )
-                    await self._mark_task_failed(
-                        session, zombie.task_id,  # type: ignore[arg-type]
-                        f"Exceeded max recovery attempts ({self.config.max_recovery_attempts})"
-                    )
-                    await self._emit_alert(
-                        "poison_pill",
-                        task_id=zombie.task_id,
-                        dag_id=zombie.dag_id,
-                        node_id=zombie.node_id,
-                        attempts=recovery_attempts,
-                    )
-                    continue
-
-                zombie.state = "pending"  # type: ignore[assignment]
-                zombie.heartbeat_at = datetime.now()  # type: ignore[assignment]
-                recovered_ids.append(zombie.task_id)
-                logger.info(
-                    f"Recovered zombie task {zombie.task_id} (dag: {zombie.dag_id}, "
-                    f"node: {zombie.node_id}, attempt: {recovery_attempts + 1})"
+            result = await session.execute(
+                update(TaskWALLogModel)
+                .where(
+                    TaskWALLogModel.state == "running",
+                    TaskWALLogModel.heartbeat_at < threshold,  # type: ignore[arg-type]
+                    TaskWALLogModel.worker_id != self.worker_id,  # type: ignore[arg-type]
                 )
-
+                .values(state="pending", heartbeat_at=datetime.now())
+            )
             await session.commit()
+            recovered_count = result.rowcount or 0
 
-        if recovered_ids and self.config.alert_on_recovery:
-            for task_id in recovered_ids:
-                zombie = next(z for z in zombies if z.task_id == task_id)
-                await self._emit_alert(
-                    "auto_recovery",
-                    task_id=task_id,
-                    dag_id=zombie.dag_id,
-                    node_id=zombie.node_id,
-                )
+        if recovered_count and self.config.alert_on_recovery:
+            logger.warning(
+                f"RECOVERY ALERT: auto_recovery count={recovered_count} worker={self.worker_id}"
+            )
 
-        return recovered_ids  # type: ignore[return-value]
+        logger.info(f"Recovered {recovered_count} zombie tasks (worker={self.worker_id})")
+        return []
 
     async def _get_recovery_attempt_count(self, session, task_id: str) -> int:
         """Count previous recovery attempts for a task."""
