@@ -128,13 +128,14 @@ def with_llm_retry():
                 if cooldown is not None:
                     await cooldown.wait()
 
-                # 並行リクエスト数のインクリメント
+                # 並行リクエスト数のインクリメント（ロック内で読み書きし競合を防ぐ）
                 lock = getattr(self, "_lock", None)
-                active_requests = getattr(self, "_active_requests", 0)
                 if lock is not None:
                     with lock:
+                        active_requests = getattr(self, "_active_requests", 0)
                         setattr(self, "_active_requests", active_requests + 1)
                 else:
+                    active_requests = getattr(self, "_active_requests", 0)
                     setattr(self, "_active_requests", active_requests + 1)
 
                 try:
@@ -144,7 +145,7 @@ def with_llm_retry():
                     # 成功時の後処理
                     if cooldown is not None:
                         cooldown.on_success()
-                    _ = getattr(self, "_consecutive_5xx", 0)
+                    lock = getattr(self, "_lock", None)
                     if lock is not None:
                         with lock:
                             setattr(self, "_consecutive_5xx", 0)
@@ -306,14 +307,14 @@ def with_llm_retry():
                         lock = getattr(self, "_lock", None)
                         if lock is not None:
                             with lock:
-                                setattr(
-                                    self,
-                                    "_consecutive_5xx",
-                                    getattr(self, "_consecutive_5xx", 0) + 1,
-                                )
-                                fail_count = getattr(self, "_consecutive_5xx", 0)
+                                consecutive = getattr(self, "_consecutive_5xx", 0) + 1
+                                setattr(self, "_consecutive_5xx", consecutive)
+                                fail_count = consecutive
                         else:
-                            setattr(self, "_consecutive_5xx", getattr(self, "_consecutive_5xx", 0) + 1)
+                            # ロックなし環境（後方互換）：GIL の原子性に頼る
+                            consecutive = getattr(self, "_consecutive_5xx", 0) + 1
+                            setattr(self, "_consecutive_5xx", consecutive)
+                            fail_count = consecutive
                             fail_count = getattr(self, "_consecutive_5xx", 0)
 
                         if fail_count >= 2:

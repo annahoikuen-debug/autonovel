@@ -4,6 +4,7 @@ import asyncio
 import importlib
 import json
 import re
+import threading
 import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
@@ -52,6 +53,7 @@ class GeminiApiClient(BaseLLMClient):
         self.client = client
         self.cooldown = cooldown
         self._active_requests = 0  # 現在の並行実行数を追跡
+        self._lock = threading.Lock()  # Step 20: カウンタ操作のスレッドセーフ化
 
     @with_llm_retry()
     async def generate_json(
@@ -291,6 +293,8 @@ class GeminiApiClient(BaseLLMClient):
 
                 async with safe_timeout(120.0):
                     response = await executor_manager.run_io(_run_once)
+                if not response or not response.text:
+                    raise ValueError("API応答が空です。")
                 full_text = response.text
                 usage = getattr(response, "usage_metadata", None)
 

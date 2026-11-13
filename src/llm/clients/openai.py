@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 import time
 from collections.abc import Callable
 from typing import Any
@@ -23,6 +24,7 @@ class OpenAIApiClient(BaseLLMClient):
     def __init__(self, cooldown: AdaptiveCooldown):
         self.cooldown = cooldown
         self._active_requests = 0
+        self._lock = threading.Lock()  # Step 20: _clients キャッシュのスレッドセーフ化
         # (base_url, api_key) -> AsyncOpenAI。呼び出しごとに新規生成していた際は
         # httpx コネクションプール/TLS セッションが 1 呼び出し 1 個のまま
         # 解放されず（リトライ 5 回 x プロバイダ 3 種 x エージェント数十>),
@@ -35,13 +37,17 @@ class OpenAIApiClient(BaseLLMClient):
         key = (base_url, api_key)
         client = self._clients.get(key)
         if client is None:
-            client = openai.AsyncOpenAI(base_url=base_url, api_key=api_key)
-            self._clients[key] = client
+            with self._lock:
+                client = self._clients.get(key)  # ダブルチェック
+                if client is None:
+                    client = openai.AsyncOpenAI(base_url=base_url, api_key=api_key)
+                    self._clients[key] = client
         return client
 
     async def aclose(self) -> None:
         """保持している全 AsyncOpenAI クライアントをクローズする（シャットダウン時）。"""
-        clients, self._clients = self._clients, {}
+        with self._lock:
+            clients, self._clients = self._clients, {}
         for client in clients.values():
             try:
                 await client.close()
