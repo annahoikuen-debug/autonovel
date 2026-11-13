@@ -143,9 +143,13 @@ export function useUnifiedStreaming() {
         setGenerationState((p: GenerationState) => ({ ...p, isGenerating: false, statusText: "" }));
       } else {
         const { task_id } = await generateOrchestrated(input!);
-        esRef.current = subscribeToAgentEvents(input!.correlation_id || `book_${input!.book_id}_branch_${input!.branch_id}_ep_${input!.ep_num}`, (event) => {
-          setState((s: UnifiedStreamingState) => ({ ...s, agentProgress: { ...s.agentProgress, [event.agent]: { status: event.payload?.status, payload: event.payload } } }));
-        });
+        esRef.current = await subscribeToAgentEvents(
+          input!.correlation_id || `book_${input!.book_id}_branch_${input!.branch_id}_ep_${input!.ep_num}`,
+          input!.book_id,
+          (event) => {
+            setState((s: UnifiedStreamingState) => ({ ...s, agentProgress: { ...s.agentProgress, [event.agent]: { status: event.payload?.status, payload: event.payload } } }));
+          }
+        );
         // ポーリングで完了待ち
         const deadline = Date.now() + 300_000; // 5分タイムアウト
         while (Date.now() < deadline) {

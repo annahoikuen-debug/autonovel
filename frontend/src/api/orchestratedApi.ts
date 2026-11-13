@@ -1,4 +1,5 @@
 import { apiFetch } from "./client";
+import { fetchStreamToken } from "./streamToken";
 import type {
   OrchestratedGenerateRequest,
   OrchestratedGenerateResponse,
@@ -52,13 +53,17 @@ export async function exportOrchestratedPackage(
   return { zipBlob: blob, filename };
 }
 
-/** EventSource経由でAgentEventストリームを購読 */
-export function subscribeToAgentEvents(
+/** EventSource経由でAgentEventストリームを購読。短命ストリームトークンをクエリに付与。 */
+export async function subscribeToAgentEvents(
   correlationId: string,
+  bookId: number,
   onEvent: (event: AgentEvent) => void,
   onError?: (err: Error) => void
-): EventSource {
-  const es = new EventSource(`${BASE}/events/${correlationId}`);
+): Promise<EventSource> {
+  const streamToken = await fetchStreamToken(bookId);
+  const es = new EventSource(
+    `${BASE}/events/${correlationId}?token=${encodeURIComponent(streamToken)}`
+  );
   es.onmessage = (e) => {
     try {
       onEvent(JSON.parse(e.data) as AgentEvent);
