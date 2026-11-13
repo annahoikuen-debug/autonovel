@@ -1,0 +1,76 @@
+site_name: AutoNovel ドキュメント
+site_description: AutoNovel（オートノベル） - AI 小説執筆プラットフォームの公式ドキュメント
+site_author: AutoNovel 運営
+repo_url: https://github.com/annahoikuen-debug/autonovel
+repo_name: annahoikuen-debug/autonovel
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: cyan
+      accent: cyan
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.annotate
+    - content.tooltips
+    - header.autohide
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+nav:
+  - ホーム: index.md
+  - ユーザーガイド:
+    - 3つの入口の歩き方: easy_mode_guide.md
+    - Easy Mode Suite 機能詳細: easy_mode_suite.md
+  - Q&A（FAQ）: FAQ.md
+  - 出版・投稿ガイド: publishing_guide.md
+  - マルチメディア ユーザーマニュアル: user/multimedia.md
+  - 開発者向け:
+    - 開発者ガイド: development_guide.md
+    - アーキテクチャ設計: architecture.md
+    - 4層圧縮モジュール: compression_module.md
+    - APIリファレンス: api.md
+    - Easy Mode API仕様書: easy_mode_api.md
+  - 運用:
+    - 起動とトラブルシューティング: STARTUP_TROUBLESHOOTING.md
+    - 本番デプロイチェックリスト: PRODUCTION_DEPLOYMENT_CHECKLIST.md
+    - SLO（サービス品質目標）: SLO.md
+    - 現況ステータス（SSOT）: STATUS.md
+  - 法務:
+    - プライバシーポリシー: legal/PRIVACY_POLICY.md
+    - 利用規約: legal/TERMS_OF_SERVICE.md
+  - 設計・ロードマップ: plans/PLAN_J1_REMAINING_36STEPS.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/annahoikuen-debug/autonovel
+    - icon: fontawesome/brands/x-twitter
+      link: https://x.com/annahoikuen_debug
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: false
+
+copyright: © 2026 AutoNovel 運営
