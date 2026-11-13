@@ -16,7 +16,7 @@ import os
 import re
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 from pydantic import BaseModel, Field
 
 from src.backend import database
@@ -27,6 +27,7 @@ from src.backend.observability.health import metrics
 from src.backend.rate_limit import generate_limiter
 from src.backend.routers.tasks import _assert_task_ownership
 from src.backend.security.owner_guard import verify_book_ownership
+from src.backend.security.stream_token import verify_stream_token
 from src.backend.tasks.generation_tasks import generate_chapter_orchestrated_task
 from src.backend.tasks.huey import huey
 from src.agents.event_bus import EventBus, AgentEvent
@@ -240,23 +241,26 @@ async def export_orchestrated_package(
 async def orchestrated_events(
     correlation_id: str,
     request: Request,
-    current_user: User = Depends(get_current_user),
+    token: str = Query(..., description="ストリーム認証トークン（短命・作品スコープ）"),
 ) -> EventSourceResponse:
     """オーケストレーション中のAgentEventをSSEでリアルタイム配信。
 
-    IDOR 防止: correlation_id は単なる識別子（`book_<id>_branch_<id>_ep_<n>`）で、
-    他人の生成イベントを購読できてしまう。作品 ID を解決して所有者を検証する。
+    EventSource は Authorization ヘッダーを送信できないため、クエリ文字列の
+    短命ストリームトークンで認証・作品スコープ所有権を検証する（H6）。
     """
     book_id = _book_id_from_correlation(correlation_id)
     if book_id is None:
-        # 作品スコープに紐づけられない correlation_id は管理者に限定する (fail-closed)
-        if getattr(current_user, "role", None) != "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="このイベントストリームは作品に紐づかないため管理者権限が必要です",
-            )
-    else:
-        await verify_book_ownership(book_id, current_user)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="このイベントストリームは作品に紐づかないため購読できません",
+        )
+    # H6: ストリームトークンで認証＋book_id スコープ所有権を検証
+    user_id = verify_stream_token(token, book_id)
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="無効または期限切れのストリームトークンです",
+        )
 
     use_redis = os.environ.get("USE_REDIS_EVENTS", "false").lower() == "true"
     event_bus = EventBus(use_redis=use_redis)
