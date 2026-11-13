@@ -254,3 +254,9 @@ print(f'README ベースライン整合 OK: {expected}')
             exit 1
           fi
 
+      - name: Docs サイトビルドチェック
+        working-directory: .
+        run: |
+          pip install mkdocs-material mkdocs-git-revision-date-localized-plugin
+          mkdocs build --strict
+
