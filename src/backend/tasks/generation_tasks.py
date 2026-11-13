@@ -475,7 +475,10 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
         if task_id:
             _update_task_in_db(str(task_id), "failed")
         # クレジットを返金（失敗時）
-        if credits_deducted and credit_service is not None and user_id is not None:
+        # NOTE: credit_service は _deduct() クロージャ内でのみ代入されるため、
+        # ここでは参照しない（常に None で返金がスキップされていたバグの修正）。
+        # refund_session で新しい CreditService を生成して返金する。
+        if credits_deducted and user_id is not None:
             refund_session = database.SessionLocal()
             try:
                 # 新しいセッションで返金処理
@@ -560,7 +563,10 @@ def generate_chapter_orchestrated_task(payload: dict[str, Any]) -> dict[str, Any
         if task_id:
             _update_task_in_db(str(task_id), "failed")
         # クレジットを返金（失敗時）
-        if credits_deducted and credit_service is not None and user_id is not None:
+        # NOTE: credit_service は _deduct() クロージャ内でのみ代入されるため、
+        # ここでは参照しない（常に None で返金がスキップされていたバグの修正）。
+        # refund_session で新しい CreditService を生成して返金する。
+        if credits_deducted and user_id is not None:
             refund_session = database.SessionLocal()
             try:
                 # 新しいセッションで返金処理
