@@ -392,10 +392,10 @@ class DAGScheduler:
                     from src.backend.tasks.huey import execute_agent_node_task, async_wait_huey_result
 
                     clean_kwargs = {k: v for k, v in task_node.kwargs.items() if not k.startswith("_")}
+                    clean_kwargs["task_id"] = task_node.task_id
                     huey_task = execute_agent_node_task(
-                        func_name=task_node.func_name,
-                        kwargs=clean_kwargs,
-                        node_id=task_node.task_id,
+                        node_name=task_node.func_name,
+                        payload=clean_kwargs,
                     )
                     timeout_val = task_node.timeout_seconds or 60.0
                     res = await async_wait_huey_result(huey_task, timeout=timeout_val)
