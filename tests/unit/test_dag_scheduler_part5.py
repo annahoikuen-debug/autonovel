@@ -89,10 +89,11 @@ async def test_dag_scheduler_huey_dispatch():
 
         result_graph = await scheduler.run_dag(graph)
 
+        # H10 (c69fde5f): DAG Huey タスクは (node_name, payload) 署名に統一。
+        # task_id は投入前に DB 行を先に作成し、payload に同梱される（H9）。
         mock_exec.assert_called_once_with(
-            func_name="agent_review",
-            kwargs={"draft": "Some draft"},
-            node_id="huey_node",
+            node_name="agent_review",
+            payload={"draft": "Some draft", "task_id": "huey_node"},
         )
         mock_wait.assert_called_once_with(mock_task, timeout=60.0)
         assert result_graph.nodes["huey_node"].status == "completed"
