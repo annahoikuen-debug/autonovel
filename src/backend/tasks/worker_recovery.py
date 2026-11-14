@@ -138,26 +138,42 @@ class WorkerRecoveryManager:
         """
         threshold = datetime.now() - timedelta(seconds=self.config.zombie_threshold_seconds)
 
+        # ゾンビタスクを検知し、自分のタスクは除外して他ワーカーのタスクのみ回復対象とする
+        zombies = await self.detect_zombie_tasks()
+        targets = [z for z in zombies if z.worker_id != self.worker_id]
+
+        if not targets:
+            return []
+
+        recovered: list[str] = []
         async with self.db_manager.get_session() as session:
-            result = await session.execute(
-                update(TaskWALLogModel)
-                .where(
-                    TaskWALLogModel.state == "running",
-                    TaskWALLogModel.heartbeat_at < threshold,  # type: ignore[arg-type]
-                    TaskWALLogModel.worker_id != self.worker_id,  # type: ignore[arg-type]
-                )
-                .values(state="pending", heartbeat_at=datetime.now())
-            )
+            for z in targets:
+                attempts = await self._get_recovery_attempt_count(session, z.task_id)
+                if attempts >= self.config.max_recovery_attempts:
+                    # 復旧上限に達した「毒薬」タスクは失敗マークにして再実行を防ぐ
+                    z.state = "failed"
+                    await session.execute(
+                        update(TaskWALLogModel)
+                        .where(TaskWALLogModel.task_id == z.task_id)
+                        .values(state="failed", heartbeat_at=datetime.now())
+                    )
+                else:
+                    z.state = "pending"
+                    recovered.append(z.task_id)
+                    await session.execute(
+                        update(TaskWALLogModel)
+                        .where(TaskWALLogModel.task_id == z.task_id)
+                        .values(state="pending", heartbeat_at=datetime.now())
+                    )
             await session.commit()
-            recovered_count = result.rowcount or 0
 
-        if recovered_count and self.config.alert_on_recovery:
+        if recovered and self.config.alert_on_recovery:
             logger.warning(
-                f"RECOVERY ALERT: auto_recovery count={recovered_count} worker={self.worker_id}"
+                f"RECOVERY ALERT: auto_recovery count={len(recovered)} worker={self.worker_id}"
             )
 
-        logger.info(f"Recovered {recovered_count} zombie tasks (worker={self.worker_id})")
-        return []
+        logger.info(f"Recovered {len(recovered)} zombie tasks (worker={self.worker_id})")
+        return recovered
 
     async def _get_recovery_attempt_count(self, session, task_id: str) -> int:
         """Count previous recovery attempts for a task."""

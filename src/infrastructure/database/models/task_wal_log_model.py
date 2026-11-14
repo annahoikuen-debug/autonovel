@@ -15,12 +15,14 @@ class TaskWALLogModel(Base):
     dag_id = Column(String(64), nullable=False, index=True)
     node_id = Column(String(64), nullable=False, index=True)
     state = Column(String(20), nullable=False)
+    worker_id = Column(String(64), nullable=True, index=True)
     input_json = Column(Text, nullable=True)
     output_json = Column(Text, nullable=True)
     heartbeat_at = Column(DateTime, nullable=True)
     created_at = Column(CompatibleDateTime, server_default=func.now())
 
     __table_args__ = (
+        Index("idx_task_wal_logs_worker_id", "worker_id"),
         Index("idx_task_wal_logs_dag_id", "dag_id"),
         Index("idx_task_wal_logs_node_id", "node_id"),
         Index("idx_task_wal_logs_task_id", "task_id"),
