@@ -71,7 +71,9 @@ async def test_produce_novel_success(monkeypatch):
         m.setattr(novel_module.producer, "create_project", fake_create)
         m.setattr(novel_module.producer, "generate_all_episodes",
                   AsyncMock(return_value=None))
-        result = await produce_novel(req, api_key="key")
+        # H15 (4ae7059c): require_api_key の二重依存を削除し、認証はグローバル
+        # ミドルウェアに一本化。produce_novel に api_key 引数は無い。
+        result = await produce_novel(req)
     assert result.project_id == 1
     assert result.status == "completed"
     assert len(created) == 1
@@ -86,8 +88,9 @@ async def test_produce_novel_generation_error(monkeypatch):
         m.setattr(novel_module.producer, "create_project", MagicMock())
         m.setattr(novel_module.producer, "generate_all_episodes",
                   AsyncMock(side_effect=RuntimeError("gen fail")))
+        # H15: api_key 引数は無い（認証はグローバルミドルウェアに一本化）
         with pytest.raises(HTTPException) as exc:
-            await produce_novel(req, api_key="key")
+            await produce_novel(req)
     assert exc.value.status_code == 500
 
 
