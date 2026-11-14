@@ -174,7 +174,6 @@ def test_generation_task_creates_new_book_when_book_id_not_provided(real_db_mana
 
     # 既存の book_id=1 に第1話を作成しておく（生成タスクで book_id=None の新規本作成時、
     # 既存作品が無傷であることを検証するため。content/summary は空で初期化）
-    from sqlalchemy import select as _select
     existing_chapter = Chapter(
         book_id=1,
         ep_num=1,

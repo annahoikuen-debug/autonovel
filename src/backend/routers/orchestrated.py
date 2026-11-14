@@ -27,7 +27,6 @@ from src.backend.database.repository import BookRepository
 from src.backend.observability.health import metrics
 from src.backend.rate_limit import generate_limiter
 from src.backend.routers.tasks import _assert_task_ownership
-from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.security.stream_token import verify_stream_token
 from src.backend.tasks.generation_tasks import generate_chapter_orchestrated_task
 from src.backend.tasks.huey import huey

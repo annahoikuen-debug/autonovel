@@ -6,7 +6,6 @@ SQLite 一時ファイル DB で `alembic upgrade head` → `digest_rollups` テ
 
 from __future__ import annotations
 
-from pathlib import Path
 
 from alembic import command
 from alembic.config import Config

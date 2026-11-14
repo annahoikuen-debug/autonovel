@@ -12,7 +12,6 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 
 BASELINE_PATH = Path("config/integration_failure_baseline.json")
 

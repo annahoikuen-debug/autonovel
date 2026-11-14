@@ -10,7 +10,6 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.backend.database.repositories import BookRepository  # 実装パスに合わせて調整
 
 
 def make_user(email: str = "user@example.com") -> Any:

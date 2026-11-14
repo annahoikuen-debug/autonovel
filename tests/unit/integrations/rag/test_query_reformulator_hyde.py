@@ -6,9 +6,8 @@ LLM はモックを使用し、実際の API 呼び出しは行わない。
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
-import pytest
 
 from src.integrations.rag.query_reformulator import QueryReformulator
 

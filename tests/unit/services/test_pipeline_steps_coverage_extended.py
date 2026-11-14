@@ -315,7 +315,6 @@ async def test_illustration_step_with_illustration_settings():
     reporter = make_reporter()
 
     with pytest.MonkeyPatch.context() as m:
-        from src.backend.workflows.illustration_workflow import IllustrationWorkflow
         instance = MagicMock()
         instance.execute = AsyncMock(return_value={"status": "success", "illustrations": []})
         m.setattr("src.backend.workflows.illustration_workflow.IllustrationWorkflow", lambda **kwargs: instance)
@@ -371,7 +370,6 @@ async def test_marketing_step_with_existing_title_and_llm():
 @pytest.mark.asyncio
 async def test_hook_generation_step_basic():
     """HookGenerationStep ベーシックテスト。"""
-    from src.services.pipeline_steps import HookGenerationStep
     ctx = make_ctx()
     engine = make_engine()
     reporter = make_reporter()

@@ -17,7 +17,6 @@ from typing import Any, Callable
 from src.audit.perturbation.ladder import LadderEntry, build_ladder
 from src.audit.perturbation.metrics import (
     check_invariance,
-    check_retest_stability,
     identify_axis,
     spearman_rank,
 )

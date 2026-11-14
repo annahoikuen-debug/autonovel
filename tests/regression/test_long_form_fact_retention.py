@@ -16,7 +16,6 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
 import json
 
 import pytest
@@ -24,7 +23,6 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.backend.database.models_digest import EpisodeDigestModel
-from src.backend.database.models_rollup import DigestRollupModel
 from src.engine.context_compression.digest_service import EpisodeDigestRepository
 from src.engine.context_compression.rollup_config import RollupConfig
 from src.engine.context_compression.rollup_generator import RollupGenerator

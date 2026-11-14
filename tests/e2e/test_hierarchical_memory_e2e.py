@@ -12,7 +12,6 @@
 from __future__ import annotations
 
 import json
-import os
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
@@ -27,7 +26,6 @@ from src.backend.database.models_digest import EpisodeDigestModel
 from src.backend.database.models_foreshadowing import ForeshadowingModel
 from src.backend.database.models_rollup import DigestRollupModel
 from src.infrastructure.database.models.base_orm import Base
-from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
 
 BOOK_ID = 1
 EPISODE_NUMBER = 10

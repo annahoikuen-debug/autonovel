@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import threading
 
-import pytest
 
 from src.backend.observability.health import _Metrics, metrics
 

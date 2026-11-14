@@ -17,8 +17,6 @@ import pytest
 from src.audit.lesson_store import (
     AuditLessonRepository,
     AuditLessonService,
-    DEFAULT_ACTIVE_MAX,
-    DEFAULT_INJECT_MAX_ITEMS,
 )
 
 

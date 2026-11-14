@@ -8,9 +8,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import pytest
 
-from scripts.ci_judge_ratchet import main, _flat_metrics, _compare
+from scripts.ci_judge_ratchet import _flat_metrics, _compare
 
 _BASELINE_DIR = Path("/tmp/ratchet_test_baseline")
 

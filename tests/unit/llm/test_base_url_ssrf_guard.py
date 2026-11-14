@@ -7,7 +7,6 @@ OPENAI_API_KEY が攻撃者ホストに Bearer 送出される。
 from __future__ import annotations
 
 import os
-from unittest.mock import MagicMock
 
 import pytest
 

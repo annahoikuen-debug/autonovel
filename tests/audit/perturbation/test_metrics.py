@@ -9,10 +9,6 @@
 from __future__ import annotations
 
 from src.audit.perturbation.metrics import (
-    IdentifiabilityResult,
-    InvarianceResult,
-    RetestResult,
-    SpearmanResult,
     check_invariance,
     check_retest_stability,
     identify_axis,

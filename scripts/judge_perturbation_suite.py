@@ -26,11 +26,10 @@ from __future__ import annotations
 
 import argparse
 import glob
-import json
 import sys
 from pathlib import Path
 
-from src.audit.perturbation.suite import JudgeSuite, run_judge_suite
+from src.audit.perturbation.suite import run_judge_suite
 
 
 def _read_corpus(patterns: list[str], limit: int | None = None) -> list[str]:

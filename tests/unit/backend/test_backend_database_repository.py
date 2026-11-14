@@ -3,9 +3,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-import pytest
 
-import src.backend.database.repository as repo_mod
 from src.backend.database.models import Book
 from src.backend.database.repository import BookRepository, DataRepositoryFacade
 from src.backend.database.core import DatabaseManager
@@ -55,8 +53,6 @@ def test_book_repository_get_with_kana():
 
 def test_data_repository_facade():
     """DataRepositoryFacade の動作確認テスト。"""
-    from src.backend.database.repository import DataRepositoryFacade
-    from src.backend.database.core import DatabaseManager
 
     db = MagicMock(spec=DatabaseManager)
     facade = DataRepositoryFacade(db)

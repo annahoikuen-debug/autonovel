@@ -393,7 +393,6 @@ class TestRollupCallBudget:
             "src.agents.writing.episode_writer._resolve_foreshadow_voter",
             lambda llm: None,
         )
-        from unittest.mock import AsyncMock
 
         monkeypatch.setattr(
             "src.engine.foreshadowing.service.ForeshadowingService.check_and_resolve",
@@ -403,7 +402,7 @@ class TestRollupCallBudget:
     @pytest.mark.asyncio
     async def test_rollup_off_no_extra_llm_calls(self, tmp_path, rollup_env_off):
         """rollup off 時、digest 生成のみで rollup 生成の LLM 呼び出しは 0 回。"""
-        from unittest.mock import AsyncMock, MagicMock
+        from unittest.mock import MagicMock
         from types import SimpleNamespace
 
         from src.agents.orchestrator import AgentContext
@@ -522,7 +521,7 @@ class TestRollupCallBudget:
         digest 生成回数は実装に依存するため、rollup 生成の LLM 呼び出し
         回数（章 rollup / 巻 rollup のみ）を予算として検証する。
         """
-        from unittest.mock import AsyncMock, MagicMock
+        from unittest.mock import MagicMock
         from types import SimpleNamespace
 
         from src.agents.orchestrator import AgentContext
@@ -531,7 +530,7 @@ class TestRollupCallBudget:
         from src.backend.database.models_foreshadowing import ForeshadowingModel
         from src.backend.database.models_rollup import DigestRollupModel
         from src.infrastructure.database.models.base_orm import Base
-        from sqlalchemy import insert, select
+        from sqlalchemy import insert
         from sqlalchemy.ext.asyncio import (
             AsyncSession,
             async_sessionmaker,

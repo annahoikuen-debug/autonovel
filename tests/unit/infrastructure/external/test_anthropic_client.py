@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import sys
-from types import ModuleType
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -75,9 +74,6 @@ class TestAnthropicClientGenerate:
     @pytest.mark.asyncio
     async def test_generate_with_caching_with_mock_client(self):
         """client がモックのとき、generate_with_caching が正常に動作すること。"""
-        from src.infrastructure.external.prompt_cache_builder import (
-            PromptCacheBuilder,
-        )
 
         mock_anthropic = MagicMock()
         mock_client_instance = MagicMock()

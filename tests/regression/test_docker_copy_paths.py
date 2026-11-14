@@ -9,7 +9,6 @@ Docker が未導入の環境でも実行可能な静的検証。
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 import pytest

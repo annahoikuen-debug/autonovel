@@ -6,8 +6,7 @@ C1: `easy_mode.py:633-710` は get_current_user / verify_book_ownership を欠�
 """
 from __future__ import annotations
 
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi.testclient import TestClient

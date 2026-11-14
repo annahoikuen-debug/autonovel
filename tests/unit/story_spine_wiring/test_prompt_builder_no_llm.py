@@ -7,7 +7,6 @@ wall: ビルダーの spine 注入経路で誤って LLM 生成（generate_json 
 
 from __future__ import annotations
 
-import pytest
 
 from src.llm.adapters.prompts import build_spine_section, build_spine_summary
 from config.story_spine import resolve_spine

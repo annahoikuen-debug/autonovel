@@ -5,8 +5,6 @@ C2: `response.choices[0].usage` は openai SDK 3.x の Choice に存在せず、
 """
 from __future__ import annotations
 
-from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from openai.types.chat import ChatCompletion, ChatCompletionMessage

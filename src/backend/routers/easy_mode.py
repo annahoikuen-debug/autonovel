@@ -29,8 +29,6 @@ from src.services.llm.prompts import (
 )
 from src.integrations.marketing.marketing import MarketingAgent
 from src.integrations.rag.rag_service import rag_service
-from src.engine.compression.compressor import FourLayerCompressor
-from src.engine.compression.models import CompressionConfig
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

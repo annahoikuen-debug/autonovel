@@ -15,7 +15,7 @@ def test_sanitize_filename_blocks_dotdot():
 
 
 def test_sanitize_filename_blocks_path_separators():
-    """/ と \ はアンダースコアに置換される（H14）。"""
+    r"""/ と \ はアンダースコアに置換される（H14）。"""
     assert sanitize_filename("a/b") == "a_b"
     assert sanitize_filename("a\\b") == "a_b"
 

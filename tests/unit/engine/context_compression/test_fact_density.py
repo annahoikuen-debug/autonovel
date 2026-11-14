@@ -9,7 +9,6 @@ cod_rounds=1 は現行の 1 pass と完全に同一（後方互換）。
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 
 import pytest
 

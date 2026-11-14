@@ -10,7 +10,6 @@ alignment / 中点反転位置 / クライマックス位置を検証する。
 
 from __future__ import annotations
 
-import pytest
 
 from src.services.structure_validator import validate
 

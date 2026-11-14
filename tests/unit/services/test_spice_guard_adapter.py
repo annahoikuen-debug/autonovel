@@ -1,6 +1,6 @@
 """Unit tests for src/services/spice_guard_adapter.py."""
 
-from src.services.spice_guard_adapter import SpiceGuardAdapter, SpiceElement, create_spice_guard_adapter
+from src.services.spice_guard_adapter import SpiceElement, create_spice_guard_adapter
 
 
 def test_spice_guard_adapter_creation():

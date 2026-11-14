@@ -12,7 +12,6 @@ from src.backend.observability.foreshadowing_ports import (
 )
 from src.engine.episode_context import EpisodeContextBuilder
 from src.engine.foreshadowing.service import ForeshadowingService
-from src.engine.foreshadowing.kpi import ForeshadowingKpiService
 from src.models.writing_metadata import WritingMetadata, ForeshadowingReport
 from src.infrastructure.repositories.foreshadowing_repo import DbForeshadowingRepository
 from src.backend.database.models_foreshadowing import ForeshadowingModel

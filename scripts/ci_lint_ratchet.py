@@ -31,7 +31,7 @@ import json
 import re
 import subprocess
 import sys
-from datetime import date, datetime
+from datetime import date
 from pathlib import Path
 
 BASELINE = Path("config/ci_lint_baseline.json")

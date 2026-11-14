@@ -16,7 +16,6 @@ import pytest
 from src.audit.judge_panel import (
     JudgePanel,
     JudgeSpec,
-    PanelScore,
     PairwiseVerdict,
     PanelUnavailable,
 )

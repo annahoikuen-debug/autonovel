@@ -8,13 +8,11 @@
 
 from __future__ import annotations
 
-import os
 from typing import Any
 
 import pytest
 
-from src.agents.specialists.unified_auditor import UnifiedAuditor
-from src.audit.judge_panel import JudgePanel, PairwiseVerdict
+from src.audit.judge_panel import PairwiseVerdict
 from src.audit.shadow_audit import (
     ShadowAuditResult,
     run_shadow_audit,

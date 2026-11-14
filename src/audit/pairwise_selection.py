@@ -6,7 +6,6 @@ from __future__ import annotations
 既存の品質ゲートには触れず、ENABLE_PAIRWISE_SELECTION env フラグでオプトイン。
 """
 
-import asyncio
 import os
 from dataclasses import dataclass
 

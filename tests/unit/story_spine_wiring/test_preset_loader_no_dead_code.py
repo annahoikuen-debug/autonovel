@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 import src.services.preset_loader as preset_loader
 

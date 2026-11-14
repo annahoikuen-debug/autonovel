@@ -10,10 +10,7 @@ upgrade が走り table ... already exists になるバグを防ぐ。
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
-import pytest
-from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect
 

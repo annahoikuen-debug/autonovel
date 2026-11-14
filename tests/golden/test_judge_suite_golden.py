@@ -11,7 +11,7 @@ import json
 
 from tests.mocks.llm_adapter import LLMMocker, MockLLMAdapter
 
-from src.audit.perturbation.suite import JudgeSuite, run_judge_suite
+from src.audit.perturbation.suite import run_judge_suite
 
 _LONG_TEXT = (
     "アルトは古いダンジョンの入り口に立っていた。剣を握る手に汗が光る。\n\n"

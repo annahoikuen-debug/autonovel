@@ -9,10 +9,7 @@
 
 from __future__ import annotations
 
-import os
-from pathlib import Path
 
-import pytest
 
 from src.audit.calibration_store import (
     DEFAULT_CALIBRATION,

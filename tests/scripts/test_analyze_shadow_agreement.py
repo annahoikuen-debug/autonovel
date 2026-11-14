@@ -7,9 +7,7 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
-import pytest
 
 from scripts.analyze_shadow_agreement import analyze_shadow_agreement
 

@@ -8,7 +8,6 @@ AuditRun(judge_mode="shadow") に並行記録する。
 合否への影響はゼロ（キルスイッチ付き）。
 """
 
-import asyncio
 from dataclasses import dataclass
 from typing import Any
 

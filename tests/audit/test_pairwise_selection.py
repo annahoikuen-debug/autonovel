@@ -6,8 +6,6 @@ JudgePanel はモックで代用し、ペアワイズ結果を制御する。
 
 from __future__ import annotations
 
-import asyncio
-from typing import Any
 
 import pytest
 

@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import re
 import random
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Literal
 
 from src.engine.auditors.rule_based_metrics import AI_CLICHE_PATTERNS

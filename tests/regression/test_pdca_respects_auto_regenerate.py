@@ -6,7 +6,6 @@ WritingService.generate_episodes(..., auto_regenerate=True, max_retries=N) が
 """
 from __future__ import annotations
 
-import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest

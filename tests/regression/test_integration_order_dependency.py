@@ -10,9 +10,7 @@ Step 5（conftest real_db_manager の環境変数復元）が壊れると即赤�
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
-import pytest
 from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect

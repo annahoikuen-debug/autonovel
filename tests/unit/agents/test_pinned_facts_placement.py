@@ -7,7 +7,6 @@ Lost in the Middle 対策として、重要事実がプロンプトの「先頭�
 
 from __future__ import annotations
 
-from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 import pytest

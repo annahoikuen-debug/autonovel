@@ -17,8 +17,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 # ORM モデルを全て Base.metadata に登録するため import（alembic/env.py と同経路）
 from src.backend.database.models import Base  # noqa: E402
 
