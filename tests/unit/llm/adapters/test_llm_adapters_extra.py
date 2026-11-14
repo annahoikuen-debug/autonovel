@@ -275,9 +275,18 @@ def test_factory_openai(prod, monkeypatch):
     ))
     with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
         get_llm_adapter("openai")
-    a = get_llm_adapter("openai", base_url="http://x")
+    a = get_llm_adapter("openai", base_url="http://x", api_key="test-key")
     assert isinstance(a, OpenAIAdapter)
     assert a.base_url == "http://x"
+
+
+def test_factory_openai_rejects_base_url_without_api_key(prod, monkeypatch):
+    # セキュリティ: base_url 単独指定はサーバーキー流出を防ぐため ValueError
+    monkeypatch.setattr("src.llm.adapters.factory.settings", SimpleNamespace(
+        LLM_PROVIDER="openai", OPENAI_API_KEY="", OPENAI_BASE_URL="", OPENAI_MODEL="m",
+    ))
+    with pytest.raises(ValueError, match="api_key"):
+        get_llm_adapter("openai", base_url="http://x")
 
 
 def test_factory_openrouter(prod, monkeypatch):

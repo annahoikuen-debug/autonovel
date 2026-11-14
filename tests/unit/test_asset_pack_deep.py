@@ -146,7 +146,7 @@ def test_asset_pack_generator_init():
     assert gen.ebook_exporter is None
 
 
-def test_asset_pack_generator_init_components():
+def test_asset_pack_generator_init_components(tmp_path):
     """_init_components の動作検証。create_ebook_exporter は EbookMetadata を
     要求するため、実装の遅延初期化は AttributeError になり得る（既知の不整合）。"""
     preset = {"characters": {"archetypes": {}}, "erotic": {}}
@@ -157,8 +157,9 @@ def test_asset_pack_generator_init_components():
     assert gen.media_exporter is None
     assert gen.ebook_exporter is None
 
+    # H13: _init_components は output_dir を必須引数とする
     try:
-        gen._init_components(_make_series())
+        gen._init_components(_make_series(), output_dir=tmp_path)
         assert gen.if_generator is not None
         assert gen.media_exporter is not None
         assert gen.ebook_exporter is not None

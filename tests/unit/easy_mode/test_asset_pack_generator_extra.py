@@ -369,17 +369,18 @@ class TestGraphOutputs:
         )
         assert files == {}
 
-    def test_init_components(self, monkeypatch):
+    def test_init_components(self, monkeypatch, tmp_path):
         from src.easy_mode.phase3 import asset_pack as ap
 
         monkeypatch.setattr(ap, "create_ebook_exporter", lambda genre, preset: MagicMock())
         gen = AssetPackGenerator("fantasy", {})
-        gen._init_components(make_series(1))
+        # H13: _init_components は output_dir を必須引数とする
+        gen._init_components(make_series(1), output_dir=tmp_path)
         assert gen.if_generator is not None
         assert gen.media_exporter is not None
         assert gen.ebook_exporter is not None
         first = gen.if_generator
-        gen._init_components(make_series(1))
+        gen._init_components(make_series(1), output_dir=tmp_path)
         assert gen.if_generator is first
 
     def test_generate_promo_materials(self, tmp_path):
