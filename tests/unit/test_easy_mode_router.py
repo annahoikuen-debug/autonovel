@@ -151,6 +151,7 @@ async def test_generate_content_success(monkeypatch, dummy_session, dummy_reques
     called_metrics = patch_dependencies(monkeypatch)
     # orchestrated タスクをモック (実装は generate_chapter_orchestrated_task を利用)
     import src.backend.tasks.generation_tasks as gen_tasks_mod
+    import uuid as uuid_mod
 
     class DummyTaskResult:
         def __init__(self):
@@ -161,6 +162,12 @@ async def test_generate_content_success(monkeypatch, dummy_session, dummy_reques
         "generate_chapter_orchestrated_task",
         lambda *args, **kwargs: DummyTaskResult(),
     )
+
+    # H9/Step 10: ルーターが uuid4() で task_id を先付与し、suggestion に含める。
+    # uuid4 を固定値に差し替えて、返却される task_id と suggestion を検証する。
+    fixed_task_id = "d18ca79c-2751-4b5f-9948-b2051dd82965"
+    monkeypatch.setattr(uuid_mod, "uuid4", lambda: uuid_mod.UUID(fixed_task_id))
+
     valid_input = easy_mode.EasyModeInput(
         chapter_history=["prev chapter"],
         current_chapter="current content",
@@ -171,8 +178,8 @@ async def test_generate_content_success(monkeypatch, dummy_session, dummy_reques
         valid_input, request=dummy_request, session=dummy_session
     )
     assert isinstance(response, easy_mode.GenerationResponse)
-    # huey_task_id should be in suggestions (now using huey enqueue)
-    assert "test-huey-id" in response.suggestions[0]
+    assert response.task_id == fixed_task_id
+    assert fixed_task_id in response.suggestions[0]
     assert "tasks_enqueued" in called_metrics
 
 
@@ -558,9 +565,14 @@ async def test_export_with_data_endpoint(monkeypatch, dummy_session):
         plots=[],
     )
 
+    # C1 (IDOR 対策): export_with_data_endpoint は current_user と所有権検証を
+    # 必要とする。管理者ユーザーを渡して所有権を満たす。
     # pytest-asyncio のイベントループ内で直接 await する
     response = await easy_mode.export_with_data_endpoint(
-        payload=payload, book_id=1, session=dummy_session
+        payload=payload,
+        book_id=1,
+        session=dummy_session,
+        current_user=make_admin_user(),
     )
     assert response.status_code == 200
     assert response.headers["Content-Type"] == "application/zip"

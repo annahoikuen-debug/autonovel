@@ -96,9 +96,13 @@ def test_reverse_generate_api(client):
 
 
 def test_export_with_data_api(client):
-    """カスタムデータ付きZIPエクスポートAPIが正常にZIPを返すことを検証"""
+    """カスタムデータ付きZIPエクスポートAPIが正常にZIPを返すことを検証
+
+    C1 (IDOR 対策): book_id は存在し、current_user が所有する（または管理者）
+    作品のみを指定する。テスト種データの book_id=1 を使用。
+    """
     response = client.post(
-        "/easy_mode/export-with-data?book_id=99",
+        "/easy_mode/export-with-data?book_id=1",
         json={
             "title": "カスタムタイトル",
             "genre": "ハイファンタジー (R15)",
