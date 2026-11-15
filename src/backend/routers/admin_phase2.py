@@ -13,19 +13,8 @@ from src.backend.auth import require_api_key
 from src.backend.config import settings
 from src.core.container import AppContainer
 from src.config.audit_weights import load_weights
-from src.engine.audit.aggregator import AuditAggregator
 from src.integrations.rag.rag_service import rag_service
 from src.services.reflective_rag import ReflectiveRAGService
-from src.agents.specialists import (
-    ConsistencyAuditor,
-    CreativityAuditor,
-    ReaderHookAuditor,
-    EmotionCurveAuditor,
-    StyleAuditor,
-    FactualAuditor,
-    StructureAuditor,
-    MultimodalAuditor,
-)
 from src.agents.enrichment_agent import EnrichmentAgent
 from src.agents.orchestrator import AgentContext
 
@@ -41,27 +30,6 @@ async def get_session():
     db = AppContainer.db()
     async with db.get_session() as session:
         yield session
-
-
-class AuditAggregateTestRequest(BaseModel):
-    book_id: int = Field(..., description="対象書籍ID")
-    chapter_number: int = Field(..., description="対象章番号")
-    draft_text: str = Field(..., description="監査対象の原稿テキスト")
-    world_bible_snapshot: dict[str, Any] = Field(default_factory=dict)
-    style_dna: dict[str, Any] = Field(default_factory=dict)
-    plot_tree: str = Field(default="")
-    plot_summary: str = Field(default="")
-    illustration_prompts: str = Field(default="")
-    genre: str = Field(default="literary")
-    phase: str = Field(default="mid_writing")
-
-
-class AuditAggregateTestResponse(BaseModel):
-    overall: float
-    by_specialist: dict[str, float]
-    missing: list[str]
-    weights_used: dict[str, float]
-    lowest_dimension: str | None
 
 
 class SpecialistInfo(BaseModel):
@@ -86,56 +54,6 @@ async def list_specialists():
         SpecialistInfo(name="structure", llm_required=True),
         SpecialistInfo(name="multimodal", llm_required=True),
     ]
-
-
-@router.post("/aggregate_test", response_model=AuditAggregateTestResponse)
-async def test_aggregate(
-    req: AuditAggregateTestRequest,
-    session: AsyncSession = Depends(get_session),
-):
-    """任意の原稿で監査集約を実行（テスト用）"""
-    weights = load_weights(genre=req.genre, phase=req.phase)
-
-    specialists = [
-        ConsistencyAuditor(llm=None),
-        CreativityAuditor(llm=None),
-        ReaderHookAuditor(llm=None),
-        EmotionCurveAuditor(llm=None),
-        StyleAuditor(llm=None, style_profile=req.style_dna),
-        FactualAuditor(llm=None),
-        StructureAuditor(llm=None),
-        MultimodalAuditor(llm=None),
-    ]
-
-    aggregator = AuditAggregator(
-        specialists=specialists,
-        weights=weights,
-        event_bus=None,
-    )
-
-    ctx = {
-        "book_id": req.book_id,
-        "chapter_number": req.chapter_number,
-        "draft_text": req.draft_text,
-        "world_bible_snapshot": req.world_bible_snapshot,
-        "style_dna": req.style_dna,
-        "plot_tree": req.plot_tree,
-        "plot_summary": req.plot_summary,
-        "illustration_prompts": req.illustration_prompts,
-        "genre": req.genre,
-        "correlation_id": f"admin_test_book{req.book_id}_ch{req.chapter_number}",
-    }
-
-    await aggregator.run_all(ctx)
-    result = aggregator.aggregate()
-
-    return AuditAggregateTestResponse(
-        overall=result.overall,
-        by_specialist=result.by_specialist,
-        missing=result.missing,
-        weights_used=result.weights_used,
-        lowest_dimension=result.lowest_dimension(),
-    )
 
 
 @router.get("/weights")
