@@ -28,7 +28,7 @@ def _user(role: str = "user", status: str = "active") -> User:
 # --------------------------------------------------------------------------
 
 async def test_get_current_user_auth_disabled(monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", True, raising=False)
     user = await auth_mod.get_current_user(token=None, db=AsyncMock())
@@ -37,7 +37,7 @@ async def test_get_current_user_auth_disabled(monkeypatch):
 
 
 async def test_get_current_user_requires_token(monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False, raising=False)
     with pytest.raises(HTTPException) as ei:
@@ -47,7 +47,7 @@ async def test_get_current_user_requires_token(monkeypatch):
 
 
 async def test_get_current_user_invalid_token(monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False, raising=False)
     monkeypatch.setattr(auth_mod, "decode_token", lambda t, expected_type=None: None)
@@ -57,7 +57,7 @@ async def test_get_current_user_invalid_token(monkeypatch):
 
 
 async def test_get_current_user_missing_sub(monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False, raising=False)
     monkeypatch.setattr(auth_mod, "decode_token", lambda t, expected_type=None: {"foo": 1})
@@ -68,7 +68,7 @@ async def test_get_current_user_missing_sub(monkeypatch):
 
 @pytest.mark.parametrize("sub,expected", [("7", 7), (7, 7), (None, None)])
 async def test_get_current_user_lookup(monkeypatch, sub, expected):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False, raising=False)
     monkeypatch.setattr(auth_mod, "decode_token", lambda t, expected_type=None: {"sub": sub} if sub else {})
@@ -85,7 +85,7 @@ async def test_get_current_user_lookup(monkeypatch, sub, expected):
 
 
 async def test_get_current_user_inactive_user(monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False, raising=False)
     monkeypatch.setattr(auth_mod, "decode_token", lambda t, expected_type=None: {"sub": "1"})
@@ -108,7 +108,7 @@ async def test_require_admin_user():
 
 
 async def test_require_api_key_variants(monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", True, raising=False)
     assert await require_api_key("Bearer x") == "dev-key"
@@ -125,7 +125,7 @@ async def test_require_api_key_variants(monkeypatch):
 
 
 async def test_require_admin_user_or_key(monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", True, raising=False)
     dev = await require_admin_user_or_key(token=None, authorization="", db=AsyncMock())
@@ -165,7 +165,7 @@ async def test_require_admin_user_or_key(monkeypatch):
 
 
 def test_validate_api_key_sync(monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", True, raising=False)
     assert validate_api_key_sync("anything") == "dev-key"

@@ -5,7 +5,7 @@ API キー検証における定数時間比較 (hmac.compare_digest)、空文字
 """
 
 from src.backend.auth import validate_api_key_sync
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 
 
 def test_validate_api_key_empty_or_whitespace():

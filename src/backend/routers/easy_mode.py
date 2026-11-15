@@ -11,7 +11,7 @@ from pydantic import ValidationError
 
 from src.backend import database
 from src.backend.auth import get_current_user, oauth2_scheme, require_api_key
-from src.backend.config import is_auth_bypass_enabled, settings
+from src.infrastructure.config.settings import is_auth_bypass_enabled, settings
 from src.backend.database import get_async_db
 from src.backend.database.core import get_db_manager
 from src.backend.database.repository import BookRepository

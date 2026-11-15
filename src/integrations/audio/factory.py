@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.integrations.audio.adapters.base import AudioTtsAdapter, TtsRequest, TtsResult
 from src.integrations.audio.adapters.elevenlabs_adapter import (
     ElevenLabsAdapter,

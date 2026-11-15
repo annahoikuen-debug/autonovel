@@ -102,7 +102,7 @@ class RateLimiter:
         proxies = self._trusted_proxies
         if proxies is None:
             # 遅延解決，避免在 import 時に settings を読む
-            from src.backend.config import settings
+            from src.infrastructure.config.settings import settings
 
             proxies = _parse_trusted_proxies(getattr(settings, "TRUSTED_PROXY_CIDRS", ""))
             self._trusted_proxies = proxies

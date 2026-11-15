@@ -10,7 +10,7 @@ app = FastAPI()
 app.include_router(pipeline_router)
 
 def test_pipeline_websocket_and_hub(monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
     monkeypatch.setattr(settings, "AUTH_DISABLED", True)
     client = TestClient(app)
 
@@ -41,7 +41,7 @@ def test_pipeline_websocket_and_hub(monkeypatch):
         assert data2["payload"]["score"] == 82.5
 
 def test_sse_pipeline_stream(monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
     monkeypatch.setattr(settings, "AUTH_DISABLED", True)
     client = TestClient(app)
     with client.stream("GET", "/api/stream/pipeline/999") as response:

@@ -1,6 +1,6 @@
 import logging
 import stripe
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 
 logger = logging.getLogger(__name__)
 

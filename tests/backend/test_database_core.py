@@ -514,7 +514,7 @@ class TestDatabaseManager:
 
     def test_init_db_falls_back_to_create_all_only_outside_production(self):
         """Alembic が失敗しても、非本番では create_all へフォールバックする。"""
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
 
         with patch('os.environ.get', return_value=""):
             with patch('src.backend.database.core.DATABASE_URL', "sqlite:///test.db"):
@@ -531,7 +531,7 @@ class TestDatabaseManager:
 
     def test_init_db_refuses_create_all_fallback_in_production(self):
         """本番では Alembic 失敗時に create_all へ落とさず、起動を失敗させる。"""
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
 
         with patch('os.environ.get', return_value=""):
             with patch('src.backend.database.core.DATABASE_URL', "postgresql+psycopg2://u:p@db/x"):

@@ -10,7 +10,7 @@ from src.backend.middleware.auth_middleware import is_public_path
 
 def test_prod_hides_metrics_docs_openapi(monkeypatch):
     """本番環境では /metrics /docs /redoc /openapi.json が非公開（Step 19）。"""
-    from src.backend import config as cfg_module
+    from src.infrastructure.config import settings as cfg_module
 
     monkeypatch.setattr(cfg_module.settings, "APP_ENV", "production")
     try:
@@ -24,7 +24,7 @@ def test_prod_hides_metrics_docs_openapi(monkeypatch):
 
 def test_dev_shows_metrics_docs_openapi(monkeypatch):
     """開発環境では /metrics /docs /redoc /openapi.json が公開（正常系回帰）。"""
-    from src.backend import config as cfg_module
+    from src.infrastructure.config import settings as cfg_module
 
     monkeypatch.setattr(cfg_module.settings, "APP_ENV", "development")
     try:
@@ -38,7 +38,7 @@ def test_dev_shows_metrics_docs_openapi(monkeypatch):
 
 def test_health_stays_public_in_prod(monkeypatch):
     """本番環境でも /health/live は公開のまま（Step 19）。"""
-    from src.backend import config as cfg_module
+    from src.infrastructure.config import settings as cfg_module
 
     monkeypatch.setattr(cfg_module.settings, "APP_ENV", "production")
     try:

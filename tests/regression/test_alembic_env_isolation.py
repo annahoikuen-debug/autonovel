@@ -18,7 +18,7 @@ from src.backend.database.core import _run_alembic_upgrade
 
 
 def _make_cfg(url: str) -> Config:
-    from src.backend.config import ROOT_DIR
+    from src.infrastructure.config.settings import ROOT_DIR
 
     ini_path = ROOT_DIR / "alembic.ini"
     cfg = Config(str(ini_path))

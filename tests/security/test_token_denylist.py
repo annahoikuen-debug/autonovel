@@ -15,7 +15,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.middleware.auth_middleware import GlobalAuthMiddleware
 from src.backend.security import token_denylist
 from src.backend.security.jwt import create_access_token, create_refresh_token, decode_token

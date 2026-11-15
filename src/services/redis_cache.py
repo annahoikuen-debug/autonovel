@@ -17,7 +17,7 @@ try:
 except ImportError:
     REDIS_AVAILABLE = False
     _redis_fallback: Any = None
-from src.backend.config import settings as _app_settings
+from src.infrastructure.config.settings import settings as _app_settings
 
 logger = logging.getLogger(__name__)
 

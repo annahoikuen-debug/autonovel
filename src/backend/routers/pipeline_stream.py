@@ -34,7 +34,7 @@ from fastapi import (
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 
-from src.backend.config import is_auth_bypass_enabled, settings
+from src.infrastructure.config.settings import is_auth_bypass_enabled, settings
 from src.backend.database import get_async_db
 from src.backend.database.models import Book
 from src.backend.security.jwt import decode_token

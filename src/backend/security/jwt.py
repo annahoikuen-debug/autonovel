@@ -5,7 +5,7 @@ from typing import Any, Optional
 
 import jwt
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 
 logger = logging.getLogger(__name__)
 

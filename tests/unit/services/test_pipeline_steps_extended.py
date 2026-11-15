@@ -607,7 +607,7 @@ class TestIllustrationStep:
         wf.execute = AsyncMock(return_value={"status": "success", "illustrations": []})
         with patch("src.backend.workflows.illustration_workflow.IllustrationWorkflow", return_value=wf), \
              patch("src.publishing.illustration.image_service.ImageService") as image_service, \
-             patch("src.backend.config.settings") as settings:
+             patch("src.infrastructure.config.settings") as settings:
             settings.get_gemini_api_key.return_value = "key"
             assert await IllustrationStep().execute(ctx, engine, make_reporter()) is True
         image_service.assert_called_once()

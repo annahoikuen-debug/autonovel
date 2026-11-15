@@ -1,7 +1,7 @@
 """`multimedia_storage` の単体テスト。"""
 from __future__ import annotations
 
-from src.backend import config
+from src.infrastructure.config import settings as config
 from src.backend.multimedia_storage import ensure_multimedia_dir, get_multimedia_dir
 
 

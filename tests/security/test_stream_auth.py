@@ -18,7 +18,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.middleware.auth_middleware import (
     PUBLIC_PREFIXES,
     _extract_stream_book_id,

@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any
 
 from src.agents.plot import PlotAgent as PlotExpander
-from src.backend.config import settings as _settings
+from src.infrastructure.config.settings import settings as _settings
 from src.backend.engine_utils import safe_get, safe_model_validate
 from src.models import (
     ArcBlueprint,

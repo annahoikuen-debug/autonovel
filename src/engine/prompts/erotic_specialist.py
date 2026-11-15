@@ -70,7 +70,7 @@ class EroticSpecialist:
         preset = get_preset(preset_name) if not yaml_preset else None
         # NSFW ガードレール: 官能生成は明示オプトイン (ENABLE_NSFW=true) のみ許可する。
         # 経路の入口で拒否し、デフォルトでは官能生成を行わない。
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
 
         if not settings.is_nsfw_enabled():
             raise RuntimeError(

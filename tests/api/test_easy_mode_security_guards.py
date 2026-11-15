@@ -7,7 +7,7 @@ APIキー認証ガードおよび不正 task_id バリデーションを検証�
 
 from fastapi.testclient import TestClient
 from src.backend.server import app
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 
 client = TestClient(app)
 

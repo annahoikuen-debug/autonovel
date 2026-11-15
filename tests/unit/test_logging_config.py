@@ -16,7 +16,7 @@ from src.infrastructure.logging_config import (
 
 def test__extra_attributes():
     """アプリコンテキスト辞書を構築する。"""
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
     settings.APP_NAME = "TestApp"
     settings.APP_VERSION = "1.0.0"
     settings.APP_ENV = "local"

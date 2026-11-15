@@ -21,7 +21,7 @@ from typing import Any, Optional
 
 import jwt
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.security.jwt import get_secret_key
 
 logger = logging.getLogger(__name__)

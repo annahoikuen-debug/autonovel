@@ -262,20 +262,23 @@ async def test_save_internal_state_variants(async_db):
 # init_db / alembic helpers / globals
 # --------------------------------------------------------------------------
 
-def test_run_alembic_upgrade_missing_ini(tmp_path, monkeypatch):
-    import src.backend.config as cfg_mod
+# _run_alembic_upgrade は関数内で src.infrastructure.config.settings.ROOT_DIR を
+# 遅延 import するため、テストでは settings モジュールの ROOT_DIR を差し替える。
+import src.infrastructure.config.settings as config_settings_mod
 
-    monkeypatch.setattr(cfg_mod, "ROOT_DIR", tmp_path)
+
+def test_run_alembic_upgrade_missing_ini(tmp_path, monkeypatch):
+
+    monkeypatch.setattr(config_settings_mod, "ROOT_DIR", tmp_path)
     with pytest.raises(RuntimeError, match="alembic.ini"):
         core._run_alembic_upgrade("sqlite:///x.db")
 
 
 def test_run_alembic_upgrade_invokes_command(tmp_path, monkeypatch):
-    import src.backend.config as cfg_mod
 
     ini = tmp_path / "alembic.ini"
     ini.write_text("[alembic]\n", encoding="utf-8")
-    monkeypatch.setattr(cfg_mod, "ROOT_DIR", tmp_path)
+    monkeypatch.setattr(config_settings_mod, "ROOT_DIR", tmp_path)
 
     calls = {}
 

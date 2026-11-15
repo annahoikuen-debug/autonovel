@@ -11,7 +11,7 @@ from anthropic.types import Message, TextBlock
 
 from src.llm.unified.types import LLMRequest, LLMResponse, LLMUsage, StreamChunk
 from src.llm.unified.interface import IUnifiedLLMClient
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 
 
 class ClaudeUnifiedClient(IUnifiedLLMClient):

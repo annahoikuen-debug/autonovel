@@ -19,7 +19,7 @@ from typing import Any
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.infrastructure.logging_config import get_logger
 from src.infrastructure.database.models.chunk import HAS_PGVECTOR, ChapterChunk
 from src.integrations.rag.embedding_service import embedding_service

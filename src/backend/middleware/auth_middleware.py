@@ -16,7 +16,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 
-from src.backend.config import is_auth_bypass_enabled, settings
+from src.infrastructure.config.settings import is_auth_bypass_enabled, settings
 from src.backend.security.jwt import decode_token
 from src.backend.security.stream_token import verify_stream_token
 from src.backend.security.token_denylist import is_revoked

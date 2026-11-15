@@ -22,8 +22,8 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import NullPool
 
 try:
-    from src.backend.config import ROOT_DIR as BASE_DIR
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import ROOT_DIR as BASE_DIR
+    from src.infrastructure.config.settings import settings
 
     DATABASE_URL = settings.DATABASE_URL
 except ImportError:
@@ -379,7 +379,7 @@ def _run_alembic_upgrade(sync_url: str) -> None:
     """
     from alembic import command
     from alembic.config import Config
-    from src.backend.config import ROOT_DIR
+    from src.infrastructure.config.settings import ROOT_DIR
 
     ini_path = ROOT_DIR / "alembic.ini"
     if not ini_path.exists():

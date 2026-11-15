@@ -39,7 +39,7 @@ def test_openai_adapter_init_with_key():
 
 def test_openai_adapter_init_default_key():
     """OpenAIAdapter はデフォルトキーで初期化される。"""
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
     settings.OPENAI_API_KEY = "sk-default-456"
 
     adapter = OpenAIAdapter()

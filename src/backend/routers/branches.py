@@ -20,7 +20,7 @@ from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.auth import get_current_user
-from src.backend.config import is_auth_bypass_enabled, settings
+from src.infrastructure.config.settings import is_auth_bypass_enabled, settings
 from src.backend.database.models import User
 from src.backend.security.jwt import decode_token
 from src.backend.security.token_denylist import is_revoked

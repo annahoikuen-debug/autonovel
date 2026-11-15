@@ -20,7 +20,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from unittest.mock import AsyncMock, patch, MagicMock
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.routers.plots import router as plots_router
 from src.backend.routers.stream_writing import router as stream_router
 

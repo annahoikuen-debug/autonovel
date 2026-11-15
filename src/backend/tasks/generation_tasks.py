@@ -192,7 +192,7 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
     correlation_id = f"book_{book_id}_branch_{branch_id}_ep_{ep_num}"
 
     # EventBus 初期化（環境変数 USE_REDIS_EVENTS=true で Redis 使用）
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     use_redis = os.environ.get("USE_REDIS_EVENTS", "false").lower() == "true"
     event_bus = EventBus(use_redis=use_redis)

@@ -11,7 +11,7 @@ from __future__ import annotations
 import logging
 from typing import Any, Protocol
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.integrations.rag.embedding_service import embedding_service
 
 logger = logging.getLogger(__name__)

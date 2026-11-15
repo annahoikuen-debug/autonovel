@@ -300,7 +300,7 @@ class TestGetDefaultStore:
     @patch("src.integrations.vector_store.ChromaVectorStore")
     @patch("src.integrations.vector_store.PgVectorStore")
     @patch("os.environ.get")
-    @patch("src.backend.config.settings")
+    @patch("src.infrastructure.config.settings.settings")
     def test_store_selection_modes(self, mock_settings, mock_env, mock_pg, mock_chroma, mock_inmem):
         mock_settings.DATABASE_URL = "postgresql://user:pass@localhost/db"
         # Mode: pgvector
@@ -330,7 +330,7 @@ class TestGetDefaultStore:
         mock_inmem.assert_called()
 
     @patch("os.environ.get")
-    @patch("src.backend.config.settings")
+    @patch("src.infrastructure.config.settings.settings")
     def test_auto_fallback_priority(self, mock_settings, mock_env):
         mock_settings.DATABASE_URL = "postgresql://user:pass@localhost/db"
         mock_settings.AUTONOVEL_RAG_MODE = "auto"

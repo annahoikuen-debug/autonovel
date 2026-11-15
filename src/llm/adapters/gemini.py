@@ -7,7 +7,7 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any, TYPE_CHECKING
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.llm.adapters.base import (
     PLACEHOLDER_API_KEY,
     BaseLLMAdapter,

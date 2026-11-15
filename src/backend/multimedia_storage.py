@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 
 __all__ = ["ensure_multimedia_dir", "get_multimedia_dir"]
 

@@ -70,7 +70,7 @@ async def check_database(timeout: float = 5.0) -> dict[str, Any]:
     try:
         from sqlalchemy import text
 
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
         from src.backend.database.core import DatabaseManager, get_db_manager
 
         mgr: DatabaseManager = get_db_manager()

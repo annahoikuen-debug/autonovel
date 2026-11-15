@@ -63,7 +63,7 @@ def test_malformed_items_are_skipped_without_exception() -> None:
 
 def test_defaults_use_settings() -> None:
     """max_chars / top_k を省略すると settings の既定値を使うこと。"""
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     docs = [
         {"content": "a", "score": 0.9},

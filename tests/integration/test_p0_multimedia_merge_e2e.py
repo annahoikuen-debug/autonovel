@@ -23,7 +23,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.infrastructure.database.models.base_orm import Base
-from src.backend import config
+from src.infrastructure.config import settings as config
 from src.backend.auth import validate_api_key_or_raise
 from src.backend.database.models import Book, User, Chapter, Branch
 from src.backend.database.series_loader import SeriesDataLoader

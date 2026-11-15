@@ -71,7 +71,7 @@ def db_session(session_factory):
 
 @pytest.fixture
 def service(session_factory, tmp_path, monkeypatch):
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
     monkeypatch.setattr(settings, "ENABLE_MULTIMEDIA", True)
     loader = SeriesDataLoader(session_factory=session_factory)
     return MultimediaService(

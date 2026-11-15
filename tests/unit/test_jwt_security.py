@@ -1,6 +1,6 @@
 import pytest
 from pydantic import ValidationError
-from src.backend.config import Settings
+from src.infrastructure.config.settings import Settings
 from src.backend.security.jwt import create_access_token, create_refresh_token, decode_token
 
 # テストプロセスには conftest が AUTH_DISABLED=true を設定している。

@@ -20,7 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.integrations.rag.rag_service import GraphRAGService, SearchResult
 from src.integrations.vector_store import BaseVectorStore
 from src.engine.nlp.japanese_tokenizer import JapaneseTokenizer
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.integrations.rag.query_reformulator import QueryReformulator, QueryReformulationMode
 
 try:

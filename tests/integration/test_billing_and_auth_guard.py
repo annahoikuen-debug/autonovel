@@ -12,7 +12,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from src.backend.server import app
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.database import get_async_db
 from src.backend.database.models import Base, User
 from src.integrations.billing.credit_service import CreditService

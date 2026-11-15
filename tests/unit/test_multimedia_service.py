@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.exceptions import MultimediaDisabledError
 from src.backend.multimedia_service import (
     MultimediaResult,

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.routers.billing import _safe_redirect_url
 
 

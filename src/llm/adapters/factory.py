@@ -7,7 +7,7 @@ import logging
 import os
 import urllib.parse
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.llm.adapters.base import BaseLLMAdapter
 from src.llm.adapters.claude import ClaudeAdapter
 from src.llm.adapters.gemini import GeminiAdapter

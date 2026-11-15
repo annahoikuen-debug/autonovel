@@ -19,7 +19,7 @@ KNOWN_SHIMS = [
     # 既存の shim（案B 以前から存在するもの）
     ("src.api.health", ["router"]),
     ("src.services.llm.circuit_breaker", ["CircuitBreaker", "LLMCircuitBreaker"]),
-    ("src.backend.config", ["settings", "Settings", "ROOT_DIR"]),
+    ("src.infrastructure.config.settings", ["settings", "Settings", "ROOT_DIR"]),
     # Step 8 で追加予定
     # ("src.core.llm_clients", ["BaseLLMClient", "GeminiApiClient", "OpenAIApiClient"]),
     # Step 9 で追加予定

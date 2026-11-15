@@ -40,7 +40,7 @@ class TestAuthBypassIsExplicitAndScoped:
         import asyncio
 
         from src.backend.auth import _get_dev_mock_user, get_current_user
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
 
         monkeypatch.setattr(settings, "AUTH_DISABLED", True)
         user = asyncio.get_event_loop_policy().new_event_loop().run_until_complete(
@@ -57,7 +57,7 @@ class TestAuthBypassIsExplicitAndScoped:
         from fastapi import HTTPException
 
         from src.backend.auth import get_current_user
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
 
         monkeypatch.setattr(settings, "AUTH_DISABLED", False)
 
@@ -73,7 +73,7 @@ class TestAuthBypassIsExplicitAndScoped:
     ) -> None:
         """AUTH_DISABLED=False では無効な API キーを必ず False に返す。"""
         from src.backend.auth import validate_api_key_sync
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
 
         monkeypatch.setattr(settings, "AUTH_DISABLED", False)
         assert validate_api_key_sync("invalid-key-999") is False
@@ -84,7 +84,7 @@ class TestAuthBypassIsExplicitAndScoped:
     ) -> None:
         """AUTH_DISABLED=True のときだけ dev-key を返す（意図された開発用挙動）。"""
         from src.backend.auth import validate_api_key_sync
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
 
         monkeypatch.setattr(settings, "AUTH_DISABLED", True)
         assert validate_api_key_sync("invalid-key-999") == "dev-key"
@@ -200,19 +200,19 @@ class TestProductionNeverEnablesAuthBypass:
         return SimpleNamespace(AUTH_DISABLED=auth_disabled, APP_ENV=app_env)
 
     def test_production_ignores_auth_disabled(self) -> None:
-        from src.backend.config import is_auth_bypass_enabled
+        from src.infrastructure.config.settings import is_auth_bypass_enabled
 
         assert is_auth_bypass_enabled(self._cfg(True, "production")) is False
 
     @pytest.mark.parametrize("env", ["development", "testing", "local", "staging"])
     def test_non_production_keeps_dev_bypass(self, env: str) -> None:
         """本番以外では開発用バイパスがそのまま効く (開発体験を壊さない)。"""
-        from src.backend.config import is_auth_bypass_enabled
+        from src.infrastructure.config.settings import is_auth_bypass_enabled
 
         assert is_auth_bypass_enabled(self._cfg(True, env)) is True
 
     @pytest.mark.parametrize("env", ["production", "testing", "development"])
     def test_auth_disabled_false_never_bypasses(self, env: str) -> None:
-        from src.backend.config import is_auth_bypass_enabled
+        from src.infrastructure.config.settings import is_auth_bypass_enabled
 
         assert is_auth_bypass_enabled(self._cfg(False, env)) is False

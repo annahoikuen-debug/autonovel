@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.database import get_async_db
 from src.backend.database.models import User
 from src.models.user import UserRegisterRequest, UserLoginRequest, TokenResponse, UserProfileResponse

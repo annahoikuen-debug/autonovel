@@ -5,7 +5,7 @@
 
 from __future__ import annotations
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.exceptions import MultimediaDisabledError
 
 __all__ = [

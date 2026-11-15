@@ -6,7 +6,7 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.llm.adapters.base import BaseLLMAdapter
 from src.llm.adapters.retry import with_retry
 

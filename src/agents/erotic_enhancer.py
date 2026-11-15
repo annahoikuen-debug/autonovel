@@ -64,7 +64,7 @@ class EroticEnhancer:
         # === NSFW ガードレール (TRACK-N N3) ===
         # 官能強化は明示オプトイン (ENABLE_NSFW=true) のみ許可する。
         # EroticGate が有効でも設定でオプトインされていなければ何もしない。
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
 
         if not settings.is_nsfw_enabled():
             return result

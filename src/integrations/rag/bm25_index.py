@@ -12,7 +12,7 @@ import logging
 from collections import OrderedDict
 from typing import Any
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.infrastructure.database.models.chapter import Chapter
 from src.infrastructure.database.models.chunk import ChapterChunk
 from src.integrations.rag.rag_service import SearchResult

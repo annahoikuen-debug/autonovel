@@ -42,7 +42,7 @@ async def test_get_current_user_with_real_session_no_await_error(real_db_session
     tests/conftest.py は全テストで `AUTH_DISABLED=true` を設定するため、
     実 DB 経路を検証するには認証を明示的に有効化する必要がある。
     """
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False)
 

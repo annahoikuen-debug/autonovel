@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from config import get_config
 from src.backend.auth import require_api_key
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.health.checks import (
     HealthCheckResult,
     HealthStatus,

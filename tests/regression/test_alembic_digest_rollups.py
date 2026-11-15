@@ -11,7 +11,7 @@ from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect
 
-from src.backend.config import ROOT_DIR
+from src.infrastructure.config.settings import ROOT_DIR
 
 
 def _make_cfg(url: str) -> Config:

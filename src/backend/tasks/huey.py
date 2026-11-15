@@ -10,7 +10,7 @@ from typing import Any
 from huey import RedisHuey, SqliteHuey
 from huey.serializer import Serializer
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 
 logger = logging.getLogger(__name__)
 

@@ -12,7 +12,7 @@ from dependency_injector import containers, providers
 
 from src.infrastructure.config.project_context import GlobalConfig
 from schemas.config import GlobalConfigModel
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.database.core import DatabaseManager
 
 # SPI ファクトリー
@@ -50,7 +50,7 @@ class InfraContainer(containers.DeclarativeContainer):
 
     db: providers.Singleton = providers.Singleton(
         DatabaseManager,
-        # SSOT は src.backend.config.settings.DATABASE_URL。環境変数の遅延変更を
+        # SSOT は src.infrastructure.config.settings.DATABASE_URL。環境変数の遅延変更を
         # 反映するため os.getenv を先に見、無ければ SSOT の値を使う。
         db_url=providers.Callable(lambda: os.getenv("DATABASE_URL") or settings.DATABASE_URL),
     )

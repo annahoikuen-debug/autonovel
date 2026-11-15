@@ -9,7 +9,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.backend import config
+from src.infrastructure.config import settings as config
 from src.backend.auth import get_current_user, validate_api_key_or_raise
 from src.backend.database.models import User
 from src.backend.multimedia_service import MultimediaService

@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.backend.auth import require_api_key
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.core.container import AppContainer
 from src.config.audit_weights import load_weights
 from src.integrations.rag.rag_service import rag_service

@@ -54,7 +54,7 @@ async def get_models_info(
     configured_keys は管理者のみに開示し、一般ユーザーには
     プロバイダ設定の有無を隠蔽する（Step 19）。
     """
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
     from src.llm.model_router import _DEFAULTS
 
     is_admin = getattr(current_user, "role", None) == "admin"

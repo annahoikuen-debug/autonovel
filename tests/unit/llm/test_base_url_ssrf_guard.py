@@ -24,7 +24,7 @@ def test_link_local_metadata_ip_blocked():
 
 def test_private_ip_blocked_in_production(monkeypatch):
     """プライベート IP (10.x, 172.16.x, 192.168.x) は production でブロック（H1）。"""
-    from src.backend import config as cfg_module
+    from src.infrastructure.config import settings as cfg_module
 
     monkeypatch.setattr(cfg_module.settings, "APP_ENV", "production")
     try:
@@ -89,7 +89,7 @@ def test_public_base_url_with_api_key_allowed(monkeypatch):
 
 def test_private_base_url_blocked_in_production_integration(monkeypatch):
     """get_llm_adapter で production 時のプライベート IP base_url は拒否される（H1）。"""
-    from src.backend import config as cfg_module
+    from src.infrastructure.config import settings as cfg_module
 
     monkeypatch.setattr(cfg_module.settings, "APP_ENV", "production")
     monkeypatch.setenv("APP_ENV", "production")

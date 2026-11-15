@@ -12,7 +12,7 @@ from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.config import is_auth_bypass_enabled, settings
+from src.infrastructure.config.settings import is_auth_bypass_enabled, settings
 from src.backend.database import get_async_db
 from src.backend.database.models import User
 from src.backend.security.jwt import decode_token

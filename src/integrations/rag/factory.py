@@ -12,7 +12,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.integrations.rag.bm25_index import EpisodeBM25Index
 from src.integrations.rag.hybrid_retriever import HybridRetriever
 from src.integrations.rag.query_reformulator import QueryReformulator

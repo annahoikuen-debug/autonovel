@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.llm.adapters.factory import get_llm_adapter
 from src.llm.adapters.mock import MockLLMAdapter
 

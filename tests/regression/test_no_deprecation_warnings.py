@@ -25,7 +25,7 @@ KNOWN_DEPRECATION_SOURCES: dict[str, str] = {
     "src.agents.audit.logical_auditor": "旧 LogicalAuditor shim（src.audit に移設済み）",
     "src.backend.database.core": "旧 DatabaseManager shim（src.infrastructure.database.core に移設済み）",
     "src.backend.writing_service": "旧 WritingService shim（src.domain.writing に移設済み）",
-    "src.backend.config": "旧 settings shim（src.infrastructure.config.settings に移設済み、TODO(H3-9)）",
+    "src.infrastructure.config.settings": "旧 settings shim（src.infrastructure.config.settings に移設済み、TODO(H3-9)）",
     "src.backend.engine_context": "旧 EngineContext shim",
     "src.core.container.__init__": "make_container() 関数のみ（クラスは正規）",
     "src.llm.adapters.base": "旧 BaseLLMAdapter 参照注意メッセージ",

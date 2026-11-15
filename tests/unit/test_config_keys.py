@@ -16,7 +16,7 @@ from unittest.mock import patch
 
 import pytest
 
-from src.backend.config import Settings
+from src.infrastructure.config.settings import Settings
 
 
 def test_gemini_api_key_aliases_with_env():

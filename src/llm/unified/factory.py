@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.llm.unified.interface import IUnifiedLLMClient
 from src.llm.unified.adapters.claude import ClaudeUnifiedClient
 from src.llm.unified.adapters.gemini import GeminiUnifiedClient
@@ -13,7 +13,7 @@ def create_unified_llm_client(provider_name: str, **kwargs: Any) -> IUnifiedLLMC
     """指定プロバイダ名の LLM クライアントを生成する。
 
     プロバイダ固有の引数（api_key 等）は kwargs から明示的に取り出し、
-    未指定時は `src.backend.config.settings` の既定値を使用する。
+    未指定時は `src.infrastructure.config.settings` の既定値を使用する。
     """
     provider = provider_name.strip().lower()
 

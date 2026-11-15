@@ -281,7 +281,7 @@ class PromptComposer:
         Returns:
             シーンプロンプトへ挿入可能なテキスト。空なら ""。
         """
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
 
         if max_chars is None:
             max_chars = settings.RAG_CONTEXT_MAX_CHARS

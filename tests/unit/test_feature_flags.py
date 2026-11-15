@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pytest
 
-from src.backend import config
+from src.infrastructure.config import settings as config
 from src.backend.exceptions import MultimediaDisabledError
 from src.backend.feature_flags import (
     is_audio_synth_enabled,

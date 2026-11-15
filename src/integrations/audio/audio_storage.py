@@ -1,5 +1,5 @@
 from pathlib import Path
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 
 
 class AudioStorageService:

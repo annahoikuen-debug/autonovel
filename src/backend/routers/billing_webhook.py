@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.database import get_async_db
 from src.backend.database.models import User
 from src.backend.database.models_billing import StripeWebhookEvent

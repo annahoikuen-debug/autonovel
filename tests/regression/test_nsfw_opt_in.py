@@ -15,7 +15,7 @@ import pytest
 
 def test_is_nsfw_enabled_default_false() -> None:
     """ENABLE_NSFW は既定で False、is_nsfw_enabled() も False を返す。"""
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     assert settings.ENABLE_NSFW is False
     assert settings.is_nsfw_enabled() is False
@@ -23,7 +23,7 @@ def test_is_nsfw_enabled_default_false() -> None:
 
 def test_erotic_generation_rejected_when_nsfw_disabled(monkeypatch) -> None:
     """ENABLE_NSFW=false では官能生成経路が拒否される (デフォルト拒否)。"""
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
     from src.engine.prompts.erotic_specialist import EroticSpecialist
     from src.nsfw.erotic_pacing import EroticCurve
 
@@ -40,7 +40,7 @@ def test_erotic_generation_rejected_when_nsfw_disabled(monkeypatch) -> None:
 
 def test_erotic_generation_allowed_when_nsfw_enabled(monkeypatch) -> None:
     """ENABLE_NSFW=true では官能生成経路が通る (オプトイン)。"""
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
     from src.engine.prompts.erotic_specialist import EroticSpecialist
     from src.nsfw.erotic_pacing import EroticCurve
 
@@ -72,7 +72,7 @@ class _StubAgent:
 def test_erotic_enhancer_noop_when_nsfw_disabled(monkeypatch) -> None:
     """ENABLE_NSFW=false では官能強化が実行されず入力をそのまま返す。"""
     from src.agents.erotic_enhancer import EroticEnhancer
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "ENABLE_NSFW", False)
 
@@ -86,7 +86,7 @@ def test_erotic_enhancer_noop_when_nsfw_disabled(monkeypatch) -> None:
 def test_erotic_enhancer_runs_when_nsfw_enabled(monkeypatch) -> None:
     """ENABLE_NSFW=true かつゲート有効なら官能強化パイプラインに進む。"""
     from src.agents.erotic_enhancer import EroticEnhancer
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "ENABLE_NSFW", True)
 

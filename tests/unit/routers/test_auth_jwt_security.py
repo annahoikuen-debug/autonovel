@@ -27,7 +27,7 @@ def test_auth_validate_api_key(monkeypatch):
     tests/conftest.py は全テストで `AUTH_DISABLED=true` を設定するため、
     本来の検証経路を検証するには必ず認証を明示的に有効化する必要がある。
     """
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     monkeypatch.setattr(settings, "AUTH_DISABLED", False)
 

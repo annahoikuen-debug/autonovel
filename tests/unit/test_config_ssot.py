@@ -1,5 +1,5 @@
 import pytest
-from src.backend.config import Settings
+from src.infrastructure.config.settings import Settings
 
 def test_settings_default_values():
     settings = Settings(_env_file=None)

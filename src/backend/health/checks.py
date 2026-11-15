@@ -111,7 +111,7 @@ async def check_llm_gateway(api_key: str | None) -> HealthCheckResult:
     """LLM Gateway 軽量呼び出し（モデル一覧 or 短い生成）"""
     import os
 
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     # ヘルスチェックでの LLM 呼び出しは既定で無効（実 API コールは費用が発生するため）
     # 環境変数 KAKU_HEALTH_CHECK_LLM=true で明示的に有効化できる
@@ -162,7 +162,7 @@ async def check_enrichment_agent() -> HealthCheckResult:
     """EnrichmentAgent 依存関係チェック"""
     start = time.perf_counter()
     try:
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
         from src.integrations.rag.rag_service import rag_service
 
         # 機能フラグチェック
@@ -175,7 +175,7 @@ async def check_enrichment_agent() -> HealthCheckResult:
         issues = []
 
         # LLM 可用性
-        from src.backend.config import settings as backend_settings
+        from src.infrastructure.config.settings import settings as backend_settings
 
         if not backend_settings.GEMINI_API_KEY or backend_settings.GEMINI_API_KEY == "DUMMY":
             issues.append("GEMINI_API_KEY not configured")

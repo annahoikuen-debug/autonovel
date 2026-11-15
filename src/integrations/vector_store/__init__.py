@@ -53,7 +53,7 @@ def get_default_store(
       - "auto"  : use PgVectorStore > ChromaVectorStore > InMemoryFallbackStore priority
     """
     import os
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     mode = getattr(settings, "AUTONOVEL_RAG_MODE", "auto") or os.environ.get("AUTONOVEL_RAG_MODE", "auto")
 

@@ -16,7 +16,7 @@ from src.core.container import AppContainer
 
 
 def _get_api_key() -> str:
-    from src.backend.config import settings
+    from src.infrastructure.config.settings import settings
 
     # Use centralized settings for GEMINI_API_KEY or GOOGLE_GENAI_API_KEY
     key = settings.GEMINI_API_KEY

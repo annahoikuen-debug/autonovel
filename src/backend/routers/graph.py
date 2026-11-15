@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from src.backend import database
 from src.backend.auth import get_current_user, require_api_key
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.database.models import Character as CharacterModel
 from src.backend.database.models import Chapter as ChapterModel, User
 from src.backend.security.owner_guard import verify_book_ownership

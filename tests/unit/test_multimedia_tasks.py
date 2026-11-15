@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-from src.backend import config
+from src.infrastructure.config import settings as config
 from src.backend.tasks.multimedia_tasks import generate_asset_pack_task
 
 

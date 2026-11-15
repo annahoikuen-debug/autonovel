@@ -25,7 +25,7 @@ def _resolve_audit_llm() -> Any:
     通過させてはならないため、意図的に実プロバイダのみを受け付ける。
     """
     try:
-        from src.backend.config import settings
+        from src.infrastructure.config.settings import settings
         from src.llm.adapters.factory import get_llm_adapter
 
         provider = (settings.LLM_PROVIDER or "").strip().lower()

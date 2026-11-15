@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from src.backend.config import Settings
+from src.infrastructure.config.settings import Settings
 
 ROOT = Path(__file__).resolve().parents[3]
 

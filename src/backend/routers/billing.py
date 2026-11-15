@@ -3,7 +3,7 @@ from typing import Dict, Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.backend.config import settings
+from src.infrastructure.config.settings import settings
 from src.backend.database import get_async_db
 from src.backend.auth import get_current_user
 from src.backend.database.models import User
