@@ -85,7 +85,6 @@
     "src/services/graph_pipeline.py",
     "src/services/bible_service.py",
     "src/services/cost_analytics.py",
-    "src/services/pdca_cycle.py",
     "src/services/episode_context.py",
     "src/services/rag_prefetch_service.py",
     "src/publishing/formatters/platform_copy_formatter.py",
@@ -118,5 +117,5 @@
     "src/engine/book_score/service.py"
   ],
   "description": "後方互換 shim の一覧。新しい shim を追加したら必ずここに登録すること。",
-  "updated_at": "2026-11-06"
+  "updated_at": "2026-11-15"
 }

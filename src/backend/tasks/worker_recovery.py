@@ -151,7 +151,7 @@ class WorkerRecoveryManager:
                 .returning(TaskWALLogModel.task_id)
             )
             await session.commit()
-            recovered = list(result.scalars().all())
+            recovered = [row.task_id for row in result.scalars().all()]
 
         if recovered and self.config.alert_on_recovery:
             logger.warning(f"RECOVERY ALERT: auto_recovery count={len(recovered)} worker={self.worker_id}")

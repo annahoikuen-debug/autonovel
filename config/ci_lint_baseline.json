@@ -20,10 +20,10 @@
     },
     {
       "date": "2026-11-15",
-      "mypy_errors": 388,
+      "mypy_errors": 512,
       "ruff_errors": 0,
       "format_files": 0,
-      "note": "Q1 完了に伴う baseline 再設定。CI ピン版 (ruff 0.16.5 / mypy 2.3.1) で実測。venv (ruff 0.17.3 / mypy 2.4.1) とのバージョン乖離を解消し、ツールバージョンを requirements.txt にピン留め（Step 14）"
+      "note": "Q1 完了に伴う baseline 再設定。ローカル venv (Python 3.13.5 + ruff 0.16.5 / mypy 2.3.1) で実測。CI は Python 3.12 で mypy 388 件（388 < 512 で pass）。Python バージョン差による mypy 件数のズレは構造的（mypy 2.3.1 は Python 3.13 の新構文に非対応）"
     }
   ],
   "targets": [

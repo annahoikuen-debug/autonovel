@@ -1,0 +1,33 @@
+{
+  "description": "PLAN_Q2 で削除対象とするデッドコードモジュール一覧。PLAN_Q2 §1-1 実測値。",
+  "updated_at": "2026-11-15",
+  "modules": [
+    "src.generation.fallback_generator",
+    "src.services.pdca_cycle",
+    "src.logging.setup",
+    "src.monitoring.otel",
+    "src.monitoring.sentry",
+    "src.generation.cache",
+    "src.agents.specialists.consistency_auditor",
+    "src.agents.specialists.style_auditor",
+    "src.agents.specialists.factual_auditor",
+    "src.agents.specialists.structure_auditor",
+    "src.agents.specialists.creativity_auditor",
+    "src.agents.specialists.emotion_curve_auditor",
+    "src.agents.specialists.reader_hook_auditor",
+    "src.agents.specialists.multimodal_auditor",
+    "src.agents.specialists.anti_ai_detector",
+    "src.agents.specialists.fallback_utils",
+    "src.llm.clients.gemini",
+    "src.llm.clients.openai",
+    "src.llm.gemini_provider",
+    "src.llm.openai_provider",
+    "src.core.llm",
+    "src.core.llm_clients",
+    "src.components.editor.Editor",
+    "src.components.editor.DiffViewer",
+    "src.components.editor.InlineAiToolbar",
+    "src.components.editor.InlineRevisionDiffModal",
+    "src.hooks.useInlineRevision"
+  ]
+}

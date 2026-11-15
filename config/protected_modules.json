@@ -1,0 +1,35 @@
+{
+  "description": "デッドコード自動スキャンの削除禁止リスト（ホワイトリスト）。ここに登録されたモジュールは、参照ゼロであっても自動削除の対象外とする。PLAN_Q2 §1-2 を参照。",
+  "updated_at": "2026-11-15",
+  "protected": {
+    "src/generation/pdca_controller.py": {
+      "reason": "使用中。src/domain/writing/coordinator.py:14,62 が PDCA 再生成判断に使用。src/agents/audit_agent/agent.py:134 も使用。Q2 の削除対象外。",
+      "referrers": [
+        "src/domain/writing/coordinator.py",
+        "src/agents/audit_agent/agent.py"
+      ]
+    },
+    "src/engine/pdca_cycle.py": {
+      "reason": "ClosedLoopPDCARunner は src/services/commercial_benchmarks.py:171 と unit/integration テスト群が import する。実行経路への配線は無いが、配線するか削除するかは PLAN_Q2 Step 12 で設計判断。Q2 の自動削除対象外。",
+      "referrers": [
+        "src/services/commercial_benchmarks.py",
+        "tests/integration/test_commercial_quality_pipeline.py",
+        "tests/integration/test_pillar4_full_regression.py",
+        "tests/unit/test_closed_loop_pdca.py"
+      ]
+    },
+    "src/llm/unified/": {
+      "reason": "src/agents/specialist_auditor_base.py と src/agents/writing/agent.py が参照（4ファイル）。削除ではなく Q3 以降の adapters への統合対象。",
+      "referrers": [
+        "src/agents/specialist_auditor_base.py",
+        "src/agents/writing/agent.py"
+      ]
+    },
+    "src/services/pdca_directive.py": {
+      "reason": "src/engine/pdca_cycle.py:18 が参照。ClosedLoopPDCARunner を温存する限り削除不可。",
+      "referrers": [
+        "src/engine/pdca_cycle.py"
+      ]
+    }
+  }
+}
