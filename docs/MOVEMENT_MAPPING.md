@@ -3,6 +3,12 @@
 > **目的**: 案B の全36ステップで「どこからどこへ移動するか」を記録し、
 > 迷子を防止する。各ステップ完了後にこの表を更新する。
 
+> **⚠️ PLAN_Q3 完了更新（2026-11-15）**: shim registry は **0 件** に到達。
+> 旧パス shim（`src.services.*`、`src.api.*`、`src.backend.{config,engine,logging_config}` 等）
+> はすべて削除済み。下記の「未着手」ステップの多くは PLAN_Q3 で shim 削除のみ先行実施済み
+> （実体移設は旧パスのまま生きているものもある）。旧パスからの import は
+> `ModuleNotFoundError` になるため、新パス（本表の移動先）を直接 import すること。
+
 ---
 
 ## Phase 0: 基盤準備 (Steps 1-6)

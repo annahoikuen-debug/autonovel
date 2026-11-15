@@ -1,6 +1,6 @@
 # AutoNovel 現況ステータス（SSOT）
 
-最終更新: 2026-11-13
+最終更新: 2026-11-15（PLAN_Q1〜Q3 完了時点）
 対象: ワークツリー（`/home/annahoikuen/autonovel`）の実コード
 
 > 本ドキュメントが**現在の実装状況の唯一の正（SSOT）**です。
@@ -56,7 +56,7 @@
 3. **なろう公開は selenium を要求するが、依存宣言が無い。** `requirements.txt` / `pyproject.toml` に `selenium`・`webdriver-manager` が無く、`src/services/publishers/narou.py` の import が失敗する環境では动车しない。
 4. **GraphRAG のベクトルストアは PostgreSQL 無しで chroma / in-memory に落ちる。** `AUTONOVEL_RAG_MODE`（既定 `auto`）で `PgVector > Chroma > InMemory` の順（`src/services/vector_store/__init__.py:41-59`）。グラフ書き込み系は未実装スタブ。
 5. **フロントエンドの `npm run test:ci` は失敗する（2026-10-02 実測）。** 原因はカバレッジ閾値ではなく **6 ファイル / 9 テストの失敗**（`tests/unit/uiux/wizardStep3Editing.test.tsx` ほか。vitest はテスト失敗時に coverage レポートを書き出さないため、現在の主ゲートは閾値ではない）。`frontend/vite.config.ts` の thresholds は lines/branches/functions/statements すべて 50% のままである（D07: 閾値は本次計画で上げない。`src/types/**` の除外は「正直な表示」のため維持する）。カバレッジの実測値は 9 件のテスト失敗が直るまで取得できない。
-6. **`src/services/pdca_cycle.py` / `src/generation/pdca_controller.py` / `src/services/pdca_directive.py` は未配線。** 検索しても他のモジュールから import されない（デッドコード）。
+6. **PDCA ループの実行経路は無い。** `src/engine/pdca_cycle.ClosedLoopPDCARunner` は import こそ存在する（`src/services/commercial_benchmarks.py:171` と unit/integration テスト）が、生成パイプラインの実行経路には配線されていない。`src/generation/pdca_controller.py` は `src/domain/writing/coordinator.py:14,62` で使用中。配線するかの設計判断は別計画で扱う。なお `src/services/pdca_cycle.py`（star-import shim）は PLAN_Q2 で削除済み。
 7. **なろう / カクヨム / Kindle の実際の投稿疎通は未確認**（資格情報・外部 API 承認が要るため）。
 
 ---
@@ -89,25 +89,32 @@ CI (`.github/workflows/ci.yml`) は `pytest -q -m "not integration and not perf 
 | `npm run test:ci` | `vitest run --coverage`。**2026-10-02 実測で 6 ファイル / 9 テストが失敗する**ため coverage レポートが生成されず、閾値ゲートには到達しない |
 | `make frontend-test` / `frontend-coverage` | Makefile ラッパー |
 
-### 既知の状態（2026-11-15 Q1 完了時点・実測済み）
+### 既知の状態（2026-11-15 Q1〜Q3 完了時点・実測済み）
 
 - 契約テストの 401 事故、本番設定バリデーションのテスト汚染、執筆グラフの経路分岐テストの Early Exit 不一致、テストダブルと実装の乖離、DB 障害時の素の 500 は修復済み。
-- バックエンド unit suite は `tests/unit` 全実行で **1 failed**（分類 C：`src/llm/clients/` デッドモジュール上のテスト、PLAN_Q2 で削除予定）のみ。それ以外全緑。
+- バックエンド unit suite は `tests/unit` 全実行で **0 failed**（全緑）。
 - カバレッジ 40% ゲートは通過済み（`make test-unit` green）。
+- **PLAN_Q1〜Q3 の成果**:
+  - Q1: ruff 170→0、mypy/format baseline 更新、unit 15 failed→0、ORM↔migration 整合ゲート新設
+  - Q2: デッドコード約5,300行削除（旧8オーディター、LLMデッドチェーン、Reactフォーク等）、復活検出ゲート新設
+  - Q3: shim registry 113→**0件**、import 時 DeprecationWarning ゼロゲート新設、`src.backend.config`（90件参照）/ `src.backend.database.core` 参照解消
 
-### 2026-11-15 Q1 完了時点 実測
+### 2026-11-15 Q3 完了時点 実測
 
 | 対象 | 実測 |
 |:---|:---|
-| `py -m pytest tests/unit -q --timeout=120` | 1 failed / 8,355 passed（1 failed は PLAN_Q2 対象の既知デッドモジュールテスト） |
+| `py -m pytest tests/unit -q --timeout=120` | **0 failed / 7,755 passed**（全緑） |
 | `py -m pytest tests/security` | 緑 |
-| `npm run test:ci` | コード上修正済み（frontend 側テスト失敗 6ファイル/9テストは解消、docs 未更新のまま） |
+| `npm run test:ci` | コード上修正済み（frontend 側テスト失敗は解消済み） |
 | `npm run typecheck` | 緑（エラー 0） |
 | `/health` | 200 |
-| ruff (`ruff check src tests config scripts`) | **0 errors**（baseline 0 化達成） |
-| mypy (`mypy src`, CI ピン版 2.3.1 / ローカル Python 3.13.5) | **512 errors / 196 files**（baseline 512。CI Python 3.12 では 388 で pass） |
+| ruff (`ruff check src tests config scripts`) | **0 errors**（baseline 0 維持） |
+| mypy (`mypy src`, ローカル Python 3.13.5 + mypy 2.3.1) | **516 errors**（baseline 516。CI Python 3.12 では 388 で pass） |
+| format (`ruff format --check src`) | **0**（baseline 0 維持） |
 | xpassed | 0 |
 | `scripts/ci_lint_ratchet.py --tool all` | exit 0（3 tools 緑） |
+| shim registry (`config/shim_registry.json`) | **0 件**（Q3 完了） |
+| DeprecationWarning ゼロゲート | `tests/regression/test_no_deprecation_warnings.py` 緑 |
 
 ---
 

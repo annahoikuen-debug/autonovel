@@ -4,11 +4,46 @@
 
 ## [Unreleased]
 
-### 破壊的変更（開発環境・内部 API）
+### Q1〜Q3 品質ゲート復旧・デッドコード削除・shim 焼却（2026-11-15）
+
+PLAN_Q1（赤いゲート復旧）/ PLAN_Q2（デッドコード削除）/ PLAN_Q3（shim 焼却）の実行結果。
+
+#### 品質ゲート（Q1）
+
+- **ruff: 170 → 0 errors**（safe fix 93 件 + 手動修正 77 件。F821 `scripts/detect_flaky.py` の未定義名は実バグとして修正）
+- **unit suite: 15 failed → 0 failed**（分類 A5: 実装バグ修正 / B9: テスト陳腐化対応 / C1: デッドモジュールテスト削除）
+  - 実装バグ修正: `TaskWALLogModel` に `worker_id` 列追加（H12 の ORM 漏れ、本番 heartbeat 更新が AttributeError で落ちる実バグ）
+  - `recover_orphan_tasks` が常に空リストを返すバグを修正（単一 UPDATE + returning で task_id 一覧を返す）
+- **新規常設回帰テスト**:
+  - `tests/regression/test_model_migration_parity.py`（マイグレーション適用後 DB と ORM モデルのカラム集合を両方向照合）
+  - `tests/regression/test_tool_version_parity.py`（CI と requirements.txt の ruff/mypy バージョン整合）
+- **運用ゲート**: `make ci-parity` 新設（CI と同一コマンド列のローカル再現）、`docs/development_guide.md` に赤のまま放置禁止規約を追記
+
+#### デッドコード削除（Q2、約 5,300 行）
+
+- G1（完全無参照）: `src/generation/fallback_generator.py`、`src/services/pdca_cycle.py`
+- G2（test-only 参照のみ）: `src/logging/setup.py`、`src/monitoring/{otel,sentry}.py`、`src/generation/cache.py`
+- G3（旧8オーディター）: `src/agents/specialists/{8オーディター,fallback_utils}.py`（UnifiedAuditor に一本化、`/admin/audit/aggregate_test` エンドポイントも削除）
+- G4（LLM デッドチェーン）: `src/llm/clients/{gemini,openai}.py`、`src/llm/{gemini,openai}_provider.py`、`src/core/llm/__init__.py`、`src/core/llm_clients/__init__.py`
+- G5（Python ツリー内 React フォーク）: `src/components/editor/{4ファイル}.tsx`、`src/hooks/useInlineRevision.ts`（frontend が SSOT）
+- **新規ゲート**: `config/removed_modules.json` + `tests/regression/test_dead_code_stays_dead.py`（削除済みモジュール復活検出）、`config/protected_modules.json`（削除禁止リスト）、`scripts/verify_dead_code.py`（AST/文字列/動的参照の3段階参照ゼロ証明）
+
+#### shim 焼却（Q3、registry 113 → 0 件）
+
+- 参照ゼロ shim 35 件、参照あり shim 約 73 件を参照解消（実体パスへの import 修正）後に削除
+- 主な参照解消先: `src.backend.config`（90件参照）→ `src.infrastructure.config.settings`、`src.services.llm.*` → `src.llm.adapters.*`、`src.services.{rag,reflective_rag,embedding}_service` → `src.integrations.rag.*`、`src.engine.{book_score.mapping,conflict_report_service}` → `src.domain.services.*`
+- **shadowed shim 削除**: `src/agents/{audit,audit_agent}.py`（同名パッケージに到達不能だったファイル）
+- **正規モジュール昇格**: `src/models/db.py`（実 Pydantic モデル定義）、`src/llm/service.py`（LLMService ラッパー）は shim から正規モジュールに昇格し DeprecationWarning を削除
+- **循環 shim 解消**: `src/integrations/marketing/marketing.py` は実体分散（agents/marketing + export_package + ctr_scorer + catchphrase_scorer + trend_syntax_extractor）からの再エクスポートに修正
+- **新規ゲート**: `tests/regression/test_no_deprecation_warnings.py`（import 時 DeprecationWarning ゼロ、既知例外は理由付きで管理）
+
+#### 破壊的変更（開発環境・内部 API）
 
 - **config/ 旧パス shim の全削除（Phase R3-1）**: `config/` 配下の後方互換 shim をすべて削除。旧パス `config.X` からの import は `ModuleNotFoundError` になる。移行先は `docs/CONFIG_UNIFICATION_PLAN.md` および `docs/MOVEMENT_MAPPING.md`（Phase 3）を参照。
   - 主な移行先: `src.config.*` / `src.infrastructure.config.*` / `src.domain.*` / `src.interfaces.*` / `src.nsfw.*`
   - R2 ゲート（旧パス参照ゼロ）を `tests/regression/test_shim_reference_gate.py` で機械強制し、削除検出テスト `tests/regression/test_shim_removal_detection.py` で旧パス import 不可を担保
+- **src/ 配下の旧パス shim 約 100 件の削除（Q3）**: 旧パス `src.services.*` / `src.api.*` / `src.backend.{config,engine,logging_config}` などからの import は `ModuleNotFoundError` になる。移行先は `docs/MOVEMENT_MAPPING.md` を参照。
+  - `/admin/audit/aggregate_test` エンドポイント削除（旧8オーディター依存、UnifiedAuditor で代替）
 
 ## [7.0.0] - 2026-11-11 - 公開前ハードニング（セキュリティ・データ整合性）
 

@@ -3,6 +3,14 @@
 > **目的**: 後方互換を保ちつつモジュールを移動する際の「旧パス → 新パス」shim の作成パターンを定義する。
 >
 > **使用タイミング**: `src/` や `config/` 内のファイルを別パスに移動した後、旧 import 経路（`from src.old.path import ...`）を維持する必要がある場合。
+>
+> **⚠️ PLAN_Q3 完了後の方針（2026-11-15）**: shim registry は **0 件** に到達済み。
+> **新規 shim の作成は原則禁止**。やむを得ず作成する場合は:
+> 1. `config/shim_registry.json` に登録し、削除期日（リリース番号）を必須化する
+> 2. `tests/regression/test_shim_reference_gate.py`（旧パス参照ゼロ）と
+>    `tests/regression/test_no_deprecation_warnings.py`（DeprecationWarning ゼロ）に
+>    影響がないことを確認する
+> 3. 削除期日に必ず削除する（延長は `docs/SHIM_REMOVAL_PLAN.md` で判断を記録）
 
 ---
 
