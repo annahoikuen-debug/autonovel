@@ -18,7 +18,7 @@ def test_task_id_set_before_huey_enqueue():
     src = inspect.getsource(easy_mode)
     # task_id 生成が generate_chapter_orchestrated_task 呼び出しより前にある
     task_id_gen_pos = src.find("huey_task_id = str(uuid.uuid4())")
-    enqueue_pos = src.find("task_result = generate_chapter_orchestrated_task(params)")
+    enqueue_pos = src.find("generate_chapter_orchestrated_task(params)")
     assert task_id_gen_pos != -1, "uuid.uuid4() による task_id 生成がない (H9)"
     assert enqueue_pos != -1, "generate_chapter_orchestrated_task 呼び出しがない (H9)"
     assert task_id_gen_pos < enqueue_pos, "task_id 生成が Huey エンキューより後になっている (H9)"

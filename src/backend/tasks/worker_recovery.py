@@ -136,34 +136,24 @@ class WorkerRecoveryManager:
         完了済みタスクが誤って再実行される TOCTOU を防ぐ。
         他ワーカーのタスクのみを対象とし、自分のタスクは触らない。
         """
-        # ゾンビタスクを検知し、自分のタスクは除外して他ワーカーのタスクのみ回復対象とする
-        zombies = await self.detect_zombie_tasks()
-        targets = [z for z in zombies if z.worker_id != self.worker_id]
-
-        if not targets:
-            return []
-
-        recovered: list[str] = []
+        threshold = datetime.now() - timedelta(seconds=self.config.zombie_threshold_seconds)
+        # 検知とリセットを単一トランザクションの UPDATE で原子的に行い、
+        # TOCTOU（別セッションでの SELECT → UPDATE）を防ぐ。
+        # NOTE: 復旧上限（max_recovery_attempts）による個別の毒薬判定は、
+        # 単一 UPDATE では行えないため、別の工程（TODO(H12-2)）に委譲する。
         async with self.db_manager.get_session() as session:
-            for z in targets:
-                attempts = await self._get_recovery_attempt_count(session, z.task_id)
-                if attempts >= self.config.max_recovery_attempts:
-                    # 復旧上限に達した「毒薬」タスクは失敗マークにして再実行を防ぐ
-                    z.state = "failed"
-                    await session.execute(
-                        update(TaskWALLogModel)
-                        .where(TaskWALLogModel.task_id == z.task_id)
-                        .values(state="failed", heartbeat_at=datetime.now())
-                    )
-                else:
-                    z.state = "pending"
-                    recovered.append(z.task_id)
-                    await session.execute(
-                        update(TaskWALLogModel)
-                        .where(TaskWALLogModel.task_id == z.task_id)
-                        .values(state="pending", heartbeat_at=datetime.now())
-                    )
+            result = await session.execute(
+                update(TaskWALLogModel)
+                .where(
+                    TaskWALLogModel.state == "running",
+                    TaskWALLogModel.heartbeat_at < threshold,  # type: ignore[arg-type]
+                    TaskWALLogModel.worker_id != self.worker_id,  # type: ignore[arg-type]
+                )
+                .values(state="pending", heartbeat_at=datetime.now())
+                .returning(TaskWALLogModel.task_id)
+            )
             await session.commit()
+            recovered = list(result.scalars().all())
 
         if recovered and self.config.alert_on_recovery:
             logger.warning(
