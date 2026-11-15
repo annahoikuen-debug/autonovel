@@ -44,11 +44,6 @@ class AppContainer(InfraContainer):
         "src.core.llm_gateway.create_genai_client",
         api_key=api_key,
     )
-    llm_factory: providers.Singleton = providers.Singleton(
-        "src.core.llm_gateway.LLMProviderFactory",
-        genai_client=genai_client,
-        cooldown=InfraContainer.cooldown,
-    )
     semantic_cache: providers.Singleton = providers.Singleton(
         "src.core.llm_gateway.SemanticCacheManager",
         vector_store=InfraContainer.vector_store,
@@ -58,10 +53,6 @@ class AppContainer(InfraContainer):
         semantic_cache=semantic_cache,
         similarity_threshold=0.75,
         use_semantic=True,
-    )
-    llm: providers.Singleton = providers.Singleton(
-        "src.core.llm_gateway.LLMGenerateResultProxy",
-        llm_factory=llm_factory,
     )
     connection_pipeline: providers.Singleton = providers.Singleton(lambda: None)
 
@@ -101,18 +92,15 @@ class AppContainer(InfraContainer):
         "src.agents.audit.LogicalAuditor",
         repo=repo,
         pm=pm,
-        llm=llm,
     )
     marketing: providers.Singleton = providers.Singleton(
         "src.agents.MarketingAgent",
         repo=repo,
         prompt_manager=pm,
-        llm=llm,
     )
     bible_generator: providers.Singleton = providers.Singleton(
         "src.engine.bible_service.WorldBibleGenerator",
         repo=repo,
-        llm=llm,
         pm=pm,
         debate=None,
         marketing=marketing,
@@ -122,18 +110,15 @@ class AppContainer(InfraContainer):
         "src.agents.plot.PlotAgent",
         repo=repo,
         pm=pm,
-        generate_json=llm.provided.generate_json,
         plot_expander=providers.Singleton(
             "src.engine.default_plot_expander.DefaultPlotExpander",
             repo=repo,
             pm=pm,
-            llm=llm,
         ),
     )
     planner: providers.Singleton = providers.Singleton(
         "src.agents.PlanningAgent",
         repo=repo,
-        llm=llm,
         prompt_manager=pm,
     )
     validator = auditor
@@ -142,7 +127,6 @@ class AppContainer(InfraContainer):
         repo=repo,
         pm=pm,
         ctx_mgr=ctx_mgr,
-        generate_json=llm.provided.generate_json,
         logic_validator=validator,
         auditor=auditor,
     )
@@ -150,7 +134,6 @@ class AppContainer(InfraContainer):
         "src.backend.engine_critique.CritiqueAgent",
         repo=repo,
         pm=pm,
-        generate_json=llm.provided.generate_json,
     )
     style_rag: providers.Singleton = providers.Singleton(
         "src.backend.engine_style_rag.StyleRagManager",
@@ -160,7 +143,6 @@ class AppContainer(InfraContainer):
     writer: providers.Singleton = providers.Singleton(
         "src.agents.WritingAgent",
         repo=repo,
-        llm=llm,
         style_rag=style_rag,
         pm=pm,
         ctx_mgr=ctx_mgr,
@@ -171,7 +153,6 @@ class AppContainer(InfraContainer):
     context_builder_agent: providers.Singleton = providers.Singleton(
         "src.agents.context_builder_agent.ContextBuilderAgent",
         repo=repo,
-        llm=llm,
         style_rag=style_rag,
         # 旧実装は providers.Self() でコンテナ自身をこれらの引数に注入していた。
         # AppContainer は truthy なので `if self.event_bus:` を素通りし、
@@ -196,7 +177,6 @@ class AppContainer(InfraContainer):
         api_key=api_key,
         repo=repo,
         db=InfraContainer.db,
-        llm=llm,
         cooldown=InfraContainer.cooldown,
         plot_service=plot_service,
         illustration_agent=illustration_agent,

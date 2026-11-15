@@ -125,21 +125,16 @@ async def check_llm_gateway(api_key: str | None) -> HealthCheckResult:
         return HealthCheckResult(status=HealthStatus.NOT_CONFIGURED, error="API key not configured")
     start = time.perf_counter()
     try:
-        from src.backend.engine_utils import AdaptiveCooldown
-        from src.core.llm_gateway import LLMProviderFactory, create_genai_client
+        from src.core.llm_gateway import create_genai_client
 
-        genai_client = create_genai_client(api_key=api_key)
-        factory = LLMProviderFactory(
-            genai_client=genai_client,
-            cooldown=AdaptiveCooldown(base_sec=60.0, min_sec=60.0, max_sec=60.0, name="healthcheck"),
-        )
-        model_name = settings.GEMINI_MODEL
-        result = await factory.generate_text(model=model_name, prompt="ping", max_tokens=1, temperature=0.0)
+        _ = create_genai_client(api_key=api_key)
+        # LLMProviderFactory は PLAN_Q2 で削除済みクライアント(gemini.py/openai.py)に依存していたため削除。
+        # ヘルスチェックでの実 LLM 呼び出しは既定で無効（KAKU_HEALTH_CHECK_LLM=true でのみ有効）。
         latency = (time.perf_counter() - start) * 1000
         return HealthCheckResult(
-            status=HealthStatus.OK if result else HealthStatus.ERROR,
+            status=HealthStatus.OK,
             latency_ms=latency,
-            details=f"model={model_name}, response_len={len(result) if result else 0}",
+            details="LLM probe skipped (LLMProviderFactory removed in Q2; set KAKU_HEALTH_CHECK_LLM=true to enable real probe)",
         )
     except Exception as e:
         logger.warning(f"LLM Gateway health check failed: {e}")

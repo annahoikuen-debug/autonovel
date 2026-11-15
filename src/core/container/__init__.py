@@ -3,6 +3,7 @@ import warnings
 
 from dependency_injector import providers
 
+from src.core.container.app import AppContainer, AppContainer2
 from src.core.container.infra import InfraContainer
 
 logger = logging.getLogger(__name__)
@@ -38,10 +39,6 @@ def __getattr__(name: str):
         from src.core.container.app import AppContainer
 
         return AppContainer
-    if name == "LLMGenerateResultProxy":
-        from src.core.llm_gateway import LLMGenerateResultProxy
-
-        return LLMGenerateResultProxy
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
@@ -51,6 +48,5 @@ __all__ = [
     "Container",
     "get_container",
     "InfraContainer",
-    "LLMGenerateResultProxy",
     "make_container",
 ]
