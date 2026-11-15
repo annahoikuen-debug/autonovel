@@ -234,9 +234,6 @@ class SaaSRevenueSimulator:
     def simulate(self) -> list[MonthlySnapshot]:
         """Run the simulation for configured months."""
         model = self.model
-        tiers = model.tiers
-
-        free_tier = self._get_tier("Free")
         starter_tier = self._get_tier("Starter")
         pro_tier = self._get_tier("Pro")
         enterprise_tier = self._get_tier("Enterprise")
@@ -427,7 +424,6 @@ class SaaSRevenueSimulator:
 
         for name, snaps in scenarios.items():
             final = snaps[-1]
-            arpcu = final.mrr_jpy / max(1, final.total_users)
             be = next(
                 (f"M{i+1}" for i, s in enumerate(snaps) if s.net_revenue_jpy >= 0),
                 "N/A",

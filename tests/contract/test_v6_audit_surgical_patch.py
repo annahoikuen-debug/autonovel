@@ -146,21 +146,6 @@ async def test_span_patch_disabled_returns_none_like_before(monkeypatch: pytest.
     assert out is None
 
 
-async def test_span_patch_disabled_returns_none_like_before(monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setenv("ENABLE_AUDIT_SPAN_PATCH", "0")
-    agent = AuditAgent()
-    agent._audit_llm = _RewritingLLM("その名を古代の魔道書と記す。")
-
-    out = await agent.try_local_patch(
-        TEXT,
-        unified_report=None,
-        failed_outcomes=[
-            {"audit_id": "deai", "severity": "medium", "error": None, "feedback": "古代の魔導書"}
-        ],
-    )
-    assert out is None
-
-
 @pytest.mark.parametrize(
     "span_flag,quote_flag,expected_strategies",
     [

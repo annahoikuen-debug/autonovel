@@ -121,8 +121,8 @@ async def generate_orchestrated(
         repo = BookRepository(session)
         repo.create_task(task_id=huey_task_id, status="running", user_id=current_user.id)
 
-        # Huey 非同期タスクとして投入
-        task_result = generate_chapter_orchestrated_task(params)
+        # Huey 非同期タスクとして投入（戻り値はワーカー側で処理し、ここでは使用しない）
+        generate_chapter_orchestrated_task(params)
 
         metrics.increment("orchestrated_tasks_enqueued")
         logger.info("Enqueued orchestrated generation task: task_id=%s", huey_task_id)

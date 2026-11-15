@@ -85,4 +85,4 @@ def test_action_templates(renderer):
         res = renderer.render(tid)
         assert res.template_id == tid
         # Action templates should produce beats/actions
-        assert any(l.type in ["beat", "action"] for l in res.lines)
+        assert any(line.type in ["beat", "action"] for line in res.lines)

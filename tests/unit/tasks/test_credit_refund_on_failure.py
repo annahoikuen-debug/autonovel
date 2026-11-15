@@ -17,7 +17,7 @@ def test_credit_refund_condition_without_credit_service():
     credit_service は _deduct() クロージャ内ローカルなので、ここでは常に None
     となり、これまで返金が不発だった。
     """
-    src = inspect.getsource(gt)
+    inspect.getsource(gt)
     # 2 つのタスク関数の両方で修正済みであること
     for fn_name in ("generate_chapter_task", "generate_chapter_orchestrated_task"):
         fn_src = inspect.getsource(getattr(gt, fn_name).func)

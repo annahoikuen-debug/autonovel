@@ -34,13 +34,13 @@ def test_fullauto_mapper():
     assert ctx.concept == "テストコンセプト"
     assert ctx.tone_vibe == 0.6
     assert ctx.user_prompt == ""
-    assert ctx.enable_illustration == False
+    assert not ctx.enable_illustration
     assert ctx.illustration_settings == {"enableIllustration": False}
-    assert ctx.enable_spice_guard == True
-    assert ctx.enable_catharsis_analysis == True
-    assert ctx.enable_marketing == True
+    assert ctx.enable_spice_guard
+    assert ctx.enable_catharsis_analysis
+    assert ctx.enable_marketing
     assert ctx.max_retries == 1
-    assert ctx.is_easy_mode == False
+    assert not ctx.is_easy_mode
     print("FullAuto mapper test passed")
 
 def test_easymode_mapper():
@@ -66,14 +66,14 @@ def test_easymode_mapper():
     assert ctx.concept == "テスト"
     assert ctx.tone_vibe == 0.6
     assert ctx.user_prompt == ""
-    assert ctx.enable_spice_guard == True
+    assert ctx.enable_spice_guard
     assert ctx.max_rewrite_iterations == 2
     assert ctx.target_audit_score == 95.0
-    assert ctx.enable_illustration == False
-    assert ctx.enable_catharsis_analysis == False
-    assert ctx.enable_marketing == True
+    assert not ctx.enable_illustration
+    assert not ctx.enable_catharsis_analysis
+    assert ctx.enable_marketing
     assert ctx.max_retries == 0
-    assert ctx.is_easy_mode == True
+    assert ctx.is_easy_mode
     assert ctx.preset_name == "zarma"
     print("EasyMode mapper test passed")
 

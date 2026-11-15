@@ -465,7 +465,7 @@ def test_build_prev_ctx():
     assert "前話あらすじ" in ctx
     assert "確定事実" in ctx
     # content truncated to 500
-    assert len([l for l in ctx.split("\n") if l.startswith("本文")][0]) <= 520
+    assert len([line for line in ctx.split("\n") if line.startswith("本文")][0]) <= 520
 
     prev2 = SimpleNamespace(content=None, summary=None, ai_insight=None)
     assert agent._build_prev_ctx(prev2, 1, 1, 2) == ""

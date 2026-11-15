@@ -100,10 +100,14 @@ class TestCompressionPerformance:
 
         result_size = sys.getsizeof(result)
         total_estimated = result_size
-        if result.layer1: total_estimated += sys.getsizeof(result.layer1)
-        if result.layer2: total_estimated += sys.getsizeof(result.layer2)
-        if result.layer3: total_estimated += sys.getsizeof(result.layer3)
-        if result.layer4: total_estimated += sys.getsizeof(result.layer4)
+        if result.layer1:
+            total_estimated += sys.getsizeof(result.layer1)
+        if result.layer2:
+            total_estimated += sys.getsizeof(result.layer2)
+        if result.layer3:
+            total_estimated += sys.getsizeof(result.layer3)
+        if result.layer4:
+            total_estimated += sys.getsizeof(result.layer4)
 
         print(f"\n[Memory Estimate] 10KB text: ~{total_estimated / 1024:.1f} KB")
         assert total_estimated < 500 * 1024 * 1024

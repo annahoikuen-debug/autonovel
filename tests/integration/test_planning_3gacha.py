@@ -43,30 +43,6 @@ def mock_book_score_calculator():
     return calc
 
 
-@pytest.fixture
-def mock_bible_generator():
-    gen = MagicMock()
-    gen.create_hegemony_plan = AsyncMock(return_value=(1, {"arcs": []}))
-    return gen
-
-
-@pytest.fixture
-def mock_repo():
-    repo = MagicMock()
-    repo._session_factory = MagicMock()
-    return repo
-
-
-@pytest.fixture
-def mock_book_score_calculator():
-    calc = MagicMock(spec=BookScoreCalculator)
-    calc._get_weights = MagicMock(return_value={
-        "structure": 35, "coherency": 10, "factual_grounding": 10,
-        "visual_textual_synergy": 5, "reader_experience": 40,
-    })
-    return calc
-
-
 @pytest.mark.asyncio
 async def test_planning_service_3gacha_comparison(
     mock_bible_generator, mock_repo, mock_book_score_calculator

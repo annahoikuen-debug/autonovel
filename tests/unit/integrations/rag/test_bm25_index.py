@@ -40,7 +40,6 @@ def test_build_and_search_wires_query_to_bm25(monkeypatch) -> None:
     assert retriever is not None
 
     called = {}
-    orig_get_scores = retriever._bm25.get_scores
 
     def fake_get_scores(query_tokens):
         called["tokens"] = query_tokens

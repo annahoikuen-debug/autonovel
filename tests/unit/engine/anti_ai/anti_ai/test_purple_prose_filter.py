@@ -46,7 +46,7 @@ class TestPurpleProseFilter:
         """Test processing empty text."""
         filter_obj = PurpleProseFilter()
         assert filter_obj.process("") == ""
-        assert filter_obj.process(None) == None  # type: ignore
+        assert filter_obj.process(None) is None  # type: ignore
 
     def test_process_no_matches(self) -> None:
         """Test processing text with no matches."""

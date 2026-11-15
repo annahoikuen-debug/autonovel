@@ -167,8 +167,6 @@ class JudgeSuite:
 
             rho_values = []
             for ax in sorted(all_axes):
-                baseline_scores_by_text: list[float] = []
-                strong_scores_by_text: list[float] = []
                 # 強度レベル順に並べたスコア系列 (baseline, weak, medium, strong)
                 level_scores: dict[int, list[float]] = {
                     0: [], 1: [], 2: [], 3: []

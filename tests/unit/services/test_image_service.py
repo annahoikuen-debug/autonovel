@@ -47,7 +47,7 @@ def test_image_service_accepts_api_key():
 def test_image_service_client_is_lazy():
     """client プロパティに触れない限り genai.Client は生成されない。"""
     with patch("google.genai.Client") as mock_client:
-        svc = ImageService(api_key="k")
+        ImageService(api_key="k")
         assert mock_client.assert_not_called is not None
         assert mock_client.call_count == 0
 

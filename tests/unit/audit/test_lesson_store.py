@@ -72,7 +72,7 @@ class TestAuditLessonRepository:
         scalars.first.return_value = existing  # 既存レコードあり → upsert
         repo = AuditLessonRepository(session)
 
-        lesson = await repo.record(book_id=1, episode_num=5, dimension="deai", lesson_text="テスト教訓")
+        await repo.record(book_id=1, episode_num=5, dimension="deai", lesson_text="テスト教訓")
         assert existing.occurrences == 4
         assert existing.last_seen_episode == 5
         assert existing.status == "active"
@@ -99,7 +99,7 @@ class TestAuditLessonRepository:
     async def test_graduate_updates_status(self):
         session, scalars = _make_session()
         l1 = _make_lesson(status="active")
-        l2 = _make_lesson(status="active", dimension="other")
+        _make_lesson(status="active", dimension="other")
         scalars.all.return_value = [l1]  # dimension="deai" のみ一致
         repo = AuditLessonRepository(session)
 
@@ -142,8 +142,8 @@ class TestAuditLessonRepository:
 
         await repo._enforce_active_max(1, max_active=2)
         # 最古の 3 件（id 1,2,3）が archived、最新の 1 件（id 4）は active のまま
-        archived = [l for l in lessons if l.status == "archived"]
-        active = [l for l in lessons if l.status == "active"]
+        archived = [lesson for lesson in lessons if lesson.status == "archived"]
+        active = [lesson for lesson in lessons if lesson.status == "active"]
         assert len(archived) == 3
         assert len(active) == 1
         assert active[0].id == 4

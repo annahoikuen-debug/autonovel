@@ -40,8 +40,8 @@ def test_ruff_check_baseline():
     baseline = data["ruff_errors"]
 
     # エラー行数を大まかにカウント（"error" または "warning" で始まる行）
-    error_lines = [l for l in output.splitlines() if ": " in l and any(
-        code in l for code in ["E", "F", "W"]
+    [line for line in output.splitlines() if ": " in line and any(
+        code in line for code in ["E", "F", "W"]
     )]
     # 厳密な数え上げは難しいため、返りコードとベースラインの両方をログに残す
     assert baseline >= 0, f"ベースライン値が不正: {baseline}"

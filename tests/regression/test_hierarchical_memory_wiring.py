@@ -119,7 +119,7 @@ class TestPersistEpisodeDigestWiring:
 
     def test_rollup_generation_is_fail_open(self):
         """rollup 生成が try/except で囲まれている（fail-open）。"""
-        source = _source_of("agents/writing/episode_writer.py")
+        _source_of("agents/writing/episode_writer.py")
         tree = _tree_of("agents/writing/episode_writer.py")
         func = _find_function(tree, "_persist_episode_digest")
         assert func is not None

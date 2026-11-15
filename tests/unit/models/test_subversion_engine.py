@@ -16,7 +16,8 @@ class TestSubversionEngine:
         assert abs(sum(e.pattern_weights.values()) - 1.0) < 0.001
 
     def test_apply_to_arc(self):
-        class MockArc: pass
+        class MockArc:
+            pass
         e = SubversionEngine(interval=3)
         e.plan_schedule(9)
         arc = MockArc()
@@ -52,7 +53,8 @@ class TestSubversionEngine:
     def test_disabled(self):
         e = SubversionEngine(enabled=False, interval=3)
         e.plan_schedule(6)
-        class Mock: pass
+        class Mock:
+            pass
         assert e.apply_to_arc(Mock(), 3) is not None  # 何もしない
         assert e.apply_to_beat(Mock(), 3) is not None  # 何もしない
 

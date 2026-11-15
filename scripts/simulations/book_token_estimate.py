@@ -235,7 +235,6 @@ print(f"""
     - 本文生成: 10-20話
     - 監査: 適宜
   合計: 約150,000-300,000トークン/月
-  
   980円プランで余裕を持って利用可能
 """)
 
@@ -266,7 +265,6 @@ print(f"""
   50話10万字の原価:
     DeepSeek-V4-Flash: JPY {total_cost_4flash:.2f}
     DeepSeek-V4-Pro:   JPY {plot_50ch.cost_jpy("deepseek_v4_pro") + episodes.cost_jpy("deepseek_v4_pro") + audit.cost_jpy("deepseek_v4_pro"):.2f}
-    
   980円プランで十分に賄える
   利益率: {(1 - total_cost_4flash / 980) * 100:.1f}%
 """)

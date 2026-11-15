@@ -29,7 +29,8 @@ print("[OK] Interval scheduling: PASS")
 # Test 4: Disabled engine does nothing
 e5 = SubversionEngine(enabled=False, interval=3)
 e5.plan_schedule(10)
-class Mock: pass
+class Mock:
+    pass
 m = Mock()
 result = e5.apply_to_arc(m, 3)
 assert result is m

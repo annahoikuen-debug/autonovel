@@ -89,8 +89,6 @@ async def test_ep_num_beat_mapping_respected(pm, base_kwargs):
 async def test_exception_in_at_falls_back_to_empty(pm, base_kwargs):
     """spine.at() が例外を投げても空文字に倒れ、プロンプト生成自体は
     壊れないこと（fail-open）。"""
-    spine = resolve_spine("exile_rise", "web_volume", "web", 40)
-
     class BrokenSpine:
         def at(self, ep_num):
             raise RuntimeError("broken at")

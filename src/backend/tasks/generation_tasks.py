@@ -422,7 +422,6 @@ def generate_chapter_task(payload: dict[str, Any]) -> dict[str, Any]:
         # ただし、本番環境ではエラーにするべき
         user_id = None
         credit_cost = 0
-        credit_service = None
         credits_deducted = False
     else:
         try:
@@ -514,7 +513,6 @@ def generate_chapter_orchestrated_task(payload: dict[str, Any]) -> dict[str, Any
         # クレジット処理をスキップしてタスクを続行（後方互換性のため）
         user_id = None
         credit_cost = 0
-        credit_service = None
         credits_deducted = False
     else:
         try:

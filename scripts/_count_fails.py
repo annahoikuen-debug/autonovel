@@ -2,7 +2,7 @@ import io
 from collections import Counter
 
 with io.open("fail_list.txt", encoding="utf-8", errors="replace") as f:
-    lines = [l for l in f if l.strip()]
+    lines = [line for line in f if line.strip()]
 
 print("total failed:", len(lines))
 files = Counter()

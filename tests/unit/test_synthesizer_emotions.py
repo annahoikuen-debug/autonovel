@@ -89,7 +89,7 @@ def test_dialogue_extractor_emotion_classification():
 
     # Both dialogue and narration lines are extracted
     # Filter to only dialogue lines
-    dialogue_lines = [l for l in lines if l.is_dialogue]
+    dialogue_lines = [line for line in lines if line.is_dialogue]
     assert len(dialogue_lines) == 2
     # First line should be angry/shout
     assert dialogue_lines[0].emotion in [SpeechEmotion.ANGER, SpeechEmotion.SHOUT]
@@ -106,7 +106,7 @@ def test_dialogue_extractor_acoustics_attached():
     lines = extractor.extract_lines(chapter_text, characters=characters)
 
     # Filter to only dialogue lines
-    dialogue_lines = [l for l in lines if l.is_dialogue]
+    dialogue_lines = [line for line in lines if line.is_dialogue]
     assert len(dialogue_lines) == 1
     assert dialogue_lines[0].acoustics is not None
     assert isinstance(dialogue_lines[0].acoustics, AcousticParameters)

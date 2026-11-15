@@ -130,7 +130,6 @@ print(f"""
     - プロット15話: {plan_tokens/36000:.1f}回
     - 本文: {plan_tokens/5000:.0f}話
     - 長編1本: {plan_tokens/111000:.1f}本
-  
   原価: JPY {plan_cost:.2f}
   利益: JPY {plan_profit:.2f}
   利益率: {BASE_PROFIT_RATE * 100:.0f}%

@@ -267,7 +267,6 @@ def run_analysis(
     logger.info(f"Loaded {len(variant_data)} variants with data")
 
     # Identify control variants (v1) and treatment variants (v2+)
-    control_variants = [v for v in variant_data if v.endswith("_v1")]
     treatment_variants = [v for v in variant_data if not v.endswith("_v1")]
 
     results = {

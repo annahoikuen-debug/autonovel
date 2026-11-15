@@ -98,7 +98,6 @@ class RemoveEndingHook(PerturbationTransform):
         sentences = _split_sentences(text)
         if len(sentences) <= 1:
             return text
-        rng = self._rng()
         max_removed = max(1, int(self.strength))
         removed = 0
         result = list(sentences)

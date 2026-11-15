@@ -49,9 +49,6 @@ KNOWN_ORPHANS: dict[str, str] = {
     "book_score_mapping": (
         '後方互換 shim（案B/C で新パスへ移設）。外部利用者の旧 import 経路維持のためリポジトリ内は新パスを直接使い shim 自体は orphan になる。削除は docs/SHIM_REMOVAL_PLAN.md の Phase R3 に従う。TODO(H1-9): 当該 shim の旧パス参照数がゼロになったリリースで削除'
     ),
-    "book_score_mapping": (
-        '後方互換 shim（案B/C で新パスへ移設）。外部利用者の旧 import 経路維持のためリポジトリ内は新パスを直接使い shim 自体は orphan になる。削除は docs/SHIM_REMOVAL_PLAN.md の Phase R3 に従う。TODO(H1-9): 当該 shim の旧パス参照数がゼロになったリリースで削除'
-    ),
     "book_score_models": (
         '後方互換 shim（案B/C で新パスへ移設）。外部利用者の旧 import 経路維持のためリポジトリ内は新パスを直接使い shim 自体は orphan になる。削除は docs/SHIM_REMOVAL_PLAN.md の Phase R3 に従う。TODO(H1-9): 当該 shim の旧パス参照数がゼロになったリリースで削除'
     ),
@@ -70,13 +67,7 @@ KNOWN_ORPHANS: dict[str, str] = {
     "cost_analytics": (
         '後方互換 shim（案B/C で新パスへ移設）。外部利用者の旧 import 経路維持のためリポジトリ内は新パスを直接使い shim 自体は orphan になる。削除は docs/SHIM_REMOVAL_PLAN.md の Phase R3 に従う。TODO(H1-9): 当該 shim の旧パス参照数がゼロになったリリースで削除'
     ),
-    "cost_analytics": (
-        '後方互換 shim（案B/C で新パスへ移設）。外部利用者の旧 import 経路維持のためリポジトリ内は新パスを直接使い shim 自体は orphan になる。削除は docs/SHIM_REMOVAL_PLAN.md の Phase R3 に従う。TODO(H1-9): 当該 shim の旧パス参照数がゼロになったリリースで削除'
-    ),
     "cost_budget_guard": (
-        '後方互換 shim（案B/C で新パスへ移設）。外部利用者の旧 import 経路維持のためリポジトリ内は新パスを直接使い shim 自体は orphan になる。削除は docs/SHIM_REMOVAL_PLAN.md の Phase R3 に従う。TODO(H1-9): 当該 shim の旧パス参照数がゼロになったリリースで削除'
-    ),
-    "data_loader": (
         '後方互換 shim（案B/C で新パスへ移設）。外部利用者の旧 import 経路維持のためリポジトリ内は新パスを直接使い shim 自体は orphan になる。削除は docs/SHIM_REMOVAL_PLAN.md の Phase R3 に従う。TODO(H1-9): 当該 shim の旧パス参照数がゼロになったリリースで削除'
     ),
     "default_plot_expander": (
@@ -119,9 +110,6 @@ KNOWN_ORPHANS: dict[str, str] = {
         '後方互換 shim（案B/C で新パスへ移設）。外部利用者の旧 import 経路維持のためリポジトリ内は新パスを直接使い shim 自体は orphan になる。削除は docs/SHIM_REMOVAL_PLAN.md の Phase R3 に従う。TODO(H1-9): 当該 shim の旧パス参照数がゼロになったリリースで削除'
     ),
     "image_service": (
-        '後方互換 shim（案B/C で新パスへ移設）。外部利用者の旧 import 経路維持のためリポジトリ内は新パスを直接使い shim 自体は orphan になる。削除は docs/SHIM_REMOVAL_PLAN.md の Phase R3 に従う。TODO(H1-9): 当該 shim の旧パス参照数がゼロになったリリースで削除'
-    ),
-    "llm_service": (
         '後方互換 shim（案B/C で新パスへ移設）。外部利用者の旧 import 経路維持のためリポジトリ内は新パスを直接使い shim 自体は orphan になる。削除は docs/SHIM_REMOVAL_PLAN.md の Phase R3 に従う。TODO(H1-9): 当該 shim の旧パス参照数がゼロになったリリースで削除'
     ),
     "llm_service": (

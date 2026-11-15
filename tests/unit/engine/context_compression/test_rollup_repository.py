@@ -74,10 +74,10 @@ class TestDigestRollupRepositoryUpsert:
 
         repo = DigestRollupRepository(db)
 
-        rec1 = await repo.upsert_rollup(
+        await repo.upsert_rollup(
             book_id=1, level="block", start_ep=1, end_ep=10, digest_text="new"
         )
-        rec2 = await repo.upsert_rollup(
+        await repo.upsert_rollup(
             book_id=1, level="block", start_ep=1, end_ep=10, digest_text="new2"
         )
 

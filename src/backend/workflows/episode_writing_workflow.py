@@ -48,10 +48,7 @@ class EpisodeWritingWorkflow(BaseWorkflow):
         write_to = kwargs["write_to"]
         passion = kwargs["passion"]
         word_count = kwargs["word_count"]
-        do_refine = kwargs["do_refine"]
-        env_state = kwargs["env_state"]
         pipeline_mode = kwargs["pipeline_mode"]
-        mode = kwargs.get("mode", "final")
 
         # WritingService を使用（engine.writer から移行済）
         writing = self.writing

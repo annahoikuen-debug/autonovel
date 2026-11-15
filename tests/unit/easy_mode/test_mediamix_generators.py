@@ -324,7 +324,7 @@ class TestAudioDramaScriptGenerator:
         gen = AudioDramaScriptGenerator("fantasy", PRESET)
         lines = gen._scene_to_voice_lines("導入の文。「セリフ」")
         assert lines[0].character == "ナレーション"
-        assert any(l.text == "セリフ" for l in lines)
+        assert any(line.text == "セリフ" for line in lines)
 
     def test_guess_speaker_variants(self):
         gen = AudioDramaScriptGenerator("fantasy", PRESET)

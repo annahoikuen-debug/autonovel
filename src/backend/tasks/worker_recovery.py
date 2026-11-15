@@ -136,8 +136,6 @@ class WorkerRecoveryManager:
         完了済みタスクが誤って再実行される TOCTOU を防ぐ。
         他ワーカーのタスクのみを対象とし、自分のタスクは触らない。
         """
-        threshold = datetime.now() - timedelta(seconds=self.config.zombie_threshold_seconds)
-
         # ゾンビタスクを検知し、自分のタスクは除外して他ワーカーのタスクのみ回復対象とする
         zombies = await self.detect_zombie_tasks()
         targets = [z for z in zombies if z.worker_id != self.worker_id]

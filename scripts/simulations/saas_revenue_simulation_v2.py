@@ -285,7 +285,6 @@ class StressTestSimulator:
         model = self.model
         tiers = model.tiers
 
-        free_tier = next((t for t in tiers if t.name == "Free"), None)
         starter_tier = next((t for t in tiers if "Starter" in t.name), None)
         pro_tier = next((t for t in tiers if "Pro" in t.name and "Studio" not in t.name), None)
         studio_tier = next((t for t in tiers if "Studio" in t.name), None)

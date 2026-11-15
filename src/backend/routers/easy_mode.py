@@ -431,8 +431,8 @@ async def generate_content(
         else:
             repo.create_task(task_id=huey_task_id, status="running", user_id=owner_id)
 
-        # タスクをキューに投入
-        task_result = generate_chapter_orchestrated_task(params)
+        # タスクをキューに投入（戻り値はワーカー側で処理し、ここでは使用しない）
+        generate_chapter_orchestrated_task(params)
 
         metrics.increment("tasks_enqueued")
         logger.info("Enqueued generation task: task_id=%s", huey_task_id)

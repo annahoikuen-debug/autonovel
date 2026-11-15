@@ -218,7 +218,6 @@ def p0_e2e_setup(monkeypatch, tmp_path: Path):
 
     container_mod.AppContainer.db = AsyncSessionLocal
     _AppContainer.db = AsyncSessionLocal
-    original_container_db = None  # restore は teardown で行う
 
     async def override_get_branch_session() -> AsyncGenerator[AsyncSession, None]:
         async with AsyncSessionLocal() as sess:

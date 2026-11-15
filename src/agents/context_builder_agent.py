@@ -489,13 +489,13 @@ class ContextBuilderAgent(SkillAgent):
                 )
                 audit_lessons_ctx = [
                     {
-                        "dimension": l.dimension,
-                        "lesson_text": l.lesson_text,
-                        "severity": l.severity,
-                        "occurrences": l.occurrences,
-                        "last_seen_episode": l.last_seen_episode,
+                        "dimension": lesson.dimension,
+                        "lesson_text": lesson.lesson_text,
+                        "severity": lesson.severity,
+                        "occurrences": lesson.occurrences,
+                        "last_seen_episode": lesson.last_seen_episode,
                     }
-                    for l in lessons
+                    for lesson in lessons
                 ]
             except Exception:
                 logger.warning("audit_lessons_ctx 取得に失敗（空リストで継続）", exc_info=True)

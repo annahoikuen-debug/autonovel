@@ -26,7 +26,7 @@ async def migrate_data():
 
         # 2. user_id が NULL の Book を検索
         from sqlalchemy import select
-        result = await session.execute(select(Book).where(Book.user_id == None))
+        result = await session.execute(select(Book).where(Book.user_id.is_(None)))
         books = result.scalars().all()
 
         # 3. user_id を紐付け

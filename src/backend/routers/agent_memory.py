@@ -20,7 +20,7 @@ _agent_memory_manager: Optional[MemoryManager] = None
 
 def get_agent_memory_manager(user_id: int) -> MemoryManager:
     """ユーザー別メモリマネージャーを取得（テナント分離）。
-    
+
     グローバルシングルトンではなく、user_id をキーにメモリ状態を分離する。
     """
     global _agent_memory_manager

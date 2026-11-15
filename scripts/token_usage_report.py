@@ -12,7 +12,7 @@ from pathlib import Path
 # Add project root to sys.path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from src.narrative.subtext_tokens.expander import TokenExpander
+
 from src.narrative.subtext_tokens.parser import TokenParser
 
 
@@ -20,7 +20,6 @@ def generate_usage_report(
     sample_texts: list[str],
     dict_path: Path = Path("data/subtext/tokens.yaml"),
 ) -> dict:
-    expander = TokenExpander(dict_path=dict_path)
     counts: dict[str, int] = {}
     total_tokens = 0
 

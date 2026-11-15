@@ -26,7 +26,7 @@ def run_with_reruns(test_path, reruns=3, timeout_per_run=60):
             "run": i+1,
             "passed": passed,
             "stdout": result.stdout if result else "",
-            "stderr": result.stderr if result else f"Exception: {e}"
+            "stderr": result.stderr if result else "Exception during execution",
         })
     return results
 
