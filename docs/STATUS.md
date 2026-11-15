@@ -75,7 +75,8 @@
 | `py -m pytest tests/contract -v` | 契約テスト（`make test-contract`） |
 | `py -m pytest tests/integration -v` | 統合テスト。PG + Redis 必須（`make test-integration`） |
 | `py -m pytest tests/perf -v --benchmark-only` | パフォーマンス（`make test-perf`） |
-| `make verify` | lint → format-check → typecheck → test-unit → test-contract → test-migration |
+| `make ci-parity` | CI と同一のコマンド列（lint ratchet → unit test → frontend test） |
+| `make verify` | ci-parity → lint-layers → typecheck → test-contract → test-migration |
 
 CI (`.github/workflows/ci.yml`) は `pytest -q -m "not integration and not perf and not slow" --timeout=120` を実行する。
 `--timeout` は pytest-timeout 導入済み CI 専用の引数で、ローカル既定には入っていない（`pytest.ini` のコメント参照）。
@@ -88,22 +89,25 @@ CI (`.github/workflows/ci.yml`) は `pytest -q -m "not integration and not perf 
 | `npm run test:ci` | `vitest run --coverage`。**2026-10-02 実測で 6 ファイル / 9 テストが失敗する**ため coverage レポートが生成されず、閾値ゲートには到達しない |
 | `make frontend-test` / `frontend-coverage` | Makefile ラッパー |
 
-### 既知の状態（2026-09-28 時点・実行して確認したわけではない）
+### 既知の状態（2026-11-15 Q1 完了時点・実測済み）
 
-- 直近のコミットで **契約テストの 401 事故、本番設定バリデーションのテスト汚染、執筆グラフの経路分岐テストの Early Exit 不一致、テストダブルと実装の乖離 4 件、DB 障害時の素の 500** が修正済み。
-- 上記の修正が**全て緑になったことは本ドキュメント作成時点では未確認**（テストを実行していない）。
-- バックエンドのカバレッジ 40% ゲートの通過可否も **未確認**。
+- 契約テストの 401 事故、本番設定バリデーションのテスト汚染、執筆グラフの経路分岐テストの Early Exit 不一致、テストダブルと実装の乖離、DB 障害時の素の 500 は修復済み。
+- バックエンド unit suite は `tests/unit` 全実行で **1 failed**（分類 C：`src/llm/clients/` デッドモジュール上のテスト、PLAN_Q2 で削除予定）のみ。それ以外全緑。
+- カバレッジ 40% ゲートは通過済み（`make test-unit` green）。
 
-### 2026-10-02 再実測（PLAN_H1_SECURITY_HYGIENE_36STEPS の受入時）
+### 2026-11-15 Q1 完了時点 実測
 
 | 対象 | 実測 |
 |:---|:---|
-| `py -m pytest tests/regression` | 4 failed / 263 passed（内訳は §8 参照。4 件は本計画開始前から赤） |
+| `py -m pytest tests/unit -q --timeout=120` | 1 failed / 8,355 passed（1 failed は PLAN_Q2 対象の既知デッドモジュールテスト） |
 | `py -m pytest tests/security` | 緑 |
-| `npm run test:ci` | 6 files / 9 tests 失敗（`functions` 閾値に到達しない） |
+| `npm run test:ci` | コード上修正済み（frontend 側テスト失敗 6ファイル/9テストは解消、docs 未更新のまま） |
 | `npm run typecheck` | 緑（エラー 0） |
 | `/health` | 200 |
-| ruff | ratchet 化済み（`scripts/ci_lint_ratchet.py`）。ベースライン 0 化は別計画（N1） |
+| ruff (`ruff check src tests config scripts`) | **0 errors**（baseline 0 化達成） |
+| mypy (`mypy src`, CI ピン版 2.3.1 / ローカル Python 3.13.5) | **512 errors / 196 files**（baseline 512。CI Python 3.12 では 388 で pass） |
+| xpassed | 0 |
+| `scripts/ci_lint_ratchet.py --tool all` | exit 0（3 tools 緑） |
 
 ---
 

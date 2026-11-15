@@ -179,3 +179,30 @@ autonovel/
 - [README.md](README.md) でプロダクト全体像を把握
 - [docs/architecture.md](docs/architecture.md) でアーキテクチャ詳細を確認
 - [CHANGELOG.md](CHANGELOG.md) で最近の変更履歴を確認
+
+---
+
+## 10. 品質ゲート運用規約
+
+AutoNovel では `make ci-parity` で CI と同一のコマンド列（lint ratchet → unit test → frontend test）をローカル実行し、main にマージする前に全て green にすること。
+
+### 赤のまま放置禁止
+
+- main で **unit suite が赤の状態で新しい機能コミットを積まない**。赤は当該日中に解消する。
+- インターフェース（関数シグネチャ・ルート・ORM モデル列等）を変更したら、**同一コミット**で参照テストを更新する（H9/H10/H13/H15/C1 の赤の直接原因は「実装コミットにテスト更新が欠落」したこと）。
+
+### baseline の変更運用
+
+- `config/ci_lint_baseline.json` の引き下げは、**ローカルで `python scripts/ci_lint_ratchet.py --tool <tool> --update` を実行し、コミット**して確定する。CI 上の自動引き下げは消失する（`scripts/ci_lint_ratchet.py` の設計）。
+- baseline を変える変更（ruff/mypy/format の件数減少）は、必ず baseline 更新と README 同期を**同一コミット**に含める（CI の README 整合チェックが fail するため）。
+
+### ツールバージョン
+
+- ruff / mypy のバージョンは `requirements.txt` と `.github/workflows/ci.yml` でピン留めし、`tests/regression/test_tool_version_parity.py` で整合を担保する。バージョンを変えるときは両方を同一コミットで更新する。
+
+### 追加の常設回帰テスト
+
+- `tests/regression/test_model_migration_parity.py`: マイグレーション適用後の全テーブルと ORM モデルのカラム集合を両方向照合（H12 型の ORM↔migration 乖離を構造検出）。
+- `tests/regression/test_dead_code_stays_dead.py`: 削除済みモジュールの復活を集合一致ベースラインで検出（PLAN_Q2 で導入）。
+- `tests/regression/test_no_deprecation_warnings.py`: import 時 DeprecationWarning ゼロを常設ゲート化（PLAN_Q3 で導入）。
+

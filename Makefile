@@ -81,7 +81,12 @@ test-migration:  ## alembic 整合性チェック (alembic check + 往復)
 check-migrations:  ## マイグレーション往復検証スクリプトを実行
 	$(PYTHON) scripts/check_migrations.py
 
-verify: lint lint-layers format-check typecheck test-unit test-contract test-migration  ## PR 前のフル検証 (CI と同じ順序)
+ci-parity: ## CI と同一のコマンド列をローカル実行（ratchet + unit test + frontend）
+	$(PYTHON) scripts/ci_lint_ratchet.py --tool all
+	$(PYTHON) -m pytest -q -m "not integration and not perf and not slow" --timeout=120
+	cd frontend && npm run test:ci
+
+verify: ci-parity lint-layers typecheck test-contract test-migration  ## PR 前のフル検証 (CI と同じ順序)
 	@echo "All checks passed."
 
 coverage:  ## カバレッジ計測・レポート生成
