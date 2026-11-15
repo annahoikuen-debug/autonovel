@@ -16,7 +16,7 @@ from src.backend.observability.foreshadowing_ports import (
     BackendForeshadowingKpiPort,
     BackendForeshadowingMetricsPort,
 )
-from src.llm.adapters.factory import LLMService
+from src.llm.service import LLMService
 from src.integrations.rag.context_retriever import ForeshadowingEntity
 from src.engine.foreshadowing.service import ForeshadowingService
 from src.engine.context_compression.rollup_config import RollupConfig

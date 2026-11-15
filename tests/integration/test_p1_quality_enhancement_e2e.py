@@ -9,7 +9,7 @@ from unittest.mock import AsyncMock, Mock
 
 from src.agents.writing.episode_writer import EpisodeWriter
 from src.agents.context_builder_agent import ContextBuilderAgent
-from src.llm.adapters.factory import LLMService
+from src.llm.service import LLMService
 from src.integrations.rag.context_retriever import LongFormContextRetriever, ForeshadowingEntity
 from src.integrations.audio.chapter_synthesizer import ChapterAudioSynthesizer
 from src.agents.media_script_agent import MediaScriptAgent

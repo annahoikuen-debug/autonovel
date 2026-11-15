@@ -11,7 +11,7 @@ except ImportError:  # pragma: no cover - environment without sudachipy
     _SUDACHI_AVAILABLE = False
 
 from src.engine.nlp.japanese_tokenizer import JapaneseTokenizer
-from src.services.reflective_rag import ReflectiveRAGService
+from src.integrations.rag.reflective_rag import ReflectiveRAGService
 from src.integrations.rag.rag_service import SearchResult
 
 

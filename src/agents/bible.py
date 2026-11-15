@@ -4,7 +4,7 @@ from typing import Any
 
 from src.agents.skill_base import SkillAgent
 from src.agents.orchestrator import AgentContext, AgentResult, AgentName
-from src.llm.adapters.factory import LLMService
+from src.llm.service import LLMService
 
 logger = logging.getLogger(__name__)
 

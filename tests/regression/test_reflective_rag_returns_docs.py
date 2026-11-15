@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.integrations.rag.rag_service import GraphRAGService, SearchResult
-from src.services.reflective_rag import ReflectiveRAGService
+from src.integrations.rag.reflective_rag import ReflectiveRAGService
 
 
 @pytest.fixture

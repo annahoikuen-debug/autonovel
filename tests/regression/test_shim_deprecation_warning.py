@@ -66,7 +66,7 @@ def test_shim_emits_deprecation_warning_dynamically():
     candidates = [
         "src.services.llm.circuit_breaker",
         "src.services.book_score_service",
-        "src.services.rag_service",
+        "src.integrations.rag.rag_service",
     ]
     for mod in candidates:
         result = subprocess.run(

@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.services.reflective_rag import ReflectiveRAGService, ReflectiveRetrievalResult, ReflectiveDoc
+from src.integrations.rag.reflective_rag import ReflectiveRAGService, ReflectiveRetrievalResult, ReflectiveDoc
 from src.integrations.rag.rag_service import SearchResult
 
 

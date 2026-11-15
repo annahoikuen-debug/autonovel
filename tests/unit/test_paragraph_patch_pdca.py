@@ -3,7 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from src.engine.pdca_cycle import ClosedLoopPDCARunner
 from src.engine.audit.aggregator import AuditAggregator
-from src.engine.book_score.mapping import UnifiedBookScoreBridge
+from src.domain.services.book_score_mapping import UnifiedBookScoreBridge
 from src.engine.audit.fast_screener import FastScreener
 from src.engine.audit.targeted_diagnostic import TargetedDiagnostic
 from src.engine.prose.paragraph_indexer import ParagraphIndexer

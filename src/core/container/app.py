@@ -207,7 +207,7 @@ class AppContainer(InfraContainer):
     # ※ repository / reporter_factory はどちらも __init__ で未使用の任意引数であり、
     #   providers.Self()（コンテナ自身）を渡しても機能しない。意図的に未指定のままにする。
     book_score_calculator: providers.Singleton = providers.Singleton(
-        "src.engine.book_score.service.BookScoreCalculator",
+        "src.engine.book_score.calculator.BookScoreCalculator",
     )
     writing_service: providers.Singleton = providers.Singleton(
         "src.domain.writing.WritingService",

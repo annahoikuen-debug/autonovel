@@ -5,7 +5,7 @@
 """
 
 
-from src.publishing.formatters.platform_copy_formatter import (
+from src.application.formatters.platform_copy_formatter import (
     FormattedChapterPayload,
     PlatformCopyFormatter,
 )

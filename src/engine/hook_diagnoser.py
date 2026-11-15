@@ -52,7 +52,7 @@ class HookDiagnoser:
     async def generate_hook_fix(self, chapter: dict[str, Any], api_key: str) -> str:
         """弱いフックの章に対し、章末を改善する修正案を生成する。"""
         if self._llm is None:
-            from src.llm.adapters.factory import LLMService
+            from src.llm.service import LLMService
 
             self._llm = LLMService(api_key=api_key)
 

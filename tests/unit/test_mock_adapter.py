@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 
-from src.services.llm.mock_adapter import MockLLMAdapter
+from src.llm.adapters.mock import MockLLMAdapter
 
 
 def test_mock_generate_text():

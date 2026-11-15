@@ -12,7 +12,7 @@ from typing import Any, Callable, List
 from src.models.patch_pdca import ParagraphTarget, PatchRewriteResult
 from src.engine.audit.aggregator import AuditAggregator
 from src.engine.audit.targeted_diagnostic import TargetedDiagnostic
-from src.engine.book_score.mapping import UnifiedBookScoreBridge
+from src.domain.services.book_score_mapping import UnifiedBookScoreBridge
 from src.engine.prose.paragraph_indexer import ParagraphIndexer
 from src.engine.prose.patch_merger import PatchMerger
 from src.services.pdca_directive import (

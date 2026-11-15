@@ -9,7 +9,7 @@ def test_core_services_import_without_age():
     modules_to_test = [
         "src.integrations.rag.rag_service",
         "src.engine.graph_pipeline",
-        "src.services.reflective_rag",
+        "src.integrations.rag.reflective_rag",
         "src.engine.compression.layer2_subgraph",
         "src.engine.compression.compressor",
         "src.backend.routers.graph",

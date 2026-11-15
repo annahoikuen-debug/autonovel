@@ -147,7 +147,7 @@ class CommercialBenchmarkJudge:
 
         # 3. Unified 5D Bridge
         try:
-            from src.engine.book_score.mapping import UnifiedBookScoreBridge
+            from src.domain.services.book_score_mapping import UnifiedBookScoreBridge
 
             bridge = UnifiedBookScoreBridge()
             u5d = bridge.map_to_5d({n: 70.0 for n in ANCHOR_PRESETS})

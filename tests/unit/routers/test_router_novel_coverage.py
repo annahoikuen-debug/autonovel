@@ -167,7 +167,7 @@ async def test_get_chapter_book_score_found_with_trend():
         import src.backend.database.uow as uow_source
         m.setattr(uow_source, "UnitOfWork", lambda db=None: uow)
         m.setattr(novel_module.AppContainer, "db", lambda: None)
-        m.setattr("src.engine.book_score.service.BookScoreCalculator",
+        m.setattr("src.engine.book_score.calculator.BookScoreCalculator",
                   lambda repository=None: calculator)
         patch_book_ownership(m, 1)
         result = await get_chapter_book_score(1, 5, current_user=make_current_user())
@@ -187,7 +187,7 @@ async def test_get_chapter_book_score_not_found():
     with pytest.MonkeyPatch.context() as m:
         m.setattr(novel_module, "UnitOfWork", lambda db=None: uow)
         m.setattr(novel_module.AppContainer, "db", lambda: None)
-        m.setattr("src.engine.book_score.service.BookScoreCalculator",
+        m.setattr("src.engine.book_score.calculator.BookScoreCalculator",
                   lambda repository=None: calculator)
         patch_book_ownership(m, 1)
         with pytest.raises(HTTPException) as exc:
@@ -219,7 +219,7 @@ async def test_get_chapter_book_score_no_trend_single_score():
     with pytest.MonkeyPatch.context() as m:
         m.setattr(novel_module, "UnitOfWork", lambda db=None: uow)
         m.setattr(novel_module.AppContainer, "db", lambda: None)
-        m.setattr("src.engine.book_score.service.BookScoreCalculator",
+        m.setattr("src.engine.book_score.calculator.BookScoreCalculator",
                   lambda repository=None: calculator)
         patch_book_ownership(m, 1)
         result = await get_chapter_book_score(1, 1, current_user=make_current_user())
@@ -311,7 +311,7 @@ async def test_get_pdca_report_success():
         m.setattr("src.backend.database.core.get_db_manager", lambda: db_manager)
         calculator = MagicMock()
         calculator.generate_pdca_report = AsyncMock(return_value=report)
-        m.setattr("src.engine.book_score.service.BookScoreCalculator",
+        m.setattr("src.engine.book_score.calculator.BookScoreCalculator",
                   lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
@@ -331,7 +331,7 @@ async def test_get_pdca_report_not_found_and_error():
         m.setattr("src.backend.database.core.get_db_manager", lambda: db_manager)
         calculator = MagicMock()
         calculator.generate_pdca_report = AsyncMock(return_value={"error": "not found"})
-        m.setattr("src.engine.book_score.service.BookScoreCalculator",
+        m.setattr("src.engine.book_score.calculator.BookScoreCalculator",
                   lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
@@ -363,7 +363,7 @@ async def test_get_book_alerts_all_types():
         m.setattr("src.backend.database.core.get_db_manager", lambda: db_manager)
         calculator = MagicMock()
         calculator.analyze_trend = AsyncMock(return_value=trend)
-        m.setattr("src.engine.book_score.service.BookScoreCalculator",
+        m.setattr("src.engine.book_score.calculator.BookScoreCalculator",
                   lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
@@ -387,7 +387,7 @@ async def test_get_book_alerts_no_trend():
         m.setattr("src.backend.database.core.get_db_manager", lambda: db_manager)
         calculator = MagicMock()
         calculator.analyze_trend = AsyncMock(return_value={"error": "no data"})
-        m.setattr("src.engine.book_score.service.BookScoreCalculator",
+        m.setattr("src.engine.book_score.calculator.BookScoreCalculator",
                   lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())
@@ -409,7 +409,7 @@ async def test_get_book_alerts_healthy():
         m.setattr("src.backend.database.core.get_db_manager", lambda: db_manager)
         calculator = MagicMock()
         calculator.analyze_trend = AsyncMock(return_value=trend)
-        m.setattr("src.engine.book_score.service.BookScoreCalculator",
+        m.setattr("src.engine.book_score.calculator.BookScoreCalculator",
                   lambda repository=None: calculator)
         import src.backend.database.repositories.book_score as bsr
         m.setattr(bsr, "BookScoreRepository", lambda s: MagicMock())

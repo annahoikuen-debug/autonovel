@@ -4,7 +4,7 @@ import pytest
 from unittest.mock import MagicMock
 
 from src.integrations.rag.query_reformulator import QueryReformulator
-from src.services.reflective_rag import ReflectiveRAGService
+from src.integrations.rag.reflective_rag import ReflectiveRAGService
 from src.integrations.rag.rag_service import SearchResult
 
 

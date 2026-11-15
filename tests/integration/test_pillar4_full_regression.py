@@ -29,7 +29,7 @@ from src.services.score_calibrator import ScoreCalibrator
 from src.engine.audit.aggregator import AuditAggregator, SPECIALIST_NAMES
 
 # 3. 5D Mapping & BookScore
-from src.engine.book_score.mapping import UnifiedBookScoreBridge
+from src.domain.services.book_score_mapping import UnifiedBookScoreBridge
 
 # 4. Directives & PDCA
 from src.services.pdca_directive import (

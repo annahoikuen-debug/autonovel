@@ -19,7 +19,7 @@ from src.models.audit import (
     PromptPatch,
 )
 from src.models.graph_schemas import GraphExtractionResult
-from src.llm.adapters.factory import LLMService
+from src.llm.service import LLMService
 from src.engine.extraction_service import extraction_service
 
 logger = logging.getLogger(__name__)
