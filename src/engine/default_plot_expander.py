@@ -107,8 +107,11 @@ class DefaultPlotExpander:
         if tension_curve is not None:
             prompt_kwargs["tension_curve"] = tension_curve
         prompt = await self.pm.build_macro_plot_skeleton_prompt(
-            bible_json_str, target_ep_list, book_id=book_id,
-            spine=spine, spine_quality=spine_quality,
+            bible_json_str,
+            target_ep_list,
+            book_id=book_id,
+            spine=spine,
+            spine_quality=spine_quality,
             **prompt_kwargs,
         )
 
@@ -190,8 +193,10 @@ class DefaultPlotExpander:
         except Exception as e:
             logger.debug(f"Failed to fetch bible for micro expansion: {e}")
         bible_dict = (
-            bible.model_dump() if hasattr(bible, "model_dump") else (bible if isinstance(bible, dict) else {})
-        ) if bible else {}
+            (bible.model_dump() if hasattr(bible, "model_dump") else (bible if isinstance(bible, dict) else {}))
+            if bible
+            else {}
+        )
         pattern_key = bible_dict.get("pattern_key") or self.pattern_key
         length_key = bible_dict.get("length_key") or self.length_key
         market_key = bible_dict.get("market_key") or self.market_key
@@ -212,7 +217,8 @@ class DefaultPlotExpander:
             previous_ending_text=previous_ending_text[-500:].strip() if previous_ending_text else "",
             characters_summary=chars_summary,
             book_id=book_id,
-            spine=spine, spine_quality=spine_quality,
+            spine=spine,
+            spine_quality=spine_quality,
         )
 
         # PLAN_S1 N4: micro 経路のテンション差分検証。

@@ -7,6 +7,7 @@ Revision ID: 0036_task_wal_logs_worker_id
 Revises: 0035_audit_lessons
 Create Date: 2026-11-13
 """
+
 from __future__ import annotations
 
 from alembic import op

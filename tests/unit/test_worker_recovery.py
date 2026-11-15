@@ -1,6 +1,6 @@
 """Tests for Worker Recovery Manager (Steps 51-53, 56-57)."""
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 

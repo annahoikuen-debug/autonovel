@@ -105,11 +105,11 @@ def identify_axis(
     """
     axes = list(baseline_scores.keys())
     if expected_axis not in baseline_scores:
-        return IdentifiabilityResult(
-            expected_drop=0.0, other_drop=0.0, ratio=0.0, identified=False
-        )
+        return IdentifiabilityResult(expected_drop=0.0, other_drop=0.0, ratio=0.0, identified=False)
 
-    expected_drop = max(0.0, baseline_scores[expected_axis] - perturbed_scores.get(expected_axis, baseline_scores[expected_axis]))
+    expected_drop = max(
+        0.0, baseline_scores[expected_axis] - perturbed_scores.get(expected_axis, baseline_scores[expected_axis])
+    )
 
     other_drops = []
     for ax in axes:

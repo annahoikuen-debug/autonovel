@@ -96,9 +96,7 @@ class NarrativeStructureSettings(BaseModel):
     enforce_overwrite_forbidden: List[str] = Field(
         default_factory=lambda: list(DEFAULT_SETTINGS["enforce_overwrite_forbidden"])
     )
-    beat_type_mapping: Dict[str, str] = Field(
-        default_factory=lambda: dict(DEFAULT_SETTINGS["beat_type_mapping"])
-    )
+    beat_type_mapping: Dict[str, str] = Field(default_factory=lambda: dict(DEFAULT_SETTINGS["beat_type_mapping"]))
     default_tension: float = Field(default=5.0, ge=0.0, le=10.0)
 
     @property
@@ -221,9 +219,7 @@ def detect_tension_violations(
     SSOT 定数で検査する**ゲート契約**であり、ソルバーの再実装ではない (P5)。
     """
     violations: List[str] = []
-    known: List[Tuple[int, float]] = [
-        (b.episode, float(b.tension)) for b in beats if b.tension is not None
-    ]
+    known: List[Tuple[int, float]] = [(b.episode, float(b.tension)) for b in beats if b.tension is not None]
 
     for (ep_a, t_a), (ep_b, t_b) in zip(known, known[1:]):
         delta = abs(t_b - t_a)
@@ -240,8 +236,7 @@ def detect_tension_violations(
         if total < settings.rolling_min_sum:
             episodes_desc = ", ".join(f"ep{ep}={t:.1f}" for ep, t in chunk)
             violations.append(
-                f"rolling {window}-episode sum {total:.1f} < {settings.rolling_min_sum:g} "
-                f"({episodes_desc})"
+                f"rolling {window}-episode sum {total:.1f} < {settings.rolling_min_sum:g} ({episodes_desc})"
             )
 
     return violations
@@ -294,7 +289,7 @@ class BeatMapper:
         """ep_num 昇順に安定ソートする (同話数は入力順を維持)。"""
         return sorted(
             episodes,
-            key=lambda ep: (_field(ep, "ep_num", 0) if _field(ep, "ep_num", 0) is not None else 0),
+            key=lambda ep: _field(ep, "ep_num", 0) if _field(ep, "ep_num", 0) is not None else 0,
         )
 
     def apply_tension_back(self, sorted_episodes: Sequence[Any], beats: Sequence[Beat]) -> int:
@@ -368,9 +363,7 @@ def build_batch_balancer(n_episodes: int) -> GlobalNarrativeBalancer:
     from src.narrative_balancer.csp.balancer import CSPNarrativeBalancer
 
     balancer = GlobalNarrativeBalancer(config=ArbitratorConfig(validate_output=False))
-    balancer.adapters["csp"] = CSPAdapter(
-        CSPNarrativeBalancer(config=_scaled_csp_config(n_episodes))
-    )
+    balancer.adapters["csp"] = CSPAdapter(CSPNarrativeBalancer(config=_scaled_csp_config(n_episodes)))
     return balancer
 
 

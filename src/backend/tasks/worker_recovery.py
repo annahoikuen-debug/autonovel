@@ -108,9 +108,7 @@ class WorkerRecoveryManager:
                 log.heartbeat_at = now  # type: ignore[assignment]
 
             await session.commit()
-            logger.debug(
-                f"Updated heartbeats for {len(running_logs)} running tasks (worker={self.worker_id})"
-            )
+            logger.debug(f"Updated heartbeats for {len(running_logs)} running tasks (worker={self.worker_id})")
 
     async def detect_zombie_tasks(self) -> list[TaskWALLogModel]:
         """Detect orphan/zombie tasks (Step 52).
@@ -156,9 +154,7 @@ class WorkerRecoveryManager:
             recovered = list(result.scalars().all())
 
         if recovered and self.config.alert_on_recovery:
-            logger.warning(
-                f"RECOVERY ALERT: auto_recovery count={len(recovered)} worker={self.worker_id}"
-            )
+            logger.warning(f"RECOVERY ALERT: auto_recovery count={len(recovered)} worker={self.worker_id}")
 
         logger.info(f"Recovered {len(recovered)} zombie tasks (worker={self.worker_id})")
         return recovered

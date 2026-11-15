@@ -33,6 +33,7 @@ def _is_secret_key(key: str) -> bool:
     k = key.lower()
     return "api_key" in k or "secret" in k or "password" in k or "token" in k
 
+
 # ==========================================
 # グローバル設定オブジェクトとアクセサ
 # ==========================================

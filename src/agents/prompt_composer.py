@@ -117,9 +117,7 @@ class PromptComposer:
                 foreshadowing_context = ""
         # 背景（継続中）の未回収伏線を1回だけ取得し、背景ブロックと
         # 期限超過伏線の抽出の双方で共有する（PLAN_M1 Step 16）。
-        unresolved_foreshadowings = await self._load_unresolved_foreshadowings(
-            book_id, ep_num, context
-        )
+        unresolved_foreshadowings = await self._load_unresolved_foreshadowings(book_id, ep_num, context)
 
         # PLAN_M1 Step 16: 重要事実の両端配置（Lost in the Middle 対策）
         # flag off 時は pinned_head / pinned_tail とも空文字（現行出力と同一）。
@@ -136,8 +134,10 @@ class PromptComposer:
             pinned = PinnedFactsGenerator(rollup_cfg).generate(
                 contract_foreshadowings=context.get("contract_foreshadowings") or [],
                 overdue_foreshadowings=[
-                    f for f in unresolved_foreshadowings
-                    if isinstance(f, dict) and f.get("target_episode") is not None
+                    f
+                    for f in unresolved_foreshadowings
+                    if isinstance(f, dict)
+                    and f.get("target_episode") is not None
                     and f.get("target_episode", 0) < ep_num
                 ],
                 prev_digest_text=prev_digest_text,
@@ -189,8 +189,10 @@ class PromptComposer:
             pinned = PinnedFactsGenerator(RollupConfig.from_env()).generate(
                 contract_foreshadowings=context.get("contract_foreshadowings") or [],
                 overdue_foreshadowings=[
-                    f for f in (context.get("unresolved_foreshadowings") or [])
-                    if isinstance(f, dict) and f.get("target_episode") is not None
+                    f
+                    for f in (context.get("unresolved_foreshadowings") or [])
+                    if isinstance(f, dict)
+                    and f.get("target_episode") is not None
                     and f.get("target_episode", 0) < ep_num
                 ],
                 prev_digest_text=prev_digest_text,
@@ -298,9 +300,7 @@ class PromptComposer:
                     meta = item.get("metadata", {}) or {}
                 else:
                     content = getattr(item, "content", "") or ""
-                    score = float(
-                        getattr(item, "score", None) or getattr(item, "similarity", None) or 0.0
-                    )
+                    score = float(getattr(item, "score", None) or getattr(item, "similarity", None) or 0.0)
                     meta = getattr(item, "metadata", {}) or {}
             except Exception:
                 continue

@@ -144,9 +144,7 @@ class JudgePanel:
         except (json.JSONDecodeError, ValueError, TypeError, AttributeError):
             return None
 
-    def _should_exclude_judge(
-        self, spec: JudgeSpec, provenance_family: JudgeFamily | None
-    ) -> bool:
+    def _should_exclude_judge(self, spec: JudgeSpec, provenance_family: JudgeFamily | None) -> bool:
         """自己偏好除外: 同一 family の judge はその対象から除外する。"""
         if provenance_family is None:
             return False
@@ -177,9 +175,7 @@ class JudgePanel:
             )
 
         try:
-            prompt = self._build_judge_prompt(
-                text, axis, provenance_family=provenance_family
-            )
+            prompt = self._build_judge_prompt(text, axis, provenance_family=provenance_family)
             response = await self.gateway.generate_text(
                 prompt=prompt,
                 primary_provider=spec.family,
@@ -249,10 +245,7 @@ class JudgePanel:
         各 judge で評価 → ScoreCalibrator で z 正規化 → 中央値を採用。
         自己偏好除外により、同一 family の judge は参加しない。
         """
-        tasks = [
-            self._call_judge(spec, text, axis, provenance_family=provenance_family)
-            for spec in self.judges
-        ]
+        tasks = [self._call_judge(spec, text, axis, provenance_family=provenance_family) for spec in self.judges]
         scores = await asyncio.gather(*tasks)
 
         available_scores = [s for s in scores if s.available]
@@ -260,9 +253,7 @@ class JudgePanel:
         n_failed = sum(1 for s in scores if not s.available and "excluded" not in (s.error or ""))
 
         if not available_scores:
-            raise PanelUnavailable(
-                f"すべての judge が利用不可 (n_excluded={n_excluded}, n_failed={n_failed})"
-            )
+            raise PanelUnavailable(f"すべての judge が利用不可 (n_excluded={n_excluded}, n_failed={n_failed})")
 
         calibrated = [s.calibrated_score for s in available_scores]
         median_score = statistics.median(calibrated)
@@ -333,12 +324,14 @@ class JudgePanel:
 
         for spec in self.judges:
             if self._should_exclude_judge(spec, provenance_family):
-                judge_verdicts.append({
-                    "judge_id": f"{spec.family}:{spec.model}",
-                    "family": spec.family,
-                    "verdict": "excluded",
-                    "reason": "same family as provenance",
-                })
+                judge_verdicts.append(
+                    {
+                        "judge_id": f"{spec.family}:{spec.model}",
+                        "family": spec.family,
+                        "verdict": "excluded",
+                        "reason": "same family as provenance",
+                    }
+                )
                 continue
 
             judge_id = f"{spec.family}:{spec.model}"
@@ -369,28 +362,28 @@ class JudgePanel:
                 else:
                     final_verdict = "tie"
 
-                judge_verdicts.append({
-                    "judge_id": judge_id,
-                    "family": spec.family,
-                    "verdict_ab": verdict_ab,
-                    "verdict_ba": verdict_ba,
-                    "final_verdict": final_verdict,
-                })
+                judge_verdicts.append(
+                    {
+                        "judge_id": judge_id,
+                        "family": spec.family,
+                        "verdict_ab": verdict_ab,
+                        "verdict_ba": verdict_ba,
+                        "final_verdict": final_verdict,
+                    }
+                )
             except Exception as e:  # noqa: BLE001
                 logger.warning("Pairwise judge %s failed: %r", judge_id, e)
-                judge_verdicts.append({
-                    "judge_id": judge_id,
-                    "family": spec.family,
-                    "verdict": "error",
-                    "reason": str(e),
-                })
+                judge_verdicts.append(
+                    {
+                        "judge_id": judge_id,
+                        "family": spec.family,
+                        "verdict": "error",
+                        "reason": str(e),
+                    }
+                )
 
         # 多数決で最終勝者を決定
-        valid_verdicts = [
-            v["final_verdict"]
-            for v in judge_verdicts
-            if v.get("final_verdict") in ("A", "B", "tie")
-        ]
+        valid_verdicts = [v["final_verdict"] for v in judge_verdicts if v.get("final_verdict") in ("A", "B", "tie")]
         if not valid_verdicts:
             raise PanelUnavailable("すべての judge がペアワイズ比較に失敗しました")
 
@@ -405,11 +398,7 @@ class JudgePanel:
         if len(tied_winners) > 1:
             winner = "tie"
 
-        agreement_rate = (
-            sum(1 for v in valid_verdicts if v == winner) / len(valid_verdicts)
-            if valid_verdicts
-            else 0.0
-        )
+        agreement_rate = sum(1 for v in valid_verdicts if v == winner) / len(valid_verdicts) if valid_verdicts else 0.0
 
         return PairwiseVerdict(
             winner=winner,

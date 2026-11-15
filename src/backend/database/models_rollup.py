@@ -35,7 +35,10 @@ class DigestRollupModel(Base):
     __tablename__ = "digest_rollups"
     __table_args__ = (
         UniqueConstraint(
-            "book_id", "level", "start_ep", "end_ep",
+            "book_id",
+            "level",
+            "start_ep",
+            "end_ep",
             name="uq_digest_rollups_book_level_range",
         ),
         {"extend_existing": True},

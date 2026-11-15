@@ -482,9 +482,10 @@ class ReflectiveRAGService:
                             query=current_query,
                             top_k=self.initial_fetch_k,
                         )
-                    elif settings.RAG_HYDE_MODE == "llm" and getattr(
-                        self.query_reformulator, "llm_adapter", None
-                    ) is not None:
+                    elif (
+                        settings.RAG_HYDE_MODE == "llm"
+                        and getattr(self.query_reformulator, "llm_adapter", None) is not None
+                    ):
                         # Plan R5 D2: HyDE 2-query RRF。元クエリと LLM 生成の擬似文書の両方で
                         # dense 検索し、compute_rrf_scores で融合する。失敗時は元クエリ単一に倒す。
                         try:
@@ -542,9 +543,7 @@ class ReflectiveRAGService:
                 # Plan R5 C4: hybrid は RRF 正規化スコア (0-1) で cosine 閾値 (0.5) と意味が異なるため、
                 # hybrid 有効時は RAG_HYBRID_MIN_SCORE を使う（dense 単一時は従来の relevance_threshold）。
                 effective_threshold = (
-                    settings.RAG_HYBRID_MIN_SCORE
-                    if self.hybrid_retriever is not None
-                    else relevance_threshold
+                    settings.RAG_HYBRID_MIN_SCORE if self.hybrid_retriever is not None else relevance_threshold
                 )
                 filtered = [(d, s, c, f, r) for d, s, c, f, r in scored if s >= effective_threshold]
 
@@ -655,9 +654,7 @@ class ReflectiveRAGService:
                         # Plan R5 C4: hybrid は RRF 正規化スコア (0-1) で cosine 閾値 (0.5) と意味が異なるため、
                         # hybrid 有効時は RAG_HYBRID_MIN_SCORE を使う（dense 単一時は従来の relevance_threshold）。
                         effective_threshold = (
-                            settings.RAG_HYBRID_MIN_SCORE
-                            if self.hybrid_retriever is not None
-                            else relevance_threshold
+                            settings.RAG_HYBRID_MIN_SCORE if self.hybrid_retriever is not None else relevance_threshold
                         )
                         filtered = [(d, s, c, f, r) for d, s, c, f, r in scored if s >= effective_threshold]
                         # Update negative documents after reranking

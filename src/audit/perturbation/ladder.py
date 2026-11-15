@@ -43,9 +43,7 @@ class LadderEntry:
         return self.transform.apply(text)
 
 
-def _make_strength_variant(
-    base: PerturbationTransform, strength: float
-) -> PerturbationTransform:
+def _make_strength_variant(base: PerturbationTransform, strength: float) -> PerturbationTransform:
     """同一クラスの強度違いインスタンスを生成する。
 
     各変換クラスは引数なしコンストラクタを持ち、strength は

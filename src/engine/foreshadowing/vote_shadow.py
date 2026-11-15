@@ -51,9 +51,7 @@ def record_vote_shadow(
             "judgment_status": judgment_status,
             "agree": ACTION_TO_STATUS.get(llm_action or "", "PLANTED") == judgment_status,
             "metadata_action": metadata_action,
-            "metadata_over_report": (
-                metadata_action == "resolved" and (llm_action or "unmentioned") == "unmentioned"
-            ),
+            "metadata_over_report": (metadata_action == "resolved" and (llm_action or "unmentioned") == "unmentioned"),
             "syntax_score": syntax_score,
         }
         path = Path(output_path) if output_path else DEFAULT_SHADOW_PATH

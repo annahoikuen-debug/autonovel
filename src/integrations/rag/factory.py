@@ -35,9 +35,7 @@ class _GraphRagDenseAdapter:
     def search(self, query: str, top_k: int = 20) -> Any:
         if self.session is None:
             return []
-        return self.rag_service.search_similar_chunks_sync(
-            self.session, query=query, limit=top_k, min_score=0.0
-        )
+        return self.rag_service.search_similar_chunks_sync(self.session, query=query, limit=top_k, min_score=0.0)
 
 
 def build_reflective_rag(

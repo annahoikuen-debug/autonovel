@@ -108,16 +108,12 @@ class DigestRollupRepository:
         block_per_volume = cfg.episodes_per_block * cfg.blocks_per_volume
 
         # 章(ブロック)境界
-        block_start = (
-            (episode_num - 1) // cfg.episodes_per_block
-        ) * cfg.episodes_per_block + 1
+        block_start = ((episode_num - 1) // cfg.episodes_per_block) * cfg.episodes_per_block + 1
         block_end = block_start + cfg.episodes_per_block - 1
         await self._set_stale(book_id, "block", block_start, block_end)
 
         # 巻境界
-        volume_start = (
-            (episode_num - 1) // block_per_volume
-        ) * block_per_volume + 1
+        volume_start = ((episode_num - 1) // block_per_volume) * block_per_volume + 1
         volume_end = volume_start + block_per_volume - 1
         await self._set_stale(book_id, "volume", volume_start, volume_end)
 

@@ -665,52 +665,32 @@ class EpisodeWriter(BaseAgent):
                     generator = RollupGenerator(rollup_cfg, llm=self.llm)
 
                     # 現在話までの全 digest を取得（ep < ep_num）
-                    digest_records = await EpisodeDigestRepository(session).get_digests(
-                        book_id
-                    )
+                    digest_records = await EpisodeDigestRepository(session).get_digests(book_id)
                     member_digests = {
-                        int(r.episode_num): (r.digest_text or "")
-                        for r in digest_records
-                        if int(r.episode_num) < ep_num
+                        int(r.episode_num): (r.digest_text or "") for r in digest_records if int(r.episode_num) < ep_num
                     }
 
                     # 章ロールアップ（章境界: 10話ごと）
                     if generator.should_generate_block(ep_num):
                         start_ep = ep_num - rollup_cfg.episodes_per_block + 1
-                        block_digests = {
-                            ep: text
-                            for ep, text in member_digests.items()
-                            if start_ep <= ep <= ep_num
-                        }
-                        block_text = await generator.generate_block_rollup(
-                            book_id, (start_ep, ep_num), block_digests
-                        )
+                        block_digests = {ep: text for ep, text in member_digests.items() if start_ep <= ep <= ep_num}
+                        block_text = await generator.generate_block_rollup(book_id, (start_ep, ep_num), block_digests)
                         if block_text:
-                            await rollup_repo.upsert_rollup(
-                                book_id, "block", start_ep, ep_num, block_text
-                            )
+                            await rollup_repo.upsert_rollup(book_id, "block", start_ep, ep_num, block_text)
 
                     # 巻ロールアップ（巻境界: 50話ごと = 10話×5章）
                     if generator.should_generate_volume(ep_num):
-                        block_per_volume = (
-                            rollup_cfg.episodes_per_block * rollup_cfg.blocks_per_volume
-                        )
+                        block_per_volume = rollup_cfg.episodes_per_block * rollup_cfg.blocks_per_volume
                         start_ep = ep_num - block_per_volume + 1
-                        block_rollups = await rollup_repo.get_rollups(
-                            book_id, "block"
-                        )
+                        block_rollups = await rollup_repo.get_rollups(book_id, "block")
                         volume_blocks = [
                             (r.start_ep, r.end_ep, r.digest_text)
                             for r in block_rollups
                             if start_ep <= r.start_ep and r.end_ep <= ep_num
                         ]
-                        volume_text = await generator.generate_volume_rollup(
-                            book_id, volume_blocks
-                        )
+                        volume_text = await generator.generate_volume_rollup(book_id, volume_blocks)
                         if volume_text:
-                            await rollup_repo.upsert_rollup(
-                                book_id, "volume", start_ep, ep_num, volume_text
-                            )
+                            await rollup_repo.upsert_rollup(book_id, "volume", start_ep, ep_num, volume_text)
 
                     # Step 14: stale な rollup をメンバ digest から再生成（retake 追従）
                     # digest 更新で失効した章/巻 rollup を、次の digest 保存時に復旧する。
@@ -727,8 +707,12 @@ class EpisodeWriter(BaseAgent):
                             )
                             if block_text:
                                 await rollup_repo.upsert_rollup(
-                                    book_id, "block", stale_r.start_ep,
-                                    stale_r.end_ep, block_text, stale_at=None,
+                                    book_id,
+                                    "block",
+                                    stale_r.start_ep,
+                                    stale_r.end_ep,
+                                    block_text,
+                                    stale_at=None,
                                 )
                         elif stale_r.level == "volume":
                             block_rollups = await rollup_repo.get_rollups(book_id, "block")
@@ -737,13 +721,15 @@ class EpisodeWriter(BaseAgent):
                                 for r in block_rollups
                                 if stale_r.start_ep <= r.start_ep and r.end_ep <= stale_r.end_ep
                             ]
-                            volume_text = await generator.generate_volume_rollup(
-                                book_id, volume_blocks
-                            )
+                            volume_text = await generator.generate_volume_rollup(book_id, volume_blocks)
                             if volume_text:
                                 await rollup_repo.upsert_rollup(
-                                    book_id, "volume", stale_r.start_ep,
-                                    stale_r.end_ep, volume_text, stale_at=None,
+                                    book_id,
+                                    "volume",
+                                    stale_r.start_ep,
+                                    stale_r.end_ep,
+                                    volume_text,
+                                    stale_at=None,
                                 )
             except Exception as e:
                 logger.warning(f"Ep.{ep_num}: ロールアップ生成でエラー: {e}")

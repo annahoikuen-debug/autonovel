@@ -160,9 +160,7 @@ class UnifiedAuditor:
             raw_patch = data.get("actionable_patch")
             if isinstance(raw_patch, dict):
                 data["actionable_quote"] = str(raw_patch.get("original_quote", "") or "") or None
-                data["actionable_replacement"] = (
-                    str(raw_patch.get("replacement", "") or "") or None
-                )
+                data["actionable_replacement"] = str(raw_patch.get("replacement", "") or "") or None
                 data["actionable_patch"] = None  # 文字列互換フィールドはクリア（structured 優先）
             elif raw_patch is not None:
                 # 従来の文字列のみ → actionable_quote へ退避（quote_patch 経路で利用）
@@ -287,11 +285,7 @@ class UnifiedAuditor:
         # 定量スコアだけで合格させないよう、定性評価が成立しなかった場合は
         # 必ず不合格とする（fail-closed）。
         # 閾値とAI定型上限も SSOT から読み込む。
-        is_ok = (
-            not degraded
-            and final >= get_gate_threshold()
-            and len(meta["cliches"]) < get_cliche_max()
-        )
+        is_ok = not degraded and final >= get_gate_threshold() and len(meta["cliches"]) < get_cliche_max()
         conflicts = self._build_conflicts(meta, qual)
 
         if degraded:

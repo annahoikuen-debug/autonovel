@@ -119,9 +119,7 @@ class QueryReformulator:
                     "物語文調（地の文・設定資料調）で 1 段落生成してください。"
                 )
                 try:
-                    res = await asyncio.wait_for(
-                        self.llm_adapter.generate(prompt), timeout=timeout_seconds
-                    )
+                    res = await asyncio.wait_for(self.llm_adapter.generate(prompt), timeout=timeout_seconds)
                 except TypeError:
                     # 同期 generate の可能性
                     res = self.llm_adapter.generate(prompt)

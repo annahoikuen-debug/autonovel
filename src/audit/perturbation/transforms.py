@@ -103,11 +103,7 @@ class RemoveEndingHook(PerturbationTransform):
         result = list(sentences)
         while removed < max_removed and len(result) > 1:
             tail = result[-1]
-            is_hook = bool(
-                re.search(r"[！？!?]$", tail)
-                or tail.endswith("」")
-                or _HOOK_MARKER.search(tail)
-            )
+            is_hook = bool(re.search(r"[！？!?]$", tail) or tail.endswith("」") or _HOOK_MARKER.search(tail))
             if is_hook:
                 result.pop()
                 removed += 1

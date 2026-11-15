@@ -127,7 +127,10 @@ class ContextManager:
 
         plot_list = plots if isinstance(plots, list) else [plots]
         search_area = " ".join(
-            [str(p.detailed_blueprint or "") + " " + str(p.summary or "") + " " + str(p.script_content or "") for p in plot_list]
+            [
+                str(p.detailed_blueprint or "") + " " + str(p.summary or "") + " " + str(p.script_content or "")
+                for p in plot_list
+            ]
         )
 
         lines = []
@@ -310,7 +313,10 @@ class ContextManager:
         # 検索範囲を拡大
         plot_list = plots if isinstance(plots, list) else [plots]
         search_area = " ".join(
-            [str(p.detailed_blueprint or "") + " " + str(p.summary or "") + " " + str(p.script_content or "") for p in plot_list]
+            [
+                str(p.detailed_blueprint or "") + " " + str(p.summary or "") + " " + str(p.script_content or "")
+                for p in plot_list
+            ]
         )
         active_char_names = [str(c.name) for c in all_chars if c.name and str(c.name) in search_area]
 

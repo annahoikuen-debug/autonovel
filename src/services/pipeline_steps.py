@@ -285,8 +285,7 @@ class CatharsisAnalysisStep(WorkflowStep):
             ctx.easy_parameters["catharsis_positions"] = catharsis_points
 
             reporter.report(
-                f"📊 カタルシス分析完了: {len(catharsis_points)}点検出 "
-                f"(タイプ: {pattern_type}, 振幅: {amplitude:.1f})",
+                f"📊 カタルシス分析完了: {len(catharsis_points)}点検出 (タイプ: {pattern_type}, 振幅: {amplitude:.1f})",
                 "info",
             )
             return True

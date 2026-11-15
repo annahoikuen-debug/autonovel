@@ -237,8 +237,6 @@ class EpisodeDigestService:
                 )
 
                 rollup_repo = DigestRollupRepository(self.repo.db)
-                await rollup_repo.mark_stale_for_episode(
-                    book_id, episode_num, self.cfg
-                )
+                await rollup_repo.mark_stale_for_episode(book_id, episode_num, self.cfg)
 
         return digest_text

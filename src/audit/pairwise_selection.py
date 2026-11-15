@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from src.audit.calibration_store import is_pairwise_enabled
 from src.audit.judge_panel import JudgePanel, PairwiseVerdict
 
+
 # 候補生成時に静的層スコアを持つ想定
 @dataclass
 class GenerationCandidate:
@@ -51,9 +52,12 @@ class PairwiseSelector:
     @staticmethod
     def is_enabled() -> bool:
         """ペアワイズ選抜が有効か (env ENABLE_PAIRWISE_SELECTION)。"""
-        return is_pairwise_enabled() or os.environ.get(
-            "ENABLE_PAIRWISE_SELECTION", "false"
-        ).strip().lower() in ("true", "1", "yes", "on")
+        return is_pairwise_enabled() or os.environ.get("ENABLE_PAIRWISE_SELECTION", "false").strip().lower() in (
+            "true",
+            "1",
+            "yes",
+            "on",
+        )
 
     def _rank_by_static(self, candidates: list[GenerationCandidate]) -> list[GenerationCandidate]:
         """静的スコアで上位 N 件を選ぶ。同点は生成順序で安定ソート。"""

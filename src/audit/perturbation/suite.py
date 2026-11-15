@@ -127,9 +127,7 @@ class JudgeSuite:
 
         # 各変換 × 各強度レベル × 各話 のスコアを収集
         # 構造: {transform_id: {label: {text_index: scores}}}
-        collected: dict[str, dict[str, dict[int, dict[str, float]]]] = defaultdict(
-            lambda: defaultdict(dict)
-        )
+        collected: dict[str, dict[str, dict[int, dict[str, float]]]] = defaultdict(lambda: defaultdict(dict))
 
         for tid, entries in self.ladders.items():
             for entry in entries:
@@ -150,9 +148,7 @@ class JudgeSuite:
         for tid, entries in self.ladders.items():
             base_transform = TRANSFORM_REGISTRY.get(tid)
             kind = base_transform.kind if base_transform is not None else "UNKNOWN"
-            affected_axes = (
-                base_transform.affected_axes if base_transform is not None else []
-            )
+            affected_axes = base_transform.affected_axes if base_transform is not None else []
 
             # Spearman: 強度レベル (0,1,2,3) と baseline->強度 のスコア差の相関
             # 各軸について、baseline スコアと強度別スコアの関係を単調性で見る
@@ -168,9 +164,7 @@ class JudgeSuite:
             rho_values = []
             for ax in sorted(all_axes):
                 # 強度レベル順に並べたスコア系列 (baseline, weak, medium, strong)
-                level_scores: dict[int, list[float]] = {
-                    0: [], 1: [], 2: [], 3: []
-                }
+                level_scores: dict[int, list[float]] = {0: [], 1: [], 2: [], 3: []}
                 for entry in entries:
                     level = _STRENGTH_ORDER[entry.label]
                     for text_index, scores in collected[tid][entry.label].items():
@@ -261,9 +255,7 @@ class JudgeSuite:
                         baseline_all[ax] = statistics.mean(b_vals)
                         strong_all[ax] = statistics.mean(s_vals)
                 if baseline_all and strong_all:
-                    inv_res = check_invariance(
-                        baseline_all, strong_all, threshold=self.invariance_threshold
-                    )
+                    inv_res = check_invariance(baseline_all, strong_all, threshold=self.invariance_threshold)
                     invariance = {
                         "max_delta": inv_res.max_delta,
                         "passed": inv_res.passed,
@@ -275,16 +267,8 @@ class JudgeSuite:
 
             # 合否判定
             rho_pass = mean_rho >= self.rho_threshold
-            inv_pass = (
-                True
-                if not invariance
-                else invariance.get("passed", True)
-            )
-            id_pass = (
-                True
-                if not identifiability
-                else identifiability.get("identified", True)
-            )
+            inv_pass = True if not invariance else invariance.get("passed", True)
+            id_pass = True if not identifiability else identifiability.get("identified", True)
             all_passed = rho_pass and inv_pass and id_pass
 
             transform_metrics.append(

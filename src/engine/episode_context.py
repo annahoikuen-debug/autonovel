@@ -599,4 +599,3 @@ class EpisodeContextBuilder:
                 1 for f in foreshadowing_list if _target_of(f) is not None and _target_of(f) < current_ep
             ),
         }
-

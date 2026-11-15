@@ -390,10 +390,8 @@ async def generate_content(
                     k: v
                     for k, v in (
                         input_data.llm_config.model_dump()
-                        if input_data.llm_config
-                        and hasattr(input_data.llm_config, "model_dump")
-                        else input_data.llm_config
-                        or {}
+                        if input_data.llm_config and hasattr(input_data.llm_config, "model_dump")
+                        else input_data.llm_config or {}
                     ).items()
                     if k != "api_key"  # H4: サーバー/ユーザー API キーをキューに平文永続化しない
                 }

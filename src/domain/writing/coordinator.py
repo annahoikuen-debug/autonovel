@@ -158,10 +158,7 @@ class WritingCoordinator:
         # max_retries が呼び出し側で明示指定された場合は、PDCA コントローラの
         # max_regenerations=0 既定値によって黙って無視されないよう、再生成ループに到達する。
         # max_retries が未指定（デフォルト）の場合は PDCA コントローラの判断に従う。
-        if (
-            max_retries is _MAX_RETRIES_UNSET
-            and not self.pdca_controller.should_regenerate_full_text()
-        ):
+        if max_retries is _MAX_RETRIES_UNSET and not self.pdca_controller.should_regenerate_full_text():
             if reporter:
                 reporter.report(
                     f"Ep.{start_ep}-{end_ep}: PDCAポリシーにより全文再生成ループは無効化されています",
@@ -175,9 +172,7 @@ class WritingCoordinator:
 
         # 明示指定された max_retries を有効値として使用（未指定時は PDCA 既定）
         effective_max_retries = (
-            self.pdca_controller.max_regenerations
-            if max_retries is _MAX_RETRIES_UNSET
-            else max_retries
+            self.pdca_controller.max_regenerations if max_retries is _MAX_RETRIES_UNSET else max_retries
         )
 
         # 自動再生成ループ (max_regenerations > 0 または max_retries > 0 の場合のみ到達)

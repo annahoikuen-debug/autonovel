@@ -385,7 +385,10 @@ def _update_task_in_db(
         session.rollback()
         logger.exception(
             "DB update failed for task_id=%s status=%s error=%s: %s",
-            task_id, status, type(e).__name__, e,
+            task_id,
+            status,
+            type(e).__name__,
+            e,
         )
         # 二重防御: 新しいセッションでステータス更新を再試行し、
         # 「タスクが永久に pending のままになる」observability 欠陥を防ぐ。
@@ -399,7 +402,10 @@ def _update_task_in_db(
         except Exception as retry_err:
             logger.error(
                 "DB update retry also failed for task_id=%s status=%s error=%s: %s",
-                task_id, status, type(retry_err).__name__, retry_err,
+                task_id,
+                status,
+                type(retry_err).__name__,
+                retry_err,
             )
     finally:
         session.close()

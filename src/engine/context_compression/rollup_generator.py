@@ -38,10 +38,10 @@ class RollupGenerator:
 
     def __init__(self, cfg: Any, llm: Any = None):
         """Args:
-            cfg: RollupConfig 互換オブジェクト（episodes_per_block,
-                blocks_per_volume, block_digest_chars, volume_digest_chars,
-                cod_rounds を持つ）。
-            llm: LLM クライアント（None でも fail-open で動作）。
+        cfg: RollupConfig 互換オブジェクト（episodes_per_block,
+            blocks_per_volume, block_digest_chars, volume_digest_chars,
+            cod_rounds を持つ）。
+        llm: LLM クライアント（None でも fail-open で動作）。
         """
         self.cfg = cfg
         self.llm = llm
@@ -114,9 +114,7 @@ class RollupGenerator:
         original_llm = self.llm
         self.llm = effective_llm
         try:
-            lines = [
-                f"第{ep}話: {text}" for ep, text in sorted(member_digests.items())
-            ]
+            lines = [f"第{ep}話: {text}" for ep, text in sorted(member_digests.items())]
             joined = "\n".join(lines)
             prompt = (
                 f"以下は第{ep_range[0]}話〜第{ep_range[1]}話の確定事実ダイジェストです。\n"
@@ -175,9 +173,7 @@ class RollupGenerator:
         original_llm = self.llm
         self.llm = effective_llm
         try:
-            lines = [
-                f"第{start}話〜第{end}話: {text}" for start, end, text in block_rollups
-            ]
+            lines = [f"第{start}話〜第{end}話: {text}" for start, end, text in block_rollups]
             joined = "\n".join(lines)
             prompt = (
                 f"以下は複数の章の確定事実要約です。\n"

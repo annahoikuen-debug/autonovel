@@ -609,7 +609,9 @@ class WritingGraphManager:
                     ],
                 )
                 healed_content = qp_result.text if qp_result.applied_count > 0 else draft_content
-                causal_reason = "healed_via_quote_patch" if qp_result.applied_count > 0 else "healed_via_actionable_patch"
+                causal_reason = (
+                    "healed_via_quote_patch" if qp_result.applied_count > 0 else "healed_via_actionable_patch"
+                )
             else:
                 healed_content = draft_content + "\n\n" + str(actionable_patch)
                 causal_reason = "healed_via_actionable_patch"

@@ -322,9 +322,7 @@ def with_llm_retry():
 
                             import config as _config_module
 
-                            _ultra_stable = (
-                                getattr(_config_module, "MODEL_ULTRA_STABLE", None) or MODEL_STABLE_FALLBACK
-                            )
+                            _ultra_stable = getattr(_config_module, "MODEL_ULTRA_STABLE", None) or MODEL_STABLE_FALLBACK
 
                             if state.model_name != _ultra_stable and (
                                 state.attempt >= 2 or state.model_name == MODEL_STABLE_FALLBACK

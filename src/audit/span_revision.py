@@ -24,17 +24,17 @@ from src.engine.prose.span_patch_applier import SpanPatchApplier
 class QuotePatch:
     """1 件の quote → replacement 置換指示。"""
 
-    original_quote: str   # 本文中に実在する断片（逐語引用）
-    replacement: str      # 差し替え文
-    rationale: str = ""   # 書き換え理由（ログ・教訓用。置換には影響しない）
+    original_quote: str  # 本文中に実在する断片（逐語引用）
+    replacement: str  # 差し替え文
+    rationale: str = ""  # 書き換え理由（ログ・教訓用。置換には影響しない）
 
 
 @dataclass(frozen=True)
 class QuotePatchResult:
     """apply_quote_patches の結果。"""
 
-    text: str                       # 置換後本文（不採用の場合は原文と同一）
-    applied_count: int              # 採用された置換件数
+    text: str  # 置換後本文（不採用の場合は原文と同一）
+    applied_count: int  # 採用された置換件数
     rejected: tuple[QuotePatch, ...]  # 未発見・検証不通で採用されなかった置換
 
 

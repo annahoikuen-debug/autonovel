@@ -799,8 +799,7 @@ class Orchestrator:
                         {
                             "from_node": current_agent_name,
                             "to_node": result.next_agent.value
-                            if result.next_agent is not None
-                            and hasattr(result.next_agent, "value")
+                            if result.next_agent is not None and hasattr(result.next_agent, "value")
                             else str(result.next_agent)
                             if result.next_agent is not None
                             else None,
@@ -819,8 +818,7 @@ class Orchestrator:
                                     "ep_num": ctx.ep_num,
                                     "from": current_agent_name,
                                     "to": result.next_agent.value
-                                    if result.next_agent is not None
-                                    and hasattr(result.next_agent, "value")
+                                    if result.next_agent is not None and hasattr(result.next_agent, "value")
                                     else str(result.next_agent)
                                     if result.next_agent is not None
                                     else None,

@@ -97,11 +97,7 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     """2 つの辞書を深くマージする (override が優先)。"""
     result = dict(base)
     for key, val in override.items():
-        if (
-            key in result
-            and isinstance(result[key], dict)
-            and isinstance(val, dict)
-        ):
+        if key in result and isinstance(result[key], dict) and isinstance(val, dict):
             result[key] = _deep_merge(result[key], val)
         else:
             result[key] = val

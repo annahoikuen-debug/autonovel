@@ -66,9 +66,7 @@ class TwoTierAuditor:
             suggested_patch=qual_model.actionable_patch or "",
         )
 
-        final_decision = "pass" if (
-            static_passed and qual_res.score >= get_gate_threshold()
-        ) else "patch_required"
+        final_decision = "pass" if (static_passed and qual_res.score >= get_gate_threshold()) else "patch_required"
 
         return IntegratedAuditReport(
             static_audit=static_res,

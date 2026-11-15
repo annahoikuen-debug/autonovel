@@ -596,7 +596,10 @@ def record_rag_retrieval_error(book_id: int | str, stage: str) -> None:
 audit_revision_total = Counter(
     "audit_revision_total",
     "Total audit revision patch attempts by strategy and outcome",
-    ["strategy", "outcome"],  # strategy: safe_replace|span_polish|quote_patch|local_polish|full_regen | outcome: applied|rejected|not_found
+    [
+        "strategy",
+        "outcome",
+    ],  # strategy: safe_replace|span_polish|quote_patch|local_polish|full_regen | outcome: applied|rejected|not_found
 )
 
 audit_revision_duration_seconds = Histogram(

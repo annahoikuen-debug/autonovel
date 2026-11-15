@@ -57,8 +57,7 @@ class EpisodeBM25Index:
 
         if len(rows) > self.max_docs:
             logger.warning(
-                f"EpisodeBM25Index: book_id={book_id} chunks={len(rows)} > max_docs={self.max_docs}; "
-                f"dense fallback"
+                f"EpisodeBM25Index: book_id={book_id} chunks={len(rows)} > max_docs={self.max_docs}; dense fallback"
             )
             self._evict_and_store(key, None)
             return None
@@ -76,14 +75,10 @@ class EpisodeBM25Index:
         retriever = BM25SparseRetriever()
         retriever.index_documents(documents)
         self._evict_and_store(key, retriever)
-        logger.debug(
-            f"EpisodeBM25Index: built book_id={book_id} docs={len(documents)} max_docs={self.max_docs}"
-        )
+        logger.debug(f"EpisodeBM25Index: built book_id={book_id} docs={len(documents)} max_docs={self.max_docs}")
         return retriever
 
-    def search(
-        self, session: Any, book_id: int, query: str, top_k: int
-    ) -> list[SearchResult]:
+    def search(self, session: Any, book_id: int, query: str, top_k: int) -> list[SearchResult]:
         """book_id スコープで BM25 検索を実行し ``SearchResult`` 列を返す。"""
         retriever = self.get(session, book_id)
         if retriever is None:

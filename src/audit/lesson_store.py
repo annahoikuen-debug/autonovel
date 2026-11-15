@@ -219,9 +219,7 @@ class AuditLessonService:
         min_occurrences: int = DEFAULT_MIN_OCCURRENCES,
     ) -> list[AuditLessonModel]:
         """active 教訓を取得する（注入用）。"""
-        return await self.repo.list_active(
-            book_id=book_id, limit=limit, min_occurrences=min_occurrences
-        )
+        return await self.repo.list_active(book_id=book_id, limit=limit, min_occurrences=min_occurrences)
 
 
 __all__ = [
