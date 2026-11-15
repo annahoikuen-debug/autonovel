@@ -60,7 +60,6 @@ def _module_matches_warning(warning_source: str, known_key: str) -> bool:
 def _import_modules_and_collect_deprecation_warnings() -> dict[str, list[str]]:
     """src/ 配下の import 可能なモジュールを全て import し、
     発生した DeprecationWarning を発生源ごとに収集する。"""
-    import os
 
     warnings_map: dict[str, list[str]] = {}
     src_dir = REPO_ROOT / "src"
