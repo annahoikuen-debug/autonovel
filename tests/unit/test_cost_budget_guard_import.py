@@ -1,4 +1,4 @@
-from src.integrations.cost_guard.analytics import CostCalculator
+from src.domain.services.cost_analytics import CostCalculator
 from src.integrations.cost_guard.budget_guard import CostBudgetGuard
 
 # Test that CostCalculator can be instantiated

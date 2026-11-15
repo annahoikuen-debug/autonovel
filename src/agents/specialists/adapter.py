@@ -333,7 +333,7 @@ class AuditAggregatorNode:
             report = await unified.audit(draft_text)
 
             # 後方互換スコアの生成
-            from src.engine.book_score.mapping import BookScoreResult
+            from src.domain.services.book_score_mapping import BookScoreResult
 
             by_sp = {
                 "reader_hook": report.qualitative.hook_score,

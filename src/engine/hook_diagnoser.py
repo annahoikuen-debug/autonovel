@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from src.services.quality_scorer import QualityScorer
+from src.engine.quality_scorer import QualityScorer
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class HookDiagnoser:
     async def generate_hook_fix(self, chapter: dict[str, Any], api_key: str) -> str:
         """弱いフックの章に対し、章末を改善する修正案を生成する。"""
         if self._llm is None:
-            from src.services.llm_service import LLMService
+            from src.llm.adapters.factory import LLMService
 
             self._llm = LLMService(api_key=api_key)
 

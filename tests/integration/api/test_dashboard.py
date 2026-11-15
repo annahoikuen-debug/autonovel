@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.api.dashboard import router, set_dashboard_engine
+from src.backend.routers.dashboard import router, set_dashboard_engine
 from src.fusion.engine import FusionEngine
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 from src.stores.vector_store import InMemoryVectorStore

@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-
-import warnings
-
-warnings.warn(
-    "src.models.db is deprecated; use docs/MOVEMENT_MAPPING.md (移設先一覧) instead",
-    DeprecationWarning,
-    stacklevel=2,
-)
 import json
 from datetime import datetime
 from typing import Any

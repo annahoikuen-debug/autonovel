@@ -11,7 +11,7 @@ from src.engine.compression.models import CompressionConfig
 from src.agents.orchestrator import AgentContext, AgentResult
 from src.agents.context_builder_agent import ContextBuilderAgent
 from src.agents.writing import WritingAgent
-from src.engine.book_score.service import BookScoreCalculator
+from src.engine.book_score.calculator import BookScoreCalculator
 from src.agents.illustration_agent import IllustrationAgent
 
 

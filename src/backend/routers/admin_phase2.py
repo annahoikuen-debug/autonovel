@@ -14,7 +14,7 @@ from src.backend.config import settings
 from src.core.container import AppContainer
 from src.config.audit_weights import load_weights
 from src.integrations.rag.rag_service import rag_service
-from src.services.reflective_rag import ReflectiveRAGService
+from src.integrations.rag.reflective_rag import ReflectiveRAGService
 from src.agents.enrichment_agent import EnrichmentAgent
 from src.agents.orchestrator import AgentContext
 

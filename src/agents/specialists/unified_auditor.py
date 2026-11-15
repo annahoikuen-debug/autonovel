@@ -26,7 +26,7 @@ def _resolve_audit_llm() -> Any:
     """
     try:
         from src.backend.config import settings
-        from src.services.llm.factory import get_llm_adapter
+        from src.llm.adapters.factory import get_llm_adapter
 
         provider = (settings.LLM_PROVIDER or "").strip().lower()
         if provider in ("", "mock"):

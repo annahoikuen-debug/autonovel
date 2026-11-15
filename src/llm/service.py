@@ -1,17 +1,11 @@
 from __future__ import annotations
 
-import warnings
+"""LLM 統合サービス。
 
-warnings.warn(
-    "src.llm.service is deprecated; use docs/MOVEMENT_MAPPING.md (移設先一覧) instead",
-    DeprecationWarning,
-    stacklevel=2,
-)
-# services/llm_service.py
-"""LLM 統合サービス (後方互換ラッパー)。
-
-src.services.llm.factory.get_llm_adapter への委譲を提供する。
+src.llm.adapters.factory.get_llm_adapter への委譲を提供する。
 3レイヤーモデルルータによる用途別最適化も兼ねる。
+
+PLAN_Q3: 旧 shim（DeprecationWarning 付き）から正規モジュールに昇格。
 """
 
 import logging
@@ -36,13 +30,13 @@ class LLMService:
 
     def get_client(self, model_name: str | None = None):
         """モデル名から LLM アダプタを取得する。"""
-        from src.services.llm.factory import get_llm_adapter
+        from src.llm.adapters.factory import get_llm_adapter
 
         return get_llm_adapter(model_name=model_name)
 
     async def generate(self, prompt: str, system_prompt: str | None = None, **kwargs: Any) -> str:
         """プロンプトからテキストを生成する。"""
-        from src.services.llm.factory import get_llm_adapter
+        from src.llm.adapters.factory import get_llm_adapter
 
         adapter = get_llm_adapter(model_name=kwargs.get("model_name"))
         return await adapter.generate_text(

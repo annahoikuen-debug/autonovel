@@ -1,7 +1,7 @@
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from src.api.health import router as health_router
+from src.backend.routers.health import router as health_router
 
 @pytest.fixture
 def client():

@@ -10,7 +10,7 @@ import time
 from typing import Any, Protocol
 
 from src.backend.config import settings
-from src.backend.logging_config import get_logger
+from src.infrastructure.logging_config import get_logger
 
 logger = get_logger("embedding_service")
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from src.llm.service import LLMService
+from src.llm.adapters.factory import LLMService
 
 logger = logging.getLogger(__name__)
 

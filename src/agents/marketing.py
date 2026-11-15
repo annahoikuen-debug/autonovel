@@ -11,7 +11,7 @@ from src.models.marketing_ctr import (
     ViralTitleRequest,
     ViralTitleResponse,
 )
-from src.llm.service import LLMService
+from src.llm.adapters.factory import LLMService
 
 # Marketing imports for catchphrase functionality
 try:

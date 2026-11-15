@@ -11,7 +11,7 @@ from src.agents.orchestrator import AgentContext, AgentResult
 from src.agents.prompt_composer import PromptComposer
 from src.agents.writing.prose_refiner_agent import ProseRefinerAgent
 from src.domain.entities.scene import Scene, SceneRole
-from src.llm.service import LLMService
+from src.llm.adapters.factory import LLMService
 
 logger = logging.getLogger(__name__)
 

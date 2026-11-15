@@ -17,7 +17,7 @@ def test_networkx_graph_store_regression():
 
 
 def test_cost_budget_guard_regression():
-    from src.integrations.cost_guard.analytics import CostCalculator
+    from src.domain.services.cost_analytics import CostCalculator
     calc = CostCalculator()
     guard = CostBudgetGuard(calculator=calc, budget_limit=10.0)
     # NOTE: check_budget_status は async 化 (check_budget_status_async) された。

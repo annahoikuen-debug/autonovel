@@ -14,7 +14,7 @@ from src.config.kakuyomu_syntax_patterns import (
     CATCHPHRASE_POWER_WORDS,
 )
 from src.integrations.marketing.catchphrase_scorer import score_catchphrase_ctr
-from src.publishing.formatters.platform_copy_formatter import PlatformCopyFormatter
+from src.application.formatters.platform_copy_formatter import PlatformCopyFormatter
 from src.publishing.publishers.kakuyomu import (
     KakuyomuCredentials,
     KakuyomuPublisher,

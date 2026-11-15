@@ -14,11 +14,11 @@ import asyncio
 import json
 import re
 
-from src.backend.logging_config import get_logger
+from src.infrastructure.logging_config import get_logger
 from src.models.graph_schemas import Entity, GraphExtractionResult, Relationship
-from src.services.llm.base import BaseLLMAdapter
-from src.services.llm.factory import get_llm_adapter
-from src.services.llm.prompts import (
+from src.llm.adapters.base import BaseLLMAdapter
+from src.llm.adapters.factory import get_llm_adapter
+from src.llm.adapters.prompts import (
     GRAPH_EXTRACTION_SYSTEM_PROMPT,
     GRAPH_EXTRACTION_USER_PROMPT,
 )
@@ -288,7 +288,7 @@ class ExtractionService:
         if not existing_entity_names or not extracted.entities:
             return extracted
 
-        from src.services.embedding_service import embedding_service
+        from src.integrations.rag.embedding_service import embedding_service
 
         # 既存エンティティ名のベクトル化キャッシュ
         existing_vecs = {}

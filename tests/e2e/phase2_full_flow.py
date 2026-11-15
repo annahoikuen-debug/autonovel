@@ -17,7 +17,7 @@ from src.engine.blind_review import BlindReviewGate
 from src.agents.event_bus import EventBus, AgentEvent
 from src.config.audit_weights import load_weights
 from src.engine.audit.aggregator import AuditAggregator
-from src.services.reflective_rag import ReflectiveRAGService
+from src.integrations.rag.reflective_rag import ReflectiveRAGService
 from src.integrations.rag.rag_service import SearchResult
 from unittest.mock import MagicMock
 

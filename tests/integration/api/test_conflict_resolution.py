@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.api.conflicts import router, set_conflict_store
+from src.backend.routers.conflicts import router, set_conflict_store
 from src.fusion.models import Conflict
 from src.pipeline.emotional_residue import EmotionType
 from src.stores.conflict_store import ConflictStore

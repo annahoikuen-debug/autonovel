@@ -1,7 +1,7 @@
 import pytest
 from src.models.style_profile import StyleProfile, SentenceLengthModel, SentenceEndDistribution
 from src.publishing.formatters.style_distiller import StyleDistillerService
-from src.services.llm.mock_adapter import MockLLMAdapter
+from src.llm.adapters.mock import MockLLMAdapter
 
 
 def test_style_profile_prompt_instruction():

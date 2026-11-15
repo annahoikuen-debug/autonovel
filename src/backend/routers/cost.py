@@ -138,7 +138,7 @@ async def get_budget_consumption_ratio(
     #
     # ここでは「推奨モデルと適用可否を返す」だけで、実際のモデル切替は行わない。
     # 切り替えの判断は既存のゲート（Cooldown / budget gate）側の責務である。
-    from src.integrations.cost_guard.analytics import CostCalculator
+    from src.domain.services.cost_analytics import CostCalculator
     from src.integrations.cost_guard.budget_guard import BudgetStatus as GuardStatus
     from src.integrations.cost_guard.budget_guard import CostBudgetGuard
 

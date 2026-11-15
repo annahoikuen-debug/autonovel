@@ -41,7 +41,7 @@ class BookScoreCalculator:
         self._repository = repository
         if bridge is None:
             try:
-                from src.engine.book_score.mapping import UnifiedBookScoreBridge
+                from src.domain.services.book_score_mapping import UnifiedBookScoreBridge
 
                 self.bridge = UnifiedBookScoreBridge()
             except Exception:
@@ -70,7 +70,7 @@ class BookScoreCalculator:
     ) -> BookScore:
         """8専門家のスコアから UnifiedBookScoreBridge を介して 5次元 BookScore を算出する (Step 31)"""
         if not self.bridge:
-            from src.engine.book_score.mapping import UnifiedBookScoreBridge
+            from src.domain.services.book_score_mapping import UnifiedBookScoreBridge
 
             self.bridge = UnifiedBookScoreBridge()
 
@@ -92,7 +92,7 @@ class BookScoreCalculator:
     ) -> Dict[str, Dict[str, float]]:
         """5次元スコアに対する各専門家の詳細寄与度（獲得点数）を取得する (Step 32)"""
         if not self.bridge:
-            from src.engine.book_score.mapping import UnifiedBookScoreBridge
+            from src.domain.services.book_score_mapping import UnifiedBookScoreBridge
 
             self.bridge = UnifiedBookScoreBridge()
         u5d = self.bridge.map_to_5d(specialist_scores, genre=genre)
@@ -101,7 +101,7 @@ class BookScoreCalculator:
     def get_dimension_to_specialists_mapping(self, genre: str = "general") -> Dict[str, Dict[str, float]]:
         """5次元から8専門家への依存度マトリクスを取得する (Step 34)"""
         if not self.bridge:
-            from src.engine.book_score.mapping import UnifiedBookScoreBridge
+            from src.domain.services.book_score_mapping import UnifiedBookScoreBridge
 
             self.bridge = UnifiedBookScoreBridge()
         return self.bridge.get_matrix_for_genre(genre)

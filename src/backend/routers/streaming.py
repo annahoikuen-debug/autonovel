@@ -15,8 +15,8 @@ from src.backend.auth import require_api_key
 from src.backend.rate_limit import stream_limiter
 from src.domain.entities.easy_mode import EasyModeInput, StreamQueryInput
 from src.services.digest_service import process_chapter
-from src.services.llm.factory import get_llm_adapter
-from src.services.llm.prompts import NOVEL_SYSTEM_PROMPT, NOVEL_USER_PROMPT_TEMPLATE
+from src.llm.adapters.factory import get_llm_adapter
+from src.llm.adapters.prompts import NOVEL_SYSTEM_PROMPT, NOVEL_USER_PROMPT_TEMPLATE
 
 logger = logging.getLogger(__name__)
 

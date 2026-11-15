@@ -119,7 +119,7 @@ def test_stream_post_invokes_cancel_on_disconnect(client: TestClient, monkeypatc
 
     monkeypatch.setattr(streaming_module, "_check_disconnect", _always_disconnected)
 
-    from src.services.llm.mock_adapter import MockLLMAdapter
+    from src.llm.adapters.mock import MockLLMAdapter
 
     cancel_called = {"n": 0}
 
@@ -167,7 +167,7 @@ def test_stream_invokes_cancel_on_disconnect(
 
     monkeypatch.setattr(streaming_module, "_check_disconnect", _always_disconnected)
 
-    from src.services.llm.mock_adapter import MockLLMAdapter
+    from src.llm.adapters.mock import MockLLMAdapter
 
     cancel_called = {"n": 0}
 

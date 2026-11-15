@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
-from src.integrations.cost_guard.analytics import CostCalculator
+from src.domain.services.cost_analytics import CostCalculator
 from src.integrations.cost_guard.budget_guard import CostBudgetGuard, BudgetStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 

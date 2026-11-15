@@ -7,7 +7,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 from src.agents.audit_agent import AuditAgent
 from src.agents.orchestrator import AgentContext, AgentName
-from src.engine.conflict_report_service import ConflictReportService
+from src.domain.services.conflict_report_service import ConflictReportService
 from src.services.learning_data_service import LearningDataService
 
 

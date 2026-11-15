@@ -10,7 +10,7 @@ from unittest.mock import patch, AsyncMock
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from src.api.health import router
+from src.backend.routers.health import router
 
 app = FastAPI()
 app.include_router(router)

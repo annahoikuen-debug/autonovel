@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from src.backend.sharp_edge_preserver import check_edges_preserved
-from src.llm.service import LLMService
+from src.llm.adapters.factory import LLMService
 from src.models.sharp_edge import SharpEdgeSpec
 
 

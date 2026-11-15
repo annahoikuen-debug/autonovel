@@ -21,8 +21,8 @@ from src.backend.security.owner_guard import verify_book_ownership
 from src.domain.entities.easy_mode import EasyModeInput, GenerationResponse
 from src.services.digest_service import process_chapter
 from src.engine.graph_pipeline import graph_pipeline_service
-from src.services.llm.factory import get_llm_adapter
-from src.services.llm.prompts import (
+from src.llm.adapters.factory import get_llm_adapter
+from src.llm.adapters.prompts import (
     NOVEL_SYSTEM_PROMPT,
     NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE,
     SUGGESTIONS_PROMPT_TEMPLATE,
@@ -161,7 +161,7 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
     spine_section = ""
     try:
         from config.story_spine import resolve_spine
-        from src.services.llm.prompts import build_spine_section
+        from src.llm.adapters.prompts import build_spine_section
 
         pattern_key = resolve_pattern_key(genre, explicit=pattern_key)
 

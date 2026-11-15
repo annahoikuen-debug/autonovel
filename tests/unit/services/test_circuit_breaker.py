@@ -1,5 +1,5 @@
 import time
-from src.services.llm.circuit_breaker import CircuitBreaker, CircuitState
+from src.llm.circuit_breaker import CircuitBreaker, CircuitState
 
 def test_circuit_breaker_transitions_to_open():
     cb = CircuitBreaker(failure_threshold=3, recovery_timeout=0.1)

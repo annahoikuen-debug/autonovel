@@ -16,8 +16,8 @@ from src.models.style_profile import (
     SentenceLengthModel,
     StyleProfile,
 )
-from src.services.llm.base import BaseLLMAdapter
-from src.services.llm.factory import get_llm_adapter
+from src.llm.adapters.base import BaseLLMAdapter
+from src.llm.adapters.factory import get_llm_adapter
 
 logger = logging.getLogger(__name__)
 

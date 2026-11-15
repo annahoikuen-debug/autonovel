@@ -5,7 +5,7 @@ import logging
 import os
 from unittest.mock import patch
 
-from src.backend.logging_config import (
+from src.infrastructure.logging_config import (
     _ContextFilter,
     _extra_attributes,
     _is_text_mode,

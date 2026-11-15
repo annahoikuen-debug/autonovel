@@ -13,7 +13,7 @@ from src.core.container import AppContainer
 from src.core.exceptions import AppError
 from src.core.observability import TraceContext
 from src.core.llm_gateway import LLMGateway
-from src.services.llm.prompts import build_spine_summary
+from src.llm.adapters.prompts import build_spine_summary
 from src.services.spine_resolver import resolve_spine
 from src.models.api_schemas import (
     AuditPlanRequest,

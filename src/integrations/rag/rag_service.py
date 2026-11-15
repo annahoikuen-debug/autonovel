@@ -20,7 +20,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from src.backend.config import settings
-from src.backend.logging_config import get_logger
+from src.infrastructure.logging_config import get_logger
 from src.infrastructure.database.models.chunk import HAS_PGVECTOR, ChapterChunk
 from src.integrations.rag.embedding_service import embedding_service
 from src.integrations.vector_store import BaseVectorStore, get_default_store

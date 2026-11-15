@@ -87,7 +87,7 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
     from src.agents.specialists.adapter import AuditAggregatorNode
     from src.agents.illustration_agent import IllustrationAgent
     from src.agents.marketing import MarketingAgent
-    from src.services.llm.factory import get_llm_adapter
+    from src.llm.adapters.factory import get_llm_adapter
     from src.publishing.illustration.image_service import ImageService
     from src.integrations.rag.factory import build_reflective_rag
     from src.integrations.rag.rag_service import rag_service

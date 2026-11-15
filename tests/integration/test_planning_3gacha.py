@@ -8,7 +8,7 @@ from unittest.mock import AsyncMock, MagicMock
 from dataclasses import dataclass
 
 from src.backend.planning_service import PlanningService
-from src.engine.book_score.service import BookScoreCalculator
+from src.engine.book_score.calculator import BookScoreCalculator
 
 
 @dataclass

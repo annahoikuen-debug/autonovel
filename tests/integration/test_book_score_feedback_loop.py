@@ -7,7 +7,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.backend.writing_service import WritingService
-from src.engine.book_score.service import BookScoreCalculator
+from src.engine.book_score.calculator import BookScoreCalculator
 
 
 @pytest.fixture

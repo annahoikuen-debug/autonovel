@@ -46,7 +46,7 @@ def call_llm_api(prompt: str, system_prompt: Optional[str] = None) -> str:
         str: LLMからの生のレスポンス（文字列）
     """
     try:
-        from src.services.llm.factory import get_llm_adapter
+        from src.llm.adapters.factory import get_llm_adapter
 
         adapter = get_llm_adapter()
         if hasattr(adapter, "generate_text_sync"):

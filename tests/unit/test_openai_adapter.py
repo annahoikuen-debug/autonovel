@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.services.llm.openai_adapter import OpenAIAdapter
+from src.llm.adapters.openai import OpenAIAdapter
 
 
 @pytest.fixture

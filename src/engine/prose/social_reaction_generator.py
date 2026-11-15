@@ -8,7 +8,7 @@ from __future__ import annotations
 import json
 import logging
 from typing import List
-from src.llm.service import LLMService
+from src.llm.adapters.factory import LLMService
 from src.models.social_reaction import StreamComment, ForumPost
 
 logger = logging.getLogger(__name__)

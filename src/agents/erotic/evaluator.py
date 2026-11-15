@@ -190,7 +190,7 @@ class EroticQualityScorer:
 
         if llm_adapter is None:
             try:
-                from src.services.llm.factory import get_llm_adapter
+                from src.llm.adapters.factory import get_llm_adapter
 
                 llm_adapter = get_llm_adapter()
             except Exception:

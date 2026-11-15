@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from src.agents.memory.manager import MemoryManager
-from src.api.agent_memory import router, set_agent_memory_manager
+from src.backend.routers.agent_memory import router, set_agent_memory_manager
 
 
 def test_core_memory_dump():

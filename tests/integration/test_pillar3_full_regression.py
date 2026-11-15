@@ -17,7 +17,7 @@ from src.engine.blind_review import (
 from src.engine.nlp.japanese_tokenizer import JapaneseTokenizer
 from src.integrations.rag.rrf_fusion import compute_rrf_scores
 from src.integrations.rag.query_reformulator import QueryReformulator
-from src.services.reflective_rag import ReflectiveRAGService
+from src.integrations.rag.reflective_rag import ReflectiveRAGService
 from src.integrations.rag.rag_service import SearchResult
 
 # Part 4 & 5 imports

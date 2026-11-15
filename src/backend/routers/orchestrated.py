@@ -211,7 +211,7 @@ async def export_orchestrated_package(
     logger.info("Orchestrated export requested: book_id=%s", book_id)
     metrics.increment("orchestrated_exports_attempted")
     from src.agents.marketing import MarketingAgent
-    from src.services.llm.factory import get_llm_adapter
+    from src.llm.adapters.factory import get_llm_adapter
 
     # MarketingAgent で ZIP 生成
     llm_adapter = get_llm_adapter()

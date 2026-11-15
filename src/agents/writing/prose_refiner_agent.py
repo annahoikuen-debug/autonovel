@@ -3,7 +3,7 @@ import time
 from typing import Optional, Any
 from src.models.prose_refinement import ProseRefineResult, RefinementDetail
 from src.engine.prose.few_shot_selector import FewShotSelector
-from src.llm.service import LLMService
+from src.llm.adapters.factory import LLMService
 import logging
 
 logger = logging.getLogger(__name__)

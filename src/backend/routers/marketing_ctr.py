@@ -15,7 +15,7 @@ from src.backend.auth import get_prompt_manager
 from src.backend.rate_limit import generate_limiter
 from src.models.marketing_ctr import ViralTitleRequest, ViralTitleResponse
 
-from src.services.llm.factory import get_llm_adapter
+from src.llm.adapters.factory import get_llm_adapter
 
 logger = logging.getLogger(__name__)
 

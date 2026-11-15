@@ -4,7 +4,7 @@ from src.domain.schemas.chapter import ChapterCreateRequest, SceneBeat, Cliffhan
 from src.domain.schemas.character import CharacterCreateRequest
 from src.domain.schemas.foreshadowing import ForeshadowingCreateRequest
 from src.engine.auditors.hybrid_auditor import TwoTierAuditor
-from src.publishing.formatters.platform_copy_formatter import PlatformCopyFormatter
+from src.application.formatters.platform_copy_formatter import PlatformCopyFormatter
 from src.publishing.exporters.commercial_epub_builder import PureCommercialEpubBuilder
 
 @pytest.mark.asyncio

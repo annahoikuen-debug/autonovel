@@ -3,7 +3,7 @@
 import logging
 import pytest
 
-from src.backend.logging_config import _SensitiveDataFilter, configure
+from src.infrastructure.logging_config import _SensitiveDataFilter, configure
 
 
 @pytest.fixture(scope="session", autouse=True)

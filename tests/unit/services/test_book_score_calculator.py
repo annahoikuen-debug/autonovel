@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from src.engine.book_score.service import BookScore, BookScoreCalculator
+from src.engine.book_score.calculator import BookScore, BookScoreCalculator
 
 
 def make_score(overall=70.0, structure=70.0, coherency=70.0, factual=70.0, visual=70.0, reader=70.0):
