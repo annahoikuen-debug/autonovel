@@ -21,7 +21,7 @@ from src.agents.specialists import (
 )
 from src.config.weight_variants import load_variants_from_yaml
 from src.engine.audit.aggregator import AuditAggregator, BookScoreResult
-from src.services.experiment_allocator import ExperimentAllocator, DEFAULT_ALLOCATOR
+from src.domain.services.experiment_allocator import ExperimentAllocator, DEFAULT_ALLOCATOR
 
 logger = logging.getLogger(__name__)
 

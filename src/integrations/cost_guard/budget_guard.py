@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from enum import Enum
-from src.services.cost_analytics import CostCalculator
+from src.domain.services.cost_analytics import CostCalculator
 from src.backend.database.repositories import CostRepository
 from sqlalchemy.ext.asyncio import AsyncSession
 

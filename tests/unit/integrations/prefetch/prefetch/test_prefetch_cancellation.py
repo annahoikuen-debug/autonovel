@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[4]))
 
-from src.services import semantic_cache as sc  # noqa: E402
+from src.integrations import semantic_cache as sc  # noqa: E402
 from src.integrations.rag.prefetch_service import RagPrefetchService  # noqa: E402
 
 

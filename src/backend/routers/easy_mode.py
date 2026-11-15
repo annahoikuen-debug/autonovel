@@ -100,7 +100,7 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
     # 文体（Style DNA）の解決とプロンプト注入
     from src.models.style_profile import StyleProfile
     from src.presets.loader import load_preset
-    from src.services.cadence_reformatter import cadence_reformatter
+    from src.application.formatters.cadence_reformatter import cadence_reformatter
 
     style_override = payload.get("style_override")
     style_id = character.get("style_id")

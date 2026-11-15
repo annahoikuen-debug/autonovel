@@ -1,4 +1,4 @@
-from src.services.cadence_reformatter import CadenceReformatter
+from src.application.formatters.cadence_reformatter import CadenceReformatter
 
 
 def test_cadence_reformatter_repeated_endings():

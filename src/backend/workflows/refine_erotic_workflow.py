@@ -23,7 +23,7 @@ class RefineEroticWorkflow(BaseWorkflow):
         try:
             from src.engine.prompts.erotic_specialist import EroticSpecialist
             from src.agents.erotic_integrity import EroticIntegrityChecker
-            from src.services.erotic_afterglow_evaluator import AfterglowEvaluator
+            from src.domain.services.erotic_afterglow_evaluator import AfterglowEvaluator
 
             self._erotic_specialist = EroticSpecialist()
             self._integrity_checker = EroticIntegrityChecker()
@@ -120,7 +120,7 @@ class RefineEroticWorkflow(BaseWorkflow):
             is_ok, issues, _, _ = checker.check_all(refined_content, consent_state=consent_state)
 
             # 3.5. afterglow 蜩∬ｳｪ隧穂ｾ｡・・eak 縺ｮ蠕後↓ afterglow 縺後≠繧句ｴ蜷茨ｼ・
-            from src.services.erotic_afterglow_evaluator import AfterglowEvaluator
+            from src.domain.services.erotic_afterglow_evaluator import AfterglowEvaluator
 
             evaluator = AfterglowEvaluator()
             # afterglow 驛ｨ蛻・ｒ邁｡譏捺歓蜃ｺ・域怙蠕後・ 1/4 繧・afterglow 蛯ｾ蜷代→縺励※隧穂ｾ｡・・

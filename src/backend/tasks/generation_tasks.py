@@ -203,7 +203,7 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
         # v5.3 / Step 2: LLM 呼び出しを計測付きで注入する。
         # 従来は全スキルが素のアダプタを共有しており、1話あたりの
         # LLM 回数・トークン・コストを算出できなかった（v6 効果検証の前提）。
-        from src.services.llm.tracked_adapter import build_tracked_adapters
+        from src.llm.adapters.tracked import build_tracked_adapters
 
         tracked = build_tracked_adapters(
             llm_adapter=llm_adapter,

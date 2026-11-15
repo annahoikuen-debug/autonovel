@@ -28,7 +28,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from src.services.llm.tracked_adapter import build_tracked_adapters  # noqa: E402
+from src.llm.adapters.tracked import build_tracked_adapters  # noqa: E402
 from src.services.token_tracker import TokenTracker  # noqa: E402
 
 #: 1話あたりの LLM 呼び出し回数の上限（現状構造のベースライン）
@@ -110,7 +110,7 @@ def measure_real_audit_calls() -> int:
     import asyncio
 
     from src.agents.audit_agent import AuditAgent
-    from src.services.llm.tracked_adapter import build_tracked_adapters
+    from src.llm.adapters.tracked import build_tracked_adapters
 
     tracker = TokenTracker()
     adapters = build_tracked_adapters(

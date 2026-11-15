@@ -17,7 +17,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent.parent.parent
 if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
-from src.services.llm.tracked_adapter import (  # noqa: E402
+from src.llm.adapters.tracked import (  # noqa: E402
     TrackedLLMAdapter,
     build_tracked_adapters,
 )

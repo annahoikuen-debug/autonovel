@@ -3,7 +3,7 @@
 import pytest
 
 from src.engine.episode_context import EpisodeContextBuilder
-from src.services.erotic_afterglow_evaluator import AfterglowEvaluator
+from src.domain.services.erotic_afterglow_evaluator import AfterglowEvaluator
 
 
 class TestEpisodeContextBuilder:
