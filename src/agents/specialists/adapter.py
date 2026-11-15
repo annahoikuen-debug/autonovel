@@ -9,16 +9,7 @@ from typing import Any, Optional
 
 from src.agents.orchestrator import AgentContext, AgentName, AgentResult
 from src.agents.specialist_auditor_base import SpecialistAuditor
-from src.agents.specialists import (
-    ConsistencyAuditor,
-    CreativityAuditor,
-    EmotionCurveAuditor,
-    FactualAuditor,
-    MultimodalAuditor,
-    ReaderHookAuditor,
-    StructureAuditor,
-    StyleAuditor,
-)
+from src.agents.specialists.unified_auditor import UnifiedAuditor
 from src.config.weight_variants import load_variants_from_yaml
 from src.engine.audit.aggregator import AuditAggregator, BookScoreResult
 from src.domain.services.experiment_allocator import ExperimentAllocator, DEFAULT_ALLOCATOR
@@ -40,18 +31,11 @@ def create_default_specialists(llm: Any = None) -> list[SpecialistAuditor]:
     if llm is None:
         logger.error(
             "create_default_specialists() was called without an LLM client. "
-            "All 8 specialist auditors will degrade to score=50.0 "
+            "All specialist auditors will degrade to score=50.0 "
             "(degraded=True) unless the caller passes llm=... ."
         )
     return [
-        ConsistencyAuditor(llm=llm),
-        CreativityAuditor(llm=llm),
-        ReaderHookAuditor(llm=llm),
-        EmotionCurveAuditor(llm=llm),
-        StyleAuditor(llm=llm),
-        FactualAuditor(llm=llm),
-        StructureAuditor(llm=llm),
-        MultimodalAuditor(llm=llm),
+        UnifiedAuditor(llm=llm),
     ]
 
 

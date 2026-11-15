@@ -11,14 +11,25 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from src.agents.context_builder_agent import ContextBuilderAgent
-from src.agents.specialists.consistency_auditor import (
-    _extract_foreshadowing_descriptions,
-)
 from src.models.foreshadowing_status import ForeshadowingScope, ForeshadowingStatus
 from src.engine.foreshadowing.planner import (
     DEFAULT_TOTAL_EPISODES,
     plan_foreshadowing,
 )
+
+
+def _extract_foreshadowing_descriptions(text: str) -> list[str]:
+    """formatted_foreshadowings テキストから説明部分を抽出する。
+
+    フォーマット: "- **{id}** (第N話提示 → 第M話回収予定): 『{title}』{desc} [現状: {status}]"
+    """
+    import re
+
+    descriptions: list[str] = []
+    # "- **ID** (...): 『タイトル』description [現状: status]" から description を抽出
+    for match in re.finditer(r"-\s\*\*[^+\*]*?\*\*\s*\([^)]*\):\s*『[^』]』\s*(.+?)(?:\s*\[現状:|\Z)", text):
+        descriptions.append(match.group(1).strip())
+    return descriptions
 
 
 # ── 1. ステートマシンの遷移ガード ───────────────────────────────

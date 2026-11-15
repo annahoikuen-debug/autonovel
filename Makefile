@@ -1,7 +1,7 @@
 # AutoNovel Makefile - 一般的な開発タスクのエイリアス。
 # Windows でも GNU Make (Git for Windows 同梱等) で実行可能。
 
-PYTHON ?= python3
+PYTHON ?=.venv/bin/python
 
 .PHONY: help install dev test lint lint-layers typecheck openapi frontend-test frontend-lint run dev-up dev-down prod-up prod-down clean verify test-unit test-integration test-contract test-perf test-migration format-check check-migrations test-security
 

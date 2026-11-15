@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 
-from src.services.llm.prompts import (
+from src.llm.adapters.prompts import (
     NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE,
     build_spine_section,
 )

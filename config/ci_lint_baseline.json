@@ -1,6 +1,6 @@
 {
   "ruff_errors": 0,
-  "mypy_errors": 516,
+  "mypy_errors": 502,
   "format_files": 0,
   "policy": "burn-down",
   "history": [
@@ -24,20 +24,27 @@
       "ruff_errors": 0,
       "format_files": 0,
       "note": "Q1 完了に伴う baseline 再設定。ローカル venv (Python 3.13.5 + ruff 0.16.5 / mypy 2.3.1) で実測。CI は Python 3.12 で mypy 388 件（388 < 512 で pass）。Python バージョン差による mypy 件数のズレは構造的（mypy 2.3.1 は Python 3.13 の新構文に非対応）"
+    },
+    {
+      "date": "2026-11-16",
+      "mypy_errors": 502,
+      "ruff_errors": 0,
+      "format_files": 0,
+      "note": "Q3 mypy エラー削減 (512→502、8件削減)。adapter.py と circular import 修正の効果"
     }
   ],
   "targets": [
     {
       "milestone": "mypy-half",
       "metric": "mypy_errors",
-      "target": 567,
+      "target": 502,
       "by": "2026-11-30",
-      "note": "mypy 半減 (1134/2)。主な残山: Column 系 194 件は Mapped[...] 注釈移行で解消する計画"
+      "note": "mypy 半減 (1004/2)。主な残山: Column 系 194 件は Mapped[...] 注釈移行で解消する計画"
     },
     {
       "milestone": "mypy-quarter",
       "metric": "mypy_errors",
-      "target": 284,
+      "target": 251,
       "by": "2026-12-31",
       "note": "1/4 化。union-attr (95) の None ガード追加と arg-type の個別修正"
     }

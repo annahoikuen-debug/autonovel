@@ -14,6 +14,17 @@ def create_genai_client(api_key: str):
     return genai.Client(api_key=api_key)
 
 
+def LLMGateway(llm: Any = None, repo: Any = None, **kwargs: Any):
+    """旧 LLMGateway（LLMGenerateResultProxy）の後方互換ファクトリ。
+
+    PLAN_Q3: LLMProviderFactory/LLMGenerateResultProxy は削除済み。
+    代替として src.llm.service.LLMService を返す。
+    """
+    from src.llm.service import LLMService
+
+    return LLMService(llm=llm, repo=repo, **kwargs)
+
+
 class SemanticCacheManager:
     """意味的キャッシュマネージャ"""
 

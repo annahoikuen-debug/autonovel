@@ -43,6 +43,51 @@ class LLMService:
             prompt=prompt, system_prompt=system_prompt or "", max_tokens=kwargs.get("max_tokens", 2000)
         )
 
+    async def generate_text(
+        self,
+        purpose_or_request: Any = "writing",
+        prompt: str = "",
+        system_prompt: str | None = None,
+        temp: float = 0.7,
+        model_name: str | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """テキスト生成（旧 LLMGateway.generate_text 互換）。
+
+        アダプタの生レスポンスをそのまま返す（GenerateResult に包まない）。
+        """
+        adapter = self.get_client(model_name=model_name)
+        return await adapter.generate_text(
+            prompt=prompt,
+            system_prompt=system_prompt or "",
+            max_tokens=kwargs.get("max_tokens", 2000),
+            stream_callback=kwargs.get("stream_callback"),
+        )
+
+    async def generate_json(
+        self,
+        purpose_or_request: Any = "writing",
+        prompt: str = "",
+        response_schema: Any = None,
+        system_instruction: str | None = None,
+        temp: float = 0.7,
+        model_name: str | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """JSON 生成（旧 LLMGateway.generate_json 互換）。
+
+        アダプタの生レスポンスをそのまま返す（GenerateResult に包まない）。
+        """
+        adapter = self.get_client(model_name=model_name)
+        return await adapter.generate_json(
+            model_name=model_name,
+            prompt=prompt,
+            response_schema=response_schema,
+            system_prompt=system_instruction or "",
+            temp=temp,
+            stream_callback=kwargs.get("stream_callback"),
+        )
+
     def resolve_model(self, purpose: str, llm_config: dict | None = None, **kwargs: Any) -> str:
         """用途別モデルを解決する (後方互換メソッド)。"""
         return resolve_model_for_purpose(purpose, llm_config or {})
