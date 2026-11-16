@@ -12,7 +12,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base_orm import Base
 
@@ -37,20 +38,22 @@ class AuditLessonModel(Base):
     __tablename__ = "audit_lessons"
     __table_args__ = {"extend_existing": True}
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    book_id = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    book_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("books.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    episode_num = Column(Integer, nullable=False, index=True)
-    dimension = Column(String(64), nullable=False, index=True)
-    lesson_text = Column(Text, nullable=False)
-    severity = Column(String(16), nullable=False, default="medium")
-    occurrences = Column(Integer, nullable=False, default=1)
-    status = Column(String(16), nullable=False, default="active", index=True)
-    first_seen_episode = Column(Integer, nullable=False)
-    last_seen_episode = Column(Integer, nullable=False)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    episode_num: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    dimension: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
+    lesson_text: Mapped[str] = mapped_column(Text, nullable=False)
+    severity: Mapped[str] = mapped_column(String(16), nullable=False, default="medium")
+    occurrences: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="active", index=True)
+    first_seen_episode: Mapped[int] = mapped_column(Integer, nullable=False)
+    last_seen_episode: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow
+    )

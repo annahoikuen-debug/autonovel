@@ -12,7 +12,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text, UniqueConstraint
+from sqlalchemy import DateTime, ForeignKey, Integer, Text, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base_orm import Base
 
@@ -44,20 +45,22 @@ class DigestRollupModel(Base):
         {"extend_existing": True},
     )
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    book_id = Column(
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    book_id: Mapped[int] = mapped_column(
         Integer,
         ForeignKey("books.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    level = Column(Text, nullable=False)
-    start_ep = Column(Integer, nullable=False)
-    end_ep = Column(Integer, nullable=False)
-    digest_text = Column(Text, nullable=False)
-    stale_at = Column(DateTime, nullable=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    level: Mapped[str] = mapped_column(Text, nullable=False)
+    start_ep: Mapped[int] = mapped_column(Integer, nullable=False)
+    end_ep: Mapped[int] = mapped_column(Integer, nullable=False)
+    digest_text: Mapped[str] = mapped_column(Text, nullable=False)
+    stale_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     def __repr__(self) -> str:
         return (

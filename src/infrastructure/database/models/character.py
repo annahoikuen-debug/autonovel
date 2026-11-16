@@ -1,12 +1,7 @@
 from __future__ import annotations
 
-from sqlalchemy import (
-    Column,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-)
+from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base_orm import Base
 from src.infrastructure.database.types import CompatibleJSON
@@ -21,11 +16,11 @@ from src.infrastructure.database.types import CompatibleJSON
 class Character(Base):
     __tablename__ = "characters"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
-    name = Column(String(100))
-    role = Column(String(50))
-    personality = Column(String(500), default="")
-    ability = Column(String(500), default="")
-    registry_data = Column(Text)
-    voice_profile_json = Column(CompatibleJSON, nullable=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    book_id: Mapped[int] = mapped_column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str | None] = mapped_column(String(100))
+    role: Mapped[str | None] = mapped_column(String(50))
+    personality: Mapped[str] = mapped_column(String(500), default="")
+    ability: Mapped[str] = mapped_column(String(500), default="")
+    registry_data: Mapped[str | None] = mapped_column(Text)
+    voice_profile_json: Mapped[dict | None] = mapped_column(CompatibleJSON, nullable=True)
