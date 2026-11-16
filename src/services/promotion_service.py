@@ -51,10 +51,10 @@ class PromotionService:
             existing = await session.execute(InternalState.__table__.select().where(InternalState.key == key))
             row = existing.fetchone()
             if row is None:
-                await session.execute(InternalState.__table__.insert().values(key=key, value=f"{token}|{expires_at}"))
+                await session.execute(InternalState.__table__.insert().values(key=key, value=f"{token}|{expires_at}"))  # type: ignore[attr-defined]
             else:
                 await session.execute(
-                    InternalState.__table__.update()
+                    InternalState.__table__.update()  # type: ignore[attr-defined]
                     .where(InternalState.key == key)
                     .values(value=f"{token}|{expires_at}", updated_at=func.now())
                 )
@@ -91,7 +91,7 @@ class PromotionService:
                     book_row = result.fetchone()
                     if book_row is not None:
                         await session.execute(
-                            Book.__table__.update().where(Book.id == db_book_id).values(mode="advanced")
+                            Book.__table__.update().where(Book.id == db_book_id).values(mode="advanced")  # type: ignore[attr-defined]
                         )
             elif str(book_id).isdigit():
                 # 直接の数値 book_id 指定による昇格対応
@@ -99,7 +99,7 @@ class PromotionService:
                 result = await session.execute(Book.__table__.select().where(Book.id == b_id))
                 book_row = result.fetchone()
                 if book_row is not None:
-                    await session.execute(Book.__table__.update().where(Book.id == b_id).values(mode="advanced"))
+                    await session.execute(Book.__table__.update().where(Book.id == b_id).values(mode="advanced"))  # type: ignore[attr-defined]
                 else:
                     raise ValueError(f"Book record not found for db_book_id={b_id}")
             else:
@@ -132,7 +132,7 @@ class PromotionService:
                                 total_episodes=total_eps or p_row.ep_num,
                             )
                             await session.execute(
-                                ForeshadowingModel.__table__.insert().values(
+                                ForeshadowingModel.__table__.insert().values(  # type: ignore[attr-defined]
                                     book_id=target_b_id,
                                     title=f"第{p_row.ep_num}話: {getattr(p_row, 'title', '') or '伏線'}",
                                     description=note.strip(),
@@ -152,10 +152,10 @@ class PromotionService:
             row = existing.fetchone()
             payload = f"{state_token}|{expires_at}"
             if row is None:
-                await session.execute(InternalState.__table__.insert().values(key=key, value=payload))
+                await session.execute(InternalState.__table__.insert().values(key=key, value=payload))  # type: ignore[attr-defined]
             else:
                 await session.execute(
-                    InternalState.__table__.update()
+                    InternalState.__table__.update()  # type: ignore[attr-defined]
                     .where(InternalState.key == key)
                     .values(value=payload, updated_at=func.now())
                 )

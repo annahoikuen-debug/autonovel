@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from sqlalchemy import (
-    Column,
-    DateTime,
-    Float,
-    Index,
-    Integer,
-    String,
-    func,
-)
+from datetime import datetime
+
+from sqlalchemy import DateTime, Float, Index, Integer, String, func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base_orm import Base
 
@@ -22,14 +17,14 @@ from src.infrastructure.database.models.base_orm import Base
 class PromptUsageLog(Base):
     __tablename__ = "prompt_usage_log"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, nullable=False, server_default=func.now(), index=True)
-    template_name = Column(String(255), nullable=False, index=True)
-    hits = Column(Integer, nullable=False, default=0)
-    total_time_ms = Column(Float, nullable=False, default=0.0)
-    avg_time_ms = Column(Float, nullable=False, default=0.0)
-    last_accessed = Column(DateTime, nullable=True)
-    error_count = Column(Integer, nullable=False, default=0)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    timestamp: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now(), index=True)
+    template_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    hits: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_time_ms: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    avg_time_ms: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    last_accessed: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    error_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
     __table_args__ = (
         Index("idx_prompt_usage_timestamp", "timestamp"),

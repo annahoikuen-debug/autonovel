@@ -186,7 +186,7 @@ class DbForeshadowingRepository:
                 ForeshadowingModel.book_id == book_id,
                 ForeshadowingModel.status.in_(active_statuses),
                 ForeshadowingModel.target_episode.isnot(None),
-                ForeshadowingModel.target_episode < current_episode,
+                ForeshadowingModel.target_episode < current_episode,  # type: ignore[arg-type]
             )
             .order_by(ForeshadowingModel.planted_episode)
         )

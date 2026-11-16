@@ -166,7 +166,7 @@ def _fix_stripe_webhook_events() -> None:
             ),
             sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=True),
             sa.Column("processed_at", sa.DateTime(), server_default=sa.func.now(), nullable=True),
-            sa.PrimaryKeyConstraint("event_id"),
+            sa.PrimaryKeyConstraint("event_id"),  # type: ignore[list-item]
         ],
         # stripe_event_id → event_id、processed → status へ移行
         "SELECT stripe_event_id, "
@@ -201,8 +201,8 @@ def _fix_credit_transactions_default() -> None:
             sa.Column("task_id", sa.String(length=100), nullable=True),
             sa.Column("description", sa.String(length=255), nullable=False),
             sa.Column("created_at", sa.DateTime(), server_default=sa.func.now(), nullable=True),
-            sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
-            sa.PrimaryKeyConstraint("id"),
+            sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),  # type: ignore[list-item]
+            sa.PrimaryKeyConstraint("id"),  # type: ignore[list-item]
         ],
         "SELECT id, user_id, amount, balance_after, transaction_type, task_id, "
         "description, COALESCE(created_at, CURRENT_TIMESTAMP) FROM credit_transactions",
