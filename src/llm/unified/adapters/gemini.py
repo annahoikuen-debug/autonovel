@@ -20,10 +20,11 @@ class GeminiUnifiedClient(IUnifiedLLMClient):
         response = self.client.models.generate_content(
             model=req.model or self.model, contents=req.prompt, config=self._build_config(req)
         )
+        usage_metadata = response.usage_metadata
         usage = LLMUsage(
-            prompt_tokens=response.usage_metadata.prompt_token_count or 0,
-            completion_tokens=response.usage_metadata.candidates_token_count or 0,
-            total_tokens=response.usage_metadata.total_token_count or 0,
+            prompt_tokens=usage_metadata.prompt_token_count if usage_metadata else 0,
+            completion_tokens=usage_metadata.candidates_token_count if usage_metadata else 0,
+            total_tokens=usage_metadata.total_token_count if usage_metadata else 0,
         )
         return LLMResponse(content=response.text or "", model=req.model or self.model, usage=usage)
 
@@ -38,10 +39,11 @@ class GeminiUnifiedClient(IUnifiedLLMClient):
                 model=req.model or self.model, contents=req.prompt, config=self._build_config(req)
             ),
         )
+        usage_metadata = response.usage_metadata
         usage = LLMUsage(
-            prompt_tokens=response.usage_metadata.prompt_token_count or 0,
-            completion_tokens=response.usage_metadata.candidates_token_count or 0,
-            total_tokens=response.usage_metadata.total_token_count or 0,
+            prompt_tokens=usage_metadata.prompt_token_count if usage_metadata else 0,
+            completion_tokens=usage_metadata.candidates_token_count if usage_metadata else 0,
+            total_tokens=usage_metadata.total_token_count if usage_metadata else 0,
         )
         return LLMResponse(content=response.text or "", model=req.model or self.model, usage=usage)
 

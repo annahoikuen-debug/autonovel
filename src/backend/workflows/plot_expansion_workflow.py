@@ -38,6 +38,7 @@ class PlotExpansionWorkflow(BaseWorkflow):
         gen_to = kwargs["gen_to"]
         mode = kwargs.get("mode", "final")
 
+        assert self.repo is not None
         bible = await self.repo.get_latest_bible(book_id)
         logger.debug(
             "plot_expansion bible=%r settings=%r",

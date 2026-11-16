@@ -256,6 +256,7 @@ async def get_scene_illustration(
             )
             .order_by(Illustration.id.desc())
         )
+        assert uow.session is not None
         result = await uow.session.execute(stmt)
         candidates = list(result.scalars().all())
 

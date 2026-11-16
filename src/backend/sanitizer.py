@@ -127,7 +127,7 @@ class NormalizationFlow:
                     try:
                         val = data[alias]
                         data["ep_num"] = (
-                            int(val) if isinstance(val, (int, float)) else int(re.search(r"\d+", str(val)).group())
+                            int(val) if isinstance(val, (int, float)) else int(re.search(r"\d+", str(val)).group())  # type: ignore[union-attr]
                         )
                         break
                     except Exception:
@@ -139,7 +139,7 @@ class NormalizationFlow:
                     try:
                         val = data[alias]
                         data["scene_number"] = (
-                            int(val) if isinstance(val, (int, float)) else int(re.search(r"-?\d+", str(val)).group())
+                            int(val) if isinstance(val, (int, float)) else int(re.search(r"-?\d+", str(val)).group())  # type: ignore[union-attr]
                         )
                         break
                     except Exception:
@@ -201,7 +201,7 @@ class NormalizationFlow:
         for num_key in self._numeric_fields:
             if num_key in data and not isinstance(data[num_key], int):
                 try:
-                    data[num_key] = int(re.search(r"-?\d+", str(data[num_key])).group())
+                    data[num_key] = int(re.search(r"-?\d+", str(data[num_key])).group())  # type: ignore[union-attr]
                 except Exception:
                     data[num_key] = 0
 

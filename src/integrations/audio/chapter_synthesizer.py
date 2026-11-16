@@ -92,8 +92,8 @@ class ChapterAudioSynthesizer:
             if isinstance(result, Exception):
                 logger.warning("Failed to synthesize line %d: %s", lines[i].line_index, result)
                 clips.append(None)
-            elif result is not None and result.audio_bytes:
-                clips.append(result.audio_bytes)
+            elif result is not None and result.audio_bytes:  # type: ignore[union-attr]
+                clips.append(result.audio_bytes)  # type: ignore[union-attr]
             else:
                 clips.append(None)
 

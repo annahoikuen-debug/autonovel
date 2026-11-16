@@ -52,11 +52,16 @@ async def get_cost_summary(
 
     result = await db.execute(stmt)
     results = result.first()
-
-    total_cost_usd = results.total_cost_usd or 0.0
-    total_input_tokens = results.total_input_tokens or 0
-    total_output_tokens = results.total_output_tokens or 0
-    total_cache_read = results.total_cache_read_tokens or 0
+    if results is None:
+        total_cost_usd = 0.0
+        total_input_tokens = 0
+        total_output_tokens = 0
+        total_cache_read = 0
+    else:
+        total_cost_usd = results.total_cost_usd or 0.0
+        total_input_tokens = results.total_input_tokens or 0
+        total_output_tokens = results.total_output_tokens or 0
+        total_cache_read = results.total_cache_read_tokens or 0
 
     # Calculate total tokens (input + output) for cache hit ratio
     total_tokens = total_input_tokens + total_output_tokens

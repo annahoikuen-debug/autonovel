@@ -289,11 +289,10 @@ async def wizard_save(
             synopsis=req.synopsis,
             target_eps=req.target_chapters,
         )
+        assert uow.session is not None
         uow.session.add(book)
         await uow.session.flush()
         book_id = book.id
-
-        # ビートシートをPlotとして保存
         beats = req.beats if req.beats else []
         from src.backend.database.models_foreshadowing import ForeshadowingModel
         from src.engine.foreshadowing.planner import plan_foreshadowing
@@ -332,6 +331,7 @@ async def wizard_save(
                     status="planted",
                     scope=plan.scope.value,
                 )
+                assert uow.session is not None
                 uow.session.add(fs)
 
     return {"book_id": book_id, "branch_id": 1, "success": True}

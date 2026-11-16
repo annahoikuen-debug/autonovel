@@ -34,7 +34,8 @@ target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
-    url = config.get_main_option("sqlalchemy.url")
+    url = config.get_main_option("sqlalchemy.url")  # type: ignore[union-attr]
+    assert url is not None, "sqlalchemy.url must be set in alembic.ini"
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -49,8 +50,10 @@ def run_migrations_offline() -> None:
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
+    url = config.get_main_option("sqlalchemy.url")  # type: ignore[union-attr]
+    assert url is not None, "sqlalchemy.url must be set in alembic.ini"
     connectable = create_engine(
-        config.get_main_option("sqlalchemy.url"),
+        url,
         poolclass=pool.NullPool,
     )
 

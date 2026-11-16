@@ -10,6 +10,7 @@ class PlanGenerationWorkflow(BaseWorkflow):
 
     async def execute(self, reporter: StatusReporter, **kwargs) -> dict[str, Any]:
         params = kwargs["params"]
+        assert self.planner is not None
         book_id, bible = await self.planner.create_hegemony_plan(
             genre=params.get("genre", "ファンタジー"),
             keywords=params.get("keywords", ""),

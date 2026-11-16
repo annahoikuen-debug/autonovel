@@ -16,6 +16,7 @@ class MarketingGenerationWorkflow(BaseWorkflow):
         latest_ep = kwargs["latest_ep"]
         prompt_manager = kwargs.get("prompt_manager")
 
+        assert self.repo is not None
         book = await self.repo.books.get_by_id(book_id)
         if not book:
             raise ValueError(f"Book not found: {book_id}")
@@ -25,6 +26,7 @@ class MarketingGenerationWorkflow(BaseWorkflow):
             reporter.add_log("マーケティングエージェントを起動しました")
 
         marketing_agent = self.marketing
+        assert marketing_agent is not None
         if prompt_manager is not None:
             try:
                 marketing_agent.prompt_manager = prompt_manager

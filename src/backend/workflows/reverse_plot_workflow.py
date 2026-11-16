@@ -180,7 +180,8 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
         spine = self._spine_for(target_episodes)
         # 逆プロットで選ばれた「つかみ」を第1話の指示に必ず反映する
         # （旧実装は `_ = answers.get("openingHook")` で捨てていた）
-        first_duty = spine.at(1).duty if spine.at(1) else "つかみを提示する。"
+        first_spine = spine.at(1)
+        first_duty = first_spine.duty if first_spine else "つかみを提示する。"
         hook_duty = f"[つかみ:{opening_hook}] {first_duty}"
 
         episodes = []
@@ -239,7 +240,8 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
         # テンション波も Spine の値を単一のソースとする
         spine = self._spine_for(target_episodes)
         tension_wave = [
-            int(round((spine.at(ep).tension if spine.at(ep) else 0.5) * 100)) for ep in range(1, target_episodes + 1)
+            int(round((beat.tension if (beat := spine.at(ep)) else 0.5) * 100))
+            for ep in range(1, target_episodes + 1)
         ]
 
         return CatharsisPattern(

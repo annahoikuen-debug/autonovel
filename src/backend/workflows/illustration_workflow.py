@@ -73,6 +73,9 @@ class IllustrationWorkflow(BaseWorkflow):
         if not book_id:
             raise ValueError("book_id is required for IllustrationWorkflow")
 
+        assert self.repo is not None
+        assert self.illustration_agent is not None
+
         enabled = settings.get("enableIllustration", False)
         if not enabled:
             logger.info(f"Illustration generation is disabled for book {book_id}")
@@ -147,6 +150,8 @@ class IllustrationWorkflow(BaseWorkflow):
         reporter: Any,
     ) -> None:
         """1話分の本文を取得し、6 コマ要約漫画を生成する。"""
+        assert self.repo is not None
+        assert self.illustration_agent is not None
         try:
             chapter = await self.repo.get_chapter(branch_id, ep_num, book_id=book_id)
         except Exception as e:  # noqa: BLE001

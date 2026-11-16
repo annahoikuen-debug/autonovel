@@ -19,6 +19,7 @@ class LogicalAuditWorkflow(BaseWorkflow):
         issues_count = 0
         from src.backend.database import UnitOfWork
 
+        assert self.repo is not None
         async with UnitOfWork(self.repo.db) as uow:
             for ep in range(ep_from, ep_to + 1):
                 plot = await uow.plots.get_plot(branch_id, ep, branch_id=branch_id, book_id=book_id)

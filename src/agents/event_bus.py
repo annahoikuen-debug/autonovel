@@ -100,6 +100,7 @@ class EventBus:
 
     def _create_redis_task(self, ev: AgentEvent) -> asyncio.Task:
         stream_name = f"agent_events:{ev.correlation_id}"
+        assert self._redis is not None
         return asyncio.create_task(
             self._redis.xadd(
                 stream_name,

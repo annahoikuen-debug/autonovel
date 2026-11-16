@@ -554,9 +554,11 @@ class PlotIntegrityMonitor:
                         patch_content=json.dumps(patch_data, ensure_ascii=False),
                         status="pending",
                     )
+                    assert uow.session is not None
                     uow.session.add(pending)
                     await uow.session.flush()
                     patch_ids.append(pending.id)
+                assert uow.session is not None
                 await uow.session.commit()
 
             logger.info(f"Submitted {len(patch_ids)} causality patches for book_id={book_id}")

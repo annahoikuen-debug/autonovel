@@ -85,6 +85,7 @@ class QualityLoop:
                     reporter.report("Anti-AI 修正実行中...", "info")
 
                 controller = self._anti_ai_controller
+                assert controller is not None
                 anti_ai_result = await controller.run(result.draft_text)
                 result.draft_text = anti_ai_result.text
 
