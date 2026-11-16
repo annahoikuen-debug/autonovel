@@ -37,8 +37,14 @@ def make_compressor(cache_enabled=False):
     return FourLayerCompressor(config=config)
 
 
-def measure_execution(compressor, text, iterations=3):
-    """実行時間測定"""
+def measure_execution(compressor, text, iterations=30):
+    """実行時間測定（外れ値除去付き）。
+
+    MAD (Median Absolute Deviation) ベースで外れ値を除去し、
+    測定ノイズによるフレーキーな比較を防ぐ。
+    """
+    import statistics
+
     times = []
     results = []
     for _ in range(iterations):
@@ -48,13 +54,29 @@ def measure_execution(compressor, text, iterations=3):
         elapsed = (time.perf_counter() - start) * 1000
         times.append(elapsed)
         results.append(result)
+
+    sorted_times = sorted(times)
+    median = statistics.median(times)
+
+    # MAD ベースで外れ値除去（median から 3*MAD を超える値を除外）
+    abs_deviations = [abs(t - median) for t in times]
+    mad = statistics.median(abs_deviations) if abs_deviations else 0
+    threshold = median + 3 * mad if mad > 0 else float("inf")
+
+    filtered_times = [t for t in times if t <= threshold]
+    if not filtered_times:
+        filtered_times = times  # 全除外の場合はフォールバック
+
     return {
-        "median_ms": statistics.median(times),
-        "mean_ms": statistics.mean(times),
-        "stdev_ms": statistics.stdev(times) if len(times) > 1 else 0,
-        "min_ms": min(times),
-        "max_ms": max(times),
+        "median_ms": statistics.median(filtered_times),
+        "mean_ms": statistics.mean(filtered_times),
+        "stdev_ms": statistics.stdev(filtered_times) if len(filtered_times) > 1 else 0,
+        "min_ms": min(filtered_times),
+        "max_ms": max(filtered_times),
         "result": results[-1],
+        "raw_times": times,
+        "filtered_count": len(filtered_times),
+        "iterations": iterations,
     }
 
 
