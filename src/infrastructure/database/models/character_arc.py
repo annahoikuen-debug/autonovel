@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from sqlalchemy import (
-    Boolean,
-    Column,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-    func,
-)
+from datetime import datetime
+
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text, func
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base_orm import Base
 from src.infrastructure.database.types import CompatibleDateTime
@@ -23,11 +18,13 @@ from src.infrastructure.database.types import CompatibleDateTime
 class CharacterArc(Base):
     __tablename__ = "character_arcs"
 
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    book_id = Column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
-    character_id = Column(Integer, ForeignKey("characters.id", ondelete="CASCADE"), nullable=False)
-    arc_name = Column(String(100))
-    arc_stages = Column(Text, default="[]")
-    current_stage_index = Column(Integer, default=0)
-    is_completed = Column(Boolean, default=False)
-    created_at = Column(CompatibleDateTime, server_default=func.now())
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    book_id: Mapped[int] = mapped_column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
+    character_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("characters.id", ondelete="CASCADE"), nullable=False
+    )
+    arc_name: Mapped[str | None] = mapped_column(String(100))
+    arc_stages: Mapped[str] = mapped_column(Text, default="[]")
+    current_stage_index: Mapped[int] = mapped_column(Integer, default=0)
+    is_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())

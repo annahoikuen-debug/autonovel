@@ -6,13 +6,10 @@ TRACK-A5: `src/backend/database/models.py` から `BranchPlaySession` を
 
 from __future__ import annotations
 
-from sqlalchemy import (
-    Column,
-    Integer,
-    String,
-    func,
-    text,
-)
+from datetime import datetime
+
+from sqlalchemy import Integer, String, func, text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base_orm import Base
 from src.infrastructure.database.types import CompatibleDateTime, CompatibleJSON
@@ -23,13 +20,15 @@ class BranchPlaySession(Base):
 
     __tablename__ = "branch_play_sessions"
 
-    id = Column(String(36), primary_key=True)
-    book_id = Column(Integer, nullable=False)
-    branch_id = Column(Integer, nullable=False)
-    current_node_id = Column(String(255), nullable=True)
-    context_json = Column(CompatibleJSON, nullable=True)
-    save_points_json = Column(CompatibleJSON, nullable=True)
-    status = Column(String(20), nullable=True, server_default=text("'active'"))
-    version = Column(Integer, nullable=False, server_default=text("1"))
-    updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
-    created_at = Column(CompatibleDateTime, server_default=func.now())
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    book_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    branch_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    current_node_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    context_json: Mapped[dict | None] = mapped_column(CompatibleJSON, nullable=True)
+    save_points_json: Mapped[dict | None] = mapped_column(CompatibleJSON, nullable=True)
+    status: Mapped[str | None] = mapped_column(String(20), nullable=True, server_default=text("'active'"))
+    version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
+    updated_at: Mapped[datetime] = mapped_column(
+        CompatibleDateTime, server_default=func.now(), onupdate=func.now()
+    )
+    created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
