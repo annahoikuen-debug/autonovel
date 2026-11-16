@@ -20,9 +20,7 @@ class ChapterVersion(Base):
     user_name: Mapped[str] = mapped_column(String(100), nullable=False)
     content: Mapped[str] = mapped_column(Text, nullable=False)
     vector_clock: Mapped[dict] = mapped_column(CompatibleJSON, nullable=False)
-    base_version_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("chapter_versions.id"), nullable=True
-    )
+    base_version_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("chapter_versions.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
 
     __table_args__ = (Index("idx_chv_book_chap", "book_id", "chapter_ep"),)

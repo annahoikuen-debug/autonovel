@@ -4,7 +4,7 @@ from datetime import datetime
 
 """名シーン・名台詞モデル定義。"""
 
-from sqlalchemy import String, Text, func
+from sqlalchemy import Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base_orm import Base

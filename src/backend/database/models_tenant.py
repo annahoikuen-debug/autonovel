@@ -22,9 +22,7 @@ class Tenant(Base):
     slug: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     plan_tier: Mapped[str] = mapped_column(String(20), default="free", nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())
 
     members = relationship("TenantMember", back_populates="tenant", cascade="all, delete-orphan")
 

@@ -16,7 +16,9 @@ class AuditIssue(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     # 作品単位の監査課題一覧は hot filter
-    book_id: Mapped[int] = mapped_column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True)
+    book_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     ep_num: Mapped[int] = mapped_column(Integer, nullable=False)
     category: Mapped[str] = mapped_column(String(50), nullable=False)
     severity: Mapped[str] = mapped_column(String(20), nullable=False)
@@ -30,6 +32,8 @@ class AuditIssue(Base):
 
     # Review linkage fields
     patch_review_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("patch_reviews.id"), nullable=True)
-    user_resolution: Mapped[str | None] = mapped_column(String(50), nullable=True)  # USER_ACCEPTED, USER_REJECTED, USER_MODIFIED
+    user_resolution: Mapped[str | None] = mapped_column(
+        String(50), nullable=True
+    )  # USER_ACCEPTED, USER_REJECTED, USER_MODIFIED
     resolved_at: Mapped[datetime | None] = mapped_column(CompatibleDateTime, nullable=True)
     resolved_by: Mapped[str | None] = mapped_column(String(100), nullable=True)

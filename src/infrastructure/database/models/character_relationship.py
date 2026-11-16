@@ -27,9 +27,7 @@ class CharacterRelationship(Base):
     depth: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     dynamics_state: Mapped[str] = mapped_column(String(50), default="strangers", nullable=False)
     last_interaction_ep: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        CompatibleDateTime, server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (
         UniqueConstraint("book_id", "char_a", "char_b", name="uq_char_rel"),

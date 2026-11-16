@@ -30,8 +30,6 @@ class Foreshadowing(Base):
     strength: Mapped[float] = mapped_column(Float, default=1.0)
     fulfilled: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        CompatibleDateTime, server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
 
     __table_args__ = (UniqueConstraint("book_id", "branch_id", "ep_num", "type", name="uq_foreshadowing"),)

@@ -24,6 +24,4 @@ class BackgroundTask(Base):
     logs: Mapped[str] = mapped_column(Text, default="[]")
     error: Mapped[str | None] = mapped_column(Text)
     result_data: Mapped[str | None] = mapped_column(Text)
-    updated_at: Mapped[datetime] = mapped_column(
-        CompatibleDateTime, server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())

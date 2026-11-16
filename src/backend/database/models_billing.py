@@ -28,9 +28,7 @@ class Subscription(Base):
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
     )
-    stripe_subscription_id: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
-    )
+    stripe_subscription_id: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     stripe_customer_id: Mapped[str] = mapped_column(String(255), nullable=False)
     plan_tier: Mapped[str] = mapped_column(String(20), nullable=False)
     status: Mapped[str] = mapped_column(String(30), nullable=False)  # active, canceled, past_due
@@ -42,6 +40,8 @@ class StripeWebhookEvent(Base):
 
     event_id: Mapped[str] = mapped_column(String(255), primary_key=True)
     event_type: Mapped[str] = mapped_column(String(100), nullable=False)
-    status: Mapped[str] = mapped_column(String(30), default="processed", nullable=False)  # processing, processed, failed
+    status: Mapped[str] = mapped_column(
+        String(30), default="processed", nullable=False
+    )  # processing, processed, failed
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     processed_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now())

@@ -23,6 +23,4 @@ class Rule(Base):
     character_name: Mapped[str | None] = mapped_column(String(100))
     status: Mapped[str] = mapped_column(String(20), default="active")
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        CompatibleDateTime, server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())

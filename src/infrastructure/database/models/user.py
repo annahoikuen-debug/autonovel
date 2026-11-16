@@ -30,13 +30,9 @@ class User(Base):
     plan_tier: Mapped[str] = mapped_column(String(20), default="free", nullable=False)
     credits: Mapped[int] = mapped_column(Integer, default=50, nullable=False)
     stripe_customer_id: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
-    tenant_id: Mapped[int | None] = mapped_column(
-        Integer, ForeignKey("tenants.id"), nullable=True, index=True
-    )
+    tenant_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("tenants.id"), nullable=True, index=True)
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(
-        CompatibleDateTime, server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
 
     def __contains__(self, item):
         # Allow checking for 'user_id', 'id', 'sub' as if they were keys

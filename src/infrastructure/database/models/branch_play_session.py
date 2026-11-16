@@ -28,7 +28,5 @@ class BranchPlaySession(Base):
     save_points_json: Mapped[dict | None] = mapped_column(CompatibleJSON, nullable=True)
     status: Mapped[str | None] = mapped_column(String(20), nullable=True, server_default=text("'active'"))
     version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
-    updated_at: Mapped[datetime] = mapped_column(
-        CompatibleDateTime, server_default=func.now(), onupdate=func.now()
-    )
+    updated_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())

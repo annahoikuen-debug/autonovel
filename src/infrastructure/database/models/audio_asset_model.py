@@ -14,7 +14,9 @@ class AudioAssetModel(Base):
     __tablename__ = "audio_assets"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    book_id: Mapped[int] = mapped_column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True)
+    book_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     episode_num: Mapped[int] = mapped_column(Integer, nullable=False)
     file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     duration_seconds: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)

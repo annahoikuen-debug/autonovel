@@ -20,9 +20,7 @@ class CharacterArc(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     book_id: Mapped[int] = mapped_column(Integer, ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
-    character_id: Mapped[int] = mapped_column(
-        Integer, ForeignKey("characters.id", ondelete="CASCADE"), nullable=False
-    )
+    character_id: Mapped[int] = mapped_column(Integer, ForeignKey("characters.id", ondelete="CASCADE"), nullable=False)
     arc_name: Mapped[str | None] = mapped_column(String(100))
     arc_stages: Mapped[str] = mapped_column(Text, default="[]")
     current_stage_index: Mapped[int] = mapped_column(Integer, default=0)
