@@ -55,7 +55,6 @@ def measure_execution(compressor, text, iterations=30):
         times.append(elapsed)
         results.append(result)
 
-    sorted_times = sorted(times)
     median = statistics.median(times)
 
     # MAD ベースで外れ値除去（median から 3*MAD を超える値を除外）

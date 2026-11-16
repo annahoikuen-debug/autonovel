@@ -6,12 +6,11 @@
 
 from __future__ import annotations
 
-from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
 
-from src.agents.orchestrator import AgentContext, AgentName, AgentResult
+from src.agents.orchestrator import AgentContext, AgentName
 from src.agents.specialists.adapter import AuditAggregatorNode
 from src.engine.audit.aggregator import BookScoreResult
 

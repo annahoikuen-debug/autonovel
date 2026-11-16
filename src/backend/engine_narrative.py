@@ -47,8 +47,10 @@ class PacingGraph:
     _FIRST_EXPLOSION_END = _V["first_win"].span[1]
     _CLIMAX_START = _V["last_stand"].span[0]
     _CLIMAX_END = _V["climax"].span[1]
-    _FINALE_START = _V["aftermath"].span[0] if "aftermath" in _V else (
-        (_V.get("coda") or _V.get("residue") or _V["aftermath"]).span[0]
+    _FINALE_START = (
+        _V["aftermath"].span[0]
+        if "aftermath" in _V
+        else ((_V.get("coda") or _V.get("residue") or _V["aftermath"]).span[0])
     )
 
     @staticmethod

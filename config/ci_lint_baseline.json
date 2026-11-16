@@ -1,6 +1,6 @@
 {
   "ruff_errors": 0,
-  "mypy_errors": 412,
+  "mypy_errors": 366,
   "format_files": 0,
   "policy": "burn-down",
   "history": [

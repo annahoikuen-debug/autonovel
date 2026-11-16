@@ -240,8 +240,7 @@ class ReversePlotGenerationWorkflow(BaseWorkflow):
         # テンション波も Spine の値を単一のソースとする
         spine = self._spine_for(target_episodes)
         tension_wave = [
-            int(round((beat.tension if (beat := spine.at(ep)) else 0.5) * 100))
-            for ep in range(1, target_episodes + 1)
+            int(round((beat.tension if (beat := spine.at(ep)) else 0.5) * 100)) for ep in range(1, target_episodes + 1)
         ]
 
         return CatharsisPattern(
