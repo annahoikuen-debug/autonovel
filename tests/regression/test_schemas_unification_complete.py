@@ -32,7 +32,7 @@ SCHEMA_IMPORT_PATHS = [
     ("src.domain.models.bible", None),
     ("src.domain.models.chapter", None),
     ("src.domain.models.branch", None),
-    ("src.domain.models.plot", None),
+    # ("src.domain.models.plot", None)  → Q2 で削除（dead code）
     ("src.domain.models.prompt_version", None),
     # src.domain.schemas (ドメインスキーマ)
     ("src.domain.schemas", None),

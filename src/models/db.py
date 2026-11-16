@@ -139,7 +139,7 @@ class PlotDbModel(BaseModel):
                 return v
         return v
 
-    # Compatibility shim for legacy code expecting dict-like access
+    # 後方互換のため dict 風の ``get`` アクセスを提供
     def get(self, key: str, default=None):
         try:
             return self.__dict__.get(key, getattr(self, key, default))

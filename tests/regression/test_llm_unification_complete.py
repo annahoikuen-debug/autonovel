@@ -1,8 +1,8 @@
-"""Step 14: LLM 4箇所の統合が完了し、全 import 経路が動作することを確認する。
+"""Step 14: LLM 統合が完了し、全新 import 経路が動作することを確認する。
 
-LLM 関連モジュールが分散していた4箇所（src/llm/, src/core/llm/,
-src/core/llm_clients/, src/services/llm/）を src/llm/ に統合し、
-旧パスの shim も含めて全経路が正しく動作することを検証する。
+LLM 関連モジュールは src/llm/ に統合済み。旧パス（src.core.llm / src.core.llm_clients /
+src.core.llm.adapters / src.services.llm / src.core.llm_gateway 等）の shim は PLAN_Q3 で
+全削除し、shim registry は 0 件に到達済み。本テストは新パスのみを検証する。
 """
 
 from __future__ import annotations
@@ -16,61 +16,80 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 
-#: 全ての LLM 関連 import 経路 (module_path, expected_symbols)
+#: 新パス（統合後）の import 経路 (module_path, expected_symbols)
 LLM_IMPORT_PATHS = [
-    # 新パス（統合後）
     ("src.llm", ["LLMCircuitBreaker", "ResilientLLMGateway", "LLMProvider"]),
-    ("src.llm.clients", ["BaseLLMClient", "GeminiApiClient", "OpenAIApiClient"]),
+    ("src.llm.clients", ["BaseLLMClient"]),
     ("src.llm.unified", ["IUnifiedLLMClient", "LLMRequest", "LLMResponse"]),
     ("src.llm.unified.adapters", ["GeminiUnifiedClient", "OpenAIUnifiedClient"]),
     ("src.llm.adapters", ["BaseLLMAdapter", "get_llm_adapter"]),
-    # 旧パス（shim、維持必須）
-    ("src.core.llm", ["IUnifiedLLMClient", "LLMCircuitBreaker", "BaseLLMClient"]),
-    ("src.core.llm_clients", ["BaseLLMClient", "GeminiApiClient"]),
-    ("src.core.llm.adapters", ["GeminiUnifiedClient"]),
-    ("src.services.llm", ["BaseLLMAdapter", "get_llm_adapter"]),
-    ("src.services.llm.circuit_breaker", ["CircuitBreaker", "LLMCircuitBreaker"]),
     ("src.llm.service", ["LLMService"]),
-    ("src.core.llm_gateway", ["LLMProviderFactory"]),
 ]
 
 
 @pytest.mark.parametrize("module_path,symbols", LLM_IMPORT_PATHS)
 def test_all_llm_import_paths(module_path, symbols):
-    """全ての LLM import 経路が動作する。"""
-    try:
-        mod = importlib.import_module(module_path)
-    except ImportError as exc:
-        pytest.fail(f"{module_path} の import に失敗: {exc}")
+    """全ての新 LLM import 経路が動作し、期待シンボルを公開する。"""
+    mod = importlib.import_module(module_path)  # ImportError はテスト失敗
     for symbol in symbols:
-        assert hasattr(mod, symbol), \
-            f"{module_path} に {symbol} が公開されていない"
+        assert hasattr(mod, symbol), f"{module_path} に {symbol} が公開されていない"
+
+
+def test_old_llm_shim_paths_removed():
+    """旧パス shim は削除済み：空パッケージまたは不在であり、実体シンボルを公開しない。"""
+    old_paths = [
+        "src.core.llm",
+        "src.core.llm_clients",
+        "src.core.llm.adapters",
+        "src.services.llm",
+    ]
+    for module_path in old_paths:
+        mod = importlib.import_module(module_path)
+        # 空パッケージ（shim 削除済み）であることを確認：実体シンプル名を持たない
+        assert not hasattr(mod, "LLMProviderFactory"), f"{module_path} に LLMProviderFactory が残存"
+        assert not hasattr(mod, "BaseLLMClient"), f"{module_path} に BaseLLMClient が残存"
+
+
+def test_old_llm_circuit_breaker_removed():
+    """src.services.llm.circuit_breaker shim は削除済み（ModuleNotFoundError）。"""
+    with pytest.raises(ModuleNotFoundError):
+        importlib.import_module("src.services.llm.circuit_breaker")
+
+
+def test_llm_gateway_compat_alias():
+    """src.core.llm_gateway は互換エイリアス（LLMGateway 関数）のみ残存。"""
+    mod = importlib.import_module("src.core.llm_gateway")
+    assert callable(getattr(mod, "LLMGateway", None)), "LLMGateway が callable ではない"
+    assert not hasattr(mod, "LLMProviderFactory"), "LLMProviderFactory は削除済み"
 
 
 def test_no_orphan_llm_files():
-    """移動元に不要な実体ファイルが残っていない。
-    src/services/llm/ のサブモジュール shim は意図的に維持しているため、
-    チェック対象から除外する（shim_registry.json に登録済み）。
-    """
+    """移動元に不要な実体ファイルが残っていない。"""
     orphan_checks = [
-        (ROOT / "src" / "core" / "llm_clients",
-         ["base.py", "gemini.py", "openai.py"]),
-        (ROOT / "src" / "core" / "llm" / "adapters",
-         ["claude_unified_client.py", "gemini_unified_client.py",
-          "mock_unified_client.py", "ollama_unified_client.py",
-          "openai_unified_client.py"]),
+        (ROOT / "src" / "core" / "llm_clients", ["base.py", "gemini.py", "openai.py"]),
+        (
+            ROOT / "src" / "core" / "llm" / "adapters",
+            [
+                "claude_unified_client.py",
+                "gemini_unified_client.py",
+                "mock_unified_client.py",
+                "ollama_unified_client.py",
+                "openai_unified_client.py",
+            ],
+        ),
     ]
     for dir_path, removed_files in orphan_checks:
         for fname in removed_files:
-            assert not (dir_path / fname).exists(), \
-                f"{dir_path / fname} が残っている（削除すべき）"
+            assert not (dir_path / fname).exists(), f"{dir_path / fname} が残っている（削除すべき）"
 
 
 def test_ruff_clean_llm():
-    """src/llm/, src/core/llm/, src/services/llm/ が ruff check を通る。"""
+    """src/llm/ が ruff check を通る。"""
     result = subprocess.run(
-        [sys.executable, "-m", "ruff", "check", "src/llm", "src/core/llm", "src/services/llm"],
-        capture_output=True, text=True, encoding="utf-8", cwd=ROOT,
+        [sys.executable, "-m", "ruff", "check", "src/llm"],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        cwd=ROOT,
     )
-    assert result.returncode == 0, \
-        f"ruff check 失敗:\n{result.stdout}\n{result.stderr}"
+    assert result.returncode == 0, f"ruff check 失敗:\n{result.stdout}\n{result.stderr}"

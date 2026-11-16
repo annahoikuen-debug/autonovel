@@ -37,10 +37,11 @@ logger = logging.getLogger(__name__)
 
 
 class DatabaseConnectionWrapper:
-    """Compatibility shim for legacy database connection wrapper.
+    """Legacy database connection wrapper.
 
     ``sql_conn`` / ``dbapi_conn`` はラッパー自身に保持し、それ以外の属性設定は
-    ``dbapi_conn`` 側に委譲する（後方互換のため）。
+    ``dbapi_conn`` 側に委譲する。読み取りも ``dbapi_conn`` に委譲するため、
+    レガシーコードの「wrapper.attr = x; wrapper.attr」という write→read パターンも動作する。
     読み取りも ``dbapi_conn`` に委譲するため、レガシーコードの
     「wrapper.attr = x; wrapper.attr」という write→read パターンも動作する。
     """

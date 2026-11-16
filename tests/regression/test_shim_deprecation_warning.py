@@ -22,10 +22,10 @@ registry = json.loads(REGISTRY_PATH.read_text(encoding="utf-8"))
 SHIMS: list[str] = registry["shims"]
 
 
-def test_registry_exists_and_non_empty():
-    """shim registry が存在し、非空（移行に伴い件数は変動する）であること。"""
+def test_registry_exists_and_empty_after_q3():
+    """shim registry が存在し、PLAN_Q3 完了により 0 件であること。"""
     assert REGISTRY_PATH.exists(), "config/shim_registry.json が存在しない"
-    assert len(SHIMS) > 0, "shim registry が空"
+    assert len(SHIMS) == 0, f"shim registry は 0 件であるべきだが {len(SHIMS)} 件ある: {SHIMS}"
 
 
 @pytest.mark.parametrize("shim_path", SHIMS)
@@ -61,13 +61,12 @@ def test_shim_warning_messages_do_not_self_reference():
 
 def test_shim_emits_deprecation_warning_dynamically():
     """動的検証（代表サンプリング）: subprocess import 時に DeprecationWarning が出る。"""
+    # PLAN_Q3 完了により shim は 0 件。動的検証対象がない場合はスキップ。
+    if not SHIMS:
+        pytest.skip("shim registry が 0 件のため動的検証対象なし（PLAN_Q3 完了済み）")
     # import 済み可能性が低い代表的 shim を 3 件選ぶ
     # config.* は Phase R3-1 (Step 9-13) で全件削除対象のため、services 系から選ぶ
-    candidates = [
-        "src.services.llm.circuit_breaker",
-        "src.services.book_score_service",
-        "src.integrations.rag.rag_service",
-    ]
+    candidates = SHIMS[:3]
     for mod in candidates:
         result = subprocess.run(
             [sys.executable, "-c", f"import {mod}"],

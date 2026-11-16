@@ -8,35 +8,11 @@ from types import SimpleNamespace
 from typing import Any, Optional
 
 from src.agents.orchestrator import AgentContext, AgentName, AgentResult
-from src.agents.specialist_auditor_base import SpecialistAuditor
-from src.agents.specialists.unified_auditor import UnifiedAuditor
 from src.config.weight_variants import load_variants_from_yaml
 from src.engine.audit.aggregator import AuditAggregator, BookScoreResult
 from src.domain.services.experiment_allocator import ExperimentAllocator, DEFAULT_ALLOCATOR
 
 logger = logging.getLogger(__name__)
-
-
-def create_default_specialists(llm: Any = None) -> list[SpecialistAuditor]:
-    """Instantiate the standard 8 specialist auditors.
-
-    Args:
-        llm: 実 LLM クライアント。渡さないと、各 specialist は
-             ``_resolve_llm()`` で ``AuditorModelRouter`` を見ますが、
-             ``register_client()`` は本番コードから一度も呼ばれていない
-             ため必ず ``None`` になり、8 specialists すべてが
-             ``score=50.0, degraded=True`` のフォールバックに落ちていた。
-             LLM を持つ呼び出し側は必ずこれを渡すこと。
-    """
-    if llm is None:
-        logger.error(
-            "create_default_specialists() was called without an LLM client. "
-            "All specialist auditors will degrade to score=50.0 "
-            "(degraded=True) unless the caller passes llm=... ."
-        )
-    return [
-        UnifiedAuditor(llm=llm),
-    ]
 
 
 def load_audit_weights(
@@ -120,11 +96,11 @@ class AuditAggregatorNode:
 
         weights = get_variant(variant_name)
 
-        # self.llm は __init__ で保持されているが、これまで
-        # create_default_specialists() に渡されていなかったため使われていなかった。
-        specialists = create_default_specialists(llm=self.llm)
+        # v5.0: UnifiedAuditor は __call__ で直接実行するため、
+        # AuditAggregator には specialist を登録しない（空リスト）。
+        # AuditAggregator は weights / variant / metrics の集約のみ担う。
         agg = AuditAggregator(
-            specialists=specialists,
+            specialists=[],
             weights=weights,
             event_bus=self.event_bus,
         )

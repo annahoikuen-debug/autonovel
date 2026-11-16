@@ -27,7 +27,7 @@ class PromptVersionDbModel(BaseModel):
     is_active: bool = False
     created_at: datetime | None = None
 
-    # Compatibility shim for legacy code that expects a ``dict`` like ``get`` method
+    # 後方互換のため dict 風の ``get`` アクセスを提供
     def get(self, key: str, default: Any = None) -> Any:
         try:
             return getattr(self, key, default)

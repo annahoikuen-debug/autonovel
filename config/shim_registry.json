@@ -1,7 +1,5 @@
 {
-  "shims": [
-    "src/backend/database/core.py"
-  ],
+  "shims": [],
   "description": "後方互換 shim の一覧。新しい shim を追加したら必ずここに登録すること。",
   "updated_at": "2026-11-15"
 }

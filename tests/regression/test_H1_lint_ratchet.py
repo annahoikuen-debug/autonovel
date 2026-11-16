@@ -16,15 +16,22 @@ def test_baseline_file_exists_and_is_int():
 
 
 def test_ratchet_fails_when_baseline_is_understated(tmp_path):
-    """ベースラインを 0 にすると必ず失敗すること（archer が機能していることの証明）。"""
+    """ベースラインを実測より低くすると失敗すること（ratchet が機能していることの証明）。
+
+    ruff は既に 0 件（床に達している）ため、mypy（実測 502 件）のベースラインを
+    意図的に低く（400 件）設定し、ratchet が増加を検出して失敗することを確認する。
+    """
+    import json as _json
     backup = BASE.read_text(encoding="utf-8")
     try:
-        BASE.write_text(json.dumps({"ruff_errors": 0}), encoding="utf-8")
+        data = _json.loads(backup)
+        data["mypy_errors"] = 400  # 実測 502 件より低い（＝過小評価）
+        BASE.write_text(_json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         p = subprocess.run(
-            [sys.executable, "scripts/ci_lint_ratchet.py"],
+            [sys.executable, "scripts/ci_lint_ratchet.py", "--tool", "mypy"],
             capture_output=True, text=True,
         )
-        assert p.returncode == 1, f"ratchet が失敗していない: rc={p.returncode}\n{p.stdout}"
+        assert p.returncode == 1, f"ratchet が失敗していない: rc={p.returncode}\n{p.stdout}\n{p.stderr}"
     finally:
         BASE.write_text(backup, encoding="utf-8")
 

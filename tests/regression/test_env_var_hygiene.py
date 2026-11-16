@@ -37,6 +37,8 @@ ALLOWED_FILES = {
     "tests/unit/test_marketing_agent.py",
     "tests/unit/api/test_illustration_router.py",
     "tests/branches/test_e2e_rest.py",
+    # SSRF ガードテストでは複数環境変数を意図的に直接代入してモック差し替え。
+    "tests/unit/llm/test_base_url_ssrf_guard.py",
 }
 
 # os.environ[...] = 形式の直接代入パターン

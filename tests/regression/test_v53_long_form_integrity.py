@@ -27,7 +27,7 @@ def _extract_foreshadowing_descriptions(text: str) -> list[str]:
 
     descriptions: list[str] = []
     # "- **ID** (...): 『タイトル』description [現状: status]" から description を抽出
-    for match in re.finditer(r"-\s\*\*[^+\*]*?\*\*\s*\([^)]*\):\s*『[^』]』\s*(.+?)(?:\s*\[現状:|\Z)", text):
+    for match in re.finditer(r"-\s\*\*[^+\*]*?\*\*\s*\([^)]*\):\s*『[^』]*』\s*(.+?)(?:\s*\[現状:|\Z)", text):
         descriptions.append(match.group(1).strip())
     return descriptions
 
@@ -182,7 +182,7 @@ class TestForeshadowingPromptWiring:
         text = ContextBuilderAgent.format_unresolved_foreshadowings([f])
         descriptions = _extract_foreshadowing_descriptions(text)
         assert len(descriptions) == 1
-        assert "黒騎士の紋章" in descriptions[0]
+        assert "壁に掛けられた古い紋章" in descriptions[0]
 
     def test_missing_id_is_tolerated(self):
         """id を持たないプロット由来の伏線でも破綻しない"""

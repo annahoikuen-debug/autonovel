@@ -1,8 +1,10 @@
 """Step 20: API 4箇所の統合が完了し、全 import 経路が動作することを確認する。
 
 API 層が分散していた4箇所（src/api/, src/backend/api/, src/backend/routers/,
-src/interfaces/api/）を統合し、旧パスの shim も含めて全経路が
-正しく動作することを検証する。
+src/interfaces/api/）を統合し、全経路が正しく動作することを検証する。
+
+PLAN_Q3 完了により旧パス shim（src.api.* / src.backend.api.* / src.infrastructure.api.*）
+は全削除し、shim registry は 0 件に到達済み。本テストは新パスのみを検証する。
 """
 
 from __future__ import annotations
@@ -16,27 +18,17 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 
-#: 全ての API 関連 import 経路 (module_path, expected_symbols)
+#: 新パス（統合後）の import 経路 (module_path, expected_symbols)
 API_IMPORT_PATHS = [
-    # 新パス（統合後）
     ("src.backend.routers.dashboard", ["router"]),
     ("src.backend.routers.conflicts", ["router"]),
     ("src.backend.routers.agent_memory", ["router"]),
     ("src.backend.routers.admin_phase2", ["router", "enrichment_router", "rag_router"]),
-    # 旧パス（shim、維持必須）
-    ("src.api.dashboard", ["router"]),
-    ("src.api.conflicts", ["router"]),
-    ("src.api.agent_memory", ["router"]),
-    ("src.api.health", ["router"]),
-    ("src.backend.api.admin_phase2", ["router", "enrichment_router", "rag_router"]),
-    # 正しいレイヤー（移動不要）
     ("src.interfaces.api.app_factory", ["create_app", "build_lifespan"]),
     ("src.interfaces.api.styles", ["router"]),
     ("src.interfaces.api.platform_export", ["router"]),
     ("src.interfaces.api.metrics", []),
-    # 外部APIクライアント（Step 18 で移設）
     ("src.infrastructure.external.api_client", []),
-    ("src.infrastructure.api.api_client", []),
 ]
 
 
@@ -53,18 +45,15 @@ def test_all_api_import_paths(module_path, symbols):
 
 
 def test_no_orphan_api_files():
-    """移動元に不要な実体ファイルが残っていない。"""
+    """移動元に実体ファイルが残っていない（旧パス shim は削除済み）。"""
     orphan_checks = [
-        (ROOT / "src" / "api", ["dashboard.py", "conflicts.py", "agent_memory.py"]),
+        (ROOT / "src" / "api", ["dashboard.py", "conflicts.py", "agent_memory.py", "health.py"]),
         (ROOT / "src" / "backend" / "api", ["admin_phase2.py"]),
     ]
     for dir_path, removed_files in orphan_checks:
         for fname in removed_files:
-            path = dir_path / fname
-            if path.exists():
-                content = path.read_text(encoding="utf-8")
-                assert "shim" in content.lower() or "後方互換" in content, \
-                    f"{path} が shim ではなく実体ファイルとして残っている"
+            assert not (dir_path / fname).exists(), \
+                f"{dir_path / fname} が残っている（PLAN_Q3 で削除済みであるべき）"
 
 
 def test_wiring_imports_new_path():
@@ -72,14 +61,12 @@ def test_wiring_imports_new_path():
     content = (ROOT / "src/backend/wiring.py").read_text(encoding="utf-8")
     assert "src.backend.routers.admin_phase2" in content, \
         "wiring.py が新パスを import していない"
-    assert "src.backend.api.admin_phase2" not in content.split("鍵", 1)[0], \
-        "wiring.py に旧パス参照が残っている"
 
 
 def test_ruff_clean_api():
-    """src/backend/routers/, src/api/, src/interfaces/api/ が ruff check を通る。"""
+    """src/backend/routers/, src/interfaces/api/ が ruff check を通る。"""
     result = subprocess.run(
-        [sys.executable, "-m", "ruff", "check", "src/backend/routers", "src/api", "src/interfaces/api"],
+        [sys.executable, "-m", "ruff", "check", "src/backend/routers", "src/interfaces/api"],
         capture_output=True, text=True, encoding="utf-8", cwd=ROOT,
     )
     assert result.returncode == 0, \

@@ -445,8 +445,13 @@
           "easy_mode"
         ],
         "summary": "Export With Data Endpoint",
-        "description": "クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする",
+        "description": "クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする\n\n認証済みユーザー本人の作品のみエクスポート・上書きできる（C1: 他者の book_id を\n推測して差し替えパッケージを取得/上書きできないようにする）。",
         "operationId": "export_with_data_endpoint_easy_mode_export_with_data_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -931,8 +936,13 @@
           "wizard"
         ],
         "summary": "Export With Data Endpoint",
-        "description": "クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする",
+        "description": "クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする\n\n認証済みユーザー本人の作品のみエクスポート・上書きできる（C1: 他者の book_id を\n推測して差し替えパッケージを取得/上書きできないようにする）。",
         "operationId": "export_with_data_endpoint_api_wizard_export_with_data_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -1417,8 +1427,13 @@
           "easy-mode"
         ],
         "summary": "Export With Data Endpoint",
-        "description": "クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする",
+        "description": "クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする\n\n認証済みユーザー本人の作品のみエクスポート・上書きできる（C1: 他者の book_id を\n推測して差し替えパッケージを取得/上書きできないようにする）。",
         "operationId": "export_with_data_endpoint_api_easy_mode_export_with_data_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "book_id",
@@ -3275,7 +3290,7 @@
           "system"
         ],
         "summary": "Get Models Info",
-        "description": "サーバー既定のモデル構成および利用可能プロバイダ一覧を返す。",
+        "description": "サーバー既定のモデル構成および利用可能プロバイダ一覧を返す。\n\nconfigured_keys は管理者のみに開示し、一般ユーザーには\nプロバイダ設定の有無を隠蔽する（Step 19）。",
         "operationId": "get_models_info_api_system_models_info_get",
         "responses": {
           "200": {
@@ -3290,7 +3305,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/system/status": {
@@ -4387,60 +4407,6 @@
                     "$ref": "#/components/schemas/SpecialistInfo"
                   },
                   "title": "Response List Specialists Admin Audit Specialists Get"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/admin/audit/aggregate_test": {
-      "post": {
-        "tags": [
-          "admin-audit"
-        ],
-        "summary": "Test Aggregate",
-        "description": "任意の原稿で監査集約を実行（テスト用）",
-        "operationId": "test_aggregate_admin_audit_aggregate_test_post",
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "",
-              "title": "Authorization"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/AuditAggregateTestRequest"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuditAggregateTestResponse"
                 }
               }
             }
@@ -7680,32 +7646,15 @@
         "summary": "Produce Novel",
         "description": "作品全話生成を開始するエンドポイント",
         "operationId": "produce_novel_api_novel_produce_post",
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "Authorization",
-            "in": "header",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "default": "",
-              "title": "Authorization"
-            }
-          }
-        ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ProduceNovelRequest"
               }
             }
-          }
+          },
+          "required": true
         },
         "responses": {
           "200": {
@@ -7728,7 +7677,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/api/novel/{project_id}/status": {
@@ -12341,7 +12295,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -12409,7 +12368,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -12479,7 +12443,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       },
       "put": {
         "tags": [
@@ -12571,7 +12540,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
       }
     },
     "/subtext/process": {
@@ -13476,7 +13450,7 @@
           "orchestrated"
         ],
         "summary": "Orchestrated Events",
-        "description": "オーケストレーション中のAgentEventをSSEでリアルタイム配信。\n\nIDOR 防止: correlation_id は単なる識別子（`book_<id>_branch_<id>_ep_<n>`）で、\n他人の生成イベントを購読できてしまう。作品 ID を解決して所有者を検証する。",
+        "description": "オーケストレーション中のAgentEventをSSEでリアルタイム配信。\n\nEventSource は Authorization ヘッダーを送信できないため、クエリ文字列の\n短命ストリームトークンで認証・作品スコープ所有権を検証する（H6）。",
         "operationId": "orchestrated_events_orchestrated_events__correlation_id__get",
         "security": [
           {
@@ -13492,6 +13466,17 @@
               "type": "string",
               "title": "Correlation Id"
             }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "ストリーム認証トークン（短命・作品スコープ）",
+              "title": "Token"
+            },
+            "description": "ストリーム認証トークン（短命・作品スコープ）"
           }
         ],
         "responses": {
@@ -13840,116 +13825,6 @@
         ],
         "title": "AssistResponse",
         "description": "インラインAIアシストレスポンス"
-      },
-      "AuditAggregateTestRequest": {
-        "properties": {
-          "book_id": {
-            "type": "integer",
-            "title": "Book Id",
-            "description": "対象書籍ID"
-          },
-          "chapter_number": {
-            "type": "integer",
-            "title": "Chapter Number",
-            "description": "対象章番号"
-          },
-          "draft_text": {
-            "type": "string",
-            "title": "Draft Text",
-            "description": "監査対象の原稿テキスト"
-          },
-          "world_bible_snapshot": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "World Bible Snapshot"
-          },
-          "style_dna": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Style Dna"
-          },
-          "plot_tree": {
-            "type": "string",
-            "title": "Plot Tree",
-            "default": ""
-          },
-          "plot_summary": {
-            "type": "string",
-            "title": "Plot Summary",
-            "default": ""
-          },
-          "illustration_prompts": {
-            "type": "string",
-            "title": "Illustration Prompts",
-            "default": ""
-          },
-          "genre": {
-            "type": "string",
-            "title": "Genre",
-            "default": "literary"
-          },
-          "phase": {
-            "type": "string",
-            "title": "Phase",
-            "default": "mid_writing"
-          }
-        },
-        "type": "object",
-        "required": [
-          "book_id",
-          "chapter_number",
-          "draft_text"
-        ],
-        "title": "AuditAggregateTestRequest"
-      },
-      "AuditAggregateTestResponse": {
-        "properties": {
-          "overall": {
-            "type": "number",
-            "title": "Overall"
-          },
-          "by_specialist": {
-            "additionalProperties": {
-              "type": "number"
-            },
-            "type": "object",
-            "title": "By Specialist"
-          },
-          "missing": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Missing"
-          },
-          "weights_used": {
-            "additionalProperties": {
-              "type": "number"
-            },
-            "type": "object",
-            "title": "Weights Used"
-          },
-          "lowest_dimension": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Lowest Dimension"
-          }
-        },
-        "type": "object",
-        "required": [
-          "overall",
-          "by_specialist",
-          "missing",
-          "weights_used",
-          "lowest_dimension"
-        ],
-        "title": "AuditAggregateTestResponse"
       },
       "AuditFastHybridRequest": {
         "properties": {

@@ -21,7 +21,7 @@
 > **静的解析ゲートの実態（2026-11-13 時点）**
 > `ruff` / `mypy` / `ruff format` は **劣化検出 ratchet + バーンダウン化済み**（`scripts/ci_lint_ratchet.py` が
 > `config/ci_lint_baseline.json` を超えたら CI を落とす hard gate）。
-> 現在のベースライン値：`ruff=0` / `mypy=516` / `format=0`（`config/ci_lint_baseline.json`、policy: burn-down）。
+> 現在のベースライン値：`ruff=0` / `mypy=502` / `format=0`（`config/ci_lint_baseline.json`、policy: burn-down）。
 > mypy は 1122 → 952 に削減中（2026-11-30 までに半減目標 567）。
 > エラー数 0 化は別計画（PLAN_H1 §9 N1）の対象外であり、
 > 上記バッジは「エラーがない」ではなく「ゲートが機能している」ことを意味しない。
@@ -634,9 +634,9 @@ curl "http://localhost:8200/api/graph/foreshadowing/kpi?book_id=1&current_episod
 > 実行点は `run()` の1箇所に集約済みで、上記のコストは**1話1回**のものです。
 > 回帰防止: `tests/unit/writing/test_episode_finalize_called_once.py`
 >
-> **1話全体の LLM 呼出回数**は実測で変動（ダイジェスト生成が有効時は +1 回）、
-> うち監査フェーズの第2層 LLM 定性評価は **1 回**です（第1層静的ルール解析は LLM 呼出なし）。
-> 詳細は `docs/STATUS.md` §5 参照。
+> **1話全体の LLM 呼出回数**は実測で **10 回**（うち監査フェーズの第2層 LLM 定性評価が支配的）、
+> ダイジェスト生成が有効時は +1 回。第1層静的ルール解析は LLM 呼出なし。
+> 目標 4-5 回に対し**未達**（詳細は `docs/STATUS.md` §5 参照）。
 >
 > 1話あたりのコスト内訳は `scripts/report_episode_cost.py --db <sqlite> --json` で出力できます。
 
