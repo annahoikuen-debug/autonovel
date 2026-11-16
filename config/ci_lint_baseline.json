@@ -9,35 +9,35 @@
       "mypy_errors": 1122,
       "ruff_errors": 90,
       "format_files": 759,
-      "note": "\u30e9\u30c1\u30a7\u30c3\u30c8\u5c0e\u5165\u6642\u306e\u5b9f\u6e2c\u3002mypy 1122 \u306f\u305d\u306e\u5f8c\u7d046\u9031\u9593\u56fa\u5b9a\u3060\u3063\u305f\uff08\u4e0a\u9650\u56fa\u5b9a\u306e\u5f62\u9ab8\u5316\u306e\u8a3c\u62e0\uff09"
+      "note": "ラチェット導入時の実測。mypy 1122 はその後約6週間固定だった（上限固定の形骸化の証拠）"
     },
     {
       "date": "2026-11-08",
       "mypy_errors": 965,
       "ruff_errors": 90,
       "format_files": 759,
-      "note": "\u521d\u56de\u30d0\u30fc\u30f3\u30c0\u30a6\u30f3: ortools \u578b\u89e3\u6c7a\u8a2d\u5b9a(23\u4ef6)\u3001IPlotRepository/IWorldBibleRepository Protocol \u4e0d\u5099\u4fee\u6b63(50\u4ef6+)\u3001verify_book_ownership \u306e AsyncSession \u8aa4\u7528\u4fee\u6b63(11\u4ef6)\u3001var-annotated 85\u4ef6\u3001rowcount 9\u4ef6"
+      "note": "初回バーンダウン: ortools 型解決設定(23件)、IPlotRepository/IWorldBibleRepository Protocol 不備修正(50件+)、verify_book_ownership の AsyncSession 誤用修正(11件)、var-annotated 85件、rowcount 9件"
     },
     {
       "date": "2026-11-15",
       "mypy_errors": 512,
       "ruff_errors": 0,
       "format_files": 0,
-      "note": "Q1 \u5b8c\u4e86\u306b\u4f34\u3046 baseline \u518d\u8a2d\u5b9a\u3002\u30ed\u30fc\u30ab\u30eb venv (Python 3.13.5 + ruff 0.16.5 / mypy 2.3.1) \u3067\u5b9f\u6e2c\u3002CI \u306f Python 3.12 \u3067 mypy 388 \u4ef6\uff08388 < 512 \u3067 pass\uff09\u3002Python \u30d0\u30fc\u30b8\u30e7\u30f3\u5dee\u306b\u3088\u308b mypy \u4ef6\u6570\u306e\u30ba\u30ec\u306f\u69cb\u9020\u7684\uff08mypy 2.3.1 \u306f Python 3.13 \u306e\u65b0\u69cb\u6587\u306b\u975e\u5bfe\u5fdc\uff09"
+      "note": "Q1 完了に伴う baseline 再設定。ローカル venv (Python 3.13.5 + ruff 0.16.5 / mypy 2.3.1) で実測。CI は Python 3.12 で mypy 388 件（388 < 512 で pass）。Python バージョン差による mypy 件数のズレは構造的（mypy 2.3.1 は Python 3.13 の新構文に非対応）"
     },
     {
       "date": "2026-11-16",
       "mypy_errors": 502,
       "ruff_errors": 0,
       "format_files": 0,
-      "note": "Q3 mypy \u30a8\u30e9\u30fc\u524a\u6e1b (512\u2192502\u300110\u4ef6\u524a\u6e1b)\u3002adapter.py \u306e\u5faa\u74b0 import \u89e3\u6d88\u3068 LLMService \u4e92\u63db\u5fa9\u5143\u306e\u52b9\u679c"
+      "note": "Q3 mypy エラー削減 (512→502、10件削減)。adapter.py の循環 import 解消と LLMService 互換復元の効果"
     },
     {
       "date": "2026-11-16",
       "mypy_errors": 500,
       "ruff_errors": 0,
       "format_files": 0,
-      "note": "Q3 \u4fee\u6b63\u5f8c\u5b9f\u6e2c (502\u2192500\u30012\u4ef6\u524a\u6e1b)\u3002adapter.py \u304b\u3089 create_default_specialists \u524a\u9664\u3001LLMService \u4e92\u63db\u30e1\u30bd\u30c3\u30c9\u4fee\u6b63\u306e\u52b9\u679c"
+      "note": "Q3 修正後実測 (502→500、2件削減)。adapter.py から create_default_specialists 削除、LLMService 互換メソッド修正の効果"
     }
   ],
   "targets": [
@@ -46,14 +46,14 @@
       "metric": "mypy_errors",
       "target": 500,
       "by": "2026-11-30",
-      "note": "mypy \u534a\u6e1b (1004/2)\u3002\u4e3b\u306a\u6b8b\u5c71: Column \u7cfb 194 \u4ef6\u306f Mapped[...] \u6ce8\u91c8\u79fb\u884c\u3067\u89e3\u6d88\u3059\u308b\u8a08\u753b"
+      "note": "mypy 半減 (1004/2)。主な残山: Column 系 194 件は Mapped[...] 注釈移行で解消する計画"
     },
     {
       "milestone": "mypy-quarter",
       "metric": "mypy_errors",
       "target": 250,
       "by": "2026-12-31",
-      "note": "1/4 \u5316\u3002union-attr (95) \u306e None \u30ac\u30fc\u30c9\u8ffd\u52a0\u3068 arg-type \u306e\u500b\u5225\u4fee\u6b63"
+      "note": "1/4 化。union-attr (95) の None ガード追加と arg-type の個別修正"
     }
   ]
 }

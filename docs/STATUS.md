@@ -109,7 +109,7 @@ CI (`.github/workflows/ci.yml`) は `pytest -q -m "not integration and not perf 
 | `npm run typecheck` | 緑（エラー 0） |
 | `/health` | 200 |
 | ruff (`ruff check src tests config scripts`) | **0 errors**（baseline 0 維持） |
-| mypy (`mypy src`, ローカル Python 3.13.5 + mypy 2.3.1) | **502 errors**（baseline 502。CI Python 3.12 では 388 で pass） |
+| mypy (`mypy src`, ローカル Python 3.13.5 + mypy 2.3.1) | **500 errors**（baseline 500。CI Python 3.12 では 388 で pass） |
 | format (`ruff format --check src`) | **0**（baseline 0 維持） |
 | xpassed | 0 |
 | `scripts/ci_lint_ratchet.py --tool all` | exit 0（3 tools 緑） |
