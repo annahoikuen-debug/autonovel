@@ -21,14 +21,14 @@ router = APIRouter(prefix="/api/books", tags=["books"])
 @router.get("/", response_model=list[BookSchema])
 async def list_books(current_user: User = Depends(get_current_user)):
     async with UnitOfWork(AppContainer.db()) as uow:
-        use_cases = BookUseCases(uow=uow)
+        use_cases = BookUseCases(uow=uow)  # type: ignore[arg-type]
         return await use_cases.list_books(user_id=current_user.id)
 
 
 @router.get("/{book_id}", response_model=BookSchema)
 async def get_book(book_id: int, current_user: User = Depends(get_current_user)):
     async with UnitOfWork(AppContainer.db()) as uow:
-        use_cases = BookUseCases(uow=uow)
+        use_cases = BookUseCases(uow=uow)  # type: ignore[arg-type]
         return await use_cases.get_book(book_id=book_id, current_user=current_user)
 
 
@@ -36,14 +36,14 @@ async def get_book(book_id: int, current_user: User = Depends(get_current_user))
 @router.post("/", response_model=BookSchema)
 async def create_book(payload: BookCreateRequest, current_user: User = Depends(get_current_user)):
     async with UnitOfWork(AppContainer.db()) as uow:
-        use_cases = BookUseCases(uow=uow)
+        use_cases = BookUseCases(uow=uow)  # type: ignore[arg-type]
         return await use_cases.create_book(payload=payload, current_user=current_user)
 
 
 @router.delete("/{book_id}")
 async def delete_book(book_id: int, current_user: User = Depends(get_current_user)):
     async with UnitOfWork(AppContainer.db()) as uow:
-        use_cases = BookUseCases(uow=uow)
+        use_cases = BookUseCases(uow=uow)  # type: ignore[arg-type]
         await use_cases.delete_book(book_id=book_id, current_user=current_user)
     return {"message": f"Book {book_id} deleted successfully"}
 
@@ -53,7 +53,7 @@ async def get_book_score_history(book_id: int, current_user: User = Depends(get_
     async with UnitOfWork(AppContainer.db()) as uow:
         # IDOR 防止: 作品の所有権を検証する
         await verify_book_ownership(book_id, current_user, uow)
-        use_cases = BookUseCases(uow=uow)
+        use_cases = BookUseCases(uow=uow)  # type: ignore[arg-type]
         return await use_cases.get_book_score_history(book_id=book_id)
 
 
@@ -66,5 +66,5 @@ async def get_pdca_cycles(
     async with UnitOfWork(AppContainer.db()) as uow:
         # IDOR 防止: 作品の所有権を検証する
         await verify_book_ownership(book_id, current_user, uow)
-        use_cases = BookUseCases(uow=uow)
+        use_cases = BookUseCases(uow=uow)  # type: ignore[arg-type]
         return await use_cases.get_pdca_cycles(book_id=book_id, chapter_number=chapter_number)
