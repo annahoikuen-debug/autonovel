@@ -390,14 +390,17 @@ def _rel_path(collection_path) -> str:
 
 def pytest_ignore_collect(collection_path, config):  # noqa: ANN001, ARG001
     """環境依存および非推奨テストの収集回避。"""
-    lowered = str(collection_path).lower()
+    rel = _rel_path(collection_path)
+    fname = Path(rel).name
 
-    # 非推奨スタブ化された age_client のレガシーテスト
-    if "age_client" in lowered:
+    # 非推奨スタブ化された age_client のレガシーテスト（ファイル名で完全一致。
+    # 部分一致 "age_client" は storage_client / message_client / usage_client 等を
+    # 無警告で収集対象外にする過去インシデントの反省に従い、ファイル名限定とする）
+    if fname.startswith("test_age_client"):
         return True
 
     # ortools 依存テストの収集回避（実際に ortools を import するものだけ）
-    if not _ORTOOLS_AVAILABLE and _rel_path(collection_path) in _ORTOOLS_REQUIRED_TESTS:
+    if not _ORTOOLS_AVAILABLE and rel in _ORTOOLS_REQUIRED_TESTS:
         return True
     return None
 
@@ -405,14 +408,16 @@ def pytest_ignore_collect(collection_path, config):  # noqa: ANN001, ARG001
 def pytest_collection_modifyitems(config, items):
     """非推奨または環境未対応のテストをスキップ。"""
     for item in items:
-        lowered = str(item.fspath).lower()
-        if "age_client" in lowered:
+        rel = _rel_path(item.fspath)
+        fname = Path(rel).name
+        # 非推奨スタブ化された age_client のレガシーテスト（ファイル名で完全一致）
+        if fname.startswith("test_age_client"):
             item.add_marker(
                 pytest.mark.skip(
                     reason="Legacy age_client tests are deprecated (replaced by Relational Memory)"
                 )
             )
-        if not _ORTOOLS_AVAILABLE and _rel_path(item.fspath) in _ORTOOLS_REQUIRED_TESTS:
+        if not _ORTOOLS_AVAILABLE and rel in _ORTOOLS_REQUIRED_TESTS:
             item.add_marker(pytest.mark.skip(reason="ortools is not installed in environment"))
         # reportlab は任意依存。PDF 出力を行うテストだけを対象外にする
         # （_rel_path は "tests/unit/...::test_name" 形式をパス文字列として扱う）。

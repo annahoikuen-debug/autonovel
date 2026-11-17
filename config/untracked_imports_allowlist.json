@@ -1,0 +1,36 @@
+{
+  "version": 1,
+  "note": "clean checkout で import 失敗が意図的・既知のテスト import を登録。各項目は (テストファイル, モジュールパス) のペア。新規検出が発生したらこのファイルを更新するか、テスト側を修正すること。",
+  "entries": [
+    {
+      "test": "tests/e2e/test_spine_end_to_end.py",
+      "module": "src.services.llm.prompts",
+      "reason": "e2e テスト。src/services/llm は削除済み。別計画で e2e テストの整理を実施予定。"
+    },
+    {
+      "test": "tests/infrastructure/test_clean_architecture_integrity.py",
+      "module": "src.agent",
+      "reason": "クリーンアーキテクチャ整合性テスト。src.agent は存在しないモジュール。テスト側の意図を確認の上、allowlist から外すか修正すること。"
+    },
+    {
+      "test": "tests/monitoring/test_observability.py",
+      "module": "src.monitoring.sentry",
+      "reason": "モニタリング観測テスト。src.monitoring.sentry は存在しない。テスト側の整理予定。"
+    },
+    {
+      "test": "tests/monitoring/test_observability.py",
+      "module": "src.monitoring.otel",
+      "reason": "モニタリング観測テスト。src.monitoring.otel は存在しない。テスト側の整理予定。"
+    },
+    {
+      "test": "tests/regression/test_llm_unification_complete.py",
+      "module": "src.services.llm.circuit_breaker",
+      "reason": "test_old_llm_circuit_breaker_removed で pytest.raises(ModuleNotFoundError) を意図している。"
+    },
+    {
+      "test": "tests/regression/test_schemas_unification_complete.py",
+      "module": "src.schemas",
+      "reason": "スキーマ統合テスト。src.schemas パッケージは存在しない（schemas/ ディレクトリのみ）。テスト側の整理予定。"
+    }
+  ]
+}
