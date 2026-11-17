@@ -389,10 +389,10 @@ class JudgePanel:
 
         counts: dict[JudgeVerdict, int] = {"A": 0, "B": 0, "tie": 0}
         for v in valid_verdicts:
-            counts[v] += 1  # type: ignore[assignment]
+            counts[v] += 1
 
         # counts.get returns Optional[int], use lambda to ensure int return type
-        winner: JudgeVerdict = max(counts, key=lambda k: counts[k])  # type: ignore[assignment]
+        winner: JudgeVerdict = max(counts, key=lambda k: counts[k])
         # 同点の場合は tie
         max_count = counts[winner]
         tied_winners = [k for k, v in counts.items() if v == max_count]

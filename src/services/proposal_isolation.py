@@ -91,10 +91,11 @@ class ProposalIsolationRunner:
         for pid, res in zip(target_ids, results):
             if isinstance(res, Exception):
                 logger.error(f"Proposal {pid} failed in sandbox: {res}")
-                outputs[pid] = {"status": "error", "error": str(res), "_sandbox_id": contexts[pid].session_id}  # type: ignore[index,assignment]
+                outputs[pid] = {"status": "error", "error": str(res), "_sandbox_id": contexts[pid].session_id}
             else:
+                assert isinstance(res, dict)
                 res["_sandbox_id"] = contexts[pid].session_id
-                outputs[pid] = res  # type: ignore[assignment]
+                outputs[pid] = res
 
         return outputs
 

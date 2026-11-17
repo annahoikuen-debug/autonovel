@@ -143,7 +143,7 @@ class JapaneseTokenizer:
     def _sudachi_tokenize(self, text: str) -> list[str]:
         """Tokenize using SudachiPy."""
         try:
-            assert self._sudachi_tokenizer is not None  # type: ignore[arg-type]
+            assert self._sudachi_tokenizer is not None
             morphemes = self._sudachi_tokenizer.tokenize(text, self._split_mode)
             tokens: list[str] = []
             for m in morphemes:
