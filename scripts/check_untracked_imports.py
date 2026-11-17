@@ -12,10 +12,12 @@ ModuleNotFoundError で落ちるテストを未然に防ぐ。
   4. 存在しないモジュールパスを import しているテストを報告し、exit 1
 
 既知の制限（静的解析のため検出できないケース）:
-  - 変数経由の importlib.import_module(module_path)（例: @pytest.mark.parametrize で
-    渡されるモジュールパス）。文字列リテラルのみを対象とする。
-    → 実例: tests/regression/test_shim_imports.py の KNOWN_SHIMS は本チェックの網に
-    かからない。該当テストは pytest tests/regression/ の実行時に初めて発覚する。
+  - 変数経由の importlib.import_module(module_path) は、モジュールスコープの
+    代入リテラルおよび @pytest.mark.parametrize で渡されるリスト名から AST で
+    解決する（このスクリプト内で実装）。f-string 等で動的に組み立てたパスや、
+    関数スコープ局所変数経由の import は依然として検出できない。
+    → 実例: tests/regression/test_shim_imports.py の KNOWN_SHIMS は AST 解決の網に
+    かかるため、本チェックで検出可能。
   - 勹的に組み立てた import（f"src.{name}" 等）。
   - 上記を検出するには pytest 実行時の import エラー（conftest/モジュールレベル import）
     を収集する別ゲートが必要。
@@ -29,6 +31,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import ast
 import json
 import re
 import subprocess
@@ -112,8 +115,9 @@ def _scan_tests() -> dict[str, list[str]]:
     for f in sorted(ROOT.glob(TEST_GLOB)):
         text = f.read_text(encoding="utf-8")
         imports = _extract_imports(text)
-        if imports:
-            result[str(f.relative_to(ROOT))] = imports
+        # 変数経由の importlib.import_module(...) は正規表現では捕捉できないため、
+        # import 文が 1 つもないファイルも走査対象に含める。
+        result[str(f.relative_to(ROOT))] = imports
     return result
 
 
@@ -124,6 +128,100 @@ def _load_allowlist(path: Path) -> set[tuple[str, str]]:
     data = json.loads(path.read_text(encoding="utf-8"))
     entries = data.get("entries", [])
     return {(e["test"], e["module"]) for e in entries}
+
+
+def _literal_string_targets(node: ast.AST) -> list[str]:
+    """リスト/タプル/セット/辞書リテラルから、モジュールパス文字列を抽出する。
+
+    (module_path, symbols) 形式のタプル/リストでは先頭要素を、それ以外の
+    文字列リテラル要素をそのまま返す。src.* 始まり以外は呼び出し側で除外する。
+    """
+    if isinstance(node, ast.Constant) and isinstance(node.value, str):
+        return [node.value]
+    if isinstance(node, (ast.List, ast.Tuple, ast.Set)):
+        out: list[str] = []
+        for e in node.elts:
+            if (
+                isinstance(e, (ast.List, ast.Tuple))
+                and e.elts
+                and isinstance(e.elts[0], ast.Constant)
+                and isinstance(e.elts[0].value, str)
+            ):
+                out.append(e.elts[0].value)
+            elif isinstance(e, ast.Constant) and isinstance(e.value, str):
+                out.append(e.value)
+        return out
+    if isinstance(node, ast.Dict):
+        return [k.value for k in node.keys if isinstance(k, ast.Constant) and isinstance(k.value, str)]
+    return []
+
+
+def _resolve_variable_imports(text: str) -> list[tuple[str, int]]:
+    """importlib.import_module(変数) を module-scope 代入リテラル /
+    @pytest.mark.parametrize 経由で解決し、(module_path, lineno) を返す。
+
+    src.* 始まりのみを対象とする（patch() の属性パス等を混ぜない）。
+    関数スコープ局所変数や f-string 組み立ては解決対象外。
+    """
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return []
+
+    # モジュールスコープ代入: NAME = リテラル
+    module_assigns: dict[str, ast.AST] = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+            module_assigns[node.targets[0].id] = node.value
+
+    results: list[tuple[str, int]] = []
+
+    def handle_function(func: ast.AST) -> None:
+        # @pytest.mark.parametrize("a,b", LISTNAME) -> name -> list_name マップ
+        pmap: dict[str, str] = {}
+        for dec in getattr(func, "decorator_list", []):
+            if (
+                isinstance(dec, ast.Call)
+                and isinstance(dec.func, ast.Attribute)
+                and dec.func.attr == "parametrize"
+                and len(dec.args) >= 2
+                and isinstance(dec.args[0], ast.Constant)
+                and isinstance(dec.args[0].value, str)
+                and isinstance(dec.args[1], ast.Name)
+            ):
+                for name in dec.args[0].value.split(","):
+                    pmap[name.strip()] = dec.args[1].id
+
+        for node in ast.walk(func):
+            if not (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and node.func.attr == "import_module"
+                and node.args
+            ):
+                continue
+            arg = node.args[0]
+            if not isinstance(arg, ast.Name):
+                continue
+            target_name = arg.id
+            source = module_assigns.get(target_name)
+            if source is None and target_name in pmap:
+                source = module_assigns.get(pmap[target_name])
+            if source is None:
+                continue
+            for m in _literal_string_targets(source):
+                if m.startswith("src."):
+                    results.append((m, node.lineno))
+
+    for node in tree.body:
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+            handle_function(node)
+        elif isinstance(node, ast.ClassDef):
+            for sub in node.body:
+                if isinstance(sub, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                    handle_function(sub)
+
+    return results
 
 
 def main() -> int:
@@ -141,9 +239,13 @@ def main() -> int:
     for test_file, imports in tests.items():
         text = (ROOT / test_file).read_text(encoding="utf-8")
         lines = text.splitlines()
+        seen: set[tuple[str, str]] = set()
         for i, line in enumerate(lines, start=1):
             for m in _extract_imports(line):
                 key = (test_file, m)
+                if key in seen:
+                    continue
+                seen.add(key)
                 if key in allowlist:
                     if _module_exists(m, modules, tracked_files, ROOT):
                         allowlisted_but_exists.append(key)
@@ -151,12 +253,27 @@ def main() -> int:
                 if not _module_exists(m, modules, tracked_files, ROOT):
                     missing.append((test_file, m, line.strip()))
 
+        # 変数経由の importlib.import_module(...) を AST で解決
+        for m, lineno in _resolve_variable_imports(text):
+            key = (test_file, m)
+            if key in seen:
+                continue
+            seen.add(key)
+            if key in allowlist:
+                if _module_exists(m, modules, tracked_files, ROOT):
+                    allowlisted_but_exists.append(key)
+                continue
+            if not _module_exists(m, modules, tracked_files, ROOT):
+                missing.append((test_file, m, lines[lineno - 1].strip()))
+
     if allowlisted_but_exists:
         print("WARN: 以下の allowlist エントリは実際にはモジュールが存在するため不要です:")
         for test_file, module in allowlisted_but_exists:
             print(f"  {test_file}:{module}")
     if missing:
-        print("ERROR: テストから追跡ゼロのモジュールを import しています（clean checkout で ModuleNotFoundError になります）:")
+        print(
+            "ERROR: テストから追跡ゼロのモジュールを import しています（clean checkout で ModuleNotFoundError になります）:"
+        )
         for test_file, module, line in missing:
             print(f"  {test_file}:{module}  <- {line}")
         if not args.list:
