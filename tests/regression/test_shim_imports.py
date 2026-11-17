@@ -17,8 +17,6 @@ import pytest
 KNOWN_SHIMS = [
     # 案Aで移動した生成物系（shim ではなく .gitkeep のみだが、念のため）
     # 既存の shim（案B 以前から存在するもの）
-    ("src.api.health", ["router"]),
-    ("src.services.llm.circuit_breaker", ["CircuitBreaker", "LLMCircuitBreaker"]),
     ("src.infrastructure.config.settings", ["settings", "Settings", "ROOT_DIR"]),
     # Step 9 で追加予定
     # ("src.core.llm.adapters", ["GeminiUnifiedClient"]),
