@@ -170,26 +170,26 @@ def _expired_targets(data: dict[str, object], tool: str) -> list[dict[str, objec
     return expired
 
 
-def check_tool(tool: str, *, update: bool) -> int:
-    actual = RUNNERS[tool]()
-    data = _load_baseline()
-    key = BASELINE_KEYS[tool]
+def _check_single_metric(
+    data: dict[str, object], tool: str, key: str, actual: int, *, update: bool
+) -> tuple[int, bool]:
+    """1 メトリクスをベースラインと比較し、(失敗数0/1, data変更有無) を返す。
 
+    data は直接変異する（ベースラインの記録・引き下げ）。ファイル書き出しは
+    呼び出し側 (check_tool) で一度だけ行う。
+    """
+    base = data.get(key)
     if update:
         data[key] = actual
-        _save_baseline(data)
-        print(f"{tool}: baseline updated: {actual}")
-        return 0
-
-    if key not in data:
+        print(f"{tool}: baseline updated: {actual} ({key})")
+        return 0, True
+    if base is None:
         # 初回導入時はベースラインを記録して通す（次回以降から ratchet が効く）
         data[key] = actual
-        _save_baseline(data)
-        print(f"{tool}: baseline was missing; recorded {actual}")
-        return 0
-
-    base = int(data[key])  # type: ignore[arg-type]
-    status = f"{tool}: actual={actual} baseline={base}"
+        print(f"{tool}: baseline was missing; recorded {actual} ({key})")
+        return 0, True
+    base = int(base)  # type: ignore[arg-type]
+    status = f"{tool}: actual={actual} baseline={base} ({key})"
 
     # --- バーンダウン target 強制 ---
     forced_floor = 0
@@ -197,33 +197,66 @@ def check_tool(tool: str, *, update: bool) -> int:
         target = int(t["target"])
         forced_floor = max(forced_floor, target)
         if actual > target:
-            print(f"FAIL: {status} / 期限切れマイルストーン '{t['milestone']}' 未達 "
-                  f"(target={target}, by={t['by']})。"
-                  " 改善するか、期日の延長を baseline の targets で行うこと。",
-                  file=sys.stderr)
-            return 1
+            print(
+                f"FAIL: {status} / 期限切れマイルストーン '{t['milestone']}' 未達 "
+                f"(target={target}, by={t['by']})。"
+                " 改善するか、期日の延長を baseline の targets で行うこと。",
+                file=sys.stderr,
+            )
+            return 1, False
         status += f" target'{t['milestone']}'=達成({target})"
 
     # baseline が期限切れ target より緩い場合、target まで強制的に下げる
     if forced_floor > base:
         data[key] = forced_floor
-        _save_baseline(data)
-        print(f"{status} / baseline を期限切れ target まで強制引き下げ: {base} -> {forced_floor}")
-        return 0
+        print(
+            f"{status} / baseline を期限切れ target まで強制引き下げ: {base} -> {forced_floor}"
+        )
+        return 0, True
 
     print(status)
     if actual > base:
         print(
-            f"FAIL: {tool} の件数がベースラインより {actual - base} 件増加した。"
+            f"FAIL: {tool} の{key} がベースラインより {actual - base} 件増加した。"
             " 意図した増加なら `--update` でベースラインを更新すること。",
             file=sys.stderr,
         )
-        return 1
+        return 1, False
     if actual < base:
         data[key] = actual
+        print(f"GOOD: {base - actual} 件減少。ベースラインを下げた。({key})")
+        return 0, True
+    return 0, False
+
+
+def check_tool(tool: str, *, update: bool) -> int:
+    data = _load_baseline()
+    failures = 0
+    dirty = False
+
+    if tool == "mypy":
+        # mypy と invalid-ignore は同一プロセス出力から両方を検証する。
+        # pyproject [tool.mypy] ignore_missing_imports = true により、
+        # `mypy src` 1 回の実行で両メトリクスを取得できる。
+        errors, invalid_ignore = _run_mypy_once()
+        for key, actual in (
+            ("mypy_errors", errors),
+            ("invalid_ignore_errors", invalid_ignore),
+        ):
+            f, d = _check_single_metric(data, "mypy", key, actual, update=update)
+            failures += f
+            dirty = dirty or d
+    else:
+        actual = RUNNERS[tool]()
+        key = BASELINE_KEYS[tool]
+        f, d = _check_single_metric(data, tool, key, actual, update=update)
+        failures += f
+        dirty = dirty or d
+
+    if update or dirty:
         _save_baseline(data)
-        print(f"GOOD: {base - actual} 件減少。ベースラインを下げた。")
-    return 0
+
+    return 1 if failures else 0
 
 
 def main() -> int:
