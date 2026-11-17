@@ -47,8 +47,6 @@ from src.models.character import (
     CharacterRegistry,
 )
 from src.infrastructure.database.models.chunk import ChapterChunk, Vector, HAS_PGVECTOR
-from src.domain.models.chapter import ChapterDbModel
-from src.domain.models.plot import PlotDbModel
 from src.models.db import (
     BookDbModel,
     BibleDbModel,
@@ -154,22 +152,6 @@ from src.models.world import (
     RecoveredItem,
     ForeshadowingAudit,
 )
-from src.models.writing import (
-    EpisodeDraft,
-    CharacterStatusChange,
-    EpisodeMetadata,
-    EpisodeFinalDraft,
-    StyleDNA,
-    StyleFragment,
-    MarketingPack,
-    WritingContext,
-    FullAutoWorkflowResult,
-    PlanGenerationResult,
-    PlotExpansionResult,
-    RetryFailedEpisodesResult,
-    EpisodeWritingResult,
-    PlotRebuildResult,
-)
 from src.models.editor import (
     SensoryType,
     ToneType,
@@ -189,12 +171,51 @@ from src.models.editor import (
 )
 
 
+# src.models.writing のシンボル: writing.py は src.domain.models.plot を eager import するため、
+# ここで eager import すると「domain.plot → src.models.__init__ → writing → domain.plot」の
+# 循環 import を形成する（モジュール単体 import の入口によっては ImportError）。
+# シンボル名はすべて後方互換のため維持する。
+_WRITING_LAZY_SYMBOLS = frozenset(
+    {
+        "EpisodeDraft",
+        "CharacterStatusChange",
+        "EpisodeMetadata",
+        "EpisodeFinalDraft",
+        "StyleDNA",
+        "StyleFragment",
+        "MarketingPack",
+        "WritingContext",
+        "FullAutoWorkflowResult",
+        "PlanGenerationResult",
+        "PlotExpansionResult",
+        "RetryFailedEpisodesResult",
+        "EpisodeWritingResult",
+        "PlotRebuildResult",
+    }
+)
+
+
 # 後方互換用遅延インポート (ORM循環インポート/起動ブロッキング回避)
 def __getattr__(name: str):
     if name in ("Bible", "Book", "Chapter", "Character", "Plot"):
         import src.backend.database.models as _backend_models
 
         return getattr(_backend_models, name)
+    if name in _WRITING_LAZY_SYMBOLS:
+        import src.models.writing as _writing
+
+        return getattr(_writing, name)
+    if name == "ChapterDbModel":
+        # 循環 import 回避: src.domain.models.chapter は src.models.base を import するため、
+        # ここで eager import すると「domain → src.models.__init__ → domain」の循環になる。
+        from src.domain.models.chapter import ChapterDbModel
+
+        return ChapterDbModel
+    if name == "PlotDbModel":
+        # 同上: src.domain.models.plot との循環を回避するため遅延解決。
+        from src.domain.models.plot import PlotDbModel
+
+        return PlotDbModel
     raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 

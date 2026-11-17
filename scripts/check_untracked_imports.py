@@ -11,6 +11,15 @@ ModuleNotFoundError で落ちるテストを未然に防ぐ。
      のモジュールパスを抽出
   4. 存在しないモジュールパスを import しているテストを報告し、exit 1
 
+既知の制限（静的解析のため検出できないケース）:
+  - 変数経由の importlib.import_module(module_path)（例: @pytest.mark.parametrize で
+    渡されるモジュールパス）。文字列リテラルのみを対象とする。
+    → 実例: tests/regression/test_shim_imports.py の KNOWN_SHIMS は本チェックの網に
+    かからない。該当テストは pytest tests/regression/ の実行時に初めて発覚する。
+  - 勹的に組み立てた import（f"src.{name}" 等）。
+  - 上記を検出するには pytest 実行時の import エラー（conftest/モジュールレベル import）
+    を収集する別ゲートが必要。
+
 Usage:
   python scripts/check_untracked_imports.py                        # CI 用（失敗で exit 1）
   python scripts/check_untracked_imports.py --list                 # 検出対象のみ一覧表示
