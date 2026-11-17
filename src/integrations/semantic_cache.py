@@ -5,7 +5,7 @@ import logging
 import math
 import os
 import uuid
-from typing import Any
+from typing import Any, cast
 
 from config import MODEL_EMBEDDING
 
@@ -123,10 +123,10 @@ class SemanticCacheManager:
         self.client = client
         self.embedding_model = embedding_model
         # L1 インメモリキャッシュ (最大1000件)
-        self._l1_cache = LRUCache(maxsize=1000)
+        self._l1_cache: LRUCache = LRUCache(maxsize=1000)
         # L2-B (Fast-Path) インメモリ・ベクトルキャッシュ
         # 重複するプロンプトの埋め込み計算を省くため、直近の embedding を保持
-        self._l2_embedding_cache = LRUCache(maxsize=500)
+        self._l2_embedding_cache: LRUCache = LRUCache(maxsize=500)
 
     def _get_l1_key(self, prompt: str, task_type: str, genre: str, temperature: float) -> str:
         """プロンプトおよびパラメータのハッシュ値からL1キャッシュキーを生成"""
@@ -378,13 +378,13 @@ class SemanticCacheManager:
         pm = PromptManager()
 
         next_ep = current_ep_num + 1
-        prefetch_prompts = []
+        prefetch_prompts: list[Any] = []
 
         for task_type in task_types:
             if task_type == "drafting":
                 # 次のエピソードのドラフティングプロンプトを先行レンダリング
                 try:
-                    prompt = await pm.build_drafting_prompt(
+                    raw_prompt = await pm.build_drafting_prompt(
                         ep_num=next_ep,
                         plot_data={},  # プレースホルダー
                         script_text="",
@@ -394,38 +394,45 @@ class SemanticCacheManager:
                         prev_ctx="",
                         book_id=book_id,
                     )
-                    # build_drafting_prompt returns Tuple[str, str]; use the user prompt part
-                    prefetch_prompts.append((task_type, prompt[1]))  # type: ignore[arg-type]
+                    # build_drafting_prompt -> Tuple[str, str]; user プロンプト部分 (raw_prompt[1]) を L1 キーに使用。
+                    # 注意: この raw_prompt[1] と、実検索側で semantic.search(prompt=...) に渡す文字列を
+                    # 一致させないと、プリフェッチした Embedding が決してヒットしない。
+                    draft_prompt = (raw_prompt[0], raw_prompt[1])
+                    # build_drafting_prompt -> Tuple[str, str]; user プロンプト部分 (prompt[1]) を L1 キーに使用。
+                    # 注意: この prompt_str と、実検索側で semantic.search(prompt=...) に渡す文字列を
+                    # 一致させないと、プリフェッチした Embedding が決してヒットしない。
+                    prefetch_prompts.append((task_type, draft_prompt[1]))
                 except Exception as e:
                     logger.debug(f"[PREFETCH] Could not prefetch drafting prompt for ep{next_ep}: {e}")
 
             elif task_type == "polishing":
                 # -Polishing プロンプトも先行レンダリング
                 try:
-                    prompt = await pm.build_polishing_prompt(
-                        draft_content="",
-                        target_word_count=3000,
-                        style_key="default",
-                        prose_sample="",
-                        book_id=book_id,
-                    )  # type: ignore[assignment]
-                    prefetch_prompts.append((task_type, prompt))  # type: ignore[arg-type]
+                    prompt: str = cast(
+                        str,
+                        await pm.build_polishing_prompt(
+                            draft_content="",
+                            target_word_count=3000,
+                            style_key="default",
+                            prose_sample="",
+                            book_id=book_id,
+                        ),
+                    )
+                    prefetch_prompts.append((task_type, prompt))
                 except Exception as e:
                     logger.debug(f"[PREFETCH] Could not prefetch polishing prompt for ep{next_ep}: {e}")
 
         # プリフェッチしたプロンプトをL1キャッシュに Warming として登録
         # (実際のEmbedding計算はバックグラウンドで実行される)
-        for task_type, prompt in prefetch_prompts:
-            # プロンプトのハッシュをキーとして、プレースホルダー値を登録
-            # build_drafting_prompt returns Tuple[str, str]; _get_l1_key needs str
-            if isinstance(prompt, str):
-                prompt_str = prompt
-            else:
-                prompt_str = prompt[1]
-            l1_key = self._get_l1_key(prompt_str, task_type, genre, temperature)
+        for item in prefetch_prompts:
+            # prefetch_prompts の要素は (task_type, prompt_str) のタプル。
+            # prompt_str と実検索側で semantic.search(prompt=...) に渡す文字列を
+            # 一致させないと、プリフェッチした Embedding が決してヒットしない。
+            task_type = item[0]
+            l1_key = self._get_l1_key(cast(str, item[1]), task_type, genre, temperature)
             # 実際のEmbedding計算は非同期でバックグラウンド実行
             _spawn_background(
-                self._prefetch_embedding(prompt_str, task_type, genre, temperature),
+                self._prefetch_embedding(cast(str, item[1]), task_type, genre, temperature),
                 name="semantic_cache.prefetch",
             )
             logger.info(f"[PREFETCH] Queued prefetch for ep{next_ep} task={task_type}, key={l1_key[:16]}...")

@@ -19,7 +19,6 @@ ROOT = Path(__file__).resolve().parents[2]
 #: 新パス（統合後）の import 経路 (module_path, expected_symbols)
 LLM_IMPORT_PATHS = [
     ("src.llm", ["LLMCircuitBreaker", "ResilientLLMGateway", "LLMProvider"]),
-    ("src.llm.clients", ["BaseLLMClient"]),
     ("src.llm.unified", ["IUnifiedLLMClient", "LLMRequest", "LLMResponse"]),
     ("src.llm.unified.adapters", ["GeminiUnifiedClient", "OpenAIUnifiedClient"]),
     ("src.llm.adapters", ["BaseLLMAdapter", "get_llm_adapter"]),

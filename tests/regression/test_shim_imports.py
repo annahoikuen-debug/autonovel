@@ -20,8 +20,6 @@ KNOWN_SHIMS = [
     ("src.api.health", ["router"]),
     ("src.services.llm.circuit_breaker", ["CircuitBreaker", "LLMCircuitBreaker"]),
     ("src.infrastructure.config.settings", ["settings", "Settings", "ROOT_DIR"]),
-    # Step 8 で追加予定
-    # ("src.core.llm_clients", ["BaseLLMClient", "GeminiApiClient", "OpenAIApiClient"]),
     # Step 9 で追加予定
     # ("src.core.llm.adapters", ["GeminiUnifiedClient"]),
     # Step 10 で追加予定

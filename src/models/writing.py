@@ -112,7 +112,8 @@ class MarketingPack(BaseModel):
 
 
 # --- Phase 4: Pydantic models for Writing Context and Workflow Results ---
-from src.models.db import BibleDbModel, BookDbModel, CharacterDbModel, PlotDbModel
+from src.domain.models.plot import PlotDbModel
+from src.models.db import BibleDbModel, BookDbModel, CharacterDbModel
 
 
 class WritingContext(BaseModel):

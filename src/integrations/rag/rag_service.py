@@ -68,7 +68,9 @@ class GraphRAGService:
     ) -> None:
         self._reranker = reranker
         self._custom_vector_store = vector_store
-        self._vector_store_instance = get_default_store()
+        self._vector_store_instance: BaseVectorStore | None = (
+            None  # lazy 初期化: 実際の使用時に get_default_store() を呼ぶ
+        )
         self._last_call_stats: dict[str, Any] = {}
         self._token_budget = token_budget
         self._enable_cache = enable_cache
@@ -88,7 +90,7 @@ class GraphRAGService:
     def _vector_store(self, val: BaseVectorStore | None) -> None:
         if val is None:
             self._custom_vector_store = None
-            self._vector_store_instance = get_default_store()
+            self._vector_store_instance = None  # 次回 getter 呼び出し時に再構築
         else:
             self._custom_vector_store = val
 

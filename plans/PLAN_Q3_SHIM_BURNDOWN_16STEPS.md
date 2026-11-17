@@ -318,3 +318,17 @@
 3. `make verify` / GitHub Actions 全ジョブ緑
 4. import 時間の before/after 実測が記録されている
 5. 旧パス参照（`src.backend.config` / `src.services.llm` / `src.models.db` / `src.api.*`）が src と tests で 0 件
+
+---
+
+## 8. 補遺：PLAN_Q4-R Step 22 実行記録（2026-11-17）
+
+`src/llm/service.py` と `src/models/db.py` は PLAN_Q3 Step 9/10 で削除予定とされていたが、実際には本番 15 ファイル（`src/llm/service.py`）と 5 ファイル（`src/models/db.py` の `PlotDbModel`/`ChapterDbModel`）が参照中であることが判明（レビュー High 指摘）。
+
+選択肢A（推奨・小）を採用：
+- `src/models/db.py` の `PlotDbModel` を `src/domain/models/plot.py` に新規作成・移設
+- `src/domain/models/chapter.py` に既存の `ChapterDbModel` あり（二重定義解消）
+- 本番 5 ファイル（`src.core.interfaces`, `src.backend.engine_plot`, `src.models.writing`, `src.models.__init__`, `tests/unit/backend/test_backend_engine_facade_and_plot`）の import 先を `src.domain.models.*` に切り替え
+- `src/llm/service.py` は「昇格完了・維持」として現存（14 ファイルが依存）
+
+検証: mypy 対象ファイル 0 エラー、ruff 0 エラー、`tests/unit/backend/test_backend_engine_facade_and_plot.py` 33 passed、`tests/unit -k "plot or interface"` 387 passed

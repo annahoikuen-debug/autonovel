@@ -31,17 +31,14 @@ class PromptRegistry:
             レンダリングされたテンプレート文字列
         """
         if not self._enabled:
-            if template_name in self._templates:
-                return self._templates[template_name].render(**variables)
-            return ""
+            # メトリクス収集のみ無効化。レンダリング自体は常に実行し、
+            # プロンプト更新がプロセス生存中に反映されなくなることを防ぐ。
+            template = self._get_template(template_name)
+            return template.render(**variables)
 
         start_time = time.perf_counter()
         try:
-            if template_name in self._templates:
-                template = self._templates[template_name]
-            else:
-                template = self._pm.get_template(template_name)  # type: ignore[attr-defined]
-                self._templates[template_name] = template
+            template = self._get_template(template_name)
             rendered = template.render(**variables)
             elapsed_ms = (time.perf_counter() - start_time) * 1000
 
@@ -111,6 +108,22 @@ class PromptRegistry:
     def is_enabled(self) -> bool:
         """メトリクス収集が有効かどうかを返す."""
         return self._enabled
+
+    def _get_template(self, template_name: str) -> Any:
+        """テンプレートをキャッシュ付きで取得する。"""
+        if template_name in self._templates:
+            return self._templates[template_name]
+        template = self._pm.get_template(template_name)  # type: ignore[attr-defined]
+        self._templates[template_name] = template
+        return template
+
+    def invalidate(self, template_name: str) -> None:
+        """テンプレートキャッシュを無効化する。
+
+        プロンプトファイルや DB の更新後などに呼び出し、
+        プロセス生存中に最新のテンプレートが反映されるようにする。
+        """
+        self._templates.pop(template_name, None)
 
     # PromptManagerのメソッドをデリゲート（passthrough）
     def __getattr__(self, name):

@@ -9,8 +9,8 @@ from __future__ import annotations
 import warnings
 from typing import Any
 
+from src.domain.models.plot import PlotDbModel
 from src.models.audit import CriticFeedback, LogicalAuditIssueList
-from src.models.db import PlotDbModel
 
 
 class LogicalAuditor:

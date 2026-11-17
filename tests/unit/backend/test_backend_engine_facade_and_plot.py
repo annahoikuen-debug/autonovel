@@ -81,7 +81,7 @@ async def test_facade_method_delegation(facade):
 # --------------------------------------------------------------------------
 
 def _plot(**kwargs):
-    from src.models.db import PlotDbModel
+    from src.domain.models.plot import PlotDbModel
 
     return PlotDbModel(book_id=1, ep_num=1, **kwargs)
 

@@ -26,9 +26,11 @@ class NarrativeScoringService:
             )
             result = await self.llm.generate_json(purpose="audit", prompt=prompt)
             metadata = result.get("metadata", {}) if isinstance(result, dict) else {}
-            score_val = (
-                float(metadata.get("score") or result.get("score") or 75.0) if isinstance(result, dict) else 75.0
-            )
+            if isinstance(result, dict):
+                score = metadata.get("score", result.get("score"))
+                score_val = float(score) if score is not None else 75.0
+            else:
+                score_val = 75.0
             return {
                 "score": score_val,
                 "feedback": metadata.get("feedback", "Narrative scoring complete"),

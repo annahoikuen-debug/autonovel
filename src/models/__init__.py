@@ -47,12 +47,12 @@ from src.models.character import (
     CharacterRegistry,
 )
 from src.infrastructure.database.models.chunk import ChapterChunk, Vector, HAS_PGVECTOR
+from src.domain.models.chapter import ChapterDbModel
+from src.domain.models.plot import PlotDbModel
 from src.models.db import (
     BookDbModel,
     BibleDbModel,
     BranchDbModel,
-    PlotDbModel,
-    ChapterDbModel,
     CharacterDbModel,
 )
 from src.models.emotional_hook import (

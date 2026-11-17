@@ -5,8 +5,10 @@ core/interfaces.py - 依存性注入のためのインターフェース（Proto
 from collections.abc import Callable
 from typing import Any, Protocol
 
+from src.domain.models.chapter import ChapterDbModel
+from src.domain.models.plot import PlotDbModel
 from src.models.base import GenerateResult
-from src.models.db import BibleDbModel, BookDbModel, ChapterDbModel, CharacterDbModel, PlotDbModel
+from src.models.db import BibleDbModel, BookDbModel, CharacterDbModel
 
 
 class ILLMClient(Protocol):
