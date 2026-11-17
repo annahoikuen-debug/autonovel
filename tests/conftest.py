@@ -394,8 +394,9 @@ def pytest_ignore_collect(collection_path, config):  # noqa: ANN001, ARG001
     fname = Path(rel).name
 
     # 非推奨スタブ化された age_client のレガシーテスト（ファイル名で完全一致。
-    # 部分一致 "age_client" は storage_client / message_client / usage_client 等を
-    # 無警告で収集対象外にする過去インシデントの反省に従い、ファイル名限定とする）
+    # 部分一致 "age_client" は tests/unit/test_image_clients.py 等の他クライアント
+    # テストを無警告で収集対象外にする過去インシデントの反省に従い、
+    # ファイル名限定とする）
     if fname.startswith("test_age_client"):
         return True
 
