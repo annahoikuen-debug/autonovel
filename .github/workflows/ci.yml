@@ -35,14 +35,12 @@ jobs:
           pip install "ruff==0.16.5" "mypy==2.3.1"
       - name: ruff ratchet (hard gate)
         run: python scripts/ci_lint_ratchet.py --tool ruff
-      - name: mypy ratchet (hard gate / 現状の件数を超えたら fail)
+      - name: mypy ratchet (hard gate / invalid type-ignore も同一プロセスで検証)
         run: python scripts/ci_lint_ratchet.py --tool mypy
       - name: ruff format ratchet (hard gate / 現状の件数を超えたら fail)
         run: python scripts/ci_lint_ratchet.py --tool format
       - name: untracked imports check (clean checkout で import 失敗するテストを未然防止)
         run: python scripts/check_untracked_imports.py
-      - name: invalid type: ignore check (hard gate)
-        run: python scripts/ci_lint_ratchet.py --tool invalid-ignore
       - name: layer boundaries check (4層アーキテクチャの依存境界)
         run: python scripts/check_layer_boundaries.py
       - name: ruff (statistics for trend)
