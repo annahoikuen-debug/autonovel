@@ -61,6 +61,21 @@ class UnitOfWork:
         self._chroma_additions: list[dict[str, Any]] = []
         self._chroma_deletions: list[dict[str, Any]] = []
 
+    async def commit(self) -> None:
+        """UnitOfWork のコミット（トランザクション境界）。"""
+
+        async def _commit_with_retry():
+            if self.session:
+                await self.outbox_service.flush(self.session, self._chroma_additions, self._chroma_deletions)
+                await self.session.commit()
+            else:
+                raise RuntimeError("Session is None during commit")
+
+        await retry_on_lock()(_commit_with_retry)()
+        logger.info(
+            f"[UOW] SQLite transaction committed with retry. Staged {len(self._chroma_additions)} Chroma adds, {len(self._chroma_deletions)} Chroma deletes to outbox."
+        )
+
     def stage_chroma_add(
         self,
         collection: str,
@@ -205,22 +220,7 @@ class UnitOfWork:
                 if self.session:
                     await self.session.rollback()
             else:
-                # コミット前に、ステージングされたChromaDB操作をoutboxに記録
-                if self.session is None:
-                    raise RuntimeError("Session not initialized")
-
-                async def _commit_with_retry():
-                    if self.session:
-                        await self.outbox_service.flush(self.session, self._chroma_additions, self._chroma_deletions)
-                        await self.session.commit()
-                    else:
-                        raise RuntimeError("Session is None during commit")
-
-                # retry_on_lock(retries=...)(func) returns the wrapper. We then call the wrapper.
-                await retry_on_lock()(_commit_with_retry)()
-                logger.info(
-                    f"[UOW] SQLite transaction committed with retry. Staged {len(self._chroma_additions)} Chroma adds, {len(self._chroma_deletions)} Chroma deletes to outbox."
-                )
+                await self.commit()
         except Exception as e:
             logger.error(f"[UOW] Error finalizing transaction: {e}")
             raise

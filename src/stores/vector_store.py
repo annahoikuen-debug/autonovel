@@ -89,7 +89,7 @@ class VectorStore(abc.ABC):
                 key = (pair[0], pair[1], emo)
                 result.signals[key] = val
                 result.confidences[key] = vec.confidences.get(key, 0.5)
-                result.causes[key] = vec.causes.get(key)
+                result.causes[key] = vec.causes.get(key) or ""
             return result
         return None
 
@@ -209,7 +209,7 @@ class RedisVectorStore(VectorStore):
                 for emo, val in pair_emotions.items():
                     result.signals[(pair[0], pair[1], emo)] = val
                     result.confidences[(pair[0], pair[1], emo)] = vector.confidences.get((pair[0], pair[1], emo), 0.5)
-                    result.causes[(pair[0], pair[1], emo)] = vector.causes.get((pair[0], pair[1], emo))
+                    result.causes[(pair[0], pair[1], emo)] = vector.causes.get((pair[0], pair[1], emo)) or ""
                 return result
         return None
 
@@ -255,8 +255,9 @@ class RedisVectorStore(VectorStore):
                 # プレフィックスを除去してキー名のみ抽出
                 prefix = f"emotional:{namespace}:"
                 for k in batch:
-                    if k.startswith(prefix):
-                        keys.append(k[len(prefix) :])
+                    key = k.decode() if isinstance(k, bytes) else k
+                    if key.startswith(prefix):
+                        keys.append(key[len(prefix) :])
                 if cursor == 0:
                     break
         except redis.RedisError as e:

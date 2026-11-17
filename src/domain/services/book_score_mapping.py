@@ -191,7 +191,7 @@ class Unified5DScore:
             "visual_textual_synergy_score": self.visual_textual_synergy_score,
             "reader_experience_score": self.reader_experience_score,
         }
-        return min(dims, key=dims.get)
+        return min(dims, key=lambda k: dims[k])
 
 
 @dataclass
@@ -219,7 +219,7 @@ class BookScoreResult:
         """by_specialist で最もスコアが低い dimension を返す。"""
         if not self.by_specialist:
             return None
-        return min(self.by_specialist, key=self.by_specialist.get)
+        return min(self.by_specialist, key=lambda k: self.by_specialist[k])
 
 
 class UnifiedBookScoreBridge:

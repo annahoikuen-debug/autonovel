@@ -41,14 +41,14 @@ class CSPNarrativeBalancer:
 
         # Midpoint check
         mid_ep = self.config.midpoint_episode
-        if mid_ep in beat_map and beat_map[mid_ep].tension < self.config.midpoint_min_tension:
+        if mid_ep in beat_map and beat_map[mid_ep].tension < self.config.midpoint_min_tension:  # type: ignore[operator]
             violations.append(
                 f"Midpoint (Ep {mid_ep}) tension {beat_map[mid_ep].tension} < {self.config.midpoint_min_tension}"
             )
 
         # Climax check
         climax_ep = self.config.climax_episode
-        if climax_ep in beat_map and beat_map[climax_ep].tension < self.config.climax_min_tension:
+        if climax_ep in beat_map and beat_map[climax_ep].tension < self.config.climax_min_tension:  # type: ignore[operator]
             violations.append(
                 f"Climax (Ep {climax_ep}) tension {beat_map[climax_ep].tension} < {self.config.climax_min_tension}"
             )

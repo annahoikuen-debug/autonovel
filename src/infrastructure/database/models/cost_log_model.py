@@ -30,7 +30,7 @@ class CostLogModel(Base):
     cost_usd: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     timestamp: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("idx_cost_log_book_id", "book_id"),
         Index("idx_cost_log_agent_name", "agent_name"),
         Index("idx_cost_log_timestamp", "timestamp"),

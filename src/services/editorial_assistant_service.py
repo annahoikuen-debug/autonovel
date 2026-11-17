@@ -40,14 +40,14 @@ class EditorialAssistantService:
     async def ask_bible(self, session: Session, request: AskBibleRequest) -> AskBibleResponse:
         """世界観バイブル・過去章に対する Q&A を実行する"""
         entities = self._extract_entities(request.query)
-        evidence_nodes = self._retrieve_evidence(session, request.book_id, entities, request.query)
+        evidence_nodes = await self._retrieve_evidence(session, request.book_id, entities, request.query)
 
         # 類似チャンクの検索 (ベクトル検索)
-        similar_chunks = self.rag.search_similar_chunks(session, request.query, limit=3)
+        similar_chunks = await self.rag.search_similar_chunks(session, request.query, limit=3)
 
         evidence_text_parts = []
         if similar_chunks:
-            evidence_text_parts.append("【過去章・設定抜粋】\n" + "\n---\n".join(similar_chunks))
+            evidence_text_parts.append("【過去章・設定抜粋】\n" + "\n---\n".join(c.content for c in similar_chunks))
         if evidence_nodes:
             node_desc = "\n".join(f"- [{n.label}] {n.id}: {n.properties}" for n in evidence_nodes)
             evidence_text_parts.append("【ナレッジグラフ確定事実】\n" + node_desc)
@@ -84,7 +84,7 @@ class EditorialAssistantService:
     async def audit_consistency(self, session: Session, request: ConsistencyAuditRequest) -> ConsistencyAuditResponse:
         """執筆テキストと GraphRAG 設定の矛盾・不整合をリアルタイム診断する"""
         entities = self._extract_entities(request.content)
-        evidence_nodes = self._retrieve_evidence(session, request.book_id, entities, request.content)
+        evidence_nodes = await self._retrieve_evidence(session, request.book_id, entities, request.content)
 
         node_desc = (
             "\n".join(f"- [{n.label}] {n.id}: {n.properties}" for n in evidence_nodes)
@@ -131,7 +131,7 @@ class EditorialAssistantService:
             found.append(text.strip())
         return found
 
-    def _retrieve_evidence(
+    async def _retrieve_evidence(
         self,
         session: Session,
         book_id: int,
@@ -144,7 +144,7 @@ class EditorialAssistantService:
 
         try:
             raw_neighbors = self.rag.get_graph_context(session, entities, max_depth=2)
-            reranked = self.rag.rerank_graph_neighbors(raw_neighbors, query_text, top_k=5)
+            reranked = await self.rag.rerank_graph_neighbors(raw_neighbors, query_text, top_k=5)
 
             nodes: list[GraphEvidenceNode] = []
             for item in reranked:

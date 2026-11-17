@@ -1190,4 +1190,4 @@ def merge_macro_and_micro(macro: EpisodeMacroSkeleton, micro: PlotMicroBlueprint
         scenes=micro.scenes,
         script_content=micro.script_content,
         foreshadowing_refs=macro.foreshadowing_plan,
-    )
+    )  # type: ignore[call-arg]

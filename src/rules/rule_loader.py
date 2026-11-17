@@ -87,6 +87,7 @@ class RuleLoader:
                     idx,
                     name,
                 )
+                condition = None
 
         return EmotionalRule(
             event_type=event_type,

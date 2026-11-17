@@ -119,7 +119,7 @@ class KoboPublisher(PublisherAdapter):
             "Authorization": f"Bearer {credentials.access_token}",
         }
 
-    async def authenticate(self, credentials: KoboCredentials) -> bool:
+    async def authenticate(self, credentials: KoboCredentials) -> bool:  # type: ignore[override]
         """OAuth2 クライアントクレデンシャルフローで初回トークン取得"""
         if not credentials.client_id or not credentials.client_secret:
             raise AuthError("Client ID と Client Secret が必要です", self.platform)
@@ -315,7 +315,7 @@ class KoboPublisher(PublisherAdapter):
         except Exception as e:
             raise NetworkError(f"チャプター追加中にエラーが発生しました: {e}", self.platform)
 
-    async def get_post_status(self, post_id: str, credentials: KoboCredentials) -> dict[str, Any]:
+    async def get_post_status(self, post_id: str, credentials: KoboCredentials) -> dict[str, Any]:  # type: ignore[override]
         """書籍ステータス取得"""
         await self._ensure_valid_token(credentials)
         client = self._get_client()

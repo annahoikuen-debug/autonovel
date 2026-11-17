@@ -26,7 +26,7 @@ class GenerationRun(Base):
     trace_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("idx_generation_run_book_id", "book_id"),
         Index("idx_generation_run_chapter_ep", "chapter_ep"),
     )

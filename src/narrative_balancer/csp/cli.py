@@ -23,7 +23,7 @@ def parse_args(args: List[str] = None):
     return parser.parse_args(args)
 
 
-def main(argv: List[str] = None) -> int:
+def main(argv: List[str] | None = None) -> int:
     args = parse_args(argv)
 
     state_path = Path(args.state)

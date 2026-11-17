@@ -101,7 +101,7 @@ def load_preset(genre: str) -> dict[str, Any]:
     if genre not in SUPPORTED_GENRES:
         raise ValueError(f"Unsupported genre: {genre}. Supported: {SUPPORTED_GENRES}")
 
-    preset = {}
+    preset: dict[str, Any] = {}
     genre_dir = PRESETS_BASE_DIR / genre
 
     if not genre_dir.exists():

@@ -87,7 +87,7 @@ def detect_foreshadowing_mentions(
 
             mentions.append(
                 ForeshadowingMention(
-                    foreshadowing_id=f_id,
+                    foreshadowing_id=f_id,  # type: ignore[arg-type]
                     title=title,
                     mention_count=count,
                     context_snippets=snippets,

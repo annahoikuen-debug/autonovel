@@ -26,7 +26,7 @@ class CharacterComment(Base):
     sentiment: Mapped[str] = mapped_column(String(50), default="neutral")
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("ix_char_comment_book_char", "book_id", "character_name"),
         Index("ix_char_comment_ep", "book_id", "episode_num"),
     )

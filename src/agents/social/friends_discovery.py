@@ -23,7 +23,7 @@ class DiscoveredCharacterCandidate(BaseModel):
 
 
 # ルールベースフォールバック用テンプレート
-ROLE_INFERENCE_TEMPLATES = [
+ROLE_INFERENCE_TEMPLATES: list[dict[str, Any]] = [
     {
         "pattern": ["勇者", "剣士", "主人公", "騎士"],
         "candidates": [

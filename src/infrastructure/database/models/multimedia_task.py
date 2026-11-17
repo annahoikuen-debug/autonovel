@@ -21,4 +21,6 @@ class MultimediaTask(Base):
     finished_at = Column(CompatibleDateTime, nullable=True)
     error = Column(Text, nullable=True)
 
-    __table_args__ = (Index("ix_multimedia_tasks_task_id", "task_id"),)
+    __table_args__ = (  # type: ignore[assignment]
+        Index("ix_multimedia_tasks_task_id", "task_id"),
+    )

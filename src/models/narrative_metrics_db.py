@@ -11,10 +11,10 @@ from sqlalchemy.sql import func
 from src.backend.database.models import NarrativeMetric
 
 # プロトタイプ互換用ローカルBase（メインメタデータのテーブル名衝突を防止）
-_LocalBase = declarative_base()
+_LocalBase = declarative_base()  # type: ignore[misc]
 
 
-class NarrativeMetricLegacy(_LocalBase):
+class NarrativeMetricLegacy(_LocalBase):  # type: ignore[valid-type, misc]
     """物語の定量的指標を保存する旧プロトタイプモデル"""
 
     __tablename__ = "narrative_metrics_legacy"
@@ -31,7 +31,7 @@ class NarrativeMetricLegacy(_LocalBase):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
 
 
-class NarrativeMetricDefinition(_LocalBase):
+class NarrativeMetricDefinition(_LocalBase):  # type: ignore[valid-type, misc]
     """指標の定義（ルーブリック）を保存するマスターモデル"""
 
     __tablename__ = "narrative_metric_definitions"

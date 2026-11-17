@@ -25,7 +25,7 @@ class PublishRecord(Base):
     updated_at = Column(Integer, nullable=False)
 
     # ユニーク制約：同一書籍・同一話・同一プラットフォームは1レコード
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         UniqueConstraint("book_id", "episode_num", "platform", name="uq_publish_record_book_ep_platform"),
         Index("ix_publish_record_book_platform", "book_id", "platform"),
     )

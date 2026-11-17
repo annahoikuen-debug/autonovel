@@ -12,7 +12,7 @@ def _is_valid_tension(value: object) -> bool:
     if value is None:
         return False
     try:
-        return not math.isnan(float(value))
+        return not math.isnan(float(value))  # type: ignore[arg-type]
     except (TypeError, ValueError):
         return False
 
@@ -115,7 +115,7 @@ class PriorityResolver:
                 # tension は Optional[float] で None/NaN があり得るため除外する
                 candidates = [p.tension for p in proposals.values() if _is_valid_tension(p.tension)]
                 if candidates:
-                    chosen_beat.tension = max(candidates)
+                    chosen_beat.tension = max(candidates)  # type: ignore[type-var]
                 # 全部 None/NaN の場合は既存値 (base) をそのまま維持する
 
             # 3. Characters & Defeats: CSP (primary) -> Grammar -> Base

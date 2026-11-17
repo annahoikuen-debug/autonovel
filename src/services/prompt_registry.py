@@ -15,6 +15,7 @@ class PromptRegistry:
 
     def __init__(self, prompt_manager: PromptManager):
         self._pm = prompt_manager
+        self._templates: dict[str, Any] = {}  # キャッシュしたテンプレート
         self._metrics: dict[str, dict[str, Any]] = {}
         self._enabled = True
 
@@ -30,11 +31,17 @@ class PromptRegistry:
             レンダリングされたテンプレート文字列
         """
         if not self._enabled:
-            return self._pm.get_template(template_name).render(**variables)
+            if template_name in self._templates:
+                return self._templates[template_name].render(**variables)
+            return ""
 
         start_time = time.perf_counter()
         try:
-            template = self._pm.get_template(template_name)
+            if template_name in self._templates:
+                template = self._templates[template_name]
+            else:
+                template = self._pm.get_template(template_name)  # type: ignore[attr-defined]
+                self._templates[template_name] = template
             rendered = template.render(**variables)
             elapsed_ms = (time.perf_counter() - start_time) * 1000
 

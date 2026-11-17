@@ -61,7 +61,7 @@ class SceneExtractor:
             if len(p) < 15:
                 continue
             score = sum(1 for cue in self._VISUAL_CUES if cue in p)
-            score += min(len(p), 300) / 100.0
+            score += min(len(p), 300) / 100.0  # type: ignore[assignment]
             scored.append((score, p))
         scored.sort(key=lambda x: x[0], reverse=True)
         return [p for _, p in scored[:max_scenes]]

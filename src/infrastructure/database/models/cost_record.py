@@ -25,7 +25,7 @@ class CostRecord(Base):
     ep_num: Mapped[int | None] = mapped_column(Integer, nullable=True)
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("idx_cost_record_book_id", "book_id"),
         Index("idx_cost_record_branch_id", "branch_id"),
     )

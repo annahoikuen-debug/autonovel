@@ -26,7 +26,7 @@ class CharacterJournal(Base):
     secret_thought: Mapped[str] = mapped_column(Text, default="")
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("ix_char_journal_book_char", "book_id", "character_name"),
         Index("ix_char_journal_ep", "book_id", "episode_num"),
     )

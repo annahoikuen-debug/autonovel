@@ -310,13 +310,13 @@ class AuditAggregator:
 
         # Step 19-22: スコアキャリブレーション・外れ値検出・分散ペナルティ
         if apply_calibration and self.calibrator is not None:
-            cal_input = {}
+            cal_input: dict[str, dict[str, float]] = {}
             for n in present:
                 res = self._results[n]
                 conf = getattr(res, "confidence", 1.0)
                 cal_input[n] = {"score": res.score, "confidence": conf}
 
-            cal_output = self.calibrator.calibrate_all(cal_input, genre=genre)
+            cal_output = self.calibrator.calibrate_all(cal_input, genre=genre)  # type: ignore
             calibrated_by_specialist = cal_output.get("calibrated_scores", by_specialist)
             calibration_meta = cal_output.get("metadata", {})
             outliers = cal_output.get("outliers", [])

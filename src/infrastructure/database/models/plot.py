@@ -71,4 +71,6 @@ class Plot(Base):
     candidates: Mapped[str] = mapped_column(Text, default="[]")
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_plots_book_branch_ep"),)
+    __table_args__ = (  # type: ignore[assignment]
+        UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_plots_book_branch_ep"),
+    )

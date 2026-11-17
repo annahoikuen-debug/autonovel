@@ -36,7 +36,7 @@ def test_all_llm_import_paths(module_path, symbols):
 
 
 def test_old_llm_shim_paths_removed():
-    """旧パス shim は削除済み：空パッケージまたは不在であり、実体シンボルを公開しない。"""
+    """旧パス shim は削除済み：clean checkout でモジュール不在（ModuleNotFoundError）であることを確認。"""
     old_paths = [
         "src.core.llm",
         "src.core.llm_clients",
@@ -44,10 +44,8 @@ def test_old_llm_shim_paths_removed():
         "src.services.llm",
     ]
     for module_path in old_paths:
-        mod = importlib.import_module(module_path)
-        # 空パッケージ（shim 削除済み）であることを確認：実体シンプル名を持たない
-        assert not hasattr(mod, "LLMProviderFactory"), f"{module_path} に LLMProviderFactory が残存"
-        assert not hasattr(mod, "BaseLLMClient"), f"{module_path} に BaseLLMClient が残存"
+        with pytest.raises(ModuleNotFoundError):
+            importlib.import_module(module_path)
 
 
 def test_old_llm_circuit_breaker_removed():

@@ -389,9 +389,13 @@ class SemanticCacheManager:
                         plot_data={},  # プレースホルダー
                         script_text="",
                         target_word_count=3000,
+                        char_static_ctx="",
+                        char_dynamic_ctx="",
+                        prev_ctx="",
                         book_id=book_id,
                     )
-                    prefetch_prompts.append((task_type, prompt))
+                    # build_drafting_prompt returns Tuple[str, str]; use the user prompt part
+                    prefetch_prompts.append((task_type, prompt[1]))  # type: ignore[arg-type]
                 except Exception as e:
                     logger.debug(f"[PREFETCH] Could not prefetch drafting prompt for ep{next_ep}: {e}")
 
@@ -404,8 +408,8 @@ class SemanticCacheManager:
                         style_key="default",
                         prose_sample="",
                         book_id=book_id,
-                    )
-                    prefetch_prompts.append((task_type, prompt))
+                    )  # type: ignore[assignment]
+                    prefetch_prompts.append((task_type, prompt))  # type: ignore[arg-type]
                 except Exception as e:
                     logger.debug(f"[PREFETCH] Could not prefetch polishing prompt for ep{next_ep}: {e}")
 
@@ -413,10 +417,15 @@ class SemanticCacheManager:
         # (実際のEmbedding計算はバックグラウンドで実行される)
         for task_type, prompt in prefetch_prompts:
             # プロンプトのハッシュをキーとして、プレースホルダー値を登録
-            l1_key = self._get_l1_key(prompt, task_type, genre, temperature)
+            # build_drafting_prompt returns Tuple[str, str]; _get_l1_key needs str
+            if isinstance(prompt, str):
+                prompt_str = prompt
+            else:
+                prompt_str = prompt[1]
+            l1_key = self._get_l1_key(prompt_str, task_type, genre, temperature)
             # 実際のEmbedding計算は非同期でバックグラウンド実行
             _spawn_background(
-                self._prefetch_embedding(prompt, task_type, genre, temperature),
+                self._prefetch_embedding(prompt_str, task_type, genre, temperature),
                 name="semantic_cache.prefetch",
             )
             logger.info(f"[PREFETCH] Queued prefetch for ep{next_ep} task={task_type}, key={l1_key[:16]}...")

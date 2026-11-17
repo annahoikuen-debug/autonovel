@@ -26,7 +26,7 @@ class TaskWALLogModel(Base):
     heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("idx_task_wal_logs_worker_id", "worker_id"),
         Index("idx_task_wal_logs_dag_id", "dag_id"),
         Index("idx_task_wal_logs_node_id", "node_id"),

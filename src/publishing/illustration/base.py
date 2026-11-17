@@ -21,7 +21,7 @@ class ImageGenerationResult:
     image_bytes: bytes
     format: str = "png"
     seed_used: int = -1
-    metadata: dict = None
+    metadata: dict | None = None
 
 
 class ImageGeneratorClient(ABC):

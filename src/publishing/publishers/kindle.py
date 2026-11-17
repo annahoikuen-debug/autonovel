@@ -134,7 +134,7 @@ class KindlePublisher(PublisherAdapter):
             "x-amz-access-token": credentials.access_token,
         }
 
-    async def authenticate(self, credentials: KindleCredentials) -> bool:
+    async def authenticate(self, credentials: KindleCredentials) -> bool:  # type: ignore[override]
         """LWA認証確認"""
         if not credentials.client_id or not credentials.client_secret:
             raise AuthError("Client ID と Client Secret が必要です", self.platform)
@@ -291,7 +291,7 @@ class KindlePublisher(PublisherAdapter):
         except Exception as e:
             raise NetworkError(f"更新中にエラーが発生しました: {e}", self.platform)
 
-    async def get_post_status(self, post_id: str, credentials: KindleCredentials) -> dict[str, Any]:
+    async def get_post_status(self, post_id: str, credentials: KindleCredentials) -> dict[str, Any]:  # type: ignore[override]
         """書籍ステータス取得"""
         await self._ensure_valid_token(credentials)
         client = self._get_client()

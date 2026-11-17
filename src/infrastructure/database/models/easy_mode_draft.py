@@ -38,7 +38,7 @@ class EasyModeDraft(Base):
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("idx_easy_mode_drafts_kind", "kind"),
         Index("idx_easy_mode_drafts_created", "created_at"),
     )

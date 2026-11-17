@@ -7,6 +7,7 @@ VOICEVOX サーバー不在時の Graceful Fallback（空ファイル生成ま�
 from __future__ import annotations
 
 import logging
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any

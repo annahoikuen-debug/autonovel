@@ -459,7 +459,7 @@ class NarouExporter(BaseExporter):
             yield self.apply_template_filters(chapter_text, self.platform, novel, ch)
 
             # 話区切り（最後の章以外に「=====」を挿入）
-            if i < len(chapters) - 1:
+            if i < len(chapters) - 1:  # type: ignore[arg-type]
                 yield "\n=====\n"
 
         # フッターがある場合は最後に出す
@@ -625,8 +625,8 @@ _EXPORTERS = {
 
 def get_exporter(platform: str) -> BaseExporter:
     """プラットフォーム名からエクスポータを取得する。未知の場合はなろうを既定とする。"""
-    cls = _EXPORTERS.get(platform, NarouExporter)
-    return cls()
+    cls = _EXPORTERS.get(platform, NarouExporter)  # type: ignore[abstract]
+    return cls()  # type: ignore[abstract]
 
 
 def list_platforms() -> List[Dict[str, str]]:

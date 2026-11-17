@@ -21,7 +21,7 @@ class MultimediaArtifact(Base):
     metadata_json = Column(Text, nullable=True)
     created_at = Column(CompatibleDateTime, server_default=func.now(), nullable=False)
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("ix_multimedia_artifacts_book_id", "book_id"),
         Index("ix_multimedia_artifacts_asset_type", "asset_type"),
     )

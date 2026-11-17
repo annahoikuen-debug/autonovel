@@ -107,26 +107,27 @@ class TestVectorStore:
         assert annotation_vec.get_value("A", "B", EmotionType.AFFECTION) == -0.5
 
     def test_get_namespace_keys(self):
-        """キー一覧取得テスト"""
-        try:
-            import fakeredis
-            redis_client = fakeredis.FakeRedis(decode_responses=True)
-        except ImportError:
-            pytest.skip("fakeredis not installed")
+        """キー一覧取得テスト（decode_responses True/False の両方で動作すること）"""
+        for decode_responses in (True, False):
+            try:
+                import fakeredis
+                redis_client = fakeredis.FakeRedis(decode_responses=decode_responses)
+            except ImportError:
+                pytest.skip("fakeredis not installed")
 
-        store = RedisVectorStore(skip_connection_check=True)
-        store.client = redis_client
+            store = RedisVectorStore(skip_connection_check=True)
+            store.client = redis_client
 
-        vec = EmotionalVector(episode_id="ep01")
-        vec.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.5, 0.8, "...", "ep01"))
+            vec = EmotionalVector(episode_id="ep01")
+            vec.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.5, 0.8, "...", "ep01"))
 
-        store.upsert("pipeline", "ep01:A->B", vec)
-        store.upsert("pipeline", "ep02:A->B", vec)
+            store.upsert("pipeline", "ep01:A->B", vec)
+            store.upsert("pipeline", "ep02:A->B", vec)
 
-        keys = store.get_namespace_keys("pipeline")
-        assert len(keys) == 2
-        assert "ep01:A->B" in keys
-        assert "ep02:A->B" in keys
+            keys = store.get_namespace_keys("pipeline")
+            assert len(keys) == 2
+            assert "ep01:A->B" in keys
+            assert "ep02:A->B" in keys
 
     def test_ttl_expiry(self):
         """TTL経過でキーが消失すること（モック時間で確認）"""

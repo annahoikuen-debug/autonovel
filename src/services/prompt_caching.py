@@ -140,7 +140,7 @@ class UnifiedPromptCache:
         l1_maxsize: int = 1000,
     ):
         # L1 インメモリキャッシュ
-        self._l1_cache = LRUCache(maxsize=l1_maxsize)
+        self._l1_cache: LRUCache = LRUCache(maxsize=l1_maxsize)
 
         # L3 セマンティックキャッシュ (ChromaDB)
         self._semantic_cache = None

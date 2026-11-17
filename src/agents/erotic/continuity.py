@@ -253,7 +253,8 @@ class SceneContinuityTracker:
                     scores[attitude] += 1
 
         # 最もスコアの高い態度を選択
-        best_attitude = max(scores, key=scores.get)
+        # scores.get returns Optional[int], use lambda to ensure int return type
+        best_attitude = max(scores, key=lambda k: scores[k])
         if scores[best_attitude] > 0:
             return best_attitude
 
@@ -618,7 +619,8 @@ class SceneContinuityTracker:
                     scores[period] += 1
 
         # 最もスコアが高い時間帯を返す
-        best_period = max(scores, key=scores.get)
+        # scores.get returns Optional[int], use lambda to ensure int return type
+        best_period = max(scores, key=lambda k: scores[k])
         if scores[best_period] == 0:
             return "unknown"
         return best_period
@@ -827,7 +829,8 @@ class ContinuityTracker:
             "content": content,
             "euphoric": euphoric,
         }
-        max_state = max(scores, key=scores.get)
+        # max_state = max(scores, key=scores.get)  # type: ignore[arg-type]
+        max_state = max(scores, key=lambda k: scores[k])
         if scores[max_state] >= 2:
             return max_state
         return "neutral"
@@ -852,7 +855,8 @@ class ContinuityTracker:
         bonded = sum(text.count(kw) for kw in INTIMACY_BONDED_KW)
 
         scores = {"stranger": stranger, "close": close, "intimate": intimate, "bonded": bonded}
-        max_level = max(scores, key=scores.get)
+        # max_level = max(scores, key=scores.get)  # type: ignore[arg-type]
+        max_level = max(scores, key=lambda k: scores[k])
         if scores[max_level] >= 1:
             return max_level
         return "acquaintance"

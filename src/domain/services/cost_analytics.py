@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass, field as dataclasses_field
-from typing import Dict, Tuple, Optional
+from typing import Dict, Optional, Tuple
 
 # Existing pricing definition
 DEFAULT_PRICING: Dict[str, Tuple[float, float]] = {
@@ -32,7 +32,7 @@ class CostCalculator:
         in_price, out_price = self.pricing.get(effective_model, self.pricing.get("default", (0.50, 1.50)))
         return round((input_tokens / 1_000_000) * in_price + (output_tokens / 1_000_000) * out_price, 6)
 
-    def _task_to_model(self, task_type: str = None) -> str:
+    def _task_to_model(self, task_type: Optional[str] = None) -> str:
         """タスク種別をモデル名にマッピングする（環境変数を考慮）。"""
         if task_type is None:
             task_type = os.environ.get("LLM_TASK_TYPE", "writing")

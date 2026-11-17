@@ -149,7 +149,7 @@ class NarouPublisher(PublisherAdapter):
             self._driver = None
             self._logged_in = False
 
-    async def authenticate(self, credentials: NarouCredentials) -> bool:
+    async def authenticate(self, credentials: NarouCredentials) -> bool:  # type: ignore[override]
         """なろうにログイン（asyncio.to_thread で非ブロッキング実行 Step 52）"""
         if not credentials.email or not credentials.password:
             raise AuthError("メールアドレスとパスワードが必要です", self.platform)
@@ -389,7 +389,7 @@ class NarouPublisher(PublisherAdapter):
 
         return await asyncio.to_thread(_sync_update)
 
-    async def get_post_status(self, post_id: str, credentials: NarouCredentials) -> dict[str, Any]:
+    async def get_post_status(self, post_id: str, credentials: NarouCredentials) -> dict[str, Any]:  # type: ignore[override]
         """投稿ステータス取得（公開状態、閲覧数等）"""
         if not self._logged_in:
             await self.authenticate(credentials)

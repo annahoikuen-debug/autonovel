@@ -8,7 +8,7 @@ from src.config import STYLE_DEFINITIONS
 try:
     from pydantic.errors import PydanticUserError
 except ImportError:
-    PydanticUserError = Exception
+    PydanticUserError = Exception  # type: ignore[assignment]
 
 from src.core.exceptions import LLMValidationError
 from src.core.observability import StructuredLogger

@@ -27,7 +27,7 @@ class PatchReview(Base):
     created_at = Column(CompatibleDateTime, server_default=func.now())
     updated_at = Column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("idx_patch_reviews_book_ep", "book_id", "ep_num"),
         Index("idx_patch_reviews_status", "status"),
     )

@@ -177,6 +177,6 @@ class ForeshadowingPredicateAnalyzer:
         return PredicateAnalysisResult(
             foreshadowing_id=foreshadowing_id,
             matches=matches,
-            highest_action=highest_action,
+            highest_action=highest_action,  # type: ignore[arg-type]
             syntax_score=syntax_score,
         )

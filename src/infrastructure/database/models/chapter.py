@@ -40,4 +40,6 @@ class Chapter(Base):
     cost_jpy: Mapped[float] = mapped_column(Float, default=0.0)
     cache_hit_ratio: Mapped[float] = mapped_column(Float, default=0.0)
 
-    __table_args__ = (UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_chapters_book_branch_ep"),)
+    __table_args__ = (  # type: ignore[assignment]
+        UniqueConstraint("book_id", "branch_id", "ep_num", name="uq_chapters_book_branch_ep"),
+    )

@@ -21,6 +21,7 @@
   python scripts/ci_lint_ratchet.py                 # ruff（後方互換）
   python scripts/ci_lint_ratchet.py --tool mypy
   python scripts/ci_lint_ratchet.py --tool format
+  python scripts/ci_lint_ratchet.py --tool invalid-ignore
   python scripts/ci_lint_ratchet.py --tool all
   python scripts/ci_lint_ratchet.py --tool ruff --update
 """
@@ -38,12 +39,14 @@ BASELINE = Path("config/ci_lint_baseline.json")
 RUFF_COUNT_RE = re.compile(r"Found\s+(\d+)\s+error")
 MYPY_COUNT_RE = re.compile(r"Found\s+(\d+)\s+error")
 FORMAT_COUNT_RE = re.compile(r"(\d+)\s+files?\s+would be reformatted")
+INVALID_IGNORE_RE = re.compile(r'Invalid "type: ignore" comment')
 
-TOOLS = ("ruff", "mypy", "format")
+TOOLS = ("ruff", "mypy", "format", "invalid-ignore")
 BASELINE_KEYS = {
     "ruff": "ruff_errors",
     "mypy": "mypy_errors",
     "format": "format_files",
+    "invalid-ignore": "invalid_ignore_errors",
 }
 
 
@@ -100,7 +103,13 @@ def run_format() -> int:
     raise RuntimeError(f"ruff format の出力から件数を取得できませんでした:\n{output[-2000:]}")
 
 
-RUNNERS = {"ruff": run_ruff, "mypy": run_mypy, "format": run_format}
+def run_invalid_ignore() -> int:
+    p = _run([sys.executable, "-m", "mypy", "src", "--ignore-missing-imports"])
+    output = p.stdout + p.stderr
+    return len(INVALID_IGNORE_RE.findall(output))
+
+
+RUNNERS = {"ruff": run_ruff, "mypy": run_mypy, "format": run_format, "invalid-ignore": run_invalid_ignore}
 
 
 def _load_baseline() -> dict[str, object]:

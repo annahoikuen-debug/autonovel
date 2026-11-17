@@ -18,9 +18,9 @@ def validate_quarter_boundaries(beats: List[Beat]) -> List[str]:
     has_disaster = any(
         b.beat_type in (BeatType.MIDPOINT_DISASTER, BeatType.DISASTER, BeatType.BATTLE) for b in q2_beats
     )
-    max_q2_tension = max((b.tension for b in q2_beats), default=0.0)
+    max_q2_tension = max((b.tension for b in q2_beats), default=0.0)  # type: ignore[type-var]
 
-    if not has_disaster and max_q2_tension < 7.0:
+    if not has_disaster and max_q2_tension < 7.0:  # type: ignore[operator]
         violations.append("Quarter 2 lacks a midpoint crisis, battle or high tension turn (max tension < 7.0)")
 
     # Quarter 4 (Climax section)

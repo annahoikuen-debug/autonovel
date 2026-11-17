@@ -124,4 +124,8 @@ class ClaudeUnifiedClient(IUnifiedLLMClient):
             async for text in stream.text_stream:
                 yield StreamChunk(text=text, is_final=False, finish_reason=None)
             # ストリーム終了時に最終チャンクを送信
-            yield StreamChunk(text="", is_final=True, finish_reason=stream.stop_reason or "stop")
+            yield StreamChunk(
+                text="",
+                is_final=True,
+                finish_reason=getattr(stream, "stop_reason", None) or "stop",
+            )

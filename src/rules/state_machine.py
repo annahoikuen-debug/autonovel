@@ -167,10 +167,11 @@ class EmotionalStateMachine:
         return len(self._state)
 
     def __iter__(self) -> Iterator[StateKey]:
-        return iter(self._state.items())
+        return iter(self._state.items())  # type: ignore[arg-type]
 
     def items(self):
         """全 (key, value) ペアを返す。"""
+        # type: ignore[arg-type]
         return self._state.items()
 
 

@@ -19,7 +19,7 @@ class SettingVersion(Base):
     created_by = Column(String(100), nullable=True)
     created_at = Column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         UniqueConstraint("book_id", "version_number", name="uq_setting_versions_book_ver"),
         Index("idx_setting_versions_book", "book_id"),
     )

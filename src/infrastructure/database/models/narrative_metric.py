@@ -17,7 +17,7 @@ class NarrativeMetric(Base):
     metric_value = Column(Float, nullable=False)
     recorded_at = Column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("idx_narrative_metrics_book_id", "book_id"),
         Index("idx_narrative_metrics_chapter_id", "chapter_id"),
         Index("idx_narrative_metrics_metric_name", "metric_name"),

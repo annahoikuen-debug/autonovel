@@ -23,7 +23,7 @@ def apply_partial_state(
     for ep, beat in partial.confirmed_beats.items():
         idx = ep - 1
         if 0 <= idx < vars.n_episodes:
-            t_val = int(round(max(1.0, min(10.0, beat.tension))))
+            t_val = int(round(max(1.0, min(10.0, beat.tension))))  # type: ignore[type-var,arg-type]
             bt_val = BEAT_TYPE_MAP.get(beat.beat_type, 0)
 
             # Add hints for solver search guidance

@@ -56,7 +56,7 @@ class GeminiUnifiedClient(IUnifiedLLMClient):
                 yield StreamChunk(text=chunk.text)
         yield StreamChunk(text="", is_final=True)
 
-    async def astream(self, req: LLMRequest) -> AsyncIterator[StreamChunk]:
+    async def astream(self, req: LLMRequest) -> AsyncIterator[StreamChunk]:  # type: ignore
         import asyncio
 
         loop = asyncio.get_running_loop()

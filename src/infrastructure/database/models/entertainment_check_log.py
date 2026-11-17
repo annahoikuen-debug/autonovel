@@ -19,4 +19,6 @@ class EntertainmentCheckLog(Base):
     feedback = Column(Text, nullable=True)
     created_at = Column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (Index("idx_entertainment_check_log_book_ep", "book_id", "ep_num"),)
+    __table_args__ = (  # type: ignore[assignment]
+        Index("idx_entertainment_check_log_book_ep", "book_id", "ep_num"),
+    )

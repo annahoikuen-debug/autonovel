@@ -63,7 +63,7 @@ def get_credentials_class(platform: str) -> type[PublisherCredentials]:
 
 def list_publishers() -> list[dict[str, str]]:
     """対応Publisher一覧を返す"""
-    return [{"platform": p.platform, "description": p.description} for p in _PUBLISHERS.values()]
+    return [{"platform": p.platform, "description": p.description} for p in _PUBLISHERS.values()]  # type: ignore[attr-defined]
 
 
 __all__ = [

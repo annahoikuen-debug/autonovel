@@ -68,7 +68,7 @@ class GraphRAGService:
     ) -> None:
         self._reranker = reranker
         self._custom_vector_store = vector_store
-        self._vector_store_instance = None
+        self._vector_store_instance = get_default_store()
         self._last_call_stats: dict[str, Any] = {}
         self._token_budget = token_budget
         self._enable_cache = enable_cache
@@ -86,8 +86,11 @@ class GraphRAGService:
 
     @_vector_store.setter
     def _vector_store(self, val: BaseVectorStore | None) -> None:
-        self._custom_vector_store = val
-        self._vector_store_instance = val
+        if val is None:
+            self._custom_vector_store = None
+            self._vector_store_instance = get_default_store()
+        else:
+            self._custom_vector_store = val
 
     def get_reranker(self) -> Reranker:
         """遅延初期化で Reranker を返す."""
@@ -920,7 +923,7 @@ class GraphRAGService:
         )
 
         # 簡易実装: キーワードベースの逆引き索引
-        index = {}
+        index: dict[str, list[dict[str, Any]]] = {}
         for chunk in chunks:
             content = chunk.content or ""
             meta = chunk.chunk_metadata or {}

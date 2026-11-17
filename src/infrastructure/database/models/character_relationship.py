@@ -29,7 +29,7 @@ class CharacterRelationship(Base):
     last_interaction_ep: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now(), onupdate=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         UniqueConstraint("book_id", "char_a", "char_b", name="uq_char_rel"),
         Index("ix_char_rel_book", "book_id"),
     )

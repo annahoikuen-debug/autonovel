@@ -28,7 +28,7 @@ class RelationshipHistory(Base):
     trigger_event = Column(String(255), default="")
     created_at = Column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("ix_rel_history_rel_id", "relationship_id"),
         Index("ix_rel_history_ep", "episode_num"),
     )

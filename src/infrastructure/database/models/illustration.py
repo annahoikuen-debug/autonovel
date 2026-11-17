@@ -27,7 +27,7 @@ class Illustration(Base):
     generation_time_ms: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("idx_illustrations_book_id", "book_id"),
         Index("idx_illustrations_book_type", "book_id", "illustration_type"),
     )

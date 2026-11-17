@@ -26,7 +26,7 @@ class PromptUsageLog(Base):
     last_accessed: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     error_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("idx_prompt_usage_timestamp", "timestamp"),
         Index("idx_prompt_usage_template", "template_name"),
     )

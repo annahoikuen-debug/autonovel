@@ -23,4 +23,6 @@ class ChapterVersion(Base):
     base_version_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("chapter_versions.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (Index("idx_chv_book_chap", "book_id", "chapter_ep"),)
+    __table_args__ = (  # type: ignore[assignment]
+        Index("idx_chv_book_chap", "book_id", "chapter_ep"),
+    )

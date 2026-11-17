@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 # [Update: 2026-05-15 17:29 - Force Reload]
-from typing import Any, Literal
+from typing import Any, Literal, Optional
 
 from pydantic import AliasChoices, BaseModel, Field, field_validator, model_validator
 
@@ -277,7 +277,7 @@ class ImmersionScore(BaseModel):
 
     model_config = MODEL_CONFIG_DEFAULTS
 
-    def calculate_total(self, weights: dict = None) -> float:
+    def calculate_total(self, weights: Optional[dict] = None) -> float:
         """加重合計でトータルスコアを計算"""
         if weights is None:
             weights = {

@@ -90,7 +90,7 @@ def get_emotional_summary(vector: EmotionalVector, top_n: int = 5) -> list[dict]
         }
         dom = get_dominant_emotion(vector, source, target)
         if dom:
-            entry["dominant"] = {"emotion": dom[0].value, "value": round(dom[1], 2)}
+            entry["dominant"] = {"emotion": dom[0].value, "value": round(dom[1], 2)}  # type: ignore[dict-item]
         summary.append(entry)
 
     return summary

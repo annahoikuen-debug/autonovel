@@ -1,7 +1,8 @@
 {
   "ruff_errors": 0,
-  "mypy_errors": 366,
+  "mypy_errors": 250,
   "format_files": 0,
+  "invalid_ignore_errors": 0,
   "policy": "burn-down",
   "history": [
     {
@@ -38,6 +39,13 @@
       "ruff_errors": 0,
       "format_files": 0,
       "note": "Q3 修正後実測 (502→500、2件削減)。adapter.py から create_default_specialists 削除、LLMService 互換メソッド修正の効果"
+    },
+    {
+      "date": "2026-11-17",
+      "mypy_errors": 304,
+      "ruff_errors": 0,
+      "format_files": 0,
+      "note": "PLAN_Q4 Phase 3継続中。__table_args__ 型注釈修正と arg-type/attr-defined 体系的修正による削減"
     }
   ],
   "targets": [

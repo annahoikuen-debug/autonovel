@@ -24,7 +24,7 @@ class DSPAdapter(NarrativeBalancerPort):
 
     name = "dsp"
 
-    def __init__(self, balancer: DSPTensionBalancer = None):
+    def __init__(self, balancer: DSPTensionBalancer | None = None):
         self.balancer = balancer or DSPTensionBalancer()
 
     def balance(self, state: PlotState) -> BalancerResult:
@@ -74,7 +74,7 @@ class CSPAdapter(NarrativeBalancerPort):
 
     name = "csp"
 
-    def __init__(self, balancer: CSPNarrativeBalancer = None):
+    def __init__(self, balancer: CSPNarrativeBalancer | None = None):
         self.balancer = balancer or CSPNarrativeBalancer()
 
     def balance(self, state: PlotState) -> BalancerResult:
@@ -145,7 +145,7 @@ class GrammarAdapter(NarrativeBalancerPort):
 
     name = "grammar"
 
-    def __init__(self, balancer: GrammarNarrativeBalancer = None):
+    def __init__(self, balancer: GrammarNarrativeBalancer | None = None):
         self.balancer = balancer or GrammarNarrativeBalancer()
 
     def balance(self, state: PlotState) -> BalancerResult:

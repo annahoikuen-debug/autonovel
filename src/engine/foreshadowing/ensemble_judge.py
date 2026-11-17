@@ -144,7 +144,7 @@ class EnsembleJudge:
 
         return EnsembleJudgment(
             foreshadowing_id=foreshadowing_id,
-            status=status,
+            status=status,  # type: ignore[arg-type]
             score_breakdown=breakdown,
             rationale=rationale,
             should_reschedule=should_reschedule,

@@ -34,7 +34,7 @@ def repair_midpoint_sag(
     for ep in list(relaxed_confirmed.keys()):
         if abs(ep - midpoint) <= 2:
             beat = relaxed_confirmed[ep]
-            if beat.tension < config.midpoint_min_tension or beat.beat_type in (BeatType.DAILY, BeatType.STAGNATION):
+            if beat.tension < config.midpoint_min_tension or beat.beat_type in (BeatType.DAILY, BeatType.STAGNATION):  # type: ignore[operator]
                 del relaxed_confirmed[ep]
 
     relaxed_state = PartialPlotState(

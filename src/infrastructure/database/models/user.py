@@ -19,7 +19,7 @@ class User(Base):
     """ユーザーアカウントの ORM モデル。"""
 
     __tablename__ = "users"
-    __table_args__ = (CheckConstraint("credits >= 0", name="chk_user_credits_non_negative"),)
+    __table_args__ = (CheckConstraint("credits >= 0", name="chk_user_credits_non_negative"),)  # type: ignore[assignment]
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)

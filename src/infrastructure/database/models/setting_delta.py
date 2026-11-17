@@ -22,7 +22,7 @@ class SettingDelta(Base):
     patch_review_id = Column(Integer, ForeignKey("patch_reviews.id"), nullable=True)
     created_at = Column(CompatibleDateTime, server_default=func.now())
 
-    __table_args__ = (
+    __table_args__ = (  # type: ignore[assignment]
         Index("idx_setting_deltas_book_field", "book_id", "field_path"),
         Index("idx_setting_deltas_merged", "merged_to_graphrag"),
     )

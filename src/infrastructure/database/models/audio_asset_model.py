@@ -23,4 +23,4 @@ class AudioAssetModel(Base):
     file_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    __table_args__ = (Index("idx_audio_assets_book_ep", "book_id", "episode_num"),)
+    __table_args__ = (Index("idx_audio_assets_book_ep", "book_id", "episode_num"),)  # type: ignore[assignment]

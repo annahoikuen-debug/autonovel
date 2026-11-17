@@ -12,7 +12,7 @@ import inspect
 import time
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -501,27 +501,29 @@ class ReflectiveRAGService:
                         merged: dict[str, Any] = {}
                         for q in queries:
                             docs = self.rag_service.search_similar_chunks(
-                                session,
+                                cast(Session, session),
                                 query=q,
                                 limit=self.initial_fetch_k,
                                 min_score=0.0,
                             )
                             if inspect.iscoroutine(docs):
                                 docs = await docs
-                            for d in docs:
+                            docs_typed = cast(list[SearchResult], docs)
+                            for d in docs_typed:
                                 did = getattr(d, "id", None) or getattr(d, "doc_id", None)
                                 if did and did not in merged:
                                     merged[did] = d
                         candidates = list(merged.values())[: self.initial_fetch_k]
                     else:
                         candidates = self.rag_service.search_similar_chunks(
-                            session,
+                            cast(Session, session),
                             query=current_query,
                             limit=self.initial_fetch_k,
                             min_score=0.0,
                         )
                         if inspect.iscoroutine(candidates):
                             candidates = await candidates
+                        candidates = cast(list[SearchResult], candidates)
                 except Exception as search_err:
                     import logging
 
@@ -535,7 +537,7 @@ class ReflectiveRAGService:
                 scored = []
                 for doc in candidates:
                     cos_sim = self._cosine_similarity(current_query, doc)
-                    ctx_fit_result = self._context_fit_check(session, doc)
+                    ctx_fit_result = self._context_fit_check(cast(Session, session), doc)
                     ctx_fit = ctx_fit_result.score
                     combined = 0.6 * cos_sim + 0.4 * ctx_fit
                     scored.append((doc, combined, cos_sim, ctx_fit, ctx_fit_result))
@@ -767,7 +769,7 @@ class ReflectiveRAGService:
 
         # 反射反復ログのDB永続化連携 (Step 22)
         if session is not None:
-            self.save_reflection_history(session, result, book_id=book_id)
+            self.save_reflection_history(cast(Session, session), result, book_id=book_id)
 
         return result
 

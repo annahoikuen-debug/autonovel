@@ -59,7 +59,7 @@ class EmotionalRule:
     source_role: Role
     target_role: Role
     emotion_deltas: Dict[EmotionType, float]
-    condition: Callable[[PlotContext], bool] = field(default=_default_condition)
+    condition: Callable[[PlotContext], bool] | None = field(default=_default_condition)
     decay_per_episode: float = 0.1
     rule_id: str = ""
 
