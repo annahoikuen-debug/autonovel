@@ -302,3 +302,22 @@ def test_list_platforms():
     assert platform_dict["markdown"] == "標準 Markdown（汎用エディタ・Obsidian等向け）"
     assert platform_dict["epub"] == "EPUB電子書籍形式"
     assert platform_dict["pdf"] == "PDFドキュメント形式"
+
+
+def test_narou_exporter_accepts_generator():
+    """ジェネレータ渡しでも export_stream が例外なく動作し、===== 区切りを出力すること。
+
+    修正前は chapters: Iterable に対して len() を呼んでおり、
+    ジェネレータ渡しで TypeError が発生していた（type: ignore[arg-type] で隠蔽されていた）。
+    """
+    novel = {"title": "テスト小説", "synopsis": "あらすじ"}
+    chapters = (
+        {"title": "第1話", "content": "本文1", "ep_num": 1},
+        {"title": "第2話", "content": "本文2", "ep_num": 2},
+    )
+    result = "".join(NarouExporter().export_stream(novel, (c for c in chapters)))
+    assert "=====" in result
+    assert "本文1" in result
+    assert "本文2" in result
+    # 最後の章の後には区切りを入れない
+    assert not result.rstrip().endswith("=====")

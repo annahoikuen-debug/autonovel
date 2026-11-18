@@ -437,6 +437,8 @@ class NarouExporter(BaseExporter):
         return "".join(self.export_stream(novel, chapters))
 
     def export_stream(self, novel: Dict[str, Any], chapters: Iterable[Dict[str, Any]]) -> Generator[str, None, None]:
+        # Iterable 渡しでも len() 安全に扱えるよう実体化（ジェネレータ渡しにも対応）
+        chapters = list(chapters)
         # ヘッダー
         header = self._header(novel)
         yield self.apply_template_filters(header, self.platform, novel)
@@ -459,7 +461,7 @@ class NarouExporter(BaseExporter):
             yield self.apply_template_filters(chapter_text, self.platform, novel, ch)
 
             # 話区切り（最後の章以外に「=====」を挿入）
-            if i < len(chapters) - 1:  # type: ignore[arg-type]
+            if i < len(chapters) - 1:
                 yield "\n=====\n"
 
         # フッターがある場合は最後に出す
