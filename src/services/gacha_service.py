@@ -270,16 +270,6 @@ JSONキー:
                             charm_point=f"{plan_type.value}の怒涛の展開",
                         )
                 # 失敗時は次のアテンプトへ継続
-            # 最大リトライ回数を終えても生成に失敗した場合
-            plan_id = f"plan_{uuid.uuid4().hex[:6]}"
-            return GachaPlan(
-                plan_id=plan_id,
-                plan_type=plan_type,
-                title=f"{request.genre}：{plan_type.value}の物語",
-                logline=f"{', '.join(request.keywords)}をモチーフにした{direction}",
-                protagonist_summary="個性的で魅力的な主人公",
-                charm_point=f"{plan_type.value}の怒涛の展開",
-            )
 
         try:
             tasks = [_generate_single_plan(pt, direction) for pt, direction in types]
