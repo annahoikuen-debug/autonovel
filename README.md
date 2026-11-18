@@ -21,7 +21,7 @@
 > **静的解析ゲートの実態（2026-11-13 時点）**
 > `ruff` / `mypy` / `ruff format` は **劣化検出 ratchet + バーンダウン化済み**（`scripts/ci_lint_ratchet.py` が
 > `config/ci_lint_baseline.json` を超えたら CI を落とす hard gate）。
-> 現在のベースライン値：ruff=0 / mypy=250 / format=0（`config/ci_lint_baseline.json`、policy: burn-down）。
+> 現在のベースライン値：ruff=0 / mypy=450 / format=0（`config/ci_lint_baseline.json`、policy: burn-down）。
 > mypy は 1122 → 952 に削減中（2026-11-30 までに半減目標 567）。
 > エラー数 0 化は別計画（PLAN_H1 §9 N1）の対象外であり、
 > 上記バッジは「エラーがない」ではなく「ゲートが機能している」ことを意味しない。

@@ -1,8 +1,8 @@
 {
   "ruff_errors": 0,
-  "mypy_errors": 250,
+  "mypy_errors": 450,
   "format_files": 0,
-  "invalid_ignore_errors": 0,
+  "unused_ignore_errors": 216,
   "policy": "burn-down",
   "history": [
     {
@@ -46,6 +46,14 @@
       "ruff_errors": 0,
       "format_files": 0,
       "note": "PLAN_Q4 Phase 3継続中。__table_args__ 型注釈修正と arg-type/attr-defined 体系的修正による削減"
+    },
+    {
+      "date": "2026-11-18",
+      "mypy_errors": 450,
+      "ruff_errors": 0,
+      "format_files": 0,
+      "unused_ignore_errors": 216,
+      "note": "[tool.mypy] warn_unused_ignores = true を常時化。同一コード状態で warn の有無だけの差であり劣化ではない。mypy_errors 234 + unused_ignore_errors 216 = 450。invalid_ignore_errors は mypy_errors に内包されるため廃止。unused_ignore_errors は新規メトリクス。"
     }
   ],
   "targets": [

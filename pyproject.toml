@@ -238,6 +238,7 @@ directory = "htmlcov"
 python_version = "3.12"
 ignore_missing_imports = true
 warn_unused_configs = true
+warn_unused_ignores = true
 show_error_codes = true
 # .gitignore に含まれるローカル専用スクリプト（debug_*.py 等）は追跡対象外のため、
 # チェック対象からも外して CI（クリーンチェックアウト）とローカルの件数を一致させる。

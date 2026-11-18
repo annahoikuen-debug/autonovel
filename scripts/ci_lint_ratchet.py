@@ -14,16 +14,18 @@
 
 対象:
   ruff   : `ruff check src tests config scripts` のエラー数
-  mypy   : `mypy src` のエラー数（invalid-ignore も同一プロセス出力から解析。
+  mypy   : `mypy src` のエラー数（[unused-ignore] も同一プロセス出力から解析。
             pyproject [tool.mypy] ignore_missing_imports = true により
-            --ignore-missing-imports は冗長）
+            --ignore-missing-imports は冗長。
+            `[unused-ignore]` は `[tool.mypy] warn_unused_ignores = true` で有効化。
+            「不要な type: ignore」のみを別メトリクスとして管理する）
   format : `ruff format --check src` の「整形が必要なファイル数」
 
 使い方:
   python scripts/ci_lint_ratchet.py                 # ruff（後方互換）
   python scripts/ci_lint_ratchet.py --tool mypy
   python scripts/ci_lint_ratchet.py --tool format
-  python scripts/ci_lint_ratchet.py --tool invalid-ignore
+  python scripts/ci_lint_ratchet.py --tool unused-ignore
   python scripts/ci_lint_ratchet.py --tool all
   python scripts/ci_lint_ratchet.py --tool ruff --update
 """
@@ -41,14 +43,14 @@ BASELINE = Path("config/ci_lint_baseline.json")
 RUFF_COUNT_RE = re.compile(r"Found\s+(\d+)\s+error")
 MYPY_COUNT_RE = re.compile(r"Found\s+(\d+)\s+error")
 FORMAT_COUNT_RE = re.compile(r"(\d+)\s+files?\s+would be reformatted")
-INVALID_IGNORE_RE = re.compile(r'Invalid "type: ignore" comment')
+UNUSED_IGNORE_RE = re.compile(r"\[unused-ignore\]")
 
-TOOLS = ("ruff", "mypy", "format", "invalid-ignore")
+TOOLS = ("ruff", "mypy", "format", "unused-ignore")
 BASELINE_KEYS = {
     "ruff": "ruff_errors",
     "mypy": "mypy_errors",
     "format": "format_files",
-    "invalid-ignore": "invalid_ignore_errors",
+    "unused-ignore": "unused_ignore_errors",
 }
 
 
@@ -80,25 +82,25 @@ def run_ruff() -> int:
     raise RuntimeError(f"ruff の出力からエラー数を取得できませんでした:\n{output[-2000:]}")
 
 
-# mypy と invalid-ignore は 1 プロセスで共用する。
+# mypy と unused-ignore は 1 プロセスで共用する。
 # pyproject.toml の [tool.mypy] ignore_missing_imports = true により、
 # `mypy src` と `mypy src --ignore-missing-imports` の出力は同一であり、
 # 2 回 mypy を起動する必要はない（実測: 8.1s + 7.7s -> 8.1s）。
-# この前提（ignore_missing_imports = true）が崩れた場合は、invalid-ignore の
+# この前提（ignore_missing_imports = true）が崩れた場合は、unused-ignore の
 # 走査で --ignore-missing-imports を付けた別プロセスが必要になる。
 _mypy_cache: dict[str, int] | None = None
 
 
 def _run_mypy_once() -> tuple[int, int]:
-    """mypy src を 1 回実行し、(エラー件数, invalid-ignore 件数) を返す。"""
+    """mypy src を 1 回実行し、(エラー件数, unused-ignore 件数) を返す。"""
     global _mypy_cache
     if _mypy_cache is not None:
-        return _mypy_cache["errors"], _mypy_cache["invalid_ignore"]
+        return _mypy_cache["errors"], _mypy_cache["unused_ignore"]
 
     p = _run([sys.executable, "-m", "mypy", "src"])
     output = p.stdout + p.stderr
     if "Success: no issues found" in output:
-        result = {"errors": 0, "invalid_ignore": 0}
+        result = {"errors": 0, "unused_ignore": 0}
     else:
         m = MYPY_COUNT_RE.search(output)
         if not m:
@@ -108,10 +110,10 @@ def _run_mypy_once() -> tuple[int, int]:
             )
         result = {
             "errors": int(m.group(1)),
-            "invalid_ignore": len(INVALID_IGNORE_RE.findall(output)),
+            "unused_ignore": len(UNUSED_IGNORE_RE.findall(output)),
         }
     _mypy_cache = result
-    return result["errors"], result["invalid_ignore"]
+    return result["errors"], result["unused_ignore"]
 
 
 def run_mypy() -> int:
@@ -129,11 +131,11 @@ def run_format() -> int:
     raise RuntimeError(f"ruff format の出力から件数を取得できませんでした:\n{output[-2000:]}")
 
 
-def run_invalid_ignore() -> int:
+def run_unused_ignore() -> int:
     return _run_mypy_once()[1]
 
 
-RUNNERS = {"ruff": run_ruff, "mypy": run_mypy, "format": run_format, "invalid-ignore": run_invalid_ignore}
+RUNNERS = {"ruff": run_ruff, "mypy": run_mypy, "format": run_format, "unused-ignore": run_unused_ignore}
 
 
 def _load_baseline() -> dict[str, object]:
@@ -255,13 +257,13 @@ def check_tool(tool: str, *, update: bool) -> int:
     dirty = False
 
     if tool == "mypy":
-        # mypy と invalid-ignore は同一プロセス出力から両方を検証する。
+        # mypy と unused-ignore は同一プロセス出力から両方を検証する。
         # pyproject [tool.mypy] ignore_missing_imports = true により、
         # `mypy src` 1 回の実行で両メトリクスを取得できる。
-        errors, invalid_ignore = _run_mypy_once()
+        errors, unused_ignore = _run_mypy_once()
         for key, actual in (
             ("mypy_errors", errors),
-            ("invalid_ignore_errors", invalid_ignore),
+            ("unused_ignore_errors", unused_ignore),
         ):
             f, d = _check_single_metric(data, "mypy", key, actual, update=update)
             failures += f
