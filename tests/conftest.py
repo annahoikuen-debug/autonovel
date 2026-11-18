@@ -36,6 +36,16 @@ def pytest_configure(config):
     # 環境変数を .env より優先するので、ここで固定する。
     os.environ["HUEY_BACKEND"] = "sqlite"
 
+    # clean checkout / CI では config/settings.toml が .gitignore 対象で欠如し、
+    # GlobalConfigModel.load() が FileNotFoundError で collection エラーになる。
+    # settings.toml.example からフォールバックを生成して収集を可能にする。
+    _settings_toml = Path("config/settings.toml")
+    _settings_example = Path("config/settings.toml.example")
+    if not _settings_toml.exists() and _settings_example.exists():
+        _settings_toml.write_text(
+            _settings_example.read_text(encoding="utf-8"), encoding="utf-8"
+        )
+
     def dummy_init_db(*args, **kwargs):
         pass
 

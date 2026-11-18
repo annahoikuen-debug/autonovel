@@ -1,0 +1,12 @@
+# settings.toml.example
+#
+# このファイルは config/settings.toml のテンプレートです。
+# 実際の運用時は config/settings.toml をコピーして作成し、
+# API キー等の秘密情報を設定してください。
+#
+# config/settings.toml は .gitignore によりバージョン管理対象外です。
+#
+# テスト収集時に config/settings.toml が存在しない場合、
+# tests/conftest.py の pytest_configure で本ファイルからコピーされます。
+
+[general]
