@@ -22,9 +22,9 @@ class GeminiUnifiedClient(IUnifiedLLMClient):
         )
         usage_metadata = response.usage_metadata
         usage = LLMUsage(
-            prompt_tokens=usage_metadata.prompt_token_count if usage_metadata else 0,
-            completion_tokens=usage_metadata.candidates_token_count if usage_metadata else 0,
-            total_tokens=usage_metadata.total_token_count if usage_metadata else 0,
+            prompt_tokens=int(usage_metadata.prompt_token_count or 0) if usage_metadata else 0,
+            completion_tokens=int(usage_metadata.candidates_token_count or 0) if usage_metadata else 0,
+            total_tokens=int(usage_metadata.total_token_count or 0) if usage_metadata else 0,
         )
         return LLMResponse(content=response.text or "", model=req.model or self.model, usage=usage)
 
@@ -41,9 +41,9 @@ class GeminiUnifiedClient(IUnifiedLLMClient):
         )
         usage_metadata = response.usage_metadata
         usage = LLMUsage(
-            prompt_tokens=usage_metadata.prompt_token_count if usage_metadata else 0,
-            completion_tokens=usage_metadata.candidates_token_count if usage_metadata else 0,
-            total_tokens=usage_metadata.total_token_count if usage_metadata else 0,
+            prompt_tokens=int(usage_metadata.prompt_token_count or 0) if usage_metadata else 0,
+            completion_tokens=int(usage_metadata.candidates_token_count or 0) if usage_metadata else 0,
+            total_tokens=int(usage_metadata.total_token_count or 0) if usage_metadata else 0,
         )
         return LLMResponse(content=response.text or "", model=req.model or self.model, usage=usage)
 
@@ -56,7 +56,7 @@ class GeminiUnifiedClient(IUnifiedLLMClient):
                 yield StreamChunk(text=chunk.text)
         yield StreamChunk(text="", is_final=True)
 
-    async def astream(self, req: LLMRequest) -> AsyncIterator[StreamChunk]:  # type: ignore
+    async def astream(self, req: LLMRequest) -> AsyncIterator[StreamChunk]:
         import asyncio
 
         loop = asyncio.get_running_loop()

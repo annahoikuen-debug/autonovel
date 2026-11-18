@@ -171,7 +171,6 @@ class EmotionalStateMachine:
 
     def items(self):
         """全 (key, value) ペアを返す。"""
-        # type: ignore[arg-type]
         return self._state.items()
 
 

@@ -907,7 +907,7 @@ class PlotEpisode(PlotEpisodeBase[CoreEngineMixin], EnigmaMixin, ComfortMixin, S
     candidates: list[PlotEpisodeBase] = Field(default_factory=list, description="AIが提示した複数の候補案")
 
     @model_validator(mode="before")
-    def unwrap_plot_metadata(cls, data: Any) -> Any:  # type: ignore[misc]
+    def unwrap_plot_metadata(cls, data: Any) -> Any:
         # Base クラスの正規化ロジックに委譲 (FlatModelMixin + extra_engines 処理)
         return super().unwrap_plot_metadata(data)  # type: ignore[operator]
 

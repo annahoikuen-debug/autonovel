@@ -625,7 +625,7 @@ _EXPORTERS = {
 
 def get_exporter(platform: str) -> BaseExporter:
     """プラットフォーム名からエクスポータを取得する。未知の場合はなろうを既定とする。"""
-    cls = _EXPORTERS.get(platform, NarouExporter)  # type: ignore[abstract]
+    cls = _EXPORTERS.get(platform, NarouExporter)
     return cls()  # type: ignore[abstract]
 
 

@@ -50,7 +50,7 @@ class OpenAIUnifiedClient(IUnifiedLLMClient):
             yield StreamChunk(text=content)
         yield StreamChunk(text="", is_final=True)
 
-    async def astream(self, req: LLMRequest) -> AsyncIterator[StreamChunk]:  # type: ignore
+    async def astream(self, req: LLMRequest) -> AsyncIterator[StreamChunk]:
         response = await self.client.chat.completions.create(
             model=req.model or "gpt-4o",
             messages=[{"role": "system", "content": req.system_prompt}, {"role": "user", "content": req.prompt}],

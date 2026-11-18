@@ -11,7 +11,7 @@ from sqlalchemy.sql import func
 from src.backend.database.models import NarrativeMetric
 
 # プロトタイプ互換用ローカルBase（メインメタデータのテーブル名衝突を防止）
-_LocalBase = declarative_base()  # type: ignore[misc]
+_LocalBase = declarative_base()
 
 
 class NarrativeMetricLegacy(_LocalBase):  # type: ignore[valid-type, misc]
