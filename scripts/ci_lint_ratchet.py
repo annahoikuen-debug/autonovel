@@ -149,6 +149,25 @@ def _save_baseline(data: dict[str, object]) -> None:
     )
 
 
+README = Path("README.md")
+README_BASELINE_RE = re.compile(r"ruff=\d+ / mypy=\d+ / format=\d+")
+
+
+def _sync_readme_baseline(data: dict[str, object]) -> None:
+    """--update 時に README.md のベースライン値行を JSON と同期する。
+
+    README に「ruff=N / mypy=N / format=N」形式の行が 1 箇所のみ存在する前提。
+    """
+    text = README.read_text(encoding="utf-8")
+    expected = f'ruff={data["ruff_errors"]} / mypy={data["mypy_errors"]} / format={data["format_files"]}'
+    new_text, count = README_BASELINE_RE.subn(expected, text)
+    if count != 1:
+        raise RuntimeError(
+            f"README.md のベースライン値行が 1 箇所に見つかりませんでした（{count} 箇所）"
+        )
+    README.write_text(new_text, encoding="utf-8")
+
+
 def _expired_targets(data: dict[str, object], tool: str) -> list[dict[str, object]]:
     """当該 tool のメトリクスに対し、期限が過ぎたバーンダウン target を返す。"""
     if data.get("policy") != "burn-down":
@@ -223,9 +242,10 @@ def _check_single_metric(
         )
         return 1, False
     if actual < base:
-        data[key] = actual
-        print(f"GOOD: {base - actual} 件減少。ベースラインを下げた。({key})")
-        return 0, True
+        print(
+            f"GOOD: {base - actual} 件減少。ベースラインは変更せず（--update で明示的に下げる）。({key})"
+        )
+        return 0, False
     return 0, False
 
 
@@ -255,6 +275,8 @@ def check_tool(tool: str, *, update: bool) -> int:
 
     if update or dirty:
         _save_baseline(data)
+        if update:
+            _sync_readme_baseline(data)
 
     return 1 if failures else 0
 
