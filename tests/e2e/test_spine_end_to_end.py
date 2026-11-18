@@ -6,7 +6,7 @@ import pytest
 def test_card_to_spine_to_prompt():
     """1枚のカードから最終プロンプトまでが繋がること。"""
     from config.story_spine import CARDS, resolve_spine
-    from src.services.llm.prompts import build_spine_section, build_spine_summary
+    from src.llm.adapters.prompts import build_spine_section, build_spine_summary
 
     card = CARDS["tpl_exile_web"]
     spine = resolve_spine(card["pattern"], card["length"], card["market"], 40)
@@ -68,7 +68,7 @@ def test_off_quality_produces_byte_identical_prompt():
     """`spine_quality=off` で既存プロンプトが完全に不変であること（本計画の最重要契約）。"""
     from config.story_spine import resolve_spine
     from tests.contract.test_spine_prompt_injection import LEGACY_TEMPLATE_SNAPSHOT
-    from src.services.llm.prompts import (
+    from src.llm.adapters.prompts import (
         NOVEL_USER_PROMPT_WITH_GRAPHRAG_TEMPLATE,
         build_spine_section,
     )
@@ -100,7 +100,7 @@ def test_off_quality_produces_byte_identical_prompt():
 def test_soft_and_hard_differ():
     """soft と hard で注入内容が変わること（段階適用が機能している）。"""
     from config.story_spine import resolve_spine
-    from src.services.llm.prompts import build_spine_section
+    from src.llm.adapters.prompts import build_spine_section
 
     spine = resolve_spine("exile_rise", "web_volume", "web", 40)
     soft = build_spine_section(spine, "soft", ep_num=33)
@@ -112,7 +112,7 @@ def test_soft_and_hard_differ():
 def test_spine_never_costs_llm_calls_end_to_end():
     """カード1枚からプロンプト文字列までを LLM 0 回で作る。"""
     from config.story_spine import CARDS, resolve_spine
-    from src.services.llm.prompts import build_spine_summary
+    from src.llm.adapters.prompts import build_spine_summary
 
     for ck, card in CARDS.items():
         spine = resolve_spine(card["pattern"], card["length"], card["market"])

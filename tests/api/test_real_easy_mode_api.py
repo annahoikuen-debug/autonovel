@@ -56,10 +56,13 @@ def test_easy_mode_invalid_input_returns_422(test_client):
 
 @patch("src.backend.tasks.generation_tasks.generate_chapter_orchestrated_task")
 def test_easy_mode_generate_enqueues_task(mock_task, test_client):
-    """有効なリクエスト送信時に非同期生成タスクがキューに投入され、タスクIDが返ること"""
-    unique_task_id = f"test-task-{uuid.uuid4()}"
+    """有効なリクエスト送信時に非同期生成タスクがキューに投入され、タスクIDが返ること。
+
+    エンドポイント側で ``uuid.uuid4()`` による task_id を生成して返す仕様のため、
+    モックの戻り値ではなくエンドポイント生成の UUID が返る。形式のみ検証する。
+    """
     mock_result = MagicMock()
-    mock_result.id = unique_task_id
+    mock_result.id = "mock-task-id"
     mock_task.return_value = mock_result
 
     payload = {
@@ -78,8 +81,11 @@ def test_easy_mode_generate_enqueues_task(mock_task, test_client):
     assert response.status_code == 200
     data = response.json()
     assert "task_id" in data
-    assert data["task_id"] == unique_task_id
+    # エンドポイント生成の UUID が返るため、UUID 形式であることを検証
+    import uuid as uuid_mod
+    uuid_mod.UUID(data["task_id"])
     assert "suggestions" in data
+    mock_task.assert_called_once()
 
 
 @patch("src.backend.tasks.generation_tasks.generate_chapter_orchestrated_task")
