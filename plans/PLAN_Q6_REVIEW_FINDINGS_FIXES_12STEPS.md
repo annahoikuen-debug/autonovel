@@ -508,6 +508,8 @@ grep -n "ruff=[0-9]* / mypy=[0-9]* / format=[0-9]*" README.md       # JSON と�
      `--strict` フラグで fail に切り替え、ci.yml のステップに `--strict` を付与する
      （現在 6 エントリのうち、`src.services.llm.prompts` など削除済み shim 由来が混在 → Step 10 と並行して精査）。
      ⚠️ **ci.yml への `--strict` 付与は allowlist 精査完了（Step 10 完了）後の follow-up コミット**とし、
+     （**実証済み**: `check_untracked_imports.py --strict` をローカルと clean worktree の両方で実行し
+     rc=0 を確認（allowlist 陳腐化エントリ 0 件）。付与済みコミット `88b4a034`）
      精査前に付けない（追加の CI 赤を避ける）。
    - 対象が `src.` 始まりのみである旨（`prompts.` 等は対象外）を docstring に明記し、拡張の要否を
      「スコープ外」へ記録する。

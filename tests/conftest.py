@@ -39,12 +39,28 @@ def pytest_configure(config):
     # clean checkout / CI では config/settings.toml が .gitignore 対象で欠如し、
     # GlobalConfigModel.load() が FileNotFoundError で collection エラーになる。
     # settings.toml.example からフォールバックを生成して収集を可能にする。
-    _settings_toml = Path("config/settings.toml")
-    _settings_example = Path("config/settings.toml.example")
+    # 原子書き込み（os.replace）で並行 pytest 起動時の部分書き込み読み取りを防ぎ、
+    # パスは conftest.py の位置基準（リポジトリルート）で解決する。
+    _repo_root = Path(__file__).resolve().parents[1]
+    _settings_toml = _repo_root / "config" / "settings.toml"
+    _settings_example = _repo_root / "config" / "settings.toml.example"
     if not _settings_toml.exists() and _settings_example.exists():
-        _settings_toml.write_text(
-            _settings_example.read_text(encoding="utf-8"), encoding="utf-8"
+        import os as _os
+        import tempfile as _tempfile
+
+        _tmp_fd, _tmp_name = _tempfile.mkstemp(
+            dir=str(_settings_toml.parent), suffix=".toml.tmp"
         )
+        try:
+            with _os.fdopen(_tmp_fd, "w", encoding="utf-8") as _f:
+                _f.write(_settings_example.read_text(encoding="utf-8"))
+            _os.replace(_tmp_name, str(_settings_toml))
+        except Exception:
+            try:
+                _os.unlink(_tmp_name)
+            except OSError:
+                pass
+            raise
 
     def dummy_init_db(*args, **kwargs):
         pass

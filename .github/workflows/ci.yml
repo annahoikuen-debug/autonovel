@@ -15,11 +15,11 @@ jobs:
   # 静的解析ゲート（劣化のみ検出する ratchet）
   # ==========================================================================
   # 現状のベースラインは config/ci_lint_baseline.json:
-  #   ruff check src tests config scripts -> 163 errors
-  #   mypy src                            -> 1164 errors in 270 files
-  #   ruff format --check src             -> 748 files would be reformatted
-  # いずれも「ベースラインより増えたら fail」で運用する。件数が減った場合は
-  # scripts/ci_lint_ratchet.py が自動でベースラインを下げる。
+  #   ruff check src tests config scripts -> 0 errors
+  #   mypy src                            -> 450 errors（unused-ignore baseline 216 を含む）
+  #   ruff format --check src             -> 0 files would be reformatted
+  # いずれも「ベースラインより増えたら fail」で運用する。件数が減っても
+  # ベースラインは自動変更されない（--update で明示的に引き下げ、README も連動更新）。
   # 全エラー 0 化は目的とせず、退行の防止を目的とする。
   static-analysis:
     runs-on: ubuntu-latest

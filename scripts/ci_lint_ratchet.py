@@ -7,7 +7,8 @@
 * 現在値 > baseline 　　　　　　 → fail（悪化検出）
 * 期限切れ milestone があり、
   現在値 > target 　　　　　　　 → fail（バーンダウン未達）
-* 現在値 < baseline 　　　　　　 → baseline を自動的に下げる（ratchet）
+* 現在値 < baseline 　　　　　　 → ログ出力のみ（自動保存なし。--update で明示的に
+  引き下げ、README の該当行も連動更新する）
 * baseline < 期限切れ target の値 → baseline を target まで下げる（強制改善）
 
 「全エラー 0 化」を目的とはしない (PLAN_H1 §9 で対象外と明記)。

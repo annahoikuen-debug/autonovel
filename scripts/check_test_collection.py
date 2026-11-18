@@ -41,6 +41,15 @@ def _collect_count() -> int:
     )
     output = p.stdout + p.stderr
 
+    # collection error が発生していても "N items collected / M errors" 形式で
+    # 件数行が出力されるため、正規表現マッチの**前に** returncode を検査する
+    # （件数が一致していても collection error を通過させない）。
+    if p.returncode != 0:
+        raise RuntimeError(
+            f"pytest --collect-only が終了コード {p.returncode} で失敗しました。"
+            f" collection error が発生している可能性があります:\n{output[-2000:]}"
+        )
+
     # pytest バージョンによって出力形式が異なる:
     #  - "collected 10703 items" (古い pytest)
     #  - "9766 tests collected" (pytest 9.x)
@@ -50,11 +59,6 @@ def _collect_count() -> int:
     m = re.search(r"collected\s+(\d+)\s+items?", output)
     if m:
         return int(m.group(1))
-    if p.returncode != 0:
-        raise RuntimeError(
-            f"pytest --collect-only が終了コード {p.returncode} で失敗しました。"
-            f" collection error が発生している可能性があります:\n{output[-2000:]}"
-        )
     raise RuntimeError(f"pytest --collect-only の出力から収集件数を取得できませんでした:\n{output[-2000:]}")
 
 

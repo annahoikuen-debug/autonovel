@@ -78,6 +78,13 @@
       "target": 250,
       "by": "2026-12-31",
       "note": "1/4 化。union-attr (95) の None ガード追加と arg-type の個別修正"
+    },
+    {
+      "milestone": "unused-ignore-burndown",
+      "metric": "unused_ignore_errors",
+      "target": 150,
+      "by": "2026-12-31",
+      "note": "不要 type-ignore の段階的撤去（baseline 216 → 150）。unused-ignore の削除は mypy エラー数を増やさないため安全"
     }
   ]
 }

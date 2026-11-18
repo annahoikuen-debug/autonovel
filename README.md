@@ -22,7 +22,7 @@
 > `ruff` / `mypy` / `ruff format` は **劣化検出 ratchet + バーンダウン化済み**（`scripts/ci_lint_ratchet.py` が
 > `config/ci_lint_baseline.json` を超えたら CI を落とす hard gate）。
 > 現在のベースライン値：ruff=0 / mypy=450 / format=0（`config/ci_lint_baseline.json`、policy: burn-down）。
-> mypy は warn_unused_ignores 有効化後 450 件（unused-ignore 216 件を含む）。本質的な型エラーは 234 件（2026-11-18 時点）。
+> mypy は warn_unused_ignores 有効化後、baseline 450 件（unused-ignore baseline 216 件を含む）。実測は 438 件（unused-ignore 210 件、Plan Q7 で 6 件撤去済み）。本質的な型エラーは 228 件（2026-11-18 時点）。
 > エラー数 0 化は別計画（PLAN_H1 §9 N1）の対象外であり、
 > 上記バッジは「エラーがない」ではなく「ゲートが機能している」ことを意味しない。
 >
