@@ -363,6 +363,13 @@ class SemanticCacheManager:
         予測プリフェッチ: 次のエピソード用のプロンプトテンプレートを先行レンダリングしてキャッシュする。
         これにより、次のエピソード生成開始時にプロンプトレンダリングのレイテンシを隠蔽できる。
 
+        注意:
+            既定 OFF（`ENABLE_SEMANTIC_PREFETCH_DRAFT=1` でのみ有効）。
+            プレースホルダ値（plot_data={} 等）でレンダリングしたプロンプトを L1 キーに使用するため、
+            実検索側のプロンプトとハッシュが不一致となり、L1/L2 キャッシュの実ヒットに寄与しない。
+            embedding API コストだけが発生するため、運用時は OFF を推奨する。
+            静的ナレッジのウォームアップは `RagPrefetchService` 側が担当する（PLAN_W6 Step 4）。
+
         Args:
             book_id: 書籍ID
             current_ep_num: 現在生成中のエピソード番号
