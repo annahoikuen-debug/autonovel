@@ -57,7 +57,7 @@ print(f'README ベースライン整合 OK: {expected}')
       - name: ruff format ratchet (hard gate / 現状の件数を超えたら fail)
         run: python scripts/ci_lint_ratchet.py --tool format
       - name: untracked imports check (clean checkout で import 失敗するテストを未然防止)
-        run: python scripts/check_untracked_imports.py
+        run: python scripts/check_untracked_imports.py --strict
       - name: layer boundaries check (4層アーキテクチャの依存境界)
         run: python scripts/check_layer_boundaries.py
       - name: ruff (statistics for trend)
