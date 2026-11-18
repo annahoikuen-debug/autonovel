@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -39,7 +40,6 @@ def _collect_count() -> int:
         ]
     )
     output = p.stdout + p.stderr
-    import re
 
     # pytest バージョンによって出力形式が異なる:
     #  - "collected 10703 items" (古い pytest)
@@ -50,6 +50,11 @@ def _collect_count() -> int:
     m = re.search(r"collected\s+(\d+)\s+items?", output)
     if m:
         return int(m.group(1))
+    if p.returncode != 0:
+        raise RuntimeError(
+            f"pytest --collect-only が終了コード {p.returncode} で失敗しました。"
+            f" collection error が発生している可能性があります:\n{output[-2000:]}"
+        )
     raise RuntimeError(f"pytest --collect-only の出力から収集件数を取得できませんでした:\n{output[-2000:]}")
 
 
@@ -58,7 +63,11 @@ def main() -> int:
     ap.add_argument("--update", action="store_true", help="収集件数ベースラインを更新")
     args = ap.parse_args()
 
-    actual = _collect_count()
+    try:
+        actual = _collect_count()
+    except RuntimeError as e:
+        print(f"FAIL: {e}", file=sys.stderr)
+        return 1
 
     if args.update:
         data = {"collected": actual}

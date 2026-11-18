@@ -8,7 +8,7 @@ ModuleNotFoundError で落ちるテストを未然に防ぐ。
   2. 各ファイルから「モジュールパス」を構築（src/core/llm.py → src.core.llm）
      ディレクトリ配下の __init__.py はパッケージとして認識
   3. tests/**/*.py から import 文（import X / from X import / importlib.import_module("X")）
-     のモジュールパスを抽出
+     のモジュールパスを抽出（対象は `src.` 始まりのみ。`prompts.` 等は対象外）
   4. 存在しないモジュールパスを import しているテストを報告し、exit 1
 
 既知の制限（静的解析のため検出できないケース）:
@@ -26,6 +26,8 @@ Usage:
   python scripts/check_untracked_imports.py                        # CI 用（失敗で exit 1）
   python scripts/check_untracked_imports.py --list                 # 検出対象のみ一覧表示
   python scripts/check_untracked_imports.py --allowlist PATH       # allowlist ファイルを指定（既定: config/untracked_imports_allowlist.json）
+  python scripts/check_untracked_imports.py --strict               # allowlist にあるが実際には存在する
+                                              エントリ（陳腐化）でも fail させる
 """
 
 from __future__ import annotations
@@ -228,6 +230,7 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--list", action="store_true", help="検出対象の import 箇所のみ一覧表示")
     ap.add_argument("--allowlist", type=Path, default=DEFAULT_ALLOWLIST, help="allowlist JSON のパス")
+    ap.add_argument("--strict", action="store_true", help="allowlist にあるが実際には存在するエントリ（陳腐化）でも fail にする")
     args = ap.parse_args()
 
     modules, tracked_files = _tracked_state()
@@ -270,6 +273,9 @@ def main() -> int:
         print("WARN: 以下の allowlist エントリは実際にはモジュールが存在するため不要です:")
         for test_file, module in allowlisted_but_exists:
             print(f"  {test_file}:{module}")
+        if args.strict:
+            print("FAIL: --strict が指定されているため、陳腐化 allowlist エントリで exit 1 します。")
+            return 1
     if missing:
         print(
             "ERROR: テストから追跡ゼロのモジュールを import しています（clean checkout で ModuleNotFoundError になります）:"
