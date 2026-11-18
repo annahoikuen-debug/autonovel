@@ -75,6 +75,9 @@ class UnitOfWork:
         logger.info(
             f"[UOW] SQLite transaction committed with retry. Staged {len(self._chroma_additions)} Chroma adds, {len(self._chroma_deletions)} Chroma deletes to outbox."
         )
+        # コミット済みステージをクリアし、__aexit__ による二重 flush を防ぐ（冪等化）
+        self._chroma_additions.clear()
+        self._chroma_deletions.clear()
 
     def stage_chroma_add(
         self,

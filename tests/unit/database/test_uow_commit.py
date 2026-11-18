@@ -93,3 +93,30 @@ async def test_commit_rollback_on_exception():
         outbox_rows = outbox_result.mappings().fetchall()
 
     assert len(outbox_rows) == 0
+
+
+@pytest.mark.asyncio
+async def test_explicit_commit_then_aexit_no_duplicate_outbox():
+    """async with 内の明示 commit 後も __aexit__ が例外なく完了し、outbox が 1 件のままであること。
+
+    commit() で _chroma_additions/_chroma_deletions をクリア（冪等化）しているため、
+    __aexit__ での再 commit による二重 outbox flush を防ぐ。
+    """
+    db = DatabaseManager("sqlite+aiosqlite:///:memory:")
+    await _setup_tables(db)
+
+    async with UnitOfWork(db) as uow:
+        conn = await uow.session.connection()
+        await conn.exec_driver_sql(
+            "INSERT INTO uow_test (id, val) VALUES (3, 'explicit')"
+        )
+        uow.stage_chroma_add("test_col", "doc_explicit", "explicit content", [0.3, 0.4])
+        await uow.commit()  # 明示コミット
+
+    # __aexit__ でもう一度 commit しようとするが、ステージはクリア済みなので outbox は 1 件のまま
+    async with db.get_session() as session:
+        outbox_result = await session.execute(text("SELECT * FROM outbox"))
+        outbox_rows = outbox_result.mappings().fetchall()
+
+    assert len(outbox_rows) == 1
+    assert outbox_rows[0]["event_type"] == "chroma_add"
