@@ -54,6 +54,14 @@
       "format_files": 0,
       "unused_ignore_errors": 216,
       "note": "[tool.mypy] warn_unused_ignores = true を常時化。同一コード状態で warn の有無だけの差であり劣化ではない。mypy_errors 234 + unused_ignore_errors 216 = 450。invalid_ignore_errors は mypy_errors に内包されるため廃止。unused_ignore_errors は新規メトリクス。"
+    },
+    {
+      "date": "2026-11-18",
+      "mypy_errors": 438,
+      "ruff_errors": 0,
+      "format_files": 0,
+      "unused_ignore_errors": 210,
+      "note": "Q6 Step5: 本差分で混入した unused type-ignore 6 件を撤去。mypy_errors 450 → 438、unused_ignore_errors 216 → 210。gemini.py の int | None 型エラー 2 件を実修正。"
     }
   ],
   "targets": [

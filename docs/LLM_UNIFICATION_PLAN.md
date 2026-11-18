@@ -73,7 +73,7 @@ src/llm/  ← 統合先（公開 API のエントリポイント）
 
 | Step | 移動元 | 移動先 | シム |
 |------|--------|--------|------|
-| 8 | `src/core/llm_clients/{base,gemini,openai}.py` | `src/llm/clients/{base,gemini,openai}.py` | `src/core/llm_clients/__init__.py` |
+| 8 | `src/core/llm_clients/{base,gemini,openai}.py` | `src/llm/clients/{base,gemini,openai}.py` | `src/core/llm_clients/__init__.py` | 対象外（移動先 `src/llm/clients/` は Q4/Q5 で削除済み） |
 | 9 | `src/core/llm/adapters/{claude,gemini,mock,ollama,openai}_unified_client.py` | `src/llm/unified/adapters/{claude,gemini,mock,ollama,openai}.py` | `src/core/llm/adapters/__init__.py` |
 | 10 | `src/services/llm/{base,factory,gemini,mock,openai,ollama,claude,vllm,tracked,failover,retry,prompts,prompt_cache}.py` | `src/llm/adapters/{base,factory,gemini,mock,openai,ollama,claude,vllm,tracked,failover,retry,prompts,prompt_cache}.py` | `src/services/llm/__init__.py` |
 | 11 | `src/core/llm/{unified_interface,types,factory}.py` | `src/llm/unified/{interface,types,factory}.py` | `src/core/llm/__init__.py` (_LAZY_EXPORTS パス更新) |

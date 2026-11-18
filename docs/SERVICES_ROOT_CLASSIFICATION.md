@@ -118,7 +118,7 @@
 | 81 | `hook_templates.py` | 1 | フックテンプレートは汎用 |
 | 82 | `novel_producer.py` | 1 | 小説プロデューサーは汎用 |
 | 83 | `prompt_caching.py` | 1 | プロンプトキャッシュは汎用 |
-| 84 | `prompt_registry.py` | 1 | プロンプトレジストリは汎用 |
+| 84 | `prompt_registry.py` | 1 | プロンプトレジストリは汎用（`src/services/prompt_registry.py` は Q6 で削除済み。`src/domain/services/prompt_service.py` に別クラス PromptRegistry が現存）|
 | 85 | `script_watcher.py` | 1 | スクリプト監視は汎用 |
 | 86 | `series_serializer.py` | 1 | シリーズシリアライザは汎用 |
 | 87 | `spice_guard_adapter.py` | 1 | スパイスガードは NSFW 関連 |

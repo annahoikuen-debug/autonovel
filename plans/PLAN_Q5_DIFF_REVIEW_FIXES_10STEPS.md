@@ -369,13 +369,13 @@ ruff 0 / format 0、`test_proposal_isolation` green。
 # 修正前
 > 現在のベースライン値：`ruff=0` / `mypy=500` / `format=0`（`config/ci_lint_baseline.json`、policy: burn-down）。
 # 修正後（config/ci_lint_baseline.json の実値と一致させる）
-> 現在のベースライン値：`ruff=0` / `mypy=250` / `format=0`（`config/ci_lint_baseline.json`、policy: burn-down）。
+> 現在のベースライン値：`ruff=0` / `mypy=450` / `format=0`（`config/ci_lint_baseline.json`、policy: burn-down）。
 ```
 （Step 5-A で mypy baseline が 233 等に動いたら、その**確定後の値**を書き込む）
 
 **根拠（実測）**: ci.yml line 55-73 のチェックは
 `f"ruff={ruff_errors} / mypy={mypy_errors} / format={format_files}" in README` を要求。
-HEAD で expected `mypy=250` vs README `mypy=500` → **False**。**base でも False（pre-existing 赤）**。
+HEAD で expected `mypy=450` vs README `mypy=450` → **True（緑）**。**Step 2 (Q6) で README チェックを ratchet より前へ移動し、構造的乖離を解消。**
 
 **検証**:
 ```bash
@@ -397,40 +397,47 @@ print('README OK:', exp)"
 > 以下 4 項目は**base `68137ce5` でも同一に再現することを実測で確認済み**であり、
 > 本差分（4 コミット）の責任ではない。修正するかどうかはユーザーの判断を仰ぐ。
 
-### D-1: clean checkout の `settings.toml` 欠如 → CI collection ゲートが構造的に赤
+### D-1: clean checkout の `settings.toml` 欠如 → CI collection ゲートが構造的に赤（**解決済み Q6 Step3**）
 
 - **実測**: HEAD clean = 9331 / 86 errors、base clean = 9324 / 86 errors、**エラーファイル集合完全一致**。
-  全件 `FileNotFoundError: config/settings.toml`。`check_test_collection.py` は clean で exit 1。
+  全件 `FileNotFoundError: config/settings.toml`。
 - **原因**: `config/settings.toml` は `.gitignore:13`。`GlobalConfigModel.load()` →
-  `validate_all(strict=True)` が存在しないファイルで例外を送出。ci.yml に生成ステップなし。
-  `settings.toml.example` もリポジトリに**存在しない**（grep ヒット 0）。
-- **修正提案（選択肢）**:
-  - **(a) 推奨**: `tests/conftest.py` の `pytest_configure`（collection の**前**）で
-    `config/settings.toml` 欠如時に**最小フォールバックを生成**する。CI とローカルが揃い、
-    base 由来の 86 errors / 436 件のテスト欠落が回復する（9767 への到達）。
-  - (b): ci.yml の test ジョブに settings.toml 生成ステップを追加（ローカル clean 再現は依然不可）。
-  - (c): `GlobalConfigModel.load()` を FileNotFoundError 許容に変更（設定必須のガードが緩むため非推奨）。
+  `validate_all(strict=True)` が存在しないファイルで例外を送出。
+- **修正（Q6 Step3 採用案 D1-a）**: `tests/conftest.py` の `pytest_configure` で
+  `config/settings.toml` 欠如時に `config/settings.toml.example` からフォールバックを生成。
+  `config/settings.toml.example` を新規追設。
+- **実測結果**: clean worktree で `check_test_collection.py` rc=0、collected=9763（HEAD ローカルと同等）。
+  base 由来の 86 errors / 436 件のテスト欠落が回復。
 
 ### D-2: README 手書き値と ratchet 自動更新の構造的乖離
 
-- **実測**: HEAD `mypy=250`（JSON）vs README `500` → チェック赤。base `366` vs `500` → 赤。
-  ratchet が実行のたびに JSON を自動更新する一方、README は手書き。
-- **修正提案（選択肢）**:
-  - **(a) 推奨**: `ci_lint_ratchet.py` の `--update` が **README の該当行も書き換える**。
-    赤の再発が構造的に不可能になる。
-  - (b): README チェックステップを ci.yml から削除（整合要求を捨てる）。
-  - (c): README の該当行を「JSON 参照」表現に変えてチェック自体を廃止。
+- **実測**: HEAD `mypy=450`（JSON、warn_unused_ignores 有効化後）vs README `450` → チェック緑（Step 2 Q6 で解決済み）。
+  ratchet が実行のたびに JSON を自動更新する一方、Step 2 (Q6) で以下を実施し構造的乖離を解消:
+  1. README チェックステップを ratchet 4 ステップより前へ移動（JSON 書き換え前に照合）
+  2. 減少時の自動 baseline 保存を廃止（`--update` で明示的に下げる）
+  3. `--update` 時に README の該当行も書き換える（`_sync_readme_baseline`）
+- **修正提案**: 上記により構造的乖離は解消。本計画（Q6）完了済み。
 
-### D-3: regression ジョブの pre-existing 失敗 9 項目
+### D-3: regression ジョブの pre-existing 失敗（実態更新）
 
-- **実測**: base `68137ce5` の clean と HEAD の clean で**同一の失敗セット**（全 pre-existing）:
-  `test_H1_lint_ratchet`（baseline understated）/ `test_H1_no_orphan_shims` 2 件 /
-  `shim_usage_stats` / `subprocess_encoding` / `t6_plan_completion` / `tenant_fk alembic head`
-  （0035 期待 vs 0036 実）/ `long_form` 2 件（NOT NULL）/ `test_shim_imports` 2 件（うち 2 件は **Step 1 で解消**）。
+- **実測（フルスイート）**: base `68137ce5` で **23 failed / 9292 passed**、HEAD で **19 failed / 9301 passed**。
+  HEAD の失敗 19 件はすべて base でも失敗（＝**本差分の回帰は 0 件**）。
+- **本差分で解消済み 4 件**:
+  `test_H1_lint_ratchet`（baseline understated → 実測値修正）/ `test_old_llm_shim_paths_removed` /
+  `test_shim_imports` [`src.api.health`, `src.services.llm.circuit_breaker` の 2 parametrize]。
+- **残存 pre-existing 19 件**:
+  - Q5 D-3 記載 7 件: `test_H1_no_orphan_shims` ×2 / `test_shim_usage_stats` /
+    `test_t6_plan_completion` / `test_tenant_fk_integrity` (alembic head) /
+    `test_long_form_fact_retention` ×2
+  - **D-3 未記載 12 件**: `test_real_easy_mode_api` / `test_production_e2e` /
+    `test_spine_end_to_end` ×4 / `test_v5_workflow_e2e` / `test_v6_llm_call_budget` /
+    `test_fusion_perf` / `test_easy_mode_export_with_data_ownership` ×2 /
+    `test_get_db_manager_singleton`
+  （うち `test_v6_llm_call_budget` と `test_get_db_manager_singleton` はフルスイート時のみ失敗、
+  単体実行では green。順序依存の可能性あり）
 - **注意**: `KNOWN_ORPHANS` 46 件のうち 45 件が削除済み shim 残骸で
   `test_known_orphans_still_exist` が赤。これは別途 `PLAN_R3_SHIM_REMOVAL_18STEPS.md` の管轄。
-- **修正提案**: 上記のうち本差分で解消可能なのは Step 1（shim_imports 2 件）のみ。
-  残りは alembic head / long_form NOT NULL / KNOWN_ORPHANS 残骸を**別計画**に切り出す。
+- **修正提案**: 残存 19 件は別計画（`PLAN_Q7_PREEXISTING_TEST_FAILURES_*.md`）に切り出し。
 
 ### D-4: clean checkout の `src.schemas` リーク（CI 再現性の限界）
 
