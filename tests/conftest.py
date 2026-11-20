@@ -268,7 +268,14 @@ def reset_metrics():
 
     pytest-xdist 並列実行時にメトリクスがリークするのを防止する。
     """
-    from src.backend.observability.health import metrics
+    try:
+        from src.backend.observability.health import metrics
+    except ImportError:
+        # 依存未インストール環境（CI release-consistency ジョブ等、pytest のみ）
+        # ではアプリ側もロードされておらずリセット対象が存在しない。
+        # setup ERROR を避けて yield だけ行う（通常環境では発生しない経路）。
+        yield
+        return
 
     yield
     metrics.reset_for_testing()
@@ -289,8 +296,15 @@ def reset_rate_limiters():
     ``token_denylist`` も同じくプロセス内メモリに積むため、ログアウト系の
     テストが後続へ失効状態を漏らさないよう一緒に掃除する。
     """
-    from src.backend.rate_limit import generate_limiter, stream_limiter
-    from src.backend.security.token_denylist import reset as reset_denylist
+    try:
+        from src.backend.rate_limit import generate_limiter, stream_limiter
+        from src.backend.security.token_denylist import reset as reset_denylist
+    except ImportError:
+        # 依存未インストール環境（CI release-consistency ジョブ等、pytest のみ）
+        # ではアプリ側もロードされておらずリセット対象が存在しない。
+        # setup ERROR を避けて yield だけ行う（通常環境では発生しない経路）。
+        yield
+        return
 
     generate_limiter.reset()
     stream_limiter.reset()
@@ -341,7 +355,17 @@ def mock_llm_adapter(request, llm_mocker: LLMMocker, monkeypatch) -> MockLLMAdap
     def mock_get_llm_adapter(*args, **kwargs):
         return mock_adapter
 
-    monkeypatch.setattr("src.llm.adapters.factory.get_llm_adapter", mock_get_llm_adapter)
+    try:
+        monkeypatch.setattr(
+            "src.llm.adapters.factory.get_llm_adapter", mock_get_llm_adapter
+        )
+    except ImportError:
+        # 依存を最小限にした環境（CI release-consistency ジョブ等、pytest のみ導入）
+        # では src.llm の import 自体が ModuleNotFoundError になる。LLM モックを
+        # 必要とするテストはその環境では元々動かないため、ここではモック適用を
+        # 諦めて setup ERROR を避ける（stdlib のみで動く regression テストを守る）。
+        # 依存が揃った通常環境では ImportError は発生しないため挙動は不変。
+        return None
     return mock_adapter
 
 

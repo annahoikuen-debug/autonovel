@@ -35,21 +35,26 @@ jobs:
           pip install "ruff==0.16.5" "mypy==2.3.1"
       - name: README 静的解析ベースライン整合性チェック
         working-directory: .
+        # NOTE: このヒアドキュメント内の Python は block scalar のインデント
+        # （10 スペース）を維持すること。インデントが欠落すると YAML パースが
+        # 失敗し、GitHub Actions がワークフローを登録できず CI が一切発火しない
+        # （72d87e3d で混入し、2026-11-21 まで気づかれなかった）。
+        # 回帰検出: tests/regression/test_workflow_syntax.py
         run: |
           python3 -c "
-import json, re, sys
-with open('config/ci_lint_baseline.json') as f:
-    baseline = json.load(f)
-with open('README.md') as f:
-    readme = f.read()
-expected = f'ruff={baseline[\"ruff_errors\"]} / mypy={baseline[\"mypy_errors\"]} / format={baseline[\"format_files\"]}'
-if expected not in readme:
-    print(f'README.md のベースライン値が不一致です。')
-    print(f'期待値: {expected}')
-    print(f'config/ci_lint_baseline.json を更新した場合は README.md も更新してください。')
-    sys.exit(1)
-print(f'README ベースライン整合 OK: {expected}')
-"
+          import json, re, sys
+          with open('config/ci_lint_baseline.json') as f:
+              baseline = json.load(f)
+          with open('README.md') as f:
+              readme = f.read()
+          expected = f'ruff={baseline[\"ruff_errors\"]} / mypy={baseline[\"mypy_errors\"]} / format={baseline[\"format_files\"]}'
+          if expected not in readme:
+              print(f'README.md のベースライン値が不一致です。')
+              print(f'期待値: {expected}')
+              print(f'config/ci_lint_baseline.json を更新した場合は README.md も更新してください。')
+              sys.exit(1)
+          print(f'README ベースライン整合 OK: {expected}')
+          "
       - name: ruff ratchet (hard gate)
         run: python scripts/ci_lint_ratchet.py --tool ruff
       - name: mypy ratchet (hard gate / invalid type-ignore も同一プロセスで検証)
@@ -67,10 +72,12 @@ print(f'README ベースライン整合 OK: {expected}')
   # ==========================================================================
   # リリース整合性ゲート（ continue-on-error: false = 本当の gate ）
   # ==========================================================================
-  # これらのテストは外部依存（DB / LLM / ネットワーク）に一切依存しない純粋な静的検査で、
-  # 現状 8 passed / 0 failed。バージョン不整合は v5 リリースの重大障害なので hard gate する。
+  # これらのテストは外部依存（DB / LLM / ネットワーク）に一切依存しない純粋な静的検査。
+  # バージョン不整合は v5 リリースの重大障害なので hard gate する。
   # 依存は pytest だけでよい: tests/conftest.py は SQLAlchemy をモジュール直下では
-  # import しない（`release-consistency` ジョブが collection error になるのを防ぐため）。
+  # import しないことに加え、autouse フィクスチャ（reset_metrics /
+  # reset_rate_limiters / mock_llm_adapter）は依存未インストール環境で
+  # ImportError を握って degradation する（2026-11-21 review-loop で堅牢化）。
   release-consistency:
     runs-on: ubuntu-latest
     steps:
@@ -89,8 +96,12 @@ print(f'README ベースライン整合 OK: {expected}')
         run: pytest tests/regression/test_tenant_fk_integrity.py -q -p no:cacheprovider
       - name: No tautological asserts
         run: pytest tests/regression/test_H1_tautology_guard.py -q -p no:cacheprovider
-      - name: Route mount parity
-        run: pytest tests/security/test_server_route_mount_parity.py -q -p no:cacheprovider
+      # NOTE: 旧「Route mount parity」ステップは削除した。
+      # tests/security/test_server_route_mount_parity.py は src.backend.server 全体を
+      # import するため pytest だけの最小環境では ModuleNotFoundError になり、
+      # このジョブでは実行不可能（本ジョブは GitHub 上で一度も走っておらず未発覚だった）。
+      # 同一テストは security ジョブ（フル依存、tests/security を一括実行）で
+      # 常に検証されているため、重複ステップとしてここからは除外する。
       - name: CHANGELOG must document the released version
         run: |
           VERSION=$(python -c "import tomllib;print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")

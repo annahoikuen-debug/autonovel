@@ -46,6 +46,27 @@
 >     修正には「ハンドラが session/uow をガードへ渡す」+「テストが所有者付き book を seed」の
 >     2 点が必要（sync Session は `isinstance(uow, AsyncSession)` 分岐に入らない点にも注意）。
 >     #2/#3（同エンドポイントの所有権テスト）も同根の可能性が高い。
+> - **2026-11-21 追記（review-loop）: 「CI が一度も走らない」根本原因を発見・修復**。
+>   - **`ci.yml` 自体が YAML 構文エラー**だった（`72d87e3d` で混入、8 コミット継続）。
+>     README ベースライン整合チェックの inline python スクリプトの block scalar
+>     インデントが欠落しており、GitHub Actions はワークフローを登録できなかった
+>     （API 実測: ci.yml の workflow runs 全期間 0 件。ローカル `make ci-parity` は
+>     workflow ファイルを経由しないため全員気づかなかった）。
+>     インデントを復元し、回帰検出テスト `tests/regression/test_workflow_syntax.py`
+>     （全 workflow のパース検査 + ci.yml ジョブ/トリガー存在検査）を新設。
+>   - **release-consistency ジョブが最小環境で全滅する潜在バグを修復**。
+>     ルート conftest の autouse 3 フィクスチャ（`reset_metrics` / `reset_rate_limiters` /
+>     `mock_llm_adapter`）が依存未インストール環境で `ModuleNotFoundError: fastapi` /
+>     `prometheus_client` を起こし、pytest のみの同ジョブでは**全テストが setup ERROR** に
+>     なっていた。3 フィクスチャを ImportError 時 degradation に堅牢化
+>     （最小環境で 14 passed を実測。通常環境は不変）。
+>     なお `test_server_route_mount_parity` は src.backend.server 全体を import するため
+>     最小環境では原理的に実行不可能 → security ジョブ（フル依存）で重複実行済みのため
+>     ジョブからステップ削除。
+> - **2026-11-21 残存失敗の正確な棚卸し（wave1 適用後）**: **10 件**
+>   （確定的 7 件: v5_e2e / no_orphan_shims ×2 / shim_usage_stats / t6_plan_completion /
+>   easy_mode_export ×2 ＋ 順序依存 3 件: v6_llm_call_budget / H1_lint_ratchet /
+>   db_manager_singleton。後者 3 件は単体実行では GREEN）。
 
 ---
 
