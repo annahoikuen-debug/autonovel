@@ -32,6 +32,15 @@ services:
       - CORS_ORIGINS=${CORS_ORIGINS:?CORS_ORIGINS is required (comma-separated origins)}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-60}
       - REFRESH_TOKEN_EXPIRE_DAYS=${REFRESH_TOKEN_EXPIRE_DAYS:-14}
+      # レートリミットの実クライアント IP 解決用。本構成では frontend の nginx が
+      # X-Forwarded-For を付けてプロキシするため、信頼するプロキシ（Docker 既定の
+      # アドレスプール 172.16.0.0/12 = compose ネットワーク）を明示する。
+      # 未設定のままだと backend から見た peer が常に nginx コンテナになり、
+      # ログイン 10 回/分などの上限が全ユーザー共有の 1 バケットに収束する
+      # （攻撃者 11 リクエストで全ユーザーのログインを 60 秒封鎖できる）。
+      # 狭めたい場合は compose ネットワークの実サブネット（docker network inspect）
+      # をカンマ区切りで .env に設定すること。worker は HTTP を受けないため不要。
+      - TRUSTED_PROXY_CIDRS=${TRUSTED_PROXY_CIDRS:-172.16.0.0/12}
       - DATABASE_URL=postgresql+psycopg2://autonovel:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/autonovel
       # src/backend/alembic/env.py は ALEMBIC_DATABASE_URL を参照する。未設定だと
       # alembic.ini の sqlite:///./autonovel.db にフォールバックし、昇格した本番 DB に

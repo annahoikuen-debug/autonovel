@@ -5,8 +5,6 @@ import ast
 import glob
 import re
 
-HEADS = {"0031_episode_digests"}
-
 
 def test_0032_declares_fk_for_all_tenant_tables():
     path = "src/backend/alembic/versions/0032_tenant_user_fk.py"
@@ -37,7 +35,9 @@ def test_alembic_has_single_head():
                         except ValueError:
                             pass
     heads = revisions - down
-    # 0035_audit_lessons が 0035_digest_rollups の後継 (down_revision 参照) なので、
-    # head は 1 つ (0035_audit_lessons)。PLAN_M1 の 0035_digest_rollups はチェーンの中間。
+    # 0036_task_wal_logs_worker_id が 0035_audit_lessons の後継 (down_revision 参照) なので、
+    # head は 1 つ (0036_task_wal_logs_worker_id)。
+    # 注意: 新しいマイグレーションを追加したら本期待値も更新すること
+    # （PLAN_Q7 #16: 0036 追加時に期待値が 0035 のままで赤くなっていたのを修正）。
     assert len(heads) == 1, f"Alembic の head が {len(heads)} 個ある: {sorted(heads)}"
-    assert "0035_audit_lessons" in heads, "head に 0035_audit_lessons が含まれていない"
+    assert "0036_task_wal_logs_worker_id" in heads, "head に 0036_task_wal_logs_worker_id が含まれていない"

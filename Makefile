@@ -3,6 +3,10 @@
 
 PYTHON ?=.venv/bin/python
 
+# CI と同一バージョンに固定する（ci.yml: pip install "mypy==2.3.1"）。
+# 変更する場合は config/ci_lint_baseline.json の再実測と README のベースライン行も更新すること。
+MYPY_PIN_VERSION ?= 2.3.1
+
 .PHONY: help install dev test lint lint-layers typecheck openapi frontend-test frontend-lint run dev-up dev-down prod-up prod-down clean verify test-unit test-integration test-contract test-perf test-migration format-check check-migrations test-security
 
 help:  ## 利用可能ターゲット一覧を表示
@@ -30,6 +34,17 @@ format-check:  ## ruff format チェック (line-length 120)
 	$(PYTHON) -m ruff format --check src tests config scripts
 
 typecheck:  ## mypy (strict 化は将来フェーズ)
+# mypy のエラー件数はバージョンに依存する（実測: 2.3.1=439件 / 2.4.1=500件）。
+# config/ci_lint_baseline.json と CI (.github/workflows/ci.yml) は mypy==2.3.1 で
+# 固定しているため、ローカルで別バージョンを使うとラチェット判定が偽 FAIL/GOOD になる。
+# バージョン不一致はここで fail-fast する。
+	@installed=$$($(PYTHON) -m mypy --version 2>/dev/null | awk '{print $$2}'); \
+	if [ "$$installed" != "$(MYPY_PIN_VERSION)" ]; then \
+		echo "ERROR: mypy $(MYPY_PIN_VERSION) が必要です（現在: $${installed:-未インストール}）。" >&2; \
+		echo "  ラチェット (config/ci_lint_baseline.json) の件数は mypy バージョン依存のため、" >&2; \
+		echo "  バージョンを一致させること: $(PYTHON) -m pip install 'mypy==$(MYPY_PIN_VERSION)'" >&2; \
+		exit 1; \
+	fi
 	$(PYTHON) -m mypy src --ignore-missing-imports
 
 openapi:  ## OpenAPI 仕様を docs/openapi.json へ生成

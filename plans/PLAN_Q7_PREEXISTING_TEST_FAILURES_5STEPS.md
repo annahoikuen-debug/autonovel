@@ -21,6 +21,10 @@
 > - HEAD の失敗 19 件は**すべて base でも失敗**（pre-existing、本差分の回帰なし）。
 > - Plan Q6 で解消済み 4 件: `test_H1_lint_ratchet` / `test_old_llm_shim_paths_removed` /
 >   `test_shim_imports` (`src.api.health`, `src.services.llm.circuit_breaker`)。
+> - **2026-11-20 追記**: 外部レビューに伴う Quick Wins で **#16 (`test_alembic_has_single_head`) を解消**。
+>   原因は 0036 マイグレーション追加時にテスト側の期待 head（0035）が未更新だったこと。
+>   期待値を `0036_task_wal_logs_worker_id` へ更新（未使用の `HEADS` 定数も撤去）。
+>   残る pre-existing は **18 件 → テスト実行ベースで 17 件**（#1, #5〜#8 は Q7 Step1/2 で別途解消済み）。
 
 ---
 
