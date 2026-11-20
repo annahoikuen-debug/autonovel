@@ -1,11 +1,18 @@
 """Performance tests for Week 4 Fusion Layer."""
 import time
+
+import pytest
+
 from src.fusion.config import FusionConfig
 from src.fusion.conflict_detector import ConflictDetector
 from src.fusion.engine import FusionEngine
 from src.fusion.models import SourceVector
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 from src.stores.vector_store import InMemoryVectorStore
+
+# 実機速度に依存する wall-clock 閾値テストのため、pytest.ini の perf マーカーを付与
+# （CI の通常実行 `-m "not ... and not perf ..."` から除外される。make test-perf で実行）。
+pytestmark = pytest.mark.perf
 
 
 def test_fusion_performance_100_pairs():

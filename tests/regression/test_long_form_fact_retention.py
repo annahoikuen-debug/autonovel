@@ -16,10 +16,9 @@
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
-import json
 
 import pytest
-from sqlalchemy import select, text
+from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.backend.database.models_digest import EpisodeDigestModel
@@ -29,6 +28,7 @@ from src.engine.context_compression.rollup_generator import RollupGenerator
 from src.engine.context_compression.rollup_repository import DigestRollupRepository
 from src.engine.episode_context import EpisodeContextBuilder
 from src.infrastructure.database.models.base_orm import Base
+from src.infrastructure.database.models.book import Book
 
 BOOK_ID = 1
 TARGET_EPISODE = 50
@@ -45,19 +45,26 @@ async def _db(tmp_path):
     async with engine.begin() as conn:
         # 全テーブルを作成（FK 閉包を自動的に解決）
         await conn.run_sync(Base.metadata.create_all)
+        # ORM 経由で挿入する。以前の生 SQL による列挙 INSERT は、ORM モデルに
+        # NOT NULL 列（cumulative_tension 等、Python 側 default のみで
+        # server_default を持たない）が追加されると列欠けで NOT NULL 制約違反に
+        # なっていた（PLAN_Q7 #17/#18 の根因）。ORM insert なら
+        # 列の追加に自動追従する。
         await conn.execute(
-            text(
-                "INSERT INTO books (id, title, mode, genre, concept, synopsis, catchcopy, "
-                "style_dna, status, marketing_data, target_eps, ai_assistant_config) "
-                "VALUES (:id, :title, :mode, :genre, :concept, :synopsis, :catchcopy, "
-                ":style_dna, :status, :marketing_data, :target_eps, :ai_assistant_config)"
-            ),
-            {
-                "id": BOOK_ID, "title": "テスト作品", "mode": "easy", "genre": "fantasy",
-                "concept": "", "synopsis": "", "catchcopy": "", "style_dna": "",
-                "status": "draft", "marketing_data": "", "target_eps": 60,
-                "ai_assistant_config": json.dumps({"enabled": False}),
-            },
+            insert(Book).values(
+                id=BOOK_ID,
+                title="テスト作品",
+                mode="easy",
+                genre="fantasy",
+                concept="",
+                synopsis="",
+                catchcopy="",
+                style_dna="",
+                status="draft",
+                marketing_data="",
+                target_eps=60,
+                ai_assistant_config={"enabled": False},
+            )
         )
     sf = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     try:

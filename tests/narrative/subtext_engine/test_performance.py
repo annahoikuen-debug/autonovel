@@ -3,8 +3,15 @@ Performance unit test for SubtextEngine (Step 18).
 """
 
 import time
+
+import pytest
+
 from src.narrative.subtext_engine.engine import SubtextEngine
 from src.narrative.subtext_engine.models import DialogueBlock
+
+# 実機速度に依存する wall-clock 閾値テストのため、pytest.ini の perf マーカーを付与
+# （CI の通常実行 `-m "not ... and not perf ..."` から除外される。make test-perf で実行）。
+pytestmark = pytest.mark.perf
 
 
 def test_engine_performance_threshold():

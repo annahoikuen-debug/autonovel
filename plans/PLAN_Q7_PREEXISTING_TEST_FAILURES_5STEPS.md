@@ -25,6 +25,27 @@
 >   原因は 0036 マイグレーション追加時にテスト側の期待 head（0035）が未更新だったこと。
 >   期待値を `0036_task_wal_logs_worker_id` へ更新（未使用の `HEADS` 定数も撤去）。
 >   残る pre-existing は **18 件 → テスト実行ベースで 17 件**（#1, #5〜#8 は Q7 Step1/2 で別途解消済み）。
+> - **2026-11-21 追記（main 緑化第1弾）**: 以下を解消（実測はコミットメッセージ参照）。
+>   - **#4 (`tests/e2e/test_production_e2e`)**: `pytestmark = [integration, skipif-no-docker]` を付与。
+>     CI ランナーには docker があるため unit ジョブ内で本番スタックの compose up を試みる恐れがあった。
+>     `tests/docker/`・`tests/integration/` と同一の除外方針に整合。
+>   - **#11 (`test_fusion_performance_100_pairs`) + Q7 外 2 件 (`test_rule_engine_perf` / `subtext_engine/test_performance`)**:
+>     wall-clock 閾値テストに `pytestmark = pytest.mark.perf` を付与。
+>     `tests/performance/test_dsp_perf.py:7` の `@pytest.mark.perf` と同一規約。
+>     規約未適用だった 3 モジュールを揃えたもの（CI の perf 除外方針は pytest.ini に既存）。
+>   - **#17/#18 (`test_long_form_fact_retention` × 2)**: 実バグ修正。
+>     テストが生 SQL で 12 列のみ INSERT していたのに対し、ORM の `Book` は
+>     `cumulative_tension` 等 NOT NULL・Python 側 default のみ（server_default なし）の列を持ち、
+>     列欠けで NOT NULL 制約違反になっていた。ORM insert に置換し列追加に自動追従化。
+>   - **#9 (`test_v5_workflow_e2e`) の根因を特定（未修正・次ステップ）**:
+>     `/easy_mode/export-with-data` が C1 で `verify_book_ownership(book_id, current_user)` を
+>     **uow 指定なし**で呼ぶため、テスト DB ではなく `AppContainer.db()` のグローバル DB を見に行く
+>     （owner_guard.py の docstring 自身が「呼び出し側のセッションを無視するとテスト DB ではなく
+>     本番 DB を見てしまう実害があった」と警告しており、easy_mode 側が渡していない）。
+>     さらにテストは book_id=101 を事前作成していないため、所有権チェック前に NotFoundError (404)。
+>     修正には「ハンドラが session/uow をガードへ渡す」+「テストが所有者付き book を seed」の
+>     2 点が必要（sync Session は `isinstance(uow, AsyncSession)` 分岐に入らない点にも注意）。
+>     #2/#3（同エンドポイントの所有権テスト）も同根の可能性が高い。
 
 ---
 

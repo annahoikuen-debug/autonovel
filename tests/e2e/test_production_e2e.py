@@ -1,6 +1,21 @@
 import time
 import subprocess
+import shutil
+
+import pytest
+
 import requests
+
+# 本番 docker compose スタック全体を起動する統合テスト。
+# - pytest.ini の integration マーカーを付与し、CI の unit ゲート
+#   （`-m "not integration ..."`）から除外する（CI ランナーには docker があるため、
+#   マーカー無しでは unit ジョブ内で本番スタックの compose up を試みてしまう）。
+# - docker が無い環境では skip する（tests/docker/test_image_security.py と同一パターン）。
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(not shutil.which("docker"), reason="docker が利用できないため skip"),
+]
+
 
 def compose_up():
     """Start docker compose in detached mode."""

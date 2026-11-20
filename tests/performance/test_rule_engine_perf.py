@@ -15,6 +15,10 @@ from src.rules.emotional_rules import EmotionalRule, PlotContext
 from src.rules.plot_events import PlotEvent, PlotEventType, Role
 from src.rules.state_machine import EmotionalStateMachine
 
+# 実機速度に依存する wall-clock 閾値テストのため、pytest.ini の perf マーカーを付与
+# （CI の通常実行 `-m "not ... and not perf ..."` から除外される。make test-perf で実行）。
+pytestmark = pytest.mark.perf
+
 
 def _make_rules(num_rules: int = 8) -> List[EmotionalRule]:
     """テスト用ルール群。"""
