@@ -67,6 +67,27 @@
 >   （確定的 7 件: v5_e2e / no_orphan_shims ×2 / shim_usage_stats / t6_plan_completion /
 >   easy_mode_export ×2 ＋ 順序依存 3 件: v6_llm_call_budget / H1_lint_ratchet /
 >   db_manager_singleton。後者 3 件は単体実行では GREEN）。
+> - **2026-11-22 追記（wave1: #9 / #2 / #3 解消）**: 3 件を**テスト側のみの修正で解消**。
+>   - **#9 (`test_v5_workflow_e2e`)**:
+>     1. テストが所有者付き `Book(id=101, user_id=1)` + `User(id=1)` をテスト DB に seed
+>       （昇格がモックのため本来昇格結果として存在するはずの行を具体化。C1 の所有権検証は削らない）。
+>     2. `api_client` フィクスチャで `AppContainer.db` をテスト用 SQLite の非同期セッションファクトリに
+>       差し替え（`test_p0_multimedia_merge_e2e.py` と同一パターン）。テスト後に復元。
+>   - **#2/#3 (`test_easy_mode_export_with_data_ownership` ×2)**: ガード `verify_book_ownership` は
+>     ハンドラ本体から直接呼ばれるため dependency_overrides で差し替え不可（過去の `fake_verify`
+>     上書きは実際には実行されておらず、ローカル dev storage DB の残留行
+>     （所有者 NULL の Book(id=1)）に偶然依存して 403 を返していた＝クリーン環境では 404/500 で赤）。
+>     autouse フィクスチャ `_isolated_guard_db` で `AppContainer.db` をテスト専用 SQLite に隔離し、
+>     「他者所有の Book(id=1)」を seed して環境非依存に 403 パスを検証するよう修正。
+>     dev storage DB の残留データには依存しなくなった（実測: storage DB を退避しても green）。
+>   - **機序（baseline フルスイートで #2/#3 が赤だった理由）**: v5_e2e の失敗リクエストがガード内で
+>     `AppContainer.db()` シングルトンを初回生成し、その時点の `DATABASE_URL`（v5_e2e の一時 DB）が
+>     プロセス終了までキャッシュされて汚染、後続のガード経由テストが削除済みファイルを見ていた。
+>   - **ハンドラが session/uow をガードへ渡す本修正（上段参照）は未実装**のため、
+>     同エンドポイントの順序依存脆弱性は構造的に残存（フォローアップ）。
+>   - フルスイート実測: baseline 9 failed → **6 failed**（新規回帰 0）。
+>     残存 6 件: no_orphan_shims ×2 / shim_usage_stats / t6_plan_completion /
+>     v6_llm_call_budget（順序依存）/ db_manager_singleton（順序依存）。
 
 ---
 

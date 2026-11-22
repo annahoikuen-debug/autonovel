@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import io
 import json
 import zipfile
@@ -29,8 +30,36 @@ from src.backend import database
 @pytest.fixture
 def api_client(real_db_manager):
     app.dependency_overrides[database.get_db] = lambda: real_db_manager
+
+    # NOTE: C1 セキュリティ修正により export-with-data は verify_book_ownership を
+    # 通る。ガードは dependency_overrides を経由せず自身で UnitOfWork を開くため、
+    # AppContainer.db をテスト用 SQLite（real_db_manager と同じファイル）に差し替えないと
+    # 本番/開発 DB を見て NotFound になる。
+    # (tests/integration/test_p0_multimedia_merge_e2e.py と同じパターン)
+    import src.core.container as container_mod
+    from src.core.container import AppContainer
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+    from sqlalchemy.pool import StaticPool
+
+    sync_url = str(real_db_manager.get_bind().url)
+    async_url = sync_url.replace("sqlite:///", "sqlite+aiosqlite:///")
+    async_engine = create_async_engine(
+        async_url,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    async_session_factory = async_sessionmaker(bind=async_engine, class_=AsyncSession, expire_on_commit=False)
+
+    original_db_provider = AppContainer.db
+    container_mod.AppContainer.db = async_session_factory
+    AppContainer.db = async_session_factory
+
     client = TestClient(app)
     yield client
+
+    container_mod.AppContainer.db = original_db_provider
+    AppContainer.db = original_db_provider
+    asyncio.run(async_engine.dispose())
     app.dependency_overrides.pop(database.get_db, None)
 
 
@@ -164,11 +193,9 @@ async def test_full_creation_to_zip_delivery_flow(api_client, real_db_manager):
         state_token="state_token_v5_e2e_valid",
     )
 
-    with patch.object(
-        PromotionResponse,
-        "__init__",
-        return_value=None,
-    ) if False else patch(
+    # NOTE: `patch.object(PromotionResponse, "__init__", ...) if False else ...`
+    # というデッドブランチ付きの古い構成を整理し、昇格サービスのモックのみを適用する。
+    with patch(
         "src.services.promotion_service.PromotionService.promote_book",
         new_callable=AsyncMock,
     ) as mock_promote:
@@ -184,6 +211,35 @@ async def test_full_creation_to_zip_delivery_flow(api_client, real_db_manager):
     # ==========================================
     # 4. 本文加筆・編集同期 & ワンクリック納品 ZIP エクスポート
     # ==========================================
+    # NOTE: C1 セキュリティ修正により export-with-data は verify_book_ownership で
+    # 「作品が存在し current_user（AUTH_DISABLED 時は dev モック管理者 id=1）が
+    # 所有すること」を検証する。昇格 (3.) はモックのため DB 行が作られないので、
+    # 昇格結果として本来存在するはずの Book(id=101, user_id=1) を実 DB に
+    # 作成してからエクスポートする（所有権検証そのものは削らない）。
+    from src.backend.database.models import Book as BookModel
+    from src.backend.database.models import User as UserModel
+
+    real_db_manager.add(
+        UserModel(
+            id=1,
+            email="dev@autonovel.local",
+            hashed_password="seed",
+            display_name="Dev Admin",
+            role="admin",
+            status="active",
+        )
+    )
+    real_db_manager.add(
+        BookModel(
+            id=101,
+            user_id=1,
+            title=selected_plan["title"],
+            genre="ハイファンタジー (R15)",
+            mode="easy",
+        )
+    )
+    real_db_manager.commit()
+
     edited_text = (
         "「お前の役目はもう終わったんだよ」\n"
         "勇者は冷笑を浮かべ、アルトの胸からギルドプレートを引きちぎった。\n"
