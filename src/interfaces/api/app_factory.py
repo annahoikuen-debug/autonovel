@@ -157,9 +157,9 @@ def create_app(
     # グローバルな上限は設定せず、認証パスにだけ上限を置くことで
     # ストリーミングやバッチ生成など他ルートの実運用を阻害しない。
     AUTH_PATH_RATE_LIMITS: dict[str, int] = {
-        "/api/auth/login": 10,
-        "/api/auth/register": 5,
-        "/api/auth/refresh": 30,
+        "/api/auth/login": settings.AUTH_RATE_LIMIT_LOGIN,
+        "/api/auth/register": settings.AUTH_RATE_LIMIT_REGISTER,
+        "/api/auth/refresh": settings.AUTH_RATE_LIMIT_REFRESH,
     }
     app.add_middleware(RateLimitMiddleware, path_rate_limits=AUTH_PATH_RATE_LIMITS)
 

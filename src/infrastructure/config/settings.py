@@ -153,6 +153,13 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
+    # 認証エンドポイント向けレート制限（1分あたりの許容リクエスト数）
+    # グローバル上限は敷かず、認証パスだけに上限を置くことで
+    # ストリーミングやバッチ生成など他ルートの実運用を阻害しない。
+    AUTH_RATE_LIMIT_LOGIN: int = 10
+    AUTH_RATE_LIMIT_REGISTER: int = 5
+    AUTH_RATE_LIMIT_REFRESH: int = 30
+
     @model_validator(mode="after")
     def validate_production_secrets(self) -> Settings:
         """本番環境でデフォルト値や空シークレットが使用されるのを防止する。
