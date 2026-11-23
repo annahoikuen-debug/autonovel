@@ -173,4 +173,4 @@ class BranchRepository(BaseRepository):
                 version=expected_version + 1,
             )
         )
-        return (result.rowcount or 0) > 0  # type: ignore[attr-defined]
+        return (result.rowcount or 0) > 0

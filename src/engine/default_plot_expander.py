@@ -281,7 +281,7 @@ class DefaultPlotExpander:
         reporter: IReporter | None = None,
     ) -> PlotEpisode:
         """指定話数の詳細プロットが存在することを保証する（完全冪等）"""
-        existing = await self.repo.get_plot(branch_id, ep_num, book_id=book_id)  # type: ignore[arg-type]
+        existing = await self.repo.get_plot(branch_id, ep_num, book_id=book_id)
         if existing and hasattr(existing, "scenes") and len(existing.scenes or []) >= 3:
             return existing  # type: ignore[return-value]
 

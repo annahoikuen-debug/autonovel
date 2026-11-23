@@ -58,7 +58,7 @@ class BookRepository(BaseRepository):
         )
         self.session.add(book)
         await self.session.flush()
-        return book.id  # type: ignore[return-value]
+        return book.id
 
     async def get_book(self, book_id: int, user_id: int | None = None) -> BookDbModel | None:
         stmt = select(Book).where(Book.id == book_id)
@@ -123,7 +123,7 @@ class BookRepository(BaseRepository):
             values["version"] = expected_version + 1
         result = await self.session.execute(stmt.values(**values))
         if expected_version is not None:
-            return (result.rowcount or 0) > 0  # type: ignore[attr-defined]
+            return (result.rowcount or 0) > 0
         return True
 
     async def get_book_version(self, book_id: int, user_id: int | None = None) -> int | None:

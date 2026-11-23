@@ -363,7 +363,7 @@ class SpiceGuard:
 
         # 1. 普遍パターンによる抽出
         for pattern_type, config in self.UNIVERSAL_PATTERNS.items():
-            priority = config["priority"]  # type: ignore[assignment]
+            priority = config["priority"]
 
             if "patterns" in config:
                 for pattern in self._compiled_patterns.get(pattern_type, []):
@@ -394,7 +394,7 @@ class SpiceGuard:
         # 2. ジャンル別パターンによる抽出
         genre_patterns = self.GENRE_PATTERNS.get(self.genre, {})
         for pattern_type, config in genre_patterns.items():
-            priority = config["priority"]  # type: ignore[assignment]
+            priority = config["priority"]
             full_type = f"{self.genre}_{pattern_type}"
 
             if "keywords" in config:

@@ -48,7 +48,7 @@ async def get_cost_summary(
     # 一般ユーザー、または管理者でall_users=Falseの場合は自身が所有する書籍に限定
     if current_user.role != "admin" or not all_users:
         user_book_ids = select(Book.id).filter(Book.user_id == current_user.id).subquery()
-        stmt = stmt.filter(CostLogModel.book_id.in_(user_book_ids))  # type: ignore[arg-type]
+        stmt = stmt.filter(CostLogModel.book_id.in_(user_book_ids))
 
     result = await db.execute(stmt)
     results = result.first()

@@ -72,7 +72,7 @@ def _get_chromadb() -> Any:
             _chromadb_module = importlib.import_module("chromadb")
         except Exception as e:  # noqa: BLE001 - インポート失敗は機能停止として扱う
             logger.warning(f"[VECTOR STORE] Failed to import/initialize chromadb: {e}.")
-            _chromadb_module = False  # type: ignore[assignment]
+            _chromadb_module = False
     return _chromadb_module or None
 
 
@@ -87,7 +87,7 @@ def _get_bm25() -> Any:
             _bm25_cls = importlib.import_module("rank_bm25").BM25Okapi
         except Exception as e:  # noqa: BLE001
             logger.warning(f"[VECTOR STORE] Failed to import rank_bm25: {e}.")
-            _bm25_cls = False  # type: ignore[assignment]
+            _bm25_cls = False
     return _bm25_cls or None
 
 
@@ -583,7 +583,7 @@ class ChromaVectorStore(BaseVectorStore):
                 # ベクトル検索のメタデータを優先して使用
                 metadata = vector_result.get("metadata", {}) if vector_result else {}
                 if not metadata and bm25_result:
-                    metadata = bm25_result.get("metadata", {})  # type: ignore[union-attr]
+                    metadata = bm25_result.get("metadata", {})
 
                 combined_results.append(
                     {

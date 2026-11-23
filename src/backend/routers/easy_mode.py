@@ -90,7 +90,7 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
     db = get_db_manager()
     async with db.get_session() as session:
         rag_context = await rag_service.build_rag_context(
-            session=session,  # type: ignore[arg-type]
+            session=session,
             book_id=book_id,
             current_prompt=current_chapter,
             character_name=char_name,
@@ -225,7 +225,7 @@ async def execute_generation(payload: dict[str, Any]) -> dict[str, Any]:
     async with db.get_session() as session:
         try:
             await graph_pipeline_service.process_chapter_knowledge(
-                session=session,  # type: ignore[arg-type]
+                session=session,
                 chapter_id=chapter_id,
                 chapter_text=generated_text,
             )

@@ -309,7 +309,7 @@ class BeatMapper:
                 old_value = 0
             if new_value != old_value:
                 try:
-                    episode.tension = new_value  # type: ignore[attr-defined]
+                    episode.tension = new_value
                     changed += 1
                 except (AttributeError, TypeError):
                     # 不変オブジェクト等は書き戻しを諦める (fail-open)

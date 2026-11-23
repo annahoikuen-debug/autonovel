@@ -46,7 +46,7 @@ class CreditService:
 
         stmt = update(User).where(User.id == user_id).values(credits=User.credits + amount)
         result = await self.db.execute(stmt)
-        if result.rowcount == 0:  # type: ignore[attr-defined]
+        if result.rowcount == 0:
             raise ValueError(f"ユーザーが見つかりません: {user_id}")
 
         new_balance = await self.get_balance(user_id)
@@ -91,7 +91,7 @@ class CreditService:
         stmt = update(User).where(User.id == user_id, User.credits >= amount).values(credits=User.credits - amount)
         result = await self.db.execute(stmt)
 
-        if result.rowcount == 0:  # type: ignore[attr-defined]
+        if result.rowcount == 0:
             # ユーザー不在か残高不足かを判定
             user_exists = (await self.db.execute(select(User.id).where(User.id == user_id))).scalar_one_or_none()
             if not user_exists:

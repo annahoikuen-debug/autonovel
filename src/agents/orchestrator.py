@@ -828,7 +828,7 @@ class Orchestrator:
                             )
                         )
                     # Set current to the next_agent for backtrack
-                    current = result.next_agent  # type: ignore[assignment]
+                    current = result.next_agent
                     continue
                 if result.error:
                     # エラーが発生しても次のスキルへ継続するオプション（artifacts にエラー情報を残す）
@@ -845,9 +845,9 @@ class Orchestrator:
                                 correlation_id=self.correlation_id,
                             )
                         )
-                    current = result.next_agent  # type: ignore[assignment]
+                    current = result.next_agent
                     continue
-                current = result.next_agent  # type: ignore[assignment]
+                current = result.next_agent
 
             except Exception as e:
                 # 予期しない例外も捕捉し、継続可能にする

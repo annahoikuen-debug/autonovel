@@ -79,7 +79,7 @@ class OpenAIAdapter(BaseLLMAdapter):
         async def _call() -> str:
             response = await self.client.chat.completions.create(
                 model=self.model,
-                messages=messages,  # type: ignore[arg-type]
+                messages=messages,
                 max_tokens=max_tokens,
                 temperature=temperature,
                 **call_kwargs,
@@ -105,7 +105,7 @@ class OpenAIAdapter(BaseLLMAdapter):
 
         response = await self.client.chat.completions.create(
             model=self.model,
-            messages=messages,  # type: ignore[arg-type]
+            messages=messages,
             max_tokens=max_tokens,
             temperature=temperature,
             stream=True,
@@ -113,6 +113,6 @@ class OpenAIAdapter(BaseLLMAdapter):
         )
 
         # response is AsyncStream[ChatCompletionChunk] when stream=True
-        async for chunk in response:  # type: ignore[union-attr]
+        async for chunk in response:
             if chunk.choices and chunk.choices[0].delta.content:
                 yield chunk.choices[0].delta.content

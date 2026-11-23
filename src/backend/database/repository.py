@@ -101,7 +101,7 @@ class DataRepositoryFacade:
             if not state:
                 return default
             try:
-                return json.loads(state.value)  # type: ignore[arg-type]
+                return json.loads(state.value)
             except Exception:
                 return state.value
 
@@ -115,8 +115,8 @@ class DataRepositoryFacade:
             if not state:
                 state = InternalState(key=key)
                 session.add(state)
-            state.value = json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value  # type: ignore[assignment]
-            state.updated_at = datetime.now()  # type: ignore[assignment]
+            state.value = json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value
+            state.updated_at = datetime.now()
             await session.commit()
 
 
@@ -404,8 +404,8 @@ class BookRepository:
                 self._safe_refresh(book)
             else:
                 # 既存本のタイトル・ジャンルを更新（かんたんモード等で生成結果を反映）
-                book.title = title  # type: ignore[assignment]
-                book.genre = genre  # type: ignore[assignment]
+                book.title = title
+                book.genre = genre
 
         # 第1話の更新または作成
         if chapter_text:
@@ -427,7 +427,7 @@ class BookRepository:
         # キャラクターの登録/更新
         if character_params and character_params.get("name"):
             char_name = character_params["name"]
-            stmt = select(Character).where(Character.book_id == book.id).where(Character.name == char_name)  # type: ignore[assignment]
+            stmt = select(Character).where(Character.book_id == book.id).where(Character.name == char_name)
             char = self.session.execute(stmt).scalar_one_or_none()
             if char:
                 char.personality = character_params.get("personality", "")
@@ -504,7 +504,7 @@ class BookRepository:
         # キャラクターの登録/更新
         if character_params and character_params.get("name"):
             char_name = character_params["name"]
-            stmt = select(Character).where(Character.book_id == book.id).where(Character.name == char_name)  # type: ignore[assignment]
+            stmt = select(Character).where(Character.book_id == book.id).where(Character.name == char_name)
             if self.is_async:
                 res = await self.session.execute(stmt)
             else:

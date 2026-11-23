@@ -61,7 +61,7 @@ class NanoBananaClient:
             if negative_prompt:
                 config_kwargs["negative_prompt"] = negative_prompt
 
-            config = types.GenerateImagesConfig(**config_kwargs)  # type: ignore[arg-type]
+            config = types.GenerateImagesConfig(**config_kwargs)
             assert self.client is not None
             response = self.client.models.generate_images(
                 model=self.config.model_id,

@@ -95,7 +95,7 @@ class WorkerRecoveryManager:
             stmt = (
                 select(TaskWALLogModel)
                 .where(TaskWALLogModel.state == "running")
-                .where(TaskWALLogModel.worker_id == self.worker_id)  # type: ignore[arg-type]
+                .where(TaskWALLogModel.worker_id == self.worker_id)
             )
             result = await session.execute(stmt)
             running_logs = result.scalars().all()
@@ -105,7 +105,7 @@ class WorkerRecoveryManager:
 
             now = datetime.now()
             for log in running_logs:
-                log.heartbeat_at = now  # type: ignore[assignment]
+                log.heartbeat_at = now
 
             await session.commit()
             logger.debug(f"Updated heartbeats for {len(running_logs)} running tasks (worker={self.worker_id})")
@@ -122,7 +122,7 @@ class WorkerRecoveryManager:
         async with self.db_manager.get_session() as session:
             stmt = select(TaskWALLogModel).where(
                 TaskWALLogModel.state == "running",
-                TaskWALLogModel.heartbeat_at < threshold,  # type: ignore[arg-type]
+                TaskWALLogModel.heartbeat_at < threshold,
             )
             result = await session.execute(stmt)
             return list(result.scalars().all())
@@ -144,8 +144,8 @@ class WorkerRecoveryManager:
                 update(TaskWALLogModel)
                 .where(
                     TaskWALLogModel.state == "running",
-                    TaskWALLogModel.heartbeat_at < threshold,  # type: ignore[arg-type]
-                    TaskWALLogModel.worker_id != self.worker_id,  # type: ignore[arg-type]
+                    TaskWALLogModel.heartbeat_at < threshold,
+                    TaskWALLogModel.worker_id != self.worker_id,
                 )
                 .values(state="pending", heartbeat_at=datetime.now())
                 .returning(TaskWALLogModel.task_id)
@@ -275,12 +275,12 @@ class WorkerRecoveryManager:
             for log in completed_logs:
                 if log.output_json:
                     try:
-                        node_outputs[log.node_id] = json.loads(log.output_json)  # type: ignore[arg-type]
+                        node_outputs[log.node_id] = json.loads(log.output_json)
                     except json.JSONDecodeError:
                         pass
 
             logger.info(f"Resuming DAG {dag_id} from checkpoint with {len(node_outputs)} completed nodes")
-            return list(node_outputs.keys())  # type: ignore[arg-type]
+            return list(node_outputs.keys())
 
     async def get_pending_tasks_for_dag(self, dag_id: str) -> list[TaskWALLogModel]:
         """Get all pending tasks for a DAG that need to be executed."""

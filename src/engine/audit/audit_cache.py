@@ -94,7 +94,7 @@ class AuditCache:
         if key in self._cache:
             self._hits += 1
             logger.debug("[AUDIT CACHE] HIT screen_plot key=%s", key[:16])
-            return self._cache[key]  # type: ignore[return-value]
+            return self._cache[key]
         self._misses += 1
         result = await self._service.screen_plot(blueprint)
         self._cache[key] = result
@@ -105,7 +105,7 @@ class AuditCache:
         if key in self._cache:
             self._hits += 1
             logger.debug("[AUDIT CACHE] HIT audit_ability key=%s", key[:16])
-            return self._cache[key]  # type: ignore[return-value]
+            return self._cache[key]
         self._misses += 1
         result = await self._service.audit_ability(blueprint, settings_json, characters_json)
         self._cache[key] = result
@@ -116,7 +116,7 @@ class AuditCache:
         if key in self._cache:
             self._hits += 1
             logger.debug("[AUDIT CACHE] HIT audit_deai key=%s", key[:16])
-            return self._cache[key]  # type: ignore[return-value]
+            return self._cache[key]
         self._misses += 1
         result = await self._service.audit_deai(content)
         self._cache[key] = result

@@ -272,7 +272,7 @@ async def _generate_orchestrated(payload: dict[str, Any]) -> dict[str, Any]:
             illustration_node = _make_execute_node(illustration_agent, AgentName.MARKETING)
 
             if enrichment_enabled:
-                nodes[AgentName.ENRICHMENT] = EnrichmentAgent(repo=repo, llm=llm_adapter).run  # type: ignore[assignment]
+                nodes[AgentName.ENRICHMENT] = EnrichmentAgent(repo=repo, llm=llm_adapter).run
                 nodes[AgentName.AUDIT] = audit_node.run  # type: ignore
                 nodes[AgentName.ILLUSTRATION] = illustration_node  # type: ignore
             else:

@@ -721,10 +721,10 @@ class DAGScheduler:
                 wal_entry = await self.worker_recovery.get_latest_wal_for_node(dag_id, node_id)
                 if wal_entry and wal_entry.output_json:
                     try:
-                        output_data = json.loads(wal_entry.output_json)  # type: ignore[arg-type]
+                        output_data = json.loads(wal_entry.output_json)
                         graph.nodes[node_id].result = output_data
                         graph.nodes[node_id].status = "completed"
-                        graph.nodes[node_id].completed_at = wal_entry.created_at  # type: ignore[assignment]
+                        graph.nodes[node_id].completed_at = wal_entry.created_at
                         logger.debug(f"Restored output for node {node_id} from WAL")
                     except json.JSONDecodeError:
                         logger.warning(f"Failed to parse WAL output for node {node_id}")

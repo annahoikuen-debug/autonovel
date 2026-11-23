@@ -186,7 +186,7 @@ class DbForeshadowingRepository:
                 ForeshadowingModel.book_id == book_id,
                 ForeshadowingModel.status.in_(active_statuses),
                 ForeshadowingModel.target_episode.isnot(None),
-                ForeshadowingModel.target_episode < current_episode,  # type: ignore[arg-type]
+                ForeshadowingModel.target_episode < current_episode,
             )
             .order_by(ForeshadowingModel.planted_episode)
         )
@@ -273,7 +273,7 @@ class DbForeshadowingRepository:
 
         stmt = update(ForeshadowingModel).where(and_(*conditions)).values(**values)
         result = await self.db.execute(stmt)
-        if result.rowcount > 0:  # type: ignore[attr-defined]
+        if result.rowcount > 0:
             return True
 
         reason = await self._diagnose_rejection(foreshadowing_id, target_status, resolved_ep)

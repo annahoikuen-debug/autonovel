@@ -50,7 +50,7 @@ class UnitOfWork:
 
                 self.db = AppContainer.db()
             except Exception:
-                self.db = None  # type: ignore[assignment]
+                self.db = None
         else:
             self.db = db
         self.session: AsyncSession | None = None

@@ -116,8 +116,8 @@ class ContextManager:
                     for c in all_chars
                     if c.name
                     and (
-                        str(c.name) in search_area  # type: ignore[operator]
-                        or str(c.name) in recent_ctx  # type: ignore[operator]
+                        str(c.name) in search_area
+                        or str(c.name) in recent_ctx
                         or any(role in (c.role or "") for role in ["主人公", "ヒロイン", "悪役", "ライバル"])
                     )
                 ]

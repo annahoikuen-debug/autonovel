@@ -251,7 +251,7 @@ async def sse_pipeline_stream(
                 await queue.put({"text": text})
 
         shim = SSEWebsocketShim()
-        await pipeline_event_hub.subscribe(book_id, shim)  # type: ignore[arg-type]
+        await pipeline_event_hub.subscribe(book_id, shim)
 
         try:
             if book_id in pipeline_event_hub._latest_snapshots:
@@ -266,7 +266,7 @@ async def sse_pipeline_stream(
                 except asyncio.TimeoutError:
                     yield ": ping\n\n"
         finally:
-            await pipeline_event_hub.unsubscribe(book_id, shim)  # type: ignore[arg-type]
+            await pipeline_event_hub.unsubscribe(book_id, shim)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

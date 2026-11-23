@@ -61,7 +61,7 @@ class ConditionRegistry:
         """
         func = self.get(name)
         self.validate_params(name, func, params)
-        return lambda ctx: func(ctx, **params)  # type: ignore[call-arg]
+        return lambda ctx: func(ctx, **params)
 
     @staticmethod
     def validate_params(name: str, func: ConditionFunc, params: Dict[str, object]) -> None:

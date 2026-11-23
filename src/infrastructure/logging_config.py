@@ -228,7 +228,7 @@ def configure() -> None:
     else:
         try:
             try:
-                from pythonjsonlogger import json as jsonlogger  # type: ignore[import-not-found]
+                from pythonjsonlogger import json as jsonlogger
             except ImportError:
                 from pythonjsonlogger import jsonlogger  # type: ignore[import-not-found,no-redef]
         except ImportError:

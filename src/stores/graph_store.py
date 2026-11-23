@@ -142,7 +142,7 @@ class KuzuGraphStore(GraphStore):
         self._connection: Any = None
         self._available = False
         try:
-            import kuzu  # type: ignore[import-not-found]
+            import kuzu
 
             self._db = kuzu.Database(db_path)
             self._connection = kuzu.Connection(self._db)

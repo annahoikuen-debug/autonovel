@@ -61,7 +61,7 @@ class DigestService:
             session.add(book)
             await session.flush()
             await session.commit()
-            return book.id  # type: ignore[return-value]
+            return book.id
 
     async def _save_digest_db(
         self,
@@ -229,7 +229,7 @@ async def generate_suggestions(chapter: str) -> list[str]:
     メソッドを委譲するだけ。
     """
     dummy_db = _DummyDB()
-    service = DigestService(llm_service=LLMService(), db=dummy_db)  # type: ignore[arg-type]
+    service = DigestService(llm_service=LLMService(), db=dummy_db)
     return await service.generate_suggestions(chapter)
 
 

@@ -328,7 +328,7 @@ async def get_graph_data(
                 GraphEdgeSchema(
                     source=f"character_{rel.source_char_id}",
                     target=f"character_{rel.target_char_id}",
-                    type=rel.relation_type,  # type: ignore[arg-type]
+                    type=rel.relation_type,
                     properties={"description": rel.description} if rel.description else {},
                 )
             )
