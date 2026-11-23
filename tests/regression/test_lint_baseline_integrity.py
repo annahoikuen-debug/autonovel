@@ -35,7 +35,10 @@ def test_ruff_check_baseline():
 
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src", "config", "tests"],
-        capture_output=True, text=True, encoding="utf-8", cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        cwd=ROOT,
     )
     # ruff check の出力からエラー数を抽出（最後の行に "Found N errors" 等が含まれる場合がある）
     output = result.stdout + result.stderr
@@ -45,9 +48,7 @@ def test_ruff_check_baseline():
     baseline = data["ruff_errors"]
 
     # エラー行数を大まかにカウント（"error" または "warning" で始まる行）
-    [line for line in output.splitlines() if ": " in line and any(
-        code in line for code in ["E", "F", "W"]
-    )]
+    [line for line in output.splitlines() if ": " in line and any(code in line for code in ["E", "F", "W"])]
     # 厳密な数え上げは難しいため、返りコードとベースラインの両方をログに残す
     assert baseline >= 0, f"ベースライン値が不正: {baseline}"
 
@@ -76,7 +77,7 @@ def test_makefile_and_ci_mypy_pin_match():
     ci_yml = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
 
     m_make = re.search(r'MYPY_PIN_VERSION\s*\?=\s*["\']?([\d.]+)["\']?', makefile)
-    m_ci = re.search(r'mypy==([\d.]+)', ci_yml)
+    m_ci = re.search(r"mypy==([\d.]+)", ci_yml)
 
     assert m_make, "Makefile に MYPY_PIN_VERSION が見つかりません"
     assert m_ci, "ci.yml に mypy== が見つかりません"
@@ -90,8 +91,8 @@ def test_coverage_fail_under_matches_readme():
     pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
 
-    m_py = re.search(r'fail_under\s*=\s*(\d+)', pyproject)
-    m_readme = re.search(r'fail_under\s*=\s*(\d+)', readme)
+    m_py = re.search(r"fail_under\s*=\s*(\d+)", pyproject)
+    m_readme = re.search(r"fail_under\s*=\s*(\d+)", readme)
 
     assert m_py, "pyproject.toml に fail_under が見つかりません"
     assert m_readme, "README に fail_under が見つかりません"
