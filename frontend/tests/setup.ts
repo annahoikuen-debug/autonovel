@@ -17,8 +17,48 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
+/*
+ * localStorage スタブ（Node 26 + jsdom 24 環境対策）。
+ *
+ * Node 26 の実験的 global localStorage は `--localstorage-file` 未指定で
+ * 無効化され、jsdom 24 と衝突して `window.localStorage` が undefined になる
+ * （"localStorage is not available because --localstorage-file was not provided"）。
+ * 多数のテストファイルが `window.localStorage.clear()` を直書きしているため、
+ * undefined のままでは全テストが環境エラーで落ちる。ここで in-memory スタブを
+ * 注入し、環境エラーとテストロジックの失敗を分離する。
+ * vite.config.ts 側の `environmentOptions.jsdom.url` は opaque origin 対策として設定済み。
+ */
+if (typeof window !== "undefined" && window.localStorage === undefined) {
+  const store = new Map<string, string>();
+  const stub = {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, String(value));
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => {
+      store.clear();
+    },
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+  Object.defineProperty(window, "localStorage", {
+    value: stub,
+    configurable: true,
+    writable: true,
+  });
+}
+
 beforeEach(() => {
-  window.localStorage.clear();
+  /*
+   * テスト間の localStorage 初期化（防御的呼び出し）。
+   * 上のスタブ注入により、この環境では常に localStorage が存在する。
+   */
+  window.localStorage?.clear?.();
 });
 
 class MockWebSocket extends EventTarget {

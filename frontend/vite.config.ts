@@ -56,6 +56,19 @@ export default defineConfig({
   },
   test: {
     environment: "jsdom",
+    /*
+     * jsdom の URL 設定（localStorage 修復）。
+     *
+     * 未指定だと opaque origin (`about:blank`) 扱いになり、jsdom 24 は
+     * "SecurityError: localStorage is not available for opaque origins" を
+     * 投げる。setup.ts の `window.localStorage.clear()` が全テストで落ちる
+     * 原因だったため、実アプリと同じオリジンを与える。
+     */
+    environmentOptions: {
+      jsdom: {
+        url: "http://localhost:5173",
+      },
+    },
     globals: true,
     setupFiles: ["./tests/setup.ts"],
     exclude: [...configDefaults.exclude, "tests/e2e/**"],
