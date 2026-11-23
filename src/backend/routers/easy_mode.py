@@ -11,6 +11,7 @@ from pydantic import ValidationError
 
 from src.backend import database
 from src.backend.auth import get_current_user, oauth2_scheme, require_api_key
+from src.config.kakuyomu_ranking_presets import KAKUYOMU_RANKING_PRESETS
 from src.infrastructure.config.settings import is_auth_bypass_enabled, settings
 from src.backend.database import get_async_db
 from src.backend.database.core import get_db_manager
@@ -724,6 +725,74 @@ async def export_with_data_endpoint(
     ascii_filename = zip_filename.encode("ascii", "ignore").decode("ascii") or "export.zip"
     metrics.increment("exports_succeeded")
 
+    return Response(
+        content=zip_bytes,
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": (f"attachment; filename=\"{ascii_filename}\"; filename*=UTF-8''{encoded_filename}"),
+            "Cache-Control": "no-store",
+        },
+    )
+
+
+# --- 改善案8: カクヨムランキング上位を狙うオンボーディング ---
+@router.get("/easy_mode/onboarding-presets")
+async def get_onboarding_presets() -> dict[str, Any]:
+    """カクヨムランキング上位を狙う初心者向けプリセット一覧を返す。
+
+    フラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は空リストを返し、
+    現行のオンボーディング挙動を変更しない。
+    """
+    if not settings.ENABLE_ONBOARDING_KAKUYOMU_MODE:
+        return {"presets": []}
+
+    return {
+        "presets": [
+            {
+                "key": key,
+                "genre": p.genre,
+                "recommended_tags": p.recommended_tags,
+                "title_patterns": p.title_patterns,
+                "synopsis_template": p.synopsis_template,
+                "target_word_count_per_ep": p.target_word_count_per_ep,
+                "update_frequency_recommendation": p.update_frequency_recommendation,
+            }
+            for key, p in KAKUYOMU_RANKING_PRESETS.items()
+        ]
+    }
+
+
+# --- 改善案8: カクヨム形式整形エクスポート ---
+@router.post("/easy_mode/export-kakuyomu-package/{book_id}")
+async def export_kakuyomu_package(
+    book_id: int = Path(ge=1),
+    session=Depends(database.get_db),
+    current_user: Any = Depends(get_current_user),
+) -> Response:
+    """カクヨム形式で整形した投稿用パッケージを返す。
+
+    フラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は 404 を返し、
+    現行のエクスポート挙動を変更しない。
+    """
+    if not settings.ENABLE_ONBOARDING_KAKUYOMU_MODE:
+        raise HTTPException(status_code=http_status.HTTP_404_NOT_FOUND, detail="Not available")
+
+    logger.info("Kakuyomu package export requested: book_id=%s", book_id)
+    await verify_book_ownership(book_id, current_user)
+    metrics.increment("exports_attempted")
+    repo = BookRepository(session)
+    agent = MarketingAgent(repo=repo)
+    zip_bytes, zip_filename = await agent.create_export_package(book_id, book_data=None)
+
+    encoded_filename = urllib.parse.quote(zip_filename)
+    ascii_filename = zip_filename.encode("ascii", "ignore").decode("ascii") or "export.zip"
+    logger.info(
+        "Kakuyomu package export succeeded: book_id=%s bytes=%d filename=%s",
+        book_id,
+        len(zip_bytes),
+        zip_filename,
+    )
+    metrics.increment("exports_succeeded")
     return Response(
         content=zip_bytes,
         media_type="application/zip",

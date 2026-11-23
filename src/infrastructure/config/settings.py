@@ -364,6 +364,13 @@ class Settings(BaseSettings):
     ENABLE_AUDIT_QUOTE_PATCH: bool = False
     ENABLE_AUDIT_LESSONS: bool = False
 
+    # 改善案1・2・8: カクヨムランキング上位獲得支援（既定 OFF、現行挙動とバイト同一維持）
+    ENABLE_SEQ_HOOK_WIRING: bool = False
+    ENABLE_CTR_WIRING: bool = False
+    ENABLE_ONBOARDING_KAKUYOMU_MODE: bool = False
+    # 改善案4: タグ最適化（既定 OFF）
+    ENABLE_TAG_WIRING: bool = False
+
     @property
     def cors_origin_list(self) -> list[str]:
         """CORS origins をリスト形式で取得する。"""

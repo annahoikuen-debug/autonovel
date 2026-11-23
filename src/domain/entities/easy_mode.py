@@ -101,6 +101,13 @@ class GenerationResponse(BaseModel):
     completion_time_ms: int = 0
     error: str = ""
     suggestions: list[str] = Field(default_factory=list)
+    # --- 改善案1: 序盤フック採点結果（フラグOFF時は None） ---
+    hook_metrics: dict[str, Any] | None = Field(default=None, description="序盤フック・章末引き採点結果")
+    # --- 改善案2: CTR採点結果・改善案（フラグOFF時は None / []） ---
+    ctr_metrics: dict[str, Any] | None = Field(default=None, description="タイトル・キャッチコピーCTR採点結果")
+    ctr_suggestions: list[str] = Field(default_factory=list, description="CTR改善案タイトルリスト")
+    # --- 改善案4: タグ提案（フラグOFF時は []） ---
+    tag_suggestions: list[str] = Field(default_factory=list, description="カクヨム推奨タグ候補リスト")
 
 
 # --- ガチャ / ダイジェスト / 昇格 スキーマ ---

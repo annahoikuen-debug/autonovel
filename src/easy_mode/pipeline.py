@@ -9,6 +9,12 @@ from __future__ import annotations
 from typing import Any
 from src.engine.auto_workflow_pipeline import create_easy_mode_pipeline
 from src.engine.pipeline_base import WorkflowContext
+from src.easy_mode.hooks import (
+    evaluate_and_maybe_rewrite,
+    evaluate_ctr,
+    generate_ctr_suggestions,
+    generate_tag_suggestions,
+)
 from src.shared.utils import StatusReporter
 
 
@@ -18,6 +24,9 @@ class EasyModePipeline:
 
     実際の処理は AutoWorkflowPipeline に委譲される。
     テスト目的で簡易インターフェースを提供。
+
+    改善案1・2: フラグ ENABLE_SEQ_HOOK_WIRING / ENABLE_CTR_WIRING が ON の場合、
+    序盤フック採点・CTR採点を結果に付加する。
     """
 
     def __init__(self):
@@ -33,7 +42,7 @@ class EasyModePipeline:
         Args:
             theme: 小説のテーマ
             reporter: 進捗報告者（オプション）
-            **kwargs: その他のパラメータ
+            **kwargs: その他のパラメータ（ep_num, title, catchphrase, text など）
 
         Returns:
             結果の辞書
@@ -86,12 +95,37 @@ class EasyModePipeline:
             # ここで実際のpipeline.executeを呼び出したいが、
             # テスト環境では依存関係が整っていないため、
             # 簡易的な成功結果を返す
-            return {
+            result: dict[str, Any] = {
                 "status": "done",
                 "book_id": hash(theme) % 10000,  # テーマベースのダミーID
                 "theme": theme,
                 "episodes": 1,
             }
+
+            # --- 改善案1: 序盤フック採点 ---
+            ep_num = kwargs.get("ep_num", 1)
+            text = kwargs.get("text", theme)
+            hooked_text, hook_metrics = evaluate_and_maybe_rewrite(text, ep_num)
+            if hook_metrics is not None:
+                result["hook_metrics"] = hook_metrics.model_dump()
+                result["text"] = hooked_text
+
+            # --- 改善案2: CTR採点 ---
+            title = kwargs.get("title", theme)
+            catchphrase = kwargs.get("catchphrase")
+            ctr_metrics = evaluate_ctr(title, catchphrase)
+            if ctr_metrics is not None:
+                result["ctr_metrics"] = ctr_metrics.model_dump()
+                result["ctr_suggestions"] = generate_ctr_suggestions(
+                    title, kwargs.get("genre", "ファンタジー"), ctr_metrics.syntax_type
+                )
+
+            # --- 改善案4: タグ提案 ---
+            tag_suggestions = generate_tag_suggestions(kwargs.get("genre", ""), kwargs.get("keywords"))
+            if tag_suggestions:
+                result["tag_suggestions"] = tag_suggestions
+
+            return result
         except Exception:
             # フォールバック: 簡易結果を返す
             return {"status": "done", "book_id": hash(theme) % 10000, "theme": theme, "episodes": 1}
