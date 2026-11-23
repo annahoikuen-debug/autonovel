@@ -4,9 +4,13 @@ import { Button } from "../common/Button";
 import type { CharacterParams as Character } from "../../types";
 import type { GenerationState } from "../../types";
 import type { SpineQualityLevel } from "../../types/easyMode";
+import type { HookMetricsUI, CTRMetricsUI } from "../../types/easyMode";
 import { GENRE_OPTIONS, FALLBACK_GENRE_OPTIONS, GenreOption } from "../../constants/genres";
 import { fetchStylePresets } from "../../api/styleApi";
 import type { StylePresetSummary } from "../../types/style";
+
+// 後方互換: 旧インポート経路（SimpleModePanel から直接参照していたコード）を維持
+export type { HookMetricsUI, CTRMetricsUI } from "../../types/easyMode";
 
 /** 文体プリセットのフォールバック（API 未起動・失敗時の選択肢） */
 const FALLBACK_STYLE_PRESETS: Array<{ id: string; label: string }> = [
@@ -65,11 +69,25 @@ export interface SimpleModePanelProps {
   onRunDigest?: () => void;
   isGachaLoading?: boolean;
   isDigestLoading?: boolean;
+  // --- 改善案1・2: メトリクス表示（フラグOFF時は null / [] で非表示） ---
+  hookMetrics?: HookMetricsUI | null;
+  ctrMetrics?: CTRMetricsUI | null;
+  ctrSuggestions?: string[];
+  onApplyCtrSuggestion?: (title: string) => void;
+  // --- 改善案4: タグ提案（フラグOFF時は [] で非表示） ---
+  tagSuggestions?: string[];
 }
 
 export function SimpleModePanel(props: SimpleModePanelProps = {}) {
   const [showStudioPeek, setShowStudioPeek] = useState(false);
   const [showCustomConfig, setShowCustomConfig] = useState(false);
+  const {
+    hookMetrics,
+    ctrMetrics,
+    ctrSuggestions,
+    onApplyCtrSuggestion,
+    tagSuggestions,
+  } = props;
 
   // 内部状態フォールバック（propsが未指定でも動作保証）
   const [localChar, setLocalChar] = useState<Character>({
@@ -612,6 +630,231 @@ export function SimpleModePanel(props: SimpleModePanelProps = {}) {
               <span style={{ color: "var(--text-muted, #888)", fontStyle: "italic" }}>生成中...</span>
             )}
           </div>
+        </div>
+      )}
+
+      {/* --- 改善案1: 序盤フック・章末引き診断パネル --- */}
+      {hookMetrics && (
+        <div
+          style={{
+            marginTop: "16px",
+            padding: "12px 16px",
+            borderRadius: "12px",
+            background: "rgba(6, 182, 212, 0.1)",
+            border: `1px solid ${hookMetrics.requires_rewrite ? "rgba(239, 68, 68, 0.4)" : "rgba(34, 197, 94, 0.3)"}`,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "8px",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "0.8rem",
+                fontWeight: 700,
+                color: "var(--accent-cyan, #06b6d4)",
+              }}
+            >
+              🪝 序盤フック・章末引き診断（第{hookMetrics.ep_num}話）
+            </span>
+            <span
+              style={{
+                fontSize: "0.75rem",
+                padding: "2px 8px",
+                borderRadius: "4px",
+                background: hookMetrics.requires_rewrite
+                  ? "rgba(239, 68, 68, 0.2)"
+                  : "rgba(34, 197, 94, 0.2)",
+                color: hookMetrics.requires_rewrite
+                  ? "var(--accent-danger, #ef4444)"
+                  : "var(--accent-success, #4ade80)",
+                fontWeight: 600,
+              }}
+            >
+              {hookMetrics.requires_rewrite ? "引き要改善" : "引き OK"}
+            </span>
+          </div>
+          <div style={{ fontSize: "0.85rem", marginBottom: "4px" }}>
+            <span style={{ fontWeight: 600, color: "var(--text-main)" }}>スコア:</span>{" "}
+            <span style={{ fontWeight: 700, color: "var(--text-main)" }}>{hookMetrics.score} 点</span>{" "}
+            <span
+              style={{
+                fontSize: "0.75rem",
+                color: "var(--text-muted)",
+                marginLeft: "8px",
+              }}
+            >
+              ({hookMetrics.hook_type})
+            </span>
+          </div>
+          <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", marginBottom: "8px" }}>
+            {hookMetrics.reason}
+          </div>
+          {hookMetrics.requires_rewrite && (
+            <div
+              style={{
+                fontSize: "0.8rem",
+                color: "var(--accent-danger, #ef4444)",
+                fontStyle: "italic",
+              }}
+            >
+              ⚠️ 章末を「危機 / 衝撃の真実 / 反撃の狼煙」で締めるよう修正することを推奨します。
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* --- 改善案2: タイトル・キャッチコピーCTR診断パネル --- */}
+      {ctrMetrics && (
+        <div
+          style={{
+            marginTop: "16px",
+            padding: "12px 16px",
+            borderRadius: "12px",
+            background: "rgba(139, 92, 246, 0.1)",
+            border: `1px solid ${ctrMetrics.title_needs_improvement ? "rgba(234, 179, 8, 0.4)" : "rgba(34, 197, 94, 0.3)"}`,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              marginBottom: "8px",
+            }}
+          >
+            <span
+              style={{
+                fontSize: "0.8rem",
+                fontWeight: 700,
+                color: "var(--accent-purple, #a855f7)",
+              }}
+            >
+              🖱️ タイトル・キャッチコピーCTR診断
+            </span>
+            <span
+              style={{
+                fontSize: "0.75rem",
+                padding: "2px 8px",
+                borderRadius: "4px",
+                background:
+                  ctrMetrics.syntax_type === "一般"
+                    ? "rgba(139, 139, 139, 0.2)"
+                    : "rgba(139, 92, 246, 0.2)",
+                color: "var(--text-main)",
+                fontWeight: 600,
+              }}
+            >
+              {ctrMetrics.syntax_type}
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: "16px", marginBottom: "8px" }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "2px" }}>
+                タイトルCTR
+              </div>
+              <span
+                style={{
+                  fontWeight: 700,
+                  fontSize: "1.1rem",
+                  color: ctrMetrics.title_needs_improvement
+                    ? "var(--accent-warning, #f59e0b)"
+                    : "var(--accent-success, #4ade80)",
+                }}
+              >
+                {ctrMetrics.title_score} 点
+              </span>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "2px" }}>
+                キャッチコピーCTR
+              </div>
+              <span
+                style={{
+                  fontWeight: 700,
+                  fontSize: "1.1rem",
+                  color: ctrMetrics.catchphrase_needs_improvement
+                    ? "var(--accent-warning, #f59e0b)"
+                    : "var(--accent-success, #4ade80)",
+                }}
+              >
+                {ctrMetrics.catchphrase_score} 点
+              </span>
+            </div>
+          </div>
+          {ctrMetrics.title_needs_improvement && ctrSuggestions && ctrSuggestions.length > 0 && (
+            <div>
+              <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginBottom: "6px" }}>
+                クリックされやすいタイトル案（クリックで適用）:
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                {ctrSuggestions!.map((s: string, i: number) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => props.onApplyCtrSuggestion?.(s)}
+                    style={{
+                      padding: "6px 10px",
+                      borderRadius: "6px",
+                      border: "1px solid rgba(255,255,255,0.15)",
+                      background: "rgba(255,255,255,0.03)",
+                      color: "var(--text-main)",
+                      fontSize: "0.8rem",
+                      cursor: "pointer",
+                      textAlign: "left" as const,
+                      transition: "all 0.15s ease",
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* --- 改善案4: カクヨム推奨タグ提案パネル --- */}
+      {tagSuggestions && tagSuggestions.length > 0 && (
+        <div
+          style={{
+            marginTop: "16px",
+            padding: "12px 16px",
+            borderRadius: "12px",
+            background: "rgba(34, 197, 94, 0.08)",
+            border: "1px solid rgba(34, 197, 94, 0.3)",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+            <span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--accent-success, #4ade80)" }}>
+              🏷️ カクヨム推奨タグ（検索にヒットしやすい組み合わせ）
+            </span>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap" as const, gap: "6px" }}>
+            {tagSuggestions.map((tag: string, i: number) => (
+              <span
+                key={i}
+                style={{
+                  padding: "3px 10px",
+                  borderRadius: "9999px",
+                  border: "1px solid rgba(34, 197, 94, 0.4)",
+                  background: "rgba(34, 197, 94, 0.12)",
+                  color: "var(--text-main)",
+                  fontSize: "0.78rem",
+                  fontWeight: 600,
+                }}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+          <p style={{ fontSize: "0.72rem", color: "var(--text-muted)", marginTop: "8px", marginBottom: 0 }}>
+            投稿時にカクヨムのタグ欄へそのまま入力してください。ジャンルに合わないタグは外して構いません。
+          </p>
         </div>
       )}
     </div>

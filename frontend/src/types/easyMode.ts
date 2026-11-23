@@ -136,3 +136,30 @@ export interface PromotionResponse {
   state_token: string;
 }
 
+
+// --- 改善案1・2・4: メトリクス型（バックエンド GenerationResponse と対応） ---
+
+export interface HookMetricsUI {
+  ep_num: number;
+  hook_type: string;
+  score: number;
+  requires_rewrite: boolean;
+  reason: string;
+  tail_sentence: string;
+}
+
+export interface CTRMetricsUI {
+  title_score: number;
+  catchphrase_score: number;
+  title_needs_improvement: boolean;
+  catchphrase_needs_improvement: boolean;
+  syntax_type: string;
+}
+
+/** 生成タスク完了結果から抽出するメトリクス一式 */
+export interface GenerationTaskMetrics {
+  hook_metrics?: HookMetricsUI | null;
+  ctr_metrics?: CTRMetricsUI | null;
+  ctr_suggestions?: string[];
+  tag_suggestions?: string[];
+}

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { generateContent, pollGenerationStatus, cancelTask as apiCancelTask } from "../api/easyMode";
 import { useNovelContext } from "../context/NovelContext";
 import type { GenerationState } from "../types";
+import type { GenerationTaskMetrics } from "../types/easyMode";
 
 type TimerId = ReturnType<typeof setTimeout>;
 
@@ -52,13 +53,31 @@ function humanizeStatus(raw: string): string {
 const POLL_TIMEOUT_MS = 300_000;
 
 /**
+ * タスク完了結果（parsed）から改善案1・2・4 のメトリクスを抽出する。
+ *
+ * フラグ OFF（バックエンド側）では対応キーが付かないため、
+ * すべて既定値（null / []）に落とす。存在しない場合の欠損は表示側で非表示になる。
+ */
+function extractTaskMetrics(parsed: Record<string, unknown>): GenerationTaskMetrics {
+  return {
+    hook_metrics: (parsed.hook_metrics as GenerationTaskMetrics["hook_metrics"]) ?? null,
+    ctr_metrics: (parsed.ctr_metrics as GenerationTaskMetrics["ctr_metrics"]) ?? null,
+    ctr_suggestions: (parsed.ctr_suggestions as string[]) ?? [],
+    tag_suggestions: (parsed.tag_suggestions as string[]) ?? [],
+  };
+}
+
+/**
  * 通常執筆のフック。
  *
  * `startGeneration` は **文体プリセット ID を引数に取る**。以前は画面側の
  * ローカル state に留まっていたため「選んだ文体が反映されない」状態だった。
+ *
+ * `onSuccess` の第3引数（metrics）は改善案1・2・4 のメトリクス。
+ * フラグ OFF の環境では既定値（null / []）が渡るため既存呼び出し元は壊れない。
  */
 export function useNovelGeneration(
-  onSuccess?: (output: string, suggestions: string[]) => void,
+  onSuccess?: (output: string, suggestions: string[], metrics?: GenerationTaskMetrics) => void,
   onMessage?: (msg: string) => void,
   onError?: (msg: string) => void
 ) {
@@ -184,7 +203,7 @@ export function useNovelGeneration(
               suggestions: sug,
               currentTaskId: null,
             }));
-            onSuccess?.(out, sug);
+            onSuccess?.(out, sug, extractTaskMetrics(parsed));
             onMessage?.("✨ 本文のAI生成が完了しました。");
             return;
           }
@@ -245,7 +264,11 @@ export function useNovelGeneration(
           suggestions: sug,
           currentTaskId: null,
         }));
-        onSuccess?.(out, sug);
+        onSuccess?.(
+          out,
+          sug,
+          extractTaskMetrics(response as unknown as Record<string, unknown>),
+        );
         onMessage?.("✨ 本文のAI生成が完了しました。");
       }
     } catch (e: unknown) {

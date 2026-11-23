@@ -8,7 +8,7 @@ import React, { useCallback, useState } from "react";
  * 選んだ的作品は localStorage に記録し、二度と自動で表示しない。
  */
 
-type EntryId = "easy" | "wizard" | "studio";
+type EntryId = "easy" | "wizard" | "studio" | "kakuyomu";
 
 interface EntryPoint {
     id: EntryId;
@@ -60,6 +60,19 @@ const ENTRIES: EntryPoint[] = [
         steps: "既存作品からすぐ開けます",
         recommended: false,
         testId: "welcome-entry-studio",
+    },
+    {
+        id: "kakuyomu",
+        path: "/app/easy?kakuyomuMode=1",
+        emoji: "🏆",
+        title: "カクヨムランキング上位を狙う",
+        audience: "カクヨムで上位・商業化を目指す人へ",
+        description:
+            "ジャンル・タグ・タイトル構文を自動推奨。毎日同じ時間に更新するスケジュールまでガイド付きで設定します。",
+        steps: "手順 4 つ（ジャンル選択 → タイトル・あらすじ → 更新スケジュール → 投稿）",
+        recommended: false,
+        badge: "カクヨム特化",
+        testId: "welcome-entry-kakuyomu",
     },
 ];
 

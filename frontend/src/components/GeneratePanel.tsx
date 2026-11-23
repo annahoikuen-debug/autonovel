@@ -24,6 +24,7 @@ import { GachaModal } from "./generate/GachaModal";
 import { DigestModal } from "./generate/DigestModal";
 import { PDCALiveMonitor } from "./studio/PDCALiveMonitor";
 import { DAGLiveTracker } from "./studio/DAGLiveTracker";
+import type { HookMetricsUI, CTRMetricsUI, GenerationTaskMetrics } from "../types/easyMode";
 
 interface GeneratePanelProps {
   onGenerated?: (output: string, suggestions: string[]) => void;
@@ -58,6 +59,21 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
   const [bookScore, setBookScore] = useState<BookScore | null>(null);
   const [isScoring, setIsScoring] = useState(false);
 
+  // --- 改善案1・2・4: 生成タスク完了結果から抽出したメトリクス ---
+  // フラグ OFF の環境では既定値（null / []）のまま表示されない。
+  const [hookMetrics, setHookMetrics] = useState<HookMetricsUI | null>(null);
+  const [ctrMetrics, setCtrMetrics] = useState<CTRMetricsUI | null>(null);
+  const [ctrSuggestions, setCtrSuggestions] = useState<string[]>([]);
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
+
+  const applyTaskMetrics = (metrics?: GenerationTaskMetrics) => {
+    if (!metrics) return;
+    setHookMetrics(metrics.hook_metrics ?? null);
+    setCtrMetrics(metrics.ctr_metrics ?? null);
+    setCtrSuggestions(metrics.ctr_suggestions ?? []);
+    setTagSuggestions(metrics.tag_suggestions ?? []);
+  };
+
   const { takeSnapshot } = useSnapshotHistory(selectedBookId, currentEpNum);
 
   const chapterScore = bookScore ? bookScore.overall_score : null;
@@ -82,9 +98,10 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
   const [showStyleComparison, setShowStyleComparison] = useState(false);
 
   const { startGeneration, cancelGeneration } = useNovelGeneration(
-    (out, sug) => {
+    (out, sug, metrics) => {
       takeSnapshot("AI生成前", currentChapterText, "ai_generate");
       syncGenerationToEditor(out);
+      applyTaskMetrics(metrics);
       onGenerated?.(out, sug);
     },
     (msg) => onMessage?.(msg),
@@ -313,6 +330,16 @@ export default function GeneratePanel({ onGenerated, onMessage }: GeneratePanelP
           onRunDigest={handleRunDigest}
           isGachaLoading={gachaLoading}
           isDigestLoading={digestLoading}
+          // --- 改善案1・2・4: メトリクス（タスク完了結果から抽出・フラグOFF時は非表示） ---
+          hookMetrics={hookMetrics}
+          ctrMetrics={ctrMetrics}
+          ctrSuggestions={ctrSuggestions}
+          onApplyCtrSuggestion={(title) => {
+            // CTR改善案はタスク完了結果（ctr_suggestions）に反映された後、
+            // メトリクス連携実装時に選択案をプロンプト欄へ差し替える導線をここに接続する。
+            onMessage?.(`🖱️ タイトル案を適用: ${title}`);
+          }}
+          tagSuggestions={tagSuggestions}
         />
       );
     }
