@@ -91,7 +91,7 @@ test-perf:  ## パフォーマンステスト (benchmarks.json ベースライ�
 # alembic.ini はリポジトリルートにしか無く、script_location = src/backend/alembic も
 # ルート相対なので、必ずルート（make の起動ディレクトリ）から実行する。
 test-migration:  ## alembic 整合性チェック (alembic check + 往復)
-	alembic check && alembic upgrade head && alembic downgrade -1 && alembic upgrade head
+	$(PYTHON) -m alembic check && $(PYTHON) -m alembic upgrade head && $(PYTHON) -m alembic downgrade -1 && $(PYTHON) -m alembic upgrade head
 
 check-migrations:  ## マイグレーション往復検証スクリプトを実行
 	$(PYTHON) scripts/check_migrations.py
