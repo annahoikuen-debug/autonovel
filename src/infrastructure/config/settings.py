@@ -143,9 +143,10 @@ class Settings(BaseSettings):
     TRUSTED_PROXY_CIDRS: str = ""
     FRONTEND_URL: str = "http://localhost:5173"
     CORS_ALLOW_HEADERS: str = "Content-Type,Authorization,X-API-Key,Accept,Origin,X-Requested-With"
-    ALLOWED_API_KEYS: str = ""
+    ALLOWED_API_KEYS: str = Field(default="", repr=False)
     JWT_SECRET_KEY: str | None = Field(
         default=None,
+        repr=False,
         validation_alias=AliasChoices("JWT_SECRET_KEY", "SECRET_KEY"),
     )
     JWT_ALGORITHM: str = "HS256"
@@ -206,8 +207,8 @@ class Settings(BaseSettings):
     # 外部決済設定
     # Stripe: 未設定は空文字 / None とし、Webhook 側は本地・テスト以外での
     # 未設定を致命エラーとして扱う（src/backend/routers/billing_webhook.py）。
-    STRIPE_SECRET_KEY: str | None = None
-    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_SECRET_KEY: str | None = Field(default=None, repr=False)
+    STRIPE_WEBHOOK_SECRET: str = Field(default="", repr=False)
     # 署名検証を完全に省略してよい環境向けオプトインフラグ（既定 False）。
     # ローカル検証以外で True にしないこと。
     ALLOW_UNSIGNED_WEBHOOKS: bool = False
@@ -254,6 +255,7 @@ class Settings(BaseSettings):
     # OpenAI 互換設定
     OPENAI_API_KEY: str | None = Field(
         default=None,
+        repr=False,
         validation_alias=AliasChoices("OPENAI_API_KEY", "OPENAI_KEY"),
     )
     OPENAI_BASE_URL: str | None = None
@@ -262,6 +264,7 @@ class Settings(BaseSettings):
     # Google Gemini 設定 (Step 37)
     GEMINI_API_KEY: str | None = Field(
         default=None,
+        repr=False,
         validation_alias=AliasChoices("GEMINI_API_KEY", "GOOGLE_GENAI_API_KEY", "GOOGLE_API_KEY"),
     )
     GEMINI_MODEL: str = "gemini-1.5-flash"
@@ -269,12 +272,13 @@ class Settings(BaseSettings):
     # Anthropic Claude 設定 (Step 42)
     ANTHROPIC_API_KEY: str | None = Field(
         default=None,
+        repr=False,
         validation_alias=AliasChoices("ANTHROPIC_API_KEY", "CLAUDE_API_KEY"),
     )
     ANTHROPIC_MODEL: str = "claude-3-5-sonnet-20241022"
 
     # OpenRouter 設定 (統一LLMゲートウェイ)
-    OPENROUTER_API_KEY: str | None = None
+    OPENROUTER_API_KEY: str | None = Field(default=None, repr=False)
     OPENROUTER_MODEL: str = "google/gemini-2.0-flash"
     OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
     # タスク別モデルルーティング (OpenRouter時に使用)
@@ -339,7 +343,7 @@ class Settings(BaseSettings):
 
     # 画像生成プロバイダ設定 (DALL-E 3 / Stable Diffusion WebUI / ComfyUI / Mock)
     IMAGE_PROVIDER: Literal["mock", "dalle3", "sd_webui", "comfyui"] = "mock"
-    DALL_E_API_KEY: str | None = None
+    DALL_E_API_KEY: str | None = Field(default=None, repr=False)
     SD_WEBUI_URL: str | None = None
     COMFYUI_URL: str | None = None
 
