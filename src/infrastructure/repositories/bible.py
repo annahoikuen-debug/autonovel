@@ -63,7 +63,7 @@ class BibleRepository(BaseRepository):
                 current_mkt = {}
                 if book_obj.marketing_data:
                     try:
-                        current_mkt = json.loads(book_obj.marketing_data)  # type: ignore[arg-type]
+                        current_mkt = json.loads(book_obj.marketing_data)
                     except (json.JSONDecodeError, ValueError):
                         pass
 
@@ -77,15 +77,15 @@ class BibleRepository(BaseRepository):
                 }
                 mkt_data = json.dumps(merged_mkt, ensure_ascii=False)
 
-                branch_id = book_obj.current_branch_id  # type: ignore[assignment]
+                branch_id = book_obj.current_branch_id
 
-                book_obj.title = bible.title  # type: ignore[assignment]
-                book_obj.genre = bible.genre  # type: ignore[assignment]
-                book_obj.concept = bible.concept  # type: ignore[assignment]
-                book_obj.synopsis = bible.synopsis  # type: ignore[assignment]
-                book_obj.target_eps = kwargs.get("target_eps", 50)  # type: ignore[assignment]
-                book_obj.style_dna = style_dna  # type: ignore[assignment]
-                book_obj.marketing_data = mkt_data  # type: ignore[assignment]
+                book_obj.title = bible.title
+                book_obj.genre = bible.genre
+                book_obj.concept = bible.concept
+                book_obj.synopsis = bible.synopsis
+                book_obj.target_eps = kwargs.get("target_eps", 50)
+                book_obj.style_dna = style_dna
+                book_obj.marketing_data = mkt_data
             else:
                 book_obj = Book(
                     title=bible.title,
@@ -107,8 +107,8 @@ class BibleRepository(BaseRepository):
                 branch_obj = Branch(book_id=book_id, name="Main", created_at=datetime.now())
                 self.session.add(branch_obj)
                 await self.session.flush()
-                branch_id = branch_obj.id  # type: ignore[assignment]
-                book_obj.current_branch_id = branch_id  # type: ignore[assignment]
+                branch_id = branch_obj.id
+                book_obj.current_branch_id = branch_id
 
             ws_data.update(
                 {
@@ -162,7 +162,7 @@ class BibleRepository(BaseRepository):
             if dialect == "postgresql":
                 from sqlalchemy.dialects.postgresql import insert as _insert
             else:
-                from sqlalchemy.dialects.sqlite import insert as _insert  # type: ignore[assignment]
+                from sqlalchemy.dialects.sqlite import insert as _insert
             stmt = _insert(Plot).values(
                 [
                     {
@@ -189,7 +189,7 @@ class BibleRepository(BaseRepository):
                 )
             )
 
-            return book_id  # type: ignore[return-value]
+            return book_id
         except Exception as e:
             logger.error(f"Failed to save full world bible: {e}\n{traceback.format_exc()}")
             raise

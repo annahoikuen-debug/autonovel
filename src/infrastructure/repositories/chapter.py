@@ -132,20 +132,20 @@ class ChapterRepository(BaseRepository):
         else:
             created = False
 
-        ch.title = title  # type: ignore[assignment]
-        ch.content = content  # type: ignore[assignment]
-        ch.summary = summary if isinstance(summary, str) else json.dumps(summary, ensure_ascii=False)  # type: ignore[assignment]
+        ch.title = title
+        ch.content = content
+        ch.summary = summary if isinstance(summary, str) else json.dumps(summary, ensure_ascii=False)
         if killer_phrase is not UNSET and killer_phrase is not None:
             ch.killer_phrase = killer_phrase
         if ai_insight is not UNSET and ai_insight is not None:
             ch.ai_insight = ai_insight
         if world_state is not UNSET and world_state is not None:
-            ch.world_state = _as_json_text(world_state)  # type: ignore[assignment]
+            ch.world_state = _as_json_text(world_state)
         if trinity_review_log is not UNSET and trinity_review_log is not None:
-            ch.trinity_review_log = _as_json_text(trinity_review_log)  # type: ignore[assignment]
+            ch.trinity_review_log = _as_json_text(trinity_review_log)
         created_dt = _as_datetime(created_at)
         if created_dt is not None:
-            ch.created_at = created_dt  # type: ignore[assignment]
+            ch.created_at = created_dt
         if tension_delta is not UNSET:
             ch.tension_delta = tension_delta
         if qol_delta is not UNSET:
@@ -174,7 +174,7 @@ class ChapterRepository(BaseRepository):
     async def get_chapters_before(
         self, branch_id: int, ep_num: int, book_id: int | None = None
     ) -> list[ChapterDbModel]:
-        stmt = select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num < ep_num)  # type: ignore[arg-type]
+        stmt = select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num < ep_num)
         if book_id is not None:
             stmt = stmt.where(Chapter.book_id == book_id)
         result = await self.session.execute(stmt.order_by(Chapter.ep_num.desc()))
@@ -241,7 +241,7 @@ class ChapterRepository(BaseRepository):
             .where(Chapter.branch_id == target_branch_id)
             .where(Chapter.ep_num == ep_num)
         )
-        return int(result.rowcount or 0)  # type: ignore[attr-defined]
+        return int(result.rowcount or 0)
 
     @retry_on_lock()
     async def update_chapter_content(
@@ -256,7 +256,7 @@ class ChapterRepository(BaseRepository):
         if book_id is not None:
             stmt = stmt.where(Chapter.book_id == book_id)
         result = await self.session.execute(stmt.values(content=content))
-        return int(result.rowcount or 0)  # type: ignore[attr-defined]
+        return int(result.rowcount or 0)
 
     @retry_on_lock()
     async def update_chapter_candidates(
@@ -267,7 +267,7 @@ class ChapterRepository(BaseRepository):
         if book_id is not None:
             stmt = stmt.where(Chapter.book_id == book_id)
         result = await self.session.execute(stmt.values(candidates=json.dumps(candidates, ensure_ascii=False)))
-        return int(result.rowcount or 0)  # type: ignore[attr-defined]
+        return int(result.rowcount or 0)
 
     async def get_relevant_past_logs(
         self,
@@ -283,7 +283,7 @@ class ChapterRepository(BaseRepository):
         keywords = re.findall(r"[一-龠々]{2,}|[ァ-ヶー]{2,}", query_text)
         if not keywords:
             return ""
-        stmt = select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num < current_ep)  # type: ignore[arg-type]
+        stmt = select(Chapter).where(Chapter.branch_id == branch_id).where(Chapter.ep_num < current_ep)
         if book_id is not None:
             stmt = stmt.where(Chapter.book_id == book_id)
         like_clauses = [Chapter.content.like(f"%{k}%") for k in keywords[:5]]
