@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+### Q7 green wave 第1弾・CI 復活・カクヨムランキング支援のマージ（2026-11-24）
+
+`fix/q7-green-wave1`（21 コミット・105 ファイル）を統合ブランチで検証のうえマージ。
+
+- **CI 復活**: `ci.yml` の YAML 構文エラーにより GitHub Actions が**史上一度も実行されていなかった**問題を修復（実測: workflow runs 全期間 0 件）
+- **バックエンドテスト緑化**: main の既存失敗 13 件のうち 11 件を解消（H1 orphan shim テスト 2 件、t6 計画完了テスト、shim 使用統計、e2e / セキュリティ・所有権テスト等）。統合後のフルスイートは **9,381 パス / 失敗 2**（失敗 2 件は main に既存の実行順序依存フレーキー）
+- **mypy 改善**: unused-ignore を 216 → 1 に削減（ラチェット基準 450 / 216 は据え置き。現行実測 323 / 1）
+- **セキュリティ強化**: 本番設定で `CORS_ORIGINS=*` を拒否するバリデータ、settings repr からの secret 値隠蔽、認証レート制限しきい値の設定外部化（各々テスト付き）
+- **カクヨムランキング上位支援**（改善案 1・2・4・8）: バックエンド配線（シーケンシャルフック・CTR・タグ最適化）+ オンボーディング UI + 契約/単体テスト。※fix ブランチに feature を混入した形でマージ（分割コスト > 利益のため承認）
+- **フロント**: メトリクスパネル連携、既存 6 失敗の解消。Node 26 localStorage 修復は main 側（1af6f231）と重複したため統合時に解消
+- `AGENTS.md` を untrack し `.gitignore` に追加
+- **マージ時の追加修正**: `tests/branches/test_e2e_ws.py` の `client` フィクスチャにモジュール属性の復元処理を追加（singleton テストへの状態汚染を解消）、`useNovelGeneration` の新シグネチャ（メトリクス第 3 引数）に既存テストを追従
+
 ### Play モード Phase 0 実装（2026-11-23）
 
 生成済み小説を「遊べる形」で再生する Play モードの UI を追加（`docs/plans/ROADMAP_PLAYABLE_NOVEL.md` Phase 0 / `docs/adr/002-play-mode-mainline.md`）。

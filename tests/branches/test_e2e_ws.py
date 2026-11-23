@@ -28,7 +28,12 @@ def client():
 
     import src.backend.database.core as core_mod
 
-    core_mod.DATABASE_URL = db_url
+    # 復元用に差し替え前の値を保存する。この fixture はモジュール属性を
+    # 直接書き換えるため、teardown がないと後続テスト
+    # (例: tests/unit/backend/test_backend_database_core.py の singleton テスト)が
+    # TestMgr を見てしまい、実行順序依存の偽失敗になる。
+    original_db_url = core_mod.DATABASE_URL
+    original_core_get_db_manager = core_mod.get_db_manager
 
     class TestMgr:
         def __init__(self):
@@ -66,6 +71,9 @@ def client():
     from src.backend.auth import get_current_user, validate_api_key_or_raise
     from src.backend.routers import branches as bmod
 
+    original_bmod_get_db_manager = bmod.get_db_manager
+    original_verify_book_ownership = bmod.verify_book_ownership
+
     # `branches.py` は `get_db_manager` を名前で import している
     # (`from ... import get_db_manager`) ため、`core_mod` 側の属性を差し替えるだけでは
     # 既に束縛済みの名前は更新されない。ルータモジュール側を直接パッチする。
@@ -85,7 +93,22 @@ def client():
     # branches ルーターは `dependencies=[Depends(get_current_user)]` を持つ
     app.dependency_overrides[get_current_user] = lambda: owner
     app.include_router(bmod.router)
-    return TestClient(app)
+
+    yield TestClient(app)
+
+    # --- teardown: パッチしたモジュール属性を元に戻す ---
+    core_mod.DATABASE_URL = original_db_url
+    core_mod.get_db_manager = original_core_get_db_manager
+    bmod.get_db_manager = original_bmod_get_db_manager
+    bmod.verify_book_ownership = original_verify_book_ownership
+    app.dependency_overrides.clear()
+    import asyncio as _asyncio
+
+    _asyncio.run(test_engine.dispose())
+    try:
+        db_path.unlink(missing_ok=True)
+    except OSError:
+        pass
 
 
 def test_ws_flow(client):
