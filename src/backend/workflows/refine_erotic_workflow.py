@@ -96,7 +96,7 @@ class RefineEroticWorkflow(BaseWorkflow):
             reporter.add_log(f"蟇ｾ雎｡菴懷刀: {book_id}, 隧ｱ謨ｰ: {ep_num}, 蠑ｷ蠎ｦ: {intensity}")  # type: ignore[attr-defined]
 
         # 1. 隧ｲ蠖薙メ繝｣繝励ち繝ｼ縺ｮ譛ｬ譁・ｒ蜿門ｾ・
-        async with self.repo as uow:  # type: ignore[attr-defined]
+        async with self.repo as uow:  # type: ignore[union-attr]
             chapter = await uow.chapters.get_chapter(branch_id, ep_num, book_id=book_id)
             if not chapter:
                 raise ValueError(f"Chapter not found for book_id {book_id}, ep_num {ep_num}")
@@ -131,10 +131,10 @@ class RefineEroticWorkflow(BaseWorkflow):
             # (existing謨ｴ蜷域ｧ繝√ぉ繝・け驛ｨ蛻・弍逵∫払...)
             if not is_ok:
                 for issue in issues:
-                    reporter.add_log(f"笞・・謨ｴ蜷域ｧ隴ｦ蜻・ {issue}")                    # type: ignore[attr-defined]
+                    reporter.add_log(f"笞・・謨ｴ蜷域ｧ隴ｦ蜻・ {issue}")  # type: ignore[union-attr]
             if not afterglow_ok:
                 for issue in afterglow_issues:
-                    reporter.add_log(f"笞・・afterglow蜩∬ｳｪ隴ｦ蜻・ {issue}")                    # type: ignore[attr-defined]
+                    reporter.add_log(f"笞・・afterglow蜩∬ｳｪ隴ｦ蜻・ {issue}")  # type: ignore[union-attr]
 
             # 4. 譛ｬ譁・ｒ譖ｴ譁ｰ
             chapter.content = refined_content

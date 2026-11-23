@@ -61,7 +61,7 @@ class EasyModePipeline:
 
         if reporter is None:
             mock_reporter = StatusReporter.__new__(StatusReporter)  # type: ignore
-            mock_reporter.report = lambda *args, **kwargs: None        # type: ignore[method-assign]
+            mock_reporter.report = lambda *args, **kwargs: None  # type: ignore[method-assign]
         else:
             mock_reporter = reporter
 

@@ -9,7 +9,7 @@ try:
 
     create_model("_TestEmailValidator", email=(EmailStr, ...))
 except Exception:
-    EmailStr = str  # type: ignore[assignment]
+    EmailStr = str  # type: ignore[misc]
 
 
 class UserRole(str, Enum):
