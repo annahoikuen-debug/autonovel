@@ -266,17 +266,17 @@ try:
                 return cleaned
             elif isinstance(obj, list):
                 return [self._clean_schema(item) for item in obj]  # type: ignore
-            return obj  # type: ignore
+            return obj
 
     def get_gemini_schema(model_class: Any) -> dict[str, Any]:
         """指定したPydanticモデルクラスのGemini用JSONスキーマを取得する"""
         if hasattr(model_class, "model_json_schema"):
-            return model_class.model_json_schema(schema_generator=GeminiSchemaGenerator)  # type: ignore
+            return model_class.model_json_schema(schema_generator=GeminiSchemaGenerator)
         return {}
 
 except ImportError:
     # フォールバック (Pydantic v1互換やインポートエラー対策)
     def get_gemini_schema(model_class: Any) -> dict[str, Any]:
         if hasattr(model_class, "model_json_schema"):
-            return model_class.model_json_schema()  # type: ignore
+            return model_class.model_json_schema()
         return {}

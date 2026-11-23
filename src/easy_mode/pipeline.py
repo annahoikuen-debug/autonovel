@@ -33,7 +33,7 @@ class EasyModePipeline:
         # デフォルトのEasyModeパイプラインを作成
         self._pipeline = create_easy_mode_pipeline()
         # モック用にrunメソッドを持たせる（テストでの差し替えを許可）
-        self.run = None  # type: ignore
+        self.run = None
 
     async def execute(self, theme: str, reporter: StatusReporter | None = None, **kwargs: Any) -> dict[str, Any]:
         """
@@ -61,7 +61,7 @@ class EasyModePipeline:
 
         if reporter is None:
             mock_reporter = StatusReporter.__new__(StatusReporter)  # type: ignore
-            mock_reporter.report = lambda *args, **kwargs: None
+            mock_reporter.report = lambda *args, **kwargs: None        # type: ignore[method-assign]
         else:
             mock_reporter = reporter
 

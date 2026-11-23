@@ -72,7 +72,7 @@ class RedisEmbeddingCache:
         self._client: Any = redis_client
         if self._client is None:
             try:
-                import redis  # type: ignore
+                import redis
 
                 self._client = redis.Redis.from_url(settings.REDIS_URL, socket_connect_timeout=1)
                 self._client.ping()

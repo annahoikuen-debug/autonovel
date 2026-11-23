@@ -82,7 +82,7 @@ def execute_publication_task(schedule_id: int) -> dict[str, Any]:
 
                 # 3. 投稿実行
                 novel_data = await _get_novel_data(book_id)
-                episodes_data = await _get_episodes_data(book_id, episode_ids, platforms=[platform])  # type: ignore[arg-type,list-item]
+                episodes_data = await _get_episodes_data(book_id, episode_ids, platforms=[platform])
 
                 pipeline = CommercialPipeline()
                 publish_results = await pipeline._publish_to_platforms(

@@ -59,7 +59,7 @@ try:
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
-    Counter = Histogram = Gauge = object  # type: ignore
+    Counter = Histogram = Gauge = object
 
 
 class PrometheusMetricsCollector:

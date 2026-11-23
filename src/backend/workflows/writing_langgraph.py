@@ -22,9 +22,9 @@ try:
 
     HAS_LANGGRAPH = True
 except ImportError:
-    MemorySaver = None  # type: ignore
-    END = None  # type: ignore
-    StateGraph = None  # type: ignore
+    MemorySaver = None
+    END = None
+    StateGraph = None
     HAS_LANGGRAPH = False
 
 from src.backend.checkpoint_saver import CheckpointManager

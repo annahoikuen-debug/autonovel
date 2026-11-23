@@ -81,7 +81,7 @@ class CrossEncoderReranker:
             raise RuntimeError(
                 "CrossEncoderReranker requires sentence-transformers. Install via `pip install -e '.[rag]'`."
             )
-        from sentence_transformers import CrossEncoder  # type: ignore
+        from sentence_transformers import CrossEncoder
 
         self._model = CrossEncoder(model_name or settings.RERANKER_MODEL)
 

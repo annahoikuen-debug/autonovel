@@ -24,7 +24,7 @@ from src.models.planning_config import PlanningConfig
 try:
     from src.config.domain_profile_manager import DomainProfileService
 except ImportError:
-    from src.config.domain_profile_manager import DomainProfileService  # type: ignore
+    from src.config.domain_profile_manager import DomainProfileService
 
 MODEL_PLANNING = getattr(_settings, "GEMINI_MODEL", "gemini-1.5-flash")
 MODEL_PLOT_EXPANSION = getattr(_settings, "GEMINI_MODEL", "gemini-1.5-flash")

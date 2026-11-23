@@ -35,7 +35,7 @@ from src.agents.event_bus import EventBus, AgentEvent
 try:
     from sse_starlette.sse import EventSourceResponse
 except ImportError:
-    EventSourceResponse = Any  # type: ignore
+    EventSourceResponse = Any
 
 # prefix は frontend/src/api/orchestratedApi.ts の `BASE = "/orchestrated"` 契約に一致させる。
 # prefix を付けないと /generate や /status/{task_id} がルート直下に露出し、

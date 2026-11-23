@@ -18,7 +18,7 @@ class BaseRepository(Generic[T]):
         raise NotImplementedError
 
     async def get(self, id: int) -> T | None:
-        result = await self.session.execute(select(self.model_class).where(self.model_class.id == id))  # type: ignore
+        result = await self.session.execute(select(self.model_class).where(self.model_class.id == id))
         return result.scalar_one_or_none()
 
     async def get_all(self) -> list[T]:
@@ -34,7 +34,7 @@ class BaseRepository(Generic[T]):
 
     @retry_on_lock()
     async def delete_by_id(self, id: int) -> None:
-        await self.session.execute(delete(self.model_class).where(self.model_class.id == id))  # type: ignore
+        await self.session.execute(delete(self.model_class).where(self.model_class.id == id))
 
     def _to_dict(self, instance) -> dict:
         if not instance:

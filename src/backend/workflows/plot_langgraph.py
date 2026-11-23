@@ -6,8 +6,8 @@ try:
 
     HAS_LANGGRAPH = True
 except ImportError:
-    END = None  # type: ignore
-    StateGraph = None  # type: ignore
+    END = None
+    StateGraph = None
     HAS_LANGGRAPH = False
 
 from src.backend.workflows.graph_state import WorkflowState

@@ -21,7 +21,7 @@ try:
 
     HAS_LANGGRAPH = True
 except ImportError:
-    SqliteSaver = None  # type: ignore
+    SqliteSaver = None
     HAS_LANGGRAPH = False
 
 

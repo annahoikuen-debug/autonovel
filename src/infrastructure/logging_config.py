@@ -230,7 +230,7 @@ def configure() -> None:
             try:
                 from pythonjsonlogger import json as jsonlogger
             except ImportError:
-                from pythonjsonlogger import jsonlogger  # type: ignore[import-not-found,no-redef]
+                from pythonjsonlogger import jsonlogger
         except ImportError:
             handler = logging.StreamHandler(sys.stdout)
             formatter = logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
