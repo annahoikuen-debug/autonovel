@@ -2,6 +2,7 @@
 E2E integration test for Anti-AI Emotion Reform and Syllogism Elimination.
 PLAN 03 - Step 12: 優等生的文章が排除され、エゴと毒が効いた文章が出力されるE2Eテスト
 """
+
 from __future__ import annotations
 
 import pytest

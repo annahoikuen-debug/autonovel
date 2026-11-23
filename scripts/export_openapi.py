@@ -1,4 +1,5 @@
 """FastAPI アプリケーションから openapi.json をエクスポートするスクリプト。"""
+
 import json
 import sys
 from pathlib import Path
@@ -7,6 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.backend.server import app
+
 
 def export_openapi():
     output_path = Path("docs/openapi.json")
@@ -17,6 +19,7 @@ def export_openapi():
         json.dump(openapi_schema, f, indent=2, ensure_ascii=False)
 
     print(f"OpenAPI schema successfully exported to: {output_path}")
+
 
 if __name__ == "__main__":
     export_openapi()

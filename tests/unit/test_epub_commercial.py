@@ -42,7 +42,7 @@ def test_commercial_epub_builder():
 
         # 3. 縦書き指定およびルビの含有確認
         p1 = zf.read("item/xhtml/p-001.xhtml").decode("utf-8")
-        assert "class=\"vrtl\"" in p1
+        assert 'class="vrtl"' in p1
         assert "<ruby>勇者<rt>ゆうしゃ</rt></ruby>" in p1
         assert '<span class="bouten">決心</span>' in p1
         assert '<span class="tcy">12</span>' in p1
@@ -55,9 +55,6 @@ def test_commercial_epub_builder():
 def test_large_book_epub_build():
     """パフォーマンステスト: 50話を瞬時に生成可能か (Step 59)"""
     builder = CommercialEpubBuilder()
-    chapters = [
-        {"title": f"第{i}話", "content": "本文テスト。" * 50}
-        for i in range(1, 51)
-    ]
+    chapters = [{"title": f"第{i}話", "content": "本文テスト。" * 50} for i in range(1, 51)]
     epub_bytes = builder.build_commercial_epub({"title": "大長編"}, chapters)
     assert len(epub_bytes) > 2000

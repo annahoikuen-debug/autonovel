@@ -1,4 +1,5 @@
 """CLI entrypoint for benchmarks."""
+
 from __future__ import annotations
 
 import argparse
@@ -22,7 +23,8 @@ def main() -> int:
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     parser.add_argument(
-        "--eps", "--episodes",
+        "--eps",
+        "--episodes",
         type=parse_episode_counts,
         default=[10, 50, 100, 200],
         help="Comma-separated episode counts to benchmark (e.g., 10,50,100)",

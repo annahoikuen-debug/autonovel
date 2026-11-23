@@ -2,6 +2,7 @@
 
 LLM 不要経路 (ヒューリスティック) とプロンプト組み立て関数を中心に検証する。
 """
+
 from __future__ import annotations
 
 from src.models.illustration import (
@@ -50,9 +51,7 @@ class TestBuildYonkomaPrompt:
 
     def test_long_summary_is_truncated(self):
         long_summary = "あ" * 500
-        prompt = build_yonkoma_prompt(
-            [long_summary, "", "", "", "", ""], {"title": "t"}, panels=6
-        )
+        prompt = build_yonkoma_prompt([long_summary, "", "", "", "", ""], {"title": "t"}, panels=6)
         assert "..." in prompt
         # 元の 500 文字は含まれていない
         assert "あ" * 500 not in prompt

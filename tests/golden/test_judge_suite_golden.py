@@ -34,9 +34,7 @@ def _make_llm_judge(adapter: MockLLMAdapter):
     def judge(text: str) -> dict[str, float]:
         # 固定応答を JSON として返す想定（generate_text は async なので await）
         response = asyncio.run(
-            adapter.generate_text(
-                prompt=text, system_prompt="評価してください", max_tokens=2000, temperature=0.2
-            )
+            adapter.generate_text(prompt=text, system_prompt="評価してください", max_tokens=2000, temperature=0.2)
         )
         try:
             data = json.loads(response)
@@ -50,9 +48,7 @@ def _make_llm_judge(adapter: MockLLMAdapter):
 def test_golden_report_structure():
     """固定応答判定器で suite を実行し、レポート構造が固定される。"""
     mocker = LLMMocker()
-    mocker.set_responses(
-        '{"hook": 80.0, "overall": 70.0, "emotional": 65.0, "character_consistency": 75.0}'
-    )
+    mocker.set_responses('{"hook": 80.0, "overall": 70.0, "emotional": 65.0, "character_consistency": 75.0}')
     adapter = MockLLMAdapter(mocker=mocker)
     judge = _make_llm_judge(adapter)
 
@@ -67,8 +63,15 @@ def test_golden_report_structure():
     d = report.to_dict()
     # トップレベルキー
     assert set(d.keys()) == {
-        "judge_id", "model_name", "prompt_version", "n_texts",
-        "n_transforms", "created_at", "thresholds", "all_passed", "transforms",
+        "judge_id",
+        "model_name",
+        "prompt_version",
+        "n_texts",
+        "n_transforms",
+        "created_at",
+        "thresholds",
+        "all_passed",
+        "transforms",
     }
     assert d["judge_id"] == "golden-judge"
     assert d["model_name"] == "mock-model"
@@ -79,13 +82,18 @@ def test_golden_report_structure():
     # 各 transform のキー
     for tm in d["transforms"]:
         assert set(tm.keys()) == {
-            "transform_id", "kind", "affected_axes", "n_texts",
-            "spearman_by_axis", "mean_rho", "identifiability",
-            "invariance", "retest_sigma", "all_passed",
+            "transform_id",
+            "kind",
+            "affected_axes",
+            "n_texts",
+            "spearman_by_axis",
+            "mean_rho",
+            "identifiability",
+            "invariance",
+            "retest_sigma",
+            "all_passed",
         }
-        assert tm["transform_id"] in (
-            "T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09"
-        )
+        assert tm["transform_id"] in ("T01", "T02", "T03", "T04", "T05", "T06", "T07", "T08", "T09")
         assert tm["kind"] in ("DIR", "INV")
         assert isinstance(tm["affected_axes"], list)
         assert isinstance(tm["spearman_by_axis"], dict)
@@ -97,15 +105,12 @@ def test_golden_report_structure():
 
 def test_golden_deterministic():
     """同じ judge で2回実行しても結果が同じになる。"""
+
     def fixed_judge(text: str) -> dict[str, float]:
         return {"hook": 80.0, "overall": 70.0, "emotional": 65.0, "character_consistency": 75.0}
 
-    report1 = run_judge_suite(
-        judge=fixed_judge, corpus=[_LONG_TEXT], judge_id="det-judge"
-    )
-    report2 = run_judge_suite(
-        judge=fixed_judge, corpus=[_LONG_TEXT], judge_id="det-judge"
-    )
+    report1 = run_judge_suite(judge=fixed_judge, corpus=[_LONG_TEXT], judge_id="det-judge")
+    report2 = run_judge_suite(judge=fixed_judge, corpus=[_LONG_TEXT], judge_id="det-judge")
 
     d1 = report1.to_dict()
     d2 = report2.to_dict()
@@ -118,15 +123,11 @@ def test_golden_deterministic():
 def test_golden_json_output():
     """to_json が有効な JSON で、期待フィールドを含む。"""
     mocker = LLMMocker()
-    mocker.set_responses(
-        '{"hook": 80.0, "overall": 70.0, "emotional": 65.0, "character_consistency": 75.0}'
-    )
+    mocker.set_responses('{"hook": 80.0, "overall": 70.0, "emotional": 65.0, "character_consistency": 75.0}')
     adapter = MockLLMAdapter(mocker=mocker)
     judge = _make_llm_judge(adapter)
 
-    report = run_judge_suite(
-        judge=judge, corpus=[_LONG_TEXT], judge_id="json-judge"
-    )
+    report = run_judge_suite(judge=judge, corpus=[_LONG_TEXT], judge_id="json-judge")
     json_str = report.to_json()
     parsed = json.loads(json_str)
     assert parsed["judge_id"] == "json-judge"

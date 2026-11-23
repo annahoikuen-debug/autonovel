@@ -46,9 +46,7 @@ def test_short_horizon_never_exceeds_total():
     `get_overdue` / KPI 側で「期限超過」に可視化されるため、**この範囲外**。
     """
     for planted in range(1, 40):
-        plan = plan_foreshadowing(
-            planted, total_episodes=min(planted + 1, 40), use_short_term_horizon=True
-        )
+        plan = plan_foreshadowing(planted, total_episodes=min(planted + 1, 40), use_short_term_horizon=True)
         assert plan.target_episode <= min(planted + 1, 40), planted
 
 

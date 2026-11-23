@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 
+
 def test_drill_restore_script_runs():
     """Run the drill restore script and verify it runs without error."""
     result = subprocess.run(

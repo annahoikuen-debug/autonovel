@@ -1,4 +1,5 @@
 """Tests for frontmatter parser."""
+
 from __future__ import annotations
 
 
@@ -116,9 +117,15 @@ beats:
         """フロントマターシリアライズ"""
         beats = [
             EmotionalBeat(
-                episode=1, scene=1, source="A", target="B",
-                emotion=EmotionType.FEAR, delta=0.6,
-                cause="test", confidence=0.9, hidden=True,
+                episode=1,
+                scene=1,
+                source="A",
+                target="B",
+                emotion=EmotionType.FEAR,
+                delta=0.6,
+                cause="test",
+                confidence=0.9,
+                hidden=True,
             )
         ]
 

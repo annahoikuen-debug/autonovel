@@ -1,6 +1,6 @@
 """Simple test to get container info."""
-from __future__ import annotations
 
+from __future__ import annotations
 
 
 def test_container_info(postgres_container, redis_container, chromadb_container):

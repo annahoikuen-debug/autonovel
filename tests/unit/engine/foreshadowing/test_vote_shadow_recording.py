@@ -51,8 +51,13 @@ class TestRecordAndAnalyze:
         """LLM 票と本線判定の不一致が agree=False で記録されること。"""
         log_path = tmp_path / "shadow.jsonl"
         record_vote_shadow(
-            book_id=1, episode_num=3, foreshadowing_id=10, foreshadowing_title="魔剣",
-            llm_action="unmentioned", judgment_status="RESOLVED", metadata_action="resolved",
+            book_id=1,
+            episode_num=3,
+            foreshadowing_id=10,
+            foreshadowing_title="魔剣",
+            llm_action="unmentioned",
+            judgment_status="RESOLVED",
+            metadata_action="resolved",
             output_path=log_path,
         )
         data = json.loads(log_path.read_text(encoding="utf-8").splitlines()[0])
@@ -74,15 +79,20 @@ class TestRecordAndAnalyze:
         """一致率・過大申告率が再現可能な数値で返ること。"""
         log_path = tmp_path / "shadow.jsonl"
         rows = [
-            ("resolved", "RESOLVED", "resolved"),      # 一致
+            ("resolved", "RESOLVED", "resolved"),  # 一致
             ("progressed", "PROGRESSED", "progressed"),  # 一致
-            ("unmentioned", "RESOLVED", "resolved"),   # 不一致 + 過大申告
-            ("resolved", "PROGRESSED", None),          # 不一致
+            ("unmentioned", "RESOLVED", "resolved"),  # 不一致 + 過大申告
+            ("resolved", "PROGRESSED", None),  # 不一致
         ]
         for llm_action, status, meta in rows:
             record_vote_shadow(
-                book_id=1, episode_num=1, foreshadowing_id=1, foreshadowing_title="t",
-                llm_action=llm_action, judgment_status=status, metadata_action=meta,
+                book_id=1,
+                episode_num=1,
+                foreshadowing_id=1,
+                foreshadowing_title="t",
+                llm_action=llm_action,
+                judgment_status=status,
+                metadata_action=meta,
                 output_path=log_path,
             )
         result = analyze_shadow_log(log_path)
@@ -100,8 +110,12 @@ class TestRecordAndAnalyze:
         bad_path = tmp_path / "as_file"
         bad_path.write_text("", encoding="utf-8")
         ok = record_vote_shadow(
-            book_id=1, episode_num=1, foreshadowing_id=1, foreshadowing_title="t",
-            llm_action="resolved", judgment_status="RESOLVED",
+            book_id=1,
+            episode_num=1,
+            foreshadowing_id=1,
+            foreshadowing_title="t",
+            llm_action="resolved",
+            judgment_status="RESOLVED",
             output_path=bad_path / "nested" / "shadow.jsonl",
         )
         assert ok is False
@@ -152,15 +166,15 @@ class TestServiceShadowIntegration:
 
         voter = _StubVoter()
         svc = ForeshadowingService(_FakeRepo(), llm_voter=voter)
-        md = WritingMetadata(episode_number=2, foreshadowings=[ForeshadowingReport(foreshadowing_id=1, action="resolved")])
+        md = WritingMetadata(
+            episode_number=2, foreshadowings=[ForeshadowingReport(foreshadowing_id=1, action="resolved")]
+        )
         log_path = tmp_path / "shadow.jsonl"
 
         import src.engine.foreshadowing.vote_shadow as shadow_mod
 
         monkeypatch.setattr(shadow_mod, "DEFAULT_SHADOW_PATH", log_path)
-        resolved = asyncio.run(
-            svc.check_and_resolve(1, 2, "魔剣が抜かれた。", writing_metadata=md, contract_ids=[1])
-        )
+        resolved = asyncio.run(svc.check_and_resolve(1, 2, "魔剣が抜かれた。", writing_metadata=md, contract_ids=[1]))
         return resolved, log_path, voter
 
     def test_shadow_records_but_verdict_is_legacy(self, monkeypatch, tmp_path):

@@ -62,8 +62,7 @@ def test_all_schema_import_paths(module_path, symbols):
         pytest.fail(f"{module_path} の import に失敗: {exc}")
     if symbols is not None:
         for symbol in symbols:
-            assert hasattr(mod, symbol), \
-                f"{module_path} に {symbol} が公開されていない"
+            assert hasattr(mod, symbol), f"{module_path} に {symbol} が公開されていない"
 
 
 def test_no_ts_in_src_types():
@@ -77,9 +76,11 @@ def test_schemas_shim():
     mod = importlib.import_module("src.schemas")
     assert mod is not None
 
+
 def test_domain_schemas_easy_mode():
     """src.domain.schemas.easy_mode が import 可能。"""
     from src.domain.schemas import easy_mode  # noqa: F401
+
 
 def test_models_importable():
     """src.models が import 可能。"""

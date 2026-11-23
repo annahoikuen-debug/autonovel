@@ -1,4 +1,5 @@
 """0032 で tenant FK が定義されていることの静的確認 + head 一意性。"""
+
 from __future__ import annotations
 
 import ast

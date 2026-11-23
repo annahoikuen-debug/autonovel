@@ -1,5 +1,6 @@
 # tests/integration/test_audit_aggregator_pipeline.py
 """Integration tests for AuditAggregator pipeline integration."""
+
 import pytest
 from unittest.mock import MagicMock
 

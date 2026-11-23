@@ -43,9 +43,7 @@ async def test_execute_success():
     agent = BibleAgent(repo=MagicMock(), llm=llm, prompt_manager=pm)
     agent.emit_event = lambda name, payload: events.append(name)
 
-    res = await agent.execute(
-        _ctx(title="T", synopsis="S", target_eps=5, concept="C", genre="sf", keywords="k")
-    )
+    res = await agent.execute(_ctx(title="T", synopsis="S", target_eps=5, concept="C", genre="sf", keywords="k"))
     assert res.next_agent == AgentName.CONTEXT_BUILDER
     assert res.artifacts == {"bible": {"rules": ["r"]}}
     assert res.error is None

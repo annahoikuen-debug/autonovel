@@ -9,11 +9,7 @@ def test_split_into_paragraphs_empty():
 
 def test_split_into_paragraphs_basic():
     """段落区切りによる自然なチャンク分割の検証。"""
-    text = (
-        "第1段落。主人公は立ち上がった。\n\n"
-        "第2段落。目の前には巨大なドラゴンがいた。\n\n"
-        "第3段落。剣を抜き、構えた。"
-    )
+    text = "第1段落。主人公は立ち上がった。\n\n第2段落。目の前には巨大なドラゴンがいた。\n\n第3段落。剣を抜き、構えた。"
 
     chunks = split_into_paragraphs(text, max_chunk_chars=30)
     assert len(chunks) >= 2

@@ -61,7 +61,13 @@ class TestLegacyCompatibility:
         assert judgment.status == "RESOLVED"
         assert judgment.should_reschedule is False
         b = judgment.score_breakdown
-        assert (b.contract_score, b.metadata_score, b.syntax_score, b.llm_vote_score, b.total_score) == (35, 40, 0, 0, 75)
+        assert (b.contract_score, b.metadata_score, b.syntax_score, b.llm_vote_score, b.total_score) == (
+            35,
+            40,
+            0,
+            0,
+            75,
+        )
 
     def test_legacy_progessed_case(self):
         """metadata なし・契約のみ 35pt → PROGRESSED (legacy 閾値 35)。
@@ -299,10 +305,10 @@ class TestMainlineEndToEnd:
 
         voter = _StubVoter()
         svc = ForeshadowingService(_FakeRepo(), llm_voter=voter)
-        md = WritingMetadata(episode_number=2, foreshadowings=[ForeshadowingReport(foreshadowing_id=1, action="resolved")])
-        resolved = asyncio.run(
-            svc.check_and_resolve(1, 2, "魔剣が抜かれた。", writing_metadata=md, contract_ids=[1])
+        md = WritingMetadata(
+            episode_number=2, foreshadowings=[ForeshadowingReport(foreshadowing_id=1, action="resolved")]
         )
+        resolved = asyncio.run(svc.check_and_resolve(1, 2, "魔剣が抜かれた。", writing_metadata=md, contract_ids=[1]))
         assert resolved == ["魔剣"]
         assert voter.calls == 1
 
@@ -341,7 +347,9 @@ class TestMainlineEndToEnd:
 
         voter = _StubVoter()
         svc = ForeshadowingService(_FakeRepo(), llm_voter=voter)
-        md = WritingMetadata(episode_number=2, foreshadowings=[ForeshadowingReport(foreshadowing_id=1, action="resolved")])
+        md = WritingMetadata(
+            episode_number=2, foreshadowings=[ForeshadowingReport(foreshadowing_id=1, action="resolved")]
+        )
         resolved = asyncio.run(svc.check_and_resolve(1, 2, "本文", writing_metadata=md, contract_ids=[1]))
         assert resolved == ["魔剣"]
         assert voter.calls == 0

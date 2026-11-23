@@ -230,7 +230,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--list", action="store_true", help="検出対象の import 箇所のみ一覧表示")
     ap.add_argument("--allowlist", type=Path, default=DEFAULT_ALLOWLIST, help="allowlist JSON のパス")
-    ap.add_argument("--strict", action="store_true", help="allowlist にあるが実際には存在するエントリ（陳腐化）でも fail にする")
+    ap.add_argument(
+        "--strict", action="store_true", help="allowlist にあるが実際には存在するエントリ（陳腐化）でも fail にする"
+    )
     args = ap.parse_args()
 
     modules, tracked_files = _tracked_state()

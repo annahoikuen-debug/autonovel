@@ -1,4 +1,5 @@
 """Unit tests for BlindReview Purifier (Part 1 / Checkpoint 1: Steps 1-6)."""
+
 from __future__ import annotations
 
 import pytest

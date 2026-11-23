@@ -32,6 +32,24 @@ if config is not None:
 target_metadata = Base.metadata
 
 
+def _include_object(object, name, type_, reflected, compare_to):
+    """alembic autogenerate/check の対象オブジェクトをフィルタリング。
+
+    target_metadata（SQLAlchemy ORMモデル）に登録されていないが
+    実際のDBに存在するテーブル（マイグレーションで生SQL作成されたテーブル等）
+    を「removed」と誤検出しないよう、compare_to が None のテーブルをスキップする。
+
+    対象:
+    - digest_rollups, rag_reflection_history, audit_specialist_results:
+      マイグレーションファイルで生SQL作成済み。ORMモデル未作成のため
+      target_metadata に登録されていない。
+    - uow_test: テスト用ワークテーブル。ORMモデル・マイグレーション両方未作成。
+    """
+    if type_ == "table" and compare_to is None:
+        return False
+    return True
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")  # type: ignore[union-attr]
@@ -42,6 +60,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        include_object=_include_object,
     )
 
     with context.begin_transaction():
@@ -63,6 +82,7 @@ def run_migrations_online() -> None:
             target_metadata=target_metadata,
             compare_type=True,
             render_as_batch=True,  # SQLite compatibility
+            include_object=_include_object,
         )
 
         with context.begin_transaction():

@@ -17,9 +17,7 @@ from src.backend.database.core import DatabaseManager
 async def _setup_tables(db: DatabaseManager):
     async with db.get_session() as session:
         async with session.begin():
-            await session.execute(
-                text("CREATE TABLE IF NOT EXISTS uow_test (id INTEGER PRIMARY KEY, val TEXT)")
-            )
+            await session.execute(text("CREATE TABLE IF NOT EXISTS uow_test (id INTEGER PRIMARY KEY, val TEXT)"))
             await session.execute(text("DELETE FROM uow_test"))
             await session.execute(
                 text("""
@@ -46,9 +44,7 @@ async def test_commit_persists_sqlite_and_outbox():
 
     async with UnitOfWork(db) as uow:
         conn = await uow.session.connection()
-        await conn.exec_driver_sql(
-            "INSERT INTO uow_test (id, val) VALUES (?, ?)", (1, "hello")
-        )
+        await conn.exec_driver_sql("INSERT INTO uow_test (id, val) VALUES (?, ?)", (1, "hello"))
         uow.stage_chroma_add("test_col", "doc_uow", "uow content", [0.1, 0.2])
 
     # コミット後の確認（別セッションで読み取り、永続化を確認）
@@ -76,9 +72,7 @@ async def test_commit_rollback_on_exception():
     try:
         async with UnitOfWork(db) as uow:
             conn = await uow.session.connection()
-            await conn.exec_driver_sql(
-                "INSERT INTO uow_test (id, val) VALUES (?, ?)", (2, "failed")
-            )
+            await conn.exec_driver_sql("INSERT INTO uow_test (id, val) VALUES (?, ?)", (2, "failed"))
             uow.stage_chroma_add("test_col", "doc_failed", "failed content", [0.1])
             raise ValueError("Forced error to trigger rollback")
     except ValueError:
@@ -107,9 +101,7 @@ async def test_explicit_commit_then_aexit_no_duplicate_outbox():
 
     async with UnitOfWork(db) as uow:
         conn = await uow.session.connection()
-        await conn.exec_driver_sql(
-            "INSERT INTO uow_test (id, val) VALUES (3, 'explicit')"
-        )
+        await conn.exec_driver_sql("INSERT INTO uow_test (id, val) VALUES (3, 'explicit')")
         uow.stage_chroma_add("test_col", "doc_explicit", "explicit content", [0.3, 0.4])
         await uow.commit()  # 明示コミット
 

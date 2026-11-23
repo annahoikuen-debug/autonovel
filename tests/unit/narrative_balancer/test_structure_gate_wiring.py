@@ -206,7 +206,8 @@ class TestGateEnforce:
         before = [s.model_dump() for s in skeletons]
         balancer = _StubBalancer(tensions=[4.0, 8.0, 6.0, 6.0])
         gate = NarrativeStructureGate(
-            settings=NarrativeStructureSettings(mode="enforce"), balancer=balancer  # type: ignore[arg-type]
+            settings=NarrativeStructureSettings(mode="enforce"),
+            balancer=balancer,  # type: ignore[arg-type]
         )
         report = gate.run(skeletons)
 
@@ -224,7 +225,8 @@ class TestGateEnforce:
         skeletons = [_skeleton(i, 50) for i in range(1, 5)]
         balancer = _StubBalancer()
         gate = NarrativeStructureGate(
-            settings=NarrativeStructureSettings(mode="enforce"), balancer=balancer  # type: ignore[arg-type]
+            settings=NarrativeStructureSettings(mode="enforce"),
+            balancer=balancer,  # type: ignore[arg-type]
         )
         report = gate.run(skeletons)
         assert balancer.calls == 0
@@ -236,7 +238,8 @@ class TestGateEnforce:
         skeletons_b = copy.deepcopy(skeletons_a)
         balancer = _StubBalancer(tensions=[4.0, 8.0, 6.0, 6.0])
         gate = NarrativeStructureGate(
-            settings=NarrativeStructureSettings(mode="enforce"), balancer=balancer  # type: ignore[arg-type]
+            settings=NarrativeStructureSettings(mode="enforce"),
+            balancer=balancer,  # type: ignore[arg-type]
         )
         gate.run(skeletons_a)
         gate.run(skeletons_b)
@@ -298,7 +301,8 @@ class TestGateOffAndWarn:
                 messages.append(message)
 
         gate = NarrativeStructureGate(
-            settings=NarrativeStructureSettings(mode="warn"), balancer=_StubBalancer()  # type: ignore[arg-type]
+            settings=NarrativeStructureSettings(mode="warn"),
+            balancer=_StubBalancer(),  # type: ignore[arg-type]
         )
         report = gate.run(skeletons, reporter=_Reporter())
         assert report.mode == "warn"

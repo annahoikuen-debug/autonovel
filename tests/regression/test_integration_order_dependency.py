@@ -7,6 +7,7 @@ Step 5（conftest real_db_manager の環境変数復元）が壊れると即赤�
 既存の tests/regression/test_collection_health_gate.py が collection 健全性を
 担うため、ここでは順序依存（環境変数汚染）のみを狙う。
 """
+
 from __future__ import annotations
 
 import os

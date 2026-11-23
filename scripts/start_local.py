@@ -137,8 +137,7 @@ def main() -> int:
     if python is None:
         print("", file=sys.stderr)
         print(
-            f"[ERROR] バックエンドを起動できる Python がありません "
-            f"(要: {', '.join(REQUIRED_MODULES)})",
+            f"[ERROR] バックエンドを起動できる Python がありません (要: {', '.join(REQUIRED_MODULES)})",
             file=sys.stderr,
         )
         print("   remedies:", file=sys.stderr)

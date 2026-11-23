@@ -62,9 +62,7 @@ def test_no_deprecated_module_imports_in_src():
     # （削除自体は docs/SHIM_REMOVAL_PLAN.md Phase R3 で管理）
     import json as _json
 
-    _shim_files = set(
-        _json.loads((ROOT_DIR / "config" / "shim_registry.json").read_text(encoding="utf-8"))["shims"]
-    )
+    _shim_files = set(_json.loads((ROOT_DIR / "config" / "shim_registry.json").read_text(encoding="utf-8"))["shims"])
 
     for py_file in src_dir.rglob("*.py"):
         if str(py_file.relative_to(ROOT_DIR)) in _shim_files:

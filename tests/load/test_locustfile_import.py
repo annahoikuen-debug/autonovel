@@ -32,8 +32,7 @@ def test_defines_a_user_class_with_tasks():
     assert user_classes, "HttpUser を継承したクラスが定義されていません"
 
     has_task = any(
-        isinstance(item, ast.FunctionDef)
-        and any(_decorator_name(d) == "task" for d in item.decorator_list)
+        isinstance(item, ast.FunctionDef) and any(_decorator_name(d) == "task" for d in item.decorator_list)
         for cls in user_classes
         for item in cls.body
     )
@@ -78,9 +77,7 @@ def test_referenced_endpoints_exist_in_backend():
         rtree = ast.parse(router.read_text(encoding="utf-8"))
         prefix = ""
         for node in ast.walk(rtree):
-            if isinstance(node, ast.Assign) and any(
-                isinstance(t, ast.Name) and t.id == "router" for t in node.targets
-            ):
+            if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "router" for t in node.targets):
                 if isinstance(node.value, ast.Call):
                     for kw in node.value.keywords:
                         if kw.arg == "prefix" and isinstance(kw.value, ast.Constant):

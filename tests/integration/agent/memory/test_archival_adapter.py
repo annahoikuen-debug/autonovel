@@ -1,4 +1,5 @@
 """Integration tests for ArchivalMemory adapter."""
+
 from src.agents.memory.archival_memory import ArchivalMemory
 from src.agents.memory.interfaces import MemoryEntry
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType

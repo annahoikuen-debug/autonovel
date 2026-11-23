@@ -28,9 +28,7 @@ class TestProseDetoxPipeline:
         syntax_refiner = SyntaxRefiner()
 
         pipeline = ProseDetoxPipeline(
-            stream_guard=stream_guard,
-            density_scorer=density_scorer,
-            syntax_refiner=syntax_refiner
+            stream_guard=stream_guard, density_scorer=density_scorer, syntax_refiner=syntax_refiner
         )
 
         assert pipeline.stream_guard.max_aggressive_per_episode == 5
@@ -154,6 +152,7 @@ class TestProseDetoxPipeline:
 # ──────────────────────────────────────────────
 # Edge case tests
 # ──────────────────────────────────────────────
+
 
 def test_edge_cases() -> None:
     """Test edge cases."""

@@ -1,4 +1,5 @@
 """Stripe Checkout / Portal のリダイレクト先 allowlist の単体テスト。"""
+
 from __future__ import annotations
 
 import pytest
@@ -14,9 +15,7 @@ def frontend_url(monkeypatch):
 
 
 def test_relative_path_is_joined_to_frontend(frontend_url):
-    assert _safe_redirect_url("/billing/success", "/billing") == (
-        "https://novel.example.com/billing/success"
-    )
+    assert _safe_redirect_url("/billing/success", "/billing") == ("https://novel.example.com/billing/success")
 
 
 def test_same_origin_absolute_url_is_allowed(frontend_url):

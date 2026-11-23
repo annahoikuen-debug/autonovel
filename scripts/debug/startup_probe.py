@@ -40,9 +40,7 @@ async def main() -> int:  # noqa: C901, PLR0912
     transport = httpx.ASGITransport(app=app)
 
     # --- lifespan (startup/shutdown イベント) ---
-    async with httpx.AsyncClient(
-        transport=transport, base_url="http://probe", timeout=30.0
-    ) as client:
+    async with httpx.AsyncClient(transport=transport, base_url="http://probe", timeout=30.0) as client:
         try:
             async with app.router.lifespan_context(app):
                 print("[+] lifespan startup ok")

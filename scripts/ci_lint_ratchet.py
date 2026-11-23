@@ -30,6 +30,7 @@
   python scripts/ci_lint_ratchet.py --tool all
   python scripts/ci_lint_ratchet.py --tool ruff --update
 """
+
 from __future__ import annotations
 
 import argparse
@@ -106,8 +107,7 @@ def _run_mypy_once() -> tuple[int, int]:
         m = MYPY_COUNT_RE.search(output)
         if not m:
             raise RuntimeError(
-                "mypy の出力からエラー数を取得できませんでした"
-                f"（終了コード {p.returncode}）:\n{output[-2000:]}"
+                f"mypy の出力からエラー数を取得できませんでした（終了コード {p.returncode}）:\n{output[-2000:]}"
             )
         result = {
             "errors": int(m.group(1)),
@@ -147,9 +147,7 @@ def _load_baseline() -> dict[str, object]:
 
 def _save_baseline(data: dict[str, object]) -> None:
     BASELINE.parent.mkdir(parents=True, exist_ok=True)
-    BASELINE.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
+    BASELINE.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 README = Path("README.md")
@@ -162,12 +160,10 @@ def _sync_readme_baseline(data: dict[str, object]) -> None:
     README に「ruff=N / mypy=N / format=N」形式の行が 1 箇所のみ存在する前提。
     """
     text = README.read_text(encoding="utf-8")
-    expected = f'ruff={data["ruff_errors"]} / mypy={data["mypy_errors"]} / format={data["format_files"]}'
+    expected = f"ruff={data['ruff_errors']} / mypy={data['mypy_errors']} / format={data['format_files']}"
     new_text, count = README_BASELINE_RE.subn(expected, text)
     if count != 1:
-        raise RuntimeError(
-            f"README.md のベースライン値行が 1 箇所に見つかりませんでした（{count} 箇所）"
-        )
+        raise RuntimeError(f"README.md のベースライン値行が 1 箇所に見つかりませんでした（{count} 箇所）")
     README.write_text(new_text, encoding="utf-8")
 
 
@@ -231,9 +227,7 @@ def _check_single_metric(
     # baseline が期限切れ target より緩い場合、target まで強制的に下げる
     if forced_floor > base:
         data[key] = forced_floor
-        print(
-            f"{status} / baseline を期限切れ target まで強制引き下げ: {base} -> {forced_floor}"
-        )
+        print(f"{status} / baseline を期限切れ target まで強制引き下げ: {base} -> {forced_floor}")
         return 0, True
 
     print(status)
@@ -245,9 +239,7 @@ def _check_single_metric(
         )
         return 1, False
     if actual < base:
-        print(
-            f"GOOD: {base - actual} 件減少。ベースラインは変更せず（--update で明示的に下げる）。({key})"
-        )
+        print(f"GOOD: {base - actual} 件減少。ベースラインは変更せず（--update で明示的に下げる）。({key})")
         return 0, False
     return 0, False
 

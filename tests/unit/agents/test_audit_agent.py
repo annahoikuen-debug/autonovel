@@ -1,5 +1,6 @@
 from src.agents.audit import PlotIntegrityMonitor
 
+
 def test_audit_agent_detect_contradiction():
     monitor = PlotIntegrityMonitor()
     characters = {"アリス": {"status": "死亡"}}

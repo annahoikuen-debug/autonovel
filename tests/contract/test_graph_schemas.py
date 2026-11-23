@@ -2,6 +2,7 @@
 
 スキーマの破壊的変更を検知するためのテスト。
 """
+
 import pytest
 from pydantic import ValidationError
 
@@ -11,13 +12,9 @@ from src.models.graph_schemas import GraphExtractionResult, Entity, Relationship
 def test_graph_extraction_result_schema():
     """GraphExtractionResult のスキーマが破壊的変更されないことを確認"""
     result = GraphExtractionResult(
-        entities=[
-            Entity(name="テスト", type="Character", description="説明", properties={})
-        ],
-        relationships=[
-            Relationship(source="A", target="B", type="KNOWS", detail="詳細")
-        ],
-        plot_summary="要約"
+        entities=[Entity(name="テスト", type="Character", description="説明", properties={})],
+        relationships=[Relationship(source="A", target="B", type="KNOWS", detail="詳細")],
+        plot_summary="要約",
     )
 
     # 必須フィールド存在確認
@@ -53,12 +50,7 @@ def test_entity_properties_default_factory():
 
 def test_relationship_fields():
     """Relationship の全フィールドが正しく設定される"""
-    rel = Relationship(
-        source="アルス",
-        target="聖剣",
-        type="POSSESSES",
-        detail="所持している"
-    )
+    rel = Relationship(source="アルス", target="聖剣", type="POSSESSES", detail="所持している")
     assert rel.source == "アルス"
     assert rel.target == "聖剣"
     assert rel.type == "POSSESSES"

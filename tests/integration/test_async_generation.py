@@ -8,6 +8,7 @@ DB 上の ``Task`` レコードへ結果を保存した後、そのレコード�
 安全に作成できるようにする (pytest-asyncio のループと競合させない)。
 ``generate_with_llm`` は未実装のため monkeypatch でダミー戻り値に差し替える。
 """
+
 from __future__ import annotations
 
 from src.backend import database
@@ -74,7 +75,15 @@ def test_generation_task_saves_to_specified_book_id(real_db_manager, monkeypatch
     specified_book_id = 999
     # クレジット控除で user_id を参照するため、所有者ユーザーを先に作成
     from src.backend.database.models import User
-    owner = User(id=1, email="test_owner@example.com", hashed_password="dummy_hash", display_name="テストオーナー", role="author", status="active")
+
+    owner = User(
+        id=1,
+        email="test_owner@example.com",
+        hashed_password="dummy_hash",
+        display_name="テストオーナー",
+        role="author",
+        status="active",
+    )
     repo.session.add(owner)
     repo._safe_commit()
 
@@ -139,6 +148,7 @@ def test_generation_task_saves_to_specified_book_id(real_db_manager, monkeypatch
         assert updated_book.genre == "ファンタジー"  # キャラクターのジャンルから更新される
         # 第1話が更新されていることを検証
         from sqlalchemy import select
+
         stmt = select(Chapter).where(Chapter.book_id == specified_book_id).where(Chapter.ep_num == 1)
         chapter = verify_repo.session.execute(stmt).scalar_one_or_none()
         assert chapter is not None
@@ -228,6 +238,7 @@ def test_generation_task_creates_new_book_when_book_id_not_provided(real_db_mana
         # タスク結果から生成された book_id を取得することを検証
         # (Step 14: タスク結果 JSON に保存先 book_id を自動注入)
         import json
+
         result_dict = json.loads(persisted_task.result)
         assert "book_id" in result_dict
         new_book_id = result_dict["book_id"]
@@ -242,6 +253,7 @@ def test_generation_task_creates_new_book_when_book_id_not_provided(real_db_mana
         assert new_book.genre == "ファンタジー"
         # 第1話が作成されていることを検証
         from sqlalchemy import select
+
         stmt = select(Chapter).where(Chapter.book_id == new_book_id).where(Chapter.ep_num == 1)
         chapter = verify_repo.session.execute(stmt).scalar_one_or_none()
         assert chapter is not None

@@ -7,6 +7,7 @@
 ALEMBIC_DATABASE_URL の副作用で「移行済みDB」に対して
 upgrade が走り table ... already exists になるバグを防ぐ。
 """
+
 from __future__ import annotations
 
 import os

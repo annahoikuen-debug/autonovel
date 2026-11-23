@@ -1,4 +1,5 @@
 """Integration tests for sensory expansion on full-length novel chapter text (Part 3, Step 35)."""
+
 import pytest
 from src.agents.orchestrator import AgentContext, AgentName
 from src.agents.enrichment_agent import EnrichmentAgent
@@ -70,10 +71,11 @@ async def test_sensory_full_chapter_text_grammar_integrity():
 
     # 3. 句読点エラー（。。や。が）やタグが残存していないこと
     import re
+
     assert "。。" not in enriched_text
     assert "。が" not in enriched_text
     assert "。けれど" not in enriched_text
-    assert not re.search(r'\[[a-zA-Z0-9_]+\]', enriched_text)
+    assert not re.search(r"\[[a-zA-Z0-9_]+\]", enriched_text)
 
     # 4. メタデータに複数箇所の文単位リライト差分が記録されていること
     assert len(sensory_meta) >= 3

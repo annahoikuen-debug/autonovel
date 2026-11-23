@@ -29,9 +29,7 @@ ROWS = [
 @pytest.mark.asyncio
 async def test_default_off_passes_everything(monkeypatch):
     monkeypatch.setenv("FORESHADOW_RELEVANCE_INJECTION", "0")
-    out = await _composer()._load_unresolved_foreshadowings(
-        book_id=1, ep_num=1, context={}, rows=ROWS
-    )
+    out = await _composer()._load_unresolved_foreshadowings(book_id=1, ep_num=1, context={}, rows=ROWS)
     assert [c["id"] for c in out] == [1, 2]
     assert all("relevance" not in c for c in out)
 
@@ -67,9 +65,7 @@ async def test_on_flag_never_returns_empty(monkeypatch):
 @pytest.mark.asyncio
 async def test_on_flag_with_no_rows_returns_empty(monkeypatch):
     monkeypatch.setenv("FORESHADOW_RELEVANCE_INJECTION", "1")
-    out = await _composer()._load_unresolved_foreshadowings(
-        book_id=1, ep_num=1, context={}, rows=[]
-    )
+    out = await _composer()._load_unresolved_foreshadowings(book_id=1, ep_num=1, context={}, rows=[])
     assert out == []
 
 

@@ -1,4 +1,5 @@
 """E2E tests for WriterAgent with hierarchical memory."""
+
 from src.agents.writer_agent import WriterAgent
 from src.stores.vector_store import InMemoryVectorStore
 
@@ -12,7 +13,13 @@ def test_writer_agent_e2e(tmp_path):
     tool_calls_ep1 = [
         {
             "name": "update_emotion",
-            "arguments": {"source": "Alice", "target": "Bob", "emotion": "trust", "delta": 0.8, "reason": "命を救われた"},
+            "arguments": {
+                "source": "Alice",
+                "target": "Bob",
+                "emotion": "trust",
+                "delta": 0.8,
+                "reason": "命を救われた",
+            },
         },
         {
             "name": "set_active_hook",

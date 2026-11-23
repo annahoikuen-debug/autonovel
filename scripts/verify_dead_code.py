@@ -80,16 +80,12 @@ def _dynamic_scan(text: str, module_path: str) -> bool:
     """動的参照スキャン。importlib.import_module / __import__ / getattr / setattr の
     文字列引数が候補モジュールと一致するか照合する。"""
     # importlib.import_module("src.llm.clients") / __import__("src.llm.clients")
-    call_regex = re.compile(
-        r"(?:importlib\.import_module|__import__)\s*\(\s*[\"']([^\"']+)[\"']"
-    )
+    call_regex = re.compile(r"(?:importlib\.import_module|__import__)\s*\(\s*[\"']([^\"']+)[\"']")
     for m in call_regex.finditer(text):
         if m.group(1) == module_path or m.group(1).replace("/", ".") == module_path:
             return True
     # getattr(obj, "src.llm.clients.X") / setattr(obj, "src.llm.clients.X", …)
-    getattr_regex = re.compile(
-        r"(?:getattr|setattr)\s*\([^,]+,\s*[\"']([^\"']+)[\"']"
-    )
+    getattr_regex = re.compile(r"(?:getattr|setattr)\s*\([^,]+,\s*[\"']([^\"']+)[\"']")
     for m in getattr_regex.finditer(text):
         if module_path in m.group(1):
             return True

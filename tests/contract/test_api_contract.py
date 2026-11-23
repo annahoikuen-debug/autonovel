@@ -1,7 +1,9 @@
 """API コントラクトテスト using schemathesis."""
+
 from __future__ import annotations
 
 import pytest
+
 schemathesis = pytest.importorskip("schemathesis")
 if schemathesis is not None:
     openapi = schemathesis.openapi

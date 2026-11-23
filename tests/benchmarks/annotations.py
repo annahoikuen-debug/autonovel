@@ -1,4 +1,5 @@
 """Scene type accuracy test annotations."""
+
 from __future__ import annotations
 
 from typing import Dict, List, Any
@@ -14,7 +15,7 @@ SCENE_ANNOTATIONS: Dict[str, Dict[str, Any]] = {
         "excluded_categories": ["地理・勢力", "日常"],
         "required_entities": ["アルカディア", "ヴォルケイン", "エクスカリバー", "迅雷"],
         "min_category_preservation_rate": 0.9,  # 90% of required categories must appear
-        "min_entity_retention_rate": 0.85,      # 85% of key entities must be retained
+        "min_entity_retention_rate": 0.85,  # 85% of key entities must be retained
     },
     "daily": {
         "description": "Daily life/slice of life scenes - focus on characters, relationships, setting",
@@ -80,7 +81,7 @@ ACCURACY_TEST_CASES: List[Dict[str, Any]] = [
         "expected_entities": ["アルカディア", "カロル", "王都グランヴァル", "冒険者ギルド", "治癒のポーション"],
         "min_preservation": 0.8,
     },
-{
+    {
         "name": "psychological_memory",
         "scene_type": "psychological",
         "text": (
@@ -102,7 +103,15 @@ ACCURACY_TEST_CASES: List[Dict[str, Any]] = [
             "古代の条約『エルシオン協定』が引き合いに出され、同盟の行方が不透明になる。"
         ),
         "expected_categories": ["地理・勢力", "伏線", "主要キャラ", "核心設定"],
-        "expected_entities": ["王都グランヴァル", "バルガス", "ミレナ", "商人ギルド", "辺境警備隊", "エルシオン協定", "関税"],
+        "expected_entities": [
+            "王都グランヴァル",
+            "バルガス",
+            "ミレナ",
+            "商人ギルド",
+            "辺境警備隊",
+            "エルシオン協定",
+            "関税",
+        ],
         "min_preservation": 0.75,
     },
 ]

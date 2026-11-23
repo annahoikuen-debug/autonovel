@@ -1,4 +1,5 @@
 """Unit tests for FusionEngine."""
+
 import pytest
 from src.fusion.config import FusionConfig
 from src.fusion.engine import FusionEngine

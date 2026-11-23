@@ -1,4 +1,5 @@
 """Tests for integrated beat parser."""
+
 from __future__ import annotations
 
 import pytest
@@ -113,7 +114,7 @@ beats:
 
     def test_convenience_function(self, char_dict):
         """便利関数 parse_script"""
-        text = 'A「行くぞ」\n[beat:fear+0.6]'
+        text = "A「行くぞ」\n[beat:fear+0.6]"
 
         result = parse_script(text, episode=15, scene=1, character_dict=char_dict)
 

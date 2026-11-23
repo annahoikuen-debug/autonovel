@@ -10,7 +10,6 @@
 from __future__ import annotations
 
 
-
 from src.audit.calibration_store import (
     DEFAULT_CALIBRATION,
     clear_cache,

@@ -39,9 +39,7 @@ RETENTION_FACT = "アルスは龍の鱗を入手した"
 async def _db(tmp_path):
     """episode_digests / digest_rollups / books を持つ実 SQLite セッション工場。"""
     db_path = tmp_path / "fact_retention.db"
-    engine = create_async_engine(
-        f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False, connect_args={"timeout": 10}
-    )
+    engine = create_async_engine(f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False, connect_args={"timeout": 10})
     async with engine.begin() as conn:
         # 全テーブルを作成（FK 閉包を自動的に解決）
         await conn.run_sync(Base.metadata.create_all)
@@ -84,12 +82,8 @@ class TestFactRetention:
     async def _save_digests(self, session: AsyncSession, override_ep3: bool = False):
         repo = EpisodeDigestRepository(session)
         for ep in range(1, TARGET_EPISODE + 1):
-            text = (
-                f"第3話: {RETENTION_FACT}。" if ep == 3 and override_ep3 else f"第{ep}話本文"
-            )
-            await repo.save_digest(
-                book_id=BOOK_ID, episode_num=ep, digest_text=text
-            )
+            text = f"第3話: {RETENTION_FACT}。" if ep == 3 and override_ep3 else f"第{ep}話本文"
+            await repo.save_digest(book_id=BOOK_ID, episode_num=ep, digest_text=text)
 
     @pytest.mark.asyncio
     async def test_rollup_off_hierarchical_returns_empty(self, tmp_path, monkeypatch):
@@ -102,14 +96,11 @@ class TestFactRetention:
                 await self._save_digests(session, override_ep3=True)
 
                 builder = EpisodeContextBuilder(db=session)
-                hierarchical = await builder._build_layer2_hierarchical(
-                    book_id=BOOK_ID, current_ep=TARGET_EPISODE
-                )
+                hierarchical = await builder._build_layer2_hierarchical(book_id=BOOK_ID, current_ep=TARGET_EPISODE)
 
                 # rollup off では階層テキストは空 (legacy フォールバックへ)
                 assert hierarchical.get("text") == "", (
-                    f"rollup off で _build_layer2_hierarchical が空でない: "
-                    f"{hierarchical.get('text')[:200]}"
+                    f"rollup off で _build_layer2_hierarchical が空でない: {hierarchical.get('text')[:200]}"
                 )
 
     @pytest.mark.asyncio
@@ -133,28 +124,17 @@ class TestFactRetention:
                         EpisodeDigestModel.episode_num.between(1, 10),
                     )
                 )
-                block_digests = {
-                    int(r.episode_num): (r.digest_text or "")
-                    for r in res.scalars().all()
-                }
-                block_text = await generator.generate_block_rollup(
-                    BOOK_ID, (1, 10), block_digests
-                )
+                block_digests = {int(r.episode_num): (r.digest_text or "") for r in res.scalars().all()}
+                block_text = await generator.generate_block_rollup(BOOK_ID, (1, 10), block_digests)
                 assert block_text, "章 rollup 生成に失敗"
-                await repo_rollup.upsert_rollup(
-                    BOOK_ID, "block", 1, 10, block_text
-                )
+                await repo_rollup.upsert_rollup(BOOK_ID, "block", 1, 10, block_text)
 
                 builder = EpisodeContextBuilder(db=session)
-                hierarchical = await builder._build_layer2_hierarchical(
-                    book_id=BOOK_ID, current_ep=TARGET_EPISODE
-                )
+                hierarchical = await builder._build_layer2_hierarchical(book_id=BOOK_ID, current_ep=TARGET_EPISODE)
                 layer2_text = hierarchical.get("text", "")
 
                 # 第3話の事実が章要約経由で**保持されている** (改善の実証)
-                assert RETENTION_FACT in layer2_text, (
-                    f"rollup on でも事実が失われている: {layer2_text[:300]}"
-                )
+                assert RETENTION_FACT in layer2_text, f"rollup on でも事実が失われている: {layer2_text[:300]}"
 
                 # Layer2 が LAYER2_MAX_CHARS 内に収まる
                 max_chars = builder.LAYER2_MAX_CHARS

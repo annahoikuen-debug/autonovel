@@ -3,6 +3,7 @@
 レビューで「400/414 が乖離」「乱数でも 27% が健全」と判定された。
 本テストは SSOT を固定し、以後の乖離を再発させない。
 """
+
 from __future__ import annotations
 
 import random
@@ -44,10 +45,7 @@ def test_resolver_output_passes_its_own_validator(pk: str, eps: int):
     これが R4 の主力テスト。修正前は `missing_beats` が空にならず **赤になる**。
     """
     spine = resolve_spine(pk, "web_volume", "web", eps)
-    chapters = [
-        {"chapter_number": b.ep_start, "tension": int(b.tension * 100)}
-        for b in spine.beats
-    ]
+    chapters = [{"chapter_number": b.ep_start, "tension": int(b.tension * 100)} for b in spine.beats]
     r = validate(chapters, pattern_key=pk)
     assert r["missing_beats"] == [], (
         f"{pk}@{eps}: resolver 出力なのに必須ビートが {len(r['missing_beats'])} 個欠落 "
@@ -64,23 +62,18 @@ def test_random_chapters_are_not_reported_healthy():
     rnd = random.Random(20260930)
     healthy = 0
     for _ in range(50):
-        chapters = [
-            {"chapter_number": i, "tension": rnd.randint(0, 10)} for i in range(1, 21)
-        ]
+        chapters = [{"chapter_number": i, "tension": rnd.randint(0, 10)} for i in range(1, 21)]
         if validate(chapters, pattern_key="exile_rise")["is_healthy"]:
             healthy += 1
     assert healthy <= 3, (
-        f"乱数 tension でも {healthy}/50 が健全と判定された。"
-        "検証器が構造を一切見ていない（beat_tol が広すぎる疑い）"
+        f"乱数 tension でも {healthy}/50 が健全と判定された。検証器が構造を一切見ていない（beat_tol が広すぎる疑い）"
     )
 
 
 def test_misplaced_beats_are_actually_detected():
     """**本当にズレた構成は「不足」として検出されること**（偽陰性 0 の確認）。"""
     # 全てを前半に固める = 全必須ビートが終盤に来るはず
-    chapters = [
-        {"chapter_number": i, "tension": 1} for i in range(1, 6)
-    ] + [
+    chapters = [{"chapter_number": i, "tension": 1} for i in range(1, 6)] + [
         {"chapter_number": 20 + i, "tension": 9} for i in range(5)
     ]
     r = validate(chapters, pattern_key="exile_rise")
@@ -98,8 +91,7 @@ def test_legacy_structures_keep_their_wide_tolerance():
     """後方互換：従来 3 構造の挙動を変えない。"""
     from src.services.structure_validator import STRUCTURE_DEFINITIONS
 
-    assigned = [{"_phase": 0.1, "tension": 5}, {"_phase": 0.5, "tension": 9},
-                {"_phase": 0.9, "tension": 3}]
+    assigned = [{"_phase": 0.1, "tension": 5}, {"_phase": 0.5, "tension": 9}, {"_phase": 0.9, "tension": 3}]
     for name, struct in STRUCTURE_DEFINITIONS.items():
         out = check_required_beats(assigned, struct)
         assert isinstance(out, list) and out, name

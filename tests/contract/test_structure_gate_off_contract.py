@@ -75,7 +75,9 @@ class _FakeLLM:
 
 
 class _FakePM:
-    async def build_macro_plot_skeleton_prompt(self, bible_json_str, ep_range, book_id=None, spine=None, spine_quality=None):
+    async def build_macro_plot_skeleton_prompt(
+        self, bible_json_str, ep_range, book_id=None, spine=None, spine_quality=None
+    ):
         return "macro prompt"
 
     async def build_micro_scene_expander_prompt(self, **kwargs):
@@ -190,9 +192,7 @@ class TestEnforceContract:
         # 補正は tension のみで行われ、LLM 応答 (20,95,60,60) から変化していること
         assert saved_tensions != [20, 95, 60, 60]
         # P6: 補正後も tension 以外 (title / summary) は LLM 応答のまま
-        assert [plot.title for _, _, plot in repo.created_plots] == [
-            s.title for s in _macro_batch().episodes
-        ]
+        assert [plot.title for _, _, plot in repo.created_plots] == [s.title for s in _macro_batch().episodes]
 
     def test_enforce_correction_is_deterministic(self, monkeypatch):
         """同入力 → 同一の補正結果 (CP-SAT シングルワーカー契約 / P2)。"""

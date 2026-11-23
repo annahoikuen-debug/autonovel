@@ -1,5 +1,6 @@
 # tests/integration/test_enrichment_trivia_pipeline.py
 """Integration tests for EnrichmentAgent trivia insertion pipeline (Step 11)."""
+
 import pytest
 from unittest.mock import MagicMock
 from src.agents.orchestrator import AgentContext, AgentName
@@ -10,13 +11,16 @@ from src.agents.enrichment_agent import EnrichmentAgent
 async def test_enrichment_agent_trivia_full_execution():
     """EnrichmentAgent.execute() を通じたトリビアリライト統合実行テスト"""
     mock_llm = MagicMock()
+
     async def fake_ainvoke(prompt):
         if "トリビア" in prompt or "世界観" in prompt or "書き換え" in prompt:
             return "かつて竜の眠る地と称された広場には、今なお神秘の風が吹き抜けていた。"
         return "頬を伝う冷たい風を感じた。"
+
     mock_llm.ainvoke = fake_ainvoke
 
     mock_rag = MagicMock()
+
     async def fake_query(*args, **kwargs):
         return [
             {
@@ -25,6 +29,7 @@ async def test_enrichment_agent_trivia_full_execution():
                 "entity": "中央広場",
             }
         ]
+
     mock_rag.query_trivia_candidates = fake_query
 
     mock_repo = MagicMock()

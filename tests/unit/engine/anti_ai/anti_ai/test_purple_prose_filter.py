@@ -21,10 +21,7 @@ class TestPurpleProseFilter:
 
     def test_init_custom(self) -> None:
         """Test custom initialization."""
-        filter_obj = PurpleProseFilter(
-            max_aggressive_per_episode=5,
-            max_metaphor_per_1k_chars=10
-        )
+        filter_obj = PurpleProseFilter(max_aggressive_per_episode=5, max_metaphor_per_1k_chars=10)
         assert filter_obj.max_aggressive_per_episode == 5
         assert filter_obj.max_metaphor_per_1k_chars == 10
 

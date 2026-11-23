@@ -5,6 +5,7 @@
 - conflicts.py: 同上、ConflictStore に user_id をスコープ
 - subtext.py: ルータレベル認証（全エンドポイントが認証必須に）
 """
+
 from __future__ import annotations
 
 import inspect

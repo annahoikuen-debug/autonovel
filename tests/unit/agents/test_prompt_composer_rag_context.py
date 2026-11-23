@@ -51,7 +51,7 @@ def test_malformed_items_are_skipped_without_exception() -> None:
     docs = [
         {"content": "good", "score": 0.90},
         None,
-        {"score": 0.50},            # content なし
+        {"score": 0.50},  # content なし
         {"content": "", "score": 0.80},  # 空 content
         "not a dict",
         {"content": "also good", "score": 0.70, "metadata": None},

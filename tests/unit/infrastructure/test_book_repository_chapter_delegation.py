@@ -59,11 +59,7 @@ class TestBookRepositoryChapterContract:
         """
         from src.infrastructure.repositories.book import BookRepository
 
-        params = [
-            name
-            for name in inspect.signature(BookRepository.get_chapter).parameters
-            if name != "self"
-        ]
+        params = [name for name in inspect.signature(BookRepository.get_chapter).parameters if name != "self"]
         assert params == ["branch_id", "ep_num", "book_id"], f"引数順が呼び出し側と不一致: {params}"
 
     def test_update_chapter_content_accepts_book_id(self) -> None:
@@ -86,11 +82,7 @@ class TestDelegationTargets:
 
         import asyncio
 
-        asyncio.run(
-            repo.save_chapter(
-                book_id=1, branch_id=2, ep_num=3, title="第3話", content="本文"
-            )
-        )
+        asyncio.run(repo.save_chapter(book_id=1, branch_id=2, ep_num=3, title="第3話", content="本文"))
 
         chapter_repo.create_chapter.assert_awaited_once()
         kwargs = chapter_repo.create_chapter.await_args.kwargs
@@ -138,11 +130,7 @@ class TestDelegationTargets:
         import asyncio
 
         content = "あ" * 500
-        asyncio.run(
-            repo.save_chapter(
-                book_id=1, branch_id=1, ep_num=1, title="t", content=content
-            )
-        )
+        asyncio.run(repo.save_chapter(book_id=1, branch_id=1, ep_num=1, title="t", content=content))
         kwargs = chapter_repo.create_chapter.await_args.kwargs
         assert kwargs["summary"], "summary が空文字になった"
         assert len(kwargs["summary"]) <= 200
@@ -160,6 +148,4 @@ class TestNoCircularImport:
             if line.startswith("from src.infrastructure.repositories.chapter")
             or line.startswith("from src.infrastructure.repositories.bible")
         ]
-        assert not module_level, (
-            f"リポジトリの import がモジュール直下にある（循環インポート）: {module_level}"
-        )
+        assert not module_level, f"リポジトリの import がモジュール直下にある（循環インポート）: {module_level}"

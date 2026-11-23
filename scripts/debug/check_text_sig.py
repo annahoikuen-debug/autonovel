@@ -21,10 +21,12 @@ def make_cd():
 
 async def t():
     response = SimpleNamespace(
-        choices=[SimpleNamespace(
-            message=SimpleNamespace(content="plain story"),
-            usage=SimpleNamespace(prompt_tokens=1, completion_tokens=2),
-        )]
+        choices=[
+            SimpleNamespace(
+                message=SimpleNamespace(content="plain story"),
+                usage=SimpleNamespace(prompt_tokens=1, completion_tokens=2),
+            )
+        ]
     )
     mock_async = MagicMock()
     mock_async.chat.completions.create = AsyncMock(return_value=response)

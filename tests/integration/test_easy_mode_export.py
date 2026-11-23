@@ -51,9 +51,7 @@ async def test_create_export_package_structure() -> None:
         ],
     }
 
-    zip_bytes, zip_filename = await agent.create_export_package(
-        book_id=101, book_data=dummy_book_data
-    )
+    zip_bytes, zip_filename = await agent.create_export_package(book_id=101, book_data=dummy_book_data)
 
     assert zip_filename == "export_101.zip"
     assert len(zip_bytes) > 0
@@ -122,9 +120,7 @@ async def test_real_db_export_package_via_fixture(real_db_manager) -> None:
         name="エイダ",
         role="主人公",
         # NOTE: 現実装は registry_data JSON から性格・能力を取得する契約
-        registry_data=json.dumps(
-            {"personality": "冷静", "ability": "論理掌握"}, ensure_ascii=False
-        ),
+        registry_data=json.dumps({"personality": "冷静", "ability": "論理掌握"}, ensure_ascii=False),
     )
     plot = Plot(
         book_id=book_id,

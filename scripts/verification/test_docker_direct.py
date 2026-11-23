@@ -1,4 +1,5 @@
 """Test to check if DockerContainer works directly in test."""
+
 from __future__ import annotations
 
 from testcontainers.core.container import DockerContainer

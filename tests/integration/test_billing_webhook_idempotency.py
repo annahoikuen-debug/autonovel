@@ -14,6 +14,8 @@ def _allow_unsigned_webhooks():
     yield
     billing_webhook_module.ALLOW_UNSIGNED_WEBHOOKS = original_opt
     billing_webhook_module.WEBHOOK_SECRET = original_secret
+
+
 import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -92,7 +94,7 @@ async def test_webhook_idempotency_prevents_duplicate_credit_grant():
                 "subscription": "sub_test123",
                 "metadata": {"user_id": str(user.id)},
             }
-        }
+        },
     }
 
     transport = ASGITransport(app=app)

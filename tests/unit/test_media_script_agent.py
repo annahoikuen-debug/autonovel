@@ -31,13 +31,9 @@ def test_manga_script_output_schema():
         visual_description="主人公が驚いた表情",
         dialogues=[{"speaker": "主人公", "text": "なんだって？"}],
         sfx=["SE: 衝撃音"],
-        narration="突然の出来事に呆然とする"
+        narration="突然の出来事に呆然とする",
     )
-    output = MangaScriptOutput(
-        page_number=1,
-        panels=[panel],
-        scene_mood="surprise"
-    )
+    output = MangaScriptOutput(page_number=1, panels=[panel], scene_mood="surprise")
     assert output.page_number == 1
     assert len(output.panels) == 1
     assert output.panels[0].camera_angle == "close_up"
@@ -50,14 +46,19 @@ def test_audio_drama_script_output_schema():
         emotion="shout",
         direction="[激昂・大声・早口]",
         audio_cues_before=[{"type": "sfx", "name": "tension", "description": "緊張感", "duration": 1.0}],
-        audio_cues_after=[{"type": "sfx", "name": "impact", "description": "インパクト", "duration": 0.5}]
+        audio_cues_after=[{"type": "sfx", "name": "impact", "description": "インパクト", "duration": 0.5}],
     )
     output = AudioDramaScriptOutput(
         episode_title="第1話",
         lines=[line],
         bgm_plan=[{"scene": "battle", "track": "battle_theme", "mood": "intense"}],
         sfx_plan=[{"trigger": "shout", "sound": "impact", "timing": "on_line"}],
-        cast_requirements={"characters": ["主人公"], "required_emotions": ["shout"], "narrator_needed": False, "total_voice_actors": 1}
+        cast_requirements={
+            "characters": ["主人公"],
+            "required_emotions": ["shout"],
+            "narrator_needed": False,
+            "total_voice_actors": 1,
+        },
     )
     assert output.episode_title == "第1話"
     assert len(output.lines) == 1
@@ -97,7 +98,7 @@ def test_build_character_context():
     agent = MediaScriptAgent(llm_provider=None)
     characters = [
         {"name": "Protagonist", "personality": "Brave", "first_person": "I", "speech_pattern": "Male"},
-        {"name": "Heroine", "personality": "Kind", "first_person": "I", "speech_pattern": "Polite"}
+        {"name": "Heroine", "personality": "Kind", "first_person": "I", "speech_pattern": "Polite"},
     ]
     context = agent._build_character_context(characters)
     assert "Protagonist" in context
@@ -108,7 +109,7 @@ def test_build_character_context():
 
 def test_fallback_manga_script():
     agent = MediaScriptAgent(llm_provider=None)
-    chapter_text = "Test chapter content.\n\nProtagonist faced difficulties.\n\"Let's go\" he said."
+    chapter_text = 'Test chapter content.\n\nProtagonist faced difficulties.\n"Let\'s go" he said.'
     characters = [{"name": "Protagonist", "personality": "Brave"}]
     results = agent._fallback_manga_script(chapter_text, characters)
     assert len(results) > 0
@@ -118,7 +119,7 @@ def test_fallback_manga_script():
 
 def test_fallback_audio_script():
     agent = MediaScriptAgent(llm_provider=None)
-    chapter_text = "Test chapter content.\n\nProtagonist faced difficulties.\n\"Let's go\" he said."
+    chapter_text = 'Test chapter content.\n\nProtagonist faced difficulties.\n"Let\'s go" he said.'
     characters = [{"name": "Protagonist", "personality": "Brave"}]
     result = agent._fallback_audio_script(chapter_text, characters)
     assert isinstance(result, AudioDramaScriptOutput)
@@ -126,23 +127,25 @@ def test_fallback_audio_script():
 
 
 def test_generate_manga_script_with_mock_llm():
-    mock_response = json.dumps({
-        "page_number": 1,
-        "panels": [
-            {
-                "panel_number": 1,
-                "camera_angle": "medium",
-                "visual_description": "Test scene",
-                "dialogues": [{"speaker": "Protagonist", "text": "Test"}],
-                "sfx": [],
-                "narration": "Test narration"
-            }
-        ],
-        "scene_mood": "neutral"
-    })
+    mock_response = json.dumps(
+        {
+            "page_number": 1,
+            "panels": [
+                {
+                    "panel_number": 1,
+                    "camera_angle": "medium",
+                    "visual_description": "Test scene",
+                    "dialogues": [{"speaker": "Protagonist", "text": "Test"}],
+                    "sfx": [],
+                    "narration": "Test narration",
+                }
+            ],
+            "scene_mood": "neutral",
+        }
+    )
     agent = MediaScriptAgent(llm_provider=None)
 
-    with patch.object(agent, '_call_llm', return_value=mock_response) as mock_call:
+    with patch.object(agent, "_call_llm", return_value=mock_response) as mock_call:
         chapter_text = "Test chapter content."
         characters = [{"name": "Protagonist", "personality": "Brave"}]
         results = agent.generate_manga_script(chapter_text, characters)
@@ -155,25 +158,32 @@ def test_generate_manga_script_with_mock_llm():
 
 
 def test_generate_audio_script_with_mock_llm():
-    mock_response = json.dumps({
-        "episode_title": "Test Episode",
-        "lines": [
-            {
-                "character": "Protagonist",
-                "text": "Test dialogue",
-                "emotion": "joy",
-                "direction": "[Bright and cheerful]",
-                "audio_cues_before": [],
-                "audio_cues_after": []
-            }
-        ],
-        "bgm_plan": [{"scene": "daily", "track": "peaceful", "mood": "calm"}],
-        "sfx_plan": [],
-        "cast_requirements": {"characters": ["Protagonist"], "required_emotions": ["joy"], "narrator_needed": False, "total_voice_actors": 1}
-    })
+    mock_response = json.dumps(
+        {
+            "episode_title": "Test Episode",
+            "lines": [
+                {
+                    "character": "Protagonist",
+                    "text": "Test dialogue",
+                    "emotion": "joy",
+                    "direction": "[Bright and cheerful]",
+                    "audio_cues_before": [],
+                    "audio_cues_after": [],
+                }
+            ],
+            "bgm_plan": [{"scene": "daily", "track": "peaceful", "mood": "calm"}],
+            "sfx_plan": [],
+            "cast_requirements": {
+                "characters": ["Protagonist"],
+                "required_emotions": ["joy"],
+                "narrator_needed": False,
+                "total_voice_actors": 1,
+            },
+        }
+    )
     agent = MediaScriptAgent(llm_provider=None)
 
-    with patch.object(agent, '_call_llm', return_value=mock_response) as mock_call:
+    with patch.object(agent, "_call_llm", return_value=mock_response) as mock_call:
         chapter_text = "Test chapter content."
         characters = [{"name": "Protagonist", "personality": "Brave"}]
         result = agent.generate_audio_script(chapter_text, characters)

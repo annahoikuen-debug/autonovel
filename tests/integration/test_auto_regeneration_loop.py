@@ -3,7 +3,8 @@
 
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -16,6 +17,7 @@ from dataclasses import dataclass
 @dataclass
 class MockBookScore:
     """BookScoreCalculator.calculate の戻り値をモックするためのデータクラス"""
+
     overall_score: float
     structure_score: float
     coherency_score: float
@@ -65,15 +67,21 @@ class TestAutoRegenerationLoop:
             if call_count[0] == 1:
                 # 初回: 65点 (閾値70未満)
                 return MockBookScore(
-                    overall_score=65.0, structure_score=55.0, coherency_score=70.0,
-                    factual_grounding_score=70.0, visual_textual_synergy_score=70.0,
+                    overall_score=65.0,
+                    structure_score=55.0,
+                    coherency_score=70.0,
+                    factual_grounding_score=70.0,
+                    visual_textual_synergy_score=70.0,
                     reader_experience_score=65.0,
                 )
             else:
                 # 2回目: 75点 (基準クリア)
                 return MockBookScore(
-                    overall_score=75.0, structure_score=80.0, coherency_score=75.0,
-                    factual_grounding_score=75.0, visual_textual_synergy_score=75.0,
+                    overall_score=75.0,
+                    structure_score=80.0,
+                    coherency_score=75.0,
+                    factual_grounding_score=75.0,
+                    visual_textual_synergy_score=75.0,
                     reader_experience_score=75.0,
                 )
 
@@ -81,10 +89,13 @@ class TestAutoRegenerationLoop:
 
         # WritingAgent モック: 成功結果を返す
         from src.agents.orchestrator import AgentResult
-        mock_writing_agent.execute = AsyncMock(return_value=AgentResult(
-            next_agent=None,
-            artifacts={"drafted_text": "生成された本文", "word_count": 3000},
-        ))
+
+        mock_writing_agent.execute = AsyncMock(
+            return_value=AgentResult(
+                next_agent=None,
+                artifacts={"drafted_text": "生成された本文", "word_count": 3000},
+            )
+        )
 
         service = WritingService(
             writing_agent=mock_writing_agent,
@@ -119,17 +130,24 @@ class TestAutoRegenerationLoop:
         # 常に低スコア
         async def mock_calculate(*args, **kwargs):
             return MockBookScore(
-                overall_score=60.0, structure_score=50.0, coherency_score=60.0,
-                factual_grounding_score=60.0, visual_textual_synergy_score=60.0,
+                overall_score=60.0,
+                structure_score=50.0,
+                coherency_score=60.0,
+                factual_grounding_score=60.0,
+                visual_textual_synergy_score=60.0,
                 reader_experience_score=60.0,
             )
 
         mock_book_score_calculator.calculate = mock_calculate
 
         from src.agents.orchestrator import AgentResult
-        mock_writing_agent.execute = AsyncMock(return_value=AgentResult(
-            next_agent=None, artifacts={"drafted_text": "本文"},
-        ))
+
+        mock_writing_agent.execute = AsyncMock(
+            return_value=AgentResult(
+                next_agent=None,
+                artifacts={"drafted_text": "本文"},
+            )
+        )
 
         service = WritingService(
             writing_agent=mock_writing_agent,
@@ -161,17 +179,24 @@ class TestAutoRegenerationLoop:
         # 初回で高スコア
         async def mock_calculate(*args, **kwargs):
             return MockBookScore(
-                overall_score=85.0, structure_score=90.0, coherency_score=85.0,
-                factual_grounding_score=85.0, visual_textual_synergy_score=85.0,
+                overall_score=85.0,
+                structure_score=90.0,
+                coherency_score=85.0,
+                factual_grounding_score=85.0,
+                visual_textual_synergy_score=85.0,
                 reader_experience_score=85.0,
             )
 
         mock_book_score_calculator.calculate = mock_calculate
 
         from src.agents.orchestrator import AgentResult
-        mock_writing_agent.execute = AsyncMock(return_value=AgentResult(
-            next_agent=None, artifacts={"drafted_text": "本文"},
-        ))
+
+        mock_writing_agent.execute = AsyncMock(
+            return_value=AgentResult(
+                next_agent=None,
+                artifacts={"drafted_text": "本文"},
+            )
+        )
 
         service = WritingService(
             writing_agent=mock_writing_agent,
@@ -205,23 +230,33 @@ class TestAutoRegenerationLoop:
             call_count[0] += 1
             if call_count[0] == 1:
                 return MockBookScore(
-                    overall_score=60.0, structure_score=50.0, coherency_score=70.0,
-                    factual_grounding_score=70.0, visual_textual_synergy_score=65.0,
+                    overall_score=60.0,
+                    structure_score=50.0,
+                    coherency_score=70.0,
+                    factual_grounding_score=70.0,
+                    visual_textual_synergy_score=65.0,
                     reader_experience_score=60.0,
                 )
             else:
                 return MockBookScore(
-                    overall_score=75.0, structure_score=80.0, coherency_score=75.0,
-                    factual_grounding_score=75.0, visual_textual_synergy_score=75.0,
+                    overall_score=75.0,
+                    structure_score=80.0,
+                    coherency_score=75.0,
+                    factual_grounding_score=75.0,
+                    visual_textual_synergy_score=75.0,
                     reader_experience_score=75.0,
                 )
 
         mock_book_score_calculator.calculate = mock_calculate
 
         from src.agents.orchestrator import AgentResult
-        mock_writing_agent.execute = AsyncMock(return_value=AgentResult(
-            next_agent=None, artifacts={"drafted_text": "本文"},
-        ))
+
+        mock_writing_agent.execute = AsyncMock(
+            return_value=AgentResult(
+                next_agent=None,
+                artifacts={"drafted_text": "本文"},
+            )
+        )
 
         service = WritingService(
             writing_agent=mock_writing_agent,

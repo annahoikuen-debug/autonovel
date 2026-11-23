@@ -1,4 +1,5 @@
 """Tests for signal extractor and polarity classification."""
+
 from __future__ import annotations
 
 import pytest

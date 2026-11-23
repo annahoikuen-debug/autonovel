@@ -2,6 +2,7 @@
 Unit tests for EpisodePipeline to verify no infinite recursion.
 PLAN 02: エンタメ演出強化・マルチジャンル＆配信・掲示板演出
 """
+
 import pytest
 from unittest.mock import AsyncMock
 from src.agents.episode_pipeline import EpisodePipeline
@@ -45,13 +46,13 @@ async def test_episode_pipeline_no_recursion():
 
     # 呼び出し引数の検証
     calls = mock_agent._write_single_episode_core.call_args_list
-    assert calls[0][1]['ep_num'] == 1  # 第1話の呼び出し
-    assert calls[1][1]['ep_num'] == 2  # 第2話の呼び出し
+    assert calls[0][1]["ep_num"] == 1  # 第1話の呼び出し
+    assert calls[1][1]["ep_num"] == 2  # 第2話の呼び出し
 
     # 全ての呼び出しで同じbook_idとbranch_idであることを確認
     for call in calls:
-        assert call[1]['book_id'] == 1
-        assert call[1]['branch_id'] == 1
+        assert call[1]["book_id"] == 1
+        assert call[1]["branch_id"] == 1
 
 
 @pytest.mark.asyncio

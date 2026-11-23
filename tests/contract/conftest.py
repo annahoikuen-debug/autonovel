@@ -1,4 +1,5 @@
 """Contract テスト用共有フィクスチャと設定."""
+
 from __future__ import annotations
 
 import pytest

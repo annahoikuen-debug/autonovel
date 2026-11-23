@@ -1,4 +1,5 @@
 """src.backend.engine_context の深層単体テスト (Step 6)。"""
+
 from __future__ import annotations
 
 import json
@@ -34,16 +35,12 @@ class TestContextModels:
         assert model.locked_foreshadowings == ["伏線1"]
 
     def test_system_config(self):
-        model = SystemConfig(
-            active_constraints=[{"type": "制約"}], pacing_instruction="テンポ速め"
-        )
+        model = SystemConfig(active_constraints=[{"type": "制約"}], pacing_instruction="テンポ速め")
         assert model.pacing_instruction == "テンポ速め"
         assert len(model.active_constraints) == 1
 
     def test_dynamic_state(self):
-        model = DynamicState(
-            character_states={"主人公": "活発"}, current_tension=70, unresolved_threads=["謎"]
-        )
+        model = DynamicState(character_states={"主人公": "活発"}, current_tension=70, unresolved_threads=["謎"])
         assert model.current_tension == 70
         assert model.character_states["主人公"] == "活発"
 
@@ -164,10 +161,7 @@ class TestContextManager:
         """
         manager._get_delegate = lambda: None
         await manager.build_past_context(book_id=42, end_ep=5)
-        calls = (
-            mock_repo.get_chapters_before.await_args_list
-            + mock_repo.get_relevant_past_logs.await_args_list
-        )
+        calls = mock_repo.get_chapters_before.await_args_list + mock_repo.get_relevant_past_logs.await_args_list
         assert calls, "リポジトリが一度も呼ばれていない"
         for call in calls:
             assert call.kwargs.get("book_id") == 42, f"book_id が伝播していない: {call}"
@@ -212,9 +206,7 @@ class TestContextManager:
         manager._get_delegate = lambda: None
         plot = _make_plot()
         chars = [_make_char("勇者", "主人公")]
-        char_ctx, prev_ctx = await manager.get_optimal_context(
-            book_id=1, ep_num=2, plots=plot, all_chars=chars
-        )
+        char_ctx, prev_ctx = await manager.get_optimal_context(book_id=1, ep_num=2, plots=plot, all_chars=chars)
         assert isinstance(char_ctx, str)
         assert isinstance(prev_ctx, str)
 
@@ -235,9 +227,7 @@ class TestContextManager:
         manager._get_delegate = lambda: None
         plot = _make_plot()
         chars = [_make_char("勇者", "主人公")]
-        data = await manager.get_structured_context_split(
-            book_id=1, ep_num=2, plot=plot, chars=chars
-        )
+        data = await manager.get_structured_context_split(book_id=1, ep_num=2, plot=plot, chars=chars)
         assert isinstance(data, ContextData)
         assert isinstance(data.immutable, ImmutableInput)
         assert isinstance(data.config, SystemConfig)

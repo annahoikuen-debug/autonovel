@@ -1,5 +1,6 @@
 from src.agents.prompt_composer import PromptComposer
 
+
 def test_prompt_composer_compose():
     composer = PromptComposer()
     composer.add_section("header", "システム指示")

@@ -1,4 +1,5 @@
 """src.easy_mode.phase3.media_mix の単体テスト。"""
+
 from __future__ import annotations
 
 import json
@@ -71,9 +72,7 @@ def test_panel_to_dict():
 
 
 def test_audio_cue_to_dict():
-    cue = AudioCue(
-        type="bgm", name="tension", description="不穏な BGM", duration=10.0, volume=0.8
-    )
+    cue = AudioCue(type="bgm", name="tension", description="不穏な BGM", duration=10.0, volume=0.8)
     d = cue.to_dict()
     assert d["type"] == "bgm"
     assert d["duration"] == 10.0
@@ -105,9 +104,7 @@ def test_audio_drama_generator_produces_script():
 
 
 def test_create_media_mix_exporter_runs():
-    exporter = create_media_mix_exporter(
-        "ハイファンタジー (R15)", {"characters": {"archetypes": {}}, "erotic": {}}
-    )
+    exporter = create_media_mix_exporter("ハイファンタジー (R15)", {"characters": {"archetypes": {}}, "erotic": {}})
     series = _make_series([_make_episode(1)])
     scripts = exporter.export_all(series.episodes[0], series, [MediaFormat.MANGA])
     assert MediaFormat.MANGA in scripts

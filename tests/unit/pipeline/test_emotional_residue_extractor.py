@@ -1,4 +1,5 @@
 """Tests for emotional residue extractor integration."""
+
 from __future__ import annotations
 
 import pytest
@@ -14,6 +15,7 @@ class TestEmotionalResidueExtractor:
     @pytest.fixture
     def vector_store(self):
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         store = RedisVectorStore(skip_connection_check=True)
         store.client = redis_client

@@ -45,16 +45,8 @@ def _module_matches_warning(warning_source: str, known_key: str) -> bool:
     # known_key（モジュールパス）をファイルパス形式に変換
     known_as_file = known_key.replace(".", "/")
     # warning_source（ファイルパス）をモジュールパス形式に変換
-    source_as_module = (
-        warning_source.replace("/", ".")
-        .replace(".py", "")
-        .replace(".__init__", "")
-    )
-    return (
-        known_as_file in warning_source
-        or source_as_module == known_key
-        or known_key in source_as_module
-    )
+    source_as_module = warning_source.replace("/", ".").replace(".py", "").replace(".__init__", "")
+    return known_as_file in warning_source or source_as_module == known_key or known_key in source_as_module
 
 
 def _import_modules_and_collect_deprecation_warnings() -> dict[str, list[str]]:
@@ -71,10 +63,7 @@ def _import_modules_and_collect_deprecation_warnings() -> dict[str, list[str]]:
         if module.endswith(".__init__"):
             module = module[: -len(".__init__")]
         # テストや __main__、migrations は対象外
-        if any(
-            part in module
-            for part in ("__main__", "migrations", "tests")
-        ):
+        if any(part in module for part in ("__main__", "migrations", "tests")):
             continue
         module_names.append(module)
 
@@ -120,10 +109,7 @@ def test_no_deprecation_warnings() -> None:
     known_ignored = 0
     for source_file, modules in warnings_map.items():
         # 既知の例外とマッチするか判定
-        matched = any(
-            _module_matches_warning(source_file, known)
-            for known in KNOWN_DEPRECATION_SOURCES
-        )
+        matched = any(_module_matches_warning(source_file, known) for known in KNOWN_DEPRECATION_SOURCES)
         if matched:
             known_ignored += len(modules)
         else:

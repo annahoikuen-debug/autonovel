@@ -4,6 +4,7 @@ docs/TEST_GATE_POLICY.md の「未達」定義・禁止語リスト、
 .github/workflows/ci.yml のコメント、
 docs/PLAN_C_SUMMARY.md の古い件数表記を検証する。
 """
+
 from __future__ import annotations
 
 from pathlib import Path

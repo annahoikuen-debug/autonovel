@@ -72,9 +72,7 @@ async def test_episode_writing_workflow_pipeline_success(harness):
         mock_enqueue.assert_called_once_with(book_id, write_from, write_to)
 
         # Verify reporter report for audit
-        reporter.report.assert_any_call(
-            "⚖️ 非同期の論理監査タスク (Shadow Mode) をエンキューしました。", "info"
-        )
+        reporter.report.assert_any_call("⚖️ 非同期の論理監査タスク (Shadow Mode) をエンキューしました。", "info")
 
 
 @pytest.mark.asyncio

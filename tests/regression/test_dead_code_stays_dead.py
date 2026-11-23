@@ -36,9 +36,7 @@ def _tracked_files() -> set[str]:
 
 def test_dead_code_stays_dead() -> None:
     """removed_modules.json に登録されたモジュールが復活していないこと。"""
-    removed = json.loads(
-        (REPO_ROOT / "config" / "removed_modules.json").read_text(encoding="utf-8")
-    )
+    removed = json.loads((REPO_ROOT / "config" / "removed_modules.json").read_text(encoding="utf-8"))
     modules = removed.get("modules", [])
     tracked = _tracked_files()
 

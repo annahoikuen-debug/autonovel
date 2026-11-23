@@ -3,6 +3,7 @@ import time
 from unittest.mock import AsyncMock, MagicMock
 from src.backend.workflows.writing_langgraph import WritingGraphManager
 
+
 @pytest.mark.asyncio
 async def test_streamlined_writing_initial_state_limits():
     """v5.0: 初期状態のmax_ac_iterが1に制限され、start_timeが記録されることを検証"""
@@ -19,6 +20,7 @@ async def test_streamlined_writing_initial_state_limits():
     assert state["max_ac_iter"] == 1
     assert "start_time" in state
     assert time.time() >= state["start_time"]
+
 
 @pytest.mark.asyncio
 async def test_streamlined_writing_early_exit():
@@ -37,11 +39,12 @@ async def test_streamlined_writing_early_exit():
     decision = graph_mgr._should_continue_critic(passing_state)
     assert decision == "finish"
 
+
 @pytest.mark.asyncio
 async def test_streamlined_writing_focused_patch_healing():
     """v5.0: actionable_patchが存在する場合、全文再生成を行わずに1パッチ置換が適用されることを検証"""
     manager = MagicMock()
-    manager._phase_healing = AsyncMock() # 全文再生成モック
+    manager._phase_healing = AsyncMock()  # 全文再生成モック
     graph_mgr = WritingGraphManager(manager)
 
     state = {

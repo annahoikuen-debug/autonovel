@@ -84,9 +84,7 @@ async def test_shadow_disabled_single_mode(monkeypatch):
     auditor = _FakeAuditor(_FakeReport())
     panel = _FakePanel(verdict=PairwiseVerdict(winner="A", axis="overall"))
 
-    result = await run_shadow_audit(
-        auditor, panel, "テスト本文です。", book_id=1, ep_num=1
-    )
+    result = await run_shadow_audit(auditor, panel, "テスト本文です。", book_id=1, ep_num=1)
 
     assert isinstance(result, ShadowAuditResult)
     assert result.shadow_enabled is False
@@ -111,9 +109,7 @@ async def test_shadow_enabled_no_anchor(monkeypatch):
     auditor = _FakeAuditor(_FakeReport())
     panel = _FakePanel(verdict=PairwiseVerdict(winner="A", axis="overall"))
 
-    result = await run_shadow_audit(
-        auditor, panel, "テスト本文です。", book_id=1, ep_num=1
-    )
+    result = await run_shadow_audit(auditor, panel, "テスト本文です。", book_id=1, ep_num=1)
 
     assert result.shadow_enabled is True
     assert result.judge_mode == "shadow"

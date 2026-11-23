@@ -43,9 +43,7 @@ class TestVoicevoxFallback:
 
     def test_fallback_empty_file_generates_silent_wav(self, tmp_path):
         """サーバー不在時 fallback_mode=empty_file は無音 WAV を生成すること。"""
-        provider = VoicevoxProvider(
-            base_url="http://localhost:59999", fallback_mode="empty_file"
-        )
+        provider = VoicevoxProvider(base_url="http://localhost:59999", fallback_mode="empty_file")
         out = tmp_path / "out.wav"
         result = provider.synthesize("テスト", out)
         assert result == out

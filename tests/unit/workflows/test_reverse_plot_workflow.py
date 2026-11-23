@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock
 from src.backend.workflows.reverse_plot_workflow import ReversePlotGenerationWorkflow
 
+
 @pytest.mark.asyncio
 async def test_reverse_plot_workflow():
     """ReversePlotGenerationWorkflowのextract_plotメソッドをテスト"""

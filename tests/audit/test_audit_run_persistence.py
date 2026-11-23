@@ -12,9 +12,7 @@ from src.agents.specialists.unified_auditor import UnifiedAuditor
 from tests.mocks.llm_adapter import MockLLMAdapter
 
 
-_TEST_TEXT = (
-    "これはテスト用の本文です。十分な長さを持たせるために、複数の文章を含めておきます。"
-)
+_TEST_TEXT = "これはテスト用の本文です。十分な長さを持たせるために、複数の文章を含めておきます。"
 
 
 class _FakeSession:

@@ -1,8 +1,11 @@
 """config.py と .env.example のキー整合性を検証するスクリプト。"""
+
 from pathlib import Path
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.backend.config import Settings
+
 
 def check_consistency():
     config_keys = set(Settings.model_fields.keys())
@@ -30,6 +33,7 @@ def check_consistency():
         print(f"WARNING: Keys in config.py but missing in .env.example: {missing_in_example}")
     else:
         print("SUCCESS: config.py and .env.example are in sync!")
+
 
 if __name__ == "__main__":
     check_consistency()

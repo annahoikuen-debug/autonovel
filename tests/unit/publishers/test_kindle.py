@@ -100,7 +100,13 @@ class TestKindlePublisher:
 
         mock_client.post = AsyncMock(side_effect=[book_response, upload_response])
 
-        novel = {"title": "テスト本", "synopsis": "あらすじ", "genre": "fantasy", "tags": ["ファンタジー"], "author": "著者名"}
+        novel = {
+            "title": "テスト本",
+            "synopsis": "あらすじ",
+            "genre": "fantasy",
+            "tags": ["ファンタジー"],
+            "author": "著者名",
+        }
         chapter = {"ep_num": 1, "title": "第1章", "content": "本文テスト"}
 
         result = await publisher.publish(novel, chapter, credentials)

@@ -29,9 +29,7 @@ async def test_llm_calls_per_episode_recorded():
 
     text = await _metrics_text()
     # prometheus_client は Counter 名に _total を付与し、ラベルをアルファベット順に出力する
-    expected = (
-        'llm_calls_per_episode_total{episode_id="ep-per-001",model="gemini-1.5-pro",tier="tier1"} 2.0'
-    )
+    expected = 'llm_calls_per_episode_total{episode_id="ep-per-001",model="gemini-1.5-pro",tier="tier1"} 2.0'
     assert expected in text
 
 
@@ -41,10 +39,7 @@ async def test_audit_call_recorded():
     record_audit_call(episode_id=episode_id, specialist="consistency", provider="gemini")
 
     text = await _metrics_text()
-    expected = (
-        'llm_calls_audit_phase_total{episode_id="ep-audit-001",provider="gemini",'
-        'specialist="consistency"} 1.0'
-    )
+    expected = 'llm_calls_audit_phase_total{episode_id="ep-audit-001",provider="gemini",specialist="consistency"} 1.0'
     assert expected in text
 
 
@@ -60,6 +55,5 @@ async def test_metrics_endpoint_outputs_llm_cost_metrics():
     assert "# TYPE llm_calls_audit_phase_total counter" in text
     assert 'llm_calls_per_episode_total{episode_id="ep-metrics-001",model="gpt-4o",tier="tier2"} 1.0' in text
     assert (
-        'llm_calls_audit_phase_total{episode_id="ep-metrics-001",provider="openrouter",'
-        'specialist="factual"} 1.0'
+        'llm_calls_audit_phase_total{episode_id="ep-metrics-001",provider="openrouter",specialist="factual"} 1.0'
     ) in text

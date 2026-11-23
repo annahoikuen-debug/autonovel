@@ -26,21 +26,27 @@ def run_benchmark():
     ]
     for i in range(120):
         if i < 10:
-            entities.append({"name": f"主要人物_{i}", "labels": ["Character"], "properties": {"role": f"主要キャラ_{i}"}})
+            entities.append(
+                {"name": f"主要人物_{i}", "labels": ["Character"], "properties": {"role": f"主要キャラ_{i}"}}
+            )
         elif i < 40:
             entities.append({"name": f"帝国組織_{i}", "labels": ["Country"], "properties": {"role": f"国家勢力_{i}"}})
         elif i < 80:
-            entities.append({"name": f"古代秘宝_{i}", "labels": ["Item"], "properties": {"role": f"アーティファクト_{i}"}})
+            entities.append(
+                {"name": f"古代秘宝_{i}", "labels": ["Item"], "properties": {"role": f"アーティファクト_{i}"}}
+            )
         else:
             entities.append({"name": f"神聖術式_{i}", "labels": ["Skill"], "properties": {"role": f"奥義スキル_{i}"}})
 
     relations = []
     for i in range(60):
-        relations.append({
-            "source": f"主要人物_{i % 10}",
-            "target": f"古代秘宝_{40 + i}",
-            "type": "所持および継承" if i % 2 == 0 else "宿命の対立",
-        })
+        relations.append(
+            {
+                "source": f"主要人物_{i % 10}",
+                "target": f"古代秘宝_{40 + i}",
+                "type": "所持および継承" if i % 2 == 0 else "宿命の対立",
+            }
+        )
 
     # 2. Setup realistic novel world text (2,000+ tokens)
     raw_text = (
@@ -96,7 +102,9 @@ def run_benchmark():
 
     # Criterion 3: Token budget obeyed and high reduction ratio achieved (>= 60%)
     assert result.final_token_count <= 1200, f"Token budget exceeded: {result.final_token_count} > 1200"
-    assert result.overall_reduction_ratio >= 0.60, f"Reduction ratio too low: {result.overall_reduction_ratio * 100:.1f}% < 60%"
+    assert result.overall_reduction_ratio >= 0.60, (
+        f"Reduction ratio too low: {result.overall_reduction_ratio * 100:.1f}% < 60%"
+    )
 
     print("=== Benchmark Passed Successfully (ALL CRITERIA MET) ===")
     return 0

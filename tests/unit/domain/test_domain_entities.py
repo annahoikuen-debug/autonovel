@@ -86,8 +86,13 @@ class TestNovelEntity:
         n1 = Novel.create(title="a", author_id=user_id)
         # copy with same id
         n2 = Novel(
-            id=n1.id, title=Title("b"), author_id=user_id, genre=Genre(""),
-            catchcopy=Catchcopy(""), synopsis=Summary(""), concept=Summary(""),
+            id=n1.id,
+            title=Title("b"),
+            author_id=user_id,
+            genre=Genre(""),
+            catchcopy=Catchcopy(""),
+            synopsis=Summary(""),
+            concept=Summary(""),
         )
         assert n1 == n2
         assert hash(n1) == hash(n2)
@@ -152,23 +157,35 @@ class TestVolumeEntity:
 
     def test_valid(self):
         v = Volume(
-            id=NovelId.generate(), novel_id=NovelId.generate(), number=1,
-            title=Title("第一巻"), start_episode=1, end_episode=10,
+            id=NovelId.generate(),
+            novel_id=NovelId.generate(),
+            number=1,
+            title=Title("第一巻"),
+            start_episode=1,
+            end_episode=10,
         )
         assert v.number == 1
 
     def test_invalid_number(self):
         with pytest.raises(ValueError):
             Volume(
-                id=NovelId.generate(), novel_id=NovelId.generate(), number=0,
-                title=Title("x"), start_episode=1, end_episode=10,
+                id=NovelId.generate(),
+                novel_id=NovelId.generate(),
+                number=0,
+                title=Title("x"),
+                start_episode=1,
+                end_episode=10,
             )
 
     def test_invalid_range(self):
         with pytest.raises(ValueError):
             Volume(
-                id=NovelId.generate(), novel_id=NovelId.generate(), number=1,
-                title=Title("x"), start_episode=5, end_episode=1,
+                id=NovelId.generate(),
+                novel_id=NovelId.generate(),
+                number=1,
+                title=Title("x"),
+                start_episode=5,
+                end_episode=1,
             )
 
 
@@ -271,16 +288,23 @@ class TestPlotPointEntity:
 
     def test_valid(self):
         pp = PlotPoint(
-            id=PlotId.generate(), plot_id=PlotId.generate(), order=1,
-            description=TextContent("対立点"), type="conflict", tension_contribution=10,
+            id=PlotId.generate(),
+            plot_id=PlotId.generate(),
+            order=1,
+            description=TextContent("対立点"),
+            type="conflict",
+            tension_contribution=10,
         )
         assert pp.order == 1
 
     def test_invalid_order(self):
         with pytest.raises(ValueError):
             PlotPoint(
-                id=PlotId.generate(), plot_id=PlotId.generate(), order=-1,
-                description=TextContent("x"), type="setup",
+                id=PlotId.generate(),
+                plot_id=PlotId.generate(),
+                order=-1,
+                description=TextContent("x"),
+                type="setup",
             )
 
 
@@ -289,26 +313,37 @@ class TestArcEntity:
 
     def test_create_factory(self):
         arc = Arc.create(
-            novel_id=NovelId.generate(), name="序章アーク",
-            description=MarkdownText("説明"), start_episode=1, end_episode=10,
+            novel_id=NovelId.generate(),
+            name="序章アーク",
+            description=MarkdownText("説明"),
+            start_episode=1,
+            end_episode=10,
         )
         assert arc.get_span() == 10
         assert arc.status == PlotStatus.PLANNED
 
     def test_invalid_name(self):
         with pytest.raises(ValueError):
-            Arc.create(novel_id=NovelId.generate(), name="", description=MarkdownText(""), start_episode=1, end_episode=2)
+            Arc.create(
+                novel_id=NovelId.generate(), name="", description=MarkdownText(""), start_episode=1, end_episode=2
+            )
 
     def test_invalid_start(self):
         with pytest.raises(ValueError):
-            Arc.create(novel_id=NovelId.generate(), name="a", description=MarkdownText(""), start_episode=0, end_episode=2)
+            Arc.create(
+                novel_id=NovelId.generate(), name="a", description=MarkdownText(""), start_episode=0, end_episode=2
+            )
 
     def test_invalid_range(self):
         with pytest.raises(ValueError):
-            Arc.create(novel_id=NovelId.generate(), name="a", description=MarkdownText(""), start_episode=5, end_episode=1)
+            Arc.create(
+                novel_id=NovelId.generate(), name="a", description=MarkdownText(""), start_episode=5, end_episode=1
+            )
 
     def test_contains_episode(self):
-        arc = Arc.create(novel_id=NovelId.generate(), name="a", description=MarkdownText(""), start_episode=3, end_episode=8)
+        arc = Arc.create(
+            novel_id=NovelId.generate(), name="a", description=MarkdownText(""), start_episode=3, end_episode=8
+        )
         assert arc.contains_episode(3) is True
         assert arc.contains_episode(8) is True
         assert arc.contains_episode(2) is False

@@ -91,9 +91,7 @@ class TestRetrieveWithReflection:
         )
         session = MagicMock()
 
-        result = await reflective.retrieve_with_reflection(
-            session, query="アリス 剣", book_id=1
-        )
+        result = await reflective.retrieve_with_reflection(session, query="アリス 剣", book_id=1)
 
         assert isinstance(result, ReflectiveRetrievalResult)
         assert result.iterations == 1
@@ -106,17 +104,17 @@ class TestRetrieveWithReflection:
         # Verify ReflectiveDoc structure
         assert all(isinstance(d, ReflectiveDoc) for d in result.documents)
         for doc in result.documents:
-            assert hasattr(doc, 'to_citation_dict')
-            assert hasattr(doc, 'context_fit_details')
-            assert hasattr(doc, 'cosine_score')
-            assert hasattr(doc, 'context_fit_score')
-            assert hasattr(doc, 'combined_score')
-            assert hasattr(doc, 'iteration_found')
-            assert hasattr(doc, 'bm25_keywords_matched')
+            assert hasattr(doc, "to_citation_dict")
+            assert hasattr(doc, "context_fit_details")
+            assert hasattr(doc, "cosine_score")
+            assert hasattr(doc, "context_fit_score")
+            assert hasattr(doc, "combined_score")
+            assert hasattr(doc, "iteration_found")
+            assert hasattr(doc, "bm25_keywords_matched")
             citation = doc.to_citation_dict()
-            assert 'scores' in citation
-            assert 'conflicts' in citation
-            assert 'entity_valid' in citation
+            assert "scores" in citation
+            assert "conflicts" in citation
+            assert "entity_valid" in citation
 
     @pytest.mark.asyncio
     async def test_multi_iteration_max_reached(self, mock_rag_service, sample_docs):
@@ -130,9 +128,7 @@ class TestRetrieveWithReflection:
         )
         session = MagicMock()
 
-        result = await reflective.retrieve_with_reflection(
-            session, query="アリス", book_id=1
-        )
+        result = await reflective.retrieve_with_reflection(session, query="アリス", book_id=1)
 
         assert result.iterations == 3
         assert result.converged is False
@@ -202,7 +198,9 @@ async def test_citation_output_structure(mock_rag_service, sample_docs):
     assert isinstance(citations, list)
     assert len(citations) == 2
     for cit in citations:
-        assert all(k in cit for k in ["id", "content_preview", "source", "iteration", "scores", "conflicts", "entity_valid"])
+        assert all(
+            k in cit for k in ["id", "content_preview", "source", "iteration", "scores", "conflicts", "entity_valid"]
+        )
         assert all(sk in cit["scores"] for sk in ["cosine", "context_fit", "combined"])
         assert isinstance(cit["conflicts"], list)
         assert isinstance(cit["entity_valid"], bool)

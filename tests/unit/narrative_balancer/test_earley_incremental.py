@@ -3,10 +3,10 @@
 conftest が ortools 未導入時に特定キーワードを含むパスを収集から除外するため、
 モジュールは importlib で関数内インポートする。
 """
+
 from __future__ import annotations
 
 import importlib
-
 
 
 def _incremental():
@@ -81,9 +81,7 @@ class TestEarleyParser:
 
     def test_grammar_defaults_when_empty_dict(self):
         # grammar={} は falsy なので既定 GRAMMAR が使われる
-        forest = _parser().EarleyParser(grammar={}).parse_prefix(
-            [_symbols().Terminal.SETUP]
-        )
+        forest = _parser().EarleyParser(grammar={}).parse_prefix([_symbols().Terminal.SETUP])
         assert forest.is_valid_prefix is True
         assert len(forest.chart) == 2
 
@@ -110,9 +108,7 @@ class TestEarleyParser:
 
     def test_max_items_pruning_does_not_crash(self):
         p = _parser().EarleyParser(max_items_per_chart=1)
-        forest = p.parse_prefix(
-            [_symbols().Terminal.SETUP, _symbols().Terminal.RISING]
-        )
+        forest = p.parse_prefix([_symbols().Terminal.SETUP, _symbols().Terminal.RISING])
         assert forest.consumed_terminals == 2
 
 

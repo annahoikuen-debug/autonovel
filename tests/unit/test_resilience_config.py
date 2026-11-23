@@ -136,6 +136,7 @@ services:
     def test_global_resilience_config_instance(self):
         """グローバルインスタンスが正しく初期化される。"""
         from src.shared.resilience_config import resilience_config
+
         assert isinstance(resilience_config, ResilienceConfigLoader)
 
     def test_config_data_isolation_between_instances(self):

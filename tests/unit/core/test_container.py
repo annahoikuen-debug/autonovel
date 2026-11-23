@@ -1,4 +1,5 @@
 """Core AppContainer tests (Step 27)."""
+
 from src.core.container import AppContainer, AppContainer2
 
 

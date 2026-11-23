@@ -65,8 +65,7 @@ async def test_illustration_agent_itself_stays_terminal():
     agent = _make_illustration_agent()
     result = await agent.execute(_ctx_without_request())
     assert result.next_agent is None, (
-        "IllustrationAgent 本体が MARKETING を返すようになっていない。"
-        "manifest 経路で終端ノードの契約が壊れる。"
+        "IllustrationAgent 本体が MARKETING を返すようになっていない。manifest 経路で終端ノードの契約が壊れる。"
     )
 
 
@@ -76,9 +75,7 @@ async def test_registered_node_chains_to_marketing():
     node = _make_execute_node(_make_illustration_agent(), AgentName.MARKETING)
     result = await node(_ctx_without_request())
     assert result.error is None
-    assert result.next_agent == AgentName.MARKETING, (
-        "no-op でも後続チェーンを止めている（K4 の再発）"
-    )
+    assert result.next_agent == AgentName.MARKETING, "no-op でも後続チェーンを止めている（K4 の再発）"
 
 
 @pytest.mark.asyncio
@@ -98,9 +95,7 @@ def test_public_run_api_is_preserved():
     from src.agents.illustration_agent import IllustrationAgent
 
     sig = inspect.signature(IllustrationAgent.run)
-    has_var_keyword = any(
-        p.kind is inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values()
-    )
+    has_var_keyword = any(p.kind is inspect.Parameter.VAR_KEYWORD for p in sig.parameters.values())
     assert has_var_keyword, (
         "IllustrationAgent.run の **kwargs シグネチャを壊した。"
         "illustration_workflow.py / illustrations.py がDependsしている"
@@ -141,6 +136,4 @@ def test_manifest_still_declares_illustration_terminal():
     """manifest 経路の終端契約が維持されていること（回帰防止）。"""
     text = MANIFEST.read_text(encoding="utf-8")
     block = text.split("name: IllustrationSkill", 1)[-1].split("- name:", 1)[0]
-    assert "runs_before: []" in block, (
-        "manifest で IllustrationSkill が終端ノードでなくなった"
-    )
+    assert "runs_before: []" in block, "manifest で IllustrationSkill が終端ノードでなくなった"

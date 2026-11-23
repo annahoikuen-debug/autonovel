@@ -5,6 +5,7 @@ from src.backend.routers import billing_webhook
 from src.backend.routers.billing_webhook import handle_stripe_webhook
 from src.backend.database.models_billing import StripeWebhookEvent
 
+
 @pytest.mark.asyncio
 async def test_billing_webhook_idempotency(monkeypatch):
     # 本番相当の安全設定（署名シークレット必須）でも検証経路を通すため、
@@ -13,7 +14,9 @@ async def test_billing_webhook_idempotency(monkeypatch):
     event_id = "evt_test_idempotent_123"
 
     mock_request = MagicMock(spec=Request)
-    mock_request.body = AsyncMock(return_value=b'{"id": "evt_test_idempotent_123", "type": "checkout.session.completed"}')
+    mock_request.body = AsyncMock(
+        return_value=b'{"id": "evt_test_idempotent_123", "type": "checkout.session.completed"}'
+    )
     mock_request.headers = {"stripe-signature": "sig_test"}
 
     # Mock database session

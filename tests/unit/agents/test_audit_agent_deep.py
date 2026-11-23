@@ -103,7 +103,14 @@ async def test_plot_integrity_monitor_check_integrity_shortcuts():
 def test_plot_integrity_monitor_calculate_score():
     monitor = PlotIntegrityMonitor()
     all_links = [
-        CausalityLink(source="content", cause_entity="A", cause_event="attack", effect_entity="B", effect_event="hurt", confidence=0.9)
+        CausalityLink(
+            source="content",
+            cause_entity="A",
+            cause_event="attack",
+            effect_entity="B",
+            effect_event="hurt",
+            confidence=0.9,
+        )
     ]
     # No broken chains, no contradictions
     score1 = monitor._calculate_score(broken_chains=[], foreshadowing=[], contradictions=[], all_links=all_links)
@@ -111,7 +118,9 @@ def test_plot_integrity_monitor_calculate_score():
 
     # With contradictions
     contradictions = ["Contradiction 1"]
-    score2 = monitor._calculate_score(broken_chains=[], foreshadowing=[], contradictions=contradictions, all_links=all_links)
+    score2 = monitor._calculate_score(
+        broken_chains=[], foreshadowing=[], contradictions=contradictions, all_links=all_links
+    )
     assert score2 < score1
 
 

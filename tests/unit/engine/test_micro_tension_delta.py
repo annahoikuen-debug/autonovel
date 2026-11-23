@@ -51,8 +51,13 @@ class _PromptCapturingLLM:
 
 class _FakePM:
     async def build_micro_scene_expander_prompt(
-        self, macro_skeleton, previous_ending_text="", characters_summary="",
-        book_id=None, spine=None, spine_quality=None,
+        self,
+        macro_skeleton,
+        previous_ending_text="",
+        characters_summary="",
+        book_id=None,
+        spine=None,
+        spine_quality=None,
     ):
         return "micro prompt"
 

@@ -38,9 +38,7 @@ def test_min_chars_bypass():
     """min_chars 未満の入力は元のまま返される。"""
     for tid, transform in TRANSFORM_REGISTRY.items():
         result = transform.apply(_SHORT_TEXT)
-        assert result == _SHORT_TEXT, (
-            f"{transform.id}: min_chars 未満だが元のテキストと異なる出力 ({result!r})"
-        )
+        assert result == _SHORT_TEXT, f"{transform.id}: min_chars 未満だが元のテキストと異なる出力 ({result!r})"
 
 
 def test_crlf_input_handled():

@@ -173,7 +173,12 @@ class TestExpanderSignature:
 
         class _FakePM:
             async def build_macro_plot_skeleton_prompt(
-                self, bible_json_str, ep_range, book_id=None, spine=None, spine_quality=None,
+                self,
+                bible_json_str,
+                ep_range,
+                book_id=None,
+                spine=None,
+                spine_quality=None,
                 tension_curve=None,
             ):
                 captured["prompt_curve"] = tension_curve
@@ -206,9 +211,7 @@ class TestExpanderSignature:
         monkeypatch.setattr(sg, "get_gate_mode", lambda: "warn")
 
         expander = DefaultPlotExpander(repo=_FakeRepo(), pm=_FakePM(), llm=_FakeLLM())
-        await expander.expand_macro_skeletons(
-            book_id=1, target_ep_list=[1, 2, 3], tension_curve=CURVE
-        )
+        await expander.expand_macro_skeletons(book_id=1, target_ep_list=[1, 2, 3], tension_curve=CURVE)
         monkeypatch.undo()
 
         assert captured["prompt_curve"] == CURVE

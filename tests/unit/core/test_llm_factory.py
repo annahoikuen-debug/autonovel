@@ -38,10 +38,9 @@ class TestCreateUnifiedLLMClient:
 
     def test_create_openai_client(self):
         """'openai' プロバイダで OpenAIUnifiedClient が生成されること。"""
-        with patch(
-            "src.infrastructure.config.settings.settings.OPENAI_API_KEY", "sk-test-openai-key"
-        ), patch(
-            "src.infrastructure.config.settings.settings.OPENAI_BASE_URL", None
+        with (
+            patch("src.infrastructure.config.settings.settings.OPENAI_API_KEY", "sk-test-openai-key"),
+            patch("src.infrastructure.config.settings.settings.OPENAI_BASE_URL", None),
         ):
             client = create_unified_llm_client("openai")
             assert client is not None
@@ -53,10 +52,9 @@ class TestCreateUnifiedLLMClient:
 
     def test_create_claude_client(self):
         """'claude' プロバイダで ClaudeUnifiedClient が生成されること。"""
-        with patch(
-            "src.infrastructure.config.settings.settings.ANTHROPIC_API_KEY", "sk-ant-test-key"
-        ), patch(
-            "src.infrastructure.config.settings.settings.ANTHROPIC_MODEL", "claude-3-sonnet"
+        with (
+            patch("src.infrastructure.config.settings.settings.ANTHROPIC_API_KEY", "sk-ant-test-key"),
+            patch("src.infrastructure.config.settings.settings.ANTHROPIC_MODEL", "claude-3-sonnet"),
         ):
             client = create_unified_llm_client("claude")
             assert client is not None
@@ -68,10 +66,9 @@ class TestCreateUnifiedLLMClient:
 
     def test_create_gemini_client(self):
         """'gemini' プロバイダで GeminiUnifiedClient が生成されること。"""
-        with patch(
-            "src.infrastructure.config.settings.settings.GEMINI_API_KEY", "AI-test-gemini-key"
-        ), patch(
-            "src.infrastructure.config.settings.settings.GEMINI_MODEL", "gemini-pro"
+        with (
+            patch("src.infrastructure.config.settings.settings.GEMINI_API_KEY", "AI-test-gemini-key"),
+            patch("src.infrastructure.config.settings.settings.GEMINI_MODEL", "gemini-pro"),
         ):
             client = create_unified_llm_client("gemini")
             assert client is not None

@@ -1,4 +1,5 @@
 """Tests for EmotionalBeat data class."""
+
 from __future__ import annotations
 
 import pytest
@@ -33,40 +34,57 @@ class TestEmotionalBeat:
 
     def test_beat_delta_clamping(self):
         """deltaが-1.0~1.0にクランプ"""
-        beat = EmotionalBeat(episode=1, scene=1, source="A", target="B",
-                             emotion=EmotionType.AFFECTION, delta=1.5, cause="test")
+        beat = EmotionalBeat(
+            episode=1, scene=1, source="A", target="B", emotion=EmotionType.AFFECTION, delta=1.5, cause="test"
+        )
         assert beat.delta == 1.0
 
-        beat2 = EmotionalBeat(episode=1, scene=1, source="A", target="B",
-                              emotion=EmotionType.AFFECTION, delta=-1.5, cause="test")
+        beat2 = EmotionalBeat(
+            episode=1, scene=1, source="A", target="B", emotion=EmotionType.AFFECTION, delta=-1.5, cause="test"
+        )
         assert beat2.delta == -1.0
 
     def test_beat_confidence_clamping(self):
         """confidenceが0.0~1.0にクランプ"""
-        beat = EmotionalBeat(episode=1, scene=1, source="A", target="B",
-                             emotion=EmotionType.AFFECTION, delta=0.5, cause="test",
-                             confidence=1.5)
+        beat = EmotionalBeat(
+            episode=1,
+            scene=1,
+            source="A",
+            target="B",
+            emotion=EmotionType.AFFECTION,
+            delta=0.5,
+            cause="test",
+            confidence=1.5,
+        )
         assert beat.confidence == 1.0
 
     def test_beat_validation_empty_source(self):
         """source空でエラー"""
         with pytest.raises(ValueError, match="source"):
-            EmotionalBeat(episode=1, scene=1, source="", target="B",
-                          emotion=EmotionType.AFFECTION, delta=0.5, cause="test")
+            EmotionalBeat(
+                episode=1, scene=1, source="", target="B", emotion=EmotionType.AFFECTION, delta=0.5, cause="test"
+            )
 
     def test_beat_validation_empty_cause(self):
         """空のcauseはEmotionalBeatでは許可される（バリデーターで警告）"""
-        beat = EmotionalBeat(episode=1, scene=1, source="A", target="B",
-                             emotion=EmotionType.AFFECTION, delta=0.5, cause="")
+        beat = EmotionalBeat(
+            episode=1, scene=1, source="A", target="B", emotion=EmotionType.AFFECTION, delta=0.5, cause=""
+        )
         # EmotionalBeat自体は空causeを許可（バリデーターでチェック）
         assert beat.cause == ""
 
     def test_to_signal_conversion(self):
         """EmotionalSignalへの変換"""
         beat = EmotionalBeat(
-            episode=14, scene=3, source="A", target="B",
-            emotion=EmotionType.FEAR, delta=0.6,
-            cause="ep14 betrayal", confidence=0.9, hidden=True,
+            episode=14,
+            scene=3,
+            source="A",
+            target="B",
+            emotion=EmotionType.FEAR,
+            delta=0.6,
+            cause="ep14 betrayal",
+            confidence=0.9,
+            hidden=True,
         )
         signal = beat.to_signal()
 
@@ -83,9 +101,15 @@ class TestEmotionalBeat:
     def test_from_dict_roundtrip(self):
         """辞書変換ラウンドトリップ"""
         original = EmotionalBeat(
-            episode=14, scene=3, source="A", target="B",
-            emotion=EmotionType.FEAR, delta=0.6,
-            cause="ep14 betrayal", confidence=0.8, hidden=True,
+            episode=14,
+            scene=3,
+            source="A",
+            target="B",
+            emotion=EmotionType.FEAR,
+            delta=0.6,
+            cause="ep14 betrayal",
+            confidence=0.8,
+            hidden=True,
             metadata={"note": "important"},
         )
 
@@ -106,8 +130,11 @@ class TestEmotionalBeat:
     def test_from_dict_defaults(self):
         """辞書からの構築でデフォルト値適用"""
         data = {
-            "source": "A", "target": "B", "emotion": "fear",
-            "delta": 0.5, "cause": "test",
+            "source": "A",
+            "target": "B",
+            "emotion": "fear",
+            "delta": 0.5,
+            "cause": "test",
         }
         beat = EmotionalBeat.from_dict(data, episode=1, scene=1)
 

@@ -3,6 +3,7 @@
 レビューで「eps=5 で大団円がクライマックスより先」「eps=8,10 でフィナーレが到達不能」
 が発見された。既存テストは 2 つの窓を 1 度も同時に踏んでいなかったため緑だった。
 """
+
 from __future__ import annotations
 
 import re
@@ -34,9 +35,7 @@ def test_finale_never_precedes_climax(eps: int):
     """**意味の反転を検出する**。フィナーレがクライマックスより前に出てはならない。"""
     clim, fin = _windows(eps)
     if fin:
-        assert min(fin) > max(clim), (
-            f"eps={eps}: フィナーレ {fin} がクライマックス {clim} より前/重複"
-        )
+        assert min(fin) > max(clim), f"eps={eps}: フィナーレ {fin} がクライマックス {clim} より前/重複"
 
 
 @pytest.mark.parametrize("eps", EPS_LIST)
@@ -47,8 +46,7 @@ def test_finale_appears_whenever_there_is_room(eps: int):
     room = [e for e in range(1, eps + 1) if e > max(clim)]
     if room:
         assert fin, (
-            f"eps={eps}: クライマックス（{max(clim)}話）の後に {room} 話あるのに"
-            "フィナーレ分岐が発火しない（到達不能）"
+            f"eps={eps}: クライマックス（{max(clim)}話）の後に {room} 話あるのにフィナーレ分岐が発火しない（到達不能）"
         )
         assert min(fin) == room[0] or min(fin) > max(clim)
 
@@ -61,8 +59,7 @@ def test_labels_depend_only_on_relative_position(eps: int):
             continue
         m = 3 * (k - 1) + 1
         assert _label(k, eps) == _label(m, eps * 3), (
-            f"k={k}: eps={eps} と eps={eps * 3} (m={m}) でラベルが不一致 "
-            f"({_label(k, eps)!r} vs {_label(m, eps * 3)!r})"
+            f"k={k}: eps={eps} と eps={eps * 3} (m={m}) でラベルが不一致 ({_label(k, eps)!r} vs {_label(m, eps * 3)!r})"
         )
 
 

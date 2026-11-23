@@ -201,9 +201,7 @@ class TestTrackedLLMAdapter:
         assert without_system == ["あ", "い", "う"]
         without_system_tokens = tracker.usage_by_task["writing"]["input_tokens"]
 
-        assert with_system_tokens > without_system_tokens, (
-            "system_prompt が stream_text の計測に含まれていない"
-        )
+        assert with_system_tokens > without_system_tokens, "system_prompt が stream_text の計測に含まれていない"
 
     def test_unknown_attributes_are_delegated(self) -> None:
         """既存スキルがアダプタ固有メソッドを呼んでも壊れないこと。"""
@@ -273,15 +271,7 @@ class TestBuildTrackedAdapters:
 class TestProductionInjection:
     def test_generation_tasks_uses_tracked_adapters(self) -> None:
         """`generation_tasks.py` が計測付きアダプタを注入すること（Step 2 完了判定）。"""
-        source = (
-            ROOT_DIR / "src" / "backend" / "tasks" / "generation_tasks.py"
-        ).read_text("utf-8")
-        assert "build_tracked_adapters" in source, (
-            "generation_tasks.py が計測付きアダプタを注入していない"
-        )
-        assert '"token_tracker": tracked["token_tracker"]' in source, (
-            "dependencies に token_tracker が含まれていない"
-        )
-        assert '"llm": tracked["llm"]' in source, (
-            "dependencies の llm が計測付きになっていない"
-        )
+        source = (ROOT_DIR / "src" / "backend" / "tasks" / "generation_tasks.py").read_text("utf-8")
+        assert "build_tracked_adapters" in source, "generation_tasks.py が計測付きアダプタを注入していない"
+        assert '"token_tracker": tracked["token_tracker"]' in source, "dependencies に token_tracker が含まれていない"
+        assert '"llm": tracked["llm"]' in source, "dependencies の llm が計測付きになっていない"

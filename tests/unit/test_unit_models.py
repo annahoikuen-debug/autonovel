@@ -1,5 +1,6 @@
 from src.models.unified_audit import ConflictItemSchema, QualitativeAudit, UnifiedAuditReport
 
+
 def test_conflict_item_schema():
     item = ConflictItemSchema(
         category="rhythm",
@@ -13,6 +14,7 @@ def test_conflict_item_schema():
     assert item.category == "rhythm"
     assert item.severity == "high"
     assert item.confidence == 0.9
+
 
 def test_unified_audit_report_with_conflicts():
     qual = QualitativeAudit(

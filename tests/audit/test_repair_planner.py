@@ -27,8 +27,7 @@ def test_major_outcome_escalates_to_scene():
 
 
 def test_medium_outcome_uses_span_level_with_targets():
-    out = [{"audit_id": "deai", "severity": "medium", "error": None,
-            "feedback": "古代の魔導書"}]
+    out = [{"audit_id": "deai", "severity": "medium", "error": None, "feedback": "古代の魔導書"}]
     plan = plan_repair(TEXT, out, [])
     assert plan.level == "span"
     assert plan.targets and TEXT.count("\n\n") >= 0

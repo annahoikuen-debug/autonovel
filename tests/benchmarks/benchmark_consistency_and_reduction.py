@@ -6,9 +6,11 @@ Outputs a table showing token budget, reduction ratio, character retention, and 
 
 import sys
 import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', '..'))
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from src.engine.compression import FourLayerCompressor, ProtectedContext
+
 
 def run_benchmark():
     """Run benchmark varying token budgets and measuring retention rates."""
@@ -36,20 +38,20 @@ def run_benchmark():
     for budget in token_budgets:
         try:
             result = compressor.compress(
-                raw_text=text,
-                protected_context=protected,
-                max_tokens=budget,
-                bypass_cache=True
+                raw_text=text, protected_context=protected, max_tokens=budget, bypass_cache=True
             )
 
             if result.metrics:
-                print(f"{budget:11} | {result.overall_reduction_ratio:15.3f} | {result.metrics.character_retention_score:14.3f} | {result.metrics.foreshadowing_retention_score:20.3f} | {result.metrics.overall_consistency_score:20.3f}")
+                print(
+                    f"{budget:11} | {result.overall_reduction_ratio:15.3f} | {result.metrics.character_retention_score:14.3f} | {result.metrics.foreshadowing_retention_score:20.3f} | {result.metrics.overall_consistency_score:20.3f}"
+                )
             else:
                 print(f"{budget:11} | {result.overall_reduction_ratio:15.3f} | {'N/A':14} | {'N/A':20} | {'N/A':20}")
         except Exception as e:
             print(f"{budget:11} | ERROR: {e}")
 
     print("\nBenchmark completed.")
+
 
 if __name__ == "__main__":
     run_benchmark()

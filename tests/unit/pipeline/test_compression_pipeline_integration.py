@@ -1,4 +1,5 @@
 """Tests for compression pipeline integration with emotional residue."""
+
 from __future__ import annotations
 
 import pytest
@@ -13,6 +14,7 @@ class TestCompressionPipelineIntegration:
     @pytest.fixture
     def vector_store(self):
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         store = RedisVectorStore(skip_connection_check=True)
         store.client = redis_client
@@ -28,6 +30,7 @@ class TestCompressionPipelineIntegration:
 
         # 空白モデルでテスト
         from src.pipeline.nlp_init import get_nlp_for_testing
+
         nlp = get_nlp_for_testing()
         if "sentencizer" not in nlp.pipe_names:
             nlp.add_pipe("sentencizer")

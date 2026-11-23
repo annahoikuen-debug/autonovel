@@ -99,9 +99,7 @@ class TestPinnedFactsPlacementFlagOn:
         )
         idx_head = prompt.index(HEAD_MARKER)
         idx_work = prompt.index(WORK_CONTEXT_MARKER)
-        assert idx_head < idx_work, (
-            f"head ({idx_head}) should be before work_context ({idx_work})"
-        )
+        assert idx_head < idx_work, f"head ({idx_head}) should be before work_context ({idx_work})"
 
     @pytest.mark.asyncio
     async def test_tail_is_after_target_word_count_and_before_output_format(self):
@@ -116,8 +114,7 @@ class TestPinnedFactsPlacementFlagOn:
         idx_target = prompt.index(TARGET_WORD_COUNT_MARKER)
         idx_output = prompt.index(OUTPUT_FORMAT_MARKER)
         assert idx_target < idx_tail < idx_output, (
-            f"tail ({idx_tail}) should be between target_word_count ({idx_target}) "
-            f"and output_format ({idx_output})"
+            f"tail ({idx_tail}) should be between target_word_count ({idx_target}) and output_format ({idx_output})"
         )
 
     @pytest.mark.asyncio
@@ -144,8 +141,7 @@ class TestPinnedFactsPlacementFlagOn:
         idx_layer3 = prompt.index(LAYER3_MARKER)
 
         assert idx_static < idx_prev < idx_layer3, (
-            f"block order broken: static={idx_static}, prev={idx_prev}, "
-            f"layer3={idx_layer3}"
+            f"block order broken: static={idx_static}, prev={idx_prev}, layer3={idx_layer3}"
         )
 
     @pytest.mark.asyncio

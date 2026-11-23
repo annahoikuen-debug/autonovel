@@ -6,6 +6,7 @@
 
 本テストは M1 で共有し、以降は追記のみ。
 """
+
 from __future__ import annotations
 
 import ast
@@ -24,20 +25,14 @@ ALLOWLIST: dict[str, str] = {
         "ワーカースレッド内で完結する。TODO(H1-5): immediate モード時の経路を確認"
     ),
     "src/backend/tasks/generation_tasks.py": (
-        "@huey.task 修飾のワーカー用 _run_async ヘルパー。"
-        "TODO(H1-5): immediate モード時の経路を確認"
+        "@huey.task 修飾のワーカー用 _run_async ヘルパー。TODO(H1-5): immediate モード時の経路を確認"
     ),
-    "src/backend/tasks/huey.py": (
-        "@huey.task 修飾のワーカー entry point。"
-        "TODO(H1-5): immediate モード時の経路を確認"
-    ),
+    "src/backend/tasks/huey.py": ("@huey.task 修飾のワーカー entry point。TODO(H1-5): immediate モード時の経路を確認"),
     "src/backend/tasks/illustration_tasks.py": (
-        "@huey.task 修飾のワーカー用 _run_async ヘルパー。"
-        "TODO(H1-5): immediate モード時の経路を確認"
+        "@huey.task 修飾のワーカー用 _run_async ヘルパー。TODO(H1-5): immediate モード時の経路を確認"
     ),
     "src/cli/illustration_cli.py": (
-        "argparse の main()。プロセス起動時に 1 回だけ呼ばれる同期 entry point。"
-        "TODO(H1-6): なし（構造的に安全）"
+        "argparse の main()。プロセス起動時に 1 回だけ呼ばれる同期 entry point。TODO(H1-6): なし（構造的に安全）"
     ),
     "src/infrastructure/external/api_client.py": (
         "close_client() はアプリケーション終了時の同期ファサード。"
@@ -122,9 +117,7 @@ def test_allowlist_entries_still_exist():
 def test_allowlist_entries_have_reasons():
     for path, reason in ALLOWLIST.items():
         assert reason.strip(), f"{path} の allowlist に理由が無い"
-        assert "TODO(H1-" in reason, (
-            f"{path} の allowlist に TODO(H1-N) の番号が無い（§9: 数値外れ禁止）"
-        )
+        assert "TODO(H1-" in reason, f"{path} の allowlist に TODO(H1-N) の番号が無い（§9: 数値外れ禁止）"
 
 
 # --- M2: repository 層のループ所有権 ----------------------------------------
@@ -155,6 +148,5 @@ def test_repository_async_fallback_is_loop_aware():
         if not any(_is_suspect(n) for n in calls):
             continue
         assert any("get_running_loop" in n for n in calls), (
-            f"repository.py:{node.lineno} {node.name}() が "
-            "get_running_loop ガード無しでイベントループを生成している"
+            f"repository.py:{node.lineno} {node.name}() が get_running_loop ガード無しでイベントループを生成している"
         )

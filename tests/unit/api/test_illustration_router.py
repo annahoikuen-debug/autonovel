@@ -4,6 +4,7 @@ Step 28: AppContainer import バグ修正の検証。
 Step 29-30: バッチ Huey 化 + status endpoint の検証。
 Step 32: R15 safety の検証 (test_image_service.py に集約済み)。
 """
+
 from __future__ import annotations
 
 import os
@@ -83,10 +84,13 @@ def test_illustration_router_batch_queues_task():
     app.dependency_overrides[get_illustration_workflow] = _override_workflow
 
     # 実装は book 所有権を検証する (IDOR 対策)。テスト環境に book はないためパッチ
-    with patch(
-        "src.backend.routers.illustrations.verify_book_ownership",
-        new=AsyncMock(return_value=None),
-    ), TestClient(app) as client:
+    with (
+        patch(
+            "src.backend.routers.illustrations.verify_book_ownership",
+            new=AsyncMock(return_value=None),
+        ),
+        TestClient(app) as client,
+    ):
         resp = client.post(
             "/api/illustrations/batch",
             json={"book_id": 1, "settings": {"enableIllustration": True}},
@@ -133,7 +137,6 @@ def test_illustration_batch_queues_huey_task():
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
 
-
     # Huey を immediate モードに切替 (CI で redis/sqlite 不要)
     # 重要: src.backend.tasks パッケージは `huey` を属性に持つので、
     # モジュールは sys.modules から直接取得する。
@@ -151,10 +154,13 @@ def test_illustration_batch_queues_huey_task():
         app.include_router(router, prefix="/api/illustrations")
 
         # 実装は book 所有権を検証する (IDOR 対策)。テスト環境に book はないためパッチ
-        with patch(
-            "src.backend.routers.illustrations.verify_book_ownership",
-            new=AsyncMock(return_value=None),
-        ), TestClient(app) as client:
+        with (
+            patch(
+                "src.backend.routers.illustrations.verify_book_ownership",
+                new=AsyncMock(return_value=None),
+            ),
+            TestClient(app) as client,
+        ):
             resp = client.post(
                 "/api/illustrations/batch",
                 json={"book_id": 1, "settings": {"enableIllustration": True}},

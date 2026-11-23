@@ -4,6 +4,7 @@
 カード選択ハイライト無効・成長曲線混入の直接の原因だった。
 **サーバーが返す形を Python 側で固定**し、FE 側はこれに合わせて修正する。
 """
+
 from __future__ import annotations
 
 import json
@@ -54,15 +55,11 @@ async def test_growth_curves_is_present_and_non_empty(opts):
 async def test_growth_curves_values_are_subset_of_story_archetypes(opts):
     """**保存先カラムと値集合が一致すること**（`plots.py` が受け付ける値だけを出す）。"""
     valid_curves = {
-        v.get("growth_curve")
-        for v in STORY_ARCHETYPES.values()
-        if isinstance(v, dict) and "growth_curve" in v
+        v.get("growth_curve") for v in STORY_ARCHETYPES.values() if isinstance(v, dict) and "growth_curve" in v
     }
     curves = opts.get("growth_curves", [])
     values = list(curves.values()) if isinstance(curves, dict) else list(curves)
-    assert set(values) <= valid_curves, (
-        "STORY_ARCHETYPES に無い値が混ざっている（保存時に FK/ENUM で落ちる）"
-    )
+    assert set(values) <= valid_curves, "STORY_ARCHETYPES に無い値が混ざっている（保存時に FK/ENUM で落ちる）"
 
 
 async def test_legacy_keys_are_preserved(opts):

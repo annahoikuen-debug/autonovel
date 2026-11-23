@@ -1,4 +1,5 @@
 """Unit tests for InMemoryFallbackStore."""
+
 from __future__ import annotations
 
 import math
@@ -27,9 +28,7 @@ class TestInMemoryFallbackStore:
 
     @pytest.mark.asyncio
     async def test_add_and_search(self):
-        await self.store.add_documents(
-            "c1", ["a", "b"], ["doc a", "doc b"], [[1.0, 0.0], [0.0, 1.0]]
-        )
+        await self.store.add_documents("c1", ["a", "b"], ["doc a", "doc b"], [[1.0, 0.0], [0.0, 1.0]])
         results = await self.store.search("c1", [1.0, 0.0], top_k=2)
         assert len(results) == 2
         # First result should be 'a' (identical direction)
@@ -37,9 +36,7 @@ class TestInMemoryFallbackStore:
 
     @pytest.mark.asyncio
     async def test_delete_by_id(self):
-        await self.store.add_documents(
-            "c1", ["a", "b"], ["doc a", "doc b"], [[1.0, 0.0], [0.0, 1.0]]
-        )
+        await self.store.add_documents("c1", ["a", "b"], ["doc a", "doc b"], [[1.0, 0.0], [0.0, 1.0]])
         await self.store.delete_by_id("c1", ["a"])
         results = await self.store.search("c1", [1.0, 0.0], top_k=5)
         ids = [r["id"] for r in results]
@@ -56,9 +53,7 @@ class TestInMemoryFallbackStore:
     @pytest.mark.asyncio
     async def test_add_documents_respects_max_items(self):
         small = InMemoryFallbackStore(max_items_per_collection=2)
-        await small.add_documents(
-            "c1", ["a", "b", "c"], ["a", "b", "c"], [[1.0, 0.0]] * 3
-        )
+        await small.add_documents("c1", ["a", "b", "c"], ["a", "b", "c"], [[1.0, 0.0]] * 3)
         results = await small.search("c1", [1.0, 0.0], top_k=10)
         # Oldest ('a') should be evicted
         ids = {r["id"] for r in results}
@@ -73,10 +68,6 @@ class TestInMemoryFallbackStore:
 
     @pytest.mark.asyncio
     async def test_hybrid_search_fallback(self):
-        await self.store.add_documents(
-            "c1", ["a", "b"], ["alpha bravo", "charlie delta"], [[1.0, 0.0], [0.0, 1.0]]
-        )
-        results = await self.store.hybrid_search(
-            "c1", "alpha", [1.0, 0.0], top_k=2, alpha=1.0
-        )
+        await self.store.add_documents("c1", ["a", "b"], ["alpha bravo", "charlie delta"], [[1.0, 0.0], [0.0, 1.0]])
+        results = await self.store.hybrid_search("c1", "alpha", [1.0, 0.0], top_k=2, alpha=1.0)
         assert len(results) == 2

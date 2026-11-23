@@ -13,6 +13,7 @@
 既知の欠陥は TODO(H1-9) として明示して固定し、
 修正時には本ファイルを反転させる（テストを弱めない）。
 """
+
 from __future__ import annotations
 
 import pytest
@@ -91,8 +92,7 @@ def test_pdf_exporter_markdown_leak_is_known_and_pinned():
     pdf_out = _out(PdfExporter)
     md_out = _out(MarkdownExporter)
     assert pdf_out == md_out, (
-        "PdfExporter の出力が MarkdownExporter と異なった。"
-        " TODO(H1-9) を解消したなら、本テストを != に反転させること。"
+        "PdfExporter の出力が MarkdownExporter と異なった。 TODO(H1-9) を解消したなら、本テストを != に反転させること。"
     )
     assert "# " in pdf_out, "PdfExporter は既知のとおり Markdown 見出しを出している（H1-9）"
 

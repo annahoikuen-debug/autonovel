@@ -24,9 +24,7 @@ def _make_service() -> tuple[GachaService, MagicMock]:
     実 DB への依存を排除する。
     """
     mock_llm = MagicMock()
-    mock_llm.generate_json = AsyncMock(
-        side_effect=json.JSONDecodeError("bad json", "doc", 0)
-    )
+    mock_llm.generate_json = AsyncMock(side_effect=json.JSONDecodeError("bad json", "doc", 0))
     service = GachaService(llm_service=mock_llm, db=MagicMock())
     service._save_gacha_plans_db = AsyncMock()
     service._save_review_session = AsyncMock()

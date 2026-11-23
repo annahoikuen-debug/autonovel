@@ -4,6 +4,7 @@ H10: dag_scheduler.py は execute_agent_node_task(func_name=..., kwargs=..., nod
 で投入していたが、ワーカー src/backend/tasks/huey.py は (node_name, payload)
 なので TypeError で必ず失敗していた。修正：node_name=..., payload=... に統一。
 """
+
 from __future__ import annotations
 
 import inspect
@@ -29,7 +30,7 @@ def test_dag_scheduler_uses_worker_signature():
     assert "node_name=task_node.func_name" in src
     assert "payload=clean_kwargs" in src
     # Huey パスで func_name= / kwargs= / node_id= の旧呼び出しが残っていない
-    huey_block = src[src.find("should_use_huey"):src.find("timeout_val = task_node.timeout_seconds")]
+    huey_block = src[src.find("should_use_huey") : src.find("timeout_val = task_node.timeout_seconds")]
     assert "func_name=task_node.func_name" not in huey_block
     assert "kwargs=clean_kwargs" not in huey_block
     assert "node_id=task_node.task_id" not in huey_block

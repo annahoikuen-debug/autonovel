@@ -4,6 +4,7 @@ H14: multimedia_service.py 等が series.title を無害化せずにパス結合
 ../ による出力ディレクトリ外への書き出しが可能だった。
 修正：sanitize_filename でパス区切り文字と .. を除去。
 """
+
 from __future__ import annotations
 
 from src.backend.multimedia_service import sanitize_filename

@@ -40,8 +40,7 @@ def test_all_api_import_paths(module_path, symbols):
     except ImportError as exc:
         pytest.fail(f"{module_path} の import に失敗: {exc}")
     for symbol in symbols:
-        assert hasattr(mod, symbol), \
-            f"{module_path} に {symbol} が公開されていない"
+        assert hasattr(mod, symbol), f"{module_path} に {symbol} が公開されていない"
 
 
 def test_no_orphan_api_files():
@@ -52,22 +51,22 @@ def test_no_orphan_api_files():
     ]
     for dir_path, removed_files in orphan_checks:
         for fname in removed_files:
-            assert not (dir_path / fname).exists(), \
-                f"{dir_path / fname} が残っている（PLAN_Q3 で削除済みであるべき）"
+            assert not (dir_path / fname).exists(), f"{dir_path / fname} が残っている（PLAN_Q3 で削除済みであるべき）"
 
 
 def test_wiring_imports_new_path():
     """wiring.py が新パス（src.backend.routers.admin_phase2）を import する。"""
     content = (ROOT / "src/backend/wiring.py").read_text(encoding="utf-8")
-    assert "src.backend.routers.admin_phase2" in content, \
-        "wiring.py が新パスを import していない"
+    assert "src.backend.routers.admin_phase2" in content, "wiring.py が新パスを import していない"
 
 
 def test_ruff_clean_api():
     """src/backend/routers/, src/interfaces/api/ が ruff check を通る。"""
     result = subprocess.run(
         [sys.executable, "-m", "ruff", "check", "src/backend/routers", "src/interfaces/api"],
-        capture_output=True, text=True, encoding="utf-8", cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        cwd=ROOT,
     )
-    assert result.returncode == 0, \
-        f"ruff check 失敗:\n{result.stdout}\n{result.stderr}"
+    assert result.returncode == 0, f"ruff check 失敗:\n{result.stdout}\n{result.stderr}"

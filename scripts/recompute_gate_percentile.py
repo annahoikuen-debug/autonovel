@@ -88,7 +88,11 @@ def fetch_scores_from_audit_run(
     try:
         rows = (
             db_session.query(__import__("src.infrastructure.database.models.audit_run", fromlist=["AuditRun"]).AuditRun)
-            .order_by(__import__("src.infrastructure.database.models.audit_run", fromlist=["AuditRun"]).AuditRun.created_at.asc())
+            .order_by(
+                __import__(
+                    "src.infrastructure.database.models.audit_run", fromlist=["AuditRun"]
+                ).AuditRun.created_at.asc()
+            )
             .limit(window)
             .all()
         )
@@ -122,9 +126,7 @@ def update_yaml_threshold(threshold: float) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="ゲートパーセンタイル再計算")
     parser.add_argument("--window", type=int, default=200, help="直近 N 件 (既定: 200)")
-    parser.add_argument(
-        "--percentile", type=float, default=30.0, help="パーセンタイル (既定: 30)"
-    )
+    parser.add_argument("--percentile", type=float, default=30.0, help="パーセンタイル (既定: 30)")
     parser.add_argument(
         "--db-session",
         dest="db_session",
@@ -152,9 +154,7 @@ def main(argv: list[str] | None = None) -> int:
         print("[ERROR] --scores または --db-session を指定してください", file=sys.stderr)
         return 1
 
-    result = compute_percentile_threshold(
-        scores, window=args.window, percentile=args.percentile
-    )
+    result = compute_percentile_threshold(scores, window=args.window, percentile=args.percentile)
 
     if result["threshold"] is None:
         print("[ERROR] スコアが空のため閾値を計算できません", file=sys.stderr)

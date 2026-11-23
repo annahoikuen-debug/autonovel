@@ -18,9 +18,7 @@ def _make_result(scalars_return):
     """db.execute の戻り値モックを作成（res.scalars().all() / .first() 対応）。"""
     scalars = MagicMock()
     scalars.all = MagicMock(return_value=scalars_return)
-    scalars.first = MagicMock(
-        return_value=(scalars_return[0] if scalars_return else None)
-    )
+    scalars.first = MagicMock(return_value=(scalars_return[0] if scalars_return else None))
     result = MagicMock()
     result.scalars = MagicMock(return_value=scalars)
     return result
@@ -49,9 +47,7 @@ class TestDigestRollupRepositoryUpsert:
         db.execute = AsyncMock(return_value=_make_result([]))
 
         repo = DigestRollupRepository(db)
-        record = await repo.upsert_rollup(
-            book_id=1, level="block", start_ep=1, end_ep=10, digest_text="digest"
-        )
+        record = await repo.upsert_rollup(book_id=1, level="block", start_ep=1, end_ep=10, digest_text="digest")
 
         # add + flush が呼ばれる
         assert db.add.called
@@ -74,12 +70,8 @@ class TestDigestRollupRepositoryUpsert:
 
         repo = DigestRollupRepository(db)
 
-        await repo.upsert_rollup(
-            book_id=1, level="block", start_ep=1, end_ep=10, digest_text="new"
-        )
-        await repo.upsert_rollup(
-            book_id=1, level="block", start_ep=1, end_ep=10, digest_text="new2"
-        )
+        await repo.upsert_rollup(book_id=1, level="block", start_ep=1, end_ep=10, digest_text="new")
+        await repo.upsert_rollup(book_id=1, level="block", start_ep=1, end_ep=10, digest_text="new2")
 
         # 2回目は既存レコードを更新（add は1回目だけ呼ばれるはず）
         assert existing.digest_text == "new2"
@@ -92,12 +84,8 @@ class TestDigestRollupRepositoryUpsert:
         db.execute = AsyncMock(return_value=_make_result([]))
 
         repo = DigestRollupRepository(db)
-        await repo.upsert_rollup(
-            book_id=1, level="block", start_ep=1, end_ep=10, digest_text="block"
-        )
-        await repo.upsert_rollup(
-            book_id=1, level="volume", start_ep=1, end_ep=50, digest_text="volume"
-        )
+        await repo.upsert_rollup(book_id=1, level="block", start_ep=1, end_ep=10, digest_text="block")
+        await repo.upsert_rollup(book_id=1, level="volume", start_ep=1, end_ep=50, digest_text="volume")
 
         # 2回の add が呼ばれる
         assert db.add.call_count == 2

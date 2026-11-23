@@ -49,7 +49,7 @@ def test_easy_mode_invalid_input_returns_422(test_client):
     """制限範囲外（content_length_limit=0 など）送信時に 422 Unprocessable Entity が返ること"""
     response = test_client.post(
         "/easy_mode/generate",
-        json={"content_length_limit": 0}  # ge=1 なのでバリデーション違反
+        json={"content_length_limit": 0},  # ge=1 なのでバリデーション違反
     )
     assert response.status_code == 422
 
@@ -66,15 +66,11 @@ def test_easy_mode_generate_enqueues_task(mock_task, test_client):
     mock_task.return_value = mock_result
 
     payload = {
-        "character_params": {
-            "name": "アレン",
-            "personality": "冷静沈着",
-            "ability": "空間魔法"
-        },
+        "character_params": {"name": "アレン", "personality": "冷静沈着", "ability": "空間魔法"},
         "current_chapter": "第1話：目覚め",
         "genre": "異世界ファンタジー",
         "content_length_limit": 2000,
-        "target_episodes": 1
+        "target_episodes": 1,
     }
 
     response = test_client.post("/easy_mode/generate", json=payload)
@@ -83,6 +79,7 @@ def test_easy_mode_generate_enqueues_task(mock_task, test_client):
     assert "task_id" in data
     # エンドポイント生成の UUID が返るため、UUID 形式であることを検証
     import uuid as uuid_mod
+
     uuid_mod.UUID(data["task_id"])
     assert "suggestions" in data
     mock_task.assert_called_once()
@@ -124,9 +121,7 @@ def test_easy_mode_generate_records_task_owner(mock_task, test_client):
         response = test_client.post("/easy_mode/generate", json=payload)
 
     assert response.status_code == 200, f"200 のはず: {response.status_code} {response.text}"
-    assert fake_repo.create_task.called or fake_repo.create_task_async.await_count, (
-        "タスクレコードが作成されていない"
-    )
+    assert fake_repo.create_task.called or fake_repo.create_task_async.await_count, "タスクレコードが作成されていない"
 
     recorder = fake_repo.create_task if fake_repo.create_task.called else None
     call_kwargs = (
@@ -134,9 +129,7 @@ def test_easy_mode_generate_records_task_owner(mock_task, test_client):
         if recorder is not None
         else fake_repo.create_task_async.await_args.kwargs
     )
-    assert call_kwargs.get("user_id") is not None, (
-        f"Task.user_id が NULL になる: {call_kwargs}"
-    )
+    assert call_kwargs.get("user_id") is not None, f"Task.user_id が NULL になる: {call_kwargs}"
 
 
 def test_easy_mode_generate_rejects_unattributable_caller(test_client, monkeypatch):
@@ -148,9 +141,7 @@ def test_easy_mode_generate_rejects_unattributable_caller(test_client, monkeypat
     from src.backend.routers import easy_mode as easy_mode_module
 
     monkeypatch.setattr(easy_mode_module.settings, "AUTH_DISABLED", False)
-    monkeypatch.setattr(
-        auth_module.settings, "ALLOWED_API_KEYS", "test-easy-mode-key", raising=False
-    )
+    monkeypatch.setattr(auth_module.settings, "ALLOWED_API_KEYS", "test-easy-mode-key", raising=False)
 
     payload = {
         "character_params": {"name": "アレン", "personality": "冷静沈着", "ability": "空間魔法"},
@@ -171,7 +162,5 @@ def test_easy_mode_generate_rejects_unattributable_caller(test_client, monkeypat
             headers={"Authorization": "test-easy-mode-key"},
         )
 
-    assert response.status_code == 403, (
-        f"所有者を特定できないなら投入時点で 403 のはず: {response.status_code}"
-    )
+    assert response.status_code == 403, f"所有者を特定できないなら投入時点で 403 のはず: {response.status_code}"
     mock_task.assert_not_called()

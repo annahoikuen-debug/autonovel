@@ -1,10 +1,12 @@
 from pathlib import Path
 from src.backend.database.core import WorkspaceManager
 
+
 def test_workspace_manager_get_path():
     path_str = WorkspaceManager.get_path("test.db")
     assert "test.db" in path_str
     assert isinstance(path_str, str)
+
 
 def test_workspace_manager_create_snapshot(tmp_path, monkeypatch):
     # テスト用ダミーDBファイル作成
@@ -16,13 +18,16 @@ def test_workspace_manager_create_snapshot(tmp_path, monkeypatch):
     assert Path(snapshot_path).exists()
     assert ".bak_" in snapshot_path
 
+
 def test_workspace_manager_create_snapshot_non_existent():
     # 存在しないファイルの場合は空文字列を返す
     snapshot_path = WorkspaceManager.create_snapshot("/path/to/non_existent_file.db")
     assert snapshot_path == ""
 
+
 def test_workspace_manager_list_backups(tmp_path, monkeypatch):
     from src.backend.database import core
+
     monkeypatch.setattr(core, "BASE_DIR", tmp_path)
 
     f1 = tmp_path / "test.bak_100.db"

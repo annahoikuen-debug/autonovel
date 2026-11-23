@@ -1,4 +1,5 @@
 """Unit tests for src/services/vector_store/pgvector.py with a fake async session."""
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -505,5 +506,3 @@ class TestClose:
         store = make_store()
         await store.close()
         assert store.engines[0].disposed == 1
-
-

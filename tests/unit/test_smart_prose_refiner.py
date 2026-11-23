@@ -2,6 +2,7 @@
 Unit tests for Smart Prose Refiner.
 PLAN 14 - Step 12: スマート校正LLM＆商業ラノベFew-Shot動的注入 実装計画書
 """
+
 from __future__ import annotations
 
 from typing import Any
@@ -33,9 +34,9 @@ class MockLLMAdapterForProseRefinement(MockLLMAdapter):
         else:
             # デフォルトは元のテキストを返す（変更なし）
             if "入力テキスト" in prompt:
-                lines = prompt.split('\n')
+                lines = prompt.split("\n")
                 for line in lines:
-                    if line.strip() and not line.startswith('#') and '入力テキスト' not in line:
+                    if line.strip() and not line.startswith("#") and "入力テキスト" not in line:
                         return line.strip()
             return "元のテキストが返されました（モック）"
 
@@ -99,10 +100,12 @@ async def test_prose_refiner_no_grammatical_errors_in_action_scene():
     assert len(result.refined_text) > 0
 
     refined = result.refined_text
-    assert refined.endswith("。") or refined.endswith("!") or refined.endswith("？") or len(refined) == 0, \
+    assert refined.endswith("。") or refined.endswith("!") or refined.endswith("？") or len(refined) == 0, (
         f"文が適切に終わっていない: {repr(refined)}"
-    assert not refined.startswith("、") and not refined.startswith("　"), \
+    )
+    assert not refined.startswith("、") and not refined.startswith("　"), (
         f"不自然な開始（主語欠落の可能性）: {repr(refined)}"
+    )
 
 
 @pytest.mark.asyncio

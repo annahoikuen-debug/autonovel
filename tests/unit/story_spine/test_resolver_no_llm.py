@@ -24,8 +24,7 @@ def no_llm(monkeypatch):
             continue
     # 1 つもパッチできていない = no-op を検出する
     assert patched, (
-        "パッチ対象が見つからない。no_llm fixture が no-op になっており、"
-        "『LLM を呼ばない』の証明になっていない"
+        "パッチ対象が見つからない。no_llm fixture が no-op になっており、『LLM を呼ばない』の証明になっていない"
     )
     return patched
 

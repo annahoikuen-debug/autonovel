@@ -1,4 +1,5 @@
 """E2E Integration Test for DAGScheduler + Huey Queue Execution (Step 66)."""
+
 from __future__ import annotations
 
 import pytest
@@ -54,8 +55,10 @@ async def test_dag_huey_orchestration_e2e(tmp_path):
         "write": {"status": "completed", "draft_text": "He opened his eyes in a new world."},
     }
 
-    with patch("src.backend.tasks.huey.execute_agent_node_task") as mock_exec, \
-         patch("src.backend.tasks.huey.async_wait_huey_result", new_callable=AsyncMock) as mock_wait:
+    with (
+        patch("src.backend.tasks.huey.execute_agent_node_task") as mock_exec,
+        patch("src.backend.tasks.huey.async_wait_huey_result", new_callable=AsyncMock) as mock_wait,
+    ):
 
         def fake_exec_call(func_name, kwargs, node_id):
             task_handle = MagicMock()

@@ -1,4 +1,5 @@
 """Unit tests for Social Interaction Models, Discovery, and Journals (Steps 45-48)."""
+
 from __future__ import annotations
 
 import pytest
@@ -47,7 +48,8 @@ def test_social_interaction_manager_relationship_tracking():
 
     # 関係性更新
     updated = manager.update_relationship(
-        "エレナ", "アルカディア",
+        "エレナ",
+        "アルカディア",
         trust_delta=15.0,
         tension_delta=-10.0,
         affinity_delta=20.0,
@@ -248,7 +250,9 @@ async def test_context_builder_agent_social_integration():
     from src.agents.social.manager import SocialInteractionManager
 
     repo = MagicMock()
-    repo.get_plot = AsyncMock(return_value=MagicMock(summary="王都の決戦", detailed_blueprint="アルカディアとヴォルケインの対峙"))
+    repo.get_plot = AsyncMock(
+        return_value=MagicMock(summary="王都の決戦", detailed_blueprint="アルカディアとヴォルケインの対峙")
+    )
     repo.get_book = AsyncMock(return_value=MagicMock())
     char1 = MagicMock(name="アルカディア", role="主人公")
     char1.name = "アルカディア"
@@ -281,6 +285,3 @@ async def test_context_builder_agent_social_integration():
     assert "登場人物間の動的心理関係性" in char_dynamic_ctx
     assert "アルカディア ⇔ ヴォルケイン" in char_dynamic_ctx
     assert "緊張度=75.0" in char_dynamic_ctx
-
-
-

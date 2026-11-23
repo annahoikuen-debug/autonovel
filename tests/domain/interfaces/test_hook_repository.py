@@ -10,38 +10,38 @@ def test_hook_repository_exists():
 
 def test_hook_repository_has_add_method():
     """add メソッドが存在することを確認"""
-    assert hasattr(HookRepository, 'add')
-    assert callable(getattr(HookRepository, 'add'))
+    assert hasattr(HookRepository, "add")
+    assert callable(getattr(HookRepository, "add"))
 
     # シグニチャを確認
     sig = inspect.signature(HookRepository.add)
     params = list(sig.parameters.keys())
-    assert 'self' in params
-    assert 'hook' in params
+    assert "self" in params
+    assert "hook" in params
 
 
 def test_hook_repository_has_get_by_book_id_method():
     """get_by_book_id メソッドが存在することを確認"""
-    assert hasattr(HookRepository, 'get_by_book_id')
-    assert callable(getattr(HookRepository, 'get_by_book_id'))
+    assert hasattr(HookRepository, "get_by_book_id")
+    assert callable(getattr(HookRepository, "get_by_book_id"))
 
     # シグニチャを確認
     sig = inspect.signature(HookRepository.get_by_book_id)
     params = list(sig.parameters.keys())
-    assert 'self' in params
-    assert 'book_id' in params
+    assert "self" in params
+    assert "book_id" in params
 
 
 def test_hook_repository_has_get_pending_hooks_method():
     """get_pending_hooks メソッドが存在することを確認"""
-    assert hasattr(HookRepository, 'get_pending_hooks')
-    assert callable(getattr(HookRepository, 'get_pending_hooks'))
+    assert hasattr(HookRepository, "get_pending_hooks")
+    assert callable(getattr(HookRepository, "get_pending_hooks"))
 
     # シグニチャを確認
     sig = inspect.signature(HookRepository.get_pending_hooks)
     params = list(sig.parameters.keys())
-    assert 'self' in params
-    assert 'book_id' in params
+    assert "self" in params
+    assert "book_id" in params
 
 
 def test_hook_repository_cannot_be_instantiated_directly():

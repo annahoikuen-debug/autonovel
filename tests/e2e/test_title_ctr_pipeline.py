@@ -89,12 +89,8 @@ def test_title_ctr_pipeline_e2e(client):
             assert cand["predicted_ctr_score"] >= 75.0, (
                 f"Candidate {idx} ({cand['title']}) score {cand['predicted_ctr_score']} < 75.0"
             )
-            assert cand["char_count"] >= 30, (
-                f"Candidate {cand['title']} char_count {cand['char_count']} < 30"
-            )
-            assert len(cand["hooks"]) >= 1, (
-                f"Candidate {cand['title']} hooks is empty"
-            )
+            assert cand["char_count"] >= 30, f"Candidate {cand['title']} char_count {cand['char_count']} < 30"
+            assert len(cand["hooks"]) >= 1, f"Candidate {cand['title']} hooks is empty"
 
         # Candidates must be ordered by score descending
         all_scores = [c["predicted_ctr_score"] for c in data["all_candidates"]]

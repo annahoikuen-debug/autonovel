@@ -1,4 +1,5 @@
 """ResilientLLMGateway の未カバー分岐を網羅する追加テスト。"""
+
 from __future__ import annotations
 
 import asyncio
@@ -190,6 +191,7 @@ class TestGenerateFlow:
             def gen_text(prompt, **kw):
                 calls.append(name)
                 return f"{name}-ok"
+
             return gen_text
 
         g = _gw(provider_factory=factory, fallback_policy={"openai": ["gemini", "openai"]})
@@ -255,9 +257,7 @@ class TestInvoke:
             return "recovered"
 
         # Reports a signature without VAR_KEYWORD so kwargs are filtered out
-        gen_text.__signature__ = inspect.Signature(
-            [inspect.Parameter("foo", inspect.Parameter.POSITIONAL_OR_KEYWORD)]
-        )
+        gen_text.__signature__ = inspect.Signature([inspect.Parameter("foo", inspect.Parameter.POSITIONAL_OR_KEYWORD)])
         g = _gw()
         out = await g._invoke(gen_text, "openai", "generate_text", "p", None, 0.1, {"extra": 1})
         assert out == "recovered"
@@ -361,6 +361,7 @@ class TestInvoke:
             def generate_text(self, prompt, **kw):
                 async def _slow():
                     await asyncio.sleep(5)
+
                 return _slow()
 
         g = _gw(call_timeout_seconds=0.01)

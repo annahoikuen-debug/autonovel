@@ -64,5 +64,3 @@ def test_spice_element_default_priority():
     """SpiceElement デフォルトpriority確認テスト。"""
     element = SpiceElement(type="violence", text="暴力", position=1)
     assert element.priority == "medium"
-
-

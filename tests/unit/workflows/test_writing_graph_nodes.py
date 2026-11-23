@@ -22,13 +22,15 @@ async def test_node_prepare(make_manager):
     """node_prepareのテスト"""
     # モックマネージャーを作成
     mock_manager = MagicMock()
-    mock_manager._phase_prepare_context = AsyncMock(return_value=(
-        "fake_gen_ctx",  # gen_ctx
-        True,            # should_dogfeed
-        False,           # should_heavy_audit
-        False,           # should_beat_decompose
-        50               # ncs_score
-    ))
+    mock_manager._phase_prepare_context = AsyncMock(
+        return_value=(
+            "fake_gen_ctx",  # gen_ctx
+            True,  # should_dogfeed
+            False,  # should_heavy_audit
+            False,  # should_beat_decompose
+            50,  # ncs_score
+        )
+    )
 
     # WritingGraphManagerのインスタンスを作成
     manager = make_manager(mock_manager)
@@ -40,7 +42,7 @@ async def test_node_prepare(make_manager):
         "sys_inst": "system instruction",
         "fw_prompt": "write a story",
         "is_easy_mode": False,
-        "passion": 0.8
+        "passion": 0.8,
     }
 
     # node_prepareを実行
@@ -63,22 +65,22 @@ async def test_node_drafting_success(monkeypatch, make_manager):
     monkeypatch.setattr("asyncio.sleep", AsyncMock())
     mock_manager = MagicMock()
     # 内容が100文字以上必要（node_drafting内のチェック）
-    mock_manager._phase_drafting = AsyncMock(return_value=(
-        "Generated draft content " * 10,  # 230文字以上
-        {"words": 230}
-    ))
+    mock_manager._phase_drafting = AsyncMock(
+        return_value=(
+            "Generated draft content " * 10,  # 230文字以上
+            {"words": 230},
+        )
+    )
 
     manager = make_manager(mock_manager)
 
     state = {
         "ep_num": 1,
-        "context": {
-            "plot": MagicMock(detailed_blueprint="blueprint text")
-        },
+        "context": {"plot": MagicMock(detailed_blueprint="blueprint text")},
         "passion": 0.5,
         "ac_iter": 0,
         "should_beat_decompose": False,
-        "gen_ctx": "fake_gen_ctx"
+        "gen_ctx": "fake_gen_ctx",
     }
 
     result = await manager.node_drafting(state)
@@ -97,13 +99,11 @@ async def test_node_drafting_failure():
 
     state = {
         "ep_num": 1,
-        "context": {
-            "plot": MagicMock(detailed_blueprint="blueprint text")
-        },
+        "context": {"plot": MagicMock(detailed_blueprint="blueprint text")},
         "passion": 0.5,
         "ac_iter": 0,
         "should_beat_decompose": False,
-        "gen_ctx": "fake_gen_ctx"
+        "gen_ctx": "fake_gen_ctx",
     }
 
     result = await manager.node_drafting(state)
@@ -120,11 +120,7 @@ async def test_node_audit_easy_mode():
 
     manager = WritingGraphManager(mock_manager)
 
-    state = {
-        "ep_num": 1,
-        "is_easy_mode": True,
-        "ac_iter": 0
-    }
+    state = {"ep_num": 1, "is_easy_mode": True, "ac_iter": 0}
 
     result = await manager.node_audit(state)
 
@@ -139,13 +135,15 @@ async def test_node_audit_easy_mode():
 async def test_node_audit_success():
     """通常のnode_audit成功ケースをテスト"""
     mock_manager = MagicMock()
-    mock_manager._phase_audit = AsyncMock(return_value=(
-        True,   # is_integrity_ok
-        0.8,    # rate
-        True,   # is_causal_ok
-        "OK",   # causal_reason
-        []      # failures
-    ))
+    mock_manager._phase_audit = AsyncMock(
+        return_value=(
+            True,  # is_integrity_ok
+            0.8,  # rate
+            True,  # is_causal_ok
+            "OK",  # causal_reason
+            [],  # failures
+        )
+    )
     mock_manager.narrative = MagicMock()
     mock_manager.narrative.get_integrity_threshold = MagicMock(return_value=0.6)
 
@@ -157,13 +155,13 @@ async def test_node_audit_success():
             "genre_str": "fantasy",
             "prev_integrity": 100,
             "engine_key": "test",
-            "plot": MagicMock(detailed_blueprint="blueprint")
+            "plot": MagicMock(detailed_blueprint="blueprint"),
         },
         "draft_content": "draft text",
         "final_meta": {},
         "is_easy_mode": False,
         "ac_iter": 0,
-        "should_heavy_audit": False
+        "should_heavy_audit": False,
     }
 
     result = await manager.node_audit(state)
@@ -189,12 +187,10 @@ async def test_node_critic():
         "ac_iter": 0,
         "ep_num": 1,
         "draft_content": "draft",
-        "context": {
-            "plot": MagicMock(detailed_blueprint="blueprint")
-        },
+        "context": {"plot": MagicMock(detailed_blueprint="blueprint")},
         "blueprint": "blueprint",
         "failures": [],
-        "gen_ctx": "fake_gen_ctx"
+        "gen_ctx": "fake_gen_ctx",
     }
 
     result = await manager.node_critic(state)
@@ -206,24 +202,24 @@ async def test_node_critic():
 async def test_node_healing():
     """node_healingのテスト"""
     mock_manager = MagicMock()
-    mock_manager._phase_healing = AsyncMock(return_value=(
-        "healed content",  # content
-        True,              # is_causal_ok
-        "Fixed"            # causal_reason
-    ))
+    mock_manager._phase_healing = AsyncMock(
+        return_value=(
+            "healed content",  # content
+            True,  # is_causal_ok
+            "Fixed",  # causal_reason
+        )
+    )
 
     manager = WritingGraphManager(mock_manager)
 
     state = {
         "ep_num": 1,
         "draft_content": "original draft",
-        "context": {
-            "plot": MagicMock(detailed_blueprint="blueprint")
-        },
+        "context": {"plot": MagicMock(detailed_blueprint="blueprint")},
         "blueprint": "blueprint",
         "causal_reason": "Original reason",
         "failures": [],
-        "monitor": None
+        "monitor": None,
     }
 
     result = await manager.node_healing(state)
@@ -248,7 +244,7 @@ async def test_node_dogfeed_skipped():
         "is_easy_mode": False,
         "ac_iter": 0,
         "max_ac_iter": 2,
-        "gen_ctx": "fake_gen_ctx"
+        "gen_ctx": "fake_gen_ctx",
     }
 
     result = await manager.node_dogfeed(state)
@@ -272,7 +268,7 @@ async def test_node_dogfeed_success():
         "is_easy_mode": False,
         "ac_iter": 0,
         "max_ac_iter": 2,
-        "gen_ctx": "fake_gen_ctx"
+        "gen_ctx": "fake_gen_ctx",
     }
 
     result = await manager.node_dogfeed(state)
@@ -298,7 +294,7 @@ async def test_node_finalize():
         "rate": 0.85,
         "threshold": 0.7,
         "causal_reason": "OK",
-        "ac_iter": 1
+        "ac_iter": 1,
     }
 
     result = await manager.node_finalize(state)
@@ -322,12 +318,7 @@ def test_route_after_audit_high_quality():
     mock_manager = MagicMock()
     manager = WritingGraphManager(mock_manager)
 
-    state = {
-        "is_easy_mode": False,
-        "quality_skip": True,
-        "is_integrity_ok": True,
-        "is_causal_ok": True
-    }
+    state = {"is_easy_mode": False, "quality_skip": True, "is_integrity_ok": True, "is_causal_ok": True}
     assert manager.route_after_audit(state) == "finish"
 
 
@@ -336,12 +327,7 @@ def test_route_after_audit_needs_review():
     mock_manager = MagicMock()
     manager = WritingGraphManager(mock_manager)
 
-    state = {
-        "is_easy_mode": False,
-        "quality_skip": False,
-        "requires_user_review": True,
-        "patch_review_id": 123
-    }
+    state = {"is_easy_mode": False, "quality_skip": False, "requires_user_review": True, "patch_review_id": 123}
     assert manager.route_after_audit(state) == "review_wait"
 
 
@@ -350,11 +336,7 @@ def test_route_after_critic_retry():
     mock_manager = MagicMock()
     manager = WritingGraphManager(mock_manager)
 
-    state = {
-        "critic_triggered": True,
-        "ac_iter": 0,
-        "max_ac_iter": 2
-    }
+    state = {"critic_triggered": True, "ac_iter": 0, "max_ac_iter": 2}
     assert manager.route_after_critic(state) == "retry"
 
 
@@ -366,7 +348,7 @@ def test_route_after_critic_finish():
     state = {
         "critic_triggered": True,
         "ac_iter": 2,  # max_ac_iterに到達
-        "max_ac_iter": 2
+        "max_ac_iter": 2,
     }
     assert manager.route_after_critic(state) == "finish"
 
@@ -415,7 +397,7 @@ def test_writing_graph_state_typeddict():
         "patch_review_id": None,
         "review_status": None,
         "requires_user_review": False,
-        "status": "pending"
+        "status": "pending",
     }
 
     # 必須フィールへのアクセス

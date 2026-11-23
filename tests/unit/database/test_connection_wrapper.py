@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy import text
 from src.backend.database.core import DatabaseManager
 
+
 def test_connection_context_manager():
     """Test that DatabaseManager.connection() returns an async context manager yielding AsyncConnection"""
     # Create a mock database manager
@@ -10,8 +11,9 @@ def test_connection_context_manager():
 
     # The connection method should return an async context manager
     conn_cm = db_manager.connection()
-    assert hasattr(conn_cm, '__aenter__')
-    assert hasattr(conn_cm, '__aexit__')
+    assert hasattr(conn_cm, "__aenter__")
+    assert hasattr(conn_cm, "__aexit__")
+
 
 def test_begin_context_manager():
     """Test that DatabaseManager.begin() returns an async context manager yielding AsyncConnection with transaction"""
@@ -20,8 +22,9 @@ def test_begin_context_manager():
 
     # The begin method should return an async context manager
     begin_cm = db_manager.begin()
-    assert hasattr(begin_cm, '__aenter__')
-    assert hasattr(begin_cm, '__aexit__')
+    assert hasattr(begin_cm, "__aenter__")
+    assert hasattr(begin_cm, "__aexit__")
+
 
 @pytest.mark.asyncio
 async def test_connection_yields_async_connection():
@@ -34,6 +37,7 @@ async def test_connection_yields_async_connection():
         # Should be able to execute a simple query
         result = await conn.execute(text("SELECT 1"))
         assert result is not None
+
 
 @pytest.mark.asyncio
 async def test_begin_yields_async_connection():

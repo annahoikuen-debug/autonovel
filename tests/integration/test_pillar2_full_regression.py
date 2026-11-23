@@ -1,4 +1,5 @@
 """Pillar 2 Full Regression and End-to-End Cross-Component Integration Test (Step 70)."""
+
 from __future__ import annotations
 
 import pytest
@@ -29,6 +30,7 @@ async def test_pillar2_end_to_end_cross_component(tmp_path):
     book_id = 7777
     async with db.get_session() as session:
         from sqlalchemy import select
+
         res = await session.execute(select(Book).where(Book.id == book_id))
         if not res.scalar_one_or_none():
             session.add(Book(id=book_id, title="Regression Novel", genre="scifi"))
@@ -63,8 +65,10 @@ async def test_pillar2_end_to_end_cross_component(tmp_path):
         events_emitted = []
 
         mock_event_bus = MagicMock()
+
         async def mock_pub(event_type, payload):
             events_emitted.append(event_type)
+
         mock_event_bus.publish_async = mock_pub
 
         mock_huey = MagicMock()
@@ -87,8 +91,10 @@ async def test_pillar2_end_to_end_cross_component(tmp_path):
             "step_b": {"output": "B finished"},
         }
 
-        with patch("src.backend.tasks.huey.execute_agent_node_task") as mock_exec, \
-             patch("src.backend.tasks.huey.async_wait_huey_result", new_callable=AsyncMock) as mock_wait:
+        with (
+            patch("src.backend.tasks.huey.execute_agent_node_task") as mock_exec,
+            patch("src.backend.tasks.huey.async_wait_huey_result", new_callable=AsyncMock) as mock_wait,
+        ):
 
             def fake_exec(func_name, kwargs, node_id):
                 t = MagicMock()
@@ -135,6 +141,7 @@ async def test_pillar2_end_to_end_cross_component(tmp_path):
     finally:
         async with db.get_session() as session:
             from sqlalchemy import delete
+
             await session.execute(delete(CharacterRelationship).where(CharacterRelationship.book_id == book_id))
             await session.execute(delete(Book).where(Book.id == book_id))
             await session.commit()

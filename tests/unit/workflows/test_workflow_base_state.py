@@ -3,11 +3,7 @@ from src.backend.workflows.graph_state import WorkflowState, PlotNodeOutput
 
 def test_workflow_state_initialization():
     """WorkflowStateの初期化とフィールバリデーションをテスト"""
-    state = WorkflowState(
-        book_id=123,
-        ep_num=1,
-        branch_id=456
-    )
+    state = WorkflowState(book_id=123, ep_num=1, branch_id=456)
     assert state.book_id == 123
     assert state.ep_num == 1
     assert state.branch_id == 456
@@ -34,7 +30,7 @@ def test_workflow_state_with_custom_values():
         is_consistent=False,
         retry_count=2,
         max_retries=5,
-        status="success"
+        status="success",
     )
     assert state.book_id == 999
     assert state.ep_num == 5
@@ -51,11 +47,7 @@ def test_workflow_state_with_custom_values():
 
 def test_plot_node_output_creation():
     """PlotNodeOutputの作成をテスト"""
-    output = PlotNodeOutput(
-        status="completed",
-        data={"result": "success"},
-        error=None
-    )
+    output = PlotNodeOutput(status="completed", data={"result": "success"}, error=None)
     assert output.status == "completed"
     assert output.data == {"result": "success"}
     assert output.error is None
@@ -63,11 +55,7 @@ def test_plot_node_output_creation():
 
 def test_plot_node_output_with_error():
     """エラーありのPlotNodeOutputをテスト"""
-    output = PlotNodeOutput(
-        status="failed",
-        data={},
-        error="Something went wrong"
-    )
+    output = PlotNodeOutput(status="failed", data={}, error="Something went wrong")
     assert output.status == "failed"
     assert output.data == {}
     assert output.error == "Something went wrong"
@@ -76,5 +64,6 @@ def test_plot_node_output_with_error():
 def test_base_workflow_import():
     """BaseWorkflowがインポートできることをテスト（抽象クラスなのでインスタンス化はしない）"""
     from src.backend.workflows.base_workflow import BaseWorkflow
+
     # 抽象クラスなのでインスタンス化はできないことを確認
-    assert BaseWorkflow.__abstractmethods__ == frozenset({'execute'})
+    assert BaseWorkflow.__abstractmethods__ == frozenset({"execute"})

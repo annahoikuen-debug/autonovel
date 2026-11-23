@@ -1,4 +1,5 @@
 """Comprehensive Health Check and Diagnostics for Pillar 2 (State & Async Infra)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -31,6 +32,7 @@ async def run_pillar2_diagnostics() -> dict[str, bool]:
         db = AppContainer.db()
         async with db.get_session() as session:
             from sqlalchemy import text
+
             await session.execute(text("SELECT 1"))
         results["Database Connectivity"] = True
         print("[*] Database Connectivity: [OK]")
@@ -41,6 +43,7 @@ async def run_pillar2_diagnostics() -> dict[str, bool]:
     # 3. Social Dynamics Schema Check
     try:
         from scripts.migrate_social_db import check_and_create_tables
+
         schema_ok = check_and_create_tables()
         results["Social Schema"] = schema_ok
         print(f"[*] Social Tables Schema: {'[OK]' if schema_ok else '[FAIL]'}")
@@ -53,7 +56,9 @@ async def run_pillar2_diagnostics() -> dict[str, bool]:
         rm = ResourceManager()
         limits = rm.calculate_worker_pool_limits()
         results["Resource Manager"] = limits["max_parallel_tasks"] > 0
-        print(f"[*] Resource Limits: [OK] (Max Parallel Tasks: {limits['max_parallel_tasks']}, Image: {limits['image_workers']})")
+        print(
+            f"[*] Resource Limits: [OK] (Max Parallel Tasks: {limits['max_parallel_tasks']}, Image: {limits['image_workers']})"
+        )
     except Exception as e:
         results["Resource Manager"] = False
         print(f"[!] Resource Manager: [FAIL] ({e})")

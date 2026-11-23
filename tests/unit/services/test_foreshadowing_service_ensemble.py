@@ -91,7 +91,7 @@ async def test_ensemble_prevents_accidental_keyword_mention():
         episode_num=5,
         draft_text="彼は机の上にあった手紙を見た。",
         writing_metadata=None,  # No metadata self-report
-        contract_ids=[],        # Not in ep 5 contract
+        contract_ids=[],  # Not in ep 5 contract
     )
 
     assert resolved == []

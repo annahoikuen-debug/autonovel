@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 from src.backend.database.repositories.chapter import ChapterRepository
 from src.backend.database.models import Chapter
 
+
 def _sql_of(mock_session) -> str:
     """実行されたステートメントの SQL 文字列を取り出す。
 
@@ -13,21 +14,21 @@ def _sql_of(mock_session) -> str:
     stmt = mock_session.execute.await_args[0][0]
     return str(stmt)
 
+
 @pytest.mark.asyncio
 async def test_chapter_update_content():
     mock_session = AsyncMock()
     mock_session.execute = AsyncMock(return_value=MagicMock(rowcount=1))
 
     repo = ChapterRepository(mock_session)
-    updated = await repo.update_chapter_content(
-        branch_id=1, ep_num=1, content="新しい本文（15文字）", book_id=7
-    )
+    updated = await repo.update_chapter_content(branch_id=1, ep_num=1, content="新しい本文（15文字）", book_id=7)
 
     mock_session.execute.assert_awaited_once()
     assert updated == 1
     sql = _sql_of(mock_session)
     assert "book_id" in sql, f"book_id でスコープされていない: {sql}"
     assert "chapters.ep_num" in sql
+
 
 @pytest.mark.asyncio
 async def test_chapter_update_content_without_book_id_stays_branch_scoped():
@@ -40,6 +41,7 @@ async def test_chapter_update_content_without_book_id_stays_branch_scoped():
 
     sql = _sql_of(mock_session)
     assert "book_id" not in sql
+
 
 @pytest.mark.asyncio
 async def test_chapter_create_new():
@@ -74,6 +76,7 @@ async def test_chapter_create_new():
     for col in ("book_id", "branch_id", "ep_num"):
         assert f"chapters.{col}" in sql, f"照合に {col} が含まれていない: {sql}"
 
+
 @pytest.mark.asyncio
 async def test_chapter_get():
     mock_session = AsyncMock()
@@ -97,6 +100,7 @@ async def test_chapter_get():
     assert ch is not None
     assert ch.title == "Chapter 1"
 
+
 @pytest.mark.asyncio
 async def test_chapter_get_none():
     mock_session = AsyncMock()
@@ -107,6 +111,7 @@ async def test_chapter_get_none():
     repo = ChapterRepository(mock_session)
     ch = await repo.get_chapter(branch_id=1, ep_num=99)
     assert ch is None
+
 
 @pytest.mark.asyncio
 async def test_chapter_delete():
@@ -121,6 +126,7 @@ async def test_chapter_delete():
     sql = _sql_of(mock_session)
     for col in ("book_id", "branch_id", "ep_num"):
         assert f"chapters.{col}" in sql, f"削除条件に {col} が含まれていない: {sql}"
+
 
 @pytest.mark.asyncio
 async def test_chapter_delete_reports_zero_when_absent():

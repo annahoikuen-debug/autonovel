@@ -1,4 +1,5 @@
 """リポジトリ層のユニットテスト。"""
+
 from __future__ import annotations
 
 from src.backend.database.repository import BookRepository

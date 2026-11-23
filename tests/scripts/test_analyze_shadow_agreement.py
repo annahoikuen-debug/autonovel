@@ -64,7 +64,7 @@ def test_analyze_threshold_exact():
     # 最初の8件は一致、最後の2件は is_passed を反転させて不一致にする
     shadow = [_make_row(i, i, i % 2 == 0, float(70 + i)) for i in range(8)] + [
         _make_row(8, 8, False, 70.0),  # single: True, shadow: False → 不一致
-        _make_row(9, 9, True, 79.0),   # single: False, shadow: True → 不一致
+        _make_row(9, 9, True, 79.0),  # single: False, shadow: True → 不一致
     ]
     # 8件一致 / 10件 = 0.8
 
@@ -77,9 +77,7 @@ def test_analyze_threshold_exact():
 def test_analyze_threshold_below():
     """閾値未満 (0.79) → recommend_switch=False。"""
     single = [_make_row(i, i, True, 80.0) for i in range(100)]
-    shadow = [_make_row(i, i, True, 80.0) for i in range(79)] + [
-        _make_row(i, i, False, 60.0) for i in range(79, 100)
-    ]
+    shadow = [_make_row(i, i, True, 80.0) for i in range(79)] + [_make_row(i, i, False, 60.0) for i in range(79, 100)]
 
     result = analyze_shadow_agreement(single, shadow, agreement_threshold=0.8)
 
@@ -155,12 +153,8 @@ def test_main_with_json_files(tmp_path):
 
     single_path = tmp_path / "single.json"
     shadow_path = tmp_path / "shadow.json"
-    single_path.write_text(
-        json.dumps([_make_row(1, 1, True, 80.0)]), encoding="utf-8"
-    )
-    shadow_path.write_text(
-        json.dumps([_make_row(1, 1, True, 78.0)]), encoding="utf-8"
-    )
+    single_path.write_text(json.dumps([_make_row(1, 1, True, 80.0)]), encoding="utf-8")
+    shadow_path.write_text(json.dumps([_make_row(1, 1, True, 78.0)]), encoding="utf-8")
 
     rc = main(
         [

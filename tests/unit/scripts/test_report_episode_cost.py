@@ -95,12 +95,9 @@ def test_unknown_model_is_flagged_not_silently_zero():
 
 def test_aggregate_groups_by_episode():
     records = [
-        {"ep_num": 1, "input_tokens": 100, "output_tokens": 10,
-         "model_name": "gpt-4o-mini", "task_type": "writing"},
-        {"ep_num": 1, "input_tokens": 200, "output_tokens": 20,
-         "model_name": "gpt-4o-mini", "task_type": "audit"},
-        {"ep_num": 2, "input_tokens": 50, "output_tokens": 5,
-         "model_name": "gpt-4o-mini", "task_type": "writing"},
+        {"ep_num": 1, "input_tokens": 100, "output_tokens": 10, "model_name": "gpt-4o-mini", "task_type": "writing"},
+        {"ep_num": 1, "input_tokens": 200, "output_tokens": 20, "model_name": "gpt-4o-mini", "task_type": "audit"},
+        {"ep_num": 2, "input_tokens": 50, "output_tokens": 5, "model_name": "gpt-4o-mini", "task_type": "writing"},
     ]
     rows = aggregate_records(records)
     assert [r["ep_num"] for r in rows] == [1, 2]
@@ -116,16 +113,12 @@ def test_records_without_episode_are_skipped():
 def test_totals_include_usd_per_episode():
     """効果測定表が読む `usd_per_episode` が算出されること。"""
     records = [
-        {"ep_num": 1, "input_tokens": 1000, "output_tokens": 100,
-         "model_name": "gpt-4o-mini", "task_type": "writing"},
-        {"ep_num": 2, "input_tokens": 1000, "output_tokens": 100,
-         "model_name": "gpt-4o-mini", "task_type": "writing"},
+        {"ep_num": 1, "input_tokens": 1000, "output_tokens": 100, "model_name": "gpt-4o-mini", "task_type": "writing"},
+        {"ep_num": 2, "input_tokens": 1000, "output_tokens": 100, "model_name": "gpt-4o-mini", "task_type": "writing"},
     ]
     report = build_report(records)
     assert report["totals"]["episode_count"] == 2
-    assert report["totals"]["usd_per_episode"] == pytest.approx(
-        report["totals"]["total_cost_usd"] / 2
-    )
+    assert report["totals"]["usd_per_episode"] == pytest.approx(report["totals"]["total_cost_usd"] / 2)
 
 
 # ── CLI 実挙動 ───────────────────────────────────────────────────
@@ -140,7 +133,11 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess:
     env = {**os.environ, "PYTHONIOENCODING": "utf-8"}
     return subprocess.run(
         [sys.executable, *args],
-        capture_output=True, text=True, cwd=ROOT, env=env, encoding="utf-8",
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        env=env,
+        encoding="utf-8",
     )
 
 
@@ -148,9 +145,7 @@ def test_cli_emits_valid_json(tmp_path):
     """--json フラグで機械可読な出力が得られること。"""
     db = tmp_path / "cost.db"
     _seed(db)
-    result = _run_cli(
-        "scripts/report_episode_cost.py", "--json", "--db", str(db)
-    )
+    result = _run_cli("scripts/report_episode_cost.py", "--json", "--db", str(db))
     assert result.returncode == 0, f"CLI が失敗: {result.stderr}"
     payload = json.loads(result.stdout)
     assert "episodes" in payload
@@ -167,9 +162,7 @@ def test_cli_without_db_prints_empty_report():
 
 def test_cli_missing_db_file_is_not_fatal(tmp_path):
     """存在しないDBパスを渡してもクラッシュしないこと。"""
-    result = _run_cli(
-        "scripts/report_episode_cost.py", "--json", "--db", str(tmp_path / "nope.db")
-    )
+    result = _run_cli("scripts/report_episode_cost.py", "--json", "--db", str(tmp_path / "nope.db"))
     assert result.returncode == 0, f"CLI が失敗: {result.stderr}"
     assert json.loads(result.stdout)["episodes"] == []
 
@@ -178,9 +171,7 @@ def test_cli_episode_filter(tmp_path):
     """--episodes による絞り込みが効くこと。"""
     db = tmp_path / "cost.db"
     _seed(db)
-    result = _run_cli(
-        "scripts/report_episode_cost.py", "--json", "--db", str(db), "--episodes", "2"
-    )
+    result = _run_cli("scripts/report_episode_cost.py", "--json", "--db", str(db), "--episodes", "2")
     payload = json.loads(result.stdout)
     assert [e["ep_num"] for e in payload["episodes"]] == [2]
 

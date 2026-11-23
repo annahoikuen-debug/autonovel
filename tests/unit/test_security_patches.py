@@ -3,6 +3,7 @@ Unit tests verifying Phase 2 security patches:
 - Cypher query & column definition validation (SQL injection prevention)
 - Admin endpoint authentication enforcement
 """
+
 import pytest
 from pydantic import ValidationError
 from src.backend.routers.graph import CypherQueryRequest, router as graph_router
@@ -16,10 +17,7 @@ def test_cypher_query_request_valid():
     req = CypherQueryRequest(query="MATCH (n) RETURN n", column_definition="(result agtype)")
     assert req.column_definition == "(result agtype)"
 
-    req_multi = CypherQueryRequest(
-        query="MATCH (n) RETURN n.id, n.name",
-        column_definition="(id agtype, name agtype)"
-    )
+    req_multi = CypherQueryRequest(query="MATCH (n) RETURN n.id, n.name", column_definition="(id agtype, name agtype)")
     assert req_multi.column_definition == "(id agtype, name agtype)"
 
 

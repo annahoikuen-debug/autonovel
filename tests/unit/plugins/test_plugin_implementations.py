@@ -1,4 +1,5 @@
 """プラグイン実装（social_posting / audio / multimedia）の追加テスト。"""
+
 from __future__ import annotations
 
 import sys

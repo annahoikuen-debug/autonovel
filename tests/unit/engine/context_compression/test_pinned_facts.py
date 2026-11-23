@@ -51,10 +51,7 @@ class TestPinnedFactsGenerator:
 
     def test_state_change_keyword_extracted(self, gen):
         """前話 digest の状態変化キーワードを含む行が抽出される。"""
-        prev_digest = (
-            "第20話: アルスは剣を入手した。村を出た。\n"
-            "アルスは敵を倒した。新たな仲間が加わった。"
-        )
+        prev_digest = "第20話: アルスは剣を入手した。村を出た。\nアルスは敵を倒した。新たな仲間が加わった。"
         result = gen.generate(prev_digest_text=prev_digest)
         assert "【状態変化】第20話: アルスは剣を入手した。村を出た。" in result.head
         assert "【状態変化】アルスは敵を倒した。新たな仲間が加わった。" in result.head

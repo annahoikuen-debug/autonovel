@@ -1,4 +1,5 @@
 """src/shared/network.py / event_bus.py / result.py / retry_policy.py の単体テスト."""
+
 from __future__ import annotations
 
 import importlib

@@ -1,4 +1,5 @@
 """src/cli/main.py および illustration_cli.py の実行経路テスト。"""
+
 from __future__ import annotations
 
 import sys

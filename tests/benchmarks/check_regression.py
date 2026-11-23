@@ -1,4 +1,5 @@
 """Regression check script for CI integration."""
+
 from __future__ import annotations
 
 import argparse
@@ -78,19 +79,23 @@ def check_results(
         max_memory_scaling = thresholds.get("max_memory_scaling_mb_per_ep", 0.5)
 
         if scaling["latency_per_episode_ms"] > max_latency_scaling:
-            scaling_violations.append({
-                "metric": "latency_scaling",
-                "value": scaling["latency_per_episode_ms"],
-                "threshold": max_latency_scaling,
-                "severity": "warning",
-            })
+            scaling_violations.append(
+                {
+                    "metric": "latency_scaling",
+                    "value": scaling["latency_per_episode_ms"],
+                    "threshold": max_latency_scaling,
+                    "severity": "warning",
+                }
+            )
         if scaling["memory_per_episode_mb"] > max_memory_scaling:
-            scaling_violations.append({
-                "metric": "memory_scaling",
-                "value": scaling["memory_per_episode_mb"],
-                "threshold": max_memory_scaling,
-                "severity": "warning",
-            })
+            scaling_violations.append(
+                {
+                    "metric": "memory_scaling",
+                    "value": scaling["memory_per_episode_mb"],
+                    "threshold": max_memory_scaling,
+                    "severity": "warning",
+                }
+            )
 
     # Overall check
     overall_result = check_regression(summary, base_thresholds)

@@ -6,6 +6,7 @@
 ハングする場合がある。本テストはオーケストレーションルーターのみを
 ロードして検証する。
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch
@@ -45,6 +46,7 @@ class TestOrchestratedAPI:
         """POST /orchestrated/generate が task_id を返すこと。"""
         # テストごとにユニークな task_id を使う (共有DB の UNIQUE 制約回避)
         import uuid
+
         unique_id = f"test-task-{uuid.uuid4().hex[:8]}"
         mock_result = MagicMock()
         mock_result.id = unique_id
@@ -103,6 +105,7 @@ class TestOrchestratedAPI:
         client = TestClient(app)
 
         import uuid
+
         unique_id = f"test-task-{uuid.uuid4().hex[:8]}"
         response = client.delete(f"/orchestrated/task/{unique_id}")
         assert response.status_code == 200
@@ -142,7 +145,5 @@ def test_orchestrated_does_not_leak_unguarded_root_routes():
     """
     from src.backend.routers.orchestrated import router as orchestrated_router
 
-    leaked = sorted(
-        r.path for r in orchestrated_router.routes if not r.path.startswith("/orchestrated")
-    )
+    leaked = sorted(r.path for r in orchestrated_router.routes if not r.path.startswith("/orchestrated"))
     assert not leaked, f"orchestrated が prefix 配下に無いルートがある: {leaked}"

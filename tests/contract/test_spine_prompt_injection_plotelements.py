@@ -44,12 +44,8 @@ async def test_off_byte_identical_macro_prompt(pm, bible_json):
     """spine_quality=off で macro プロンプトがバイト単位で同一であること。"""
     spine = resolve_spine("exile_rise", "web_volume", "web", 40)
 
-    _a = await pm.build_macro_plot_skeleton_prompt(
-        bible_json, [1, 2, 3], spine=None, spine_quality="off"
-    )
-    _b = await pm.build_macro_plot_skeleton_prompt(
-        bible_json, [1, 2, 3], spine=spine, spine_quality="off"
-    )
+    _a = await pm.build_macro_plot_skeleton_prompt(bible_json, [1, 2, 3], spine=None, spine_quality="off")
+    _b = await pm.build_macro_plot_skeleton_prompt(bible_json, [1, 2, 3], spine=spine, spine_quality="off")
     assert _a == _b, "off でも macro プロンプトが変わった"
 
 
@@ -58,12 +54,8 @@ async def test_off_byte_identical_micro_prompt(pm, macro_skeleton):
     """spine_quality=off で micro プロンプトがバイト単位で同一であること。"""
     spine = resolve_spine("exile_rise", "web_volume", "web", 40)
 
-    _a = await pm.build_micro_scene_expander_prompt(
-        macro_skeleton, spine=None, spine_quality="off"
-    )
-    _b = await pm.build_micro_scene_expander_prompt(
-        macro_skeleton, spine=spine, spine_quality="off"
-    )
+    _a = await pm.build_micro_scene_expander_prompt(macro_skeleton, spine=None, spine_quality="off")
+    _b = await pm.build_micro_scene_expander_prompt(macro_skeleton, spine=spine, spine_quality="off")
     assert _a == _b, "off でも micro プロンプトが変わった"
 
 
@@ -84,26 +76,16 @@ async def test_summary_injected_only_when_soft_or_hard(pm, bible_json, macro_ske
     off は空文字。"""
     spine = resolve_spine("exile_rise", "web_volume", "web", 40)
 
-    macro_off = await pm.build_macro_plot_skeleton_prompt(
-        bible_json, [1, 2, 3], spine=spine, spine_quality="off"
-    )
-    macro_soft = await pm.build_macro_plot_skeleton_prompt(
-        bible_json, [1, 2, 3], spine=spine, spine_quality="soft"
-    )
-    macro_hard = await pm.build_macro_plot_skeleton_prompt(
-        bible_json, [1, 2, 3], spine=spine, spine_quality="hard"
-    )
+    macro_off = await pm.build_macro_plot_skeleton_prompt(bible_json, [1, 2, 3], spine=spine, spine_quality="off")
+    macro_soft = await pm.build_macro_plot_skeleton_prompt(bible_json, [1, 2, 3], spine=spine, spine_quality="soft")
+    macro_hard = await pm.build_macro_plot_skeleton_prompt(bible_json, [1, 2, 3], spine=spine, spine_quality="hard")
     assert macro_off == macro_off  # トートロジーだがoff固定の証左
     assert macro_soft != macro_off, "soft で macro summary が注入されていない"
     assert macro_hard != macro_off, "hard で macro summary が注入されていない"
     assert "【構造の割当】" in macro_soft or "【構造の割当】" in macro_hard
 
-    micro_off = await pm.build_micro_scene_expander_prompt(
-        macro_skeleton, spine=spine, spine_quality="off"
-    )
-    micro_hard = await pm.build_micro_scene_expander_prompt(
-        macro_skeleton, spine=spine, spine_quality="hard"
-    )
+    micro_off = await pm.build_micro_scene_expander_prompt(macro_skeleton, spine=spine, spine_quality="off")
+    micro_hard = await pm.build_micro_scene_expander_prompt(macro_skeleton, spine=spine, spine_quality="hard")
     assert micro_off == micro_off
     assert micro_hard != micro_off, "hard で micro duty が注入されていない"
     # macro には summary（全体構造）、micro には当該話duty が入ることを区別

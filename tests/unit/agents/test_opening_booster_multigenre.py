@@ -14,7 +14,9 @@ async def test_opening_booster_multigenre_prompt_construction():
     agent = OpeningBoosterAgent(llm=mock_llm)
 
     # ダンジョンストリームジャンルの第1話プロンプトテスト
-    config = OpeningEpisodeConfig(ep_num=1, target_word_count=2000, inciting_incident="未知の隠し部屋発見", payoff_moment="スキル覚醒")
+    config = OpeningEpisodeConfig(
+        ep_num=1, target_word_count=2000, inciting_incident="未知の隠し部屋発見", payoff_moment="スキル覚醒"
+    )
     result = await agent.build_prompt(config, genre="dungeon_stream")
 
     # ダンジョンストリーム特有の指示が含まれていることを確認
@@ -44,12 +46,16 @@ async def test_opening_booster_multigenre_cliffhanger_evaluation():
 
     # モックのセットアップ
     mock_llm = AsyncMock()
-    mock_llm.generate_text.return_value = "底辺配信者・同接1人の絶望 → 未知の隠し部屋/ユニークスキル覚醒 → 配信切り忘れで引く"
+    mock_llm.generate_text.return_value = (
+        "底辺配信者・同接1人の絶望 → 未知の隠し部屋/ユニークスキル覚醒 → 配信切り忘れで引く"
+    )
 
     agent = OpeningBoosterAgent(llm=mock_llm)
 
     # ダンジョンストリームジャンルのクリフハンガー評価テスト
-    config = OpeningEpisodeConfig(ep_num=1, target_word_count=2000, inciting_incident="未知の隠し部屋発見", payoff_moment="スキル覚醒")
+    config = OpeningEpisodeConfig(
+        ep_num=1, target_word_count=2000, inciting_incident="未知の隠し部屋発見", payoff_moment="スキル覚醒"
+    )
     result = await agent.generate_opening_episode(config, protagonist_name="テスト配信者", genre="dungeon_stream")
 
     # 結果が返ってくることを確認

@@ -55,8 +55,13 @@ class _FakePM:
         self.calls = []
 
     async def build_micro_scene_expander_prompt(
-        self, macro_skeleton, previous_ending_text="", characters_summary="",
-        book_id=None, spine=None, spine_quality=None,
+        self,
+        macro_skeleton,
+        previous_ending_text="",
+        characters_summary="",
+        book_id=None,
+        spine=None,
+        spine_quality=None,
     ):
         self.calls.append(
             dict(
@@ -71,11 +76,14 @@ class _FakePM:
         return "micro prompt"
 
     async def build_macro_plot_skeleton_prompt(
-        self, bible_json_str, ep_range, book_id=None, spine=None, spine_quality=None,
+        self,
+        bible_json_str,
+        ep_range,
+        book_id=None,
+        spine=None,
+        spine_quality=None,
     ):
-        self.calls.append(
-            dict(ep_range=ep_range, spine=spine, spine_quality=spine_quality, book_id=book_id)
-        )
+        self.calls.append(dict(ep_range=ep_range, spine=spine, spine_quality=spine_quality, book_id=book_id))
         return "macro prompt"
 
 
@@ -150,9 +158,7 @@ async def test_resolve_spine_exception_falls_back_to_none(skeleton, monkeypatch)
     llm = _FakeLLM(ep_num=3)
     expander = DefaultPlotExpander(repo=repo, pm=pm, llm=llm)
 
-    result = await expander.expand_single_micro(
-        book_id=1, ep_num=3, skeleton=skeleton, reporter=_FakeReporter()
-    )
+    result = await expander.expand_single_micro(book_id=1, ep_num=3, skeleton=skeleton, reporter=_FakeReporter())
 
     # 執筆が継続し、PlotEpisode が返される
     assert result is not None

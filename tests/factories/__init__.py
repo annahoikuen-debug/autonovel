@@ -3,6 +3,7 @@
 このモジュールは、統合テストで使用するテストデータを生成するための
 ファクトリ関数を提供します。
 """
+
 from __future__ import annotations
 
 import random
@@ -13,7 +14,7 @@ from typing import Dict, Any, Optional
 
 def random_string(length: int = 8) -> str:
     """ランダムな文字列を生成."""
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+    return "".join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
 def random_email() -> str:
@@ -44,7 +45,7 @@ def user_factory(**kwargs) -> Dict[str, Any]:
         "full_name": random_name(),
         "is_active": True,
         "created_at": datetime.now() - timedelta(days=random.randint(0, 365)),
-        "updated_at": datetime.now()
+        "updated_at": datetime.now(),
     }
     defaults.update(kwargs)
     return defaults
@@ -69,7 +70,7 @@ def book_factory(**kwargs) -> Dict[str, Any]:
         "page_count": random.randint(100, 1000),
         "language": random.choice(["日本語", "英語", "フランス語", "ドイツ語"]),
         "created_at": datetime.now() - timedelta(days=random.randint(0, 365)),
-        "updated_at": datetime.now()
+        "updated_at": datetime.now(),
     }
     defaults.update(kwargs)
     return defaults
@@ -95,7 +96,7 @@ def chapter_factory(**kwargs) -> Dict[str, Any]:
         "content": "これはサンプルの章内容です。" * random.randint(10, 50),
         "word_count": random.randint(500, 5000),
         "created_at": datetime.now() - timedelta(days=random.randint(0, 365)),
-        "updated_at": datetime.now()
+        "updated_at": datetime.now(),
     }
     defaults.update(kwargs)
     return defaults
@@ -118,7 +119,7 @@ def character_factory(**kwargs) -> Dict[str, Any]:
         "description": f"{random_name()}は物語の中で重要な役割を果たします。",
         "first_appearance_chapter": random.randint(1, 10),
         "created_at": datetime.now() - timedelta(days=random.randint(0, 365)),
-        "updated_at": datetime.now()
+        "updated_at": datetime.now(),
     }
     defaults.update(kwargs)
     return defaults

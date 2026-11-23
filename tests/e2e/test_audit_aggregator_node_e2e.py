@@ -134,8 +134,16 @@ async def test_audit_aggregator_degraded_all_missing():
 
     agg = AuditAggregator(
         specialists=[],
-        weights={"consistency": 0.125, "creativity": 0.125, "reader_hook": 0.125, "emotion_curve": 0.125,
-                 "style": 0.125, "factual": 0.125, "structure": 0.125, "multimodal": 0.125},
+        weights={
+            "consistency": 0.125,
+            "creativity": 0.125,
+            "reader_hook": 0.125,
+            "emotion_curve": 0.125,
+            "style": 0.125,
+            "factual": 0.125,
+            "structure": 0.125,
+            "multimodal": 0.125,
+        },
     )
     result = agg.aggregate()
 

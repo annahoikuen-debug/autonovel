@@ -5,6 +5,7 @@ Ensures Clean Architecture rules:
 1. Domain layer (src/domain/) must never depend on presentation/routing layers
    (e.g., src.backend.routers, fastapi router modules).
 """
+
 import ast
 from pathlib import Path
 import pytest
@@ -61,11 +62,6 @@ def test_domain_layer_does_not_import_routers():
         for lineno, mod_name in imports:
             for forbidden in forbidden_prefixes:
                 if mod_name == forbidden or mod_name.startswith(f"{forbidden}."):
-                    violations.append(
-                        f"{rel_path}:{lineno} imports forbidden module '{mod_name}'"
-                    )
+                    violations.append(f"{rel_path}:{lineno} imports forbidden module '{mod_name}'")
 
-    assert not violations, (
-        "Domain layer has architectural dependency violations:\n"
-        + "\n".join(violations)
-    )
+    assert not violations, "Domain layer has architectural dependency violations:\n" + "\n".join(violations)

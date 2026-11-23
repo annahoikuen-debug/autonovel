@@ -1,4 +1,5 @@
 """Integration tests for WriterAgent write loop and memory update."""
+
 from src.agents.writer_agent import WriterAgent
 from src.stores.vector_store import InMemoryVectorStore
 

@@ -13,6 +13,7 @@ v5.2 までは長編に関する定量指標が 1 つも無く、
     python -m tests.benchmarks.long_form --eps 20,50,100
     python -m tests.benchmarks.long_form --check   # CI 用（閾値違反で exit 1）
 """
+
 from __future__ import annotations
 
 import json
@@ -83,9 +84,7 @@ class _FakeForeshadowing:
         self.status = ForeshadowingStatus.PLANTED.value
 
 
-def _estimate_layer2_chars(
-    past_episodes: list[int], unresolved: list[_FakeForeshadowing], max_chars: int
-) -> int:
+def _estimate_layer2_chars(past_episodes: list[int], unresolved: list[_FakeForeshadowing], max_chars: int) -> int:
     """EpisodeContextBuilder._build_layer2_summary と同じComposableで文字数を推定する。
 
     実際のDBクエリ無しに「Layer2 が話数に比例して膨らまないか」を検証する。
@@ -98,9 +97,7 @@ def _estimate_layer2_chars(
         tail = past_episodes[-recent:]
         lines = [f"第{ep}話: {'本文' * 25}..." for ep in head]
         if omitted:
-            lines.append(
-                f"……（第{omitted[0]}話〜第{omitted[-1]}話の確定事実は省略）……"
-            )
+            lines.append(f"……（第{omitted[0]}話〜第{omitted[-1]}話の確定事実は省略）……")
         lines += [f"第{ep}話: {'本文' * 25}..." for ep in tail]
     else:
         lines = [f"第{ep}話: {'本文' * 25}..." for ep in past_episodes]
@@ -114,11 +111,7 @@ def _estimate_layer2_chars(
         f"{f', 第{f.target_episode}話回収目標' if f.target_episode else ''}）"
         for f in unresolved
     ]
-    fs_section = (
-        "\n\n【未回収伏線一覧】\n" + "\n".join(fs_lines)
-        if fs_lines
-        else "\n\n【未回収伏線一覧】\n(なし)"
-    )
+    fs_section = "\n\n【未回収伏線一覧】\n" + "\n".join(fs_lines) if fs_lines else "\n\n【未回収伏線一覧】\n(なし)"
     return len(history + fs_section)
 
 
@@ -194,9 +187,7 @@ def run_long_form(
         abandoned=abandoned,
         active_at_end=len(unresolved),
         collection_rate=round(resolved / terminal_count, 4) if terminal_count else 0.0,
-        resolution_rate=(
-            round(terminal_count / len(all_fs), 4) if all_fs else 0.0
-        ),
+        resolution_rate=(round(terminal_count / len(all_fs), 4) if all_fs else 0.0),
         context_chars_by_ep=context_chars,
         layer2_chars_max=layer2_max,
         layer2_chars_final=layer2_final,
@@ -209,11 +200,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="v5.3 Long-form Integrity Benchmark (foreshadowing KPI)",
     )
-    parser.add_argument("--eps", type=str, default="20,50,100",
-                        help="Comma-separated episode counts")
+    parser.add_argument("--eps", type=str, default="20,50,100", help="Comma-separated episode counts")
     parser.add_argument("--out", type=str, default="", help="Write JSON results here")
-    parser.add_argument("--check", action="store_true",
-                        help="Fail (exit 1) when thresholds are violated")
+    parser.add_argument("--check", action="store_true", help="Fail (exit 1) when thresholds are violated")
     args = parser.parse_args(argv)
 
     eps_list = [int(x.strip()) for x in args.eps.split(",") if x.strip()]
@@ -241,14 +230,11 @@ def main(argv: list[str] | None = None) -> int:
         failures: list[str] = []
         for r in results:
             if r["completion_rate"] < 1.0:
-                failures.append(
-                    f"eps={r['total_episodes']}: 完走率 {r['completion_rate']:.2%} < 100%"
-                )
+                failures.append(f"eps={r['total_episodes']}: 完走率 {r['completion_rate']:.2%} < 100%")
             # Layer2 は話数が増えても有界であること
             if r["layer2_chars_max"] > 8000:
                 failures.append(
-                    f"eps={r['total_episodes']}: Layer2 最大文字数 "
-                    f"{r['layer2_chars_max']} > 8000（コンテキスト肥大）"
+                    f"eps={r['total_episodes']}: Layer2 最大文字数 {r['layer2_chars_max']} > 8000（コンテキスト肥大）"
                 )
         if failures:
             print("\n[FAIL]")

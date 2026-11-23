@@ -1,4 +1,5 @@
 """src/stores/conflict_store.py と graph_store / vector_store の追加テスト。"""
+
 from __future__ import annotations
 
 import json

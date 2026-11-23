@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 
+
 def test_check_performance_script():
     """Run the performance check script and verify it passes."""
     result = subprocess.run(

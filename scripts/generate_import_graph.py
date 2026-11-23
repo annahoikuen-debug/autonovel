@@ -33,9 +33,7 @@ OUTPUT_FILE = ROOT / "var" / "import_graph.json"
 #   from src.pkg.sub import name
 #   from src.pkg import name
 #   import src.pkg.sub
-IMPORT_PATTERN = re.compile(
-    r"^\s*(?:from\s+(\S+?)\s+import\s+.*?|import\s+(\S+?))\s*(?:#.*)?$"
-)
+IMPORT_PATTERN = re.compile(r"^\s*(?:from\s+(\S+?)\s+import\s+.*?|import\s+(\S+?))\s*(?:#.*)?$")
 
 
 def is_python_file(path: Path) -> bool:

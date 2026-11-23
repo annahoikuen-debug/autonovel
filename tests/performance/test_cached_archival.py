@@ -1,4 +1,5 @@
 """Performance tests for CachedArchivalMemory."""
+
 import time
 from src.agents.memory.cached_archival import CachedArchivalMemory
 from src.agents.memory.interfaces import MemoryEntry

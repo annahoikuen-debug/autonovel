@@ -39,9 +39,7 @@ def test_plot_quality_score_is_not_zero_for_uniform_dimensions():
     """全次元 70 なら総合スコアも 70（0 にならない）。"""
     score = QualityCalculator.calculate_plot_quality_score(_FakePlot(70))
 
-    assert score.overall == 70, (
-        "plot 品質スコアが 0 になった（重みキーの不一致で total_weight=0）"
-    )
+    assert score.overall == 70, "plot 品質スコアが 0 になった（重みキーの不一致で total_weight=0）"
 
 
 def test_plot_quality_dimension_keys_have_matching_weights():

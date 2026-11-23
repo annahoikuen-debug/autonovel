@@ -19,9 +19,7 @@ async def test_primary_success_returns_primary_result():
     async def fallback():
         return "fallback-data"
 
-    result, provider = await mgr.execute_with_fallback(
-        "gemini", "openai", primary, fallback
-    )
+    result, provider = await mgr.execute_with_fallback("gemini", "openai", primary, fallback)
 
     assert result == "primary-data"
     assert provider == "gemini"
@@ -41,9 +39,7 @@ async def test_primary_failure_falls_back_to_fallback():
         fallback_calls += 1
         return "fallback-data"
 
-    result, provider = await mgr.execute_with_fallback(
-        "gemini", "openai", primary, fallback
-    )
+    result, provider = await mgr.execute_with_fallback("gemini", "openai", primary, fallback)
 
     assert result == "fallback-data"
     assert provider == "openai"
@@ -86,9 +82,7 @@ async def test_unknown_provider_has_no_breaker():
     async def fallback():
         return "fallback-data"
 
-    result, provider = await mgr.execute_with_fallback(
-        "unknown-provider", "openai", primary, fallback
-    )
+    result, provider = await mgr.execute_with_fallback("unknown-provider", "openai", primary, fallback)
 
     assert result == "unknown-primary"
     assert provider == "unknown-provider"
@@ -119,9 +113,7 @@ async def test_primary_breaker_open_skips_primary():
     async def fallback():
         return "fallback-data"
 
-    result, provider = await mgr.execute_with_fallback(
-        "gemini", "openai", primary, fallback
-    )
+    result, provider = await mgr.execute_with_fallback("gemini", "openai", primary, fallback)
 
     assert not primary_called
     assert result == "fallback-data"

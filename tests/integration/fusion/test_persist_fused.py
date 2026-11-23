@@ -1,4 +1,5 @@
 """Integration tests for persisting fused emotional vectors."""
+
 from src.fusion.config import FusionConfig
 from src.fusion.engine import FusionEngine
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType

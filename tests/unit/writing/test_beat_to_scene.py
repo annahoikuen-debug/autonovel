@@ -91,8 +91,10 @@ def mock_prompt_manager():
 @pytest.fixture
 def scene_writer(mock_llm, mock_context_builder, mock_prompt_manager):
     """SceneWriter インスタンスを作成"""
-    with patch("src.agents.writing.scene_writer.ProseRefinerAgent", MockProseRefiner), \
-         patch("src.agents.erotic_enhancer.EroticEnhancer", MockEroticEnhancer):
+    with (
+        patch("src.agents.writing.scene_writer.ProseRefinerAgent", MockProseRefiner),
+        patch("src.agents.erotic_enhancer.EroticEnhancer", MockEroticEnhancer),
+    ):
         writer = SceneWriter(
             llm=mock_llm,
             context_builder=mock_context_builder,
@@ -117,6 +119,7 @@ class TestSceneEntity:
     def test_create_introduction_scene(self):
         """導入シーンの作成テスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -139,6 +142,7 @@ class TestSceneEntity:
     def test_create_conflict_scene(self):
         """衝突シーンの作成テスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -158,6 +162,7 @@ class TestSceneEntity:
     def test_create_hook_scene(self):
         """引きシーンの作成テスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -177,6 +182,7 @@ class TestSceneEntity:
     def test_create_standard_triad(self):
         """標準3シーン構造の作成テスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -196,6 +202,7 @@ class TestSceneEntity:
     def test_scene_lifecycle(self):
         """シーンのライフサイクルテスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -232,6 +239,7 @@ class TestSceneEntity:
     def test_tension_delta(self):
         """テンション変化量のテスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -251,6 +259,7 @@ class TestSceneWriter:
     async def test_build_scene_context(self, scene_writer):
         """シーン用コンテキスト構築のテスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -282,6 +291,7 @@ class TestSceneWriter:
     async def test_write_scene(self, scene_writer):
         """単一シーン生成のテスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -315,6 +325,7 @@ class TestSceneWriterOrchestrator:
     async def test_write_episode_scenes(self, scene_orchestrator):
         """1話分の3シーン順次生成テスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -348,6 +359,7 @@ class TestSceneWriterOrchestrator:
     async def test_compose_episode(self, scene_orchestrator):
         """シーン結合テスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -355,7 +367,7 @@ class TestSceneWriterOrchestrator:
 
         # 完了済みとしてマーク
         for i, scene in enumerate(scenes):
-            scene.mark_completed(f"シーン{i+1}の本文です。")
+            scene.mark_completed(f"シーン{i + 1}の本文です。")
 
         composed = scene_orchestrator.compose_episode(scenes)
 
@@ -372,6 +384,7 @@ class TestBeatToSceneIntegration:
     async def test_full_beat_to_scene_pipeline(self, scene_orchestrator):
         """完全なBeat-to-Sceneパイプラインのテスト"""
         from src.domain.value_objects.ids import NovelId
+
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
 
@@ -412,18 +425,21 @@ class TestScenePrompts:
     def test_introduction_prompt_exists(self):
         """導入プロンプトテンプレートの存在確認"""
         from pathlib import Path
+
         path = Path(__file__).resolve().parents[3] / "prompts" / "templates" / "narrative" / "scene_introduction.j2"
         assert path.exists(), f"Template not found: {path}"
 
     def test_conflict_prompt_exists(self):
         """衝突プロンプトテンプレートの存在確認"""
         from pathlib import Path
+
         path = Path(__file__).resolve().parents[3] / "prompts" / "templates" / "narrative" / "scene_conflict.j2"
         assert path.exists(), f"Template not found: {path}"
 
     def test_hook_prompt_exists(self):
         """引きプロンプトテンプレートの存在確認"""
         from pathlib import Path
+
         path = Path(__file__).resolve().parents[3] / "prompts" / "templates" / "narrative" / "scene_hook.j2"
         assert path.exists(), f"Template not found: {path}"
 

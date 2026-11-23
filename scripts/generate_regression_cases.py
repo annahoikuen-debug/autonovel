@@ -9,10 +9,7 @@ def generate_regression_cases(output_dir: str = "tests/fixtures/regression"):
     out.mkdir(parents=True, exist_ok=True)
 
     # 1. Normal curve
-    normal_beats = [
-        {"episode": i, "tension": 4.0 + (i % 5) * 1.2, "beat_type": "SETUP"}
-        for i in range(1, 41)
-    ]
+    normal_beats = [{"episode": i, "tension": 4.0 + (i % 5) * 1.2, "beat_type": "SETUP"} for i in range(1, 41)]
     with open(out / "normal_40ep.json", "w", encoding="utf-8") as f:
         json.dump(normal_beats, f, indent=2)
 

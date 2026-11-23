@@ -1,4 +1,5 @@
 """Step 1: プロットイベント型定義テスト。"""
+
 from __future__ import annotations
 
 
@@ -38,9 +39,15 @@ class TestPlotEventCreation:
     def test_all_event_types_exist(self):
         """計画書に定義された全イベントタイプが存在する。"""
         expected = {
-            "BETRAYAL", "RESCUE", "CONFESSION", "COMBAT_VICTORY",
-            "LOSS_OF_LOVED_ONE", "SECRET_SHARED", "FORCED_COOPERATION",
-            "REJECTION", "CUSTOM",
+            "BETRAYAL",
+            "RESCUE",
+            "CONFESSION",
+            "COMBAT_VICTORY",
+            "LOSS_OF_LOVED_ONE",
+            "SECRET_SHARED",
+            "FORCED_COOPERATION",
+            "REJECTION",
+            "CUSTOM",
         }
         actual = {e.name for e in PlotEventType}
         assert expected == actual
@@ -48,8 +55,15 @@ class TestPlotEventCreation:
     def test_all_roles_exist(self):
         """計画書に定義された全役割が存在する。"""
         expected = {
-            "VICTIM", "PERPETRATOR", "RESCUER", "WITNESS", "SHARER",
-            "RECEIVER", "PARTICIPANT", "CONFESSOR", "LISTENER",
+            "VICTIM",
+            "PERPETRATOR",
+            "RESCUER",
+            "WITNESS",
+            "SHARER",
+            "RECEIVER",
+            "PARTICIPANT",
+            "CONFESSOR",
+            "LISTENER",
         }
         actual = {r.name for r in Role}
         assert expected == actual
@@ -57,7 +71,10 @@ class TestPlotEventCreation:
     def test_get_character_missing_role(self):
         """存在しない役割は None を返す。"""
         event = PlotEvent(
-            event_id="e", episode=1, scene=1, event_type="betrayal",
+            event_id="e",
+            episode=1,
+            scene=1,
+            event_type="betrayal",
             roles={Role.VICTIM: "A"},
         )
         assert event.get_character(Role.RESCUER) is None
@@ -80,11 +97,13 @@ class TestPlotEventCreation:
 
     def test_from_dict_unknown_role_fallback(self):
         """未知の役割は PARTICIPANT にフォールバック。"""
-        event = PlotEvent.from_dict({
-            "event_id": "e",
-            "episode": 1,
-            "scene": 1,
-            "event_type": "betrayal",
-            "roles": {"unknown_role": "X"},
-        })
+        event = PlotEvent.from_dict(
+            {
+                "event_id": "e",
+                "episode": 1,
+                "scene": 1,
+                "event_type": "betrayal",
+                "roles": {"unknown_role": "X"},
+            }
+        )
         assert event.get_character(Role.PARTICIPANT) == "X"

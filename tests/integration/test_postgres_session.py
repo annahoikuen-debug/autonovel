@@ -1,4 +1,5 @@
 """Test to verify PostgreSQL session fixture works."""
+
 from __future__ import annotations
 
 from sqlalchemy import text

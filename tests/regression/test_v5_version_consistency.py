@@ -101,9 +101,7 @@ def test_prod_compose_image_tags(authoritative_version: str) -> None:
     assert tags, "docker-compose.prod.yml に autonovel-* イメージタグが見つかりません"
 
     mismatched = [t for t in tags if t != authoritative_version]
-    assert not mismatched, (
-        f"docker-compose.prod.yml のイメージタグが {authoritative_version} と不一致: {mismatched}"
-    )
+    assert not mismatched, f"docker-compose.prod.yml のイメージタグが {authoritative_version} と不一致: {mismatched}"
 
 
 def test_readme_version_matches(authoritative_version: str) -> None:
@@ -155,7 +153,6 @@ def test_env_example_version_matches_pyproject(authoritative_version: str) -> No
         f".env.example に古いバージョンリテラルが含まれています: {matches}\n"
         "バージョンは pyproject.toml の project.version に追随してください。"
     )
-
 
 
 if __name__ == "__main__":

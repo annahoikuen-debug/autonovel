@@ -101,6 +101,7 @@ def test_empty_corpus():
 
 def test_judge_exception_handled():
     """判定器が例外を出した場合もスイートは継続する。"""
+
     def failing_judge(text: str) -> dict[str, float]:
         raise RuntimeError("judge failure")
 

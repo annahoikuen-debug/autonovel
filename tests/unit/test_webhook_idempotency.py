@@ -48,6 +48,7 @@ def allow_unsigned_webhooks(monkeypatch):
 
 def _make_dummy_request(event_dict: dict) -> Request:
     import json
+
     body_bytes = json.dumps(event_dict).encode("utf-8")
 
     async def receive():
@@ -63,11 +64,13 @@ def _make_dummy_request(event_dict: dict) -> Request:
 async def test_webhook_idempotency_flow():
     async with TestingSessionLocal() as db:
         event_id = "evt_test_123"
-        req = _make_dummy_request({
-            "id": event_id,
-            "type": "unhandled_dummy_event",
-            "data": {"object": {}},
-        })
+        req = _make_dummy_request(
+            {
+                "id": event_id,
+                "type": "unhandled_dummy_event",
+                "data": {"object": {}},
+            }
+        )
 
         # 1. 初回受信 -> 成功
         res1 = await handle_stripe_webhook(request=req, stripe_signature="", db=db)
@@ -100,11 +103,13 @@ async def test_webhook_stuck_processing_retried():
         db.add(stuck_evt)
         await db.commit()
 
-        req = _make_dummy_request({
-            "id": event_id,
-            "type": "unhandled_dummy_event",
-            "data": {"object": {}},
-        })
+        req = _make_dummy_request(
+            {
+                "id": event_id,
+                "type": "unhandled_dummy_event",
+                "data": {"object": {}},
+            }
+        )
 
         # タイムアウト検知により再処理が実行される
         res = await handle_stripe_webhook(request=req, stripe_signature="", db=db)

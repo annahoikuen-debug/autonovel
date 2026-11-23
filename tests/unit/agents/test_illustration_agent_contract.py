@@ -49,9 +49,7 @@ async def test_missing_request_is_noop_not_error() -> None:
     ctx = AgentContext(book_id=1, branch_id=1, ep_num=1, artifacts={})
     result = await agent.execute(ctx)
 
-    assert result.error is None, (
-        f"request 不在を error として返している: {result.error}"
-    )
+    assert result.error is None, f"request 不在を error として返している: {result.error}"
     assert result.artifacts.get("illustration_skipped") is True
     assert result.artifacts.get("illustration_result") is None
 
@@ -85,9 +83,7 @@ async def test_skipped_event_is_emitted() -> None:
 def test_no_error_string_remains_in_early_return() -> None:
     """`request is required in artifacts` の error 文字列が残っていないこと。"""
     src = inspect.getsource(IllustrationAgent.execute)
-    assert 'error="request is required in artifacts"' not in src, (
-        "request 不在時の error 返却が残っている"
-    )
+    assert 'error="request is required in artifacts"' not in src, "request 不在時の error 返却が残っている"
 
 
 def test_illustration_is_terminal_in_manifest() -> None:
@@ -95,6 +91,4 @@ def test_illustration_is_terminal_in_manifest() -> None:
     manifest = (ROOT_DIR / "src" / "agents" / "skills" / "manifest.yaml").read_text("utf-8")
     block_start = manifest.index("name: IllustrationSkill")
     block = manifest[block_start : block_start + 400]
-    assert "runs_before: []" in block, (
-        "IllustrationSkill が終端ノードでない場合、next_agent の設計を見直すこと"
-    )
+    assert "runs_before: []" in block, "IllustrationSkill が終端ノードでない場合、next_agent の設計を見直すこと"

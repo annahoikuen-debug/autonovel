@@ -442,4 +442,3 @@ class TestBibleDomainServiceChecks:
         svc, _ = make_service()
         assert isinstance(svc._validator, BibleValidator)
         assert isinstance(svc._consistency_checker, BibleConsistencyChecker)
-

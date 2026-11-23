@@ -4,6 +4,7 @@ from fastapi import Request
 from src.backend.routers import billing_webhook
 from src.backend.routers.billing_webhook import handle_stripe_webhook
 
+
 @pytest.mark.asyncio
 async def test_stripe_webhook_grants_credits(monkeypatch):
     # 署名シークレット必須という本番安全設定の奥へ入るため、
@@ -11,7 +12,9 @@ async def test_stripe_webhook_grants_credits(monkeypatch):
     monkeypatch.setattr(billing_webhook, "WEBHOOK_SECRET", "whsec_test_secret")
     # Mock request
     mock_request = MagicMock(spec=Request)
-    mock_request.body = AsyncMock(return_value=b'{"id": "evt_test_123", "type": "checkout.session.completed", "data": {"object": {"id": "cs_test_123", "customer": "cus_test_123", "subscription": "sub_test_123"}}}')
+    mock_request.body = AsyncMock(
+        return_value=b'{"id": "evt_test_123", "type": "checkout.session.completed", "data": {"object": {"id": "cs_test_123", "customer": "cus_test_123", "subscription": "sub_test_123"}}}'
+    )
     mock_request.headers = {"stripe-signature": "sig_test"}
 
     # Mock database session
@@ -28,13 +31,16 @@ async def test_stripe_webhook_grants_credits(monkeypatch):
 
     # Mock Stripe.Webhook.construct_event to return our event
     with patch("stripe.Webhook.construct_event") as mock_construct:
-        mock_construct.return_value = {"id": "evt_test_123", "type": "checkout.session.completed", "data": {"object": {"id": "cs_test_123", "customer": "cus_test_123", "subscription": "sub_test_123"}}}
+        mock_construct.return_value = {
+            "id": "evt_test_123",
+            "type": "checkout.session.completed",
+            "data": {"object": {"id": "cs_test_123", "customer": "cus_test_123", "subscription": "sub_test_123"}},
+        }
 
         # Mock the Stripe Subscription retrieve
         with patch("stripe.Subscription.retrieve") as mock_sub_retrieve:
             mock_sub_retrieve.return_value = MagicMock(
-                items=MagicMock(data=[MagicMock(price=MagicMock(id="price_test_123"))]),
-                customer="cus_test_123"
+                items=MagicMock(data=[MagicMock(price=MagicMock(id="price_test_123"))]), customer="cus_test_123"
             )
 
             # Mock the get_credits_for_price_id function to return 100 credits
@@ -42,7 +48,9 @@ async def test_stripe_webhook_grants_credits(monkeypatch):
                 # Mock the get_tier_for_price_id function
                 with patch("src.backend.routers.billing_webhook.get_tier_for_price_id", return_value="pro"):
                     # Mock CreditService.grant_credits to avoid real DB access
-                    with patch("src.integrations.billing.credit_service.CreditService.grant_credits", new_callable=AsyncMock) as mock_grant:
+                    with patch(
+                        "src.integrations.billing.credit_service.CreditService.grant_credits", new_callable=AsyncMock
+                    ) as mock_grant:
                         # Call the handler
                         await handle_stripe_webhook(mock_request, db=mock_session)
 

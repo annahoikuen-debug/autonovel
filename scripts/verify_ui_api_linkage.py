@@ -4,6 +4,7 @@ UI/UX と実機能の接続検証スクリプト。
 フロントエンドが実際に叩く API エンドポイントが、
 バックエンドに定義されているかを照合する。
 """
+
 from __future__ import annotations
 
 import re
@@ -15,18 +16,11 @@ ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_SRC = ROOT / "frontend" / "src"
 # routers/ 配下と、include_router を書く server.py などのアプリルートをまとめて走査する
 BACKEND_ROUTERS = ROOT / "src" / "backend" / "routers"
-BACKEND_APP_FILES = sorted(
-    set(BACKEND_ROUTERS.rglob("*.py"))
-    | set((ROOT / "src" / "backend").glob("*.py"))
-)
+BACKEND_APP_FILES = sorted(set(BACKEND_ROUTERS.rglob("*.py")) | set((ROOT / "src" / "backend").glob("*.py")))
 
 # ---------------------------------------------------------------- フロントの API 呼び出し収集
-DIRECT_RE = re.compile(
-    r"""(?:apiFetch|fetch)\s*(?:<[^>]*>)?\s*\(\s*[`"']([^`"']+)[`"']"""
-)
-BASE_RE = re.compile(
-    r"""(?:const|let)\s+(\w*(?:BASE|base)\w*)\s*[:=]\s*["']([^"']+)["']"""
-)
+DIRECT_RE = re.compile(r"""(?:apiFetch|fetch)\s*(?:<[^>]*>)?\s*\(\s*[`"']([^`"']+)[`"']""")
+BASE_RE = re.compile(r"""(?:const|let)\s+(\w*(?:BASE|base)\w*)\s*[:=]\s*["']([^"']+)["']""")
 COMPOSED_RE = re.compile(r"`\$\{(\w+)\}([^`]*)`")
 TEMPLATE_ANY_RE = re.compile(r"\$\{[^}]*\}")
 
@@ -43,9 +37,7 @@ def collect_frontend_calls() -> set[str]:
 
         # ベースパス定数は「そのファイル内だけ」で有効（モジュールスコープ）。
         # グローバルに収集すると別ファイルの同名定数を誤って引き当ててしまう。
-        bases: dict[str, str] = {
-            m.group(1): m.group(2) for m in BASE_RE.finditer(text)
-        }
+        bases: dict[str, str] = {m.group(1): m.group(2) for m in BASE_RE.finditer(text)}
 
         # (1) apiFetch(`...`) / fetch("...") の直接呼び出し
         for m in DIRECT_RE.finditer(text):
@@ -80,9 +72,7 @@ ROUTE_RE = re.compile(
     re.DOTALL,
 )
 PREFIX_RE = re.compile(r"""APIRouter\s*\(\s*prefix\s*=\s*["']([^"']+)["']""")
-INCLUDE_PREFIX_RE = re.compile(
-    r"""include_router\s*\(\s*\w+\s*,\s*prefix\s*=\s*["']([^"']+)["']"""
-)
+INCLUDE_PREFIX_RE = re.compile(r"""include_router\s*\(\s*\w+\s*,\s*prefix\s*=\s*["']([^"']+)["']""")
 # include_router(plots.router, prefix="/api/plots") のような形を拾う
 INCLUDE_FULL_RE = re.compile(
     r"""include_router\s*\(\s*(\w+)(?:\.router)?\s*,\s*prefix\s*=\s*["']([^"']+)["']""",
@@ -147,9 +137,7 @@ def collect_backend_routes() -> set[str]:
 def to_pattern(path: str) -> re.Pattern[str]:
     """動的パラメータ（{} や {book_id}）をワイルドカードにした正規表現を作る"""
     segs = re.split(r"(\{[^}]*\})", path)
-    body = "".join(
-        r"[^/]+" if s.startswith("{") else re.escape(s) for s in segs
-    )
+    body = "".join(r"[^/]+" if s.startswith("{") else re.escape(s) for s in segs)
     return re.compile("^" + body + "$")
 
 
@@ -228,7 +216,7 @@ def main() -> int:
     print()
 
     print("=" * 78)
-    print(f"結論: 主要導線 {ok}/{len(key_paths)} 接続済み / 全体 {len(front)-len(unmatched)}/{len(front)}")
+    print(f"結論: 主要導線 {ok}/{len(key_paths)} 接続済み / 全体 {len(front) - len(unmatched)}/{len(front)}")
     print("=" * 78)
     return 0
 

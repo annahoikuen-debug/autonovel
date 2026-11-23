@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 
 class MockStreamlitSessionState(dict):
     """st.session_state をシミュレートする辞書クラス"""
+
     def __getattr__(self, name):
         try:
             return self[name]
@@ -23,6 +24,7 @@ class MockStreamlitSessionState(dict):
 
 class MockStreamlitContext:
     """Streamlit の実行環境とウィジェット状態を記録・シミュレートするクラス"""
+
     def __init__(self):
         self.session_state = MockStreamlitSessionState()
         self.sidebar = self
@@ -158,19 +160,23 @@ class MockStreamlitContext:
         class MockNavigation:
             def __init__(self, ctx):
                 self.ctx = ctx
+
             def run(self):
                 self.ctx.navigation_run_called = True
                 self.ctx.navigation_run_called_with_time = time.time()
+
         return MockNavigation(self)
 
     def fragment(self, *args, **kwargs):
         def decorator(func):
             return func
+
         return decorator
 
     def dialog(self, title, width="medium"):
         def decorator(func):
             return func
+
         return decorator
 
     class Page:
@@ -184,13 +190,16 @@ class MockStreamlitContext:
         def fragment(self, *args, **kwargs):
             if len(args) == 1 and callable(args[0]):
                 return args[0]
+
             def decorator(func):
                 return func
+
             return decorator
 
 
 class MockStreamlitModule:
     """streamlit モジュール全体をモックするラッパー"""
+
     def __init__(self, context: MockStreamlitContext):
         self.context = context
 
@@ -201,8 +210,10 @@ class MockStreamlitModule:
 class _CtxManager:
     def __init__(self, ctx):
         self.ctx = ctx
+
     def __enter__(self):
         return self.ctx
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         return False
 
@@ -210,7 +221,7 @@ class _CtxManager:
 def patch_streamlit(context: MockStreamlitContext):
     """sys.modules['streamlit'] をモックに置き換える"""
     mock_st = MockStreamlitModule(context)
-    sys.modules['streamlit'] = mock_st
+    sys.modules["streamlit"] = mock_st
     return mock_st
 
 

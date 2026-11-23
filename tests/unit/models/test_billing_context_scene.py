@@ -1,4 +1,5 @@
 """src/models/billing.py, context.py, visual_key_scene.py の単体テスト."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -28,7 +29,11 @@ class TestPlanTier:
 class TestTransactionType:
     def test_values(self):
         assert {t.value for t in TransactionType} == {
-            "monthly_grant", "pack_purchase", "consumption", "refund", "admin_adjust",
+            "monthly_grant",
+            "pack_purchase",
+            "consumption",
+            "refund",
+            "admin_adjust",
         }
 
 

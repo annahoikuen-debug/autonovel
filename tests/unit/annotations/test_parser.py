@@ -1,4 +1,5 @@
 """Tests for inline beat parser."""
+
 from __future__ import annotations
 
 import pytest
@@ -73,7 +74,7 @@ class TestParseBeats:
 
     def test_parse_multiple_beats_same_line(self, char_dict):
         """同一行に複数タグ"""
-        text = '[beat:aff+0.3][beat:ten-0.2] A\u300c\u884c\u304f\u300d'
+        text = "[beat:aff+0.3][beat:ten-0.2] A\u300c\u884c\u304f\u300d"
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=char_dict)
 
         assert len(beats) == 2
@@ -93,7 +94,7 @@ class TestParseBeats:
 
     def test_parse_hidden_flag(self, char_dict):
         """hiddenフラグ"""
-        text = 'A\u300c\u5e73\u6c17\u3060\u300d[beat:fea+0.8 hidden]'
+        text = "A\u300c\u5e73\u6c17\u3060\u300d[beat:fea+0.8 hidden]"
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=char_dict)
 
         assert len(beats) == 1
@@ -101,7 +102,7 @@ class TestParseBeats:
 
     def test_parse_no_cause_defaults(self, char_dict):
         """cause省略時のデフォルト"""
-        text = 'A\u300c\u884c\u304f\u300d[beat:ten+0.3]'
+        text = "A\u300c\u884c\u304f\u300d[beat:ten+0.3]"
         clean, beats = parse_beats(text, episode=5, scene=1, character_dict=char_dict)
 
         assert len(beats) == 1
@@ -109,7 +110,7 @@ class TestParseBeats:
 
     def test_parse_emotion_aliases(self, char_dict):
         """感情エイリアス"""
-        text = 'A\u300c\u884c\u304f\u300d[beat:fea+0.5]'
+        text = "A\u300c\u884c\u304f\u300d[beat:fea+0.5]"
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=char_dict)
 
         assert len(beats) == 1
@@ -117,7 +118,7 @@ class TestParseBeats:
 
     def test_speaker_estimation(self, char_dict):
         """発言者推定の動作確認"""
-        text = 'A\u300c\u884c\u3050\u305e\u300d\n[beat:fear+0.6]'
+        text = "A\u300c\u884c\u3050\u305e\u300d\n[beat:fear+0.6]"
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=char_dict)
 
         assert len(beats) == 1
@@ -125,7 +126,7 @@ class TestParseBeats:
 
     def test_no_character_dict(self):
         """辞書なしでも動作（空セット）"""
-        text = 'A\u300c\u884c\u304f\u300d[beat:fear+0.5]'
+        text = "A\u300c\u884c\u304f\u300d[beat:fear+0.5]"
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=set())
 
         # 辞書が空だと推定できないため beats は空
@@ -134,9 +135,9 @@ class TestParseBeats:
 
     def test_clean_text_preserves_non_tag_content(self, char_dict):
         """タグ以外のテキストが保持される"""
-        text = 'A\u300c\u884c\u3050\u305e\u300d\n[beat:fear+0.6]\nB\u300c\u5f85\u3061\u306a\u3055\u3044\u300d'
+        text = "A\u300c\u884c\u3050\u305e\u300d\n[beat:fear+0.6]\nB\u300c\u5f85\u3061\u306a\u3055\u3044\u300d"
         clean, beats = parse_beats(text, episode=1, scene=1, character_dict=char_dict)
 
-        assert 'A\u300c\u884c\u3050\u305e\u300d' in clean
-        assert 'B\u300c\u5f85\u3061\u306a\u3055\u3044\u300d' in clean
+        assert "A\u300c\u884c\u3050\u305e\u300d" in clean
+        assert "B\u300c\u5f85\u3061\u306a\u3055\u3044\u300d" in clean
         assert "[beat:" not in clean

@@ -37,8 +37,7 @@ class TestComposeConfigCommand:
             timeout=60,
         )
         assert result.returncode == 0, (
-            f"docker compose config failed (rc={result.returncode})\n"
-            f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+            f"docker compose config failed (rc={result.returncode})\nstdout:\n{result.stdout}\nstderr:\n{result.stderr}"
         )
 
     @pytest.mark.skipif(not _docker_available(), reason="docker CLI not available")

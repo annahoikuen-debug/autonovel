@@ -1,4 +1,5 @@
 """Tests for emotional context template."""
+
 from __future__ import annotations
 
 import pytest
@@ -18,7 +19,7 @@ class TestEmotionalContextTemplate:
     def template(self, env):
         return env.get_template("emotional_context.j2")
 
-    @ pytest.fixture
+    @pytest.fixture
     def sample_vector(self):
         vec = EmotionalVector(episode_id="ep14")
         vec.set_signal(EmotionalSignal("A", "B", EmotionType.AFFECTION, 0.3, 0.8, "...", "ep14"))

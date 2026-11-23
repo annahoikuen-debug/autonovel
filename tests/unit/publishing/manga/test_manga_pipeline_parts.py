@@ -1,4 +1,5 @@
 """Unit tests for src/services/manga/{config,models,prompt_generator,quality_gate}."""
+
 from pathlib import Path
 
 
@@ -86,9 +87,7 @@ class TestMangaModels:
         assert b.characters == []
 
     def test_quality_check_result_defaults(self):
-        r = QualityCheckResult(
-            is_valid=True, grid_score=0.9, line_sharpness_score=0.9, color_bleed_score=0.0
-        )
+        r = QualityCheckResult(is_valid=True, grid_score=0.9, line_sharpness_score=0.9, color_bleed_score=0.0)
         assert r.reasons == []
 
     def test_pipeline_result_defaults(self):

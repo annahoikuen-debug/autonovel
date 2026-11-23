@@ -17,6 +17,7 @@
 ruff F821 はモジュールスコープとローカルスコープを正しく解決するため、
 本件のゲートとしてはこちらが適切。
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -64,8 +65,7 @@ class TestChapterRouterGuardsResolve:
         import src.backend.routers.episodes as m
 
         assert hasattr(m, "verify_branch_belongs_to_book"), (
-            "episodes.py が参照する verify_branch_belongs_to_book が"
-            "モジュール名前空間に存在しない"
+            "episodes.py が参照する verify_branch_belongs_to_book がモジュール名前空間に存在しない"
         )
 
     def test_upsert_chapter_body_has_no_private_guard_alias(self) -> None:
@@ -80,9 +80,6 @@ class TestChapterRouterGuardsResolve:
 
         body = inspect.getsource(upsert_chapter)
         assert "_verify_branch_belongs_to_book" not in body, (
-            "upsert_chapter が未定義名 `_verify_branch_belongs_to_book` を"
-            "参照しています（実行時に NameError）"
+            "upsert_chapter が未定義名 `_verify_branch_belongs_to_book` を参照しています（実行時に NameError）"
         )
-        assert "verify_branch_belongs_to_book" in body, (
-            "upsert_chapter がブランチ所有権ガードを呼んでいません"
-        )
+        assert "verify_branch_belongs_to_book" in body, "upsert_chapter がブランチ所有権ガードを呼んでいません"

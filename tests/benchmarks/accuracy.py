@@ -1,4 +1,5 @@
 """Accuracy metrics for scene-type trimming evaluation."""
+
 from __future__ import annotations
 
 import hashlib
@@ -18,8 +19,8 @@ def _simple_embedding(text: str, dim: int = 128) -> List[float]:
         # Hash each word to multiple dimensions
         h = hashlib.md5(word.encode()).hexdigest()
         for j in range(0, min(len(h), 32), 2):
-            idx = int(h[j:j+2], 16) % dim
-            val = (int(h[j:j+2], 16) / 255.0) - 0.5
+            idx = int(h[j : j + 2], 16) % dim
+            val = (int(h[j : j + 2], 16) / 255.0) - 0.5
             vec[idx] += val
     # Normalize
     norm = sum(v * v for v in vec) ** 0.5
@@ -59,7 +60,7 @@ def narrative_coherence(
     if not original_text or not compressed_text:
         return 0.0
 
-    if embedder and hasattr(embedder, 'encode'):
+    if embedder and hasattr(embedder, "encode"):
         orig_vec = embedder.encode(original_text)
         comp_vec = embedder.encode(compressed_text)
     else:

@@ -85,10 +85,7 @@ def test_splitter_plain_text():
 
 
 def test_splitter_tagged_metadata():
-    raw = (
-        "物語本文です。\n\n"
-        '[METADATA_JSON]\n{"episode_number": 1, "summary": "s"}\n[/METADATA_JSON]\n\n---\n'
-    )
+    raw = '物語本文です。\n\n[METADATA_JSON]\n{"episode_number": 1, "summary": "s"}\n[/METADATA_JSON]\n\n---\n'
     prose, meta = NovelOutputSplitter.split_novel_output(raw)
     assert prose == "物語本文です。"
     assert meta is not None
@@ -110,7 +107,7 @@ def test_splitter_trailing_json_block():
 
 
 def test_splitter_invalid_json_metadata():
-    raw = 'T\n[METADATA_JSON]\nnot json\n[/METADATA_JSON]'
+    raw = "T\n[METADATA_JSON]\nnot json\n[/METADATA_JSON]"
     prose, meta = NovelOutputSplitter.split_novel_output(raw)
     assert prose == "T"
     assert meta is None
@@ -157,9 +154,11 @@ def test_patch_merger_applies():
 # --------------------------------------------------------------------------
 async def test_social_stream_comments_success():
     llm = MagicMock()
-    llm.generate_text = AsyncMock(return_value=json.dumps(
-        {"comments": [{"user": "a", "text": "t", "timestamp": "2024"}, {"text": "t2", "timestamp": "2024-01-01"}]}
-    ))
+    llm.generate_text = AsyncMock(
+        return_value=json.dumps(
+            {"comments": [{"user": "a", "text": "t", "timestamp": "2024"}, {"text": "t2", "timestamp": "2024-01-01"}]}
+        )
+    )
     g = SocialReactionGenerator(llm)
     out = await g.generate_stream_comments("highlight", count=5)
     assert len(out) == 2

@@ -3,6 +3,7 @@
 レビューで発見された破绽は「web_volume@40 と long_serial だけを見ていた」ことに
 起因する.Test 側は **破綻域を明示的に含める** こと。
 """
+
 from __future__ import annotations
 
 import itertools
@@ -16,9 +17,7 @@ RISKY_EPS = (1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 15, 20, 40, 100, 300)
 
 
 @pytest.mark.parametrize("eps", [3, 4, 5, 6, 8, 10])
-@pytest.mark.parametrize(
-    "pattern", ["exile_rise", "detective_mystery", "death_loop", "avenger_dark"]
-)
+@pytest.mark.parametrize("pattern", ["exile_rise", "detective_mystery", "death_loop", "avenger_dark"])
 def test_web_market_ends_with_volume_hook_when_there_is_a_next_volume(pattern: str, eps: int):
     """Web 連載は 2 話以上で話末の引きで終わる。"""
     spine = resolve_spine(pattern, "short", "web", eps)
@@ -46,9 +45,7 @@ def test_non_web_markets_never_force_volume_hook(market: str, eps: int):
     """Web 以外は「次への引き」を強制しない（逆方向の契約も守る）。"""
     for pattern in ("exile_rise", "detective_mystery", "gourmet_conqueror"):
         spine = resolve_spine(pattern, "single_volume", market, eps)
-        assert "volume_hook" not in spine.keys, (
-            f"{market} に volume_hook が混入: {spine.keys}"
-        )
+        assert "volume_hook" not in spine.keys, f"{market} に volume_hook が混入: {spine.keys}"
 
 
 def test_three_invariants_survive_the_volume_hook_fix():
@@ -66,9 +63,7 @@ def test_three_invariants_survive_the_volume_hook_fix():
 def test_beat_keys_are_unique_in_every_resolution():
     """**38×6×4×3 = 2,736 ケースでキーが重複しないこと**（重複 8 件の回帰）。"""
     offenders = []
-    for p, length, market in itertools.product(
-        sorted(PATTERNS), sorted(LENGTHS), sorted(MARKETS)
-    ):
+    for p, length, market in itertools.product(sorted(PATTERNS), sorted(LENGTHS), sorted(MARKETS)):
         lo, hi = LENGTHS[length]["eps_range"]
         for eps in (lo, (lo + hi) // 2, hi):
             keys = resolve_spine(p, length, market, eps).keys

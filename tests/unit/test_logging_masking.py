@@ -181,10 +181,7 @@ class TestConfigureIntegration:
         configure()
         root = logging.getLogger()
         # ハンドラーのフィルタに _SensitiveDataFilter が含まれている
-        assert any(
-            any(isinstance(f, _SensitiveDataFilter) for f in h.filters)
-            for h in root.handlers
-        )
+        assert any(any(isinstance(f, _SensitiveDataFilter) for f in h.filters) for h in root.handlers)
 
     def test_logging_output_is_masked(self, caplog):
         """実際のログ出力がマスクされる"""

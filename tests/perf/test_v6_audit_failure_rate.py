@@ -133,9 +133,7 @@ def build_corpus(n: int = CORPUS_SIZE, seed: int = CORPUS_SEED) -> list[EpisodeS
                 blueprint=blueprint,
                 drafted_text=drafted,
                 prev_ctx=f"前話: {hero}は{place}で{item}を得た。",
-                settings_json=json.dumps(
-                    {"world": place, "power_system": f"{event}力学"}, ensure_ascii=False
-                ),
+                settings_json=json.dumps({"world": place, "power_system": f"{event}力学"}, ensure_ascii=False),
                 characters_json=json.dumps(
                     [{"name": hero, "ability": f"{event}Mqzr", "is_alive": True}],
                     ensure_ascii=False,
@@ -214,9 +212,7 @@ class FakePromptManager:
         return f"[fast_plot_screen]\n{blueprint}"
 
     @staticmethod
-    def build_critic_feedback_prompt(
-        issue_list: Any = None, draft_content: str = "", blueprint: str = ""
-    ) -> str:
+    def build_critic_feedback_prompt(issue_list: Any = None, draft_content: str = "", blueprint: str = "") -> str:
         return f"[critic]\n{draft_content}\n{blueprint}"
 
     @staticmethod

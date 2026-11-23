@@ -54,7 +54,8 @@ def test_four_layer_compression_invariants():
         "【登場人物】アルス：勇者。セリア：聖女。\n"
         "【世界観】アヴァロン王国。魔王軍との戦争が続いている。\n"
         "【直前エピソード】アルスは迷宮の最下層に到達し、ガーディアンを討伐した。\n"
-        + "長い戦闘の余波で洞窟は崩落寸前であった。" * 10
+        + "長い戦闘の余波で洞窟は崩落寸前であった。"
+        * 10
     )
 
     result = compressor.compress(original_text, max_tokens=100)

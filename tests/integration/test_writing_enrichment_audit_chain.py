@@ -5,6 +5,7 @@ Verifies that:
 2. EnrichmentAgent enriches the drafted text (sensory expansion / token budget) and forwards to AUDIT.
 3. AuditAggregatorNode receives enriched_text and aggregates evaluations from specialist auditors.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -14,7 +15,6 @@ from src.agents.orchestrator import AgentContext, AgentName
 from src.agents.writing.agent import WritingAgent
 from src.agents.enrichment_agent import EnrichmentAgent
 from src.agents.specialists.adapter import AuditAggregatorNode
-
 
 
 @pytest.mark.asyncio
@@ -48,7 +48,6 @@ async def test_writing_enrichment_audit_chain():
             "target_word_count": 1000,
         },
     )
-
 
     # 1. Execute WritingAgent
     writing_result = await writing_agent.execute(ctx)

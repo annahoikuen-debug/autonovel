@@ -1,4 +1,5 @@
 """pytest 共有フィクスチャ。テスト実行時の sys.path 設定と一時 DB を提供する。"""
+
 from __future__ import annotations
 
 import functools
@@ -48,9 +49,7 @@ def pytest_configure(config):
         import os as _os
         import tempfile as _tempfile
 
-        _tmp_fd, _tmp_name = _tempfile.mkstemp(
-            dir=str(_settings_toml.parent), suffix=".toml.tmp"
-        )
+        _tmp_fd, _tmp_name = _tempfile.mkstemp(dir=str(_settings_toml.parent), suffix=".toml.tmp")
         try:
             with _os.fdopen(_tmp_fd, "w", encoding="utf-8") as _f:
                 _f.write(_settings_example.read_text(encoding="utf-8"))
@@ -82,7 +81,6 @@ import pytest
 # 実際の生成物を扱うフィクスチャの中で遅延 import する。
 if TYPE_CHECKING:
     from sqlalchemy.orm import Session
-
 
 
 # 各種外部サービス利用可能性フラグ（軽量チェック）
@@ -213,9 +211,7 @@ def real_db_manager(monkeypatch) -> Generator[Session, None, None]:
         db_module.engine = engine
         db_module.SessionLocal = SessionLocal  # type: ignore[assignment]
         db_core.DATABASE_URL = previous_url or (
-            db_core.settings.DATABASE_URL
-            if hasattr(db_core, "settings")
-            else "sqlite:///storage/autonovel.db"
+            db_core.settings.DATABASE_URL if hasattr(db_core, "settings") else "sqlite:///storage/autonovel.db"
         )
         db_core._sync_engine = None
         db_core._sync_session_factory = None
@@ -345,9 +341,7 @@ def mock_llm_adapter(request, llm_mocker: LLMMocker, monkeypatch) -> MockLLMAdap
     * マーカー ``@pytest.mark.real_llm``（``pytest.ini`` に marker 登録済み）
     * 環境変数 ``TEST_WITH_REAL_LLM=1``（CI 全体で opt-out）
     """
-    if os.environ.get("TEST_WITH_REAL_LLM") == "1" or (
-        request.node.get_closest_marker("real_llm") is not None
-    ):
+    if os.environ.get("TEST_WITH_REAL_LLM") == "1" or (request.node.get_closest_marker("real_llm") is not None):
         return None
 
     mock_adapter = MockLLMAdapter(llm_mocker)
@@ -356,9 +350,7 @@ def mock_llm_adapter(request, llm_mocker: LLMMocker, monkeypatch) -> MockLLMAdap
         return mock_adapter
 
     try:
-        monkeypatch.setattr(
-            "src.llm.adapters.factory.get_llm_adapter", mock_get_llm_adapter
-        )
+        monkeypatch.setattr("src.llm.adapters.factory.get_llm_adapter", mock_get_llm_adapter)
     except ImportError:
         # 依存を最小限にした環境（CI release-consistency ジョブ等、pytest のみ導入）
         # では src.llm の import 自体が ModuleNotFoundError になる。LLM モックを
@@ -464,9 +456,7 @@ def pytest_collection_modifyitems(config, items):
         # 非推奨スタブ化された age_client のレガシーテスト（ファイル名で完全一致）
         if fname.startswith("test_age_client"):
             item.add_marker(
-                pytest.mark.skip(
-                    reason="Legacy age_client tests are deprecated (replaced by Relational Memory)"
-                )
+                pytest.mark.skip(reason="Legacy age_client tests are deprecated (replaced by Relational Memory)")
             )
         if not _ORTOOLS_AVAILABLE and rel in _ORTOOLS_REQUIRED_TESTS:
             item.add_marker(pytest.mark.skip(reason="ortools is not installed in environment"))

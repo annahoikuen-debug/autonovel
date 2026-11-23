@@ -10,7 +10,7 @@ def test_illustration_point_creation():
         composition="主人公が左、ヒロインが右、二人の間に距離がある",
         props="主人公の剣とヒロインの杖を交差",
         expressions={"主人公": "決意した表情", "ヒロイン": "不安と信頼の混じった表情"},
-        background="夕焼けに染まる荒野、廃城の尖塔"
+        background="夕焼けに染まる荒野、廃城の尖塔",
     )
 
     assert ip.id == "IP-001"
@@ -33,7 +33,7 @@ def test_illustration_point_with_notes():
         props="主人公の刀に残像",
         expressions={"主人公": "余裕綽々だが目に死の気配"},
         background="暗い洞窟、壁に苔が生えている",
-        notes="このシーンは第1章のクライマックス"
+        notes="このシーンは第1章のクライマックス",
     )
 
     assert ip.notes == "このシーンは第1章のクライマックス"
@@ -49,7 +49,7 @@ def test_illustration_point_to_dict():
         props="なし",
         expressions={"ヒロイン": "幸せそうな笑顔"},
         background="桜並びの道、花びらが舞っている",
-        notes="エンディングを彷彿とさせるシーン"
+        notes="エンディングを彷彿とさせるシーン",
     )
 
     expected = {
@@ -60,7 +60,7 @@ def test_illustration_point_to_dict():
         "props": "なし",
         "expressions": {"ヒロイン": "幸せそうな笑顔"},
         "background": "桜並びの道、花びらが舞っている",
-        "notes": "エンディングを彷彿とさせるシーン"
+        "notes": "エンディングを彷彿とさせるシーン",
     }
 
     assert ip.to_dict() == expected
@@ -76,7 +76,7 @@ def test_illustration_point_from_dict():
         "props": "主人公の盾と敵の斧がぶつかり火花が散る",
         "expressions": {"主人公": "真剣な眼差し", "敵リーダー": "狂気的な笑み"},
         "background": "崖っぷちの決戦場、雷鳴が轟く",
-        "notes": None
+        "notes": None,
     }
 
     ip = IllustrationPoint.from_dict(data)
@@ -101,7 +101,7 @@ def test_illustration_point_roundtrip():
         props="小舟が川を流れている",
         expressions={},
         background="青空に白い雲、遠くに山脈",
-        notes="オープニングに使用推奨"
+        notes="オープニングに使用推奨",
     )
 
     data = original.to_dict()

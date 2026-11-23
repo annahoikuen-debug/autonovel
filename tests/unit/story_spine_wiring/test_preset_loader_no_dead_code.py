@@ -21,7 +21,17 @@ def test_preset_loader_public_api_intact():
     assert callable(preset_loader.get_tension_curve)
 
     # 全ジャンルで load_preset_for_pipeline が例外なく動くこと（archetype_key には pattern_key を渡す）
-    for genre in ["zarma", "aku_reijo", "cheat_tensei", "slow_life", "dungeon_admin", "modern_cheat", "ts_tensei", "vrmmo", "loop"]:
+    for genre in [
+        "zarma",
+        "aku_reijo",
+        "cheat_tensei",
+        "slow_life",
+        "dungeon_admin",
+        "modern_cheat",
+        "ts_tensei",
+        "vrmmo",
+        "loop",
+    ]:
         preset = preset_loader.load_preset_for_pipeline(genre, "exile_rise")
         assert isinstance(preset, dict)
         assert "_meta" in preset
@@ -30,6 +40,7 @@ def test_preset_loader_public_api_intact():
     preset = preset_loader.load_preset_for_pipeline("zarma", "exile_rise")
     tension = preset_loader.get_tension_curve(preset)
     assert isinstance(tension, dict)
+
 
 def test_no_call_sites_remain():
     """src/ tests/ 全体をスキャンし get_plot_pattern の参照が 0 件であること。

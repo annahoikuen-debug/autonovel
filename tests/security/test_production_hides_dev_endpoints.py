@@ -3,6 +3,7 @@
 - /metrics /docs /redoc /openapi.json を本番環境で非公開
 - /api/system/models/info の configured_keys を admin のみに開示
 """
+
 from __future__ import annotations
 
 from src.backend.middleware.auth_middleware import is_public_path
@@ -55,4 +56,4 @@ def test_system_models_info_configured_keys_admin_only():
 
     src = inspect.getsource(system.get_models_info)
     assert "is_admin" in src
-    assert 'if is_admin else False' in src
+    assert "if is_admin else False" in src

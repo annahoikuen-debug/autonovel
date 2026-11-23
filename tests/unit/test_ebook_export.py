@@ -1,4 +1,5 @@
 """src.easy_mode.phase3.ebook_export の単体テスト。"""
+
 from __future__ import annotations
 
 from pathlib import Path

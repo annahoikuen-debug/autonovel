@@ -1,4 +1,5 @@
 """Regression tests for emotional residue pipeline."""
+
 from __future__ import annotations
 
 import pytest
@@ -20,6 +21,7 @@ class TestEmotionalResidueRegression:
     @pytest.fixture
     def vector_store(self):
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         store = RedisVectorStore(skip_connection_check=True)
         store.client = redis_client
@@ -76,6 +78,7 @@ class TestEmotionalResidueRegression:
 
         # 新しいストアインスタンスで読み出し（シミュレーション）
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         new_store = RedisVectorStore(skip_connection_check=True)
         new_store.client = redis_client
@@ -93,6 +96,7 @@ class TestEmotionalResidueRegression:
 
         # TTL 1秒のストア
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         short_store = RedisVectorStore(default_ttl=1, skip_connection_check=True)
         short_store.client = redis_client

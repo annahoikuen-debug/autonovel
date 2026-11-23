@@ -1,4 +1,5 @@
 """Integration tests for WriterAgent using fused emotional context prompt."""
+
 from src.agents.writer_agent import WriterAgent
 from src.fusion.config import FusionConfig
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType

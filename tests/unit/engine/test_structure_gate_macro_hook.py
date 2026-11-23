@@ -20,10 +20,7 @@ from src.models.plot import EpisodeMacroSkeleton, PlotMacroBatch
 
 def _batch_with_violation() -> PlotMacroBatch:
     return PlotMacroBatch(
-        episodes=[
-            EpisodeMacroSkeleton(ep_num=i, tension=20 if i == 1 else (95 if i == 2 else 60))
-            for i in range(1, 5)
-        ]
+        episodes=[EpisodeMacroSkeleton(ep_num=i, tension=20 if i == 1 else (95 if i == 2 else 60)) for i in range(1, 5)]
     )
 
 
@@ -54,7 +51,9 @@ class _CountingLLM:
 
 
 class _FakePM:
-    async def build_macro_plot_skeleton_prompt(self, bible_json_str, ep_range, book_id=None, spine=None, spine_quality=None):
+    async def build_macro_plot_skeleton_prompt(
+        self, bible_json_str, ep_range, book_id=None, spine=None, spine_quality=None
+    ):
         return "macro prompt"
 
     async def build_micro_scene_expander_prompt(self, **kwargs):
@@ -86,9 +85,7 @@ class TestHookWiring:
         llm = _CountingLLM(_batch_with_violation())
         expander = DefaultPlotExpander(repo=repo, pm=_FakePM(), llm=llm)
 
-        asyncio.run(
-            expander.expand_macro_skeletons(book_id=1, target_ep_list=[1, 2, 3, 4], reporter=_FakeReporter())
-        )
+        asyncio.run(expander.expand_macro_skeletons(book_id=1, target_ep_list=[1, 2, 3, 4], reporter=_FakeReporter()))
         assert llm.call_count == 1, "gate が LLM を追加呼び出ししている (P2 違反)"
 
     def test_no_extra_llm_calls_from_gate_in_enforce(self, monkeypatch):

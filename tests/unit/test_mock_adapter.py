@@ -1,4 +1,5 @@
 """モック LLM アダプタのユニットテスト。"""
+
 from __future__ import annotations
 
 import asyncio
@@ -41,11 +42,13 @@ async def test_mock_generate_text_with_kwargs():
 def test_mock_stream_text():
     """stream_text はチャンクをイテレートする。"""
     adapter = MockLLMAdapter()
+
     async def run():
         chunks = []
         async for chunk in adapter.stream_text(prompt="test prompt"):
             chunks.append(chunk)
         return chunks
+
     chunk_list = asyncio.run(run())
     assert len(chunk_list) == 8
     assert chunk_list[0] == "薄暗い洞窟の奥、"

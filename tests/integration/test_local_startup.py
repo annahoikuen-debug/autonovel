@@ -32,7 +32,6 @@ def _find_powershell() -> str | None:
     return None
 
 
-
 # 実プロセス起動テストは明示的にオプトインした場合のみ実行
 RUN_REAL_LAUNCH = "--run-real-launch" in sys.argv
 

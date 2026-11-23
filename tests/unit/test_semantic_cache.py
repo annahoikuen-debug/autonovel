@@ -235,9 +235,7 @@ class TestSemanticCacheManager:
         mock_collection = MagicMock()
         mock_collection.get.return_value = {
             "ids": [f"id_{i}" for i in range(1500)],
-            "metadatas": [
-                {"last_accessed": f"2024-01-{i:02d}T00:00:00"} for i in range(1, 1501)
-            ],
+            "metadatas": [{"last_accessed": f"2024-01-{i:02d}T00:00:00"} for i in range(1, 1501)],
         }
         self.mock_vector_store.get_collection.return_value = mock_collection
         self.mock_vector_store.delete_by_id = AsyncMock()
@@ -333,10 +331,12 @@ class TestSemanticCacheManager:
     @pytest.mark.asyncio
     async def test_compute_similarity_different(self):
         """Test similarity of different texts."""
-        self.cache._get_embedding = AsyncMock(side_effect=[
-            [1.0, 0.0, 0.0],  # vec1
-            [0.0, 1.0, 0.0],  # vec2
-        ])
+        self.cache._get_embedding = AsyncMock(
+            side_effect=[
+                [1.0, 0.0, 0.0],  # vec1
+                [0.0, 1.0, 0.0],  # vec2
+            ]
+        )
 
         sim = await self.cache.compute_similarity("text1", "text2")
         assert sim == 0.0  # Orthogonal vectors
@@ -344,10 +344,12 @@ class TestSemanticCacheManager:
     @pytest.mark.asyncio
     async def test_compute_similarity_zero_norm(self):
         """Test similarity with zero norm vectors."""
-        self.cache._get_embedding = AsyncMock(side_effect=[
-            [0.0, 0.0],  # Zero vector
-            [1.0, 0.0],
-        ])
+        self.cache._get_embedding = AsyncMock(
+            side_effect=[
+                [0.0, 0.0],  # Zero vector
+                [1.0, 0.0],
+            ]
+        )
 
         sim = await self.cache.compute_similarity("text1", "text2")
         assert sim == 0.0

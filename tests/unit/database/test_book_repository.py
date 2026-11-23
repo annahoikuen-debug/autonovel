@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, MagicMock
 from src.backend.database.repositories.book import BookRepository
 from src.backend.database.models import Book
 
+
 @pytest.mark.asyncio
 async def test_book_repository_get_active_books():
     mock_session = AsyncMock()
@@ -26,6 +27,7 @@ async def test_book_repository_get_active_books():
     assert len(books) == 1
     assert books[0].title == "Test Book"
 
+
 @pytest.mark.asyncio
 async def test_book_repository_create_book():
     mock_session = AsyncMock()
@@ -46,6 +48,7 @@ async def test_book_repository_create_book():
 
     mock_session.add.assert_called_once()
     mock_session.flush.assert_awaited_once()
+
 
 @pytest.mark.asyncio
 async def test_book_repository_get_book():
@@ -71,6 +74,7 @@ async def test_book_repository_get_book():
     assert book.id == 42
     assert book.title == "Specific Book"
 
+
 @pytest.mark.asyncio
 async def test_book_repository_get_book_not_found():
     mock_session = AsyncMock()
@@ -81,6 +85,7 @@ async def test_book_repository_get_book_not_found():
     repo = BookRepository(mock_session)
     book = await repo.get_book(999)
     assert book is None
+
 
 @pytest.mark.asyncio
 async def test_book_repository_updates():

@@ -7,6 +7,7 @@ from src.engine.auditors.hybrid_auditor import TwoTierAuditor
 from src.application.formatters.platform_copy_formatter import PlatformCopyFormatter
 from src.publishing.exporters.commercial_epub_builder import PureCommercialEpubBuilder
 
+
 @pytest.mark.asyncio
 async def test_v5_full_novel_lifecycle():
     # 1. プロジェクト・章（五感ビート・引き）・キャラ（心理葛藤・語尾）・伏線定義

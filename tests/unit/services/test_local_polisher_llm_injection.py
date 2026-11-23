@@ -163,9 +163,7 @@ async def test_empty_llm_output_keeps_original():
 async def test_preamble_is_stripped():
     """前置き行が除去され、本文だけが残ること。"""
     llm = _AsyncLLM(out="承知しました。\n推敲された文。")
-    out = await LocalPolisher().polish_with_llm(
-        TEXT, (_start(), _start() + len(TARGET)), "改善して", llm
-    )
+    out = await LocalPolisher().polish_with_llm(TEXT, (_start(), _start() + len(TARGET)), "改善して", llm)
     assert "承知" not in out
     assert "推敲された文。" in out
     assert out.startswith("前置き。")

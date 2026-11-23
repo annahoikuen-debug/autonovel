@@ -25,7 +25,7 @@ def test_audit_returns_issues(mock_call_llm):
 @patch("src.audit.unified_llm_auditor.call_llm_api")
 def test_audit_empty_when_no_issues(mock_call_llm):
     """LLMが空の配列を返した場合、Issueリストが空になる"""
-    mock_call_llm.return_value = '[]'
+    mock_call_llm.return_value = "[]"
 
     auditor = UnifiedLLMAuditor()
     issues = auditor.audit("問題のないテキスト")
@@ -36,7 +36,7 @@ def test_audit_empty_when_no_issues(mock_call_llm):
 @patch("src.audit.unified_llm_auditor.call_llm_api")
 def test_audit_handles_malformed_json(mock_call_llm):
     """LLMが不正なJSONを返した場合のエラーハンドリング"""
-    mock_call_llm.return_value = 'これはJSONではない'
+    mock_call_llm.return_value = "これはJSONではない"
 
     auditor = UnifiedLLMAuditor()
     issues = auditor.audit("サンプルテキスト")

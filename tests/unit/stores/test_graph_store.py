@@ -1,4 +1,5 @@
 """Step 11: GraphStore インターフェーステスト (モックDB使用)。"""
+
 from __future__ import annotations
 
 from src.stores.graph_store import GraphStore, InMemoryGraphStore

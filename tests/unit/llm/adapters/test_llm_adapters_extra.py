@@ -44,12 +44,14 @@ class _AsyncIter:
         async def gen():
             for i in self._items:
                 yield i
+
         return gen()
 
 
 @pytest.fixture
 def always_warn():
     import warnings as _w
+
     with _w.catch_warnings():
         _w.simplefilter("always")
         yield
@@ -69,12 +71,12 @@ def test_placeholder_helpers():
 
 async def test_base_adapter_abstract_hooks(always_warn):
     class Impl(BaseLLMAdapter):
-        async def generate_text(self, prompt, system_prompt=None, max_tokens=2000,
-                               temperature=0.7, response_format=None, **kw):
+        async def generate_text(
+            self, prompt, system_prompt=None, max_tokens=2000, temperature=0.7, response_format=None, **kw
+        ):
             return "ok"
 
-        async def stream_text(self, prompt, system_prompt=None, max_tokens=2000,
-                              temperature=0.7, **kw):
+        async def stream_text(self, prompt, system_prompt=None, max_tokens=2000, temperature=0.7, **kw):
             yield "a"
 
     assert await Impl().generate_text("p") == "ok"
@@ -92,12 +94,12 @@ async def test_base_adapter_abstract_hooks(always_warn):
 
 def test_base_adapter_sync_generate_no_loop(always_warn):
     class Impl(BaseLLMAdapter):
-        async def generate_text(self, prompt, system_prompt=None, max_tokens=2000,
-                               temperature=0.7, response_format=None, **kw):
+        async def generate_text(
+            self, prompt, system_prompt=None, max_tokens=2000, temperature=0.7, response_format=None, **kw
+        ):
             return "sync-ok"
 
-        async def stream_text(self, prompt, system_prompt=None, max_tokens=2000,
-                              temperature=0.7, **kw):
+        async def stream_text(self, prompt, system_prompt=None, max_tokens=2000, temperature=0.7, **kw):
             yield ""
 
     with pytest.warns(DeprecationWarning):
@@ -106,12 +108,12 @@ def test_base_adapter_sync_generate_no_loop(always_warn):
 
 async def test_base_adapter_sync_generate_inside_loop(always_warn):
     class Impl(BaseLLMAdapter):
-        async def generate_text(self, prompt, system_prompt=None, max_tokens=2000,
-                               temperature=0.7, response_format=None, **kw):
+        async def generate_text(
+            self, prompt, system_prompt=None, max_tokens=2000, temperature=0.7, response_format=None, **kw
+        ):
             return "threaded"
 
-        async def stream_text(self, prompt, system_prompt=None, max_tokens=2000,
-                              temperature=0.7, **kw):
+        async def stream_text(self, prompt, system_prompt=None, max_tokens=2000, temperature=0.7, **kw):
             yield ""
 
     with pytest.warns(DeprecationWarning):
@@ -259,9 +261,14 @@ def test_factory_mock(prod):
 
 
 def test_factory_gemini(prod, monkeypatch):
-    monkeypatch.setattr("src.llm.adapters.factory.settings", SimpleNamespace(
-        LLM_PROVIDER="gemini", GEMINI_API_KEY="", GEMINI_MODEL="m",
-    ))
+    monkeypatch.setattr(
+        "src.llm.adapters.factory.settings",
+        SimpleNamespace(
+            LLM_PROVIDER="gemini",
+            GEMINI_API_KEY="",
+            GEMINI_MODEL="m",
+        ),
+    )
     with pytest.raises(RuntimeError, match="GEMINI_API_KEY"):
         get_llm_adapter("gemini")
     a = get_llm_adapter("gemini", api_key="k", model_name="mm")
@@ -270,9 +277,15 @@ def test_factory_gemini(prod, monkeypatch):
 
 
 def test_factory_openai(prod, monkeypatch):
-    monkeypatch.setattr("src.llm.adapters.factory.settings", SimpleNamespace(
-        LLM_PROVIDER="openai", OPENAI_API_KEY="", OPENAI_BASE_URL="", OPENAI_MODEL="m",
-    ))
+    monkeypatch.setattr(
+        "src.llm.adapters.factory.settings",
+        SimpleNamespace(
+            LLM_PROVIDER="openai",
+            OPENAI_API_KEY="",
+            OPENAI_BASE_URL="",
+            OPENAI_MODEL="m",
+        ),
+    )
     with pytest.raises(RuntimeError, match="OPENAI_API_KEY"):
         get_llm_adapter("openai")
     a = get_llm_adapter("openai", base_url="http://x", api_key="test-key")
@@ -282,35 +295,60 @@ def test_factory_openai(prod, monkeypatch):
 
 def test_factory_openai_rejects_base_url_without_api_key(prod, monkeypatch):
     # セキュリティ: base_url 単独指定はサーバーキー流出を防ぐため ValueError
-    monkeypatch.setattr("src.llm.adapters.factory.settings", SimpleNamespace(
-        LLM_PROVIDER="openai", OPENAI_API_KEY="", OPENAI_BASE_URL="", OPENAI_MODEL="m",
-    ))
+    monkeypatch.setattr(
+        "src.llm.adapters.factory.settings",
+        SimpleNamespace(
+            LLM_PROVIDER="openai",
+            OPENAI_API_KEY="",
+            OPENAI_BASE_URL="",
+            OPENAI_MODEL="m",
+        ),
+    )
     with pytest.raises(ValueError, match="api_key"):
         get_llm_adapter("openai", base_url="http://x")
 
 
 def test_factory_openrouter(prod, monkeypatch):
-    monkeypatch.setattr("src.llm.adapters.factory.settings", SimpleNamespace(
-        LLM_PROVIDER="openrouter", OPENROUTER_API_KEY="", OPENAI_API_KEY="k2",
-        OPENROUTER_MODEL="rm", OPENROUTER_BASE_URL="http://r",
-    ))
+    monkeypatch.setattr(
+        "src.llm.adapters.factory.settings",
+        SimpleNamespace(
+            LLM_PROVIDER="openrouter",
+            OPENROUTER_API_KEY="",
+            OPENAI_API_KEY="k2",
+            OPENROUTER_MODEL="rm",
+            OPENROUTER_BASE_URL="http://r",
+        ),
+    )
     a = get_llm_adapter("openrouter")
     assert a.model == "rm"
     assert a.base_url == "http://r"
-    monkeypatch.setattr("src.llm.adapters.factory.settings", SimpleNamespace(
-        LLM_PROVIDER="openrouter", OPENROUTER_API_KEY="", OPENAI_API_KEY="",
-        OPENROUTER_MODEL="rm", OPENROUTER_BASE_URL="http://r",
-    ))
+    monkeypatch.setattr(
+        "src.llm.adapters.factory.settings",
+        SimpleNamespace(
+            LLM_PROVIDER="openrouter",
+            OPENROUTER_API_KEY="",
+            OPENAI_API_KEY="",
+            OPENROUTER_MODEL="rm",
+            OPENROUTER_BASE_URL="http://r",
+        ),
+    )
     with pytest.raises(RuntimeError, match="OPENROUTER_API_KEY"):
         get_llm_adapter("openrouter")
 
 
 def test_factory_claude_ollama_vllm(prod, monkeypatch):
-    monkeypatch.setattr("src.llm.adapters.factory.settings", SimpleNamespace(
-        LLM_PROVIDER="claude", ANTHROPIC_API_KEY="", ANTHROPIC_MODEL="cm",
-        OLLAMA_BASE_URL="http://o", OLLAMA_MODEL="om",
-        VLLM_BASE_URL="http://v", VLLM_MODEL="vm",
-    ))
+    monkeypatch.setattr(
+        "src.llm.adapters.factory.settings",
+        SimpleNamespace(
+            LLM_PROVIDER="claude",
+            ANTHROPIC_API_KEY="",
+            ANTHROPIC_MODEL="cm",
+            OLLAMA_BASE_URL="http://o",
+            OLLAMA_MODEL="om",
+            VLLM_BASE_URL="http://v",
+            VLLM_MODEL="vm",
+        ),
+    )
     with pytest.raises(RuntimeError, match="ANTHROPIC_API_KEY"):
         get_llm_adapter("claude")
     assert isinstance(get_llm_adapter("claude", api_key="k"), ClaudeAdapter)
@@ -414,9 +452,7 @@ def test_openai_placeholder_key_warns(caplog):
 # --------------------------------------------------------------------------
 def _claude_client():
     client = MagicMock()
-    client.messages.create = AsyncMock(
-        return_value=SimpleNamespace(content=[SimpleNamespace(text="claude-out")])
-    )
+    client.messages.create = AsyncMock(return_value=SimpleNamespace(content=[SimpleNamespace(text="claude-out")]))
 
     stream = MagicMock()
     stream.text_stream = _AsyncIter(["a", "b"])
@@ -490,9 +526,13 @@ def test_gemini_module_getattr(monkeypatch):
 
 
 def test_gemini_client_requires_key(monkeypatch):
-    monkeypatch.setattr("src.llm.adapters.gemini.settings", SimpleNamespace(
-        GEMINI_API_KEY="", GEMINI_MODEL="gm",
-    ))
+    monkeypatch.setattr(
+        "src.llm.adapters.gemini.settings",
+        SimpleNamespace(
+            GEMINI_API_KEY="",
+            GEMINI_MODEL="gm",
+        ),
+    )
     a = gemini_mod.GeminiAdapter()
     assert a.api_key == PLACEHOLDER_API_KEY
     with pytest.raises(LLMConfigurationError):

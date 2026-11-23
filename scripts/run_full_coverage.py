@@ -14,17 +14,22 @@ sys.path.insert(0, str(ROOT))
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
 cmd = [
-    sys.executable, "-m", "pytest", "tests",
+    sys.executable,
+    "-m",
+    "pytest",
+    "tests",
     "--ignore=tests/contract/test_db_schema.py",
     "--ignore=tests/load/test_locustfile.py",
     "--ignore=tests/unit/scripts/test_check_env.py",
-    "-m", "not perf",
+    "-m",
+    "not perf",
     "-q",
     "--cov=src",
     "--cov-report=json:coverage.json",
     "--cov-report=term",
     "--import-mode=importlib",
-    "-p", "no:timeout",
+    "-p",
+    "no:timeout",
 ]
 
 print("Running:", " ".join(cmd[:6]), "...")

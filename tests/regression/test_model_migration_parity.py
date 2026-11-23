@@ -41,8 +41,7 @@ def _alembic_upgrade_head(db_url: str) -> None:
     )
     if result.returncode != 0:
         raise AssertionError(
-            f"alembic upgrade head failed (exit {result.returncode}):\n"
-            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+            f"alembic upgrade head failed (exit {result.returncode}):\nstdout: {result.stdout}\nstderr: {result.stderr}"
         )
 
 
@@ -59,9 +58,7 @@ def _db_column_names(db_path: str) -> dict[str, set[str]]:
     conn = sqlite3.connect(db_path)
     try:
         cur = conn.cursor()
-        cur.execute(
-            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
-        )
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
         table_names = [row[0] for row in cur.fetchall()]
         tables: dict[str, set[str]] = {}
         for name in table_names:
@@ -108,8 +105,7 @@ def test_model_migration_parity(tmp_path: Path) -> None:
     orm_only = set(orm_tables) - set(db_tables) - set(KNOWN_TABLE_DRIFT)
     db_only = set(db_tables) - set(orm_tables) - set(KNOWN_TABLE_DRIFT)
     assert not orm_only and not db_only, (
-        f"テーブル名の不一致（既知 drift 除外後）: "
-        f"ORMのみ={orm_only}, DBのみ={db_only}"
+        f"テーブル名の不一致（既知 drift 除外後）: ORMのみ={orm_only}, DBのみ={db_only}"
     )
 
     for table_name in orm_tables:
@@ -119,9 +115,7 @@ def test_model_migration_parity(tmp_path: Path) -> None:
         db_cols = db_tables[table_name]
         missing_in_db = orm_cols - db_cols
         missing_in_orm = db_cols - orm_cols
-        assert not missing_in_db, (
-            f"テーブル '{table_name}' の以下の列が DB に存在しません: {missing_in_db}"
-        )
+        assert not missing_in_db, f"テーブル '{table_name}' の以下の列が DB に存在しません: {missing_in_db}"
         assert not missing_in_orm, (
             f"テーブル '{table_name}' の以下の列が ORM モデルに定義されていません: {missing_in_orm}"
         )

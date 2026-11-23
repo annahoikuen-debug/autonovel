@@ -1,6 +1,7 @@
 """
 test_narrative_spine_enforcement.py - EmotionalHookSpec と SharpEdgeSpec のプロンプト注入・制約保全テスト
 """
+
 from __future__ import annotations
 
 

@@ -7,6 +7,7 @@ detect_zombie_tasks とリセットが別セッションのため、クラッシ
 - update_running_task_heartbeats が自分の worker_id のタスクのみを更新
 - recover_orphan_tasks が単一トランザクションの UPDATE で原子的にリセット
 """
+
 from __future__ import annotations
 
 import inspect
@@ -25,12 +26,8 @@ def test_heartbeat_updates_own_tasks_only():
 def test_recover_orphan_uses_single_transaction_update():
     """recover_orphan_tasks が単一トランザクションの UPDATE で原子的にリセット（H12）。"""
     src = inspect.getsource(WorkerRecoveryManager.recover_orphan_tasks)
-    assert "update(TaskWALLogModel)" in src, (
-        "recover_orphan_tasks が単一 UPDATE を使っていない (H12)"
-    )
-    assert "worker_id != self.worker_id" in src, (
-        "recover_orphan_tasks が自分のタスクを対象外にしていない (H12)"
-    )
+    assert "update(TaskWALLogModel)" in src, "recover_orphan_tasks が単一 UPDATE を使っていない (H12)"
+    assert "worker_id != self.worker_id" in src, "recover_orphan_tasks が自分のタスクを対象外にしていない (H12)"
     assert "await self.detect_zombie_tasks()" not in src, (
         "recover_orphan_tasks が別セッションの detect_zombie_tasks を呼んでいる (H12)"
     )

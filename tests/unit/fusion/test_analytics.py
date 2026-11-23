@@ -1,4 +1,5 @@
 """Unit tests for fusion analytics."""
+
 from src.fusion.analytics import analyze_source_contribution
 from src.fusion.models import Conflict, FusedValue, FusedVector
 from src.pipeline.emotional_residue import EmotionType

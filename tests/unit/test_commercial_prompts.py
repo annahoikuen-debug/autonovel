@@ -79,11 +79,15 @@ class TestCommercialPrompts(unittest.TestCase):
             "status_flip_trigger",
         ]
         for role in roles:
-            prompt_scene = commercial_role_prompt_registry(role, character_name="アレン", prompt_type="scene_generation")
+            prompt_scene = commercial_role_prompt_registry(
+                role, character_name="アレン", prompt_type="scene_generation"
+            )
             self.assertIn("アレン", prompt_scene)
             self.assertGreater(len(prompt_scene), 50)
 
-            prompt_build = commercial_role_prompt_registry(role, character_name="アレン", prompt_type="character_building")
+            prompt_build = commercial_role_prompt_registry(
+                role, character_name="アレン", prompt_type="character_building"
+            )
             self.assertIn("アレン", prompt_build)
             self.assertGreater(len(prompt_build), 30)
 

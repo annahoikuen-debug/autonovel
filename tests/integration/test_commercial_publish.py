@@ -60,20 +60,24 @@ class TestCommercialPipelinePublish:
             mock_publisher._apply_rate_limit = AsyncMock()
 
             # 第1話はpublish、第2話以降はupdate_chapter
-            mock_publisher.publish = AsyncMock(return_value=PublishResult(
-                success=True,
-                platform="narou",
-                post_id="novel_123",
-                url="https://ncode.syosetu.com/n123/",
-                metadata={"novel_id": "novel_123", "episode": 1}
-            ))
-            mock_publisher.update_chapter = AsyncMock(return_value=PublishResult(
-                success=True,
-                platform="narou",
-                post_id="novel_123",
-                url="https://ncode.syosetu.com/n123/2/",
-                metadata={"novel_id": "novel_123", "episode": 2}
-            ))
+            mock_publisher.publish = AsyncMock(
+                return_value=PublishResult(
+                    success=True,
+                    platform="narou",
+                    post_id="novel_123",
+                    url="https://ncode.syosetu.com/n123/",
+                    metadata={"novel_id": "novel_123", "episode": 1},
+                )
+            )
+            mock_publisher.update_chapter = AsyncMock(
+                return_value=PublishResult(
+                    success=True,
+                    platform="narou",
+                    post_id="novel_123",
+                    url="https://ncode.syosetu.com/n123/2/",
+                    metadata={"novel_id": "novel_123", "episode": 2},
+                )
+            )
 
             mock_get_pub.return_value = mock_publisher
 
@@ -102,7 +106,9 @@ class TestCommercialPipelinePublish:
         assert sample_episodes[2]["narou_post_id"] == "novel_123"
 
     @pytest.mark.asyncio
-    async def test_publish_to_multiple_platforms(self, pipeline, sample_novel, sample_episodes, narou_credentials, kakuyomu_credentials):
+    async def test_publish_to_multiple_platforms(
+        self, pipeline, sample_novel, sample_episodes, narou_credentials, kakuyomu_credentials
+    ):
         """複数プラットフォーム投稿テスト"""
         credentials = {
             "narou": narou_credentials,
@@ -114,23 +120,21 @@ class TestCommercialPipelinePublish:
             narou_pub = AsyncMock()
             narou_pub.authenticate = AsyncMock(return_value=True)
             narou_pub._apply_rate_limit = AsyncMock()
-            narou_pub.publish = AsyncMock(return_value=PublishResult(
-                success=True, platform="narou", post_id="n123"
-            ))
-            narou_pub.update_chapter = AsyncMock(return_value=PublishResult(
-                success=True, platform="narou", post_id="n123"
-            ))
+            narou_pub.publish = AsyncMock(return_value=PublishResult(success=True, platform="narou", post_id="n123"))
+            narou_pub.update_chapter = AsyncMock(
+                return_value=PublishResult(success=True, platform="narou", post_id="n123")
+            )
 
             # カクヨムモック
             kakuyomu_pub = AsyncMock()
             kakuyomu_pub.authenticate = AsyncMock(return_value=True)
             kakuyomu_pub._apply_rate_limit = AsyncMock()
-            kakuyomu_pub.publish = AsyncMock(return_value=PublishResult(
-                success=True, platform="kakuyomu", post_id="k456"
-            ))
-            kakuyomu_pub.update_chapter = AsyncMock(return_value=PublishResult(
-                success=True, platform="kakuyomu", post_id="k456"
-            ))
+            kakuyomu_pub.publish = AsyncMock(
+                return_value=PublishResult(success=True, platform="kakuyomu", post_id="k456")
+            )
+            kakuyomu_pub.update_chapter = AsyncMock(
+                return_value=PublishResult(success=True, platform="kakuyomu", post_id="k456")
+            )
 
             def get_pub_side_effect(platform):
                 if platform == "narou":
@@ -186,13 +190,15 @@ class TestCommercialPipelinePublish:
             mock_publisher._apply_rate_limit = AsyncMock()
 
             # 第1話成功、第2話失敗、第3話成功
-            mock_publisher.publish = AsyncMock(return_value=PublishResult(
-                success=True, platform="narou", post_id="n123"
-            ))
-            mock_publisher.update_chapter = AsyncMock(side_effect=[
-                PublishResult(success=False, platform="narou", error="Network error"),
-                PublishResult(success=True, platform="narou", post_id="n123"),
-            ])
+            mock_publisher.publish = AsyncMock(
+                return_value=PublishResult(success=True, platform="narou", post_id="n123")
+            )
+            mock_publisher.update_chapter = AsyncMock(
+                side_effect=[
+                    PublishResult(success=False, platform="narou", error="Network error"),
+                    PublishResult(success=True, platform="narou", post_id="n123"),
+                ]
+            )
 
             mock_get_pub.return_value = mock_publisher
 
@@ -217,7 +223,6 @@ class TestCommercialPipelinePublish:
             with patch.object(pipeline, "_generate_content_async") as mock_gen:
                 with patch.object(pipeline, "_publish_to_platforms") as mock_pub:
                     with patch.object(pipeline, "_create_schedule_csv") as mock_csv:
-
                         mock_plan.return_value = {
                             "concept": "テスト",
                             "genre": "fantasy",
@@ -259,7 +264,6 @@ class TestCommercialPipelinePublish:
             with patch.object(pipeline, "_generate_content_async") as mock_gen:
                 with patch.object(pipeline, "_publish_to_platforms") as mock_pub:
                     with patch.object(pipeline, "_create_schedule_csv") as mock_csv:
-
                         mock_plan.return_value = {"target_eps": 3}
                         mock_gen.return_value = (sample_episodes, {})
                         mock_csv.return_value = "/tmp/schedule.csv"
@@ -288,7 +292,6 @@ class TestCommercialPipelineRun:
         with patch.object(pipeline, "_step_plan_async") as mock_plan:
             with patch.object(pipeline, "_generate_content_async") as mock_gen:
                 with patch.object(pipeline, "_create_schedule_csv") as mock_csv:
-
                     mock_plan.return_value = {
                         "concept": "テスト概念",
                         "genre": "fantasy",
@@ -302,7 +305,7 @@ class TestCommercialPipelineRun:
                             {"ep_num": 1, "title": "第1話", "content": "内容1"},
                             {"ep_num": 2, "title": "第2話", "content": "内容2"},
                         ],
-                        {}
+                        {},
                     )
                     mock_csv.return_value = "/tmp/test.csv"
 

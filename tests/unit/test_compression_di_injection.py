@@ -1,4 +1,5 @@
 """DIコンテナでの圧縮コンポーネント注入確認テスト"""
+
 from __future__ import annotations
 
 import pytest

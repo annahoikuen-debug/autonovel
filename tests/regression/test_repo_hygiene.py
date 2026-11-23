@@ -83,8 +83,7 @@ def test_no_forbidden_artifacts_are_tracked():
 
     assert not violations, (
         "Forbidden artifacts are tracked in git. Untrack them with "
-        "`git rm --cached <path>` and keep them ignored:\n  "
-        + "\n  ".join(sorted(set(violations)))
+        "`git rm --cached <path>` and keep them ignored:\n  " + "\n  ".join(sorted(set(violations)))
     )
 
 

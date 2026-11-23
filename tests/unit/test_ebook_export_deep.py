@@ -1,4 +1,5 @@
 """src.easy_mode.phase3.ebook_export の深層単体テスト (Step 5)。"""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -25,22 +26,17 @@ from src.easy_mode.spice_guard import SpiceElement
 def _make_series(genre: str = "ハイファンタジー (R15)", episode_count: int = 2) -> SeriesResult:
     episodes = []
     for i in range(episode_count):
-        content = (
-            f"エピソード{i+1}の本文\n\n主人公は行動した。\n\n「セリフです」\n\n"
-            f"衝撃の展開！\n"
-        )
+        content = f"エピソード{i + 1}の本文\n\n主人公は行動した。\n\n「セリフです」\n\n衝撃の展開！\n"
         episodes.append(
             EpisodeResult(
                 episode_num=i + 1,
-                title=f"テスト話{i+1}",
+                title=f"テスト話{i + 1}",
                 content=content,
                 word_count=len(content),
                 audit_score=85.0,
                 audit_passed=True,
                 rewrite_count=0,
-                spice_elements=[
-                    SpiceElement(type="unique_metaphor", text="例え", position=0, priority="low")
-                ],
+                spice_elements=[SpiceElement(type="unique_metaphor", text="例え", position=0, priority="low")],
                 metadata={},
             )
         )
@@ -173,9 +169,8 @@ class TestEbookContentProcessor:
         result = processor._escape_html(raw)
         # & と < がエスケープされることを検証
         assert chr(60) not in result  # < は残らない
-        assert chr(38) in result      # & エンティティが使われる
+        assert chr(38) in result  # & エンティティが使われる
         assert "lt;" in result
-
 
     def test_generate_css(self, processor):
         css = processor.generate_css()
@@ -209,9 +204,7 @@ class TestEbookExporter:
     def test_create_metadata_with_overrides(self, tmp_path):
         exporter = self._make_exporter(tmp_path)
         series = _make_series()
-        meta = exporter.create_metadata(
-            series, author="上書き作者", tags=["tag1", "tag2"]
-        )
+        meta = exporter.create_metadata(series, author="上書き作者", tags=["tag1", "tag2"])
         assert meta.author == "上書き作者"
         assert meta.tags == ["tag1", "tag2"]
 

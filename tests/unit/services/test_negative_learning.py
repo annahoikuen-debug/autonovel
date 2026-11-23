@@ -34,13 +34,15 @@ def learning_service(mock_repo, mock_chroma):
 async def test_record_negative_sample_rejected(learning_service, mock_repo, mock_chroma):
     """却下時のネガティブサンプル記録テスト"""
     mock_collection = mock_chroma.get_or_create_collection.return_value
-    mock_repo.misc.get_patch_review = AsyncMock(return_value={
-        "id": 10,
-        "audit_issue_ids": [1, 2],
-        "learning_metadata": {
-            "negative_sample_candidates": ["logical_consistency", "causal_integrity"],
-        },
-    })
+    mock_repo.misc.get_patch_review = AsyncMock(
+        return_value={
+            "id": 10,
+            "audit_issue_ids": [1, 2],
+            "learning_metadata": {
+                "negative_sample_candidates": ["logical_consistency", "causal_integrity"],
+            },
+        }
+    )
     mock_repo.session.execute = AsyncMock()
 
     count = await learning_service.record_negative_sample(
@@ -59,13 +61,15 @@ async def test_record_negative_sample_rejected(learning_service, mock_repo, mock
 async def test_record_negative_sample_approved(learning_service, mock_repo, mock_chroma):
     """承認時のポジティブサンプル記録テスト"""
     mock_collection = mock_chroma.get_or_create_collection.return_value
-    mock_repo.misc.get_patch_review = AsyncMock(return_value={
-        "id": 11,
-        "audit_issue_ids": [3],
-        "learning_metadata": {
-            "negative_sample_candidates": ["deai"],
-        },
-    })
+    mock_repo.misc.get_patch_review = AsyncMock(
+        return_value={
+            "id": 11,
+            "audit_issue_ids": [3],
+            "learning_metadata": {
+                "negative_sample_candidates": ["deai"],
+            },
+        }
+    )
     mock_repo.session.execute = AsyncMock()
 
     count = await learning_service.record_negative_sample(
@@ -84,13 +88,15 @@ async def test_record_negative_sample_approved(learning_service, mock_repo, mock
 async def test_record_negative_sample_modified(learning_service, mock_repo, mock_chroma):
     """修正時の両方記録テスト"""
     mock_collection = mock_chroma.get_or_create_collection.return_value
-    mock_repo.misc.get_patch_review = AsyncMock(return_value={
-        "id": 12,
-        "audit_issue_ids": [4],
-        "learning_metadata": {
-            "negative_sample_candidates": ["ability_consistency"],
-        },
-    })
+    mock_repo.misc.get_patch_review = AsyncMock(
+        return_value={
+            "id": 12,
+            "audit_issue_ids": [4],
+            "learning_metadata": {
+                "negative_sample_candidates": ["ability_consistency"],
+            },
+        }
+    )
     mock_repo.session.execute = AsyncMock()
 
     count = await learning_service.record_negative_sample(
@@ -110,10 +116,12 @@ async def test_get_negative_patterns(learning_service, mock_chroma):
     """ネガティブパターン検索テスト"""
     mock_collection = mock_chroma.get_collection.return_value
     mock_collection.query.return_value = {
-        "metadatas": [[
-            {"patch_review_id": 10, "audit_type": "logical_consistency", "label": "negative"},
-            {"patch_review_id": 11, "audit_type": "logical_consistency", "label": "negative"},
-        ]],
+        "metadatas": [
+            [
+                {"patch_review_id": 10, "audit_type": "logical_consistency", "label": "negative"},
+                {"patch_review_id": 11, "audit_type": "logical_consistency", "label": "negative"},
+            ]
+        ],
     }
 
     patterns = await learning_service.get_negative_patterns("logical_consistency", limit=10)

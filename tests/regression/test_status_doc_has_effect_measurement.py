@@ -36,10 +36,7 @@ def test_unmeasured_items_are_declared_not_guessed():
     """未計測項目は `未計測` と明記されていること（推測の混入防止）。"""
     text = _text()
     section = text.split("v6 効果測定", 1)[-1]
-    assert "未計測" in section, (
-        "未計測の項目が明示されていない。"
-        "推測値を効果測定表に載せることになる"
-    )
+    assert "未計測" in section, "未計測の項目が明示されていない。推測値を効果測定表に載せることになる"
     # プレースホルダ（未解決の記入）が残っていないこと
     assert "(Step 13)" not in section, "未計測セルが未解決のまま残っている"
     assert "TODO" not in section, "TODO が残ったまま"
@@ -63,9 +60,7 @@ def test_version_section_matches_pyproject():
     version = str(version["project"]["version"])
     text = _text()
     section = text.split("## 1. バージョン", 1)[-1].split("\n---", 1)[0]
-    assert f"**{version}**" in section, (
-        f"バージョン節が pyproject の {version} と一致しない"
-    )
+    assert f"**{version}**" in section, f"バージョン節が pyproject の {version} と一致しない"
     # 旧バージョンが 正として残っていないこと
     assert "**5.3.0**" not in section, "旧バージョンが正として残っている"
 

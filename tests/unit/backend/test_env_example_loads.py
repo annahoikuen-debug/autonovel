@@ -4,6 +4,7 @@ README は `cp .env.example .env` を案内している。`extra="forbid"` の�
 対して example 側だけキーが増えると、利用者は起動時に ValidationError で
 止まってしまうため、テンプレートのロード可否を機械的に固定する。
 """
+
 from __future__ import annotations
 
 from pathlib import Path

@@ -60,6 +60,7 @@ def test_erotic_generation_allowed_when_nsfw_enabled(monkeypatch) -> None:
 # EroticEnhancer.enhance_erotic_content の入口ガード (バイパス経路の遮断)
 # ---------------------------------------------------------------------------
 
+
 class _StubAgent:
     """Enhancer の検証に十分な最小スタブ。"""
 

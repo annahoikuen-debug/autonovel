@@ -52,6 +52,7 @@ def _read_corpus(patterns: list[str], limit: int | None = None) -> list[str]:
 def _make_judge(kind: str):
     """判定器 callable を生成する。"""
     if kind == "mock":
+
         def mock_judge(text: str) -> dict[str, float]:
             return {
                 "hook": min(100.0, len(text) * 0.1),
@@ -59,6 +60,7 @@ def _make_judge(kind: str):
                 "emotional": 50.0,
                 "character_consistency": 70.0,
             }
+
         return mock_judge
     if kind == "unified":
         # 遅延インポート（LLM プロバイダ未設定時でもインポートエラーを避ける）
@@ -80,6 +82,7 @@ def _make_judge(kind: str):
             except Exception as e:  # noqa: BLE001 - 判定器失敗は空スコア
                 print(f"[WARN] 判定器失敗: {e}", file=sys.stderr)
                 return {}
+
         return unified_judge
     raise ValueError(f"不明な判定器種別: {kind}")
 

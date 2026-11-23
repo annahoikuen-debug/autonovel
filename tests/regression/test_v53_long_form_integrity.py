@@ -3,6 +3,7 @@
 v5.2 までの実装には、伏線回収が「動くように見えるが実際には動かない」
 複数の配線欠落があった。本テストはその欠落が再発しないことを固定化する。
 """
+
 from __future__ import annotations
 
 from types import SimpleNamespace
@@ -165,8 +166,12 @@ class TestForeshadowingPromptWiring:
     def test_id_is_rendered(self):
         """ID が無いと LLM が回収を報告できず、伏線が放置される"""
         f = SimpleNamespace(
-            id=77, title="聖剣の封印", planted_episode=2,
-            description="古代遺跡で発見された封印", target_episode=10, status="planted",
+            id=77,
+            title="聖剣の封印",
+            planted_episode=2,
+            description="古代遺跡で発見された封印",
+            target_episode=10,
+            status="planted",
         )
         text = ContextBuilderAgent.format_unresolved_foreshadowings([f])
         assert "- **77**" in text
@@ -176,8 +181,12 @@ class TestForeshadowingPromptWiring:
     def test_consistency_auditor_can_parse_output(self):
         """出力書式が ConsistencyAuditor のパーサと一致すること"""
         f = SimpleNamespace(
-            id=99, title="黒騎士の紋章", planted_episode=1,
-            description="壁に掛けられた古い紋章", target_episode=20, status="progressed",
+            id=99,
+            title="黒騎士の紋章",
+            planted_episode=1,
+            description="壁に掛けられた古い紋章",
+            target_episode=20,
+            status="progressed",
         )
         text = ContextBuilderAgent.format_unresolved_foreshadowings([f])
         descriptions = _extract_foreshadowing_descriptions(text)
@@ -187,18 +196,21 @@ class TestForeshadowingPromptWiring:
     def test_missing_id_is_tolerated(self):
         """id を持たないプロット由来の伏線でも破綻しない"""
         f = SimpleNamespace(
-            title="未登録伏線", planted_episode=4, description="d",
-            target_episode=None, status="planted",
+            title="未登録伏線",
+            planted_episode=4,
+            description="d",
+            target_episode=None,
+            status="planted",
         )
         text = ContextBuilderAgent.format_unresolved_foreshadowings([f])
         assert "未登録伏線" in text
         assert "- **" not in text
 
     def test_always_has_section_header(self):
-        f = SimpleNamespace(id=1, title="x", planted_episode=1, description="",
-                            target_episode=None, status="planted")
+        f = SimpleNamespace(id=1, title="x", planted_episode=1, description="", target_episode=None, status="planted")
         text = ContextBuilderAgent.format_unresolved_foreshadowings([f])
         assert "伏線" in text
+
     def test_empty_returns_none_marker(self):
         assert ContextBuilderAgent.format_unresolved_foreshadowings([]) == "なし"
 
@@ -216,7 +228,9 @@ class TestReschedulerUsesRealApi:
         repo = MagicMock()
         repo.update_target_episode = AsyncMock(return_value=True)
         result = await ForeshadowingRescheduler.reschedule_foreshadowing(
-            foreshadowing_id=5, current_episode=3, repo=repo,
+            foreshadowing_id=5,
+            current_episode=3,
+            repo=repo,
         )
         assert result is not None
         repo.update_target_episode.assert_awaited_once()
@@ -228,7 +242,9 @@ class TestReschedulerUsesRealApi:
 
         repo = SimpleNamespace()  # update_target_episode を持たない
         result = await ForeshadowingRescheduler.reschedule_foreshadowing(
-            foreshadowing_id=5, current_episode=3, repo=repo,
+            foreshadowing_id=5,
+            current_episode=3,
+            repo=repo,
         )
         assert result is None
 
@@ -239,7 +255,9 @@ class TestReschedulerUsesRealApi:
         repo = MagicMock()
         repo.update_target_episode = AsyncMock(return_value=False)
         result = await ForeshadowingRescheduler.reschedule_foreshadowing(
-            foreshadowing_id=5, current_episode=3, repo=repo,
+            foreshadowing_id=5,
+            current_episode=3,
+            repo=repo,
         )
         assert result is None
 
@@ -288,7 +306,10 @@ class TestReschedulerUsesRealApi:
         repo = MagicMock()
         repo.update_target_episode = AsyncMock(return_value=True)
         result = await ForeshadowingRescheduler.reschedule_foreshadowing(
-            foreshadowing_id=5, current_episode=40, repo=repo, max_episode=40,
+            foreshadowing_id=5,
+            current_episode=40,
+            repo=repo,
+            max_episode=40,
         )
         assert result is None
         repo.update_target_episode.assert_not_awaited()
@@ -305,13 +326,16 @@ class TestReschedulerUsesRealApi:
             captured["max_episode"] = max_episode
             return current_episode + 2
 
-        monkeypatch.setattr(
-            svc_mod.ForeshadowingRescheduler, "reschedule_foreshadowing", _fake_reschedule
-        )
+        monkeypatch.setattr(svc_mod.ForeshadowingRescheduler, "reschedule_foreshadowing", _fake_reschedule)
 
         f = SimpleNamespace(
-            id=1, title="伏線A", description="d", planted_episode=1,
-            target_episode=5, status="planted", keywords=[],
+            id=1,
+            title="伏線A",
+            description="d",
+            planted_episode=1,
+            target_episode=5,
+            status="planted",
+            keywords=[],
         )
         repo = MagicMock()
         repo.get_unresolved = AsyncMock(return_value=[f])
@@ -320,8 +344,11 @@ class TestReschedulerUsesRealApi:
 
         service = ForeshadowingService(repo)
         await service.check_and_resolve(
-            book_id=1, episode_num=5, draft_text="伏線Aが動いた",
-            contract_ids=[1], total_episodes=120,
+            book_id=1,
+            episode_num=5,
+            draft_text="伏線Aが動いた",
+            contract_ids=[1],
+            total_episodes=120,
         )
         assert captured["max_episode"] == 120
 
@@ -331,8 +358,13 @@ class TestReschedulerUsesRealApi:
         from src.engine.foreshadowing.service import ForeshadowingService
 
         f = SimpleNamespace(
-            id=1, title="伏線B", description="d", planted_episode=1,
-            target_episode=5, status="progressed", keywords=[],
+            id=1,
+            title="伏線B",
+            description="d",
+            planted_episode=1,
+            target_episode=5,
+            status="progressed",
+            keywords=[],
         )
         repo = MagicMock()
         repo.get_unresolved = AsyncMock(return_value=[f])
@@ -343,7 +375,9 @@ class TestReschedulerUsesRealApi:
         service = ForeshadowingService(repo)
         with caplog.at_level("INFO", logger="src.engine.foreshadowing.service"):
             resolved = await service.check_and_resolve(
-                book_id=1, episode_num=5, draft_text="伏線Bがさらに動いた",
+                book_id=1,
+                episode_num=5,
+                draft_text="伏線Bがさらに動いた",
                 contract_ids=[1],
             )
         assert resolved == []
@@ -360,8 +394,7 @@ class TestReschedulerUsesRealApi:
         assert not [
             r
             for r in caplog.records
-            if r.levelname == "WARNING"
-            and not any(token in r.getMessage() for token in unrelated)
+            if r.levelname == "WARNING" and not any(token in r.getMessage() for token in unrelated)
         ]
 
     @pytest.mark.asyncio
@@ -370,8 +403,13 @@ class TestReschedulerUsesRealApi:
         from src.engine.foreshadowing.service import ForeshadowingService
 
         f = SimpleNamespace(
-            id=2, title="伏線C", description="d", planted_episode=1,
-            target_episode=5, status="planted", keywords=[],
+            id=2,
+            title="伏線C",
+            description="d",
+            planted_episode=1,
+            target_episode=5,
+            status="planted",
+            keywords=[],
         )
         repo = MagicMock()
         repo.get_unresolved = AsyncMock(return_value=[f])
@@ -381,7 +419,10 @@ class TestReschedulerUsesRealApi:
         service = ForeshadowingService(repo)
         with caplog.at_level("INFO", logger="src.engine.foreshadowing.service"):
             await service.check_and_resolve(
-                book_id=1, episode_num=5, draft_text="伏線Cが動いた", contract_ids=[2],
+                book_id=1,
+                episode_num=5,
+                draft_text="伏線Cが動いた",
+                contract_ids=[2],
             )
         messages = " ".join(r.getMessage() for r in caplog.records)
         assert "PROGRESSED に更新" in messages
@@ -393,8 +434,13 @@ class TestReschedulerUsesRealApi:
         from src.engine.foreshadowing.service import ForeshadowingService
 
         f = SimpleNamespace(
-            id=3, title="伏線D", description="d", planted_episode=1,
-            target_episode=None, status="planted", keywords=[],
+            id=3,
+            title="伏線D",
+            description="d",
+            planted_episode=1,
+            target_episode=None,
+            status="planted",
+            keywords=[],
         )
         repo = MagicMock()
         repo.get_unresolved = AsyncMock(return_value=[f])
@@ -404,7 +450,9 @@ class TestReschedulerUsesRealApi:
 
         service = ForeshadowingService(repo)
         resolved = await service.check_and_resolve(
-            book_id=1, episode_num=2, draft_text="伏線Dの正体が 밝혀られた",
+            book_id=1,
+            episode_num=2,
+            draft_text="伏線Dの正体が 밝혀られた",
             contract_ids=[],
         )
         # 契約0件・target 無し = 契約済みではない（35pt の契約ボーナスなし）
@@ -426,9 +474,7 @@ class TestForeshadowingKpi:
 
     @pytest.mark.asyncio
     async def test_collection_rate(self):
-        kpi = await self._service(
-            {"planted": 3, "progressed": 2, "resolved": 4, "abandoned": 1}
-        ).compute(book_id=1)
+        kpi = await self._service({"planted": 3, "progressed": 2, "resolved": 4, "abandoned": 1}).compute(book_id=1)
         # 終端5本中 4本回収 → 0.8
         assert kpi.collection_rate == 0.8
         assert kpi.active == 5
@@ -452,9 +498,9 @@ class TestForeshadowingKpi:
     @pytest.mark.asyncio
     async def test_metrics_published(self):
         """Prometheus メトリクスが実際に更新される"""
-        kpi = await self._service(
-            {"planted": 0, "progressed": 0, "resolved": 3, "abandoned": 0}
-        ).compute(book_id=42, current_episode=10)
+        kpi = await self._service({"planted": 0, "progressed": 0, "resolved": 3, "abandoned": 0}).compute(
+            book_id=42, current_episode=10
+        )
         from src.backend.observability import metrics as m
 
         value = m.foreshadowing_collection_rate.labels(book_id="42")._value.get()
@@ -507,15 +553,17 @@ class TestContractForeshadowingWiring:
         agent.logger = MagicMock()
 
         db_record = SimpleNamespace(
-            id=1, title="DB伏線", description="d", planted_episode=1,
-            target_episode=5, status="planted",
+            id=1,
+            title="DB伏線",
+            description="d",
+            planted_episode=1,
+            target_episode=5,
+            status="planted",
         )
         repo = MagicMock()
         repo.get_unresolved = AsyncMock(return_value=[db_record])
         service = MagicMock()
-        service.get_contract_foreshadowings = AsyncMock(
-            return_value=[{"id": 1, "title": "DB伏線"}]
-        )
+        service.get_contract_foreshadowings = AsyncMock(return_value=[{"id": 1, "title": "DB伏線"}])
         repo_cls = MagicMock(return_value=repo)
         service_cls = MagicMock(return_value=service)
 
@@ -536,9 +584,7 @@ class TestContractForeshadowingWiring:
     async def test_no_session_returns_empty(self):
         agent = ContextBuilderAgent.__new__(ContextBuilderAgent)
         agent.logger = MagicMock()
-        unresolved, contract = await ContextBuilderAgent._load_db_foreshadowings(
-            agent, None, book_id=7, ep_num=5
-        )
+        unresolved, contract = await ContextBuilderAgent._load_db_foreshadowings(agent, None, book_id=7, ep_num=5)
         assert unresolved == []
         assert contract == []
 

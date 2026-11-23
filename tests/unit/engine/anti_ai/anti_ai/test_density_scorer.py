@@ -83,50 +83,49 @@ class TestDensityScorer:
     def test_should_simplify(self) -> None:
         """Test the should_simplify decision function."""
         # Score well under thresholds
-        low_score = DensityScore(aggressive_density=0.5, metaphor_density=0.5,
-                                sensory_overload=0.1, verb_strength=0.8)
+        low_score = DensityScore(aggressive_density=0.5, metaphor_density=0.5, sensory_overload=0.1, verb_strength=0.8)
         assert not DensityScorer.should_simplify(low_score)
 
         # Score over aggressive threshold
-        high_aggressive = DensityScore(aggressive_density=3.0, metaphor_density=1.0,
-                                      sensory_overload=0.1, verb_strength=0.8)
+        high_aggressive = DensityScore(
+            aggressive_density=3.0, metaphor_density=1.0, sensory_overload=0.1, verb_strength=0.8
+        )
         assert DensityScorer.should_simplify(high_aggressive)
 
         # Score over metaphor threshold
-        high_metaphor = DensityScore(aggressive_density=1.0, metaphor_density=4.0,
-                                    sensory_overload=0.1, verb_strength=0.8)
+        high_metaphor = DensityScore(
+            aggressive_density=1.0, metaphor_density=4.0, sensory_overload=0.1, verb_strength=0.8
+        )
         assert DensityScorer.should_simplify(high_metaphor)
 
         # Score over sensory threshold
-        high_sensory = DensityScore(aggressive_density=1.0, metaphor_density=1.0,
-                                   sensory_overload=0.6, verb_strength=0.8)
+        high_sensory = DensityScore(
+            aggressive_density=1.0, metaphor_density=1.0, sensory_overload=0.6, verb_strength=0.8
+        )
         assert DensityScorer.should_simplify(high_sensory)
 
         # Score under verb strength threshold
-        low_verb = DensityScore(aggressive_density=1.0, metaphor_density=1.0,
-                               sensory_overload=0.1, verb_strength=0.2)
+        low_verb = DensityScore(aggressive_density=1.0, metaphor_density=1.0, sensory_overload=0.1, verb_strength=0.2)
         assert DensityScorer.should_simplify(low_verb)
 
     def test_get_density_category(self) -> None:
         """Test density categorization."""
         # Clean text
-        clean_score = DensityScore(aggressive_density=0.5, metaphor_density=0.5,
-                                  sensory_overload=0.1, verb_strength=0.8)
+        clean_score = DensityScore(
+            aggressive_density=0.5, metaphor_density=0.5, sensory_overload=0.1, verb_strength=0.8
+        )
         assert DensityScorer.get_density_category(clean_score) == "clean"
 
         # Moderate (1 risk factor)
-        mod_score = DensityScore(aggressive_density=1.5, metaphor_density=0.5,
-                                sensory_overload=0.1, verb_strength=0.8)
+        mod_score = DensityScore(aggressive_density=1.5, metaphor_density=0.5, sensory_overload=0.1, verb_strength=0.8)
         assert DensityScorer.get_density_category(mod_score) == "moderate"
 
         # Elevated (2 risk factors)
-        elev_score = DensityScore(aggressive_density=1.5, metaphor_density=2.0,
-                                 sensory_overload=0.1, verb_strength=0.8)
+        elev_score = DensityScore(aggressive_density=1.5, metaphor_density=2.0, sensory_overload=0.1, verb_strength=0.8)
         assert DensityScorer.get_density_category(elev_score) == "elevated"
 
         # High (3+ risk factors)
-        high_score = DensityScore(aggressive_density=1.5, metaphor_density=2.0,
-                                 sensory_overload=0.4, verb_strength=0.2)
+        high_score = DensityScore(aggressive_density=1.5, metaphor_density=2.0, sensory_overload=0.4, verb_strength=0.2)
         assert DensityScorer.get_density_category(high_score) == "high"
 
 

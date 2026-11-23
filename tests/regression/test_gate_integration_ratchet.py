@@ -7,6 +7,7 @@
 失敗数そのものは CI 上（postgres/redis あり）で検証するため、
 本テストは基準ファイルの構造健全性のみを担う。
 """
+
 from __future__ import annotations
 
 import json

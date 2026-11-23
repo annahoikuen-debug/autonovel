@@ -138,11 +138,13 @@ async def test_learning_data_service_negative_sample(mock_repo):
 
     service = LearningDataService(repo=mock_repo, chroma_client=mock_chroma)
 
-    mock_repo.misc.get_patch_review = AsyncMock(return_value={
-        "id": 1,
-        "audit_issue_ids": [1, 2],
-        "learning_metadata": {"negative_sample_candidates": ["logical_consistency", "causal_integrity"]},
-    })
+    mock_repo.misc.get_patch_review = AsyncMock(
+        return_value={
+            "id": 1,
+            "audit_issue_ids": [1, 2],
+            "learning_metadata": {"negative_sample_candidates": ["logical_consistency", "causal_integrity"]},
+        }
+    )
     mock_repo.session.execute = AsyncMock()
 
     count = await service.record_negative_sample(

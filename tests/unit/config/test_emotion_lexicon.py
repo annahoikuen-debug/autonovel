@@ -1,4 +1,5 @@
 """Tests for emotion lexicon configuration."""
+
 from __future__ import annotations
 
 import yaml
@@ -15,8 +16,16 @@ class TestEmotionLexicon:
 
         # 全感情タイプが存在すること
         expected_emotions = {
-            "affection", "tension", "fear", "trust", "intimacy",
-            "jealousy", "anger", "sadness", "surprise", "disgust"
+            "affection",
+            "tension",
+            "fear",
+            "trust",
+            "intimacy",
+            "jealousy",
+            "anger",
+            "sadness",
+            "surprise",
+            "disgust",
         }
         assert set(lexicon.lexicon.keys()) == expected_emotions
 
@@ -40,22 +49,30 @@ class TestEmotionLexicon:
             assert isinstance(pattern[0], str)  # subj_dep
             assert isinstance(pattern[1], str)  # obj_dep
             assert pattern[2] in {
-                "affection", "tension", "fear", "trust", "intimacy",
-                "jealousy", "anger", "sadness", "surprise", "disgust"
+                "affection",
+                "tension",
+                "fear",
+                "trust",
+                "intimacy",
+                "jealousy",
+                "anger",
+                "sadness",
+                "surprise",
+                "disgust",
             }
             assert isinstance(pattern[3], (int, float))
 
     def test_polarity_flip_verbs_load(self):
         lexicon = load_emotion_lexicon()
-        assert hasattr(lexicon, 'polarity_flip_verbs')
+        assert hasattr(lexicon, "polarity_flip_verbs")
         assert isinstance(lexicon.polarity_flip_verbs, list)
         assert "裏切る" in lexicon.polarity_flip_verbs
         assert "騙す" in lexicon.polarity_flip_verbs
 
     def test_intensifiers_attenuators_load(self):
         lexicon = load_emotion_lexicon()
-        assert hasattr(lexicon, 'intensifiers')
-        assert hasattr(lexicon, 'attenuators')
+        assert hasattr(lexicon, "intensifiers")
+        assert hasattr(lexicon, "attenuators")
         assert isinstance(lexicon.intensifiers, list)
         assert isinstance(lexicon.attenuators, list)
         assert "底知れぬ" in lexicon.intensifiers

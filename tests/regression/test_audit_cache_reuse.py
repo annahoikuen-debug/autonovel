@@ -88,9 +88,7 @@ async def test_audit_ability_cache_hit_skips_llm(cache, audit_service):
     characters_json = "{}"
 
     await cache.audit_ability(blueprint, settings_json, characters_json)
-    audit_service.audit_ability.assert_awaited_once_with(
-        blueprint, settings_json, characters_json
-    )
+    audit_service.audit_ability.assert_awaited_once_with(blueprint, settings_json, characters_json)
 
     audit_service.audit_ability.reset_mock()
     await cache.audit_ability(blueprint, settings_json, characters_json)

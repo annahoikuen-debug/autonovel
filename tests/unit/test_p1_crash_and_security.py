@@ -9,6 +9,7 @@ class TestPublishRecordImport:
     def test_commercial_router_import(self):
         """commercial ルーターがインポート可能であること."""
         from src.backend.routers.commercial import router
+
         assert router is not None
 
 
@@ -18,6 +19,7 @@ class TestGraphRouterImport:
     def test_graph_router_import(self):
         """graph ルーターがインポート可能であること."""
         from src.backend.routers.graph import router
+
         assert router is not None
 
 
@@ -60,7 +62,7 @@ class TestPatchesAuth:
 
         assert router is not None
         # エンドポイントレベルの依存関係を確認
-        routes_with_auth = [r for r in router.routes if hasattr(r, 'dependencies') and r.dependencies]
+        routes_with_auth = [r for r in router.routes if hasattr(r, "dependencies") and r.dependencies]
         assert len(routes_with_auth) >= 2  # GET /{book_id}/pending と GET /reviews/{review_id}
 
 

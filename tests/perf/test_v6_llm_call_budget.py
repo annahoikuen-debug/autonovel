@@ -211,26 +211,16 @@ class TestLlmCallsPerEpisode:
         # 実測値はトラッカーの実カウンタそのものである
         measured = sum(b["calls"] for b in result["breakdown"].values())
         assert measured > 0, "1話あたりのLLM回数が計測できていない"
-        assert result["total_calls"] == measured, (
-            f"集計値 {result['total_calls']} と内訳合計 {measured} が不一致"
-        )
+        assert result["total_calls"] == measured, f"集計値 {result['total_calls']} と内訳合計 {measured} が不一致"
         # 独立計測（新しいトラッカー）でも同じ値になること
-        assert measure_calls_per_episode() == measured, (
-            "独立計測値が一致しない（計測が確定的でない）"
-        )
-        print(
-            f"\n[実測] 1話あたりLLM呼び出し回数: {measured}"
-            f"（構成内訳は参考値: {STRUCTURAL_SKILL_LLM_CALLS}）"
-        )
+        assert measure_calls_per_episode() == measured, "独立計測値が一致しない（計測が確定的でない）"
+        print(f"\n[実測] 1話あたりLLM呼び出し回数: {measured}（構成内訳は参考値: {STRUCTURAL_SKILL_LLM_CALLS}）")
 
     def test_measured_calls_match_target_verdict(self) -> None:
         """実測値を目標（4-5回）と比較し、判定を返すこと（T6 Step 13/15 用）。"""
         measured = measure_calls_per_episode()
         verdict = judge_against_target(measured, target_min=4, target_max=5)
-        print(
-            f"\n[実測] 1話 {measured} 回 / 目標 4-5 回 → "
-            f"{'達成' if verdict['meets_target'] else '未達'}"
-        )
+        print(f"\n[実測] 1話 {measured} 回 / 目標 4-5 回 → {'達成' if verdict['meets_target'] else '未達'}")
         assert verdict["measured"] == measured
         assert verdict["meets_target"] in (True, False)
         assert 0 < measured <= BASELINE_MAX_LLM_CALLS_PER_EPISODE
@@ -246,10 +236,7 @@ class TestLlmCallsPerEpisode:
         効果測定表には下限値として記載すること。
         """
         measured = measure_real_audit_calls()
-        print(
-            f"\n[実測] 監査フェーズのLLM呼び出し回数: {measured}"
-            "（決定的なスタブ LLM による下限値）"
-        )
+        print(f"\n[実測] 監査フェーズのLLM呼び出し回数: {measured}（決定的なスタブ LLM による下限値）")
         assert measured > 0, "監査フェーズの実測が 0"
         assert 0 < measured <= 10, f"監査回数が想定外: {measured}"
 
@@ -264,10 +251,7 @@ class TestLlmCallsPerEpisode:
         assert isinstance(structural, int) and structural > 0
         assert isinstance(measured, int) and measured > 0
         # 差分があれば「構造推計では上过长期」になる。記録として残す。
-        print(
-            f"\n[参考] 構成推計 {structural} 回 / 実測 {measured} 回 "
-            f"（差 {measured - structural:+d}）"
-        )
+        print(f"\n[参考] 構成推計 {structural} 回 / 実測 {measured} 回 （差 {measured - structural:+d}）")
 
     def test_calls_are_aggregated_by_task_type(self) -> None:
         """用途別に集計されること（K3 / B-1 の判断材料）。"""
@@ -301,9 +285,7 @@ class TestLlmCallsPerEpisode:
         breakdown = result["breakdown"]
         total = result["total_calls"]
         audit_ratio = breakdown["audit"]["calls"] / total
-        assert audit_ratio < 0.4, (
-            f"WS-A 適用後も監査占有率が高い: {audit_ratio:.1%}（期待: <40%）"
-        )
+        assert audit_ratio < 0.4, f"WS-A 適用後も監査占有率が高い: {audit_ratio:.1%}（期待: <40%）"
         print(f"\n[実測] 監査が全体の {audit_ratio:.1%} を占める（WS-A 適用後）")
 
     def test_cost_per_episode_is_reported(self) -> None:
@@ -311,10 +293,7 @@ class TestLlmCallsPerEpisode:
         tracker = TokenTracker()
         result = _simulate_one_episode(tracker)
         assert result["cost_usd"] > 0, "コストが 0 として算出されている"
-        print(
-            f"\n[実測] 1話あたり推定コスト: ${result['cost_usd']:.8f}"
-            f"（トークン {result['total_tokens']}）"
-        )
+        print(f"\n[実測] 1話あたり推定コスト: ${result['cost_usd']:.8f}（トークン {result['total_tokens']}）")
 
     def test_cost_breakdown_by_task(self) -> None:
         """タスク別のコスト内訳が出ること（tier ルーティングの効果測定用）。"""
@@ -347,13 +326,8 @@ class TestBudgetGuard:
         result = _simulate_one_episode(tracker)
         meets_target = result["total_calls"] <= TARGET_MAX_LLM_CALLS_PER_EPISODE
         if not meets_target:
-            print(
-                f"\n[未達] 1話 {result['total_calls']} 回 > 目標 "
-                f"{TARGET_MAX_LLM_CALLS_PER_EPISODE} 回。"
-            )
-        assert meets_target is True, (
-            "WS-A 適用後も目標未達。WS-B（軽量監査モード）等の追加削減が必要。"
-        )
+            print(f"\n[未達] 1話 {result['total_calls']} 回 > 目標 {TARGET_MAX_LLM_CALLS_PER_EPISODE} 回。")
+        assert meets_target is True, "WS-A 適用後も目標未達。WS-B（軽量監査モード）等の追加削減が必要。"
 
     def test_parallelization_does_not_reduce_call_count(self) -> None:
         """WS-A-3（ゲート集約）で監査の呼び出し回数は 1 回に削減される。
@@ -438,9 +412,7 @@ class TestRollupCallBudget:
             return collected
 
         db_path = tmp_path / "rollup_budget_off.db"
-        engine = create_async_engine(
-            f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False
-        )
+        engine = create_async_engine(f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False)
         tables = _tables_with_fk_closure(
             ForeshadowingModel.__table__,
             EpisodeDigestModel.__table__,
@@ -452,18 +424,24 @@ class TestRollupCallBudget:
                 if table.name == "books":
                     await conn.execute(
                         insert(table).values(
-                            id=1, title="予算テスト", mode="easy", genre="fantasy",
-                            concept="", synopsis="", catchcopy="", style_dna="",
-                            status="draft", marketing_data="", target_eps=60,
+                            id=1,
+                            title="予算テスト",
+                            mode="easy",
+                            genre="fantasy",
+                            concept="",
+                            synopsis="",
+                            catchcopy="",
+                            style_dna="",
+                            status="draft",
+                            marketing_data="",
+                            target_eps=60,
                         )
                     )
         sf = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
         async with sf() as session:
             llm = MagicMock()
-            llm.generate_text = AsyncMock(
-                return_value="本文\n\n[METADATA_JSON]\n{}\n[/METADATA_JSON]"
-            )
+            llm.generate_text = AsyncMock(return_value="本文\n\n[METADATA_JSON]\n{}\n[/METADATA_JSON]")
             llm.generate = CountingDigestLLM().generate
             prompt_manager = MagicMock()
             prompt_manager.build_final_writing_prompt = AsyncMock(return_value="PROMPT")
@@ -482,14 +460,14 @@ class TestRollupCallBudget:
 
             repo_digest = EpisodeDigestRepository(session)
             for ep in range(1, 11):
-                await EpisodeDigestService(
-                    repo=repo_digest, llm=CountingDigestLLM()
-                ).summarize_and_save(
+                await EpisodeDigestService(repo=repo_digest, llm=CountingDigestLLM()).summarize_and_save(
                     book_id=1, episode_num=ep, draft_text=f"第{ep}話本文"
                 )
                 await writer.run(
                     AgentContext(
-                        book_id=1, branch_id=1, ep_num=ep,
+                        book_id=1,
+                        branch_id=1,
+                        ep_num=ep,
                         artifacts={
                             "writing_context": {
                                 "use_beat_to_scene": False,
@@ -513,9 +491,7 @@ class TestRollupCallBudget:
             assert len(res.scalars().all()) == 0, "rollup off で章 rollup が生成されてはいけない"
 
     @pytest.mark.asyncio
-    async def test_rollup_on_call_budget_block_and_volume(
-        self, tmp_path, rollup_env_on
-    ):
+    async def test_rollup_on_call_budget_block_and_volume(self, tmp_path, rollup_env_on):
         """rollup on 時、10話ごとに +1（章）、50話ごとに +1（巻）を超えない。
 
         digest 生成回数は実装に依存するため、rollup 生成の LLM 呼び出し
@@ -558,9 +534,7 @@ class TestRollupCallBudget:
             return collected
 
         db_path = tmp_path / "rollup_budget_on.db"
-        engine = create_async_engine(
-            f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False
-        )
+        engine = create_async_engine(f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False)
         tables = _tables_with_fk_closure(
             ForeshadowingModel.__table__,
             EpisodeDigestModel.__table__,
@@ -572,18 +546,24 @@ class TestRollupCallBudget:
                 if table.name == "books":
                     await conn.execute(
                         insert(table).values(
-                            id=1, title="予算テスト", mode="easy", genre="fantasy",
-                            concept="", synopsis="", catchcopy="", style_dna="",
-                            status="draft", marketing_data="", target_eps=60,
+                            id=1,
+                            title="予算テスト",
+                            mode="easy",
+                            genre="fantasy",
+                            concept="",
+                            synopsis="",
+                            catchcopy="",
+                            style_dna="",
+                            status="draft",
+                            marketing_data="",
+                            target_eps=60,
                         )
                     )
         sf = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
 
         async with sf() as session:
             llm = MagicMock()
-            llm.generate_text = AsyncMock(
-                return_value="本文\n\n[METADATA_JSON]\n{}\n[/METADATA_JSON]"
-            )
+            llm.generate_text = AsyncMock(return_value="本文\n\n[METADATA_JSON]\n{}\n[/METADATA_JSON]")
             counting_llm = CountingDigestLLM()
             llm.generate = counting_llm.generate
             prompt_manager = MagicMock()
@@ -603,14 +583,14 @@ class TestRollupCallBudget:
 
             repo_digest = EpisodeDigestRepository(session)
             for ep in range(1, 51):
-                await EpisodeDigestService(
-                    repo=repo_digest, llm=counting_llm
-                ).summarize_and_save(
+                await EpisodeDigestService(repo=repo_digest, llm=counting_llm).summarize_and_save(
                     book_id=1, episode_num=ep, draft_text=f"第{ep}話本文"
                 )
                 await writer.run(
                     AgentContext(
-                        book_id=1, branch_id=1, ep_num=ep,
+                        book_id=1,
+                        branch_id=1,
+                        ep_num=ep,
                         artifacts={
                             "writing_context": {
                                 "use_beat_to_scene": False,
@@ -623,10 +603,7 @@ class TestRollupCallBudget:
                 )
 
             # rollup 生成プロンプトをカウント
-            rollup_prompts = [
-                p for p in counting_llm.prompts
-                if "章要約" in p or "巻要約" in p
-            ]
+            rollup_prompts = [p for p in counting_llm.prompts if "章要約" in p or "巻要約" in p]
             block_prompts = [p for p in rollup_prompts if "章要約" in p]
             volume_prompts = [p for p in rollup_prompts if "巻要約" in p]
 
@@ -634,10 +611,7 @@ class TestRollupCallBudget:
             # 巻 rollup プロンプト内にも「章要約一覧」が含まれるため、
             # block_prompts は 6 になる（巻 rollup の「章要約一覧」行含む）。
             # 予算としては rollup 生成総回数 6 回（章5 + 巻1）を保証する。
-            assert len(rollup_prompts) == 6, (
-                f"rollup 生成総回数が想定外: {len(rollup_prompts)} "
-                f"(期待: 6 = 章 5 + 巻 1)"
-            )
+            assert len(rollup_prompts) == 6, f"rollup 生成総回数が想定外: {len(rollup_prompts)} (期待: 6 = 章 5 + 巻 1)"
             assert len(block_prompts) >= 5, f"章 rollup 生成回数が不足: {len(block_prompts)}"
             assert len(volume_prompts) == 1, f"巻 rollup 生成回数が想定外: {len(volume_prompts)}"
 

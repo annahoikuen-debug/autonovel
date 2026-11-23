@@ -1,4 +1,5 @@
 """Tests for Skill-Driven Dynamic Pipeline via manifest.yaml (Phase 2 / Steps 13-24)."""
+
 import pytest
 import tempfile
 import os
@@ -18,6 +19,7 @@ from src.agents.orchestrator import (
 
 class DummyStepSkill(SkillAgent):
     """テスト用のシンプルなスキル"""
+
     async def execute(self, ctx: AgentContext) -> AgentResult:
         execution_order = ctx.artifacts.setdefault("execution_order", [])
         execution_order.append(self._skill_name)

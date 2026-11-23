@@ -2,6 +2,7 @@
 
 Q5 方針: branch_id=1 はデフォルトとして残し、明示指定があればそちらを優先する。
 """
+
 from __future__ import annotations
 
 import inspect

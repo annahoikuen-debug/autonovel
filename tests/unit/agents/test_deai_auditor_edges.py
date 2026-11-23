@@ -24,9 +24,7 @@ class TestDeAIAuditorEdges:
         import asyncio
 
         result = asyncio.run(
-            self.auditor.audit(
-                "これはbefore after 余韻のある終わり方 です", before_content="before", edges=edges
-            )
+            self.auditor.audit("これはbefore after 余韻のある終わり方 です", before_content="before", edges=edges)
         )
         assert result[0] is True
 
@@ -35,9 +33,7 @@ class TestDeAIAuditorEdges:
         import asyncio
 
         result = asyncio.run(
-            self.auditor.audit(
-                "これは after で 余韻がない です", before_content="before", edges=edges
-            )
+            self.auditor.audit("これは after で 余韻がない です", before_content="before", edges=edges)
         )
         assert result[0] is False
         assert "ending_pullback" in result[1]

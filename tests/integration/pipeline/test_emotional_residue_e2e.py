@@ -1,4 +1,5 @@
 """E2E integration test for emotional residue pipeline."""
+
 from __future__ import annotations
 
 import pytest
@@ -15,6 +16,7 @@ class TestEmotionalResidueE2E:
     @pytest.fixture
     def vector_store(self):
         import fakeredis
+
         redis_client = fakeredis.FakeRedis(decode_responses=True)
         store = RedisVectorStore(skip_connection_check=True)
         store.client = redis_client

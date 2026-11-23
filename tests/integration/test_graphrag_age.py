@@ -7,6 +7,7 @@
 - rag_service: hybrid_search, build_rag_context, reranking
 - FastAPI endpoints (via TestClient)
 """
+
 from __future__ import annotations
 
 from tests.integration.conftest import HAS_TESTCONTAINERS, docker_daemon_available
@@ -69,6 +70,7 @@ def age_container():
 
         # Create all tables from models
         from src.infrastructure.database.models import Base
+
         Base.metadata.create_all(engine)
 
         # Run alembic migrations up to 0011 (skip problematic 0012+)
@@ -104,6 +106,7 @@ def age_session(age_container):
 # ============================================================
 # age_client Tests
 # ============================================================
+
 
 def test_age_init_graph_idempotent(age_session):
     """init_graph を 2 回呼んでも両方 True でグラフ重複作成エラーにならない."""
@@ -144,9 +147,7 @@ def test_age_sqlstate_duplicate_graph_returns_true(age_session):
     assert client.init_graph(age_session) is True
     assert client.init_graph(age_session) is True
     age_session.execute(text('SET search_path = ag_catalog, "$user", public;'))
-    rows = age_session.execute(
-        text("SELECT name FROM ag_graph WHERE name = 'test_graph_pgcode';")
-    ).fetchall()
+    rows = age_session.execute(text("SELECT name FROM ag_graph WHERE name = 'test_graph_pgcode';")).fetchall()
     assert any(r[0] == "test_graph_pgcode" for r in rows)
 
 
@@ -188,9 +189,10 @@ def test_age_upsert_edge(age_session):
     client.upsert_node(age_session, "Item", "聖剣", {"rarity": "legendary"})
 
     # エッジ作成
-    assert client.upsert_edge(
-        age_session, "Character", "アルス", "Item", "聖剣", "POSSESSES", {"since": "chapter_1"}
-    ) is True
+    assert (
+        client.upsert_edge(age_session, "Character", "アルス", "Item", "聖剣", "POSSESSES", {"since": "chapter_1"})
+        is True
+    )
 
     # 検証
     result = client.execute_cypher(
@@ -241,10 +243,7 @@ def test_age_batch_upsert(age_session):
     client = AgeClient(default_graph_name="test_graph_batch")
     assert client.init_graph(age_session) is True
 
-    nodes = [
-        {"label": "Character", "name": f"キャラ{i}", "properties": {"idx": i}}
-        for i in range(10)
-    ]
+    nodes = [{"label": "Character", "name": f"キャラ{i}", "properties": {"idx": i}} for i in range(10)]
     count = client.upsert_nodes_batch(age_session, nodes)
     assert count == 10
 
@@ -253,7 +252,7 @@ def test_age_batch_upsert(age_session):
             "source_label": "Character",
             "source_name": f"キャラ{i}",
             "target_label": "Character",
-            "target_name": f"キャラ{i+1}",
+            "target_name": f"キャラ{i + 1}",
             "relation_type": "KNOWS",
         }
         for i in range(9)
@@ -339,6 +338,7 @@ def test_age_graph_stats(age_container):
 # PgVectorStore Tests
 # ============================================================
 
+
 def test_pgvector_store_init(age_container):
     """PgVectorStore 初期化."""
     from src.integrations.vector_store import PgVectorStore, HAS_PGVECTOR
@@ -348,21 +348,26 @@ def test_pgvector_store_init(age_container):
 
     # Use URL with password for asyncpg (trust authentication accepts any password)
     import re
+
     url = str(age_container.url)
     # Keep the password for asyncpg
-    url = re.sub(r'postgresql\+psycopg2://', 'postgresql://', url)
+    url = re.sub(r"postgresql\+psycopg2://", "postgresql://", url)
     store = PgVectorStore(url, dimension=1536)
     import asyncio
+
     asyncio.run(store._ensure_table("test_collection"))
     # テーブル作成確認
     from sqlalchemy import text
+
     with age_container.connect() as conn:
-        result = conn.execute(text("""
+        result = conn.execute(
+            text("""
             SELECT EXISTS (
                 SELECT FROM information_schema.tables
                 WHERE table_name = 'vec_test_collection'
             )
-        """))
+        """)
+        )
         assert result.scalar() is True
 
 
@@ -438,6 +443,7 @@ async def test_pgvector_store_hybrid_search(age_container):
 # graph_pipeline Tests
 # ============================================================
 
+
 def test_graph_pipeline_process_chapter(age_session):
     """単章処理パイプライン."""
     from src.engine.graph_pipeline import GraphPipelineService
@@ -466,9 +472,11 @@ def test_graph_pipeline_process_chapter(age_session):
         plot_summary="アルスが聖剣を得て王都へ向かう",
     )
 
-    with patch("src.engine.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
-         patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
-         patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
+    with (
+        patch("src.engine.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction),
+        patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction),
+        patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True),
+    ):
         result = pipeline.process_chapter_knowledge(age_session, 1, text)
 
     assert result.chunks_created >= 1
@@ -495,9 +503,11 @@ def test_graph_pipeline_batch(age_session):
         plot_summary="テスト",
     )
 
-    with patch("src.engine.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
-         patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
-         patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
+    with (
+        patch("src.engine.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction),
+        patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction),
+        patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True),
+    ):
         stats = pipeline.process_chapters_batch(age_session, chapters)
 
     assert stats.chapters_processed == 3
@@ -507,6 +517,7 @@ def test_graph_pipeline_batch(age_session):
 # ============================================================
 # rag_service Tests
 # ============================================================
+
 
 @pytest.mark.asyncio
 async def test_rag_hybrid_search(age_session):
@@ -520,38 +531,46 @@ async def test_rag_hybrid_search(age_session):
     from sqlalchemy import text
 
     # Create book if not exists (provide all required columns)
-    age_session.execute(text("""
+    age_session.execute(
+        text("""
         INSERT INTO books (id, title, mode, ai_assistant_config, created_at)
         VALUES (1, 'Test Book', 'normal', '{}', NOW())
         ON CONFLICT (id) DO NOTHING
-    """))
+    """)
+    )
 
     # Create branch if not exists
-    age_session.execute(text("""
+    age_session.execute(
+        text("""
         INSERT INTO branches (id, book_id, name) VALUES (1, 1, 'Main Branch')
         ON CONFLICT (id) DO NOTHING
-    """))
+    """)
+    )
 
     # Create chapter if not exists
-    age_session.execute(text("""
+    age_session.execute(
+        text("""
         INSERT INTO chapters (id, book_id, branch_id, ep_num, title, content,
             score_story, killer_phrase, summary, world_state,
             trinity_review_log, ai_insight, tension_delta, qol_delta, is_anchor)
         VALUES (1, 1, 1, 1, 'Test Chapter', 'Test Content',
             0, '', '', '', '', '', 0.0, 0.0, false)
         ON CONFLICT (id) DO NOTHING
-    """))
+    """)
+    )
     age_session.commit()
 
     # チャンクデータ準備
     from src.infrastructure.database.models.chunk import ChapterChunk
-    chunk1 = ChapterChunk(chapter_id=1, chunk_index=0, content="アルスが聖剣を手に入れた", embedding=[1.0]*1536)
-    chunk2 = ChapterChunk(chapter_id=1, chunk_index=1, content="王都でセリアと出会った", embedding=[0.0]*1536)
+
+    chunk1 = ChapterChunk(chapter_id=1, chunk_index=0, content="アルスが聖剣を手に入れた", embedding=[1.0] * 1536)
+    chunk2 = ChapterChunk(chapter_id=1, chunk_index=1, content="王都でセリアと出会った", embedding=[0.0] * 1536)
     age_session.add_all([chunk1, chunk2])
     age_session.commit()
 
     # グラフデータ準備
     from src.integrations.age_client import AgeClient
+
     client = AgeClient(default_graph_name="test_rag_graph")
     client.init_graph(age_session)
     client.upsert_node(age_session, "Character", "アルス", {})
@@ -577,31 +596,38 @@ async def test_rag_build_context(age_session):
     from sqlalchemy import text
 
     # Create book if not exists (provide all required columns)
-    age_session.execute(text("""
+    age_session.execute(
+        text("""
         INSERT INTO books (id, title, mode, ai_assistant_config, created_at)
         VALUES (1, 'Test Book', 'normal', '{}', NOW())
         ON CONFLICT (id) DO NOTHING
-    """))
+    """)
+    )
 
     # Create branch if not exists
-    age_session.execute(text("""
+    age_session.execute(
+        text("""
         INSERT INTO branches (id, book_id, name) VALUES (1, 1, 'Main Branch')
         ON CONFLICT (id) DO NOTHING
-    """))
+    """)
+    )
 
     # Create chapter if not exists
-    age_session.execute(text("""
+    age_session.execute(
+        text("""
         INSERT INTO chapters (id, book_id, branch_id, ep_num, title, content,
             score_story, killer_phrase, summary, world_state,
             trinity_review_log, ai_insight, tension_delta, qol_delta, is_anchor)
         VALUES (1, 1, 1, 1, 'Test Chapter', 'Test Content',
             0, '', '', '', '', '', 0.0, 0.0, false)
         ON CONFLICT (id) DO NOTHING
-    """))
+    """)
+    )
     age_session.commit()
 
     # グラフデータ
     from src.integrations.age_client import age_client
+
     age_client.init_graph(age_session)
     age_client.upsert_node(age_session, "Character", "アルス", {"description": "主人公"})
     age_client.upsert_node(age_session, "Item", "聖剣", {"description": "伝説の剣"})
@@ -610,12 +636,15 @@ async def test_rag_build_context(age_session):
 
     # チャンク
     from src.infrastructure.database.models.chunk import ChapterChunk
-    chunk = ChapterChunk(chapter_id=1, chunk_index=0, content="アルスは聖剣を抜いた", embedding=[0.5]*1536)
+
+    chunk = ChapterChunk(chapter_id=1, chunk_index=0, content="アルスは聖剣を抜いた", embedding=[0.5] * 1536)
     age_session.add(chunk)
     age_session.commit()
 
-    with patch("src.integrations.rag.rag_service.settings.ENABLE_GRAPHRAG", True), \
-         patch("src.integrations.rag.rag_service.settings.DATABASE_URL", "postgresql://test"):
+    with (
+        patch("src.integrations.rag.rag_service.settings.ENABLE_GRAPHRAG", True),
+        patch("src.integrations.rag.rag_service.settings.DATABASE_URL", "postgresql://test"),
+    ):
         context = await service.build_rag_context(
             age_session,
             current_prompt="聖剣を構える",
@@ -629,6 +658,7 @@ async def test_rag_build_context(age_session):
 # ============================================================
 # FastAPI Endpoint Tests
 # ============================================================
+
 
 def test_graph_api_endpoints(age_container, monkeypatch):
     """FastAPI エンドポイントテスト."""
@@ -675,6 +705,7 @@ def test_graph_api_endpoints(age_container, monkeypatch):
 # Performance Tests
 # ============================================================
 
+
 @pytest.mark.perf
 def test_age_performance_1000_nodes(age_session):
     """1000ノードでのパフォーマンステスト."""
@@ -684,10 +715,7 @@ def test_age_performance_1000_nodes(age_session):
     assert client.init_graph(age_session) is True
 
     # 1000ノード一括作成
-    nodes = [
-        {"label": "Character", "name": f"キャラ{i}", "properties": {"idx": i}}
-        for i in range(1000)
-    ]
+    nodes = [{"label": "Character", "name": f"キャラ{i}", "properties": {"idx": i}} for i in range(1000)]
 
     start = time.perf_counter()
     count = client.upsert_nodes_batch(age_session, nodes)
@@ -738,6 +766,7 @@ def test_pgvector_performance_1000_docs(age_container):
 # Error Handling Tests
 # ============================================================
 
+
 def test_age_invalid_cypher(age_session):
     """無効なCypherクエリのエラーハンドリング."""
     from src.integrations.age_client import AgeClient
@@ -756,7 +785,9 @@ def test_age_connection_retry(age_container):
 
     # 正常な接続でリトライが不要なことを確認
     client = AgeClient(default_graph_name="test_retry")
-    session_factory = create_engine(str(age_container.url).replace("postgresql+psycopg2://", "postgresql+psycopg2://")).connect()
+    session_factory = create_engine(
+        str(age_container.url).replace("postgresql+psycopg2://", "postgresql+psycopg2://")
+    ).connect()
     session = session_factory
 
     # 複数回実行してもエラーにならない
@@ -769,6 +800,7 @@ def test_age_connection_retry(age_container):
 # ============================================================
 # Full E2E Test
 # ============================================================
+
 
 @pytest.mark.asyncio
 async def test_graphrag_e2e(age_session):
@@ -798,9 +830,13 @@ async def test_graphrag_e2e(age_session):
     mock_extraction = GraphExtractionResult(
         entities=[
             Entity(name="アルス", type="Character", description="勇者。聖剣所持", properties={"is_alive": True}),
-            Entity(name="聖剣エクスカリバー", type="Item", description="伝説の聖剣", properties={"rarity": "legendary"}),
+            Entity(
+                name="聖剣エクスカリバー", type="Item", description="伝説の聖剣", properties={"rarity": "legendary"}
+            ),
             Entity(name="王都ルミナス", type="Location", description="王国の首都", properties={}),
-            Entity(name="ガレス", type="Character", description="門番。アルスの知り合い", properties={"role": "gatekeeper"}),
+            Entity(
+                name="ガレス", type="Character", description="門番。アルスの知り合い", properties={"role": "gatekeeper"}
+            ),
         ],
         relationships=[
             Relationship(source="アルス", target="聖剣エクスカリバー", type="POSSESSES", detail="手に入れた"),
@@ -815,9 +851,11 @@ async def test_graphrag_e2e(age_session):
 
     # 3. パイプライン実行
     pipeline = GraphPipelineService()
-    with patch("src.engine.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction), \
-         patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction), \
-         patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True):
+    with (
+        patch("src.engine.graph_pipeline.extraction_service.extract_graph_from_text", return_value=mock_extraction),
+        patch("src.engine.graph_pipeline.extraction_service.resolve_entities", return_value=mock_extraction),
+        patch("src.engine.graph_pipeline.settings.ENABLE_GRAPHRAG", True),
+    ):
         result = pipeline.process_chapter_knowledge(age_session, 1, chapter_text)
 
     assert result.chunks_created >= 1
@@ -836,8 +874,10 @@ async def test_graphrag_e2e(age_session):
     assert "ガレス" in names
 
     # 5. RAGコンテキスト生成
-    with patch("src.integrations.rag.rag_service.settings.ENABLE_GRAPHRAG", True), \
-         patch("src.integrations.rag.rag_service.settings.DATABASE_URL", "postgresql://test"):
+    with (
+        patch("src.integrations.rag.rag_service.settings.ENABLE_GRAPHRAG", True),
+        patch("src.integrations.rag.rag_service.settings.DATABASE_URL", "postgresql://test"),
+    ):
         context = await rag.build_rag_context(
             age_session,
             current_prompt="聖剣を構えて戦闘の構えをとる",

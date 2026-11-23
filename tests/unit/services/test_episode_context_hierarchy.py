@@ -63,14 +63,10 @@ class TestLayer2Hierarchical:
                 _make_result(foreshadowing),
             ]
         )
-        return await builder._build_layer2_hierarchical(
-            book_id=1, current_ep=current_ep, max_chars=4000
-        )
+        return await builder._build_layer2_hierarchical(book_id=1, current_ep=current_ep, max_chars=4000)
 
     @pytest.mark.asyncio
-    async def test_hierarchical_order_volume_then_block_then_digest(
-        self, builder, mock_db, monkeypatch
-    ):
+    async def test_hierarchical_order_volume_then_block_then_digest(self, builder, mock_db, monkeypatch):
         """巻要約 → 章要約 → 直近digest の順で text に現れる。"""
         monkeypatch.setenv("ENABLE_DIGEST_ROLLUP", "1")
 
@@ -113,9 +109,7 @@ class TestLayer2Hierarchical:
 
         mock_db.execute = AsyncMock(return_value=_make_result([]))
 
-        summary = await builder._build_layer2_hierarchical(
-            book_id=1, current_ep=5, max_chars=4000
-        )
+        summary = await builder._build_layer2_hierarchical(book_id=1, current_ep=5, max_chars=4000)
 
         assert summary["text"] == ""
         assert summary["layer2_chars"] == 0
@@ -140,9 +134,7 @@ class TestLayer2Hierarchical:
             ]
         )
 
-        summary = await builder._build_layer2_hierarchical(
-            book_id=1, current_ep=10, max_chars=4000
-        )
+        summary = await builder._build_layer2_hierarchical(book_id=1, current_ep=10, max_chars=4000)
 
         # 期限超過(伏線A)が先に現れる
         idx_a = summary["text"].index("伏線A")
@@ -163,9 +155,7 @@ class TestLayer2Hierarchical:
             ]
         )
 
-        summary = await builder._build_layer2_hierarchical(
-            book_id=1, current_ep=5, max_chars=4000
-        )
+        summary = await builder._build_layer2_hierarchical(book_id=1, current_ep=5, max_chars=4000)
 
         for key in [
             "foreshadowing_omitted",

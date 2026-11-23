@@ -1,7 +1,8 @@
 # tests/integration/test_eventbus_integration.py
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import pytest
 
@@ -18,9 +19,13 @@ class EventEmittingSkill(SkillAgent):
     async def execute(self, ctx: AgentContext) -> AgentResult:
         await self.emit_event_sync("skill.started", {"book_id": ctx.book_id, "ep_num": ctx.ep_num})
         if self.should_fail:
-            await self.emit_event_sync("skill.error", {"book_id": ctx.book_id, "ep_num": ctx.ep_num, "error": "Intentional failure"})
+            await self.emit_event_sync(
+                "skill.error", {"book_id": ctx.book_id, "ep_num": ctx.ep_num, "error": "Intentional failure"}
+            )
             raise ValueError("Intentional failure")
-        await self.emit_event_sync("skill.completed", {"book_id": ctx.book_id, "ep_num": ctx.ep_num, "result": "success"})
+        await self.emit_event_sync(
+            "skill.completed", {"book_id": ctx.book_id, "ep_num": ctx.ep_num, "result": "success"}
+        )
         return AgentResult(next_agent=None, artifacts={"skill_executed": True})
 
 
@@ -68,6 +73,7 @@ async def test_skill_emit_event():
     # 手動で flush するか、publish の戻り値を待つ必要がある
     # ここでは簡易的に sleep で待つ
     import asyncio
+
     await asyncio.sleep(0.1)
 
     assert result.artifacts.get("skill_executed") is True
@@ -93,8 +99,11 @@ async def test_orchestrator_emits_events():
     skill1 = EventEmittingSkill(event_bus=bus)
     skill2 = EventEmittingSkill(event_bus=bus)
 
-    async def node1(ctx): return await skill1.execute(ctx)
-    async def node2(ctx): return await skill2.execute(ctx)
+    async def node1(ctx):
+        return await skill1.execute(ctx)
+
+    async def node2(ctx):
+        return await skill2.execute(ctx)
 
     orch = Orchestrator(
         nodes={
@@ -108,6 +117,7 @@ async def test_orchestrator_emits_events():
     await orch.run(ctx, start=AgentName.PLANNING)
 
     import asyncio
+
     # タスク実行を十分に待つ
     await asyncio.sleep(0.5)
 
@@ -140,6 +150,7 @@ async def test_skill_error_event():
         pass
 
     import asyncio
+
     await asyncio.sleep(0.1)
 
     error_events = [e for e in received if e.payload.get("event") == "skill.error"]

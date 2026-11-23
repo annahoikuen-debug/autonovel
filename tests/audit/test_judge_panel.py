@@ -123,9 +123,7 @@ async def test_self_preference_exclusion():
         calibrator=_FakeCalibrator(),
     )
     # 出力原稿の family が gemini の場合、gemini judge は除外
-    score = await panel.score_axis(
-        "テスト本文です。", "hook", provenance_family="gemini"
-    )
+    score = await panel.score_axis("テスト本文です。", "hook", provenance_family="gemini")
     assert score.n_excluded == 1
     assert score.n_available == 2
     # 除外された judge は scores に含まれない（available=False なので）

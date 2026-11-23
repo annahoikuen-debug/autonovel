@@ -21,9 +21,7 @@ def test_adapters_satisfy_port():
 
 
 def test_adapters_execution():
-    beats = [
-        Beat(episode=i, tension=3.0, beat_type=BeatType.DAILY) for i in range(1, 21)
-    ]
+    beats = [Beat(episode=i, tension=3.0, beat_type=BeatType.DAILY) for i in range(1, 21)]
     state = PlotState.from_beats(beats, total_episodes=20)
 
     dsp = DSPAdapter()

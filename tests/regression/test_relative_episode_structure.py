@@ -34,7 +34,8 @@ def test_instruction_depends_only_on_relative_position(eps):
 def test_climax_cluster_scales_with_length(eps):
     """クライマックスクラスタが「終盤」に固定されていること。"""
     hits = [
-        ep for ep in range(1, eps + 1)
+        ep
+        for ep in range(1, eps + 1)
         if "【クライマックス】" in PacingGraph.get_instruction(ep, total_eps=eps)["instruction"]
     ]
     assert hits, f"eps={eps} でクライマックスが見つからない"
@@ -45,8 +46,7 @@ def test_climax_cluster_scales_with_length(eps):
 def test_first_explosion_scales_with_length(eps):
     """第1の爆発が序盤（10〜25%）に固定されていること。"""
     hits = [
-        ep for ep in range(1, eps + 1)
-        if "第1の爆発" in PacingGraph.get_instruction(ep, total_eps=eps)["instruction"]
+        ep for ep in range(1, eps + 1) if "第1の爆発" in PacingGraph.get_instruction(ep, total_eps=eps)["instruction"]
     ]
     assert hits, f"eps={eps} で第1の爆発が見つからない"
     rel = hits[0] / eps
@@ -138,7 +138,10 @@ def test_episode_beat_accepts_100():
     from src.models.beat_sheet import EpisodeBeat
 
     beat = EpisodeBeat(
-        ep_num=100, phase="終盤", mission="決戦",
-        tension_target=0.9, visual_scene_focus="黒幕との対決",
+        ep_num=100,
+        phase="終盤",
+        mission="決戦",
+        tension_target=0.9,
+        visual_scene_focus="黒幕との対決",
     )
     assert beat.ep_num == 100

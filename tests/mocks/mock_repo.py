@@ -66,9 +66,7 @@ class MockPlotRepository(MockBaseRepository):
 
 
 class MockChapterRepository(MockBaseRepository):
-    async def get_chapter(
-        self, branch_id: int, ep_num: int, book_id: int | None = None
-    ):
+    async def get_chapter(self, branch_id: int, ep_num: int, book_id: int | None = None):
         return self.data.get(f"{branch_id}_{ep_num}")
 
     async def save_chapter(self, book_id: int, chapter_data: dict):
@@ -85,9 +83,7 @@ class MockBibleRepository(MockBaseRepository):
 
 
 class MockBranchRepository(MockBaseRepository):
-    async def create_branch(
-        self, book_id: int, name: str, parent_id: int | None = None, fork_ep_num: int = 0
-    ) -> int:
+    async def create_branch(self, book_id: int, name: str, parent_id: int | None = None, fork_ep_num: int = 0) -> int:
         b_id = len(self.data) + 1
         self.data[b_id] = {
             "id": b_id,
@@ -122,9 +118,7 @@ class MockCharacterRepository(MockBaseRepository):
                 res.append(CharacterDbModel(**c))
         return res
 
-    async def create_character(
-        self, book_id: int, name: str, role: str, registry_data: Any
-    ) -> None:
+    async def create_character(self, book_id: int, name: str, role: str, registry_data: Any) -> None:
         c_id = len(self.data) + 1
         self.data[c_id] = {
             "id": c_id,
@@ -218,9 +212,7 @@ class MockRulesRepository(MockBaseRepository):
         if rule_id in self.data:
             del self.data[rule_id]
 
-    async def create_masterpiece(
-        self, emotion_or_scene: str, content: str, vector: list[float] | None = None
-    ) -> int:
+    async def create_masterpiece(self, emotion_or_scene: str, content: str, vector: list[float] | None = None) -> int:
         m_id = len(self.masterpieces) + 1
         self.masterpieces[m_id] = {
             "id": m_id,
@@ -269,9 +261,7 @@ class MockAuditRepository(MockBaseRepository):
     async def get_issue(self, issue_id: int) -> dict[str, Any] | None:
         return self.data.get(issue_id)
 
-    async def get_issues_by_book(
-        self, book_id: int, status: str | None = None
-    ) -> list[dict[str, Any]]:
+    async def get_issues_by_book(self, book_id: int, status: str | None = None) -> list[dict[str, Any]]:
         res = []
         for i in self.data.values():
             if i.get("book_id") == book_id:
@@ -279,9 +269,7 @@ class MockAuditRepository(MockBaseRepository):
                     res.append(i)
         return res
 
-    async def update_issue_status(
-        self, issue_id: int, status: str, resolved_note: str = ""
-    ) -> None:
+    async def update_issue_status(self, issue_id: int, status: str, resolved_note: str = "") -> None:
         if issue_id in self.data:
             self.data[issue_id]["status"] = status
             self.data[issue_id]["resolved_note"] = resolved_note
@@ -326,21 +314,13 @@ class MockPromptVersionRepository(MockBaseRepository):
         res = sorted(res, key=lambda x: x.get("created_at"), reverse=True)
         return res[:limit]
 
-    async def get_active_prompt_version(
-        self, book_id: int, prompt_key: str
-    ) -> dict[str, Any] | None:
+    async def get_active_prompt_version(self, book_id: int, prompt_key: str) -> dict[str, Any] | None:
         for v in self.data.values():
-            if (
-                v.get("book_id") == book_id
-                and v.get("prompt_key") == prompt_key
-                and v.get("is_active")
-            ):
+            if v.get("book_id") == book_id and v.get("prompt_key") == prompt_key and v.get("is_active"):
                 return v
         return None
 
-    async def set_active_prompt_version(
-        self, book_id: int, prompt_key: str, version_id: int
-    ) -> None:
+    async def set_active_prompt_version(self, book_id: int, prompt_key: str, version_id: int) -> None:
         for v in self.data.values():
             if v.get("book_id") == book_id and v.get("prompt_key") == prompt_key:
                 v["is_active"] = v.get("id") == version_id

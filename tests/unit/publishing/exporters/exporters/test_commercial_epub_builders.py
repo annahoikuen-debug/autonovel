@@ -1,4 +1,5 @@
 """Unit tests for the two commercial EPUB builders."""
+
 import io
 import zipfile
 
@@ -19,9 +20,7 @@ def _opf(raw: bytes) -> str:
 
 class TestPureCommercialEpubBuilder:
     def _build(self, **kw):
-        chapters = kw.pop(
-            "chapters", [{"title": "第1話", "body": "本文一行\n\n「セリフ」"}]
-        )
+        chapters = kw.pop("chapters", [{"title": "第1話", "body": "本文一行\n\n「セリフ」"}])
         return PureCommercialEpubBuilder().build_epub(
             title=kw.pop("title", "星降る夜"),
             author=kw.pop("author", "著者"),
@@ -44,8 +43,8 @@ class TestPureCommercialEpubBuilder:
     def test_middle_page(self):
         e = _entries(self._build())
         html = e["OEBPS/middle-page.xhtml"].decode()
-        assert "<div class=\"title\">星降る夜</div>" in html
-        assert "<div class=\"author\">著者</div>" in html
+        assert '<div class="title">星降る夜</div>' in html
+        assert '<div class="author">著者</div>' in html
 
     def test_chapter_page(self):
         e = _entries(self._build())
@@ -89,11 +88,7 @@ class TestPureCommercialEpubBuilder:
         assert '<itemref idref="cover"/>' in opf
 
     def test_multiple_chapters(self):
-        e = _entries(
-            self._build(
-                chapters=[{"title": "A", "body": "a"}, {"title": "B", "body": "b"}]
-            )
-        )
+        e = _entries(self._build(chapters=[{"title": "A", "body": "a"}, {"title": "B", "body": "b"}]))
         assert "OEBPS/chapter_1.xhtml" in e
         assert "OEBPS/chapter_2.xhtml" in e
 
@@ -139,7 +134,7 @@ class TestCommercialEpubBuilder:
         e = _entries(self._build())
         assert b"item/standard.opf" in e["META-INF/container.xml"]
         assert b"writing-mode: vertical-rl" in e["item/style/vertical.css"]
-        assert "epub:type=\"toc\"" in e["item/nav.xhtml"].decode()
+        assert 'epub:type="toc"' in e["item/nav.xhtml"].decode()
         assert "urn:uuid:u-1" in e["item/toc.ncx"].decode()
 
     def test_chapter_files(self):
@@ -220,9 +215,7 @@ class TestCommercialEpubBuilder:
         assert "item/xhtml/ill-ill-1.xhtml" in e
 
     def test_illustration_epub_item_instance(self):
-        item = EpubIllustrationItem(
-            image_id="obj1", image_bytes=PNG, file_name="o.png", media_type="image/png"
-        )
+        item = EpubIllustrationItem(image_id="obj1", image_bytes=PNG, file_name="o.png", media_type="image/png")
         e = _entries(self._build(images=[item]))
         assert "item/images/o.png" in e
         assert "item/xhtml/ill-obj1.xhtml" in e

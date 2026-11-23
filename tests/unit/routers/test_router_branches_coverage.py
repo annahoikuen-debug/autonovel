@@ -1,4 +1,5 @@
 """Branches router coverage: diff, fork, merge, graph, play session flows."""
+
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -19,11 +20,10 @@ from src.backend.routers.branches import (
 )
 
 
-def make_branch(branch_id=1, book_id=10, name="Branch A", parent_id=None,
-               fork_ep_num=0):
-    return SimpleNamespace(id=branch_id, book_id=book_id, name=name,
-                           parent_id=parent_id, fork_ep_num=fork_ep_num,
-                           created_at=None)
+def make_branch(branch_id=1, book_id=10, name="Branch A", parent_id=None, fork_ep_num=0):
+    return SimpleNamespace(
+        id=branch_id, book_id=book_id, name=name, parent_id=parent_id, fork_ep_num=fork_ep_num, created_at=None
+    )
 
 
 def make_session():
@@ -42,12 +42,14 @@ def patch_branch_repo(monkeypatch, repo, chapter_repo=None):
     monkeypatch.setattr(branches_module, "BranchRepository", lambda s: repo)
     import src.backend.database.repositories.branch as backend_branch
     import src.infrastructure.repositories.branch as infra_branch
+
     monkeypatch.setattr(backend_branch, "BranchRepository", lambda s: repo)
     monkeypatch.setattr(infra_branch, "BranchRepository", lambda s: repo)
     if chapter_repo is not None:
         monkeypatch.setattr(branches_module, "ChapterRepository", lambda s: chapter_repo)
         import src.backend.database.repositories.chapter as backend_chapter
         import src.infrastructure.repositories.chapter as infra_chapter
+
         monkeypatch.setattr(backend_chapter, "ChapterRepository", lambda s: chapter_repo)
         monkeypatch.setattr(infra_chapter, "ChapterRepository", lambda s: chapter_repo)
     return repo
@@ -80,17 +82,15 @@ def patch_book_ownership(monkeypatch, book_id=10):
 async def test_get_branch_diff_success():
     session = make_session()
     branch_repo = MagicMock()
-    branch_repo.get_branch = AsyncMock(
-        side_effect=[make_branch(1, name="A"), make_branch(2, name="B")])
+    branch_repo.get_branch = AsyncMock(side_effect=[make_branch(1, name="A"), make_branch(2, name="B")])
     chapter_repo = MagicMock()
     chapter_repo.get_chapter = AsyncMock(
-        side_effect=[SimpleNamespace(content="line1\nline2"),
-                     SimpleNamespace(content="line1\nline3")])
+        side_effect=[SimpleNamespace(content="line1\nline2"), SimpleNamespace(content="line1\nline3")]
+    )
 
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, branch_repo, chapter_repo)
-        result = await get_branch_diff(10, branchA=1, branchB=2, chapter=3,
-                                       session=session)
+        result = await get_branch_diff(10, branchA=1, branchB=2, chapter=3, session=session)
     assert result["chapter_number"] == 3
     assert result["branch_a_name"] == "A"
     assert result["branch_b_name"] == "B"
@@ -115,8 +115,7 @@ async def test_get_branch_diff_branch_not_found():
 async def test_get_branch_diff_chapter_not_found_and_null_content():
     session = make_session()
     branch_repo = MagicMock()
-    branch_repo.get_branch = AsyncMock(
-        side_effect=[make_branch(1), make_branch(2)])
+    branch_repo.get_branch = AsyncMock(side_effect=[make_branch(1), make_branch(2)])
     chapter_repo = MagicMock()
     # First call: both None -> 404
     chapter_repo.get_chapter = AsyncMock(side_effect=[None, None])
@@ -128,27 +127,19 @@ async def test_get_branch_diff_chapter_not_found_and_null_content():
     assert exc.value.detail == "Chapter not found"
 
     # Null content -> empty strings
-    chapter_repo.get_chapter = AsyncMock(
-        side_effect=[SimpleNamespace(content=None),
-                     SimpleNamespace(content=None)])
-    branch_repo.get_branch = AsyncMock(
-        side_effect=[make_branch(1), make_branch(2)])
+    chapter_repo.get_chapter = AsyncMock(side_effect=[SimpleNamespace(content=None), SimpleNamespace(content=None)])
+    branch_repo.get_branch = AsyncMock(side_effect=[make_branch(1), make_branch(2)])
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, branch_repo, chapter_repo)
-        result = await get_branch_diff(10, branchA=1, branchB=2, chapter=3,
-                                       session=session)
+        result = await get_branch_diff(10, branchA=1, branchB=2, chapter=3, session=session)
     assert result["content_a"] == ""
     assert result["content_b"] == ""
     # nameless branches -> default names
-    chapter_repo.get_chapter = AsyncMock(
-        side_effect=[SimpleNamespace(content="a"),
-                     SimpleNamespace(content="a")])
-    branch_repo.get_branch = AsyncMock(
-        side_effect=[make_branch(1, name=None), make_branch(2, name=None)])
+    chapter_repo.get_chapter = AsyncMock(side_effect=[SimpleNamespace(content="a"), SimpleNamespace(content="a")])
+    branch_repo.get_branch = AsyncMock(side_effect=[make_branch(1, name=None), make_branch(2, name=None)])
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, branch_repo, chapter_repo)
-        result2 = await get_branch_diff(10, branchA=1, branchB=2, chapter=3,
-                                        session=session)
+        result2 = await get_branch_diff(10, branchA=1, branchB=2, chapter=3, session=session)
     assert result2["branch_a_name"] == "Branch 1"
     assert result2["branch_b_name"] == "Branch 2"
 
@@ -287,13 +278,11 @@ async def test_merge_branches_target_not_found_and_merge_failed():
 async def test_preview_merge_no_conflict():
     session = make_session()
     branch_repo = MagicMock()
-    branch_repo.get_branch = AsyncMock(
-        side_effect=[make_branch(1, parent_id=None), make_branch(2, parent_id=1)])
+    branch_repo.get_branch = AsyncMock(side_effect=[make_branch(1, parent_id=None), make_branch(2, parent_id=1)])
     chapter_repo = MagicMock()
     chapter_repo.get_chapter = AsyncMock(
-        side_effect=[SimpleNamespace(content="same"),
-                     SimpleNamespace(content="same"),
-                     SimpleNamespace(content="base")])
+        side_effect=[SimpleNamespace(content="same"), SimpleNamespace(content="same"), SimpleNamespace(content="base")]
+    )
     payload = SimpleNamespace(source_branch_id=1, target_branch_id=2, merge_ep_num=3)
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, branch_repo, chapter_repo)
@@ -308,13 +297,15 @@ async def test_preview_merge_no_conflict():
 async def test_preview_merge_with_conflict():
     session = make_session()
     branch_repo = MagicMock()
-    branch_repo.get_branch = AsyncMock(
-        side_effect=[make_branch(1), make_branch(2, parent_id=1)])
+    branch_repo.get_branch = AsyncMock(side_effect=[make_branch(1), make_branch(2, parent_id=1)])
     chapter_repo = MagicMock()
     chapter_repo.get_chapter = AsyncMock(
-        side_effect=[SimpleNamespace(content="source text"),
-                     SimpleNamespace(content="target text"),
-                     SimpleNamespace(content="base text")])
+        side_effect=[
+            SimpleNamespace(content="source text"),
+            SimpleNamespace(content="target text"),
+            SimpleNamespace(content="base text"),
+        ]
+    )
     payload = SimpleNamespace(source_branch_id=1, target_branch_id=2, merge_ep_num=3)
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, branch_repo, chapter_repo)
@@ -339,8 +330,7 @@ async def test_preview_merge_branch_not_found_and_missing_chapters():
     assert exc.value.status_code == 404
 
     # Missing chapters -> empty contents, no conflict
-    branch_repo.get_branch = AsyncMock(
-        side_effect=[make_branch(1, parent_id=None), make_branch(2, parent_id=None)])
+    branch_repo.get_branch = AsyncMock(side_effect=[make_branch(1, parent_id=None), make_branch(2, parent_id=None)])
     chapter_repo = MagicMock()
     chapter_repo.get_chapter = AsyncMock(return_value=None)
     with pytest.MonkeyPatch.context() as m:
@@ -413,8 +403,7 @@ async def test_start_play_session_success():
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
         patch_book_ownership(m, 10)
-        result = await start_play_session(payload, session=session,
-                                          current_user=make_current_user())
+        result = await start_play_session(payload, session=session, current_user=make_current_user())
     assert result.current_node_id == "n1"
     assert result.status == "active"
     repo.create_play_session.assert_awaited_once()
@@ -431,8 +420,7 @@ async def test_start_play_session_branch_not_found():
         patch_branch_repo(m, repo)
         patch_book_ownership(m, 10)
         with pytest.raises(HTTPException) as exc:
-            await start_play_session(payload, session=session,
-                                     current_user=make_current_user())
+            await start_play_session(payload, session=session, current_user=make_current_user())
     assert exc.value.status_code == 404
 
 
@@ -441,19 +429,25 @@ async def test_get_play_state_success():
     session = make_session()
     import uuid as uuid_module
     from datetime import datetime as dt
+
     session_id = str(uuid_module.uuid4())
     repo = MagicMock()
     repo.get_play_session = AsyncMock(
-        return_value=SimpleNamespace(branch_id=1, book_id=10, current_node_id="n1",
-                                     context_json={"ctx": 1}, save_points_json=[1, 2],
-                                     status="active", updated_at=dt.utcnow()))
-    repo.load_branch_graph = AsyncMock(return_value={
-        "nodes": {"n1": {"choices": [{"text": "go"}]}}})
+        return_value=SimpleNamespace(
+            branch_id=1,
+            book_id=10,
+            current_node_id="n1",
+            context_json={"ctx": 1},
+            save_points_json=[1, 2],
+            status="active",
+            updated_at=dt.utcnow(),
+        )
+    )
+    repo.load_branch_graph = AsyncMock(return_value={"nodes": {"n1": {"choices": [{"text": "go"}]}}})
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
         patch_book_ownership(m, 10)
-        result = await get_play_state(session_id, session=session,
-                                      current_user=make_current_user())
+        result = await get_play_state(session_id, session=session, current_user=make_current_user())
         assert result.session_id == session_id
         assert result.current_node_id == "n1"
         assert result.current_node["choices"]
@@ -462,24 +456,36 @@ async def test_get_play_state_success():
         assert result.status == "active"
         # status=None -> default "active"
         repo.get_play_session = AsyncMock(
-            return_value=SimpleNamespace(branch_id=1, book_id=10, current_node_id="n1",
-                                         context_json=None, save_points_json=None,
-                                         status=None, updated_at=None))
-        result2 = await get_play_state(session_id, session=session,
-                                       current_user=make_current_user())
+            return_value=SimpleNamespace(
+                branch_id=1,
+                book_id=10,
+                current_node_id="n1",
+                context_json=None,
+                save_points_json=None,
+                status=None,
+                updated_at=None,
+            )
+        )
+        result2 = await get_play_state(session_id, session=session, current_user=make_current_user())
         assert result2.status == "active"
         assert result2.context == {}
         assert result2.save_points_count == 0
 
 
-def make_play_session(branch_id=1, book_id=10, current_node_id="n1",
-                      context_json=None, save_points_json=None, status="active"):
+def make_play_session(
+    branch_id=1, book_id=10, current_node_id="n1", context_json=None, save_points_json=None, status="active"
+):
     from datetime import datetime as dt
-    return SimpleNamespace(branch_id=branch_id, book_id=book_id,
-                           current_node_id=current_node_id,
-                           context_json=context_json,
-                           save_points_json=save_points_json,
-                           status=status, updated_at=dt.utcnow())
+
+    return SimpleNamespace(
+        branch_id=branch_id,
+        book_id=book_id,
+        current_node_id=current_node_id,
+        context_json=context_json,
+        save_points_json=save_points_json,
+        status=status,
+        updated_at=dt.utcnow(),
+    )
 
 
 @pytest.mark.asyncio
@@ -491,6 +497,7 @@ async def test_get_play_state_invalid_uuid_and_not_found():
     assert exc.value.status_code == 400
 
     import uuid as uuid_module
+
     session_id = str(uuid_module.uuid4())
     repo = MagicMock()
     repo.get_play_session = AsyncMock(return_value=None)
@@ -505,6 +512,7 @@ async def test_get_play_state_invalid_uuid_and_not_found():
 async def test_get_play_state_no_graph():
     session = make_session()
     import uuid as uuid_module
+
     session_id = str(uuid_module.uuid4())
     repo = MagicMock()
     repo.get_play_session = AsyncMock(return_value=make_play_session(current_node_id=None))
@@ -512,7 +520,6 @@ async def test_get_play_state_no_graph():
     with pytest.MonkeyPatch.context() as m:
         patch_branch_repo(m, repo)
         patch_book_ownership(m, 10)
-        result = await get_play_state(session_id, session=session,
-                                      current_user=make_current_user())
+        result = await get_play_state(session_id, session=session, current_user=make_current_user())
     assert result.current_node == {}
     assert result.current_node_id is None

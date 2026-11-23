@@ -87,8 +87,7 @@ def test_emit_skip_swallows_reporter_and_metrics_errors():
     reporter = MagicMock()
     reporter.report = MagicMock(side_effect=RuntimeError("ui down"))
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.services.pipeline_steps.metrics.increment",
-                  MagicMock(side_effect=RuntimeError("metrics down")))
+        m.setattr("src.services.pipeline_steps.metrics.increment", MagicMock(side_effect=RuntimeError("metrics down")))
         _emit_skip(reporter, ctx, "step", "reason")
     assert ctx.warnings == ["step: reason"]
 
@@ -135,8 +134,15 @@ async def test_plan_step_with_stop_signal_and_catharsis():
 def make_wave_pattern(**overrides):
     """NarrativeWavePattern 相当のモック (model_dump 付き)。"""
     pattern = MagicMock()
-    dump = {"stress_levels": [80, 30], "catharsis_indices": [], "emotional_peaks": [],
-            "trough_markers": [], "wave_score": 47.1, "is_healthy": True, "issues": []}
+    dump = {
+        "stress_levels": [80, 30],
+        "catharsis_indices": [],
+        "emotional_peaks": [],
+        "trough_markers": [],
+        "wave_score": 47.1,
+        "is_healthy": True,
+        "issues": [],
+    }
     dump.update(overrides)
     pattern.model_dump = MagicMock(return_value=dump)
     pattern.catharsis_points = []
@@ -159,8 +165,10 @@ async def test_write_step_with_retry_exception():
     reporter = make_reporter()
 
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.backend.workflows._shared_ops.execute_with_retry",
-                  AsyncMock(side_effect=RuntimeError("transient error")))
+        m.setattr(
+            "src.backend.workflows._shared_ops.execute_with_retry",
+            AsyncMock(side_effect=RuntimeError("transient error")),
+        )
         with pytest.raises(RuntimeError, match="transient error"):
             await WriteStep().execute(ctx, engine, reporter)
 
@@ -263,8 +271,7 @@ async def test_audit_rewrite_with_max_iterations_exceeded():
         spice.extract_spice = MagicMock(return_value=[])
         spice.build_rewrite_prompt = MagicMock(return_value="prompt")
         spice.clean_markers = MagicMock(side_effect=lambda text: text)
-        m.setattr("src.services.pipeline_steps.create_spice_guard_adapter",
-                  lambda genre: spice)
+        m.setattr("src.services.pipeline_steps.create_spice_guard_adapter", lambda genre: spice)
         result = await AuditRewriteStep().execute(ctx, engine, reporter)
         assert result is True
 
@@ -309,8 +316,7 @@ async def test_package_step_with_marketing_pack():
 @pytest.mark.asyncio
 async def test_illustration_step_with_illustration_settings():
     """IllustrationStep illustration_settings 指定テスト。"""
-    ctx = make_ctx(enable_illustration=True,
-                   illustration_settings={"enableIllustration": True, "someSetting": True})
+    ctx = make_ctx(enable_illustration=True, illustration_settings={"enableIllustration": True, "someSetting": True})
     engine = make_engine()
     reporter = make_reporter()
 
@@ -334,13 +340,17 @@ async def test_marketing_step_with_genre_and_archetype():
     reporter = make_reporter()
 
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.services.pipeline_steps.load_preset_for_pipeline",
-                  lambda genre, archetype: {
-                      "titles": {"title_templates": ["SF Title"]},
-                      "marketing": {"synopsis_structure": {"hook": "SF Hook"},
-                                    "catchphrase_templates": ["SF Catchphrase"],
-                                    "tags": ["sf1", "sf2"]},
-                  })
+        m.setattr(
+            "src.services.pipeline_steps.load_preset_for_pipeline",
+            lambda genre, archetype: {
+                "titles": {"title_templates": ["SF Title"]},
+                "marketing": {
+                    "synopsis_structure": {"hook": "SF Hook"},
+                    "catchphrase_templates": ["SF Catchphrase"],
+                    "tags": ["sf1", "sf2"],
+                },
+            },
+        )
         assert await MarketingStep().execute(ctx, engine, reporter) is True
 
     assert ctx.title == "SF Title"
@@ -355,8 +365,7 @@ async def test_marketing_step_with_existing_title_and_llm():
     reporter = make_reporter()
 
     with pytest.MonkeyPatch.context() as m:
-        m.setattr("src.services.pipeline_steps.load_preset_for_pipeline",
-                  lambda genre, archetype: {})
+        m.setattr("src.services.pipeline_steps.load_preset_for_pipeline", lambda genre, archetype: {})
         assert await MarketingStep().execute(ctx, engine, reporter) is True
     assert ctx.title == "Existing Title"
     engine.llm.generate.assert_not_called()
@@ -426,13 +435,9 @@ async def test_illustration_point_step_with_episodes():
     char1.name = "主人公"
     char2 = MagicMock()
     char2.name = "ヒロイン"
-    engine.repo.bible.get_by_book_id = AsyncMock(
-        return_value=MagicMock(characters=[char1, char2])
-    )
+    engine.repo.bible.get_by_book_id = AsyncMock(return_value=MagicMock(characters=[char1, char2]))
     engine.repo.plot.get_all_plots = AsyncMock(return_value=[])
-    engine.repo.episode.get_all_by_book_id = AsyncMock(
-        return_value=[MagicMock() for _ in range(5)]
-    )
+    engine.repo.episode.get_all_by_book_id = AsyncMock(return_value=[MagicMock() for _ in range(5)])
     reporter = make_reporter()
 
     assert await IllustrationPointGenerationStep().execute(ctx, engine, reporter) is True

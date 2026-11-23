@@ -40,4 +40,3 @@ print("-" * 75)
 for grp, d in sorted_groups[:35]:
     pct = (d["cov"] / d["stmts"] * 100) if d["stmts"] > 0 else 0
     print(f"{grp:<35} | {len(d['files']):>5} | {d['stmts']:>6} | {d['cov']:>7} | {d['missing']:>7} | {pct:>5.1f}%")
-

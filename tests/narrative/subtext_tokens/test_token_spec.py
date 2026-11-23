@@ -27,10 +27,10 @@ def test_token_bnf_parser_valid_cases():
 def test_token_bnf_parser_invalid_cases():
     invalid_tokens = [
         "[UNKNOWN:irony]",  # Unknown category
-        "[:irony]",         # Missing category
-        "[BEAT:]",          # Missing key
-        "[BEAT:UPPERCASE]", # Key not lowercase
-        "BEAT:pause",       # Missing brackets
+        "[:irony]",  # Missing category
+        "[BEAT:]",  # Missing key
+        "[BEAT:UPPERCASE]",  # Key not lowercase
+        "BEAT:pause",  # Missing brackets
     ]
     for raw in invalid_tokens:
         assert TokenParser.is_valid_token(raw) is False

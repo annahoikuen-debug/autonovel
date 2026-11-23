@@ -61,6 +61,7 @@ class TestFacadeFlags:
         class Partial(vs.BaseVectorStore):
             async def add_documents(self, *a, **k): ...
             async def search(self, *a, **k): ...
+
             # search_with_score, delete_by_id, clear_collection は未実装
 
         with pytest.raises(TypeError):

@@ -1,4 +1,5 @@
 """Unit tests for Phase 3 exception error code format (Step 22)."""
+
 from src.core.exceptions.phase3 import (
     CompressionError,
     DAGSchedulerError,

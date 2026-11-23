@@ -1,4 +1,5 @@
 """Step 13: エンジン統合・永続化フックテスト。"""
+
 from __future__ import annotations
 
 import tempfile
@@ -43,7 +44,10 @@ class TestEnginePersistence:
         tmpdir = Path(tempfile.mkdtemp())
         engine = _make_engine()
         event = PlotEvent(
-            "ep14_betrayal", 14, 1, PlotEventType.BETRAYAL,
+            "ep14_betrayal",
+            14,
+            1,
+            PlotEventType.BETRAYAL,
             roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"},
         )
         engine.process_episode(14, [event], initial_context=PlotContext(episode=14))
@@ -76,7 +80,10 @@ class TestEnginePersistence:
         """None ストアを渡してもエラーにならない。"""
         engine = _make_engine()
         event = PlotEvent(
-            "ep14_betrayal", 14, 1, PlotEventType.BETRAYAL,
+            "ep14_betrayal",
+            14,
+            1,
+            PlotEventType.BETRAYAL,
             roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"},
         )
         engine.process_episode(14, [event])
@@ -95,11 +102,13 @@ class TestEnginePersistence:
         prev_ep = None
         for ep in (14, 15):
             if ep == 14:
-                event = PlotEvent(f"ep{ep}_betrayal", ep, 1, PlotEventType.BETRAYAL,
-                                  roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"})
+                event = PlotEvent(
+                    f"ep{ep}_betrayal", ep, 1, PlotEventType.BETRAYAL, roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"}
+                )
             else:
-                event = PlotEvent(f"ep{ep}_rescue", ep, 1, PlotEventType.RESCUE,
-                                  roles={Role.VICTIM: "A", Role.RESCUER: "B"})
+                event = PlotEvent(
+                    f"ep{ep}_rescue", ep, 1, PlotEventType.RESCUE, roles={Role.VICTIM: "A", Role.RESCUER: "B"}
+                )
             engine.process_episode(ep, [event], previous_snapshot=snapshot, previous_episode=prev_ep)
             engine.persist_results(vector_store, graph_store, log_store, episode=ep)
             snapshot = engine.last_snapshot

@@ -64,9 +64,7 @@ def test_dockerfile_copy_dirs_exist(dockerfile_name):
         dir_name = src.rstrip("/").lstrip("./")
         if dir_name in DOCKER_COPY_DIRS:
             target = ROOT / dir_name
-            assert target.is_dir(), (
-                f"{dockerfile_name} の COPY 先ディレクトリが存在しない: {src}"
-            )
+            assert target.is_dir(), f"{dockerfile_name} の COPY 先ディレクトリが存在しない: {src}"
 
 
 def test_dockerfile_copy_files_exist():
@@ -97,9 +95,7 @@ def test_entrypoint_no_stale_paths():
         pytest.skip("entrypoint.sh が存在しない")
     content = entrypoint.read_text(encoding="utf-8")
     for stale in STALE_PATHS:
-        assert stale not in content, (
-            f"entrypoint.sh に旧パス参照が残っている: {stale}"
-        )
+        assert stale not in content, f"entrypoint.sh に旧パス参照が残っている: {stale}"
 
 
 def test_compose_no_stale_paths():
@@ -107,6 +103,4 @@ def test_compose_no_stale_paths():
     for compose_file in ROOT.glob("docker-compose*.yml"):
         content = compose_file.read_text(encoding="utf-8")
         for stale in STALE_PATHS:
-            assert stale not in content, (
-                f"{compose_file.name} に旧パス参照が残っている: {stale}"
-            )
+            assert stale not in content, f"{compose_file.name} に旧パス参照が残っている: {stale}"

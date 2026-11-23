@@ -1,4 +1,5 @@
 """Coverage tests for src/backend/database/core.py and src/backend/database/repository.py."""
+
 from __future__ import annotations
 
 import asyncio
@@ -38,6 +39,7 @@ async def async_db(tmp_path):
 # --------------------------------------------------------------------------
 # module-level fallbacks / constants
 # --------------------------------------------------------------------------
+
 
 def test_database_connection_wrapper_shim():
     """後方互換シム: sql_conn / dbapi_conn を受け取り、属性の write→read が動くこと。"""
@@ -109,6 +111,7 @@ def test_retry_with_logging_handles_aiosqlite_error(monkeypatch):
 # WorkspaceManager
 # --------------------------------------------------------------------------
 
+
 def test_workspace_manager_paths_and_snapshot(tmp_path, monkeypatch):
     monkeypatch.setattr(core, "BASE_DIR", tmp_path)
     assert WorkspaceManager.get_path("a.db") == str(tmp_path / "a.db")
@@ -124,6 +127,7 @@ def test_workspace_manager_paths_and_snapshot(tmp_path, monkeypatch):
 # --------------------------------------------------------------------------
 # DatabaseManager
 # --------------------------------------------------------------------------
+
 
 @pytest.mark.parametrize(
     "url,expected_driver,expected_db",

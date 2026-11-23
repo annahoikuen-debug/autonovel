@@ -1,4 +1,5 @@
 """Unit tests for asynchronous sensory expansion module (Part 2)."""
+
 import pytest
 import asyncio
 import time
@@ -51,6 +52,7 @@ async def test_call_llm_async_dispatch_types():
     class AsyncGenLLM:
         async def generate(self, prompt):
             return "非同期generate五感描写"
+
     res2 = await _call_llm_async(AsyncGenLLM(), "prompt")
     assert res2 == "非同期generate五感描写"
 
@@ -60,6 +62,7 @@ async def test_call_llm_async_dispatch_types():
             m = MagicMock()
             m.content = "LangChain五感描写"
             return m
+
     res3 = await _call_llm_async(LangChainLLM(), "prompt")
     assert res3 == "LangChain五感描写"
 

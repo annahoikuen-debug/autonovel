@@ -10,6 +10,7 @@ if str(ROOT_DIR) not in sys.path:
 
 from typing import Dict
 
+
 def run_health_checks() -> int:
     print("==========================================================")
     print("   Pillar 3: Semantic RAG & Compression Health Check      ")
@@ -20,6 +21,7 @@ def run_health_checks() -> int:
     # 1. Japanese Tokenizer Check
     try:
         from src.services.nlp.japanese_tokenizer import JapaneseTokenizer
+
         tok = JapaneseTokenizer()
         tokens = tok.tokenize("勇者カイトは伝説の聖剣を抜いて魔王を倒した。")
         assert len(tokens) > 0
@@ -32,6 +34,7 @@ def run_health_checks() -> int:
     # 2. RRF Fusion Check
     try:
         from src.services.rrf_fusion import compute_rrf_scores
+
         dense = [{"id": "doc1", "content": "c1"}, {"id": "doc2", "content": "c2"}]
         sparse = [{"id": "doc2", "content": "c2"}, {"id": "doc3", "content": "c3"}]
         fused = compute_rrf_scores(dense, sparse, k=60)
@@ -45,6 +48,7 @@ def run_health_checks() -> int:
     # 3. Query Reformulator Check
     try:
         from src.services.query_reformulator import QueryReformulator
+
         qr = QueryReformulator()
         rewritten = qr.reformulate_query(
             query="魔法少女",
@@ -64,6 +68,7 @@ def run_health_checks() -> int:
         from unittest.mock import MagicMock
         from src.services.reflective_rag import ReflectiveRAGService
         from src.services.rag_service import SearchResult
+
         mock_rag = MagicMock()
         mock_rag.age_client = None
         service = ReflectiveRAGService(rag_service=mock_rag)
@@ -79,6 +84,7 @@ def run_health_checks() -> int:
     # 5. Dynamic Taxonomy Engine Check
     try:
         from src.services.compression.layer3_taxonomy import DynamicTaxonomyEngine
+
         tax = DynamicTaxonomyEngine()
         cat = tax.generalize("エルヴィン騎士団長", context="王国の軍事組織")
         assert cat is not None and len(cat) > 0
@@ -92,11 +98,15 @@ def run_health_checks() -> int:
     try:
         from src.services.compression.compressor import FourLayerCompressor
         from src.services.compression.models import CompressionConfig, ProtectedContext
+
         comp = FourLayerCompressor(config=CompressionConfig(max_tokens=200, cache_enabled=False))
         prot = ProtectedContext(active_characters=["アレン"], pending_foreshadowing_ids=["FS-1"])
         c_res = comp.compress(
             raw_text="アレンは剣を抜いた。" * 20,
-            entities=[{"name": "アレン", "labels": ["Hero"], "properties": {}}, {"name": "FS-1", "labels": ["Foreshadowing"], "properties": {}}],
+            entities=[
+                {"name": "アレン", "labels": ["Hero"], "properties": {}},
+                {"name": "FS-1", "labels": ["Foreshadowing"], "properties": {}},
+            ],
             relations=[],
             scene_type="combat",
             max_tokens=200,
@@ -113,6 +123,7 @@ def run_health_checks() -> int:
     # 7. Blind Review Gate & Proposal Sandbox Check
     try:
         from src.services.blind_review import BlindReviewGate, BlindFeedbackPurifier
+
         gate = BlindReviewGate(forbidden_agents=["proposal_b"])
         scrubbed = gate.scrub_payload({"proposal_b": "secret", "clean": "public"})
         assert "<BLOCKED:proposal_b>" in scrubbed["proposal_b"]

@@ -1,4 +1,5 @@
 """Integration tests for sensory expansion pipeline with EnrichmentAgent (Part 2, Step 23)."""
+
 import pytest
 from src.agents.orchestrator import AgentContext, AgentName
 from src.agents.enrichment_agent import EnrichmentAgent
@@ -61,7 +62,8 @@ async def test_enrichment_agent_sensory_pipeline_full_execution():
 
     # [visual] などのデバッグタグが本文に残留していないこと
     import re
-    assert not re.search(r'\[[a-zA-Z0-9_]+\]', enriched_text)
+
+    assert not re.search(r"\[[a-zA-Z0-9_]+\]", enriched_text)
 
     # 五感拡充のメタデータが記録されていること
     sensory_meta = metadata.get("sensory", metadata.get("sensory_expansions", []))

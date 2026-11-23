@@ -1,4 +1,5 @@
 """Unit tests for build_fused_emotional_context_prompt."""
+
 from src.fusion.config import FusionConfig
 from src.fusion.engine import FusionEngine
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType

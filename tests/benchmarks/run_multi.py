@@ -1,4 +1,5 @@
 """Multi-episode benchmark engine."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -65,9 +66,7 @@ def benchmark_novel(
     ]
 
     # Run all episodes
-    all_results = benchmark_episodes(
-        ep_dicts, book_id=book_id, max_tokens=max_tokens, runs_per_ep=runs_per_ep
-    )
+    all_results = benchmark_episodes(ep_dicts, book_id=book_id, max_tokens=max_tokens, runs_per_ep=runs_per_ep)
 
     # Aggregate at checkpoints
     checkpoints = {}
@@ -150,6 +149,7 @@ def benchmark_at_episode_counts(
             continue
         # Create fresh generator for each count to ensure independence
         from tests.benchmarks.fixtures import LongNovelGenerator
+
         gen = LongNovelGenerator(seed=42)
         sub_novel = gen.generate_novel(ep_count)
         results[ep_count] = benchmark_novel(sub_novel, book_id, max_tokens, runs_per_ep)

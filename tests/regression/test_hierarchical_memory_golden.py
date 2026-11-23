@@ -24,9 +24,7 @@ GOLDEN_FILE = GOLDEN_DIR / "writing_prompt_baseline.txt"
 
 def _build_manager() -> PromptManager:
     """Jinja2 環境を直接注入した PromptManager を構築。"""
-    return PromptManager(
-        jinja_env=Environment(loader=FileSystemLoader("prompts"))
-    )
+    return PromptManager(jinja_env=Environment(loader=FileSystemLoader("prompts")))
 
 
 async def _build_prompt(manager: PromptManager) -> str:
@@ -74,9 +72,7 @@ async def test_writing_prompt_matches_golden():
 
     # `_build_forbidden_section` はランダムに禁忌語を選択するため、
     # golden 比較の安定性のため固定値を返すようにモック化する。
-    manager._build_forbidden_section = AsyncMock(
-        return_value="【🚨禁忌語・強制置換🚨】\nテスト用固定禁忌語指示\n"
-    )
+    manager._build_forbidden_section = AsyncMock(return_value="【🚨禁忌語・強制置換🚨】\nテスト用固定禁忌語指示\n")
 
     prompt = await _build_prompt(manager)
 
@@ -84,9 +80,7 @@ async def test_writing_prompt_matches_golden():
     if not GOLDEN_FILE.exists():
         GOLDEN_DIR.mkdir(parents=True, exist_ok=True)
         GOLDEN_FILE.write_text(prompt, encoding="utf-8")
-        pytest.skip(
-            "Golden ファイルを初期作成しました。次回実行で比較を行います。"
-        )
+        pytest.skip("Golden ファイルを初期作成しました。次回実行で比較を行います。")
 
     expected = GOLDEN_FILE.read_text(encoding="utf-8")
     assert prompt == expected, (

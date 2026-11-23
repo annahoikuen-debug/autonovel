@@ -1,4 +1,5 @@
 """Unit tests for DAGScheduler Part 5 (Steps 49-54): Timeouts, Cascade Cancellation, Huey Dispatch."""
+
 from __future__ import annotations
 
 import asyncio
@@ -80,9 +81,10 @@ async def test_dag_scheduler_huey_dispatch():
 
     fake_huey_result = {"status": "completed", "output": "Review passed", "node_id": "huey_node"}
 
-    with patch("src.backend.tasks.huey.execute_agent_node_task") as mock_exec, \
-         patch("src.backend.tasks.huey.async_wait_huey_result", new_callable=AsyncMock) as mock_wait:
-
+    with (
+        patch("src.backend.tasks.huey.execute_agent_node_task") as mock_exec,
+        patch("src.backend.tasks.huey.async_wait_huey_result", new_callable=AsyncMock) as mock_wait,
+    ):
         mock_task = MagicMock()
         mock_exec.return_value = mock_task
         mock_wait.return_value = fake_huey_result

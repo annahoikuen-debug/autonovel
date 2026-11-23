@@ -1,4 +1,5 @@
 """GraphRAG 検索・Reranking サービスの単体テスト."""
+
 from unittest.mock import patch, MagicMock
 import asyncio
 
@@ -68,10 +69,7 @@ def test_graph_rag_service_init():
 
 def test_graph_rag_service_init_custom_params():
     """Test GraphRAGService initialization with custom parameters."""
-    service = GraphRAGService(
-        token_budget=5000,
-        enable_cache=False
-    )
+    service = GraphRAGService(token_budget=5000, enable_cache=False)
 
     assert service._token_budget == 5000
     assert service._enable_cache is False
@@ -158,11 +156,7 @@ def test_graph_rag_service_get_cached():
 
     # Test when key exists and is valid
     context = RagContext(
-        graph_context="graph",
-        vector_context="vector",
-        fulltext_context="fulltext",
-        stats={},
-        token_estimate=100
+        graph_context="graph", vector_context="vector", fulltext_context="fulltext", stats={}, token_estimate=100
     )
     service._cache["valid_key"] = (context, time.time() - 100)  # Valid (not expired)
     result = service._get_cached("valid_key")
@@ -178,11 +172,7 @@ def test_graph_rag_service_set_cache():
     service._enable_cache = True
 
     context = RagContext(
-        graph_context="graph",
-        vector_context="vector",
-        fulltext_context="fulltext",
-        stats={},
-        token_estimate=100
+        graph_context="graph", vector_context="vector", fulltext_context="fulltext", stats={}, token_estimate=100
     )
 
     service._set_cache("test_key", context)
@@ -249,7 +239,7 @@ def test_graph_rag_service_truncate_to_budget():
     # Each Japanese char takes ~0.67 tokens (1/1.5)
     # So 100 Japanese chars would be ~150 tokens
     long_japanese_text = "あ" * 150  # Should exceed budget of 100
-    short_japanese_text = "あ" * 50   # Should fit within budget
+    short_japanese_text = "あ" * 50  # Should fit within budget
 
     result = service._truncate_to_budget([long_japanese_text, short_japanese_text], 100)
     # First item should be truncated, second item should be included if it fits

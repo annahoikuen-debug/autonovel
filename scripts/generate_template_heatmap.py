@@ -84,7 +84,7 @@ def generate_heatmap(
       <tr><th>Template ID</th><th>Category</th><th>Weight</th><th>Usage Count</th><th>Distribution</th></tr>
     </thead>
     <tbody>
-      {''.join(rows)}
+      {"".join(rows)}
     </tbody>
   </table>
 </body>

@@ -7,6 +7,7 @@ LLM 未設定（degraded=True）は「評価不能＝不合格」という
 両方向を検証する。これによりゲートが「常に止まる」「常に通る」
 どちらの過剰修正でも赤くなる。
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock

@@ -1,4 +1,5 @@
 """Unit tests for the small exporters/* helper modules (Steps 37-50)."""
+
 import io
 import zipfile
 
@@ -72,7 +73,7 @@ class TestTcyFormatter:
 
 class TestTextSanitizer:
     def test_odd_ellipsis_doubled(self):
-        assert sanitize_novel_text(" citric… ") .strip() == "citric……"
+        assert sanitize_novel_text(" citric… ").strip() == "citric……"
 
     def test_even_ellipsis_untouched(self):
         assert "……" in sanitize_novel_text("citric……")
@@ -90,9 +91,7 @@ class TestTextSanitizer:
         assert sanitize_novel_text("") == ""
 
     def test_escape_xhtml_text(self):
-        assert escape_xhtml_text('<a href="x">&</a>') == (
-            "&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;"
-        )
+        assert escape_xhtml_text('<a href="x">&</a>') == ("&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;")
 
     def test_escape_xhtml_text_plain(self):
         assert escape_xhtml_text("ふつう") == "ふつう"
@@ -156,7 +155,7 @@ class TestEpubRubyProcessor:
         assert EpubRubyProcessor.to_xhtml_paragraphs("普通の行") == "<p>普通の行</p>"
 
     def test_empty_line(self):
-        assert '&#160;' in EpubRubyProcessor.to_xhtml_paragraphs("a\n\nb")
+        assert "&#160;" in EpubRubyProcessor.to_xhtml_paragraphs("a\n\nb")
 
     def test_crlf_normalised(self):
         out = EpubRubyProcessor.to_xhtml_paragraphs("a\r\nb")
@@ -226,9 +225,7 @@ class TestEpubContentBuilder:
         assert 'class="p-illustration"' in out
 
     def test_build_illustration_xhtml_with_caption(self):
-        out = EpubContentBuilder.build_illustration_xhtml(
-            "i.png", title="挿絵", caption="キャプション & <b>"
-        )
+        out = EpubContentBuilder.build_illustration_xhtml("i.png", title="挿絵", caption="キャプション & <b>")
         assert '<p class="illustration-caption">キャプション &amp; &lt;b&gt;</p>' in out
         assert 'href="../style/vertical.css"' in out
 

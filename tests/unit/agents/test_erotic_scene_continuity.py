@@ -228,9 +228,7 @@ def test_check_attitude_continuity(tracker):
 
 
 def test_check_discovery_continuity(tracker):
-    tracker.save_snapshot(
-        SceneStateSnapshot(character_name="A", episode_num=1, discoveries=["王の秘密"])
-    )
+    tracker.save_snapshot(SceneStateSnapshot(character_name="A", episode_num=1, discoveries=["王の秘密"]))
     issues = tracker.check_discovery_continuity(2, "A", "彼は眠った")
     assert any("重要な情報" in i for i in issues)
     tracker.save_snapshot(SceneStateSnapshot(character_name="A", episode_num=1, discoveries=["何もない話"]))

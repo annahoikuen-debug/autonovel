@@ -4,8 +4,11 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.domain.domain_services.character_domain_service import (
-    CharacterDomainService, CharacterValidator, CharacterConsistencyChecker,
-    CharacterRelationshipManager, CharacterValidationError,
+    CharacterDomainService,
+    CharacterValidator,
+    CharacterConsistencyChecker,
+    CharacterRelationshipManager,
+    CharacterValidationError,
     RelationshipType,
 )
 from src.domain.entities.character import Character, CharacterArc
@@ -131,7 +134,9 @@ class TestCharacterRelationshipManager:
 
     def test_add_relationship_invalid_strength(self):
         with pytest.raises(ValueError):
-            self.manager.add_relationship(CharacterId.generate(), CharacterId.generate(), RelationshipType.ALLY, strength=150)
+            self.manager.add_relationship(
+                CharacterId.generate(), CharacterId.generate(), RelationshipType.ALLY, strength=150
+            )
 
     def test_get_relationships(self):
         c1, c2 = CharacterId.generate(), CharacterId.generate()

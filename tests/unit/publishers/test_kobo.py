@@ -26,7 +26,7 @@ class TestKoboPublisher:
             client_secret="test_secret",
             access_token="valid_token",
             token_expires_at=time.time() + 3600,
-            publisher_id="pub_123"
+            publisher_id="pub_123",
         )
 
     def test_publisher_initialization(self, publisher):

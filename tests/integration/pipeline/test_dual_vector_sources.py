@@ -1,4 +1,5 @@
 """Step 16: ベースラインベクトルとパイプライン抽出ベクトルの併存テスト。"""
+
 from __future__ import annotations
 
 import tempfile
@@ -48,11 +49,18 @@ class MockExtractor(EmotionalResidueExtractor):
     def extract_and_persist(self, episode_id: str, script: str) -> EmotionalVector:
         """脚本から感情ベクトル抽出 (モック実装)。"""
         vec = EmotionalVector(episode_id=episode_id)
-        vec.set_signal(EmotionalSignal(
-            source="A", target="B", emotion_type=EmotionType.JEALOUSY,
-            value=0.6, confidence=0.7, evidence_span=script[:20],
-            episode_id=episode_id, cause="pipeline_extraction",
-        ))
+        vec.set_signal(
+            EmotionalSignal(
+                source="A",
+                target="B",
+                emotion_type=EmotionType.JEALOUSY,
+                value=0.6,
+                confidence=0.7,
+                evidence_span=script[:20],
+                episode_id=episode_id,
+                cause="pipeline_extraction",
+            )
+        )
         self.vector_store.upsert(NAMESPACE_PIPELINE, f"{episode_id}:A->B", vec)
         return vec
 

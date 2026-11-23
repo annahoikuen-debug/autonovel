@@ -6,7 +6,7 @@ USD_JPY = 155
 
 # DeepSeek-V4 API価格（2026年9月現在）
 DEEPSEEK_V4_FLASH = {
-    "input_per_1m": 0.14,      # USD per 1M tokens
+    "input_per_1m": 0.14,  # USD per 1M tokens
     "input_cached_per_1m": 0.0028,
     "output_per_1m": 0.28,
 }
@@ -20,9 +20,7 @@ DEEPSEEK_V4_PRO = {
 for model in [DEEPSEEK_V4_FLASH, DEEPSEEK_V4_PRO]:
     model["input_jpy_per_1m"] = model["input_per_1m"] * USD_JPY
     model["output_jpy_per_1m"] = model["output_per_1m"] * USD_JPY
-    model["blended_jpy_per_1m"] = (
-        0.8 * model["input_jpy_per_1m"] + 0.2 * model["output_jpy_per_1m"]
-    )
+    model["blended_jpy_per_1m"] = 0.8 * model["input_jpy_per_1m"] + 0.2 * model["output_jpy_per_1m"]
 
 # 500クレジット = 10円 という設定
 CREDITS = 500
@@ -89,9 +87,9 @@ print("=" * 70)
 
 # 1話あたりのトークン数
 EPISODE_TOKENS = {
-    "plot_15ch": 36_000,    # 15話プロット全体
-    "episode": 5_000,       # 1話本文
-    "audit": 3_000,         # 監査・批評
+    "plot_15ch": 36_000,  # 15話プロット全体
+    "episode": 5_000,  # 1話本文
+    "audit": 3_000,  # 監査・批評
 }
 
 scenarios = [

@@ -39,6 +39,7 @@ def test_no_broken_database_imports_across_project():
     # narrative_metrics_db が正常に読み込めること
     from src.models.narrative_metrics_db import NarrativeMetric
     from src.infrastructure.database.models import Base
+
     assert issubclass(NarrativeMetric, Base)
 
 
@@ -46,6 +47,7 @@ def test_core_orm_models_load_cleanly():
     """主要ドメインモデルがクリーンに読み込めることを検証"""
     from src.backend.database.models import Book, Chapter, Character, Plot
     from src.infrastructure.database.models.task import Task
+
     assert Book.__tablename__ == "books"
     assert Chapter.__tablename__ == "chapters"
     assert Character.__tablename__ == "characters"

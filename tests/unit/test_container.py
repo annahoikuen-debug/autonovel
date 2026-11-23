@@ -32,4 +32,3 @@ def test_legacy_config_container_compatibility():
     c1 = get_container()
     assert c1 is not None
     assert issubclass(Container, AppContainer)
-

@@ -1,6 +1,7 @@
 import pytest
 from src.agents.event_bus import EventBus, AgentEvent
 
+
 @pytest.mark.asyncio
 async def test_eventbus_publish_subscribe():
     bus = EventBus()

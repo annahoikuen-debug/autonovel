@@ -1,5 +1,6 @@
 # tests/unit/test_trivia_rewrite.py
 """Unit tests for Step 1-9: Trivia Inline Rewriting and Context Integration."""
+
 import pytest
 from unittest.mock import MagicMock
 from src.agents.enrichment_agent import EnrichmentAgent
@@ -22,8 +23,10 @@ async def test_trivia_rewrite_fallback_when_no_llm():
 async def test_trivia_rewrite_with_mock_llm():
     """LLMが設定されている場合、自然なリライト文が返ること (Step 3)"""
     mock_llm = MagicMock()
+
     async def fake_ainvoke(p):
         return "かつて湖の底に沈んでいたとされる王都の石畳には、古代の波紋が刻まれていた。"
+
     mock_llm.ainvoke = fake_ainvoke
 
     agent = EnrichmentAgent(llm=mock_llm)
@@ -40,10 +43,13 @@ async def test_trivia_rewrite_with_mock_llm():
 async def test_trivia_rewrite_timeout_protection():
     """LLMがタイムアウトした場合、元のトリビアがフォールバックされること (Step 4)"""
     import asyncio
+
     slow_llm = MagicMock()
+
     async def slow_call(p):
         await asyncio.sleep(5.0)
         return "遅延した回答"
+
     slow_llm.ainvoke = slow_call
 
     agent = EnrichmentAgent(llm=slow_llm)
@@ -79,17 +85,18 @@ def test_trivia_pov_tone_adjustment():
 async def test_trivia_token_budget_and_metadata_diff():
     """トークン予算上限の遵守とBefore/Afterメタデータの完全記録 (Step 8 & 9)"""
     mock_llm = MagicMock()
+
     async def fake_ainvoke(p):
         return "聖なる白銀の光を放つ伝説の剣。"
+
     mock_llm.ainvoke = fake_ainvoke
 
     agent = EnrichmentAgent(llm=mock_llm)
     mock_rag = MagicMock()
+
     async def fake_query(*args, **kwargs):
-        return [
-            {"fact": f"聖剣の歴史その{i}", "source_type": "world_bible", "entity": "聖剣"}
-            for i in range(8)
-        ]
+        return [{"fact": f"聖剣の歴史その{i}", "source_type": "world_bible", "entity": "聖剣"} for i in range(8)]
+
     mock_rag.query_trivia_candidates = fake_query
     agent.rag_service = mock_rag
     agent.repo = MagicMock()

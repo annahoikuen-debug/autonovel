@@ -26,13 +26,27 @@ class _StubEventBus:
 def _make_score_result(overall: float) -> BookScoreResult:
     return BookScoreResult(
         overall=overall,
-        by_specialist={"consistency": overall, "creativity": overall, "reader_hook": overall,
-                       "emotion_curve": overall, "style": overall, "factual": overall,
-                       "structure": overall, "multimodal": overall},
+        by_specialist={
+            "consistency": overall,
+            "creativity": overall,
+            "reader_hook": overall,
+            "emotion_curve": overall,
+            "style": overall,
+            "factual": overall,
+            "structure": overall,
+            "multimodal": overall,
+        },
         missing=[],
-        weights_used={"consistency": 0.125, "creativity": 0.125, "reader_hook": 0.125,
-                      "emotion_curve": 0.125, "style": 0.125, "factual": 0.125,
-                      "structure": 0.125, "multimodal": 0.125},
+        weights_used={
+            "consistency": 0.125,
+            "creativity": 0.125,
+            "reader_hook": 0.125,
+            "emotion_curve": 0.125,
+            "style": 0.125,
+            "factual": 0.125,
+            "structure": 0.125,
+            "multimodal": 0.125,
+        },
         raw={},
     )
 
@@ -54,8 +68,16 @@ async def test_publish_aggregated_metrics_no_event_bus():
 
     agg = AuditAggregator(
         specialists=[],
-        weights={"consistency": 0.125, "creativity": 0.125, "reader_hook": 0.125, "emotion_curve": 0.125,
-                 "style": 0.125, "factual": 0.125, "structure": 0.125, "multimodal": 0.125},
+        weights={
+            "consistency": 0.125,
+            "creativity": 0.125,
+            "reader_hook": 0.125,
+            "emotion_curve": 0.125,
+            "style": 0.125,
+            "factual": 0.125,
+            "structure": 0.125,
+            "multimodal": 0.125,
+        },
         event_bus=None,
     )
 
@@ -74,8 +96,16 @@ async def test_publish_aggregated_metrics_publishes_event():
     event_bus = _StubEventBus()
     agg = AuditAggregator(
         specialists=[],
-        weights={"consistency": 0.125, "creativity": 0.125, "reader_hook": 0.125, "emotion_curve": 0.125,
-                 "style": 0.125, "factual": 0.125, "structure": 0.125, "multimodal": 0.125},
+        weights={
+            "consistency": 0.125,
+            "creativity": 0.125,
+            "reader_hook": 0.125,
+            "emotion_curve": 0.125,
+            "style": 0.125,
+            "factual": 0.125,
+            "structure": 0.125,
+            "multimodal": 0.125,
+        },
         event_bus=event_bus,
     )
 
@@ -102,8 +132,16 @@ async def test_publish_aggregated_metrics_regeneration_triggered():
     event_bus = _StubEventBus()
     agg = AuditAggregator(
         specialists=[],
-        weights={"consistency": 0.125, "creativity": 0.125, "reader_hook": 0.125, "emotion_curve": 0.125,
-                 "style": 0.125, "factual": 0.125, "structure": 0.125, "multimodal": 0.125},
+        weights={
+            "consistency": 0.125,
+            "creativity": 0.125,
+            "reader_hook": 0.125,
+            "emotion_curve": 0.125,
+            "style": 0.125,
+            "factual": 0.125,
+            "structure": 0.125,
+            "multimodal": 0.125,
+        },
         event_bus=event_bus,
     )
 

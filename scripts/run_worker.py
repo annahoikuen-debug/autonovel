@@ -1,4 +1,5 @@
 """scripts/run_worker.py - Huey 分散タスクワーカー起動スクリプト (Step 41)"""
+
 from __future__ import annotations
 
 import argparse
@@ -23,7 +24,13 @@ logger = logging.getLogger("huey_worker")
 def main():
     parser = argparse.ArgumentParser(description="AutoNovel Huey Task Worker")
     parser.add_argument("-w", "--workers", type=int, default=2, help="Number of worker processes/threads")
-    parser.add_argument("-k", "--worker-type", choices=["thread", "process", "greenlet"], default="thread", help="Worker execution model")
+    parser.add_argument(
+        "-k",
+        "--worker-type",
+        choices=["thread", "process", "greenlet"],
+        default="thread",
+        help="Worker execution model",
+    )
     parser.add_argument("--health-check", action="store_true", help="Run health check and exit")
 
     args = parser.parse_args()

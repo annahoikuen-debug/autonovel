@@ -102,15 +102,14 @@ async def test_save_or_update_book_with_chapter_async():
 async def test_book_repository_concurrency():
     """複数セッションによる並行タスク作成・更新がデッドロックなく完了することを検証 (Step 4)"""
     async with create_test_db() as session_factory:
+
         async def worker(worker_id: int):
             async with session_factory() as session:
                 task_id = f"concurrent-task-{worker_id}"
                 task = Task(id=task_id, status="pending", created_at=0, updated_at=0)
                 session.add(task)
                 await session.commit()
-                await session.execute(
-                    update(Task).where(Task.id == task_id).values(status="completed")
-                )
+                await session.execute(update(Task).where(Task.id == task_id).values(status="completed"))
                 await session.commit()
                 fetched = await session.get(Task, task_id)
                 assert fetched is not None

@@ -1,4 +1,5 @@
 """Step 2: 感情変化ルール定義テスト。"""
+
 from __future__ import annotations
 
 from src.pipeline.emotional_residue import EmotionType
@@ -66,6 +67,7 @@ class TestRuleCreation:
 
     def test_condition_exception_returns_false(self):
         """条件関数の例外は False 扱い。"""
+
         def bad_condition(ctx):
             raise RuntimeError("boom")
 

@@ -91,9 +91,7 @@ class TestRollupGeneratorBlock:
         mock_llm = MockLLM(response="アルスは剣を入手し、村を出て王都に到着した。")
         gen = RollupGenerator(cfg, llm=mock_llm)
 
-        result = await gen.generate_block_rollup(
-            book_id=1, ep_range=(1, 10), member_digests=member_digests
-        )
+        result = await gen.generate_block_rollup(book_id=1, ep_range=(1, 10), member_digests=member_digests)
 
         assert result == "アルスは剣を入手し、村を出て王都に到着した。"
         assert len(mock_llm.calls) == 1
@@ -109,9 +107,7 @@ class TestRollupGeneratorBlock:
         gen = RollupGenerator(cfg, llm=mock_llm)
 
         member_digests = {1: "d1", 10: "d10"}
-        result = await gen.generate_block_rollup(
-            book_id=1, ep_range=(1, 10), member_digests=member_digests
-        )
+        result = await gen.generate_block_rollup(book_id=1, ep_range=(1, 10), member_digests=member_digests)
 
         assert len(result) <= cfg.block_digest_chars
         assert result.endswith("...")
@@ -120,9 +116,7 @@ class TestRollupGeneratorBlock:
     async def test_generate_block_rollup_llm_none(self, cfg):
         """LLM 未設定時は None を返す（fail-open）。"""
         gen = RollupGenerator(cfg, llm=None)
-        result = await gen.generate_block_rollup(
-            book_id=1, ep_range=(1, 10), member_digests={1: "d1"}
-        )
+        result = await gen.generate_block_rollup(book_id=1, ep_range=(1, 10), member_digests={1: "d1"})
         assert result is None
 
     @pytest.mark.asyncio
@@ -130,9 +124,7 @@ class TestRollupGeneratorBlock:
         """メンバ digests が空の場合は None。"""
         mock_llm = MockLLM(response="x")
         gen = RollupGenerator(cfg, llm=mock_llm)
-        result = await gen.generate_block_rollup(
-            book_id=1, ep_range=(1, 10), member_digests={}
-        )
+        result = await gen.generate_block_rollup(book_id=1, ep_range=(1, 10), member_digests={})
         assert result is None
         assert len(mock_llm.calls) == 0  # LLM 未呼び出し
 
@@ -175,9 +167,7 @@ class TestRollupGeneratorVolume:
         mock_llm = MockLLM(response="巻の総合要約。")
         gen = RollupGenerator(cfg, llm=mock_llm)
 
-        result = await gen.generate_volume_rollup(
-            book_id=1, block_rollups=block_rollups
-        )
+        result = await gen.generate_volume_rollup(book_id=1, block_rollups=block_rollups)
 
         assert result == "巻の総合要約。"
         assert len(mock_llm.calls) == 1
@@ -191,9 +181,7 @@ class TestRollupGeneratorVolume:
         gen = RollupGenerator(cfg, llm=mock_llm)
 
         block_rollups = [(1, 10, "章1")]
-        result = await gen.generate_volume_rollup(
-            book_id=1, block_rollups=block_rollups
-        )
+        result = await gen.generate_volume_rollup(book_id=1, block_rollups=block_rollups)
 
         assert len(result) <= cfg.volume_digest_chars
         assert result.endswith("...")
@@ -201,7 +189,5 @@ class TestRollupGeneratorVolume:
     @pytest.mark.asyncio
     async def test_generate_volume_rollup_llm_none(self, cfg):
         gen = RollupGenerator(cfg, llm=None)
-        result = await gen.generate_volume_rollup(
-            book_id=1, block_rollups=[(1, 10, "章1")]
-        )
+        result = await gen.generate_volume_rollup(book_id=1, block_rollups=[(1, 10, "章1")])
         assert result is None

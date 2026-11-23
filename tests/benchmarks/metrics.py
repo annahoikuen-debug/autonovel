@@ -1,4 +1,5 @@
 """Metrics aggregation and analysis for benchmarks."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List
@@ -98,7 +99,9 @@ def compute_scaling_metrics(
     # Memory scaling
     sum_y_mem = sum(memories)
     sum_xy_mem = sum(x * y for x, y in zip(ep_counts, memories))
-    slope_mem = (n * sum_xy_mem - sum_x * sum_y_mem) / (n * sum_x2 - sum_x * sum_x) if n * sum_x2 != sum_x * sum_x else 0
+    slope_mem = (
+        (n * sum_xy_mem - sum_x * sum_y_mem) / (n * sum_x2 - sum_x * sum_x) if n * sum_x2 != sum_x * sum_x else 0
+    )
 
     return {
         "latency_per_episode_ms": slope,
@@ -120,47 +123,55 @@ def check_regression(
         p95_latency = summary["latency_ms"].get("p95", 0)
         max_latency = thresholds.get("max_latency_ms_per_ep", float("inf"))
         if p95_latency > max_latency:
-            violations.append({
-                "metric": "latency_p95_ms",
-                "value": p95_latency,
-                "threshold": max_latency,
-                "severity": "error",
-            })
+            violations.append(
+                {
+                    "metric": "latency_p95_ms",
+                    "value": p95_latency,
+                    "threshold": max_latency,
+                    "severity": "error",
+                }
+            )
 
     # Compression ratio check
     if "reduction_ratio" in summary:
         mean_reduction = summary["reduction_ratio"].get("mean", 0)
         min_reduction = thresholds.get("min_compression_ratio", 0)
         if mean_reduction < min_reduction:
-            violations.append({
-                "metric": "compression_ratio",
-                "value": mean_reduction,
-                "threshold": min_reduction,
-                "severity": "error",
-            })
+            violations.append(
+                {
+                    "metric": "compression_ratio",
+                    "value": mean_reduction,
+                    "threshold": min_reduction,
+                    "severity": "error",
+                }
+            )
 
     # Memory check
     if "memory_mb" in summary:
         max_memory = summary["memory_mb"].get("max", 0)
         max_mem_threshold = thresholds.get("max_memory_mb", float("inf"))
         if max_memory > max_mem_threshold:
-            violations.append({
-                "metric": "memory_max_mb",
-                "value": max_memory,
-                "threshold": max_mem_threshold,
-                "severity": "warning",
-            })
+            violations.append(
+                {
+                    "metric": "memory_max_mb",
+                    "value": max_memory,
+                    "threshold": max_mem_threshold,
+                    "severity": "warning",
+                }
+            )
 
     # Cache hit rate check
     cache_hit = summary.get("cache_hit_rate", 0)
     min_cache = thresholds.get("min_cache_hit_rate", 0)
     if cache_hit < min_cache:
-        violations.append({
-            "metric": "cache_hit_rate",
-            "value": cache_hit,
-            "threshold": min_cache,
-            "severity": "warning",
-        })
+        violations.append(
+            {
+                "metric": "cache_hit_rate",
+                "value": cache_hit,
+                "threshold": min_cache,
+                "severity": "warning",
+            }
+        )
 
     return {
         "passed": len(violations) == 0,

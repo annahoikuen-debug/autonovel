@@ -1,5 +1,6 @@
 # tests/integration/test_full_pipeline.py
 """マルチエージェントオーケストレーション統合テスト。"""
+
 from __future__ import annotations
 
 import pytest
@@ -28,6 +29,7 @@ class TestFullPipeline:
         ctx = create_mock_context(artifacts={"llm": llm, "repo": repo})
 
         from src.agents.orchestrator import AgentName
+
         final_ctx = await orchestrator.run(ctx, AgentName.PLANNING)
 
         # 最終成果物の確認
@@ -43,7 +45,10 @@ class TestFullPipeline:
         # 1 回目は監査失敗、2 回目は合格とする LLM モック
         call_sequence = [
             {"success": True, "metadata": {"arcs": [{"title": "第1章", "start_ep": 1, "end_ep": 3}]}},  # Planning
-            {"success": True, "metadata": {"ep_num": 1, "title": "第1話", "detailed_blueprint": "BP", "summary": "Sum"}},  # Plot
+            {
+                "success": True,
+                "metadata": {"ep_num": 1, "title": "第1話", "detailed_blueprint": "BP", "summary": "Sum"},
+            },  # Plot
             {"success": True, "metadata": {"settings": {}, "characters": []}},  # Bible
             # ContextBuilder は LLM 不使用
             {"success": True, "metadata": {"output": "最初の本文"}},  # Writing 1回目
@@ -52,7 +57,13 @@ class TestFullPipeline:
             {"success": True, "metadata": {"is_valid": True, "feedback": "OK"}},  # Audit 2回目: 合格
             # Illustration, Marketing は LLM 不使用 or 簡易
         ]
-        llm = MockLLMAdapter({f"{k}:{i+1}": v for i, v in enumerate(call_sequence) for k in ["planning", "plot", "bible", "writing", "audit"]})
+        llm = MockLLMAdapter(
+            {
+                f"{k}:{i + 1}": v
+                for i, v in enumerate(call_sequence)
+                for k in ["planning", "plot", "bible", "writing", "audit"]
+            }
+        )
         # 簡易化: 実際は purpose ごとに分岐するが、ここではシーケンシャルに返す
         # より正確なモックが必要なら MockLLMAdapter を拡張
 
@@ -61,6 +72,7 @@ class TestFullPipeline:
         ctx = create_mock_context(artifacts={"llm": llm, "repo": repo})
 
         from src.agents.orchestrator import AgentName
+
         final_ctx = await orchestrator.run(ctx, AgentName.PLANNING)
 
         # リトライ後も最終成果物が得られること
@@ -70,6 +82,7 @@ class TestFullPipeline:
     @pytest.mark.asyncio
     async def test_illustration_error_continues_to_marketing(self):
         """シナリオ C: IllustrationAgent エラーでも MarketingAgent まで継続。"""
+
         # IllustrationAgent で例外を投げるモック
         class FailingImageService:
             async def generate(self, *args, **kwargs):
@@ -145,6 +158,7 @@ class TestEventBusIntegration:
         orchestrator = create_mock_orchestrator(llm=llm, repo=repo)
         # EventBus を注入した Orchestrator を再構築
         from src.agents import Orchestrator as OrchestratorClass
+
         orchestrator_with_bus = OrchestratorClass(orchestrator.nodes, event_bus=event_bus, correlation_id="test_123")
         ctx = create_mock_context(artifacts={"llm": llm, "repo": repo})
 
@@ -179,6 +193,15 @@ class TestAgentContextArtifacts:
         # 初期 artifacts が保持されていること
         assert final_ctx.artifacts.get("custom_key") == "custom_value"
         # 各段階の成果物が追加されていること
-        expected_keys = ["arcs", "plots", "bible", "writing_context", "drafted_text", "audit_report", "illustrations", "zip_data"]
+        expected_keys = [
+            "arcs",
+            "plots",
+            "bible",
+            "writing_context",
+            "drafted_text",
+            "audit_report",
+            "illustrations",
+            "zip_data",
+        ]
         for key in expected_keys:
             assert key in final_ctx.artifacts, f"Missing artifact: {key}"

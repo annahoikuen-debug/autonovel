@@ -36,28 +36,40 @@ class TestParseArgs:
 
 class TestMainErrors:
     def test_input_not_found(self, tmp_path: Path):
-        rc = main([
-            "--input", str(tmp_path / "missing.json"),
-            "--output", str(tmp_path / "out.json"),
-        ])
+        rc = main(
+            [
+                "--input",
+                str(tmp_path / "missing.json"),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
         assert rc == 1
 
     def test_invalid_shape(self, tmp_path: Path):
         bad = tmp_path / "bad.json"
         bad.write_text(json.dumps({"no_beats_key": 1}), encoding="utf-8")
-        rc = main([
-            "--input", str(bad),
-            "--output", str(tmp_path / "out.json"),
-        ])
+        rc = main(
+            [
+                "--input",
+                str(bad),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
         assert rc == 2
 
     def test_malformed_json(self, tmp_path: Path):
         bad = tmp_path / "bad.json"
         bad.write_text("}}}", encoding="utf-8")
-        rc = main([
-            "--input", str(bad),
-            "--output", str(tmp_path / "out.json"),
-        ])
+        rc = main(
+            [
+                "--input",
+                str(bad),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
         assert rc == 2
 
 

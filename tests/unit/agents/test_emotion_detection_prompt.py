@@ -1,4 +1,5 @@
 """Unit tests for emotion detection prompt."""
+
 from pathlib import Path
 
 

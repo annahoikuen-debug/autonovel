@@ -4,7 +4,10 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 
 from src.domain.domain_services.plot_domain_service import (
-    PlotDomainService, PlotStructureValidator, PlotIntegrityChecker, PlotValidationError,
+    PlotDomainService,
+    PlotStructureValidator,
+    PlotIntegrityChecker,
+    PlotValidationError,
 )
 from src.domain.entities.plot import Plot, Arc, PlotStatus, ChainPhase
 from src.domain.value_objects.ids import NovelId, PlotId
@@ -46,19 +49,31 @@ class TestPlotStructureValidator:
         assert any("Catharsis" in e for e in errors)
 
     def test_validate_arc_ok(self):
-        arc = Arc.create(novel_id=NovelId.generate(), name="a", description=MarkdownText("d"), start_episode=1, end_episode=5)
+        arc = Arc.create(
+            novel_id=NovelId.generate(), name="a", description=MarkdownText("d"), start_episode=1, end_episode=5
+        )
         assert PlotStructureValidator.validate_arc(arc) == []
 
     def test_validate_chain_phase_transition_valid(self):
         assert PlotStructureValidator.validate_chain_phase_transition(ChainPhase.FRICITON, ChainPhase.TURN) is True
         assert PlotStructureValidator.validate_chain_phase_transition(ChainPhase.TURN, ChainPhase.COUNTER_TURN) is True
-        assert PlotStructureValidator.validate_chain_phase_transition(ChainPhase.COUNTER_TURN, ChainPhase.RESOLUTION) is True
-        assert PlotStructureValidator.validate_chain_phase_transition(ChainPhase.RESOLUTION, ChainPhase.CATHARSIS) is True
+        assert (
+            PlotStructureValidator.validate_chain_phase_transition(ChainPhase.COUNTER_TURN, ChainPhase.RESOLUTION)
+            is True
+        )
+        assert (
+            PlotStructureValidator.validate_chain_phase_transition(ChainPhase.RESOLUTION, ChainPhase.CATHARSIS) is True
+        )
         assert PlotStructureValidator.validate_chain_phase_transition(ChainPhase.CATHARSIS, ChainPhase.FRICITON) is True
-        assert PlotStructureValidator.validate_chain_phase_transition(ChainPhase.MICRO_CATHARSIS, ChainPhase.FRICITON) is True
+        assert (
+            PlotStructureValidator.validate_chain_phase_transition(ChainPhase.MICRO_CATHARSIS, ChainPhase.FRICITON)
+            is True
+        )
 
     def test_validate_chain_phase_transition_invalid(self):
-        assert PlotStructureValidator.validate_chain_phase_transition(ChainPhase.FRICITON, ChainPhase.RESOLUTION) is False
+        assert (
+            PlotStructureValidator.validate_chain_phase_transition(ChainPhase.FRICITON, ChainPhase.RESOLUTION) is False
+        )
         assert PlotStructureValidator.validate_chain_phase_transition(ChainPhase.RESOLUTION, ChainPhase.TURN) is False
 
 
@@ -121,7 +136,9 @@ class TestPlotIntegrityChecker:
         novel_id = NovelId.generate()
         branch_id = NovelId.generate()
         repo = make_mock_repo()
-        arc = Arc.create(novel_id=novel_id, name="アーク", description=MarkdownText("d"), start_episode=1, end_episode=5)
+        arc = Arc.create(
+            novel_id=novel_id, name="アーク", description=MarkdownText("d"), start_episode=1, end_episode=5
+        )
         plots = [Plot.create(novel_id=novel_id, branch_id=branch_id, episode_number=1, title="p1")]
         repo.get_arcs_by_novel = AsyncMock(return_value=[arc])
         repo.list_by_branch = AsyncMock(return_value=plots)

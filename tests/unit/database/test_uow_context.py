@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.backend.database.uow import UnitOfWork
 
+
 @pytest.mark.asyncio
 async def test_uow_commit_on_success():
     """正常終了時にコミットされることをテスト"""
@@ -14,7 +15,6 @@ async def test_uow_commit_on_success():
 
     mock_db = MagicMock()
     mock_db.get_session.return_value = mock_session
-
 
     uow = UnitOfWork(db=mock_db)
 
@@ -30,6 +30,7 @@ async def test_uow_commit_on_success():
     # After the context, commit and close should have been called
     mock_session.commit.assert_awaited_once()
     mock_session.close.assert_awaited_once()
+
 
 @pytest.mark.asyncio
 async def test_uow_rollback_on_failure():

@@ -196,6 +196,7 @@ def test_generation_tasks_social_repo_wiring():
     """Step 24の検証: generation_tasks.py が SocialRepository を正常にインポート・参照できること"""
     import inspect
     from src.backend.tasks import generation_tasks
+
     source = inspect.getsource(generation_tasks._generate_orchestrated)
     assert "SocialRepository" in source
     assert "social_repo=social_repo" in source

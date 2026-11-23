@@ -1,4 +1,5 @@
 """Unit tests for fusion data models."""
+
 from src.fusion.models import SourceVector, FusedValue, Conflict, FusedVector
 from src.pipeline.emotional_residue import EmotionalVector, EmotionalSignal, EmotionType
 

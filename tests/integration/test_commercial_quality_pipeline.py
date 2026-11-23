@@ -1,6 +1,7 @@
 """
 test_commercial_quality_pipeline.py - 商用品質執筆オーケストレーションパイプラインの統合テスト
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock

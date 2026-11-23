@@ -1,4 +1,5 @@
 """Tests for src/services/cadence compound merger, span extractor and models."""
+
 from __future__ import annotations
 
 import pytest

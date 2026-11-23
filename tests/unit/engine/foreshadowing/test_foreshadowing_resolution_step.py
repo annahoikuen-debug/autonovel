@@ -7,6 +7,7 @@ from src.models.foreshadowing import Foreshadowing
 
 class MockStatusReporter:
     """モックの StatusReporter"""
+
     def __init__(self):
         self.reports = []
         self._should_stop = False
@@ -22,23 +23,27 @@ class MockStatusReporter:
         class State:
             def should_stop(self):
                 return self._should_stop
+
         return State()
 
 
 class MockEngineWithRepository:
     """伏線リポジトリを持つモックの UltimateHegemonyEngine"""
+
     def __init__(self):
         self.foreshadowing_repository = MockForeshadowingRepository()
 
 
 class MockEngineWithoutRepository:
     """伏線リポジトリを持たないモックの UltimateHegemonyEngine"""
+
     def __init__(self):
         self.foreshadowing_repository = None
 
 
 class MockForeshadowingRepository:
     """モックの伏線リポジトリ"""
+
     def __init__(self):
         self.stored_foreshadowings = {}  # book_id -> List[Foreshadowing]
         self.updated_foreshadowings = []  # 更新された伏線のリスト
@@ -55,10 +60,7 @@ class MockForeshadowingRepository:
 
     def get_unresolved(self, book_id: int):
         foreshadowings = self.stored_foreshadowings.get(book_id, [])
-        unresolved = [
-            fs for fs in foreshadowings
-            if fs.resolution_volume is None and fs.resolution_episode is None
-        ]
+        unresolved = [fs for fs in foreshadowings if fs.resolution_volume is None and fs.resolution_episode is None]
         return unresolved.copy()
 
     def resolve(self, foreshadowing_id: str, volume: int, episode: int):
@@ -86,11 +88,7 @@ class MockForeshadowingRepository:
 
         balance = hang_count - resolve_count
 
-        return {
-            "hang_count": hang_count,
-            "resolve_count": resolve_count,
-            "balance": balance
-        }
+        return {"hang_count": hang_count, "resolve_count": resolve_count, "balance": balance}
 
 
 def test_foreshadowing_resolution_step_create():
@@ -115,7 +113,7 @@ async def test_foreshadowing_resolution_step_execute_no_book_id():
         word_count=2000,
         book_id=None,  # 重要: None
         current_volume=1,
-        current_episode=1
+        current_episode=1,
     )
     engine = MockEngineWithRepository()
     reporter = MockStatusReporter()
@@ -149,7 +147,7 @@ async def test_foreshadowing_resolution_step_execute_no_volume_episode():
         word_count=2000,
         book_id=123,
         current_volume=0,  # 重要: 0 または負の値
-        current_episode=1
+        current_episode=1,
     )
     engine = MockEngineWithRepository()
     reporter = MockStatusReporter()
@@ -183,20 +181,14 @@ async def test_foreshadowing_resolution_step_execute_with_repository_no_matches(
         word_count=2000,
         book_id=123,
         current_volume=5,  # 存在しない巻話
-        current_episode=3
+        current_episode=3,
     )
     engine = MockEngineWithRepository()
     reporter = MockStatusReporter()
 
     # 事前にいくつかの伏線を追加しておく（異なる巻話）
     fs1 = Foreshadowing(
-        id="F-001",
-        content="伏線1",
-        hang_volume=1,
-        hang_episode=1,
-        hang_chapter=1,
-        hang_type="implicit",
-        importance="★"
+        id="F-001", content="伏線1", hang_volume=1, hang_episode=1, hang_chapter=1, hang_type="implicit", importance="★"
     )
     fs2 = Foreshadowing(
         id="F-002",
@@ -207,7 +199,7 @@ async def test_foreshadowing_resolution_step_execute_with_repository_no_matches(
         hang_type="explicit",
         importance="★★",
         resolution_volume=3,
-        resolution_episode=1
+        resolution_episode=1,
     )
     engine.foreshadowing_repository.add(fs1)
     engine.foreshadowing_repository.add(fs2)
@@ -244,7 +236,7 @@ async def test_foreshadowing_resolution_step_execute_with_repository_has_matches
         word_count=2000,
         book_id=123,
         current_volume=3,
-        current_episode=2
+        current_episode=2,
     )
     engine = MockEngineWithRepository()
     reporter = MockStatusReporter()
@@ -258,7 +250,7 @@ async def test_foreshadowing_resolution_step_execute_with_repository_has_matches
         hang_episode=2,
         hang_chapter=5,
         hang_type="implicit",
-        importance="★★"
+        importance="★★",
     )
     # 一致しない伏線（異なる巻話）
     fs2 = Foreshadowing(
@@ -268,7 +260,7 @@ async def test_foreshadowing_resolution_step_execute_with_repository_has_matches
         hang_episode=2,
         hang_chapter=3,
         hang_type="reader_task",
-        importance="★"
+        importance="★",
     )
     # 既に解決済みの伏線
     fs3 = Foreshadowing(
@@ -280,7 +272,7 @@ async def test_foreshadowing_resolution_step_execute_with_repository_has_matches
         hang_type="implicit",
         importance="★",
         resolution_volume=4,
-        resolution_episode=2
+        resolution_episode=2,
     )
 
     engine.foreshadowing_repository.add(fs1)
@@ -325,7 +317,7 @@ async def test_foreshadowing_resolution_step_execute_fallback_to_context_no_matc
         book_id=123,
         current_volume=5,  # 存在しない巻話
         current_episode=3,
-        foreshadowings=[]  # 空のリストで初期化
+        foreshadowings=[],  # 空のリストで初期化
     )
     engine = MockEngineWithoutRepository()
     reporter = MockStatusReporter()
@@ -371,7 +363,7 @@ async def test_foreshadowing_resolution_step_execute_fallback_to_context_has_mat
                 hang_episode=4,
                 hang_chapter=7,
                 hang_type="implicit",
-                importance="★"
+                importance="★",
             ),
             Foreshadowing(
                 id="F-002",
@@ -380,7 +372,7 @@ async def test_foreshadowing_resolution_step_execute_fallback_to_context_has_mat
                 hang_episode=1,
                 hang_chapter=3,
                 hang_type="reader_task",
-                importance="★★"
+                importance="★★",
             ),
             Foreshadowing(
                 id="F-003",
@@ -391,17 +383,16 @@ async def test_foreshadowing_resolution_step_execute_fallback_to_context_has_mat
                 hang_type="explicit",
                 importance="★★★",
                 resolution_volume=2,
-                resolution_episode=6  # 既に解決済み
-            )
-        ]
+                resolution_episode=6,  # 既に解決済み
+            ),
+        ],
     )
     engine = MockEngineWithoutRepository()
     reporter = MockStatusReporter()
 
     # 実行前の未解決伏線の数を確認
     initial_unresolved = [
-        fs for fs in ctx.foreshadowings
-        if fs.resolution_volume is None and fs.resolution_episode is None
+        fs for fs in ctx.foreshadowings if fs.resolution_volume is None and fs.resolution_episode is None
     ]
     assert len(initial_unresolved) == 2  # F-001 と F-002
 
@@ -417,10 +408,7 @@ async def test_foreshadowing_resolution_step_execute_fallback_to_context_has_mat
     assert any("(巻2話4)" in msg for msg in info_reports)
 
     # 正しく1件の伏線が更新されていることを確認
-    updated_count = [
-        fs for fs in ctx.foreshadowings
-        if fs.resolution_volume == 2 and fs.resolution_episode == 4
-    ]
+    updated_count = [fs for fs in ctx.foreshadowings if fs.resolution_volume == 2 and fs.resolution_episode == 4]
     assert len(updated_count) == 1
     assert updated_count[0].id == "F-001"
 
@@ -452,7 +440,7 @@ async def test_foreshadowing_resolution_step_execute_exception_handling():
         word_count=2000,
         book_id=123,
         current_volume=1,
-        current_episode=1
+        current_episode=1,
     )
     engine = MockEngineThatRaises()
     reporter = MockStatusReporter()

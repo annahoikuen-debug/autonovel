@@ -1,5 +1,6 @@
 # tests/integration/test_enrichment_e2e.py
 """EnrichmentAgent E2E統合テスト"""
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
@@ -15,11 +16,13 @@ class TestEnrichmentE2E:
         """モックLLM"""
         llm = AsyncMock()
         llm.generate_text = AsyncMock(return_value="生成されたテキスト")
-        llm.generate_json = AsyncMock(return_value={
-            "enriched_text": "エンリッチメント済みテキスト",
-            "insertions": [],
-            "expansions": [],
-        })
+        llm.generate_json = AsyncMock(
+            return_value={
+                "enriched_text": "エンリッチメント済みテキスト",
+                "insertions": [],
+                "expansions": [],
+            }
+        )
         return llm
 
     @pytest.fixture
@@ -32,12 +35,10 @@ class TestEnrichmentE2E:
     def mock_rag_service(self):
         """モックRAGサービス"""
         rag = AsyncMock()
-        rag.query_trivia_candidates = AsyncMock(return_value=[
-            {"fact": "世界観の豆知識", "source_type": "world_bible", "entity": "世界観", "score": 0.9}
-        ])
-        rag.index_bible_sources = AsyncMock(return_value={
-            "魔法システム": [{"source": "設定書", "page": "p.1"}]
-        })
+        rag.query_trivia_candidates = AsyncMock(
+            return_value=[{"fact": "世界観の豆知識", "source_type": "world_bible", "entity": "世界観", "score": 0.9}]
+        )
+        rag.index_bible_sources = AsyncMock(return_value={"魔法システム": [{"source": "設定書", "page": "p.1"}]})
         return rag
 
     @pytest.fixture
@@ -89,7 +90,12 @@ class TestEnrichmentE2E:
 
         assert result.next_agent == AgentName.AUDIT
         assert result.artifacts["enriched_text"] == sample_context.artifacts["drafted_text"]
-        assert result.artifacts["enrichment_metadata"] == {"trivia": [], "citations": [], "sensory": [], "multimedia": {}}
+        assert result.artifacts["enrichment_metadata"] == {
+            "trivia": [],
+            "citations": [],
+            "sensory": [],
+            "multimedia": {},
+        }
 
     @pytest.mark.asyncio
     async def test_execute_no_drafted_text(self, agent):
@@ -126,9 +132,11 @@ class TestEnrichmentE2E:
 
         # emit_event をフック
         original_emit = agent.emit_event
+
         def capture_event(name, payload):
             events.append((name, payload))
             return original_emit(name, payload)
+
         agent.emit_event = capture_event
 
         await agent.execute(sample_context)
@@ -168,7 +176,7 @@ class TestEnrichmentE2E:
         """トリビア挿入でテキストが長くなる"""
         agent._config = {
             "enabled": True,
-            "trivia_insertion": {"enabled": True, "max_insertions_per_chapter": 3, "relevance_threshold": 0.5}
+            "trivia_insertion": {"enabled": True, "max_insertions_per_chapter": 3, "relevance_threshold": 0.5},
         }
 
         result = await agent.execute(sample_context)

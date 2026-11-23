@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from src.api.middleware.rate_limit import RateLimitMiddleware
 
+
 @pytest.fixture
 def client():
     app = FastAPI()
@@ -15,12 +16,13 @@ def client():
 
     return TestClient(app)
 
+
 def test_rate_limit_allows_n_requests(client):
     test_payload = {"title": "Test"}
     # Make 5 requests (should be allowed)
     for i in range(5):
         resp = client.post("/api/generate", json=test_payload)
-        assert resp.status_code == 202, f"Request {i+1} failed with {resp.status_code}"
+        assert resp.status_code == 202, f"Request {i + 1} failed with {resp.status_code}"
 
     # 6th request should be rate limited.
     # `BaseHTTPMiddleware.dispatch` runs OUTSIDE Starlette's ExceptionMiddleware,

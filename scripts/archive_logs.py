@@ -3,8 +3,10 @@
 Log archiving script.
 Uploads rotated log files to cloud storage and deletes local copies.
 """
+
 import os
 import logging
+
 
 def archive_logs(log_dir="logs", bucket_name="my-log-archive"):
     """
@@ -30,6 +32,7 @@ def archive_logs(log_dir="logs", bucket_name="my-log-archive"):
                 # Placeholder: actual upload and delete logic would go here
 
     logger.info("Log archiving completed.")
+
 
 if __name__ == "__main__":
     archive_logs()

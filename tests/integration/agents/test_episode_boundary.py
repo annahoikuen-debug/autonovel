@@ -1,4 +1,5 @@
 """Integration tests for episode boundary auto compact and save."""
+
 from src.agents.writer_agent import WriterAgent
 from src.stores.vector_store import InMemoryVectorStore
 

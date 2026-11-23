@@ -6,12 +6,14 @@
 JWT 鍵 / SQLite の判定に到達しない。
 またローカル .env の影響を受けないよう _env_file=None を渡す。
 """
+
 import pytest
 from pydantic import ValidationError
 
 
 def test_production_rejects_auth_disabled():
     from src.infrastructure.config.settings import Settings
+
     with pytest.raises(ValidationError, match="AUTH_DISABLED"):
         Settings(
             APP_ENV="production",
@@ -23,6 +25,7 @@ def test_production_rejects_auth_disabled():
 def test_development_allows_auth_disabled():
     """開発モードで AUTH_DISABLED=True は許容される。"""
     from src.infrastructure.config.settings import Settings
+
     settings = Settings(
         APP_ENV="development",
         AUTH_DISABLED=True,

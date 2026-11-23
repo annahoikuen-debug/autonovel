@@ -1,4 +1,5 @@
 """Unit tests for src/services/manga/{client,upscaler,typesetter,pipeline}."""
+
 import subprocess
 import sys
 import types
@@ -88,9 +89,7 @@ class TestNanoBananaClientMock:
 
     def test_edit_sheet_generates_when_missing(self, tmp_path):
         c = NanoBananaClient(config=_cfg(tmp_path), mock_mode=True)
-        out = c.edit_sheet_panel(
-            tmp_path / "missing.png", "fix", output_path=tmp_path / "e.png"
-        )
+        out = c.edit_sheet_panel(tmp_path / "missing.png", "fix", output_path=tmp_path / "e.png")
         assert out.exists()
 
     def test_edit_sheet_default_path(self, tmp_path):
@@ -122,9 +121,7 @@ class TestNanoBananaClientLive:
 
         c = NanoBananaClient(config=_cfg(tmp_path, api_key="live-key"))
         assert c.mock_mode is False
-        out = c.generate_sheet(
-            prompt="p", negative_prompt="bad", output_path=tmp_path / "o.png"
-        )
+        out = c.generate_sheet(prompt="p", negative_prompt="bad", output_path=tmp_path / "o.png")
         assert out.read_bytes() == b"PNGBYTES"
         kwargs = fake_client.models.generate_images.call_args.kwargs
         assert kwargs["config"]["negative_prompt"] == "bad"

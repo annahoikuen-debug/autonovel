@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Alembic マイグレーション双方向（upgrade -> downgrade -> upgrade）自動検証スクリプト。"""
+
 import os
 import sys
 import subprocess

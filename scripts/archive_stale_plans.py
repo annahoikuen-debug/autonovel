@@ -1,4 +1,5 @@
 """古い計画書を docs/archive/ に退避するスクリプト。"""
+
 import shutil
 from pathlib import Path
 
@@ -16,6 +17,7 @@ STALE_PATTERNS = [
     "implementation_plan_72steps",
 ]
 
+
 def archive_plans():
     ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
     if not PLANS_DIR.exists():
@@ -25,7 +27,12 @@ def archive_plans():
     archived_count = 0
     for file in PLANS_DIR.glob("*.md"):
         # PROPOSAL_01〜09 および README.md は保護して残す
-        if file.name.startswith("PROPOSAL_") or file.name in ("README.md", "P1_COVERAGE_DATABASE_12STEPS.md", "P4_COVERAGE_WORKFLOWS_12STEPS.md", "P5_COVERAGE_EASYMODE_12STEPS.md"):
+        if file.name.startswith("PROPOSAL_") or file.name in (
+            "README.md",
+            "P1_COVERAGE_DATABASE_12STEPS.md",
+            "P4_COVERAGE_WORKFLOWS_12STEPS.md",
+            "P5_COVERAGE_EASYMODE_12STEPS.md",
+        ):
             continue
 
         for pat in STALE_PATTERNS:
@@ -37,6 +44,7 @@ def archive_plans():
                 break
 
     print(f"Total archived files: {archived_count}")
+
 
 if __name__ == "__main__":
     archive_plans()

@@ -130,9 +130,7 @@ async def test_select_pairwise_champion_changes():
         }
     )
     selector = PairwiseSelector(panel=panel, top_n_from_static=3)
-    candidates = _make_candidates(
-        ["本文Aです。", "本文Bです。", "本文Cです。"], [80.0, 70.0, 60.0]
-    )
+    candidates = _make_candidates(["本文Aです。", "本文Bです。", "本文Cです。"], [80.0, 70.0, 60.0])
 
     result = await selector.select(candidates)
 

@@ -1,4 +1,5 @@
 """Unit tests for hook generator."""
+
 from src.agents.hooks.hook_generator import generate_hooks
 from src.agents.memory.core_memory import CoreMemory
 

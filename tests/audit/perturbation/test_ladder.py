@@ -36,13 +36,9 @@ def test_each_ladder_has_four_entries():
     for tid, entries in ladders.items():
         assert len(entries) == 4, f"{tid}: エントリ数が4ではない ({len(entries)})"
         labels = [e.label for e in entries]
-        assert labels == ["baseline", "weak", "medium", "strong"], (
-            f"{tid}: ラベル順が不正 {labels}"
-        )
+        assert labels == ["baseline", "weak", "medium", "strong"], f"{tid}: ラベル順が不正 {labels}"
         strengths = [e.strength for e in entries]
-        assert strengths == [0.0, 1.0, 2.0, 3.0], (
-            f"{tid}: 強度が不正 {strengths}"
-        )
+        assert strengths == [0.0, 1.0, 2.0, 3.0], f"{tid}: 強度が不正 {strengths}"
 
 
 def test_baseline_returns_original_text():

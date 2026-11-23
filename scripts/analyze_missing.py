@@ -1,4 +1,5 @@
 """coverage.json から未カバー行の多いモジュールをレポートする開発用スクリプト。"""
+
 import json
 import sys
 

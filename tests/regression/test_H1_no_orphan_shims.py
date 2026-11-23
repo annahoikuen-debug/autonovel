@@ -6,6 +6,7 @@
 残る既知の orphan は R2 のファイル所有表の外にあるため、削除せず
 「理由 + TODO(H1-N)」付きで明示する（PLAN_H1 §9）。
 """
+
 from __future__ import annotations
 
 import ast
@@ -29,7 +30,7 @@ KNOWN_ORPHANS: dict[str, str] = {
         "だがロジック自体は有効。TODO(H1-10): 呼び出し側を配線するか削除を決定"
     ),
     "plot_service": (
-        "DI コンテナ（src/core/container/app.py:78）で文字列参照 \"src.services.plot_service.PlotService\""
+        'DI コンテナ（src/core/container/app.py:78）で文字列参照 "src.services.plot_service.PlotService"'
         "経由で使われるが AST import 検知では 0 件。TODO(H1-10): 明示 import に移行するか削除を決定"
     ),
 }
@@ -101,9 +102,7 @@ def test_detector_flags_a_synthetic_orphan():
 def test_known_orphans_have_reasons_and_numbers():
     for name, reason in KNOWN_ORPHANS.items():
         assert reason.strip(), f"{name} の KNOWN_ORPHANS エントリに理由が無い"
-        assert "TODO(H1-" in reason, (
-            f"{name} の KNOWN_ORPHANS エントリに TODO(H1-N) の番号が無い（§9: 数値外れ禁止）"
-        )
+        assert "TODO(H1-" in reason, f"{name} の KNOWN_ORPHANS エントリに TODO(H1-N) の番号が無い（§9: 数値外れ禁止）"
 
 
 def test_known_orphans_still_exist():

@@ -1,6 +1,6 @@
 """Wizard のビート生成が Spine に基づくことの確認。"""
-from pathlib import Path
 
+from pathlib import Path
 
 
 def test_save_the_cat_hardcode_is_gone():

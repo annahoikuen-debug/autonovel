@@ -3,6 +3,7 @@
 ``frontend/src/api/client.ts:56-63`` の ``apiFetch`` だけが ``Authorization`` を注入する。
 生 ``fetch(`` は認証が必要なエンドポイントで 401 になる。
 """
+
 from __future__ import annotations
 
 import glob
@@ -50,7 +51,6 @@ def test_no_raw_fetch_without_authorization_header():
             continue
         if not HEADER_RE.search(src):
             offenders.append(p)
-    assert not offenders, (
-        f"認証ヘッダを付与しない生 fetch が {len(offenders)} ファイルにある:\n  "
-        + "\n  ".join(sorted(offenders))
+    assert not offenders, f"認証ヘッダを付与しない生 fetch が {len(offenders)} ファイルにある:\n  " + "\n  ".join(
+        sorted(offenders)
     )

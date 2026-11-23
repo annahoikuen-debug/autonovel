@@ -1,8 +1,8 @@
-path = 'src/backend/routers/tasks.py'
-with open(path, 'r', encoding='utf-8') as f:
+path = "src/backend/routers/tasks.py"
+with open(path, "r", encoding="utf-8") as f:
     text = f.read()
 
-old_get_task_status = '''@router.get("/{task_id}/status")
+old_get_task_status = """@router.get("/{task_id}/status")
 async def get_task_status(
     task_id: str,
     current_user: User = Depends(get_current_user),
@@ -33,9 +33,9 @@ async def get_task_status(
     task_user_id = data.get("user_id")
     if task_user_id and task_user_id != current_user.id and current_user.role != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="このタスクへのアクセス権限がありません")
-    return data'''
+    return data"""
 
-new_get_task_status = '''@router.get("/{task_id}/status")
+new_get_task_status = """@router.get("/{task_id}/status")
 async def get_task_status(
     task_id: str,
     current_user: User | None = Depends(get_current_user),
@@ -69,9 +69,9 @@ async def get_task_status(
     task_user_id = data.get("user_id")
     if task_user_id and current_user and task_user_id != getattr(current_user, "id", None) and getattr(current_user, "role", None) != "admin":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="このタスクへのアクセス権限がありません")
-    return data'''
+    return data"""
 
-text = text.replace(old_get_task_status.replace('\r\n', '\n'), new_get_task_status.replace('\r\n', '\n'))
-with open(path, 'w', encoding='utf-8') as f:
+text = text.replace(old_get_task_status.replace("\r\n", "\n"), new_get_task_status.replace("\r\n", "\n"))
+with open(path, "w", encoding="utf-8") as f:
     f.write(text)
-print('tasks.py successfully updated')
+print("tasks.py successfully updated")

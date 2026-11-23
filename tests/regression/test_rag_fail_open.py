@@ -32,9 +32,7 @@ def test_hybrid_retriever_exception_is_swallowed() -> None:
     try:
         import asyncio
 
-        result = asyncio.run(
-            rag.retrieve_with_reflection(session=session, query="q", book_id=1)
-        )
+        result = asyncio.run(rag.retrieve_with_reflection(session=session, query="q", book_id=1))
     except Exception as e:
         raise AssertionError(f"fail-open 違反: 例外が外部に漏れた {e!r}")
 

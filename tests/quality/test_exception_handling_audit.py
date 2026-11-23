@@ -60,7 +60,6 @@ def test_no_silent_exception_swallowing_in_workflows():
             for lineno, desc in silent_catches:
                 violations.append(f"{rel_path}:{lineno} -> {desc}")
 
-    assert not violations, (
-        f"Found {len(violations)} silent exception catch(es) in workflows/services:\n"
-        + "\n".join(violations)
+    assert not violations, f"Found {len(violations)} silent exception catch(es) in workflows/services:\n" + "\n".join(
+        violations
     )

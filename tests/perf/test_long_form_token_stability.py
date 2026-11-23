@@ -5,6 +5,7 @@
 コンテキスト長（文字数・推定トークン数）が爆発せず一定のウィンドウ内に
 安定収束（フラット化）することを検証する。
 """
+
 import time
 from unittest.mock import AsyncMock, MagicMock
 
@@ -37,7 +38,11 @@ def test_rolling_memory_token_stability_20_episodes():
 
     # 1話〜20話までのシミュレーション
     for ep in range(1, 21):
-        prev_text = f"第{ep-1}話の本文サンプル。レオンとフェイは敵の追手を振り切り、新たな街の門をくぐった。" * 15 if ep > 1 else ""
+        prev_text = (
+            f"第{ep - 1}話の本文サンプル。レオンとフェイは敵の追手を振り切り、新たな街の門をくぐった。" * 15
+            if ep > 1
+            else ""
+        )
         stats = builder.get_context_stats(
             bible_summary=bible,
             past_digests=digests,
@@ -145,8 +150,7 @@ class TestEpisodeContextBuilderTokenStability:
         """
         return {
             ep: (
-                f"第{ep}話: 主人公は新たな仲間と出会い、遺跡の鍵を入手した。"
-                f"魔物との戦闘を経て、次なる目的地へ向かう。"
+                f"第{ep}話: 主人公は新たな仲間と出会い、遺跡の鍵を入手した。魔物との戦闘を経て、次なる目的地へ向かう。"
             )
             for ep in range(1, 100)
         }
@@ -177,10 +181,7 @@ class TestEpisodeContextBuilderTokenStability:
         # chapter_list は digests に基づく MagicMock リスト。
         # _brief は chapter_list をループしながら digests を参照するため、
         # chapter_list が空だと digests が無視されてしまう。
-        chapter_models = [
-            MagicMock(ep_num=ep, content=digests.get(ep, f"第{ep}話本文"))
-            for ep in range(1, ep_num)
-        ]
+        chapter_models = [MagicMock(ep_num=ep, content=digests.get(ep, f"第{ep}話本文")) for ep in range(1, ep_num)]
 
         # _safe_execute は _build_layer2_summary の chapter / foreshadowing 取得に使われる。
         # str(select(...)) に "chapter" が含まれるかで分岐し、
@@ -209,24 +210,19 @@ class TestEpisodeContextBuilderTokenStability:
         return ctx["layer2_summary"]
 
     @pytest.mark.asyncio
-    async def test_layer2_chars_stays_under_limit_1_to_100_episodes(
-        self, mock_db, digests_99
-    ):
+    async def test_layer2_chars_stays_under_limit_1_to_100_episodes(self, mock_db, digests_99):
         """1〜100話すべてで layer2_chars が LAYER2_MAX_CHARS (4000) に収まる。"""
         max_chars = 0
         for ep in range(1, 101):
             summary = await self._run_layer2(mock_db, digests_99, ep)
             max_chars = max(max_chars, summary["layer2_chars"])
             assert summary["layer2_chars"] <= EpisodeContextBuilder.LAYER2_MAX_CHARS, (
-                f"Ep {ep}: layer2_chars={summary['layer2_chars']} exceeds "
-                f"{EpisodeContextBuilder.LAYER2_MAX_CHARS}"
+                f"Ep {ep}: layer2_chars={summary['layer2_chars']} exceeds {EpisodeContextBuilder.LAYER2_MAX_CHARS}"
             )
         print(f"\n[Max layer2_chars over 1-100 ep]: {max_chars}")
 
     @pytest.mark.asyncio
-    async def test_layer2_with_rollup_stays_under_limit_1_to_100_episodes(
-        self, mock_db, digests_99, monkeypatch
-    ):
+    async def test_layer2_with_rollup_stays_under_limit_1_to_100_episodes(self, mock_db, digests_99, monkeypatch):
         """rollup_enabled=True でも 1〜100話すべてで layer2_chars ≤ LAYER2_MAX_CHARS。
 
         rollup 未登録（get_rollups 空）でも digests から history を組み立て、
@@ -238,15 +234,12 @@ class TestEpisodeContextBuilderTokenStability:
             summary = await self._run_layer2(mock_db, digests_99, ep, rollup_enabled=True)
             max_chars = max(max_chars, summary["layer2_chars"])
             assert summary["layer2_chars"] <= EpisodeContextBuilder.LAYER2_MAX_CHARS, (
-                f"Ep {ep}: layer2_chars={summary['layer2_chars']} exceeds "
-                f"{EpisodeContextBuilder.LAYER2_MAX_CHARS}"
+                f"Ep {ep}: layer2_chars={summary['layer2_chars']} exceeds {EpisodeContextBuilder.LAYER2_MAX_CHARS}"
             )
         print(f"\n[Max layer2_chars with rollup over 1-100 ep]: {max_chars}")
 
     @pytest.mark.asyncio
-    async def test_omission_marker_appears_when_window_exceeded(
-        self, mock_db, digests_99
-    ):
+    async def test_omission_marker_appears_when_window_exceeded(self, mock_db, digests_99):
         """中間省略マーカーの出現条件を現行コードの実態に合わせて検証。
 
         `_build_layer2_summary` は `chapter_list[2:-10]` のスライスを
@@ -262,6 +255,4 @@ class TestEpisodeContextBuilderTokenStability:
                     f"Ep {ep}: unexpected omission marker (chapter_list={chapter_count})"
                 )
             else:
-                assert "……" in summary["text"], (
-                    f"Ep {ep}: missing omission marker (chapter_list={chapter_count})"
-                )
+                assert "……" in summary["text"], f"Ep {ep}: missing omission marker (chapter_list={chapter_count})"

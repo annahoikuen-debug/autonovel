@@ -18,7 +18,11 @@ def test_t6_plan_all_steps_satisfied():
     """T6 計画の全完了条件が満たされていること。"""
     result = subprocess.run(
         [sys.executable, "scripts/verify_t6_plan.py"],
-        capture_output=True, text=True, cwd=ROOT, encoding="utf-8", errors="replace",
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+        encoding="utf-8",
+        errors="replace",
     )
     assert result.returncode == 0, f"検証スクリプトが失敗: {result.stderr}"
     out = result.stdout
@@ -32,6 +36,5 @@ def test_t6_plan_all_steps_satisfied():
     total = int(line[0].split("/")[1].strip())
     done = int(line[0].split()[1].split("/")[0].strip())
     assert done == total == 28, (
-        f"完了条件数が {done}/{total}。検証スクリプトの改変または"
-        "ステップの追加・削除がないか確認すること"
+        f"完了条件数が {done}/{total}。検証スクリプトの改変またはステップの追加・削除がないか確認すること"
     )

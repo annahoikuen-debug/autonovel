@@ -5,6 +5,7 @@ credit_service が _deduct() クロージャ内でのみ代入され、返金ブ
 UnboundLocalError で不発していた。condition から credit_service is not None を削除し、
 失敗時必ず返金するように修正。
 """
+
 from __future__ import annotations
 
 import inspect

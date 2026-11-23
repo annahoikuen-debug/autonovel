@@ -1,4 +1,5 @@
 """Standalone test with local fixture definition - copy of working version."""
+
 from __future__ import annotations
 
 import pytest

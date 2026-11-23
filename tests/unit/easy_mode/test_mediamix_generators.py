@@ -202,7 +202,7 @@ class TestMangaScriptGenerator:
 
     def test_extract_dialogue_and_narration(self):
         gen = MangaScriptGenerator("fantasy", PRESET)
-        assert gen._extract_dialogue("「a」『b』\"c\"")
+        assert gen._extract_dialogue('「a」『b』"c"')
         assert gen._extract_narration("前に「a」 後ろ") == "前に 後ろ"
 
     def test_generate_sfx_action(self):
@@ -458,7 +458,7 @@ class TestVideoScriptGenerator:
 
     def test_shot_dialogue_and_narration(self):
         gen = VideoScriptGenerator("fantasy", PRESET)
-        assert gen._extract_dialogue_for_shot("「a」『b』\"c\"") == ["a", "b", "c"]
+        assert gen._extract_dialogue_for_shot('「a」『b』"c"') == ["a", "b", "c"]
         assert gen._extract_narration_for_shot("前「a」後") == "前後"
 
 

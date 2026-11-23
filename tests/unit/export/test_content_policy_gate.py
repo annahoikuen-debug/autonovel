@@ -69,7 +69,7 @@ def test_content_policy_strict_preset():
 
 def test_content_policy_lenient_preset():
     """緩い preset (max_intensity が高い) では通過する。"""
-    check_content_policy(DIRECT_TEXT, preset_name="full")   # max 3 >= "セックス"(3)
+    check_content_policy(DIRECT_TEXT, preset_name="full")  # max 3 >= "セックス"(3)
     check_content_policy(DIRECT_TEXT, preset_name="intense")  # max 5
 
 

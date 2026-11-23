@@ -81,8 +81,7 @@ class TestRollupConfigSsoT:
             source = py_file.read_text(encoding="utf-8")
             for env_name in rollup_env_names:
                 assert env_name not in source, (
-                    f"{rel} directly references rollup env {env_name}; "
-                    f"use RollupConfig.from_env() instead"
+                    f"{rel} directly references rollup env {env_name}; use RollupConfig.from_env() instead"
                 )
 
 
@@ -95,23 +94,13 @@ class TestPersistEpisodeDigestWiring:
         assert func is not None, "_persist_episode_digest not found"
 
         calls = _called_attrs(func)
-        assert "generate_block_rollup" in calls, (
-            "_persist_episode_digest が generate_block_rollup を呼んでいない"
-        )
-        assert "generate_volume_rollup" in calls, (
-            "_persist_episode_digest が generate_volume_rollup を呼んでいない"
-        )
-        assert "upsert_rollup" in calls, (
-            "_persist_episode_digest が upsert_rollup を呼んでいない"
-        )
+        assert "generate_block_rollup" in calls, "_persist_episode_digest が generate_block_rollup を呼んでいない"
+        assert "generate_volume_rollup" in calls, "_persist_episode_digest が generate_volume_rollup を呼んでいない"
+        assert "upsert_rollup" in calls, "_persist_episode_digest が upsert_rollup を呼んでいない"
 
     def test_rollup_config_imported_in_episode_writer(self):
         tree = _tree_of("agents/writing/episode_writer.py")
-        imports = [
-            node
-            for node in ast.walk(tree)
-            if isinstance(node, ast.ImportFrom) and node.module
-        ]
+        imports = [node for node in ast.walk(tree) if isinstance(node, ast.ImportFrom) and node.module]
         modules = {node.module for node in imports}
         assert "src.engine.context_compression.rollup_config" in modules, (
             "episode_writer.py が RollupConfig を import していない"
@@ -140,6 +129,4 @@ class TestRollingMemoryNotInProduction:
             if str(rel) == "engine/context_compression/rolling_memory.py":
                 continue
             source = py_file.read_text(encoding="utf-8")
-            assert "RollingMemoryBuilder" not in source, (
-                f"{rel} imports RollingMemoryBuilder (dead code in production)"
-            )
+            assert "RollingMemoryBuilder" not in source, f"{rel} imports RollingMemoryBuilder (dead code in production)"

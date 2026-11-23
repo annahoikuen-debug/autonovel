@@ -17,6 +17,7 @@
 注意: 製品側の「要求 RAM が総容量を超えるノードを検出せず無限ループする」挙動は
 **未修正**である（テスト側のみ対応。課題として記録済み）。
 """
+
 from __future__ import annotations
 
 from src.backend.tasks.resource_manager import ResourceManager

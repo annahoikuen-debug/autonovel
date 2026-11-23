@@ -3,6 +3,7 @@ import tomli
 import sys
 from pathlib import Path
 
+
 def main():
     with open("pyproject.toml", "rb") as f:
         data = tomli.load(f)
@@ -20,6 +21,7 @@ def main():
     print(f"Found {len(omit)} omit patterns")
     # 実際にファイルシステムでマッチするものを列挙（オプション）
     import glob
+
     matched = []
     for pattern in omit:
         matched.extend(glob.glob(pattern, recursive=True))
@@ -29,6 +31,7 @@ def main():
         for file in matched:
             f.write(file + "\n")
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(main())

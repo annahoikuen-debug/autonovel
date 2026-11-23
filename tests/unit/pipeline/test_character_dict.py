@@ -1,4 +1,5 @@
 """Tests for character dictionary loader."""
+
 from __future__ import annotations
 
 import tempfile
@@ -50,6 +51,7 @@ class TestCharacterDict:
     def test_json_format(self):
         """JSON形式も読み込み可能"""
         import json
+
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w") as f:
             json.dump({"characters": ["J1", "J2"]}, f)
             temp_path = f.name

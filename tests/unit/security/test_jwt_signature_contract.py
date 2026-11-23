@@ -8,6 +8,7 @@
 テストが `TypeError: unexpected keyword argument 'data'` で失敗した
 （PLAN_J1 W2）。本契約テストにより、今後のシグネチャ変更は即座に赤くなる。
 """
+
 from __future__ import annotations
 
 import inspect
@@ -29,17 +30,13 @@ def test_create_access_token_signature_contract() -> None:
     # キーワード専用引数
     for name in ("role", "extra_claims"):
         assert name in params, f"create_access_token は {name} 引数を公開していること"
-        assert params[name].kind == inspect.Parameter.KEYWORD_ONLY, (
-            f"{name} はキーワード専用引数であること"
-        )
+        assert params[name].kind == inspect.Parameter.KEYWORD_ONLY, f"{name} はキーワード専用引数であること"
 
     # 既定値の契約
     assert params["role"].default == "user", "role の既定値は 'user' であること"
 
     # 旧 data= API が復活していないこと
-    assert "data" not in params, (
-        "旧 create_access_token(data={...}) API へ後戻りしていないこと"
-    )
+    assert "data" not in params, "旧 create_access_token(data={...}) API へ後戻りしていないこと"
 
 
 def test_create_refresh_token_signature_contract() -> None:
@@ -52,16 +49,10 @@ def test_create_refresh_token_signature_contract() -> None:
         inspect.Parameter.POSITIONAL_OR_KEYWORD,
     ), "user_id は位置引数であること"
 
-    assert "extra_claims" in params, (
-        "create_refresh_token は extra_claims 引数を公開していること"
-    )
-    assert params["extra_claims"].kind == inspect.Parameter.KEYWORD_ONLY, (
-        "extra_claims はキーワード専用引数であること"
-    )
+    assert "extra_claims" in params, "create_refresh_token は extra_claims 引数を公開していること"
+    assert params["extra_claims"].kind == inspect.Parameter.KEYWORD_ONLY, "extra_claims はキーワード専用引数であること"
 
-    assert "data" not in params, (
-        "旧 create_refresh_token(data={...}) API へ後戻りしていないこと"
-    )
+    assert "data" not in params, "旧 create_refresh_token(data={...}) API へ後戻りしていないこと"
 
 
 def test_tokens_issued_with_public_signature_are_decodable() -> None:

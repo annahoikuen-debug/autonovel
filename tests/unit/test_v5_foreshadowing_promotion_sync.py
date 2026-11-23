@@ -2,6 +2,7 @@
 test_v5_foreshadowing_promotion_sync.py
 ウィザード保存およびStudio昇格時の伏線ステートマシン自動同期を検証するテスト。
 """
+
 import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -51,39 +52,47 @@ async def test_promotion_service_foreshadowing_sync(real_db_manager):
     session.commit()
 
     # 2. 昇格実行前の伏線件数は 0
-    fs_before = session.execute(
-        select(ForeshadowingModel).where(ForeshadowingModel.book_id == book.id)
-    ).scalars().all()
+    fs_before = session.execute(select(ForeshadowingModel).where(ForeshadowingModel.book_id == book.id)).scalars().all()
     assert len(fs_before) == 0
 
     # 3. PromotionService で昇格実行
     class AsyncSessionAdapter:
         def __init__(self, sync_session):
             self._sync = sync_session
+
         async def execute(self, statement, *args, **kwargs):
             return self._sync.execute(statement, *args, **kwargs)
+
         async def commit(self):
             self._sync.commit()
+
         async def rollback(self):
             self._sync.rollback()
+
         def add(self, instance):
             self._sync.add(instance)
+
         def add_all(self, instances):
             self._sync.add_all(instances)
+
         async def flush(self):
             self._sync.flush()
 
     class MockDbManager:
         def __init__(self, s):
             self._s = AsyncSessionAdapter(s)
+
         def get_session(self):
             class _Ctx:
                 def __init__(self, sess):
                     self.sess = sess
+
                 async def __aenter__(self):
                     return self.sess
+
                 async def __aexit__(self, *args):
                     pass
+
             return _Ctx(self._s)
 
     svc = PromotionService(db=MockDbManager(session))
@@ -97,9 +106,15 @@ async def test_promotion_service_foreshadowing_sync(real_db_manager):
     session.refresh(book)
     assert book.mode == "advanced"
 
-    fs_after = session.execute(
-        select(ForeshadowingModel).where(ForeshadowingModel.book_id == book.id).order_by(ForeshadowingModel.planted_episode)
-    ).scalars().all()
+    fs_after = (
+        session.execute(
+            select(ForeshadowingModel)
+            .where(ForeshadowingModel.book_id == book.id)
+            .order_by(ForeshadowingModel.planted_episode)
+        )
+        .scalars()
+        .all()
+    )
 
     assert len(fs_after) == 2
     assert fs_after[0].planted_episode == 1

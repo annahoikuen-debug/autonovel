@@ -41,8 +41,7 @@ def test_shim_importable(module_path, symbols):
     except ImportError as exc:
         pytest.fail(f"{module_path} の import に失敗: {exc}")
     for symbol in symbols:
-        assert hasattr(mod, symbol), \
-            f"{module_path} に {symbol} が公開されていない"
+        assert hasattr(mod, symbol), f"{module_path} に {symbol} が公開されていない"
 
 
 def test_shim_list_not_empty():

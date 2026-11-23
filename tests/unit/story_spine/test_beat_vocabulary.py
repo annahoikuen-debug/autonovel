@@ -21,11 +21,7 @@ def test_keys_are_unique():
 
 def test_all_spans_are_relative():
     """**絶対話数が混入していないことの構造テスト**（本計画の最重要不変条件）。"""
-    offenders = [
-        f"{k}: {b.span}"
-        for k, b in BEAT_VOCABULARY.items()
-        if not (0.0 <= b.span[0] < b.span[1] <= 1.0)
-    ]
+    offenders = [f"{k}: {b.span}" for k, b in BEAT_VOCABULARY.items() if not (0.0 <= b.span[0] < b.span[1] <= 1.0)]
     assert not offenders, f"相対でない span がある: {offenders}"
 
 

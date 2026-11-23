@@ -30,13 +30,13 @@ class TestEasyModeFlow(unittest.IsolatedAsyncioTestCase):
     async def test_easy_mode_pipeline_custom_run_mock(self):
         """パイプラインのカスタム run フックが正しく呼び出されることを検証"""
         pipeline = EasyModePipeline()
-        mock_run = AsyncMock(return_value={
-            "status": "success",
-            "episodes": [
-                {"episode_number": 1, "title": "序章", "content": "冒険が始まる。"}
-            ],
-            "total_words": 1500,
-        })
+        mock_run = AsyncMock(
+            return_value={
+                "status": "success",
+                "episodes": [{"episode_number": 1, "title": "序章", "content": "冒険が始まる。"}],
+                "total_words": 1500,
+            }
+        )
         pipeline.run = mock_run
 
         result = await pipeline.execute(theme="異世界転生")
@@ -54,5 +54,5 @@ class TestEasyModeFlow(unittest.IsolatedAsyncioTestCase):
             await pipeline.execute(theme="失敗するテーマ")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

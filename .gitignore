@@ -155,5 +155,7 @@ e2e.db*
 .commandcode/
 site/
 
-# エージェント用ローカル手順書（リポジトリ所有者がローカル運用として未追跡管理）
-AGENTS.md
+# データベースバックアップ（一時ファイル）
+autonovel.db.bak.*
+autonovel.db-wal
+autonovel.db-shm

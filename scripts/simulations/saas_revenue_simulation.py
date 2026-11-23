@@ -29,8 +29,8 @@ COMPETITOR_PRICING_MONTHLY_USD = {
     "NovelAI_Tablet": 10.0,
     "NovelAI_Scroll": 15.0,
     "NovelAI_Opus": 25.0,
-    "AI_Naberisuto_Voyager": 9.0,   # ~JPY 1,160
-    "AI_Naberisuto_Bungo": 16.0,    # ~JPY 1,980
+    "AI_Naberisuto_Voyager": 9.0,  # ~JPY 1,160
+    "AI_Naberisuto_Bungo": 16.0,  # ~JPY 1,980
     "ChatGPT_Plus": 20.0,
 }
 
@@ -51,6 +51,7 @@ CHAPTERS_PER_USER = {
 # 2. Business Model Configuration
 # ============================================================
 
+
 @dataclass
 class PricingTier:
     name: str
@@ -64,6 +65,7 @@ class PricingTier:
 @dataclass
 class RevenueModel:
     """Complete SaaS revenue model configuration."""
+
     name: str
     currency: str = "JPY"
     tax_rate: float = 0.10  # Japanese consumption tax
@@ -160,6 +162,7 @@ STANDARD_TIERS = [
 # ============================================================
 # 4. Simulation Engine
 # ============================================================
+
 
 @dataclass
 class MonthlySnapshot:
@@ -307,12 +310,14 @@ class SaaSRevenueSimulator:
             )
 
             # Costs
-            llm_cost = self._calculate_llm_cost({
-                "free": free_users,
-                "starter": starter_users,
-                "pro": pro_users,
-                "enterprise": enterprise_users,
-            })
+            llm_cost = self._calculate_llm_cost(
+                {
+                    "free": free_users,
+                    "starter": starter_users,
+                    "pro": pro_users,
+                    "enterprise": enterprise_users,
+                }
+            )
             infra_cost = self._calculate_infrastructure_cost(total_users)
             staff_cost = model.staff_cost_monthly
             marketing_cost = model.marketing_monthly + paid_cac
@@ -379,7 +384,9 @@ class SaaSRevenueSimulator:
         print(f"  Infrastructure:      JPY {final.infrastructure_cost_jpy:,}")
         print(f"  Staff:               JPY {final.staff_cost_jpy:,}")
         print(f"  Marketing:           JPY {final.marketing_cost_jpy:,}")
-        print(f"  Total Monthly Cost:  JPY {final.llm_cost_jpy + final.infrastructure_cost_jpy + final.staff_cost_jpy + final.marketing_cost_jpy:,}")
+        print(
+            f"  Total Monthly Cost:  JPY {final.llm_cost_jpy + final.infrastructure_cost_jpy + final.staff_cost_jpy + final.marketing_cost_jpy:,}"
+        )
         print()
         print("--- PROFITABILITY ---")
         print(f"  Monthly Net Revenue: JPY {final.net_revenue_jpy:,}")
@@ -425,7 +432,7 @@ class SaaSRevenueSimulator:
         for name, snaps in scenarios.items():
             final = snaps[-1]
             be = next(
-                (f"M{i+1}" for i, s in enumerate(snaps) if s.net_revenue_jpy >= 0),
+                (f"M{i + 1}" for i, s in enumerate(snaps) if s.net_revenue_jpy >= 0),
                 "N/A",
             )
             print(
@@ -503,6 +510,7 @@ class SaaSRevenueSimulator:
 # 5. Scenario Definitions
 # ============================================================
 
+
 def create_base_model() -> RevenueModel:
     """Create base-case revenue model."""
     return RevenueModel(
@@ -561,13 +569,15 @@ def create_aggressive_model() -> RevenueModel:
 # 6. Main Execution
 # ============================================================
 
+
 def print_detailed_monthly_table(simulator: SaaSRevenueSimulator) -> None:
     """Print a detailed monthly breakdown table."""
     print()
-    print(f"{'Month':>6} {'Users':>8} {'Free':>7} {'Starter':>8} {'Pro':>7} {'Ent':>5} "
-          f"{'MRR':>12} {'LLM Cost':>10} {'Net':>12}")
-    print(f"{'-' * 6} {'-' * 8} {'-' * 7} {'-' * 8} {'-' * 7} {'-' * 5} "
-          f"{'-' * 12} {'-' * 10} {'-' * 12}")
+    print(
+        f"{'Month':>6} {'Users':>8} {'Free':>7} {'Starter':>8} {'Pro':>7} {'Ent':>5} "
+        f"{'MRR':>12} {'LLM Cost':>10} {'Net':>12}"
+    )
+    print(f"{'-' * 6} {'-' * 8} {'-' * 7} {'-' * 8} {'-' * 7} {'-' * 5} {'-' * 12} {'-' * 10} {'-' * 12}")
 
     for s in simulator.snapshots:
         print(

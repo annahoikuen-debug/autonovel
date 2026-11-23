@@ -1,4 +1,5 @@
 """Performance benchmarks for Japanese tokenizers."""
+
 from __future__ import annotations
 
 import pytest
@@ -171,16 +172,14 @@ class TestCompressionPipelinePerformance:
         ]
 
         # Warmup (cache disabled)
-        compressor.compress(text, entities=entities, relations=relations,
-                           scene_type="combat", bypass_cache=True)
+        compressor.compress(text, entities=entities, relations=relations, scene_type="combat", bypass_cache=True)
 
         # Benchmark
         iterations = 5
         latencies = []
         for _ in range(iterations):
             start = time.perf_counter()
-            compressor.compress(text, entities=entities, relations=relations,
-                               scene_type="combat", bypass_cache=True)
+            compressor.compress(text, entities=entities, relations=relations, scene_type="combat", bypass_cache=True)
             latencies.append((time.perf_counter() - start) * 1000)
 
         avg_latency = statistics.mean(latencies)
@@ -204,20 +203,20 @@ class TestCompressionPipelinePerformance:
 
         # First call - cache miss
         start = time.perf_counter()
-        compressor.compress(text, entities=entities, relations=relations,
-                                     scene_type="combat", bypass_cache=False)
+        compressor.compress(text, entities=entities, relations=relations, scene_type="combat", bypass_cache=False)
         miss_time = (time.perf_counter() - start) * 1000
 
         # Second call - cache hit
         start = time.perf_counter()
-        result2 = compressor.compress(text, entities=entities, relations=relations,
-                                     scene_type="combat", bypass_cache=False)
+        result2 = compressor.compress(
+            text, entities=entities, relations=relations, scene_type="combat", bypass_cache=False
+        )
         hit_time = (time.perf_counter() - start) * 1000
 
         print("\nCache performance:")
         print(f"  Miss: {miss_time:.1f}ms")
         print(f"  Hit:  {hit_time:.1f}ms")
-        print(f"  Speedup: {miss_time/hit_time:.1f}x")
+        print(f"  Speedup: {miss_time / hit_time:.1f}x")
 
         # Cache hit should be significantly faster
         assert hit_time < miss_time * 0.5, "Cache hit not significantly faster"

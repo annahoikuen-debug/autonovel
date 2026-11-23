@@ -26,9 +26,9 @@ async def test_writing_coordinator_pdca_skips_full_regeneration_and_applies_sing
     mock_writer.generate_episodes = AsyncMock(return_value=500)
     mock_repo = MagicMock()
     mock_score_calculator = MagicMock()
-    mock_score_calculator.calculate = AsyncMock(return_value=MagicMock(
-        overall_score=80.0, structure_score=80.0, coherency_score=80.0
-    ))
+    mock_score_calculator.calculate = AsyncMock(
+        return_value=MagicMock(overall_score=80.0, structure_score=80.0, coherency_score=80.0)
+    )
 
     dummy_ep = DummyEpisode("昔々ある所に、お爺さんとお婆さんが住んでいました。毎日平和でした。")
     mock_repo.get_episode_by_number.return_value = dummy_ep
@@ -45,7 +45,9 @@ async def test_writing_coordinator_pdca_skips_full_regeneration_and_applies_sing
     ]
 
     mock_polisher = MagicMock()
-    mock_polisher.polish.return_value = "昔々ある所に、波乱万丈なお爺さんとお婆さんが住んでいました。毎日事件の連続でした。"
+    mock_polisher.polish.return_value = (
+        "昔々ある所に、波乱万丈なお爺さんとお婆さんが住んでいました。毎日事件の連続でした。"
+    )
 
     # PDCA with max_regenerations=0 (default) and max_local_patches=1
     pdca = PDCAController(max_regenerations=0, max_local_patches=1)

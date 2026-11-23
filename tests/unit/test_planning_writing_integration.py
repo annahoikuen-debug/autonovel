@@ -1,7 +1,8 @@
 # tests/unit/test_planning_writing_integration.py
 import sys
 import os
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock
@@ -37,18 +38,25 @@ def mock_repo():
 @pytest.fixture
 def mock_book_score_calculator():
     calc = MagicMock(spec=BookScoreCalculator)
-    calc.calculate = AsyncMock(return_value=MagicMock(
-        overall_score=80.0,
-        structure_score=85.0,
-        coherency_score=75.0,
-        factual_grounding_score=80.0,
-        visual_textual_synergy_score=85.0,
-        reader_experience_score=75.0,
-    ))
-    calc._get_weights = MagicMock(return_value={
-        "structure": 25, "coherency": 25, "factual_grounding": 20,
-        "visual_textual_synergy": 15, "reader_experience": 15,
-    })
+    calc.calculate = AsyncMock(
+        return_value=MagicMock(
+            overall_score=80.0,
+            structure_score=85.0,
+            coherency_score=75.0,
+            factual_grounding_score=80.0,
+            visual_textual_synergy_score=85.0,
+            reader_experience_score=75.0,
+        )
+    )
+    calc._get_weights = MagicMock(
+        return_value={
+            "structure": 25,
+            "coherency": 25,
+            "factual_grounding": 20,
+            "visual_textual_synergy": 15,
+            "reader_experience": 15,
+        }
+    )
     return calc
 
 
@@ -61,9 +69,7 @@ def mock_writer():
 
 
 @pytest.mark.asyncio
-async def test_planning_service_with_book_score(
-    mock_bible_generator, mock_repo, mock_book_score_calculator
-):
+async def test_planning_service_with_book_score(mock_bible_generator, mock_repo, mock_book_score_calculator):
     """PlanningService が BookScoreCalculator を使って予測できること"""
     service = PlanningService(
         bible_generator=mock_bible_generator,
@@ -90,9 +96,7 @@ async def test_planning_service_with_book_score(
 
 
 @pytest.mark.asyncio
-async def test_writing_service_with_book_score(
-    mock_repo, mock_writer, mock_book_score_calculator
-):
+async def test_writing_service_with_book_score(mock_repo, mock_writer, mock_book_score_calculator):
     """WritingService が BookScoreCalculator を使って評価できること"""
     service = WritingService(
         writer=mock_writer,
@@ -107,9 +111,13 @@ async def test_writing_service_with_book_score(
 
     # 執筆
     word_count = await service.generate_episodes(
-        book_id=1, start_ep=1, end_ep=1,
-        passion=0.8, target_word_count=3000,
-        is_easy_mode=False, reporter=MagicMock(),
+        book_id=1,
+        start_ep=1,
+        end_ep=1,
+        passion=0.8,
+        target_word_count=3000,
+        is_easy_mode=False,
+        reporter=MagicMock(),
     )
     assert word_count == 3000
 
@@ -122,23 +130,28 @@ async def test_writing_service_with_book_score(
 
 
 @pytest.mark.asyncio
-async def test_writing_service_regeneration_trigger(
-    mock_repo, mock_writer
-):
+async def test_writing_service_regeneration_trigger(mock_repo, mock_writer):
     """閾値未満で再生成トリガーが発火すること"""
     calc = MagicMock(spec=BookScoreCalculator)
-    calc.calculate = AsyncMock(return_value=MagicMock(
-        overall_score=60.0,
-        structure_score=50.0,
-        coherency_score=65.0,
-        factual_grounding_score=70.0,
-        visual_textual_synergy_score=55.0,
-        reader_experience_score=59.0,  # 60未満で低スコア判定
-    ))
-    calc._get_weights = MagicMock(return_value={
-        "structure": 25, "coherency": 25, "factual_grounding": 20,
-        "visual_textual_synergy": 15, "reader_experience": 15,
-    })
+    calc.calculate = AsyncMock(
+        return_value=MagicMock(
+            overall_score=60.0,
+            structure_score=50.0,
+            coherency_score=65.0,
+            factual_grounding_score=70.0,
+            visual_textual_synergy_score=55.0,
+            reader_experience_score=59.0,  # 60未満で低スコア判定
+        )
+    )
+    calc._get_weights = MagicMock(
+        return_value={
+            "structure": 25,
+            "coherency": 25,
+            "factual_grounding": 20,
+            "visual_textual_synergy": 15,
+            "reader_experience": 15,
+        }
+    )
 
     service = WritingService(
         writer=mock_writer,

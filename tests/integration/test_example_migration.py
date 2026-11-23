@@ -1,4 +1,5 @@
 """Example showing how to migrate existing integration tests to use real PostgreSQL service."""
+
 from __future__ import annotations
 
 from sqlalchemy import text

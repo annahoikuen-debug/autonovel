@@ -2,6 +2,7 @@
 
 対象: src/backend/routers/{structure,prompt_versions,prompt_compare}.py
 """
+
 from __future__ import annotations
 
 

@@ -1,4 +1,5 @@
 """Tests for NLP initialization."""
+
 from __future__ import annotations
 
 import pytest

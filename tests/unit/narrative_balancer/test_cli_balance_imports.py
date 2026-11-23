@@ -90,9 +90,7 @@ class TestBalanceCommandWiring:
         ("balancer_type", "use_config"),
         [("dsp", False), ("csp", True), ("grammar", False)],
     )
-    def test_cmd_balance_delegates_to_package_cli(
-        self, balancer_type: str, use_config: bool, tmp_path: Path
-    ):
+    def test_cmd_balance_delegates_to_package_cli(self, balancer_type: str, use_config: bool, tmp_path: Path):
         """3 種すべての balancer が beats JSON を入力として動作すること。
 
         壊れ方: csp への --state マッピング漏れ・dsp/grammar への

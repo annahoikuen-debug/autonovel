@@ -18,9 +18,7 @@ def test_issue_has_severity_field():
 
 def test_paragraph_count_insufficient_is_critical():
     issues = StaticRuleAuditor().audit("   ")
-    assert any(
-        i.type == "paragraph_count_insufficient" and i.severity == "critical" for i in issues
-    )
+    assert any(i.type == "paragraph_count_insufficient" and i.severity == "critical" for i in issues)
 
 
 def test_line_start_punct_is_minor():

@@ -1,4 +1,5 @@
 """Unit tests for CompactionPolicy."""
+
 from src.agents.memory.archival_memory import ArchivalMemory
 from src.agents.memory.compaction import CompactionPolicy
 from src.agents.memory.core_memory import CoreMemory

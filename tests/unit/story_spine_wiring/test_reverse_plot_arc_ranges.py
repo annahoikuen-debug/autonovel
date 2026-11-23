@@ -3,6 +3,7 @@
 レビューで eps=1,2,3 で inverted 区間と範囲外の部を確認した。
 F1 計画の中心ユースケース（short.eps_range=[1,3]）が壊れていた。
 """
+
 from __future__ import annotations
 
 import inspect
@@ -28,13 +29,9 @@ def test_arcs_are_ordered_and_within_range(eps: int, conflict: str):
     assert arcs, f"eps={eps}/{conflict}: 部が 1 つも無い"
     prev_end = 0
     for arc in arcs:
-        assert arc.start_ep <= arc.end_ep, (
-            f"eps={eps}/{conflict}: inverted 区間 {arc.start_ep}>{arc.end_ep}"
-        )
+        assert arc.start_ep <= arc.end_ep, f"eps={eps}/{conflict}: inverted 区間 {arc.start_ep}>{arc.end_ep}"
         assert 1 <= arc.start_ep, f"eps={eps}/{conflict}: start={arc.start_ep} が 1 未満"
-        assert arc.end_ep <= eps, (
-            f"eps={eps}/{conflict}: end={arc.end_ep} が総話数 {eps} を超過"
-        )
+        assert arc.end_ep <= eps, f"eps={eps}/{conflict}: end={arc.end_ep} が総話数 {eps} を超過"
         assert arc.start_ep == prev_end + 1, (
             f"eps={eps}/{conflict}: 部が連続していない（gap: {prev_end} -> {arc.start_ep}）"
         )

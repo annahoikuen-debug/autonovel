@@ -36,9 +36,7 @@ def test_shim_contains_deprecation_warning(shim_path):
         pytest.skip(f"shim ファイルが存在しない（削除計画 Phase R3 済み等）: {shim_path}")
     content = p.read_text(encoding="utf-8", errors="ignore")
     assert "warnings.warn" in content, f"{shim_path} に warnings.warn がない"
-    assert "DeprecationWarning" in content, (
-        f"{shim_path} の warnings.warn が DeprecationWarning を発していない"
-    )
+    assert "DeprecationWarning" in content, f"{shim_path} の warnings.warn が DeprecationWarning を発していない"
 
 
 def test_shim_warning_messages_do_not_self_reference():
@@ -54,9 +52,7 @@ def test_shim_warning_messages_do_not_self_reference():
         m = re.search(r'"(\S+) is deprecated; use (\S+) instead"', content)
         if m and m.group(1) == m.group(2):
             self_referencing.append(shim_path)
-    assert not self_referencing, (
-        f"警告メッセージが自パスを指している shim: {self_referencing}"
-    )
+    assert not self_referencing, f"警告メッセージが自パスを指している shim: {self_referencing}"
 
 
 def test_shim_emits_deprecation_warning_dynamically():
@@ -77,6 +73,5 @@ def test_shim_emits_deprecation_warning_dynamically():
         )
         stderr = result.stderr or ""
         assert "DeprecationWarning" in stderr, (
-            f"{mod} の import 時に DeprecationWarning が出ていない。\n"
-            f"stderr: {stderr[:500]}"
+            f"{mod} の import 時に DeprecationWarning が出ていない。\nstderr: {stderr[:500]}"
         )

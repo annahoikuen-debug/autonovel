@@ -18,7 +18,7 @@ class CreditTransaction(Base):
     transaction_type: Mapped[str] = mapped_column(String(30), nullable=False)
     task_id: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     description: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 
 
 class Subscription(Base):

@@ -221,9 +221,7 @@ def test_metrics_no_matching_targets():
 
 
 def test_metrics_density_cap():
-    out = TrimmedContextOutput(
-        compressed_text="x", token_count=1, retained_entities=[str(i) for i in range(50)]
-    )
+    out = TrimmedContextOutput(compressed_text="x", token_count=1, retained_entities=[str(i) for i in range(50)])
     m = calculate_consistency_metrics("テキスト", out)
     assert m.semantic_density_score == 1.0
 
@@ -231,11 +229,7 @@ def test_metrics_density_cap():
 # --------------------------------------------------------------------------
 # compressor.py
 # --------------------------------------------------------------------------
-RAW = (
-    "アルトは剣を抜いた。斬撃が空気を裂く。"
-    "ルナは呪文を唱え、氷の壁を立ち上げた。"
-    "暗黒の魔王が現れた。"
-)
+RAW = "アルトは剣を抜いた。斬撃が空気を裂く。ルナは呪文を唱え、氷の壁を立ち上げた。暗黒の魔王が現れた。"
 
 
 def test_compressor_end_to_end():
@@ -320,9 +314,7 @@ def test_compressor_uses_age_when_available():
     age = MagicMock()
     comp = FourLayerCompressor(CompressionConfig(cache_enabled=False), age_client=age)
     session = MagicMock()
-    comp.layer2.extract_from_age = MagicMock(
-        return_value=SubgraphLayerOutput(seed_entity_names=["アルト"])
-    )
+    comp.layer2.extract_from_age = MagicMock(return_value=SubgraphLayerOutput(seed_entity_names=["アルト"]))
     res = comp.compress(RAW, session=session, graph_name="g")
     comp.layer2.extract_from_age.assert_called_once()
     assert res.layer2.seed_entity_names == ["アルト"]

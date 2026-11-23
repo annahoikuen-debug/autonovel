@@ -201,14 +201,8 @@ def test_revoked_token_does_not_affect_other_tokens(monkeypatch):
     payload = _payload(revoked)
     _run(token_denylist.revoke(payload["jti"], payload.get("exp")))
 
-    assert (
-        client.get("/protected", headers={"Authorization": f"Bearer {revoked}"}).status_code
-        == 401
-    )
-    assert (
-        client.get("/protected", headers={"Authorization": f"Bearer {other}"}).status_code
-        == 200
-    )
+    assert client.get("/protected", headers={"Authorization": f"Bearer {revoked}"}).status_code == 401
+    assert client.get("/protected", headers={"Authorization": f"Bearer {other}"}).status_code == 200
 
 
 # ---------------------------------------------------------------------------
@@ -242,9 +236,7 @@ def test_logout_requires_a_token(api_client):
 
 
 def test_logout_with_garbage_token_is_rejected(api_client):
-    res = api_client.post(
-        "/api/auth/logout", headers={"Authorization": "Bearer not.a.token"}
-    )
+    res = api_client.post("/api/auth/logout", headers={"Authorization": "Bearer not.a.token"})
 
     assert res.status_code == 401
 
@@ -274,8 +266,6 @@ def test_refresh_rejects_revoked_refresh_token(api_client):
     payload = _payload(refresh, expected_type="refresh")
     _run(token_denylist.revoke(payload["jti"], payload.get("exp")))
 
-    res = api_client.post(
-        "/api/auth/refresh", headers={"Authorization": f"Bearer {refresh}"}
-    )
+    res = api_client.post("/api/auth/refresh", headers={"Authorization": f"Bearer {refresh}"})
 
     assert res.status_code == 401

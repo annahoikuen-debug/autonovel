@@ -69,15 +69,11 @@ def _loose_scan(text: str, regex: re.Pattern[str]) -> bool:
 
 
 def _dynamic_scan(text: str, module_path: str) -> bool:
-    call_regex = re.compile(
-        r"(?:importlib\.import_module|__import__)\s*\(\s*[\"']([^\"']+)[\"']"
-    )
+    call_regex = re.compile(r"(?:importlib\.import_module|__import__)\s*\(\s*[\"']([^\"']+)[\"']")
     for m in call_regex.finditer(text):
         if m.group(1) == module_path or m.group(1).replace("/", ".") == module_path:
             return True
-    getattr_regex = re.compile(
-        r"(?:getattr|setattr)\s*\([^,]+,\s*[\"']([^\"']+)[\"']"
-    )
+    getattr_regex = re.compile(r"(?:getattr|setattr)\s*\([^,]+,\s*[\"']([^\"']+)[\"']")
     for m in getattr_regex.finditer(text):
         if module_path in m.group(1):
             return True
@@ -172,16 +168,11 @@ def main() -> int:
             deletable = total_refs == 0 or r["shadowed"]
             verdict = "✓ 削除可" if deletable else "✗ 参照あり"
             shadowed_mark = "🌑" if r["shadowed"] else ""
-            print(
-                f"| {r['shim']} | {len(r['src_strict'])} | {len(r['tests_strict'])} | "
-                f"{shadowed_mark} | {verdict} |"
-            )
+            print(f"| {r['shim']} | {len(r['src_strict'])} | {len(r['tests_strict'])} | {shadowed_mark} | {verdict} |")
         print()
         print(f"合計: {len(results)} 件の shim")
         deletable_count = sum(
-            1
-            for r in results
-            if (len(r["src_strict"]) + len(r["tests_strict"]) == 0) or r["shadowed"]
+            1 for r in results if (len(r["src_strict"]) + len(r["tests_strict"]) == 0) or r["shadowed"]
         )
         print(f"削除可能: {deletable_count} 件 / 参照あり: {len(results) - deletable_count} 件")
     else:

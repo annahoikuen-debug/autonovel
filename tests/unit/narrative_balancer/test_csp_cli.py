@@ -36,28 +36,40 @@ class TestParseArgs:
 
 class TestMainErrors:
     def test_state_file_not_found(self, tmp_path: Path):
-        rc = main([
-            "--state", str(tmp_path / "missing.json"),
-            "--output", str(tmp_path / "out.json"),
-        ])
+        rc = main(
+            [
+                "--state",
+                str(tmp_path / "missing.json"),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
         assert rc == 1
 
     def test_invalid_format(self, tmp_path: Path):
         bad = tmp_path / "bad.json"
         bad.write_text(json.dumps({"unexpected": True}), encoding="utf-8")
-        rc = main([
-            "--state", str(bad),
-            "--output", str(tmp_path / "out.json"),
-        ])
+        rc = main(
+            [
+                "--state",
+                str(bad),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
         assert rc == 2
 
     def test_malformed_json(self, tmp_path: Path):
         bad = tmp_path / "bad.json"
         bad.write_text("not json at all", encoding="utf-8")
-        rc = main([
-            "--state", str(bad),
-            "--output", str(tmp_path / "out.json"),
-        ])
+        rc = main(
+            [
+                "--state",
+                str(bad),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
         assert rc == 2
 
 

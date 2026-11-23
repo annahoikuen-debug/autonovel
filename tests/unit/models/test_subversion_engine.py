@@ -18,6 +18,7 @@ class TestSubversionEngine:
     def test_apply_to_arc(self):
         class MockArc:
             pass
+
         e = SubversionEngine(interval=3)
         e.plan_schedule(9)
         arc = MockArc()
@@ -31,6 +32,7 @@ class TestSubversionEngine:
     def test_apply_to_beat_tension_clip(self):
         class MockBeat:
             tension_target = 0.9
+
         e = SubversionEngine(interval=3)
         e.plan_schedule(6)
         beat = MockBeat()
@@ -43,7 +45,7 @@ class TestSubversionEngine:
             SubversionPattern(pattern_type="A", trigger_ep=3, description="d", cost="c", payoff_hint="h"),
             SubversionPattern(pattern_type="B", trigger_ep=3, description="d", cost="c", payoff_hint="h"),  # 重複
             SubversionPattern(pattern_type="C", trigger_ep=5, description="d", cost="c", payoff_hint="h"),  # 間隔不足
-            SubversionPattern(pattern_type="A", trigger_ep=38, description="d", cost="c", payoff_hint="h"), # 終盤
+            SubversionPattern(pattern_type="A", trigger_ep=38, description="d", cost="c", payoff_hint="h"),  # 終盤
         ]
         errors = e.validate_coherence(40)
         assert "重複発火話数あり" in errors
@@ -53,8 +55,10 @@ class TestSubversionEngine:
     def test_disabled(self):
         e = SubversionEngine(enabled=False, interval=3)
         e.plan_schedule(6)
+
         class Mock:
             pass
+
         assert e.apply_to_arc(Mock(), 3) is not None  # 何もしない
         assert e.apply_to_beat(Mock(), 3) is not None  # 何もしない
 
@@ -63,6 +67,7 @@ class TestSubversionEngine:
             mission = ""
             visual_scene_focus = ""
             tension_target = 0.5
+
         e = SubversionEngine(interval=3)
         e.plan_schedule(6)
         beat = MockBeat()
@@ -74,6 +79,7 @@ class TestSubversionEngine:
     def test_apply_to_arc_thematic_milestone(self):
         class MockArc:
             thematic_milestone = ""
+
         e = SubversionEngine(interval=3)
         e.plan_schedule(6)
         arc = MockArc()

@@ -1,4 +1,5 @@
 """Report generation and output for benchmarks."""
+
 from __future__ import annotations
 
 import json
@@ -43,10 +44,12 @@ def print_report(summary: Dict[str, Any], title: str = "Benchmark Report") -> No
     if scene_bd:
         print(" PER SCENE TYPE:")
         for scene, metrics in sorted(scene_bd.items()):
-            print(f"  {scene:15s} (n={metrics['count']}): "
-                  f"latency={format_pct_stats(metrics.get('latency_ms'), 'ms')}, "
-                  f"reduction={format_pct_stats(metrics.get('reduction_ratio'))}, "
-                  f"tokens={format_pct_stats(metrics.get('final_tokens'))}")
+            print(
+                f"  {scene:15s} (n={metrics['count']}): "
+                f"latency={format_pct_stats(metrics.get('latency_ms'), 'ms')}, "
+                f"reduction={format_pct_stats(metrics.get('reduction_ratio'))}, "
+                f"tokens={format_pct_stats(metrics.get('final_tokens'))}"
+            )
         print("-" * 70)
 
 
@@ -59,10 +62,10 @@ def print_checkpoints_report(checkpoints: Dict[int, Dict[str, Any]]) -> None:
     print("-" * 70)
     for cp in sorted(checkpoints.keys()):
         data = checkpoints[cp]
-        lat = format_value(data.get('latency_ms', {}).get('mean', 0))
-        red = format_value(data.get('reduction_ratio', {}).get('mean', 0) * 100, 1)
-        tok = format_value(data.get('final_tokens', {}).get('mean', 0))
-        ch = format_value(data.get('cache_hit_rate', 0) * 100, 1)
+        lat = format_value(data.get("latency_ms", {}).get("mean", 0))
+        red = format_value(data.get("reduction_ratio", {}).get("mean", 0) * 100, 1)
+        tok = format_value(data.get("final_tokens", {}).get("mean", 0))
+        ch = format_value(data.get("cache_hit_rate", 0) * 100, 1)
         print(f" {cp:>8} | {lat:>15} | {red:>9}% | {tok:>8} | {ch:>5}%")
     print("-" * 70)
 
@@ -97,9 +100,11 @@ def generate_markdown_report(
     for metric_name in ["latency_ms", "memory_mb", "final_tokens", "reduction_ratio"]:
         stats = summary.get(metric_name, {})
         unit = "ms" if metric_name == "latency_ms" else ("MB" if metric_name == "memory_mb" else "")
-        lines.append(f"| {metric_name} | {format_value(stats.get('mean', 0))}{unit} | "
-                     f"{format_value(stats.get('p50', 0))}{unit} | {format_value(stats.get('p95', 0))}{unit} | "
-                     f"{format_value(stats.get('min', 0))}{unit} | {format_value(stats.get('max', 0))}{unit} |")
+        lines.append(
+            f"| {metric_name} | {format_value(stats.get('mean', 0))}{unit} | "
+            f"{format_value(stats.get('p50', 0))}{unit} | {format_value(stats.get('p95', 0))}{unit} | "
+            f"{format_value(stats.get('min', 0))}{unit} | {format_value(stats.get('max', 0))}{unit} |"
+        )
 
     lines.append(f"\n| Cache Hit Rate | {format_value(summary.get('cache_hit_rate', 0) * 100, 1)}% | | | | |")
 
@@ -110,10 +115,12 @@ def generate_markdown_report(
         lines.append("| Scene | Count | Latency (ms) | Reduction | Final Tokens |")
         lines.append("|-------|-------|--------------|-----------|--------------|")
         for scene, metrics in sorted(scene_bd.items()):
-            lines.append(f"| {scene} | {metrics['count']} | "
-                         f"{format_pct_stats(metrics.get('latency_ms'), 'ms')} | "
-                         f"{format_pct_stats(metrics.get('reduction_ratio'))} | "
-                         f"{format_pct_stats(metrics.get('final_tokens'))} |")
+            lines.append(
+                f"| {scene} | {metrics['count']} | "
+                f"{format_pct_stats(metrics.get('latency_ms'), 'ms')} | "
+                f"{format_pct_stats(metrics.get('reduction_ratio'))} | "
+                f"{format_pct_stats(metrics.get('final_tokens'))} |"
+            )
 
     # Checkpoints
     if checkpoints:
@@ -122,10 +129,12 @@ def generate_markdown_report(
         lines.append("|----------|--------------|-----------|--------------|-----------|")
         for cp in sorted(checkpoints.keys()):
             data = checkpoints[cp]
-            lines.append(f"| {cp} | {format_value(data.get('latency_ms', {}).get('mean', 0))} | "
-                         f"{format_value(data.get('reduction_ratio', {}).get('mean', 0) * 100, 1)}% | "
-                         f"{format_value(data.get('final_tokens', {}).get('mean', 0))} | "
-                         f"{format_value(data.get('cache_hit_rate', 0) * 100, 1)}% |")
+            lines.append(
+                f"| {cp} | {format_value(data.get('latency_ms', {}).get('mean', 0))} | "
+                f"{format_value(data.get('reduction_ratio', {}).get('mean', 0) * 100, 1)}% | "
+                f"{format_value(data.get('final_tokens', {}).get('mean', 0))} | "
+                f"{format_value(data.get('cache_hit_rate', 0) * 100, 1)}% |"
+            )
 
     return "\n".join(lines)
 

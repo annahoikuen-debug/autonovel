@@ -1,4 +1,3 @@
-
 import pytest
 
 pytest.importorskip("google.genai")
@@ -7,12 +6,14 @@ from unittest.mock import MagicMock, patch
 from src.llm.unified.adapters.gemini import GeminiUnifiedClient
 from src.llm.unified.types import LLMRequest
 
+
 @pytest.fixture
 def mock_genai():
     with patch("google.genai.Client") as MockClient:
         client_instance = MagicMock()
         MockClient.return_value = client_instance
         yield client_instance
+
 
 def test_gemini_unified_client_generate(mock_genai):
     client = GeminiUnifiedClient(api_key="test-key")

@@ -1,4 +1,5 @@
 """Unit tests for WorkingMemory."""
+
 from src.agents.memory.archival_memory import ArchivalMemory
 from src.agents.memory.interfaces import WorkingFrame
 from src.agents.memory.working_memory import WorkingMemory

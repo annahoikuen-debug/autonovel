@@ -224,8 +224,7 @@ class LLMGenerateResultMockProxy:
         if len(args) == 1 and hasattr(args[0], "prompt"):
             request = args[0]
             text, usage = await self.mock_llm.generate_text(
-                model_name=getattr(request, "model_name", None)
-                or getattr(request, "purpose", "writing"),
+                model_name=getattr(request, "model_name", None) or getattr(request, "purpose", "writing"),
                 prompt=request.prompt,
                 system_instruction=request.system_instruction,
                 temp=getattr(request, "temp", 0.7),

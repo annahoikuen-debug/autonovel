@@ -14,6 +14,7 @@ pytest の出力は UTF-8。日本語を含むテスト名を含む出力に対�
 このテストは、pytest を起動する subprocess 呼び出しが `encoding=` を
 明示していないことを静的検査し、再発を機械的に防ぐ。
 """
+
 from __future__ import annotations
 
 import ast
@@ -39,9 +40,7 @@ def _iter_subprocess_calls() -> list[tuple[str, int, ast.Call]]:
             if not isinstance(node, ast.Call):
                 continue
             func = node.func
-            if not (
-                isinstance(func, ast.Attribute) and func.attr in _SUBPROCESS_METHODS
-            ):
+            if not (isinstance(func, ast.Attribute) and func.attr in _SUBPROCESS_METHODS):
                 continue
             if not isinstance(func.value, ast.Name) or func.value.id != "subprocess":
                 continue
@@ -95,8 +94,7 @@ class TestSubprocessEncodingIsExplicit:
         assert not offenders, (
             "pytest サブプロセスに encoding= がありません。"
             "Windows(CP932) では UTF-8 出力をデコードできず、"
-            "対象のゲートが collection ERROR で黙って無効化されます:\n"
-            + "\n".join(offenders)
+            "対象のゲートが collection ERROR で黙って無効化されます:\n" + "\n".join(offenders)
         )
 
     def test_gate_detects_the_known_offender_pattern(self) -> None:
@@ -105,15 +103,8 @@ class TestSubprocessEncodingIsExplicit:
         ゲート自身が無条件に通る実装だと何も防げないため、
         検出ロジックが機能していることを最小の入力で確認する。
         """
-        code = (
-            "import subprocess\n"
-            "subprocess.run(['-m', 'pytest', '--collect-only'], text=True)\n"
-        )
-        call = next(
-            node
-            for node in ast.walk(ast.parse(code))
-            if isinstance(node, ast.Call)
-        )
+        code = "import subprocess\nsubprocess.run(['-m', 'pytest', '--collect-only'], text=True)\n"
+        call = next(node for node in ast.walk(ast.parse(code)) if isinstance(node, ast.Call))
         assert _is_text_mode(call) is True
         assert _invokes_pytest(call) is True
         assert "encoding" not in {k.arg for k in call.keywords if k.arg}

@@ -5,6 +5,7 @@ Step 40-46:
 - ValueError → HTTP 400 (router 層は別テスト)
 - generate_suggestions が LLM を呼ぶ
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
@@ -86,9 +87,7 @@ async def test_digest_suggestions_uses_llm():
     from src.services.digest_service import DigestService
 
     fake_llm = MagicMock()
-    fake_llm.generate = AsyncMock(
-        return_value="- 主人公の内面をもっと描写する\n- 伏線を 1 つ追加する\n- 設定を練る"
-    )
+    fake_llm.generate = AsyncMock(return_value="- 主人公の内面をもっと描写する\n- 伏線を 1 つ追加する\n- 設定を練る")
 
     svc = DigestService(llm_service=fake_llm, db=MagicMock())
     res = await svc.generate_suggestions("テスト章本文です。")

@@ -20,11 +20,16 @@ def test_global_cli_execution(tmp_path):
     with open(input_file, "w", encoding="utf-8") as f:
         json.dump(beats, f)
 
-    ret = main([
-        "--input", str(input_file),
-        "--output", str(output_file),
-        "--report", str(report_file),
-    ])
+    ret = main(
+        [
+            "--input",
+            str(input_file),
+            "--output",
+            str(output_file),
+            "--report",
+            str(report_file),
+        ]
+    )
     assert ret == 0
     assert output_file.exists()
     assert report_file.exists()

@@ -98,14 +98,10 @@ def aggregate_records(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
         row["total_cost_usd"] = round(row["total_cost_usd"] + one["total_cost_usd"], 8)
         for key in ("by_task", "by_tier"):
             for name, agg in one[key].items():
-                bucket = row[key].setdefault(
-                    name, {"calls": 0, "cost_usd": 0.0, "tokens": 0}
-                )
+                bucket = row[key].setdefault(name, {"calls": 0, "cost_usd": 0.0, "tokens": 0})
                 bucket["calls"] += agg["calls"]
                 bucket["tokens"] += agg["tokens"]
-                bucket["cost_usd"] = round(
-                    bucket["cost_usd"] + agg["cost_usd"], 8
-                )
+                bucket["cost_usd"] = round(bucket["cost_usd"] + agg["cost_usd"], 8)
     return [episodes[k] for k in sorted(episodes)]
 
 
@@ -122,9 +118,7 @@ def build_report(records: list[dict[str, Any]]) -> dict[str, Any]:
             "output_tokens": sum(e["output_tokens"] for e in episodes),
             "total_tokens": sum(e["total_tokens"] for e in episodes),
             "total_cost_usd": total_cost,
-            "usd_per_episode": (
-                round(total_cost / len(episodes), 8) if episodes else 0.0
-            ),
+            "usd_per_episode": (round(total_cost / len(episodes), 8) if episodes else 0.0),
         },
     }
 
@@ -158,11 +152,7 @@ def _load_records(db_path: str | None, book_id: int | None) -> list[dict[str, An
     if not path.exists():
         return []
 
-    query = (
-        "SELECT ep_num, task_type, model_name, tier,"
-        "       input_tokens, output_tokens"
-        "  FROM token_usage"
-    )
+    query = "SELECT ep_num, task_type, model_name, tier,       input_tokens, output_tokens  FROM token_usage"
     params: list[Any] = []
     if book_id is not None:
         query += " WHERE book_id = ?"
@@ -198,9 +188,7 @@ def _render_text(report: dict[str, Any]) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(
-        description="1話あたりのLLMコストを報告する（T6 Step 6）"
-    )
+    parser = argparse.ArgumentParser(description="1話あたりのLLMコストを報告する（T6 Step 6）")
     parser.add_argument("--db", help="token_usage を持つSQLiteファイルのパス")
     parser.add_argument("--book-id", type=int, help="対象作品IDで絞り込む")
     parser.add_argument("--episodes", help="カンマ区切りの話番号で絞り込む（例: 1,2,3）")

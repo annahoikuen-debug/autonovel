@@ -1,4 +1,5 @@
 """Integration tests for ReflectiveRAGService and ContextBuilderAgent (Step 24)."""
+
 from __future__ import annotations
 
 import pytest

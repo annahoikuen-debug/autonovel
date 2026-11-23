@@ -38,28 +38,28 @@ def mock_targeted_diagnostic():
 @pytest.fixture
 def mock_paragraph_indexer():
     indexer = MagicMock(spec=ParagraphIndexer)
-    indexer.index_paragraphs = MagicMock(return_value=[
-        {'index': 0, 'text': 'Dummy paragraph 0'},
-        {'index': 1, 'text': 'Dummy paragraph 1'},
-    ])
+    indexer.index_paragraphs = MagicMock(
+        return_value=[
+            {"index": 0, "text": "Dummy paragraph 0"},
+            {"index": 1, "text": "Dummy paragraph 1"},
+        ]
+    )
     return indexer
 
 
 @pytest.fixture
 def mock_patch_agent():
     agent = MagicMock(spec=ParagraphPatchAgent)
-    agent.rewrite_paragraph = AsyncMock(return_value=PatchRewriteResult(
-        index=0,
-        patched_text='Patched dummy paragraph',
-        confidence_score=0.9
-    ))
+    agent.rewrite_paragraph = AsyncMock(
+        return_value=PatchRewriteResult(index=0, patched_text="Patched dummy paragraph", confidence_score=0.9)
+    )
     return agent
 
 
 @pytest.fixture
 def mock_patch_merger():
     merger = MagicMock(spec=PatchMerger)
-    merger.merge_patches = MagicMock(return_value='Merged dummy draft')
+    merger.merge_patches = MagicMock(return_value="Merged dummy draft")
     return merger
 
 
@@ -102,14 +102,24 @@ async def test_paragraph_patch_pdca_reduces_llm_calls(
 
     # Mock the audit aggregator to return a low score initially, then a high score after patching
     mock_audit_aggregator.aggregate.side_effect = [
-        MagicMock(overall=70.0, calibrated_overall=70.0, by_specialist={}, calibrated_by_specialist={}),  # Initial audit
-        MagicMock(overall=70.0, calibrated_overall=70.0, by_specialist={}, calibrated_by_specialist={}),  # Audit after first cycle (before patching)
-        MagicMock(overall=85.0, calibrated_overall=85.0, by_specialist={}, calibrated_by_specialist={}),  # Audit after patching
+        MagicMock(
+            overall=70.0, calibrated_overall=70.0, by_specialist={}, calibrated_by_specialist={}
+        ),  # Initial audit
+        MagicMock(
+            overall=70.0, calibrated_overall=70.0, by_specialist={}, calibrated_by_specialist={}
+        ),  # Audit after first cycle (before patching)
+        MagicMock(
+            overall=85.0, calibrated_overall=85.0, by_specialist={}, calibrated_by_specialist={}
+        ),  # Audit after patching
     ]
 
     # Mock the diagnostic to return one weak paragraph in the first cycle
     mock_targeted_diagnostic.identify_weak_paragraphs.side_effect = [
-        [MagicMock(index=0, original_text='Dummy paragraph 0', issue_category='test', directive='Make it more engaging')],
+        [
+            MagicMock(
+                index=0, original_text="Dummy paragraph 0", issue_category="test", directive="Make it more engaging"
+            )
+        ],
         [],  # No weak paragraphs in the second cycle
     ]
 

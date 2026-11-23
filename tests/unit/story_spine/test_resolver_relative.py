@@ -37,7 +37,7 @@ def test_critical_beats_keep_their_order_across_lengths(pattern, eps):
     mid_idx = keys.index("midpoint_reversal")
     climax_idx = keys.index("climax")
     assert hook_idx < mid_idx < climax_idx, f"{pattern}@{eps}: 順序が崩れた {keys}"
-    assert "climax" not in keys[climax_idx + 1:], f"{pattern}@{eps}: climax が重複 {keys}"
+    assert "climax" not in keys[climax_idx + 1 :], f"{pattern}@{eps}: climax が重複 {keys}"
 
 
 @pytest.mark.parametrize("eps", [20, 60, 200])
@@ -62,9 +62,7 @@ def test_pacing_graph_is_length_independent():
 
     short = PacingGraph.get_instruction(2, total_eps=20)
     long_ = PacingGraph.get_instruction(10, total_eps=100)
-    assert short["instruction"] == long_["instruction"], (
-        "話数だけ変えても同じ相対位置なら同じ指示になるはず"
-    )
+    assert short["instruction"] == long_["instruction"], "話数だけ変えても同じ相対位置なら同じ指示になるはず"
 
 
 def test_first_explosion_position_scales():
@@ -73,7 +71,8 @@ def test_first_explosion_position_scales():
 
     for eps in (20, 40, 100):
         found = [
-            ep for ep in range(1, eps + 1)
+            ep
+            for ep in range(1, eps + 1)
             if "第1の爆発" in PacingGraph.get_instruction(ep, total_eps=eps)["instruction"]
         ]
         assert found, f"eps={eps} で第1の爆発が見つからない"

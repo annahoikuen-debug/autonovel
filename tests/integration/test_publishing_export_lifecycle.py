@@ -2,6 +2,7 @@
 
 執筆本文からEPUB 3生成および投稿サイト形式テキスト取得の全結合テスト。
 """
+
 import pytest
 import asyncio
 from httpx import AsyncClient, ASGITransport
@@ -265,6 +266,7 @@ class TestPublishingExportLifecycle:
     @pytest.mark.asyncio
     async def test_concurrent_requests(self, client):
         """同時リクエストの処理テスト"""
+
         async def make_request(platform: str):
             return await client.post(
                 "/api/export/copy/",

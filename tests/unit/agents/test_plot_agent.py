@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock
 from src.agents.plot import PlotAgent
 
+
 @pytest.mark.asyncio
 async def test_plot_agent_generate_beats():
     agent = PlotAgent()

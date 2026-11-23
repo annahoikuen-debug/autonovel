@@ -1,8 +1,10 @@
 """
 テスト: PDCAスリム化のリグレッションテスト（全文再生成ループ禁止・局所パッチ最大1回 の振る舞い保証）
 """
+
 import unittest
 from src.generation.pdca_controller import PDCAController
+
 
 class TestPDcalimitation(unittest.TestCase):
     def test_full_regeneration_disabled_by_default(self):
@@ -18,5 +20,6 @@ class TestPDcalimitation(unittest.TestCase):
         controller.record_local_patch()
         self.assertFalse(controller.can_do_local_patch())
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

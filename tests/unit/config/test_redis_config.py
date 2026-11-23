@@ -1,4 +1,5 @@
 """Tests for Redis configuration."""
+
 from __future__ import annotations
 
 import yaml

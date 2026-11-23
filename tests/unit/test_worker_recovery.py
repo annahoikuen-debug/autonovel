@@ -1,4 +1,5 @@
 """Tests for Worker Recovery Manager (Steps 51-53, 56-57)."""
+
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
@@ -107,10 +108,7 @@ class TestWorkerRecoveryManager:
         _, session = mock_db_manager
 
         # Mock running tasks
-        mock_logs = [
-            MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running")
-            for i in range(3)
-        ]
+        mock_logs = [MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running") for i in range(3)]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_logs
         session.execute.return_value = mock_result
@@ -131,10 +129,7 @@ class TestWorkerRecoveryManager:
 
         # Mock zombie tasks (heartbeat older than threshold)
         old_time = datetime.now() - timedelta(seconds=400)
-        mock_zombies = [
-            MagicMock(spec=TaskWALLogModel, task_id=f"zombie_{i}", heartbeat_at=old_time)
-            for i in range(2)
-        ]
+        mock_zombies = [MagicMock(spec=TaskWALLogModel, task_id=f"zombie_{i}", heartbeat_at=old_time) for i in range(2)]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_zombies
         session.execute.return_value = mock_result
@@ -247,10 +242,7 @@ class TestWorkerRecoveryManager:
         """Test pausing downstream tasks of a failed node."""
         _, session = mock_db_manager
 
-        mock_tasks = [
-            MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running")
-            for i in range(3)
-        ]
+        mock_tasks = [MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running") for i in range(3)]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_tasks
         session.execute.return_value = mock_result
@@ -332,8 +324,7 @@ class TestWorkerRecoveryManagerIntegration:
         _, session = mock_db_manager
 
         mock_logs = [
-            MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running", heartbeat_at=None)
-            for i in range(5)
+            MagicMock(spec=TaskWALLogModel, task_id=f"task_{i}", state="running", heartbeat_at=None) for i in range(5)
         ]
         mock_result = MagicMock()
         mock_result.scalars.return_value.all.return_value = mock_logs

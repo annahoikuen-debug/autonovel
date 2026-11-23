@@ -70,12 +70,7 @@ def test_no_metadata_present():
 
 def test_malformed_json_fallback():
     """Test graceful handling of invalid JSON in metadata block."""
-    raw = (
-        "壊れたJSONを持つ本文。\n\n"
-        "[METADATA_JSON]\n"
-        "{ this is not valid json }\n"
-        "[/METADATA_JSON]"
-    )
+    raw = "壊れたJSONを持つ本文。\n\n[METADATA_JSON]\n{ this is not valid json }\n[/METADATA_JSON]"
     prose, metadata = NovelOutputSplitter.split_novel_output(raw)
     assert prose == "壊れたJSONを持つ本文。"
     assert metadata is None

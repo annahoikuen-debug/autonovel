@@ -57,7 +57,6 @@ def test_extract_sentence_span_no_delims():
 def test_detect_trailing_conjunction():
     assert detect_trailing_conjunction("悲しかったが、笑った", 5) == "が、"
 
-
     assert detect_trailing_conjunction("悲しかったので", 5) == "ので"
     assert detect_trailing_conjunction("そのまま進んだ", 4) == ""
 
@@ -84,7 +83,9 @@ def test_detect_abstract_emotions_skips_overlapping_match():
     assert (spans[0].emotion, spans[0].start, spans[0].end) == ("anger", 1, 3)
 
 
-@pytest.mark.parametrize("context,first_sense", [("炎の火が燃える", "tactile"), ("闇の影", "visual"), ("森の外の風", "tactile")])
+@pytest.mark.parametrize(
+    "context,first_sense", [("炎の火が燃える", "tactile"), ("闇の影", "visual"), ("森の外の風", "tactile")]
+)
 async def test_generate_sensory_details_context_priorities(context, first_sense):
     details = await generate_sensory_details(_span(), context)
     assert details[0].startswith(f"[{first_sense}]")
@@ -337,9 +338,7 @@ def test_replace_sentence_level_with_details():
 
 def test_replace_phrase_level_falls_back_to_sense_generic():
     text = "彼は悲しかった。"
-    span = EmotionSpan(
-        start=2, end=7, emotion="sadness", intensity=0.7, abstract_phrase="悲しかった"
-    )
+    span = EmotionSpan(start=2, end=7, emotion="sadness", intensity=0.7, abstract_phrase="悲しかった")
     out, meta = replace_with_sensory_expansion(text, [span], [["涙がこぼれる"]])
     assert meta[0]["senses_covered"] == ["sensory"]
     assert "涙がこぼれる" in out
@@ -408,9 +407,7 @@ def test_replace_trailing_clause_already_present():
         sentence_text=text,
         trailing_conjunction="が",
     )
-    out, _ = replace_with_sensory_expansion(
-        text, [span], [["[visual] 涙がこぼれるが、静かに歩いた"]]
-    )
+    out, _ = replace_with_sensory_expansion(text, [span], [["[visual] 涙がこぼれるが、静かに歩いた"]])
     assert out.count("静かに歩いた") == 1
 
 

@@ -1,4 +1,5 @@
 """BookMapper の単体テスト。"""
+
 from datetime import datetime
 from src.domain.entities.novel import Novel
 from src.domain.value_objects.ids import NovelId, UserId

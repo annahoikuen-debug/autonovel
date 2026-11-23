@@ -1,4 +1,5 @@
 """Tests for DAG Persistence (Step 6)."""
+
 import pytest
 import tempfile
 from src.backend.tasks.dag_persistence import FileSystemDAGPersistence, DAGPersistence
@@ -85,6 +86,7 @@ def test_scheduler_checkpoint_integration():
 
         # 実行
         import asyncio
+
         completed = asyncio.run(scheduler.run_dag(g))
 
         assert completed.is_all_completed()

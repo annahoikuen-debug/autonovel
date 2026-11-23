@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock
 from src.backend.workflows.refine_erotic_workflow import RefineEroticWorkflow
 
+
 @pytest.mark.asyncio
 async def test_refine_erotic_workflow():
     """RefineEroticWorkflowのrefine_sceneメソッドをテスト"""

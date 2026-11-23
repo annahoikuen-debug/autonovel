@@ -1,4 +1,5 @@
 """上級者エディタ用データモデルの単体テスト."""
+
 import pytest
 from pydantic import ValidationError
 

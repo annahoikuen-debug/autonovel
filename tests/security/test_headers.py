@@ -3,6 +3,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from src.security.headers import SecurityHeadersMiddleware
 
+
 @pytest.fixture
 def client():
     app = FastAPI()
@@ -13,6 +14,7 @@ def client():
         return {"Hello": "World"}
 
     return TestClient(app)
+
 
 def test_security_headers_present(client):
     resp = client.get("/")

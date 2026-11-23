@@ -1,4 +1,5 @@
 """Extended coverage for src/services/bible_service.py."""
+
 from __future__ import annotations
 
 import json
@@ -298,9 +299,7 @@ class TestGenerateCharacters:
     async def test_returns_mc_and_subs(self):
         llm = make_llm({"name": "Hero", "characters": [{"name": "Sub"}]})
         gen = make_generator(llm=llm)
-        mc, subs = await gen._generate_characters(
-            WorldRules(), "fantasy", "kw", "concept", "hero", "ek", None
-        )
+        mc, subs = await gen._generate_characters(WorldRules(), "fantasy", "kw", "concept", "hero", "ek", None)
         assert mc["name"] == "Hero"
         assert subs == [{"name": "Sub"}]
 
@@ -344,17 +343,13 @@ class TestGenerateBibleCore:
 
     async def test_concept_fallback(self):
         gen = make_generator(llm=make_llm(self._core(concept="")))
-        core = await gen._generate_bible_core(
-            WorldRules(), {}, [], "", "fantasy", "kw", "hero", "ek", 5, "T", None
-        )
+        core = await gen._generate_bible_core(WorldRules(), {}, [], "", "fantasy", "kw", "hero", "ek", 5, "T", None)
         assert "kw" in core.concept
 
     async def test_subs_truncated_to_five(self):
         gen = make_generator(llm=make_llm(self._core()))
         subs = [{"name": f"S{i}"} for i in range(9)]
-        core = await gen._generate_bible_core(
-            WorldRules(), {"name": "H"}, subs, "c", "f", "k", "s", "e", 5, "T", None
-        )
+        core = await gen._generate_bible_core(WorldRules(), {"name": "H"}, subs, "c", "f", "k", "s", "e", 5, "T", None)
         assert len(core.sub_characters) == 5
 
 
@@ -366,9 +361,7 @@ class TestMarketingData:
 
     async def test_applies_catchcopies_and_tags(self):
         mkt = MagicMock()
-        mkt.generate_marketing_pack = AsyncMock(
-            return_value={"catchcopies": ["c1"], "tags": ["t1"]}
-        )
+        mkt.generate_marketing_pack = AsyncMock(return_value={"catchcopies": ["c1"], "tags": ["t1"]})
         gen = make_generator(marketing=mkt)
         core = WorldBibleCore()
         core.marketing_assets.tags = ["t0"]
@@ -421,9 +414,7 @@ class TestAuditAndRepair:
 
     async def test_inconsistent_repair_fails(self):
         auditor = MagicMock()
-        auditor.audit_plot_integrity = AsyncMock(
-            return_value=MagicMock(is_consistent=False, conflict_report="c")
-        )
+        auditor.audit_plot_integrity = AsyncMock(return_value=MagicMock(is_consistent=False, conflict_report="c"))
         gen = make_generator(llm=make_llm(None, success=False), auditor=auditor)
         core = WorldBibleCore()
         core.synopsis = "unchanged"
@@ -432,9 +423,7 @@ class TestAuditAndRepair:
 
     async def test_repair_without_mc_profile(self):
         auditor = MagicMock()
-        auditor.audit_plot_integrity = AsyncMock(
-            return_value=MagicMock(is_consistent=False, conflict_report="c")
-        )
+        auditor.audit_plot_integrity = AsyncMock(return_value=MagicMock(is_consistent=False, conflict_report="c"))
         llm = make_llm({"synopsis": "s2", "repair_summary": "r", "mc_profile": {"name": "X"}})
         gen = make_generator(llm=llm, auditor=auditor)
         core = WorldBibleCore()
@@ -446,7 +435,10 @@ class TestAuditAndRepair:
 class TestMarketingAbTest:
     async def test_applies_winner(self):
         llm = make_llm(
-            {"ab_test_candidates": [{"title": "WinTitle", "tags": ["a"]}, {"title": "Lose", "tags": []}], "winning_index": 0}
+            {
+                "ab_test_candidates": [{"title": "WinTitle", "tags": ["a"]}, {"title": "Lose", "tags": []}],
+                "winning_index": 0,
+            }
         )
         gen = make_generator(llm=llm)
         core = WorldBibleCore()
@@ -505,7 +497,17 @@ class TestGenerateRoadmap:
     async def test_roadmap_from_llm(self):
         payloads = [
             {"arcs": [{"arc_num": 1, "start_ep": 1, "end_ep": 9, "title": "A", "summary": "S"}]},
-            {"full_story_roadmap": [{"ep_num": 1, "title": "R", "one_line_summary": "s", "resolution_style": "Cheat", "antagonist_status": "none"}]},
+            {
+                "full_story_roadmap": [
+                    {
+                        "ep_num": 1,
+                        "title": "R",
+                        "one_line_summary": "s",
+                        "resolution_style": "Cheat",
+                        "antagonist_status": "none",
+                    }
+                ]
+            },
         ]
         it = iter(payloads)
 
@@ -522,7 +524,15 @@ class TestGenerateRoadmap:
         core.synopsis = "s"
         core.title = "T"
         roadmap = await gen._generate_roadmap(core, 9, "f", "e", None)
-        assert roadmap == [{"ep_num": 1, "title": "R", "one_line_summary": "s", "resolution_style": "Cheat", "antagonist_status": "none"}]
+        assert roadmap == [
+            {
+                "ep_num": 1,
+                "title": "R",
+                "one_line_summary": "s",
+                "resolution_style": "Cheat",
+                "antagonist_status": "none",
+            }
+        ]
 
     async def test_roadmap_retry_succeeds(self):
         responses = [
@@ -550,7 +560,9 @@ class TestGenerateRoadmap:
         assert any("再試行" in str(c) for c in reporter.report.call_args_list)
 
     async def test_roadmap_retry_fails_placeholder(self):
-        gen = make_generator(llm=make_llm({"arcs": [{"arc_num": 1, "start_ep": 1, "end_ep": 9, "title": "A", "summary": "S"}]}))
+        gen = make_generator(
+            llm=make_llm({"arcs": [{"arc_num": 1, "start_ep": 1, "end_ep": 9, "title": "A", "summary": "S"}]})
+        )
         core = WorldBibleCore()
         core.synopsis = "s"
         core.title = "T"
@@ -564,7 +576,21 @@ class TestGenerateRoadmap:
         core = WorldBibleCore()
         core.arcs = [ArcBlueprint(arc_num=1, start_ep=1, end_ep=3, title="A", summary="S")]
         core.synopsis = "s"
-        gen = make_generator(llm=make_llm({"full_story_roadmap": [{"ep_num": 1, "title": "R", "one_line_summary": "s", "resolution_style": "Cheat", "antagonist_status": "none"}]}))
+        gen = make_generator(
+            llm=make_llm(
+                {
+                    "full_story_roadmap": [
+                        {
+                            "ep_num": 1,
+                            "title": "R",
+                            "one_line_summary": "s",
+                            "resolution_style": "Cheat",
+                            "antagonist_status": "none",
+                        }
+                    ]
+                }
+            )
+        )
         roadmap = await gen._generate_roadmap(core, 3, "f", "e", None)
         assert len(roadmap) == 1 and roadmap[0]["ep_num"] == 1
 
@@ -573,13 +599,23 @@ class TestStandardPlan:
     async def test_full_flow(self):
         llm = MagicMock()
         payloads = [
-            {"causality_map": ["a -> b"]},                       # world rules
-            {"name": "Hero"},                                     # mc
-            {"characters": [{"name": "Sub"}]},                    # subs
-            {"title": "CoreTitle", "concept": "CoreConcept"},      # bible core
+            {"causality_map": ["a -> b"]},  # world rules
+            {"name": "Hero"},  # mc
+            {"characters": [{"name": "Sub"}]},  # subs
+            {"title": "CoreTitle", "concept": "CoreConcept"},  # bible core
             {"ab_test_candidates": [{"title": "AB", "tags": ["t"]}], "winning_index": 0},  # ab test
             {"arcs": [{"arc_num": 1, "start_ep": 1, "end_ep": 3, "title": "A", "summary": "S"}]},
-            {"full_story_roadmap": [{"ep_num": 1, "title": "R", "one_line_summary": "s", "resolution_style": "Cheat", "antagonist_status": "none"}]},
+            {
+                "full_story_roadmap": [
+                    {
+                        "ep_num": 1,
+                        "title": "R",
+                        "one_line_summary": "s",
+                        "resolution_style": "Cheat",
+                        "antagonist_status": "none",
+                    }
+                ]
+            },
         ]
         it = iter(payloads)
 
@@ -606,7 +642,17 @@ class TestStandardPlan:
             {"title": "CoreTitle", "synopsis": "short"},
             None,  # ab test failure
             {"arcs": [{"arc_num": 1, "start_ep": 1, "end_ep": 3, "title": "A", "summary": "S"}]},
-            {"full_story_roadmap": [{"ep_num": 1, "title": "R", "one_line_summary": "s", "resolution_style": "Cheat", "antagonist_status": "none"}]},
+            {
+                "full_story_roadmap": [
+                    {
+                        "ep_num": 1,
+                        "title": "R",
+                        "one_line_summary": "s",
+                        "resolution_style": "Cheat",
+                        "antagonist_status": "none",
+                    }
+                ]
+            },
         ]
         it = iter(payloads)
 
@@ -620,10 +666,13 @@ class TestStandardPlan:
         llm.generate_json = AsyncMock(side_effect=lambda *a, **k: make())
         gen = make_generator(llm=llm)
         config = make_config(target_eps=3, initial_plot_limit=0)
-        with patch(
-            "src.engine.bible_service.DomainProfileService.get_fallback_synopsis_details",
-            return_value={"theme_desc": "TH", "ending_desc": "EN"},
-        ), patch("src.engine.bible_service.DomainProfileService.get_default_causality_map", return_value=[]):
+        with (
+            patch(
+                "src.engine.bible_service.DomainProfileService.get_fallback_synopsis_details",
+                return_value={"theme_desc": "TH", "ending_desc": "EN"},
+            ),
+            patch("src.engine.bible_service.DomainProfileService.get_default_causality_map", return_value=[]),
+        ):
             await gen._create_standard_plan(config, None)
 
     async def test_plot_expansion_invoked(self):
@@ -635,7 +684,17 @@ class TestStandardPlan:
             {"title": "CoreTitle", "synopsis": "x" * 60},
             None,
             {"arcs": [{"arc_num": 1, "start_ep": 1, "end_ep": 2, "title": "A", "summary": "S"}]},
-            {"full_story_roadmap": [{"ep_num": 1, "title": "R", "one_line_summary": "s", "resolution_style": "Cheat", "antagonist_status": "none"}]},
+            {
+                "full_story_roadmap": [
+                    {
+                        "ep_num": 1,
+                        "title": "R",
+                        "one_line_summary": "s",
+                        "resolution_style": "Cheat",
+                        "antagonist_status": "none",
+                    }
+                ]
+            },
         ]
         it = iter(payloads)
 
@@ -663,7 +722,17 @@ class TestStandardPlan:
             {"title": "CoreTitle", "synopsis": "x" * 60},
             None,
             {"arcs": [{"arc_num": 1, "start_ep": 1, "end_ep": 2, "title": "A", "summary": "S"}]},
-            {"full_story_roadmap": [{"ep_num": 1, "title": "R", "one_line_summary": "s", "resolution_style": "Cheat", "antagonist_status": "none"}]},
+            {
+                "full_story_roadmap": [
+                    {
+                        "ep_num": 1,
+                        "title": "R",
+                        "one_line_summary": "s",
+                        "resolution_style": "Cheat",
+                        "antagonist_status": "none",
+                    }
+                ]
+            },
         ]
         it = iter(payloads)
 
@@ -698,9 +767,7 @@ class TestUltraFastPlan:
         repo = make_repo()
         gen = make_generator(repo=repo, llm=llm)
         config = make_config(ultra_fast=True, initial_plot_limit=0)
-        with patch(
-            "src.backend.database.UnitOfWork"
-        ):
+        with patch("src.backend.database.UnitOfWork"):
             pass
         book_id, bible = await gen._create_ultra_fast_plan(config, None)
         assert book_id == 11
@@ -785,8 +852,10 @@ class TestCreateHegemonyPlan:
             async def __aexit__(self, *exc):
                 return False
 
-        with patch("src.backend.database.UnitOfWork", FakeUOW), \
-             patch.object(gen, "_create_ultra_fast_plan", AsyncMock(return_value=(11, "UF_BIBLE"))) as uf:
+        with (
+            patch("src.backend.database.UnitOfWork", FakeUOW),
+            patch.object(gen, "_create_ultra_fast_plan", AsyncMock(return_value=(11, "UF_BIBLE"))) as uf,
+        ):
             book_id, bible = await gen.create_hegemony_plan(
                 genre="fantasy", keywords="k", style_key="style_web_standard", concept="c", title="T"
             )
@@ -798,8 +867,10 @@ class TestCreateHegemonyPlan:
     async def test_standard_route(self):
         gen = make_generator()
         config = make_config(ultra_fast=False)
-        with patch.object(gen, "_create_standard_plan", AsyncMock(return_value=(5, "BIBLE"))) as std, \
-             patch("src.backend.database.UnitOfWork") as uow:
+        with (
+            patch.object(gen, "_create_standard_plan", AsyncMock(return_value=(5, "BIBLE"))) as std,
+            patch("src.backend.database.UnitOfWork") as uow,
+        ):
             uow.return_value.__aenter__ = AsyncMock()
             uow.return_value.__aexit__ = AsyncMock(return_value=False)
             book_id, bible = await gen.create_hegemony_plan(config=config)
@@ -808,8 +879,10 @@ class TestCreateHegemonyPlan:
 
     async def test_ultra_fast_route_flag(self):
         gen = make_generator()
-        with patch.object(gen, "_create_ultra_fast_plan", AsyncMock(return_value=(6, "B2"))) as uf, \
-             patch("src.backend.database.UnitOfWork") as uow:
+        with (
+            patch.object(gen, "_create_ultra_fast_plan", AsyncMock(return_value=(6, "B2"))) as uf,
+            patch("src.backend.database.UnitOfWork") as uow,
+        ):
             uow.return_value.__aenter__ = AsyncMock()
             uow.return_value.__aexit__ = AsyncMock(return_value=False)
             book_id, bible = await gen.create_hegemony_plan(config=make_config(ultra_fast=True))

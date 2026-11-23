@@ -192,8 +192,8 @@ class TestTonePerfector:
     def test_enforce_tone_no_name(self):
         """Test with character without name."""
         chars = [CharacterRegistry(name="", first_person="私")]
-        result = TonePerfector.enforce_tone('「私は行く」', chars)
-        assert result == '「私は行く」'
+        result = TonePerfector.enforce_tone("「私は行く」", chars)
+        assert result == "「私は行く」"
 
 
 class TestOutputSanitizer:
@@ -219,13 +219,13 @@ class TestOutputSanitizer:
 
     def test_parse_llm_json_invalid(self):
         """Test parsing invalid JSON."""
-        text = 'This is not JSON at all'
+        text = "This is not JSON at all"
         result = OutputSanitizer.parse_llm_json(text)
         assert result == {}
 
     def test_extract_content_and_metadata_separator(self):
         """Test extraction with separator."""
-        text = "Story content\n### NOVEL CONTENT ###\n{\"title\": \"Test\"}\n### NOVEL CONTENT ###"
+        text = 'Story content\n### NOVEL CONTENT ###\n{"title": "Test"}\n### NOVEL CONTENT ###'
         metadata, content = OutputSanitizer.extract_content_and_metadata(text)
         # The function extracts metadata from the separator format
         assert isinstance(metadata, dict)

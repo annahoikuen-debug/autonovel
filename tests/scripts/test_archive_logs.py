@@ -2,6 +2,7 @@ import os
 import subprocess
 import sys
 
+
 def test_archive_logs_script_runs():
     """Run the archive logs script and verify it runs without error."""
     result = subprocess.run(

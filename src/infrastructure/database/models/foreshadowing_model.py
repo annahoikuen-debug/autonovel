@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base_orm import Base
@@ -32,7 +32,10 @@ class ForeshadowingModel(Base):
     """
 
     __tablename__ = "foreshadowings"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = (
+        Index("ix_foreshadowings_book_status", "book_id", "status"),
+        {"extend_existing": True},
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     book_id: Mapped[int] = mapped_column(

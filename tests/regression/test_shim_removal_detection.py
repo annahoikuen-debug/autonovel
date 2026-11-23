@@ -129,6 +129,5 @@ def test_removed_shim_has_no_referencing_source(shim_path):
     mod = shim_path[:-3].replace("/", ".")
     referencing = sorted(m for m in _strict_import_modules() if m == mod or m.startswith(mod + "."))
     assert not referencing, (
-        f"{shim_path} ({mod}) を参照するソースがまだ残っている: {referencing}\n"
-        "削除前に全参照を新パスへ置換すること。"
+        f"{shim_path} ({mod}) を参照するソースがまだ残っている: {referencing}\n削除前に全参照を新パスへ置換すること。"
     )

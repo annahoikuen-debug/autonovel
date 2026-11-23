@@ -4,6 +4,7 @@
 既存テストは全て「keys に climax がある」ことしか見ていなかったため、
 **消えた beat の中身を直接数える**必要がある。
 """
+
 from __future__ import annotations
 
 import pytest
@@ -29,9 +30,7 @@ def test_close_role_survives_medium_lengths(pattern: str, eps: int):
     if not expected:
         pytest.skip(f"{pattern} には close role の beat が無い（ patterns.yaml 側の定義）")
     keys = set(resolve_spine(pattern, "single_volume", "general", eps).keys)
-    assert keys & set(expected), (
-        f"{pattern}@{eps}: close role が全滅。期待 {expected} / 実際 {sorted(keys)}"
-    )
+    assert keys & set(expected), f"{pattern}@{eps}: close role が全滅。期待 {expected} / 実際 {sorted(keys)}"
 
 
 @pytest.mark.parametrize(
@@ -49,9 +48,7 @@ def test_known_drop_cases_are_fixed(pattern: str, length: str, market: str, eps:
     spine = resolve_spine(pattern, length, market, eps)
     keys = spine.keys
     assert "climax" in keys, f"{pattern}@{eps}: climax が消えた {keys}"
-    assert keys[-1] != "climax", (
-        f"{pattern}@{eps}: 最後が回収 beat ではなく climax 上書きされている {keys}"
-    )
+    assert keys[-1] != "climax", f"{pattern}@{eps}: 最後が回収 beat ではなく climax 上書きされている {keys}"
     assert len(keys) == len(set(keys)), f"{pattern}@{eps}: キーの重複 {keys}"
 
 
@@ -66,9 +63,7 @@ def test_episode_coverage_is_exact_with_no_gap_and_no_overlap(eps: int):
                 f"{pattern}@{eps}: covered={covered[:12]} len={len(covered)}"
             )
         else:
-            assert covered == list(range(1, eps + 1)), (
-                f"{pattern}@{eps}: covered={covered[:12]} len={len(covered)}"
-            )
+            assert covered == list(range(1, eps + 1)), f"{pattern}@{eps}: covered={covered[:12]} len={len(covered)}"
 
 
 def test_beat_count_equals_min_of_nodes_and_eps_when_compressible():
@@ -81,9 +76,7 @@ def test_beat_count_equals_min_of_nodes_and_eps_when_compressible():
         yaml_len = len(PATTERNS[pattern]["beats"])
         for eps in (3, 5, 10):
             spine = resolve_spine(pattern, "novella", "general", eps)
-            assert len(spine.beats) <= max(eps, 3), (
-                f"{pattern}@{eps}: {len(spine.beats)} beats（yaml は {yaml_len}）"
-            )
+            assert len(spine.beats) <= max(eps, 3), f"{pattern}@{eps}: {len(spine.beats)} beats（yaml は {yaml_len}）"
 
 
 def test_merged_duty_is_not_truncated_mid_sentence():

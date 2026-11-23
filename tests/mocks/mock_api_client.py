@@ -168,9 +168,7 @@ class MockApiClient:
         }
         return task_id
 
-    def expand_plots(
-        self, api_key: str, config: dict, book_id: int, gen_from: int, gen_to: int
-    ) -> str | None:
+    def expand_plots(self, api_key: str, config: dict, book_id: int, gen_from: int, gen_to: int) -> str | None:
         task_id = "task_expand_mock"
         self.tasks[task_id] = {
             "is_running": False,
@@ -214,9 +212,7 @@ class MockApiClient:
         }
         return task_id
 
-    def import_chapter(
-        self, api_key: str, book_id: int, ep_num: int, import_text: str, do_refine: bool
-    ) -> str | None:
+    def import_chapter(self, api_key: str, book_id: int, ep_num: int, import_text: str, do_refine: bool) -> str | None:
         task_id = "task_import_mock"
         self.tasks[task_id] = {
             "is_running": False,
@@ -250,9 +246,7 @@ class MockApiClient:
         return task_id
 
     def analyze_style_dna(self, api_key: str, sample: str) -> dict[str, Any]:
-        return {
-            "style_dna": {"sentence_length": "medium", "pacing": "fast", "vocabulary": "standard"}
-        }
+        return {"style_dna": {"sentence_length": "medium", "pacing": "fast", "vocabulary": "standard"}}
 
     def audit_producer_plan(
         self,
@@ -322,9 +316,7 @@ class MockApiClient:
 
     def delete_chapter(self, book_id: int, ep_num: int) -> bool:
         if book_id in self.chapters:
-            self.chapters[book_id] = [
-                c for c in self.chapters[book_id] if c.get("ep_num") != ep_num
-            ]
+            self.chapters[book_id] = [c for c in self.chapters[book_id] if c.get("ep_num") != ep_num]
             return True
         return False
 

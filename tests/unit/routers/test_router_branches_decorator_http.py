@@ -87,9 +87,7 @@ def test_every_decorated_route_is_registered():
     "template_path,method,request_path,body",
     DECORATED_ROUTES,
 )
-def test_decorated_route_does_not_return_500(
-    template_path: str, method: str, request_path: str, body: dict | None
-):
+def test_decorated_route_does_not_return_500(template_path: str, method: str, request_path: str, body: dict | None):
     """``@requires_book_ownership`` 付きルートが TypeError 起因の 500 を返さない。
 
     旧実装（ラッパー無し）では、この経路は必ず 500 になっていた。
@@ -104,13 +102,10 @@ def test_decorated_route_does_not_return_500(
         if method == "delete":
             res = client.delete(request_path)
         else:
-            res = getattr(client, method)(
-                request_path, json=body, params={"branch_id": BRANCH_ID}
-            )
+            res = getattr(client, method)(request_path, json=body, params={"branch_id": BRANCH_ID})
 
     assert res.status_code != 500, (
-        f"{method.upper()} {template_path} が 500"
-        f"（`current_user` の想定外 kwargs）: {res.text}"
+        f"{method.upper()} {template_path} が 500（`current_user` の想定外 kwargs）: {res.text}"
     )
 
 
@@ -166,16 +161,18 @@ def test_ownership_helper_receives_a_user_object():
     async def _capture(book_id, current_user, uow=None):
         seen.append((book_id, current_user))
 
-    with patch.object(branches_module, "verify_book_ownership", _capture), patch.object(
-        branches_module, "get_branch_session", _fake_session
-    ), patch.object(
-        branches_module,
-        "BranchRepository",
-        MagicMock(
-            return_value=MagicMock(
-                get_branch=AsyncMock(return_value=SimpleNamespace(id=BRANCH_ID, book_id=BOOK_ID)),
-                save_branch_graph=AsyncMock(return_value=None),
-            )
+    with (
+        patch.object(branches_module, "verify_book_ownership", _capture),
+        patch.object(branches_module, "get_branch_session", _fake_session),
+        patch.object(
+            branches_module,
+            "BranchRepository",
+            MagicMock(
+                return_value=MagicMock(
+                    get_branch=AsyncMock(return_value=SimpleNamespace(id=BRANCH_ID, book_id=BOOK_ID)),
+                    save_branch_graph=AsyncMock(return_value=None),
+                )
+            ),
         ),
     ):
         client = TestClient(_make_app(), raise_server_exceptions=False)

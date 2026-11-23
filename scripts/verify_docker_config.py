@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Docker設定とヘルスチェック構成の自動検証スクリプト。"""
+
 import sys
 from pathlib import Path
 

@@ -73,9 +73,7 @@ async def test_no_dependents_is_noop(monkeypatch):
 async def test_unawaitable_repo_attribute_is_swallowed(monkeypatch):
     """`MagicMock()`（await 不能）を渡しても例外を漏らさない。"""
     monkeypatch.setenv("FORESHADOW_CASCADE_RESCHEDULE", "1")
-    out = await ForeshadowingRescheduler.cascade_reschedule(
-        ROWS, 1, 5, MagicMock(), max_episode=40
-    )
+    out = await ForeshadowingRescheduler.cascade_reschedule(ROWS, 1, 5, MagicMock(), max_episode=40)
     assert out == []
 
 

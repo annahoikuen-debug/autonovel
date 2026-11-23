@@ -49,9 +49,7 @@ class TestFactDensityCod:
         llm = _CountingLLM(["第1〜10話: 封印が解けた。少年が旅に出た。"])
         gen = RollupGenerator(cfg, llm=llm)
 
-        result = await gen.generate_block_rollup(
-            1, (1, 10), {1: "第1話: 封印があった。", 2: "第2話: 封印が解けた。"}
-        )
+        result = await gen.generate_block_rollup(1, (1, 10), {1: "第1話: 封印があった。", 2: "第2話: 封印が解けた。"})
 
         assert llm.call_count == 1, f"cod_rounds=1 で呼び出し回数が 1 回でない: {llm.call_count}"
         assert result == "第1〜10話: 封印が解けた。少年が旅に出た。"
@@ -68,7 +66,9 @@ class TestFactDensityCod:
         gen = RollupGenerator(cfg, llm=llm)
 
         result = await gen.generate_block_rollup(
-            1, (1, 10), {1: "第1話: 封印があった。", 2: "第2話: 封印が解けた。"},
+            1,
+            (1, 10),
+            {1: "第1話: 封印があった。", 2: "第2話: 封印が解けた。"},
             cod_rounds=2,
         )
 
@@ -110,9 +110,7 @@ class TestFactDensityCod:
         )
         gen = RollupGenerator(cfg, llm=llm)
 
-        result = await gen.generate_block_rollup(
-            1, (1, 10), {1: "第1話: テスト。"}, cod_rounds=3
-        )
+        result = await gen.generate_block_rollup(1, (1, 10), {1: "第1話: テスト。"}, cod_rounds=3)
 
         assert llm.call_count == 3, f"cod_rounds=3 で呼び出し回数が 3 回でない: {llm.call_count}"
         assert result == "pass3 結果"
@@ -123,9 +121,7 @@ class TestFactDensityCod:
         llm = _CountingLLM(["単一 pass 結果"])
         gen = RollupGenerator(cfg, llm=llm)
 
-        result = await gen.generate_block_rollup(
-            1, (1, 10), {1: "第1話: テスト。"}, cod_rounds=0
-        )
+        result = await gen.generate_block_rollup(1, (1, 10), {1: "第1話: テスト。"}, cod_rounds=0)
 
         assert llm.call_count == 1
         assert result == "単一 pass 結果"
@@ -135,9 +131,7 @@ class TestFactDensityCod:
         """LLM 未設定時は cod_rounds に関わらず None を返す（fail-open）。"""
         gen = RollupGenerator(cfg, llm=None)
 
-        result = await gen.generate_block_rollup(
-            1, (1, 10), {1: "第1話: テスト。"}, cod_rounds=2
-        )
+        result = await gen.generate_block_rollup(1, (1, 10), {1: "第1話: テスト。"}, cod_rounds=2)
 
         assert result is None
 
@@ -155,9 +149,7 @@ class TestFactDensityCod:
         )
         gen = RollupGenerator(cfg, llm=llm)
 
-        result = await gen.generate_block_rollup(
-            1, (1, 10), {1: "第1話: テスト。" * 10}, cod_rounds=2
-        )
+        result = await gen.generate_block_rollup(1, (1, 10), {1: "第1話: テスト。" * 10}, cod_rounds=2)
 
         assert result == "あ" * 50
         assert len(result) <= 150, "2 pass 目は 1 pass 目以下の文字数（圧縮による密度向上）であるべき"

@@ -49,9 +49,7 @@ def _tables_with_fk_closure(*tables):
 async def _real_db(tmp_path):
     """digest_rollups を含む実 SQLite セッション工場。"""
     db_path = tmp_path / "hierarchical_memory.db"
-    engine = create_async_engine(
-        f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False, connect_args={"timeout": 10}
-    )
+    engine = create_async_engine(f"sqlite+aiosqlite:///{db_path.as_posix()}", echo=False, connect_args={"timeout": 10})
     tables = _tables_with_fk_closure(
         ForeshadowingModel.__table__,
         EpisodeDigestModel.__table__,
@@ -76,9 +74,7 @@ async def _real_db(tmp_path):
                         target_eps=60,
                     )
                 )
-    session_factory = async_sessionmaker(
-        bind=engine, class_=AsyncSession, expire_on_commit=False
-    )
+    session_factory = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
     try:
         yield session_factory
     finally:
@@ -90,9 +86,7 @@ def _raw_generation(metadata: dict) -> str:
     return (
         "少年は剣身に手を伸ばし、祈りを捧げた。\n"
         "眩い光とともに封印が解け、聖剣の封印は静かに開いた。\n\n"
-        "[METADATA_JSON]\n"
-        + json.dumps(metadata, ensure_ascii=False, indent=2)
-        + "\n[/METADATA_JSON]"
+        "[METADATA_JSON]\n" + json.dumps(metadata, ensure_ascii=False, indent=2) + "\n[/METADATA_JSON]"
     )
 
 
@@ -110,9 +104,7 @@ def _make_writer(session, ep_num: int, raw: str = "PROMPT") -> EpisodeWriter:
     llm.generate = MagicMock(return_value=f"第{ep_num}話: 封印が解けた。")
 
     prompt_manager = MagicMock()
-    prompt_manager.build_final_writing_prompt = AsyncMock(
-        return_value=_raw_generation({})
-    )
+    prompt_manager.build_final_writing_prompt = AsyncMock(return_value=_raw_generation({}))
 
     repo = SimpleNamespace(session=session)
     writer = EpisodeWriter(
@@ -152,9 +144,7 @@ async def test_block_rollup_created_at_episode_10(tmp_path, monkeypatch):
 
             repo_digest = EpisodeDigestRepository(session)
             for ep in range(1, EPISODE_NUMBER):
-                await EpisodeDigestService(
-                    repo=repo_digest, llm=_make_digest_llm(ep)
-                ).summarize_and_save(
+                await EpisodeDigestService(repo=repo_digest, llm=_make_digest_llm(ep)).summarize_and_save(
                     book_id=BOOK_ID, episode_num=ep, draft_text=f"第{ep}話本文"
                 )
 
@@ -196,9 +186,7 @@ async def test_volume_rollup_created_at_episode_50(tmp_path, monkeypatch):
 
             repo_digest = EpisodeDigestRepository(session)
             for ep in range(1, 50):
-                await EpisodeDigestService(
-                    repo=repo_digest, llm=_make_digest_llm(ep)
-                ).summarize_and_save(
+                await EpisodeDigestService(repo=repo_digest, llm=_make_digest_llm(ep)).summarize_and_save(
                     book_id=BOOK_ID, episode_num=ep, draft_text=f"第{ep}話本文"
                 )
 
@@ -237,8 +225,7 @@ async def test_pinned_facts_in_prompt_when_enabled(tmp_path, monkeypatch):
                 "use_beat_to_scene": False,
                 "contract_foreshadowings": [{"id": 1, "title": "竜の鱗の行方"}],
                 "unresolved_foreshadowings": [
-                    {"id": 2, "title": "期限切れ伏線", "planted_episode": 1,
-                     "target_episode": 5, "status": "planted"}
+                    {"id": 2, "title": "期限切れ伏線", "planted_episode": 1, "target_episode": 5, "status": "planted"}
                 ],
             }
             await writer.run(_agent_ctx(EPISODE_NUMBER, writing_context))
@@ -275,8 +262,7 @@ async def test_flag_off_pinned_is_empty(tmp_path, monkeypatch):
                 "use_beat_to_scene": False,
                 "contract_foreshadowings": [{"id": 1, "title": "竜の鱗の行方"}],
                 "unresolved_foreshadowings": [
-                    {"id": 2, "title": "期限切れ伏線", "planted_episode": 1,
-                     "target_episode": 5, "status": "planted"}
+                    {"id": 2, "title": "期限切れ伏線", "planted_episode": 1, "target_episode": 5, "status": "planted"}
                 ],
             }
             await writer.run(_agent_ctx(EPISODE_NUMBER, writing_context))
@@ -335,10 +321,9 @@ async def test_rollup_llm_call_count_budget(tmp_path, monkeypatch):
                         EpisodeDigestRepository,
                         EpisodeDigestService,
                     )
+
                     repo_digest = EpisodeDigestRepository(session)
-                    await EpisodeDigestService(
-                        repo=repo_digest, llm=_make_digest_llm(ep)
-                    ).summarize_and_save(
+                    await EpisodeDigestService(repo=repo_digest, llm=_make_digest_llm(ep)).summarize_and_save(
                         book_id=BOOK_ID, episode_num=ep, draft_text=f"第{ep}話本文"
                     )
                 await writer.run(_agent_ctx(ep, writing_context))
@@ -365,9 +350,7 @@ async def test_retake_triggers_stale_rollup_regeneration(tmp_path, monkeypatch):
 
             repo_digest = EpisodeDigestRepository(session)
             for ep in range(1, 10):
-                await EpisodeDigestService(
-                    repo=repo_digest, llm=_make_digest_llm(ep)
-                ).summarize_and_save(
+                await EpisodeDigestService(repo=repo_digest, llm=_make_digest_llm(ep)).summarize_and_save(
                     book_id=BOOK_ID, episode_num=ep, draft_text=f"第{ep}話本文"
                 )
 
@@ -391,9 +374,7 @@ async def test_retake_triggers_stale_rollup_regeneration(tmp_path, monkeypatch):
             assert rollups[0].stale_at is None
 
             # Step 23-2: ep3 の digest を retake で更新 → 章 rollup (1-10) が stale になる
-            await EpisodeDigestService(
-                repo=repo_digest, llm=_make_digest_llm(3)
-            ).summarize_and_save(
+            await EpisodeDigestService(repo=repo_digest, llm=_make_digest_llm(3)).summarize_and_save(
                 book_id=BOOK_ID, episode_num=3, draft_text="第3話: 更新後の本文（竜の鱗を入手）"
             )
 

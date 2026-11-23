@@ -58,23 +58,27 @@ class MockEngine:
         self.auditor = MagicMock()
 
         # デフォルトモック設定
-        self.planner.infer_easy_mode_params = AsyncMock(return_value=MagicMock(
-            genre_key="ファンタジー",
-            core_idea="テストコンセプト",
-            mc_concept="チート主人公",
-            title_idea="テストタイトル",
-        ))
+        self.planner.infer_easy_mode_params = AsyncMock(
+            return_value=MagicMock(
+                genre_key="ファンタジー",
+                core_idea="テストコンセプト",
+                mc_concept="チート主人公",
+                title_idea="テストタイトル",
+            )
+        )
         self.planner.create_hegemony_plan = AsyncMock(return_value=(1, MagicMock(title="テスト小説")))
         self.planner.plan_auditor = MagicMock()
         self.planner.plan_auditor.audit_bible_completeness = AsyncMock(return_value=True)
 
         self.writer.generate_episodes_pipeline = AsyncMock(return_value=(10000, []))
         self.llm.generate = AsyncMock(return_value="リライトされた本文")
-        self.auditor.audit = AsyncMock(return_value={
-            "overall_score": 900,  # 1000点満点
-            "issues": [],
-            "improvements": ["もっと面白く"],
-        })
+        self.auditor.audit = AsyncMock(
+            return_value={
+                "overall_score": 900,  # 1000点満点
+                "issues": [],
+                "improvements": ["もっと面白く"],
+            }
+        )
 
         # リポジトリモック
         self.repo.plot.get_all_plots = AsyncMock(return_value=[])
@@ -188,7 +192,9 @@ class TestUnifiedPipeline:
         )
 
         # 実行時間短縮のため一部モック
-        with patch("src.services.pipeline_steps.CatharsisAnalysisStep.execute", new_callable=AsyncMock) as mock_catharsis:
+        with patch(
+            "src.services.pipeline_steps.CatharsisAnalysisStep.execute", new_callable=AsyncMock
+        ) as mock_catharsis:
             mock_catharsis.return_value = True
 
             result = await pipeline.execute(full_auto_context, mock_engine, mock_reporter)
@@ -290,6 +296,7 @@ class TestUnifiedPipeline:
 
         # 1回目失敗、2回目成功
         call_count = [0]
+
         async def mock_generate(*args, **kwargs):
             call_count[0] += 1
             if call_count[0] == 1:
@@ -460,9 +467,7 @@ async def test_illustration_step_uses_engine_agent():
 
     # engine に illustration_agent を生やす (Mock ではなく実 IllustrationWorkflow)
     mock_workflow = MagicMock(spec=IllustrationWorkflow)
-    mock_workflow.execute = AsyncMock(
-        return_value={"status": "success", "illustrations": [{"id": 1, "url": "/x.png"}]}
-    )
+    mock_workflow.execute = AsyncMock(return_value={"status": "success", "illustrations": [{"id": 1, "url": "/x.png"}]})
     mock_engine.illustration_agent = MagicMock()
     mock_engine.illustration_workflow = mock_workflow
 
@@ -545,9 +550,7 @@ async def test_marketing_step_preset_path():
         book_id=1,
     )
 
-    with patch(
-        "src.services.pipeline_steps.load_preset_for_pipeline", return_value=preset
-    ):
+    with patch("src.services.pipeline_steps.load_preset_for_pipeline", return_value=preset):
         result = await MarketingStep().execute(ctx, mock_engine, mock_reporter)
 
     assert result is True
@@ -574,9 +577,7 @@ async def test_marketing_step_llm_fallback():
         concept="底辺冒険者の逆襲",
     )
 
-    with patch(
-        "src.services.pipeline_steps.load_preset_for_pipeline", return_value={}
-    ):
+    with patch("src.services.pipeline_steps.load_preset_for_pipeline", return_value={}):
         result = await MarketingStep().execute(ctx, mock_engine, mock_reporter)
 
     assert result is True
@@ -601,9 +602,7 @@ async def test_marketing_step_template_fallback():
         book_id=1,
     )
 
-    with patch(
-        "src.services.pipeline_steps.load_preset_for_pipeline", return_value={}
-    ):
+    with patch("src.services.pipeline_steps.load_preset_for_pipeline", return_value={}):
         result = await MarketingStep().execute(ctx, mock_engine, mock_reporter)
 
     assert result is True
@@ -627,9 +626,7 @@ async def test_marketing_step_archetype_key_missing_safe():
         book_id=1,
     )
 
-    with patch(
-        "src.services.pipeline_steps.load_preset_for_pipeline", return_value={}
-    ) as mock_load:
+    with patch("src.services.pipeline_steps.load_preset_for_pipeline", return_value={}) as mock_load:
         result = await MarketingStep().execute(ctx, mock_engine, mock_reporter)
 
     assert result is True
@@ -697,9 +694,7 @@ async def test_catharsis_step_real_analysis_runs():
     plot1 = MagicMock(tension=40)
     plot2 = MagicMock(tension=80)
     plot3 = MagicMock(tension=30)
-    mock_engine.repo.plot.get_all_plots = AsyncMock(
-        return_value=[plot1, plot2, plot3]
-    )
+    mock_engine.repo.plot.get_all_plots = AsyncMock(return_value=[plot1, plot2, plot3])
     mock_reporter = MockReporter()
     ctx = WorkflowContext(
         genre="ファンタジー",

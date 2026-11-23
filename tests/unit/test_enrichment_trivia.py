@@ -1,5 +1,6 @@
 # tests/unit/test_enrichment_trivia.py
 """EnrichmentAgent トリビア挿入の単体テスト"""
+
 import pytest
 from src.agents.enrichment_agent import EnrichmentAgent
 
@@ -30,7 +31,7 @@ class TestTriviaInsertion:
         assert 0 in points
         # 残りは文末付近
         for p in points[1:]:
-            assert text[max(0, p-5):p] in ["。", "！", "？"] or p == len(text)
+            assert text[max(0, p - 5) : p] in ["。", "！", "？"] or p == len(text)
 
     def test_find_insertion_points_evenly_spaced(self, agent):
         """等間隔フォールバック"""
@@ -39,7 +40,7 @@ class TestTriviaInsertion:
         assert len(points) == 5
         # 概ね等間隔
         for i in range(1, len(points)):
-            diff = points[i] - points[i-1]
+            diff = points[i] - points[i - 1]
             assert 150 < diff < 250  # 1000/5=200 前後
 
     def test_score_trivia_relevance_exact_match(self, agent):
@@ -80,11 +81,7 @@ class TestTriviaInsertion:
 
     def test_extract_entities(self, agent):
         """エンティティ抽出"""
-        writing_context = {
-            "characters": ["主人公", "ヒロイン"],
-            "location": "王都",
-            "key_items": ["聖剣", "魔導書"]
-        }
+        writing_context = {"characters": ["主人公", "ヒロイン"], "location": "王都", "key_items": ["聖剣", "魔導書"]}
         entities = agent._extract_entities(writing_context)
         assert "主人公" in entities
         assert "ヒロイン" in entities

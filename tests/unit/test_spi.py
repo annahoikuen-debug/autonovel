@@ -51,8 +51,7 @@ def test_spi_llm_factory_rejects_non_mock_provider():
         except ValueError:
             continue
         raise AssertionError(
-            f"provider_type={provider!r} が ValueError を投げずに生成されました。"
-            " フェイク実装が復活しています"
+            f"provider_type={provider!r} が ValueError を投げずに生成されました。 フェイク実装が復活しています"
         )
 
 

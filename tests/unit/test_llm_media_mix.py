@@ -58,10 +58,26 @@ class MockMediaScriptAgent:
                     emotion="anger",
                     direction="[激昂・大声・早口]",
                     audio_cues_before=[
-                        {"type": "sfx", "name": "tension", "description": "緊張感", "duration": 1.0, "volume": 1.0, "fade_in": 0.0, "fade_out": 0.0}
+                        {
+                            "type": "sfx",
+                            "name": "tension",
+                            "description": "緊張感",
+                            "duration": 1.0,
+                            "volume": 1.0,
+                            "fade_in": 0.0,
+                            "fade_out": 0.0,
+                        }
                     ],
                     audio_cues_after=[
-                        {"type": "sfx", "name": "impact", "description": "インパクト", "duration": 0.5, "volume": 1.0, "fade_in": 0.0, "fade_out": 0.0}
+                        {
+                            "type": "sfx",
+                            "name": "impact",
+                            "description": "インパクト",
+                            "duration": 0.5,
+                            "volume": 1.0,
+                            "fade_in": 0.0,
+                            "fade_out": 0.0,
+                        }
                     ],
                 ),
                 MagicMock(
@@ -268,10 +284,14 @@ def test_media_mix_exporter_export_all():
     episode = make_test_episode(1)
     series = make_test_series()
 
-    scripts = exporter.export_all(episode, series, [
-        MediaFormat.MANGA,
-        MediaFormat.AUDIO_DRAMA,
-    ])
+    scripts = exporter.export_all(
+        episode,
+        series,
+        [
+            MediaFormat.MANGA,
+            MediaFormat.AUDIO_DRAMA,
+        ],
+    )
 
     assert MediaFormat.MANGA in scripts
     assert MediaFormat.AUDIO_DRAMA in scripts
@@ -291,9 +311,11 @@ def test_manga_character_context_injection():
     # Capture the characters passed to the agent
     captured_chars = []
     original_generate = mock_agent.generate_manga_script
+
     def capture_chars(text, chars):
         captured_chars.append(chars)
         return original_generate(text, chars)
+
     mock_agent.generate_manga_script = capture_chars
 
     episode = make_test_episode(1)
@@ -319,9 +341,11 @@ def test_audio_character_context_injection():
 
     captured_chars = []
     original_generate = mock_agent.generate_audio_script
+
     def capture_chars(text, chars):
         captured_chars.append(chars)
         return original_generate(text, chars)
+
     mock_agent.generate_audio_script = capture_chars
 
     episode = make_test_episode(1)

@@ -1,4 +1,5 @@
 """Tests for annotations API endpoints - unit tests with proper mocking."""
+
 from __future__ import annotations
 
 import pytest
@@ -44,9 +45,7 @@ class TestAnnotationsRouterLogic:
         req = PersistRequest(
             book_id=1,
             episode=14,
-            beats=[
-                BeatDTO(episode=14, scene=3, source="A", target="B", emotion="fear", delta=0.8, cause="test")
-            ]
+            beats=[BeatDTO(episode=14, scene=3, source="A", target="B", emotion="fear", delta=0.8, cause="test")],
         )
         assert req.book_id == 1
         assert len(req.beats) == 1
@@ -109,12 +108,14 @@ class TestAnnotationsRouterLogic:
             episode=14,
             beats=[
                 BeatDTO(episode=14, scene=3, source="A", target="B", emotion="fear", delta=0.8, cause="test"),
-            ]
+            ],
         )
 
         # モックセットアップ
         with patch("src.backend.routers.annotations.verify_book_ownership", new_callable=AsyncMock) as mock_verify:
-            with patch("src.backend.routers.annotations.load_character_dict", return_value={"A", "B"}) as mock_load_dict:
+            with patch(
+                "src.backend.routers.annotations.load_character_dict", return_value={"A", "B"}
+            ) as mock_load_dict:
                 with patch("src.backend.routers.annotations.BeatValidator") as mock_validator_cls:
                     with patch("src.backend.routers.annotations._get_stores") as mock_get_stores:
                         with patch("src.backend.routers.annotations.AnnotationPersistence") as mock_persistence_cls:
@@ -160,14 +161,16 @@ class TestAnnotationsRouterLogic:
             episode=14,
             beats=[
                 BeatDTO(episode=14, scene=3, source="X", target="B", emotion="fear", delta=0.8, cause="test"),
-            ]
+            ],
         )
 
         with patch("src.backend.routers.annotations.verify_book_ownership", new_callable=AsyncMock):
             with patch("src.backend.routers.annotations.load_character_dict", return_value={"A", "B"}):
                 with patch("src.backend.routers.annotations.BeatValidator") as mock_validator_cls:
                     mock_validator = MagicMock()
-                    mock_validator.validate.return_value = MagicMock(is_valid=False, errors=["Unknown character 'X'"], warnings=[])
+                    mock_validator.validate.return_value = MagicMock(
+                        is_valid=False, errors=["Unknown character 'X'"], warnings=[]
+                    )
                     mock_validator_cls.return_value = mock_validator
 
                     with patch("src.backend.routers.annotations._get_stores"):
@@ -210,7 +213,9 @@ class TestAnnotationsRouterLogic:
                 mock_vector_store._get_by_key.return_value = vec
 
                 mock_user = MagicMock()
-                result = await get_annotation_history(book_id=1, episode=14, source="A", target="B", current_user=mock_user)
+                result = await get_annotation_history(
+                    book_id=1, episode=14, source="A", target="B", current_user=mock_user
+                )
 
                 assert "history" in result
                 assert len(result["history"]) == 1

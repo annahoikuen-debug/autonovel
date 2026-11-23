@@ -1,4 +1,5 @@
 """Step 6: プロットイベント入力ファイル形式テスト。"""
+
 from __future__ import annotations
 
 import pytest

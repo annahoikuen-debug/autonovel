@@ -4,6 +4,7 @@ Zero-Cost Infra & Pure Creative Pipelineの全要素（画像/音声の外部従
 投稿サイト整形コピー、純Python商用EPUB 3生成、トークン/コストガードレール）が
 完全に連動して動作することを検証する。
 """
+
 from __future__ import annotations
 
 import pytest

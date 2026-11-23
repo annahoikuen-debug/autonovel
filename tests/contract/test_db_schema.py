@@ -3,6 +3,7 @@
 - テーブル数が減っていないか（削除は禁止、追加は許容）
 - 必須カラム（NOT NULL かつ default なし）が消えていないか
 """
+
 import json
 from pathlib import Path
 

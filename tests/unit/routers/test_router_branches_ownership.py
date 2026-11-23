@@ -83,9 +83,10 @@ def test_play_routes_are_unaffected():
     assert play, "/play 系が存在しない"
     for route in branches_router.routes:
         if "/play" in route.path:
-            assert "current_user" not in {
-                p.name for p in inspect_params(route)
-            }, f"所有者検証が注入された /play ルート: {route.path}"
+            assert "current_user" not in {p.name for p in inspect_params(route)}, (
+                f"所有者検証が注入された /play ルート: {route.path}"
+            )
+
 
 def test_direct_call_skips_ownership_check():
     """handler を直接呼び出した場合、検証は走らない（単体テストが動く理由）。"""

@@ -36,9 +36,7 @@ async def test_helper_is_noop_for_none_book():
 async def test_helper_never_raises():
     from src.backend.routers import episodes
 
-    with patch(
-        "src.integrations.rag.prefetch_service.RagPrefetchService", side_effect=RuntimeError("x")
-    ):
+    with patch("src.integrations.rag.prefetch_service.RagPrefetchService", side_effect=RuntimeError("x")):
         assert await episodes._cancel_prefetch_for_book(1) == 0
 
 
@@ -51,7 +49,9 @@ def test_tasks_router_imports_cancel_all():
 def test_episodes_router_calls_helper_in_retry():
     from src.backend.routers import episodes
 
-    assert callable(getattr(episodes, "_cancel_prefetch_for_book", None)), "_cancel_prefetch_for_book が定義されていない"
+    assert callable(getattr(episodes, "_cancel_prefetch_for_book", None)), (
+        "_cancel_prefetch_for_book が定義されていない"
+    )
 
 
 @pytest.mark.asyncio

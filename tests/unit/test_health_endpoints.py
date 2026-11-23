@@ -23,8 +23,10 @@ def test_readiness_endpoint_returns_503_on_db_failure():
     app.include_router(router)
     client = TestClient(app)
 
-    with patch.object(src.core.container.AppContainer, 'db') as mock_db_container, \
-         patch.object(src.backend.routers.health, 'check_database') as mock_check_db:
+    with (
+        patch.object(src.core.container.AppContainer, "db") as mock_db_container,
+        patch.object(src.backend.routers.health, "check_database") as mock_check_db,
+    ):
         # Mock the database container to return a mock db manager
         mock_db_manager = {}
         mock_db_container.return_value = mock_db_manager

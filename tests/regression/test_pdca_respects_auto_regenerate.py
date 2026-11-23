@@ -4,6 +4,7 @@ WritingService.generate_episodes(..., auto_regenerate=True, max_retries=N) が
 明示指定された場合、pdca_controller の max_regenerations=0 既定値によって
 黙って無視されてはならない。
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
@@ -80,7 +81,7 @@ async def test_auto_regenerate_true_triggers_score_calculation() -> None:
         regeneration_actions=[],
     )
     mock_calculator.calculate.side_effect = [
-        low_score,   # 1回目: 低スコア → 再生成トリガー
+        low_score,  # 1回目: 低スコア → 再生成トリガー
         high_score,  # 2回目: 高スコア → ループ終了
         high_score,  # 3回目: 再生成後の再評価（max_retries=3 の安全側）
         # 以前は high_score を4個（予備2個）並べていたが、4回目以降の過剰呼び出しを
@@ -88,10 +89,15 @@ async def test_auto_regenerate_true_triggers_score_calculation() -> None:
     ]
 
     await service.generate_episodes(
-        book_id=1, start_ep=1, end_ep=1,
-        passion=0.8, target_word_count=3000,
-        is_easy_mode=False, reporter=MagicMock(),
-        auto_regenerate=True, max_retries=3,
+        book_id=1,
+        start_ep=1,
+        end_ep=1,
+        passion=0.8,
+        target_word_count=3000,
+        is_easy_mode=False,
+        reporter=MagicMock(),
+        auto_regenerate=True,
+        max_retries=3,
     )
 
     # auto_regenerate=True なら calculate は低スコア1回＋高スコア2回で3回呼ばれる
@@ -110,10 +116,15 @@ async def test_auto_regenerate_false_skips_score_calculation() -> None:
     service, mock_writer, mock_calculator = _make_service()
 
     await service.generate_episodes(
-        book_id=1, start_ep=1, end_ep=1,
-        passion=0.8, target_word_count=3000,
-        is_easy_mode=False, reporter=MagicMock(),
-        auto_regenerate=False, max_retries=3,
+        book_id=1,
+        start_ep=1,
+        end_ep=1,
+        passion=0.8,
+        target_word_count=3000,
+        is_easy_mode=False,
+        reporter=MagicMock(),
+        auto_regenerate=False,
+        max_retries=3,
     )
 
     # auto_regenerate=False なら calculate は呼ばれない
@@ -133,10 +144,15 @@ async def test_auto_regenerate_true_with_max_retries_zero_skips_calculation() ->
     service, mock_writer, mock_calculator = _make_service()
 
     await service.generate_episodes(
-        book_id=1, start_ep=1, end_ep=1,
-        passion=0.8, target_word_count=3000,
-        is_easy_mode=False, reporter=MagicMock(),
-        auto_regenerate=True, max_retries=0,
+        book_id=1,
+        start_ep=1,
+        end_ep=1,
+        passion=0.8,
+        target_word_count=3000,
+        is_easy_mode=False,
+        reporter=MagicMock(),
+        auto_regenerate=True,
+        max_retries=0,
     )
 
     assert mock_calculator.calculate.call_count == 0, (

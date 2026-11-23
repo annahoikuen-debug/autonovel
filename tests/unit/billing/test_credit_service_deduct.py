@@ -18,8 +18,8 @@ async def test_insufficient_credits_raises_error():
     mock_select_result.scalar_one_or_none.return_value = 1  # user exists
 
     mock_session.execute.side_effect = [
-        mock_update_result,   # First call: UPDATE
-        mock_select_result,   # Second call: SELECT User.id
+        mock_update_result,  # First call: UPDATE
+        mock_select_result,  # Second call: SELECT User.id
     ]
 
     credit_service = CreditService(mock_session)
@@ -30,12 +30,7 @@ async def test_insufficient_credits_raises_error():
     credit_service.get_balance = mock_get_balance
 
     with pytest.raises(InsufficientCreditsError) as exc_info:
-        await credit_service.deduct_credits(
-            user_id=1,
-            amount=10,
-            transaction_type="test",
-            description="Test deduction"
-        )
+        await credit_service.deduct_credits(user_id=1, amount=10, transaction_type="test", description="Test deduction")
 
     assert "Insufficient credits" in str(exc_info.value)
     assert "Required: 10" in str(exc_info.value)
@@ -62,10 +57,7 @@ async def test_user_not_found_raises_error():
 
     with pytest.raises(ValueError) as exc_info:
         await credit_service.deduct_credits(
-            user_id=999,
-            amount=5,
-            transaction_type="test",
-            description="User not found"
+            user_id=999, amount=5, transaction_type="test", description="User not found"
         )
 
     assert "ユーザーが見つかりません" in str(exc_info.value)
@@ -78,10 +70,7 @@ async def test_zero_amount_deduction():
     credit_service = CreditService(mock_session)
 
     result = await credit_service.deduct_credits(
-        user_id=1,
-        amount=0,
-        transaction_type="test",
-        description="Zero deduction"
+        user_id=1, amount=0, transaction_type="test", description="Zero deduction"
     )
 
     assert result is True
@@ -96,10 +85,7 @@ async def test_negative_amount_raises_error():
 
     with pytest.raises(ValueError) as exc_info:
         await credit_service.deduct_credits(
-            user_id=1,
-            amount=-5,
-            transaction_type="test",
-            description="Negative deduction"
+            user_id=1, amount=-5, transaction_type="test", description="Negative deduction"
         )
 
     assert "消費額は0以上である必要があります" in str(exc_info.value)
@@ -117,9 +103,9 @@ async def test_deduct_credits_for_text_writing():
     mock_balance_result.scalar_one_or_none.return_value = 9
 
     mock_session.execute.side_effect = [
-        mock_update_result,      # UPDATE
-        mock_balance_result,     # get_balance (first)
-        mock_balance_result,     # get_balance (second after transaction)
+        mock_update_result,  # UPDATE
+        mock_balance_result,  # get_balance (first)
+        mock_balance_result,  # get_balance (second after transaction)
     ]
 
     async def mock_get_balance(user_id):
@@ -173,9 +159,9 @@ async def test_deduct_credits_success():
     mock_balance_result.scalar_one_or_none.return_value = 5
 
     mock_session.execute.side_effect = [
-        mock_update_result,      # UPDATE
-        mock_balance_result,     # get_balance (first)
-        mock_balance_result,     # get_balance (second after transaction)
+        mock_update_result,  # UPDATE
+        mock_balance_result,  # get_balance (first)
+        mock_balance_result,  # get_balance (second after transaction)
     ]
 
     async def mock_get_balance(user_id):
@@ -185,10 +171,7 @@ async def test_deduct_credits_success():
     credit_service.get_balance = mock_get_balance
 
     result = await credit_service.deduct_credits(
-        user_id=1,
-        amount=5,
-        transaction_type="consumption",
-        description="Normal deduction"
+        user_id=1, amount=5, transaction_type="consumption", description="Normal deduction"
     )
 
     assert result is True

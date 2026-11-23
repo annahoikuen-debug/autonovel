@@ -4,6 +4,7 @@ H1: base_url にプライベート IP / メタデータ IP (169.254.x.x 等) を
 サーバー側リクエスト偽造（SSRF）となり、api_key 未指定時にサーバーの
 OPENAI_API_KEY が攻撃者ホストに Bearer 送出される。
 """
+
 from __future__ import annotations
 
 import os

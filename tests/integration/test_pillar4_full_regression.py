@@ -124,6 +124,7 @@ def test_score_calibration_and_unified_5d_bridge():
 @pytest.mark.asyncio
 async def test_closed_loop_pdca_convergence():
     """Verify closed loop revision improves text and converges."""
+
     def create_mock_specialist(name: str, scores: list[float]):
         s = MagicMock(spec=SpecialistAuditor)
         s.specialist_name = name
@@ -146,13 +147,11 @@ async def test_closed_loop_pdca_convergence():
                     )
                 ],
             )
+
         s._safe_audit = _safe_audit
         return s
 
-    specialists = [
-        create_mock_specialist(name, [60.0, 75.0, 88.0])
-        for name in SPECIALIST_NAMES
-    ]
+    specialists = [create_mock_specialist(name, [60.0, 75.0, 88.0]) for name in SPECIALIST_NAMES]
     agg = AuditAggregator(specialists=specialists, weights={n: 0.125 for n in SPECIALIST_NAMES})
 
     async def mock_writer(ctx):
@@ -180,11 +179,14 @@ async def test_dag_replanning_downstream_rollback():
     event_bus = MagicMock()
     event_bus.publish_async = AsyncMock()
 
-    scheduler = DAGScheduler(task_registry={
-        "n1": lambda: "v1",
-        "n2": lambda: "v2",
-        "n3": lambda: "v3",
-    }, event_bus=event_bus)
+    scheduler = DAGScheduler(
+        task_registry={
+            "n1": lambda: "v1",
+            "n2": lambda: "v2",
+            "n3": lambda: "v3",
+        },
+        event_bus=event_bus,
+    )
 
     graph = DAGGraph(dag_id="dag_regression")
     graph.add_node(DAGTaskNode(task_id="n1", func_name="n1", status="completed"))

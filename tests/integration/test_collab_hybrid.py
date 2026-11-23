@@ -3,6 +3,7 @@
 import pytest
 from datetime import datetime, timedelta
 
+
 # Import the merge function directly (copy from router to avoid container issues)
 def merge_paragraphs_lww(
     server_content: str,
@@ -48,7 +49,7 @@ async def test_sync_endpoint_no_conflict():
         "",  # server_content
         "Hello world\n\nThis is a test",
         {},  # server_vc
-        {"userA": 1}
+        {"userA": 1},
     )
 
     assert merged == "Hello world\n\nThis is a test"
@@ -79,11 +80,7 @@ async def test_presence_in_memory_storage():
 
     key = (1, 1)
     _presence[key] = {
-        "userA": {
-            "cursor": 100,
-            "selection": {"start": 100, "end": 110},
-            "updated": datetime.utcnow().isoformat()
-        }
+        "userA": {"cursor": 100, "selection": {"start": 100, "end": 110}, "updated": datetime.utcnow().isoformat()}
     }
 
     # Test retrieval
@@ -95,13 +92,12 @@ async def test_presence_in_memory_storage():
     _presence[key]["userB"] = {
         "cursor": 200,
         "selection": None,
-        "updated": (datetime.utcnow() - timedelta(seconds=60)).isoformat()
+        "updated": (datetime.utcnow() - timedelta(seconds=60)).isoformat(),
     }
 
     now = datetime.utcnow()
     filtered = {
-        u: p for u, p in _presence[key].items()
-        if (now - datetime.fromisoformat(p["updated"])).total_seconds() < 30
+        u: p for u, p in _presence[key].items() if (now - datetime.fromisoformat(p["updated"])).total_seconds() < 30
     }
 
     assert "userA" in filtered
@@ -218,6 +214,7 @@ async def test_reload_restores_draft():
 @pytest.mark.asyncio
 async def test_version_history_chain():
     """Test that version history maintains base_version_id chain."""
+
     class ChapterVersion:
         def __init__(self, id, book_id, chapter_ep, user_name, content, vector_clock, base_version_id):
             self.id = id
@@ -230,13 +227,7 @@ async def test_version_history_chain():
 
     # Create version chain
     v1 = ChapterVersion(
-        id=1,
-        book_id=1,
-        chapter_ep=1,
-        user_name="userA",
-        content="v1",
-        vector_clock={"userA": 1},
-        base_version_id=None
+        id=1, book_id=1, chapter_ep=1, user_name="userA", content="v1", vector_clock={"userA": 1}, base_version_id=None
     )
 
     v2 = ChapterVersion(
@@ -246,7 +237,7 @@ async def test_version_history_chain():
         user_name="userB",
         content="v2",
         vector_clock={"userA": 1, "userB": 1},
-        base_version_id=1
+        base_version_id=1,
     )
 
     v3 = ChapterVersion(
@@ -256,7 +247,7 @@ async def test_version_history_chain():
         user_name="userA",
         content="v3",
         vector_clock={"userA": 2, "userB": 1},
-        base_version_id=2
+        base_version_id=2,
     )
 
     # Verify chain

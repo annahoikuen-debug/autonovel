@@ -13,12 +13,14 @@ from src.infrastructure.database.models.base_orm import Base
 # Use an in-memory SQLite database for testing
 TEST_DATABASE_URL = "sqlite:///:memory:"
 
+
 @pytest.fixture
 def db_engine():
     engine = create_engine(TEST_DATABASE_URL, echo=False)
     Base.metadata.create_all(engine)
     yield engine
     Base.metadata.drop_all(engine)
+
 
 @pytest.fixture
 def db_session(db_engine):
@@ -27,11 +29,13 @@ def db_session(db_engine):
     yield session
     session.close()
 
+
 @pytest.fixture
 def loader(db_engine):
     # Create a session factory bound to our test engine
     SessionLocal = sessionmaker(bind=db_engine)
     return SeriesDataLoader(session_factory=SessionLocal)
+
 
 def test_load_series_with_chapters(loader, db_session):
     # Create a test book
@@ -75,6 +79,7 @@ def test_load_series_with_chapters(loader, db_session):
     assert series.episodes[0].word_count == 4  # Fixed: "Content of chapter 1" has 4 words
     assert series.bible == {"theme": "epic"}
 
+
 def test_load_series_no_chapters_raises(loader, db_session):
     # Create a book with no chapters
     book = Book(title="Empty Book", genre="Sci-Fi", concept="A concept")
@@ -87,7 +92,9 @@ def test_load_series_no_chapters_raises(loader, db_session):
         loader.load_series(config)
     # Check that it's the expected exception
     from src.backend.exceptions import NoChaptersFoundError
+
     assert isinstance(exc_info.value, NoChaptersFoundError)
+
 
 def test_load_series_fallback_to_minimal(loader, db_session):
     # Create a book with no chapters
@@ -105,6 +112,7 @@ def test_load_series_fallback_to_minimal(loader, db_session):
     assert series.episodes[0].content == ""
     assert series.episodes[0].word_count == 0
     assert series.episodes[0].needs_human_review
+
 
 def test_save_series_to_db(loader, db_session):
     # Create a book

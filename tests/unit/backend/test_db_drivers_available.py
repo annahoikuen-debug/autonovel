@@ -5,6 +5,7 @@ SQLAlchemy の該当ダイアレクトがモジュール直下で import する�
 ``test_backend_database_core.py`` が ModuleNotFoundError でまとめて失敗する。
 本テストは「ドライバ未導入」を早期に検出するための環境ガードである。
 """
+
 from __future__ import annotations
 
 import importlib

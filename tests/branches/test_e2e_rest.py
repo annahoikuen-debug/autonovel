@@ -2,6 +2,7 @@
 
 Branch 作成 → fork → play → save/load → export → stats.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -33,13 +34,17 @@ def client():
 
     # Override the database URL in the core module
     import src.backend.database.core as core_mod
+
     core_mod.DATABASE_URL = db_url
+
     # Override the get_db_manager to return a manager using our test engine
     class TestMgr:
         def __init__(self):
             self.session_factory = test_session_factory
+
         def get_session(self):
             return self.session_factory()
+
     core_mod.get_db_manager = lambda: TestMgr()
 
     # Create tables
@@ -51,6 +56,7 @@ def client():
         # 所有者消费的検証を通すように user_id を設定する。
         async with test_session_factory() as session:
             from src.backend.database.models import Book, User
+
             user = User(
                 id=1,
                 email="branches-e2e@example.com",
@@ -60,11 +66,10 @@ def client():
                 status="active",
             )
             session.add(user)
-            book = Book(
-                title="t", genre="g", concept="c", current_branch_id=1, user_id=user.id
-            )
+            book = Book(title="t", genre="g", concept="c", current_branch_id=1, user_id=user.id)
             session.add(book)
             await session.commit()
+
     asyncio.run(_setup())
 
     # Set test API key
@@ -85,6 +90,7 @@ def client():
     # `branches.py` は `get_db_manager` を名前で import しているため、
     # `core_mod` 側の属性を差し替えるだけではルータは一時 DB を見られない。
     bmod.get_db_manager = core_mod.get_db_manager
+
     # `enforce_book_ownership` はセッション引数なしで `verify_book_ownership` を呼ぶため
     # 自身で UnitOfWork を開いて一時 DB を見られない。Book を返すスタブに置き換える
     # (ガードはスタブするがハンドラ本体は最後まで実行する)。
@@ -116,8 +122,13 @@ def test_full_rest_flow(client):
     graph = {
         "entry_node_id": "n1",
         "nodes": {
-            "n1": {"id": "n1", "episode_num": 1, "content": "start", "branch_type": "choice",
-                    "choices": [{"id": "c1", "text": "go", "target_node_id": "n2"}]},
+            "n1": {
+                "id": "n1",
+                "episode_num": 1,
+                "content": "start",
+                "branch_type": "choice",
+                "choices": [{"id": "c1", "text": "go", "target_node_id": "n2"}],
+            },
             "n2": {"id": "n2", "episode_num": 2, "content": "end", "branch_type": "merge", "merge_target": "n2"},
         },
     }
@@ -127,19 +138,31 @@ def test_full_rest_flow(client):
     assert r.status_code == 200
 
     # 3) Fork
-    r = client.post("/api/branches/1/fork", json={"parent_id": bid, "name": "alt", "fork_ep_num": 1}, params={"api_key": "testkey"})
+    r = client.post(
+        "/api/branches/1/fork", json={"parent_id": bid, "name": "alt", "fork_ep_num": 1}, params={"api_key": "testkey"}
+    )
     print(f"Fork response status: {r.status_code}", flush=True)
     print(f"Fork response body: {r.text}", flush=True)
     assert r.status_code == 201
     bid2 = r.json()["id"]
 
     # alt にもグラフを設定（export で EPUB 生成するため）
-    r = client.put("/api/branches/1/graph", json={
-        "entry_node_id": "a1",
-        "nodes": {
-            "a1": {"id": "a1", "episode_num": 1, "content": "alt start", "branch_type": "merge", "merge_target": "a1"}
+    r = client.put(
+        "/api/branches/1/graph",
+        json={
+            "entry_node_id": "a1",
+            "nodes": {
+                "a1": {
+                    "id": "a1",
+                    "episode_num": 1,
+                    "content": "alt start",
+                    "branch_type": "merge",
+                    "merge_target": "a1",
+                }
+            },
         },
-    }, params={"api_key": "testkey", "branch_id": bid2})
+        params={"api_key": "testkey", "branch_id": bid2},
+    )
     print(f"Alt branch graph PUT response status: {r.status_code}", flush=True)
     print(f"Alt branch graph PUT response body: {r.text}", flush=True)
     assert r.status_code == 200

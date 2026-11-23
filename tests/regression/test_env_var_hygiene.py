@@ -8,6 +8,7 @@ try/finally で元の値を復元しているファイルは ALLOWED_FILES に
 将来、新しいファイルで直接代入を追加した場合は本テストが赤になり、
 レビューで monkeypatch.setenv への書き換えを求める。
 """
+
 from __future__ import annotations
 
 import re
@@ -83,7 +84,6 @@ def test_no_new_env_direct_assignment_without_monkeypatch() -> None:
         "tests/ 下で環境変数直接代入が検出されました。monkeypatch.setenv に書き換えるか、\n"
         "try/finally で復元する場合は ALLOWED_FILES に追加してください:\n"
         + "\n".join(
-            f"  {file}:" + "\n".join(f"    L{no}: {code}" for no, code in lines)
-            for file, lines in violations.items()
+            f"  {file}:" + "\n".join(f"    L{no}: {code}" for no, code in lines) for file, lines in violations.items()
         )
     )

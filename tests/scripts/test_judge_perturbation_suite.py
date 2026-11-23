@@ -97,7 +97,5 @@ def test_main_missing_corpus_returns_nonzero(tmp_path):
     """コーパスが空の場合、main は非ゼロを返す。"""
     empty_dir = tmp_path / "empty"
     empty_dir.mkdir()
-    rc = main(
-        ["--corpus", str(empty_dir / "*.txt"), "--judge", "mock"]
-    )
+    rc = main(["--corpus", str(empty_dir / "*.txt"), "--judge", "mock"])
     assert rc == 1

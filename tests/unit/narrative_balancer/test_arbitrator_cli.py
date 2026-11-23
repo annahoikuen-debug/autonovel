@@ -31,9 +31,18 @@ class TestParseArgs:
         assert args.report is None
 
     def test_optional_args(self):
-        args = parse_args([
-            "-i", "in.json", "-o", "out.json", "-c", "cfg.yaml", "-r", "rep.json",
-        ])
+        args = parse_args(
+            [
+                "-i",
+                "in.json",
+                "-o",
+                "out.json",
+                "-c",
+                "cfg.yaml",
+                "-r",
+                "rep.json",
+            ]
+        )
         assert args.config == "cfg.yaml"
         assert args.report == "rep.json"
 
@@ -44,28 +53,40 @@ class TestParseArgs:
 
 class TestMainErrors:
     def test_input_not_found_returns_1(self, tmp_path: Path):
-        rc = main([
-            "--input", str(tmp_path / "missing.json"),
-            "--output", str(tmp_path / "out.json"),
-        ])
+        rc = main(
+            [
+                "--input",
+                str(tmp_path / "missing.json"),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
         assert rc == 1
 
     def test_invalid_format_returns_2(self, tmp_path: Path):
         bad = tmp_path / "bad.json"
         bad.write_text(json.dumps({"unexpected": "shape"}), encoding="utf-8")
-        rc = main([
-            "--input", str(bad),
-            "--output", str(tmp_path / "out.json"),
-        ])
+        rc = main(
+            [
+                "--input",
+                str(bad),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
         assert rc == 2
 
     def test_malformed_json_returns_2(self, tmp_path: Path):
         bad = tmp_path / "bad.json"
         bad.write_text("{ not json", encoding="utf-8")
-        rc = main([
-            "--input", str(bad),
-            "--output", str(tmp_path / "out.json"),
-        ])
+        rc = main(
+            [
+                "--input",
+                str(bad),
+                "--output",
+                str(tmp_path / "out.json"),
+            ]
+        )
         assert rc == 2
 
 

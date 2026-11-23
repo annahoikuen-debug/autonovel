@@ -1,4 +1,5 @@
 """Single episode benchmark engine."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -29,7 +30,7 @@ def benchmark_single_episode(
 
     for run in range(runs):
         # Use bypass_cache=True for first run, then False to test cache
-        bypass = (run == 0)
+        bypass = run == 0
         result, elapsed_ms, peak_mb = measure_time_and_memory(
             wrapper.compress_episode,
             text=text,
@@ -70,10 +71,22 @@ def benchmark_single_episode(
         "memory_mb": stats(memories),
         "final_tokens": stats(tokens),
         "reduction_ratio": stats(reductions),
-        "cache_hit_rate": sum(1 for r in range(1, runs) if wrapper.compress_episode(
-            text=text, scene_type=scene_type, entities=entities, relations=relations,
-            book_id=book_id, ep_num=ep_num, bypass_cache=False
-        )["from_cache"]) / max(1, runs - 1) if runs > 1 else 0.0,
+        "cache_hit_rate": sum(
+            1
+            for r in range(1, runs)
+            if wrapper.compress_episode(
+                text=text,
+                scene_type=scene_type,
+                entities=entities,
+                relations=relations,
+                book_id=book_id,
+                ep_num=ep_num,
+                bypass_cache=False,
+            )["from_cache"]
+        )
+        / max(1, runs - 1)
+        if runs > 1
+        else 0.0,
         "sample_output": final_texts[0][:200] if final_texts else "",
     }
 

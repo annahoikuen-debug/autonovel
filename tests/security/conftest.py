@@ -3,13 +3,13 @@
 make_user / authenticate / create_book_for_user は
 tests/security 配下の IDOR・所有権検証テストで共通利用する。
 """
+
 from __future__ import annotations
 
 from typing import Any
 from unittest.mock import MagicMock
 
 import pytest
-
 
 
 def make_user(email: str = "user@example.com") -> Any:

@@ -53,11 +53,11 @@ def _make_ctx() -> AgentContext:
 @pytest.mark.parametrize(
     ("score", "expected_next_agent"),
     [
-        (69.9, AgentName.WRITING),   # 合格ライン未満
+        (69.9, AgentName.WRITING),  # 合格ライン未満
         (70.0, AgentName.ILLUSTRATION),  # ちょうど合格ライン
         (70.1, AgentName.ILLUSTRATION),  # 合格ライン超過
         (100.0, AgentName.ILLUSTRATION),  # 満点
-        (0.0, AgentName.WRITING),    # ゼロ点
+        (0.0, AgentName.WRITING),  # ゼロ点
     ],
 )
 async def test_quality_gate_threshold(score: float, expected_next_agent: AgentName):

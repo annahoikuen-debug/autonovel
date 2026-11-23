@@ -1,6 +1,8 @@
 """不要な一時ファイルやキャッシュをクリーンアップするスクリプト。"""
+
 import shutil
 from pathlib import Path
+
 
 def cleanup():
     # pycache のクリーンアップ
@@ -14,6 +16,7 @@ def cleanup():
     if Path(".pytest_cache").exists():
         shutil.rmtree(".pytest_cache", ignore_errors=True)
         print("Cleaned .pytest_cache")
+
 
 if __name__ == "__main__":
     cleanup()

@@ -5,6 +5,7 @@ PLAN_J1 W5: `src/backend/security/credit_guard.py` を削除したが、
 本テストは「参照ゼロ」を機械的に固定し、将来モジュールを削除する際の
 safety net として機能する。
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -43,7 +44,4 @@ def _scan_for_references() -> list[str]:
 def test_no_references_to_removed_modules() -> None:
     """削除済みモジュール(credit_guard)への残存参照が無いこと。"""
     hits = _scan_for_references()
-    assert not hits, (
-        "削除済みモジュールへの残存参照が見つかります（import が壊れます）:\n"
-        + "\n".join(hits)
-    )
+    assert not hits, "削除済みモジュールへの残存参照が見つかります（import が壊れます）:\n" + "\n".join(hits)

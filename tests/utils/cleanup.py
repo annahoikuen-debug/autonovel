@@ -2,6 +2,7 @@
 
 統合テストで使用する共通のクリーンアップ関数を提供します。
 """
+
 from __future__ import annotations
 
 import logging
@@ -78,8 +79,10 @@ class CleanupManager:
             *args: 関数に渡す位置引数
             **kwargs: 関数に渡すキーワード引数
         """
+
         def wrapped_func():
             func(*args, **kwargs)
+
         self._cleanup_functions.append(wrapped_func)
 
     def __enter__(self):
@@ -102,11 +105,14 @@ def with_cleanup(*cleanup_funcs):
         # テストコード
         pass
     """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             try:
                 return func(*args, **kwargs)
             finally:
                 run_cleanup_functions(list(cleanup_funcs))
+
         return wrapper
+
     return decorator

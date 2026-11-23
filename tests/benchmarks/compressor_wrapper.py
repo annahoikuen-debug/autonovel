@@ -1,4 +1,5 @@
 """Compressor wrapper for benchmark execution."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional

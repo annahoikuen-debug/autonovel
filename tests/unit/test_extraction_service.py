@@ -1,4 +1,5 @@
 """ナレッジグラフ抽出・名寄せサービスの単体テスト."""
+
 import asyncio
 from unittest.mock import MagicMock
 

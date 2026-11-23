@@ -66,8 +66,7 @@ def test_all_config_import_paths(module_path, symbols):
 
     if symbols is not None:
         for symbol in symbols:
-            assert hasattr(mod, symbol), \
-                f"{module_path} に {symbol} が公開されていない"
+            assert hasattr(mod, symbol), f"{module_path} に {symbol} が公開されていない"
 
 
 def test_no_orphan_config_files():
@@ -92,8 +91,9 @@ def test_no_orphan_config_files():
         path = ROOT / fname
         if path.exists():
             content = path.read_text(encoding="utf-8")
-            assert "shim" in content.lower() or "後方互換" in content, \
+            assert "shim" in content.lower() or "後方互換" in content, (
                 f"{path} が shim ではなく実体ファイルとして残っている"
+            )
 
 
 def test_config_yaml_intact():
@@ -106,9 +106,19 @@ def test_config_yaml_intact():
 def test_ruff_clean_config():
     """src/config/, src/infrastructure/config/, src/domain/, src/interfaces/ が ruff check を通る。"""
     result = subprocess.run(
-        [sys.executable, "-m", "ruff", "check",
-         "src/config", "src/infrastructure/config", "src/domain", "src/interfaces"],
-        capture_output=True, text=True, encoding="utf-8", cwd=ROOT,
+        [
+            sys.executable,
+            "-m",
+            "ruff",
+            "check",
+            "src/config",
+            "src/infrastructure/config",
+            "src/domain",
+            "src/interfaces",
+        ],
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        cwd=ROOT,
     )
-    assert result.returncode == 0, \
-        f"ruff check 失敗:\n{result.stdout}\n{result.stderr}"
+    assert result.returncode == 0, f"ruff check 失敗:\n{result.stdout}\n{result.stderr}"

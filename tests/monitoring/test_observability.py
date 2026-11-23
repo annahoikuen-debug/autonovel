@@ -1,4 +1,5 @@
 """Sentry と OpenTelemetry が例外を正しく捕捉することをテスト"""
+
 from unittest.mock import patch, MagicMock
 import pytest
 
@@ -10,6 +11,7 @@ from src.monitoring.sentry import init_sentry
 from src.monitoring.otel import init_otel
 from src.api.middleware.error_handler import ErrorHandlerMiddleware
 
+
 @pytest.fixture
 def client():
     app = FastAPI()
@@ -20,6 +22,7 @@ def client():
     @app.get("/")
     def root():
         from opentelemetry import trace
+
         tracer = trace.get_tracer("test_tracer")
         with tracer.start_span("root_request"):
             return {"status": "ok"}
@@ -30,6 +33,7 @@ def client():
 
     return TestClient(app, raise_server_exceptions=False)
 
+
 @patch("src.monitoring.sentry.sentry_sdk.capture_exception")
 def test_sentry_captures_api_exception(mock_capture, client):
     # エラーを返すエンドポイントを呼ぶ（例: 不正な入力で 500）
@@ -37,6 +41,7 @@ def test_sentry_captures_api_exception(mock_capture, client):
     # 実際には 500 となる
     assert resp.status_code == 500
     mock_capture.assert_called_once()
+
 
 @patch("opentelemetry.trace.get_tracer")
 def test_otel_creates_span_for_request(mock_get_tracer, client):

@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, Text
+from sqlalchemy import DateTime, ForeignKey, Index, Integer, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from src.infrastructure.database.models.base_orm import Base
@@ -28,7 +28,16 @@ class EpisodeDigestModel(Base):
     """
 
     __tablename__ = "episode_digests"
-    __table_args__ = {"extend_existing": True}
+    __table_args__ = (
+        Index("ix_episode_digests_book_episode", "book_id", "episode_num"),
+        Index(
+            "uq_episode_digests_book_episode",
+            "book_id",
+            "episode_num",
+            unique=True,
+        ),
+        {"extend_existing": True},
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     book_id: Mapped[int] = mapped_column(

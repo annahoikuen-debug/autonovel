@@ -34,7 +34,9 @@ def main(argv: list[str] | None = None) -> int:
         prog="analyze_foreshadow_vote_agreement",
         description="伏線 LLM 第 4 投票の shadow 一致率を集計する",
     )
-    parser.add_argument("--log", "-l", default=None, help="shadow JSONL のパス (既定: logs/foreshadow_vote_shadow.jsonl)")
+    parser.add_argument(
+        "--log", "-l", default=None, help="shadow JSONL のパス (既定: logs/foreshadow_vote_shadow.jsonl)"
+    )
     parser.add_argument("--json", action="store_true", help="JSON で出力する")
     parser.add_argument(
         "--agreement-target",

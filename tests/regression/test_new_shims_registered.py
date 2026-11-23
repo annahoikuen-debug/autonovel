@@ -43,7 +43,4 @@ def test_all_shims_registered():
                 discovered.add(rel)
 
     unregistered = discovered - registered
-    assert not unregistered, (
-        f"未登録の shim: {sorted(unregistered)}\n"
-        f"config/shim_registry.json に追加してください"
-    )
+    assert not unregistered, f"未登録の shim: {sorted(unregistered)}\nconfig/shim_registry.json に追加してください"

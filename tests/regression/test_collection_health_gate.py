@@ -28,6 +28,7 @@ CI は緑を返しうる。このゲートはcollection 自体を検証し、
 テストの検証力が 0 になると、その後に追加するゲートもすべて無意味になる。
 実行されていることの確認は、他のあらゆるゲートの前提条件である。
 """
+
 from __future__ import annotations
 
 import re
@@ -141,9 +142,7 @@ class TestCollectionIsHealthy:
         proc = _collect_tests()
 
         error_lines = [
-            line
-            for line in proc.stdout.splitlines()
-            if line.startswith("ERROR ") or line.startswith("E   ")
+            line for line in proc.stdout.splitlines() if line.startswith("ERROR ") or line.startswith("E   ")
         ]
         assert not error_lines, (
             "テストの collection error があります。該当テストは実行されません:\n"
@@ -158,9 +157,7 @@ class TestCollectionIsHealthy:
         現れることがある。このテストは無条件な「緑」を弾く。
         """
         proc = _collect_tests()
-        assert proc.returncode in (0, 1), (
-            f"collection が異常終了した (rc={proc.returncode}):\n{proc.stderr[-2000:]}"
-        )
+        assert proc.returncode in (0, 1), f"collection が異常終了した (rc={proc.returncode}):\n{proc.stderr[-2000:]}"
 
         # `9493 tests collected` 相当の行を探す
         collected = 0
@@ -171,8 +168,7 @@ class TestCollectionIsHealthy:
                     if token.isdigit():
                         collected = max(collected, int(token))
         assert collected > 1000, (
-            f"収集されたテストが {collected} 件しかない。"
-            "collection error で全体が中断されている可能性がある"
+            f"収集されたテストが {collected} 件しかない。collection error で全体が中断されている可能性がある"
         )
 
 
@@ -202,8 +198,7 @@ class TestCollectionSpeed:
         run = _run_collection()
 
         assert run.pytest_collection_seconds is not None, (
-            "collection の所要時間が出力から採取できなかった。\n"
-            f"stdout 末尾:\n{run.proc.stdout[-1500:]}"
+            f"collection の所要時間が出力から採取できなかった。\nstdout 末尾:\n{run.proc.stdout[-1500:]}"
         )
         assert run.pytest_collection_seconds <= COLLECTION_SECONDS_BUDGET, (
             f"collection が {run.pytest_collection_seconds:.1f} 秒で、"
@@ -214,8 +209,7 @@ class TestCollectionSpeed:
         # 無条件の「緑」を弾く: 件数を取り損ねると軽くなって当然なので、
         # 予算チェックは「十分な件数を収集した上で」成立している必要がある。
         assert run.collected >= MIN_COLLECTED_TESTS, (
-            f"収集件数が {run.collected} 件しかない。"
-            "件数不足のまま軽い collection を予算内と誤判定しないこと。"
+            f"収集件数が {run.collected} 件しかない。件数不足のまま軽い collection を予算内と誤判定しないこと。"
         )
 
         # wall は機種・I/O 状態で揺れるため 30 秒とは比較せず、

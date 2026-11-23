@@ -38,9 +38,7 @@ async def test_off_byte_identical_drafting_prompt(pm, base_kwargs):
     spine = resolve_spine("exile_rise", "web_volume", "web", 40)
 
     _sys_a, user_a = await pm.build_drafting_prompt(**base_kwargs, spine=None, spine_quality="off")
-    _sys_b, user_b = await pm.build_drafting_prompt(
-        **base_kwargs, spine=spine, spine_quality="off"
-    )
+    _sys_b, user_b = await pm.build_drafting_prompt(**base_kwargs, spine=spine, spine_quality="off")
     assert user_a == user_b, "off でも spine オブジェクトありで出力が変わった"
 
 
@@ -89,12 +87,11 @@ async def test_ep_num_beat_mapping_respected(pm, base_kwargs):
 async def test_exception_in_at_falls_back_to_empty(pm, base_kwargs):
     """spine.at() が例外を投げても空文字に倒れ、プロンプト生成自体は
     壊れないこと（fail-open）。"""
+
     class BrokenSpine:
         def at(self, ep_num):
             raise RuntimeError("broken at")
 
-    _sys_broken, user_broken = await pm.build_drafting_prompt(
-        **base_kwargs, spine=BrokenSpine(), spine_quality="hard"
-    )
+    _sys_broken, user_broken = await pm.build_drafting_prompt(**base_kwargs, spine=BrokenSpine(), spine_quality="hard")
     _sys_none, user_none = await pm.build_drafting_prompt(**base_kwargs, spine=None, spine_quality="hard")
     assert user_broken == user_none, "spine.at() 例外でプロンプトが壊れた"

@@ -49,17 +49,13 @@ def analyze_shadow_agreement(
     for r in rows_single:
         key = (int(r["book_id"]), int(r["ep_num"]))
         # 同じキーが複数ある場合は最新の created_at を採用
-        if key not in single_index or r.get("created_at", "") > single_index[key].get(
-            "created_at", ""
-        ):
+        if key not in single_index or r.get("created_at", "") > single_index[key].get("created_at", ""):
             single_index[key] = r
 
     shadow_index: dict[tuple[int, int], dict[str, Any]] = {}
     for r in rows_shadow:
         key = (int(r["book_id"]), int(r["ep_num"]))
-        if key not in shadow_index or r.get("created_at", "") > shadow_index[key].get(
-            "created_at", ""
-        ):
+        if key not in shadow_index or r.get("created_at", "") > shadow_index[key].get("created_at", ""):
             shadow_index[key] = r
 
     # 共通キーでペアリング
@@ -110,11 +106,7 @@ def fetch_rows_from_audit_run(
 ) -> list[dict[str, Any]]:
     """AuditRun テーブルから指定 judge_mode のレコードを取得する。"""
     try:
-        AuditRun = (
-            __import__(
-                "src.infrastructure.database.models.audit_run", fromlist=["AuditRun"]
-            ).AuditRun
-        )
+        AuditRun = __import__("src.infrastructure.database.models.audit_run", fromlist=["AuditRun"]).AuditRun
         rows = (
             db_session.query(AuditRun)
             .filter(AuditRun.judge_mode == judge_mode)
@@ -207,9 +199,7 @@ def main(argv: list[str] | None = None) -> int:
         )
         return 1
 
-    result = analyze_shadow_agreement(
-        rows_single, rows_shadow, agreement_threshold=args.agreement_threshold
-    )
+    result = analyze_shadow_agreement(rows_single, rows_shadow, agreement_threshold=args.agreement_threshold)
 
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

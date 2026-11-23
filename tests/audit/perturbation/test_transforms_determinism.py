@@ -21,9 +21,7 @@ def test_all_transforms_deterministic():
         outputs = [transform.apply(_TEST_TEXT) for _ in range(5)]
         first = outputs[0]
         for i, out in enumerate(outputs[1:], start=2):
-            assert out == first, (
-                f"{transform.id}: {i} 回目と1回目の出力が一致しません (非決定的)"
-            )
+            assert out == first, f"{transform.id}: {i} 回目と1回目の出力が一致しません (非決定的)"
 
 
 def test_transforms_return_str():

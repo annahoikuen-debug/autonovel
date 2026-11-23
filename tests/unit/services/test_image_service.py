@@ -7,6 +7,7 @@ NOTE: 現実装は GenAI クライアントを ``client`` プロパティで遅�
 セーフティ設定は ``_build_safety_filter_level`` (GenAI SDK 文字列マッピング) で
 返す。旧 ``_build_safety_settings`` / ``settings[0].threshold`` API は廃止済み。
 """
+
 from __future__ import annotations
 
 import os

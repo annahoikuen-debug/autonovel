@@ -17,9 +17,7 @@ from pathlib import Path
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="AutoNovel FastAPI の OpenAPI 仕様書を JSON 出力する"
-    )
+    parser = argparse.ArgumentParser(description="AutoNovel FastAPI の OpenAPI 仕様書を JSON 出力する")
     parser.add_argument(
         "--output",
         "-o",

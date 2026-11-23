@@ -164,7 +164,7 @@ async def test_get_latest_score(mock_calc):
 @pytest.mark.asyncio
 async def test_analyze_trend(mock_calc):
     scores = [
-        MagicMock(overall_score=70.0 + i * 2, structure_score=70.0, coherency_score=70.0, chapter_number=i+1)
+        MagicMock(overall_score=70.0 + i * 2, structure_score=70.0, coherency_score=70.0, chapter_number=i + 1)
         for i in range(5)
     ]
     mock_calc._repository.get_all_for_book = AsyncMock(return_value=scores)

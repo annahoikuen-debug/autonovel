@@ -2,6 +2,7 @@
 E2E Integration Test for Modern Dungeon Stream Multi-Genre Writing
 PLAN 02: エンタメ演出強化・マルチジャンル＆配信・掲示板演出
 """
+
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 from src.agents.writing.opening_booster import OpeningBoosterAgent
@@ -28,7 +29,9 @@ async def test_modern_dungeon_stream_full_flow():
 
     # SocialReactionGenerator用のモックレスポンス
     stream_comments_json = '{"comments": [{"user": "視聴者1", "text": "すげええええ！", "timestamp": "2026-09-19T00:00:00"}, {"user": "視聴者2", "text": "同接10万突破wwww", "timestamp": "2026-09-19T00:00:01"}]}'
-    forum_thread_json = '{"posts": [{"name": "イッチ", "body": "ドラゴン瞬殺した配信者www"}, {"name": "名無し", "body": "草"}]}'
+    forum_thread_json = (
+        '{"posts": [{"name": "イッチ", "body": "ドラゴン瞬殺した配信者www"}, {"name": "名無し", "body": "草"}]}'
+    )
 
     # 各コンポーネント用に独立したモックLLMを作成
     opening_llm = AsyncMock()

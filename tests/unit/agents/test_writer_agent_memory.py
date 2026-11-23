@@ -1,4 +1,5 @@
 """Unit tests for WriterAgent memory initialization and attributes."""
+
 from src.agents.writer_agent import WriterAgent
 from src.stores.vector_store import InMemoryVectorStore
 

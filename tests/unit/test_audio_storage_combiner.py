@@ -11,6 +11,7 @@ def test_audio_combiner_with_mock_clips():
     client = MockAudioSynthesisClient(sample_rate=24000, default_duration=0.2)
     # 2つのモックWAVを取得
     import asyncio
+
     clip1 = asyncio.run(client.synthesize(None)).audio_bytes
     clip2 = asyncio.run(client.synthesize(None)).audio_bytes
 

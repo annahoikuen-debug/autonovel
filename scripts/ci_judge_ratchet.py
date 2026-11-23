@@ -25,7 +25,7 @@ REPORTS_GLOB = "reports/judge_suite_*.json"
 
 # 比較対象のメトリクスキーと許容劣化幅（絶対差）
 METRIC_TOLERANCE = {
-    "mean_rho": 0.05,          # ρ が 0.05 以上低下したら劣化
+    "mean_rho": 0.05,  # ρ が 0.05 以上低下したら劣化
     "identifiability.expected_drop": 0.2,  # 期待軸低下が 20% 以上縮小したら劣化
     "invariance.max_delta": 0.5,  # INV の max_delta が 0.5 以上増加したら劣化
 }
@@ -58,24 +58,16 @@ def _flat_metrics(report: dict) -> dict[str, float]:
 
         ident = tm.get("identifiability") or {}
         if ident:
-            flat[f"{judge_id}.{tid}.identifiability.expected_drop"] = float(
-                ident.get("expected_drop", 0.0)
-            )
+            flat[f"{judge_id}.{tid}.identifiability.expected_drop"] = float(ident.get("expected_drop", 0.0))
             flat[f"{judge_id}.{tid}.identifiability.ratio"] = float(
                 ident.get("ratio", 0.0) if ident.get("ratio") != float("inf") else 0.0
             )
-            flat[f"{judge_id}.{tid}.identifiability.identified"] = (
-                1.0 if ident.get("identified") else 0.0
-            )
+            flat[f"{judge_id}.{tid}.identifiability.identified"] = 1.0 if ident.get("identified") else 0.0
 
         inv = tm.get("invariance") or {}
         if inv:
-            flat[f"{judge_id}.{tid}.invariance.max_delta"] = float(
-                inv.get("max_delta", 0.0)
-            )
-            flat[f"{judge_id}.{tid}.invariance.passed"] = (
-                1.0 if inv.get("passed") else 0.0
-            )
+            flat[f"{judge_id}.{tid}.invariance.max_delta"] = float(inv.get("max_delta", 0.0))
+            flat[f"{judge_id}.{tid}.invariance.passed"] = 1.0 if inv.get("passed") else 0.0
 
     return flat
 
@@ -108,9 +100,7 @@ def _compare(baseline: dict, current: dict) -> list[str]:
             # 数値メトリクス：baseline - current > tolerance で劣化
             diff = b_val - c_val
             if diff > tolerance:
-                problems.append(
-                    f"  {key}: baseline={b_val:.4f} 現在={c_val:.4f} (劣化 {diff:.4f} > 許容 {tolerance})"
-                )
+                problems.append(f"  {key}: baseline={b_val:.4f} 現在={c_val:.4f} (劣化 {diff:.4f} > 許容 {tolerance})")
         else:
             # それ以外は厳密比較（all_passed などのフラグは劣化のみ検出）
             if key.endswith(".all_passed") or key.endswith(".identified") or key.endswith(".passed"):
@@ -159,9 +149,7 @@ def cmd_update_baseline(report_path: str) -> int:
 
     baseline = _load_json(src)
     BASELINE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    BASELINE_PATH.write_text(
-        json.dumps(baseline, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    BASELINE_PATH.write_text(json.dumps(baseline, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[OK] baseline を更新しました: {BASELINE_PATH}")
     return 0
 
@@ -169,9 +157,7 @@ def cmd_update_baseline(report_path: str) -> int:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="擾乱スイート ratchet")
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--check", action="store_true", help="baseline と最新レポートを比較して劣化を検出"
-    )
+    group.add_argument("--check", action="store_true", help="baseline と最新レポートを比較して劣化を検出")
     group.add_argument(
         "--update-baseline",
         metavar="REPORT_JSON",

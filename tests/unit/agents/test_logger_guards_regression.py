@@ -23,11 +23,7 @@ TARGETS = [
 
 def _iter_calls(tree: ast.AST):
     for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id == "hasattr"
-        ):
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "hasattr":
             yield node
 
 
@@ -97,11 +93,7 @@ def test_migrated_files_never_assign_self_logger():
                     and tgt.value.id == "self"
                 ):
                     offenders.append(f"{path}:{node.lineno}")
-    assert not offenders, (
-        "移行対象ファイルが self.logger を生成している"
-        "（デッドガードの再導入に直結）: "
-        f"{offenders}"
-    )
+    assert not offenders, f"移行対象ファイルが self.logger を生成している（デッドガードの再導入に直結）: {offenders}"
 
 
 def test_migrated_modules_still_import():
@@ -128,12 +120,7 @@ def test_migrated_files_resolve_module_level_logger():
     ):
         module = importlib.import_module(mod)
         resolved = getattr(module, "logger", None)
-        assert resolved is not None, (
-            f"{mod} にモジュールレベル logger が無い"
-            "（置換結果が NameError になる）"
-        )
+        assert resolved is not None, f"{mod} にモジュールレベル logger が無い（置換結果が NameError になる）"
         import logging
 
-        assert isinstance(resolved, logging.Logger), (
-            f"{mod}.logger が logging.Logger ではない: {type(resolved)}"
-        )
+        assert isinstance(resolved, logging.Logger), f"{mod}.logger が logging.Logger ではない: {type(resolved)}"

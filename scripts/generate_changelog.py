@@ -83,7 +83,20 @@ def _format_changelog_entry(version: str, grouped: dict[str, list[tuple[str, str
     lines.append("")
 
     # タイプ順序（重要度の高い順）
-    type_order = ["feat", "fix", "security", "perf", "refactor", "style", "test", "docs", "chore", "ci", "build", "revert"]
+    type_order = [
+        "feat",
+        "fix",
+        "security",
+        "perf",
+        "refactor",
+        "style",
+        "test",
+        "docs",
+        "chore",
+        "ci",
+        "build",
+        "revert",
+    ]
 
     for ctype in type_order:
         if ctype not in grouped:
@@ -106,7 +119,7 @@ def _split_off_unreleased(existing: str) -> tuple[str, str]:
     # 旧 Unreleased の中身は次のバージョン見出し（## [xxx]）まで破棄する（重複挿入防止）
     next_section = re.search(r"^## \[", rest, flags=re.MULTILINE)
     if next_section:
-        return before, rest[next_section.start():]
+        return before, rest[next_section.start() :]
     return before, ""
 
 

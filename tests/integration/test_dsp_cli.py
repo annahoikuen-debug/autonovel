@@ -8,10 +8,7 @@ def test_cli_execution(tmp_path):
     input_file = tmp_path / "beats.json"
     output_file = tmp_path / "corrected.json"
 
-    beats = [
-        {"episode": i, "tension": 3.0 if 15 <= i <= 25 else 5.0, "beat_type": "SETUP"}
-        for i in range(1, 41)
-    ]
+    beats = [{"episode": i, "tension": 3.0 if 15 <= i <= 25 else 5.0, "beat_type": "SETUP"} for i in range(1, 41)]
     with open(input_file, "w", encoding="utf-8") as f:
         json.dump(beats, f)
 

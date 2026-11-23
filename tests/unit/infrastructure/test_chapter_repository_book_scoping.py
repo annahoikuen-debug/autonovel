@@ -89,9 +89,7 @@ async def _counts(session: AsyncSession) -> dict[tuple[int, int], int]:
     from sqlalchemy import func, select
 
     result = await session.execute(
-        select(Chapter.book_id, Chapter.ep_num, func.count(Chapter.id)).group_by(
-            Chapter.book_id, Chapter.ep_num
-        )
+        select(Chapter.book_id, Chapter.ep_num, func.count(Chapter.id)).group_by(Chapter.book_id, Chapter.ep_num)
     )
     return {(row[0], row[1]): row[2] for row in result}
 
@@ -130,12 +128,14 @@ class TestCreateChapterScoping:
 
         # BOOK_B の第1話は他人の資産。書き換わっていない。
         b1 = (
-            await session.execute(
-                Chapter.__table__.select().where(Chapter.book_id == BOOK_B).where(
-                    Chapter.ep_num == 1
+            (
+                await session.execute(
+                    Chapter.__table__.select().where(Chapter.book_id == BOOK_B).where(Chapter.ep_num == 1)
                 )
             )
-        ).mappings().first()
+            .mappings()
+            .first()
+        )
         assert b1["content"] == "Bの本文1", "他作品の本文が上書きされた"
         assert b1["title"] == "B第1話", "他作品のタイトルが上書きされた"
 
@@ -160,12 +160,14 @@ class TestCreateChapterScoping:
         await session.commit()
 
         a2 = (
-            await session.execute(
-                Chapter.__table__.select().where(Chapter.book_id == BOOK_A).where(
-                    Chapter.ep_num == 2
+            (
+                await session.execute(
+                    Chapter.__table__.select().where(Chapter.book_id == BOOK_A).where(Chapter.ep_num == 2)
                 )
             )
-        ).mappings().first()
+            .mappings()
+            .first()
+        )
         assert a2["content"] == "Aの本文2", "別作品の同一話番号が書き換わった"
 
     async def test_upsert_preserves_generated_metadata(self, session: AsyncSession) -> None:
@@ -186,16 +188,16 @@ class TestCreateChapterScoping:
         await session.commit()
 
         row = (
-            await session.execute(
-                Chapter.__table__.select().where(Chapter.book_id == BOOK_A).where(
-                    Chapter.ep_num == 1
+            (
+                await session.execute(
+                    Chapter.__table__.select().where(Chapter.book_id == BOOK_A).where(Chapter.ep_num == 1)
                 )
             )
-        ).mappings().first()
-        assert row["content"] == "手書きで直した本文", "本文の編集が反映されていない"
-        assert row["killer_phrase"] == "Aのキラーフレーズ1", (
-            "生成済みの killer_phrase が保存で消えた"
+            .mappings()
+            .first()
         )
+        assert row["content"] == "手書きで直した本文", "本文の編集が反映されていない"
+        assert row["killer_phrase"] == "Aのキラーフレーズ1", "生成済みの killer_phrase が保存で消えた"
         assert row["ai_insight"] == "AのAI洞察1", "生成済みの ai_insight が保存で消えた"
         assert row["world_state"] == '{"owner": "A"}', "world_state が保存で消えた"
         assert row["created_at"] == ORIGINAL_CREATED_AT, "作成日時が保存で上書きされた"
@@ -221,12 +223,14 @@ class TestCreateChapterScoping:
         await session.commit()
 
         row = (
-            await session.execute(
-                Chapter.__table__.select().where(Chapter.book_id == BOOK_A).where(
-                    Chapter.ep_num == 1
+            (
+                await session.execute(
+                    Chapter.__table__.select().where(Chapter.book_id == BOOK_A).where(Chapter.ep_num == 1)
                 )
             )
-        ).mappings().first()
+            .mappings()
+            .first()
+        )
         assert row["killer_phrase"] == "Aのキラーフレーズ1"
         assert row["world_state"] == '{"owner": "A"}'
         assert row["trinity_review_log"] == "{}"
@@ -253,12 +257,14 @@ class TestCreateChapterScoping:
         await session.commit()  # flush できていれば成功
 
         row = (
-            await session.execute(
-                Chapter.__table__.select().where(Chapter.book_id == BOOK_A).where(
-                    Chapter.ep_num == 2
+            (
+                await session.execute(
+                    Chapter.__table__.select().where(Chapter.book_id == BOOK_A).where(Chapter.ep_num == 2)
                 )
             )
-        ).mappings().first()
+            .mappings()
+            .first()
+        )
         assert row["created_at"] == datetime(2026, 5, 5, 12, 30, tzinfo=timezone.utc)
 
 
@@ -303,9 +309,7 @@ class TestGetAllNonAnchorChaptersScoping:
         chapters = await repo.get_all_non_anchor_chapters(BOOK_A, branch_id=BRANCH)
 
         assert len(chapters) == 3
-        assert all(c.content.startswith("Aの本文") for c in chapters), (
-            "他作品の本文が混ざっている"
-        )
+        assert all(c.content.startswith("Aの本文") for c in chapters), "他作品の本文が混ざっている"
 
     async def test_first_argument_is_treated_as_book_id(self, session: AsyncSession) -> None:
         """第1引数だけを渡した呼び出し（= book_id）でも作品単位で絞られる。

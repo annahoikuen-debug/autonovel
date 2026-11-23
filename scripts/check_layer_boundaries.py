@@ -25,6 +25,7 @@
   python scripts/check_layer_boundaries.py --update-baseline # 契約2のベースラインを再記録
   python scripts/check_layer_boundaries.py --report          # 違反ファイルの一覧（移行 TODO 用）
 """
+
 from __future__ import annotations
 
 import argparse

@@ -5,6 +5,7 @@ src/integrations/rag/reflective_rag.py:644-651 の安全フォールバックに
 LLM 未設定（rag_service.age_client=None）でも、search_similar_chunks が正常に
 動作すれば documents が空にならないことを検証する。
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock

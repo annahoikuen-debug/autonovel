@@ -50,9 +50,7 @@ def _load_books(pattern_keys: tuple[str, ...]) -> list[dict]:
             async with UnitOfWork(AppContainer.db()) as uow:
                 if uow.session is None:
                     return out, False
-                result = await uow.session.execute(
-                    select(Plot).order_by(Plot.book_id, Plot.ep_num)
-                )
+                result = await uow.session.execute(select(Plot).order_by(Plot.book_id, Plot.ep_num))
                 for row in result.scalars().all():
                     out.append(
                         {
@@ -95,10 +93,7 @@ def measure(pattern_keys: tuple[str, ...] = DEFAULT_PATTERNS) -> dict:
 
     per_book: list[dict] = []
     for book_id, plots in sorted(books.items()):
-        chapters = [
-            {"chapter_number": p["ep_num"], "tension": p["tension"], "title": p["title"]}
-            for p in plots
-        ]
+        chapters = [{"chapter_number": p["ep_num"], "tension": p["tension"], "title": p["title"]} for p in plots]
         total = len(chapters)
         if total == 0:
             continue
@@ -139,15 +134,11 @@ def measure(pattern_keys: tuple[str, ...] = DEFAULT_PATTERNS) -> dict:
         "db_reachable": db_reachable,
         "books": per_book,
         "book_count": len(per_book),
-        "k1_alignment": round(statistics.fmean([b["k1_alignment"] for b in per_book]), 3)
-        if per_book
-        else None,
+        "k1_alignment": round(statistics.fmean([b["k1_alignment"] for b in per_book]), 3) if per_book else None,
         "k2_midpoint": {
             "mean": round(statistics.fmean(mids), 3) if mids else None,
             "stdev": round(statistics.pstdev(mids), 3) if len(mids) > 1 else None,
-            "in_band_rate": round(sum(1 for m in mids if 0.40 <= m <= 0.60) / len(mids), 3)
-            if mids
-            else None,
+            "in_band_rate": round(sum(1 for m in mids if 0.40 <= m <= 0.60) / len(mids), 3) if mids else None,
         },
         "k3_climax": {
             "mean": round(statistics.fmean(climaxes), 3) if climaxes else None,

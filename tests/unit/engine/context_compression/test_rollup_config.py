@@ -118,9 +118,7 @@ class TestRollupConfigInvalidFallback:
                 "cod_rounds": 1,
                 "block_digest_chars": 300,
             }
-            assert getattr(cfg, key) == defaults[key], (
-                f"{key} should fall back to {defaults[key]} with env={env}"
-            )
+            assert getattr(cfg, key) == defaults[key], f"{key} should fall back to {defaults[key]} with env={env}"
 
     def test_cod_rounds_min_is_1(self):
         """cod_rounds は最低 1 (max(1, ...))。"""

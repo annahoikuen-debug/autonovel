@@ -10,9 +10,7 @@ def test_priority_resolver_conflict():
     config = ArbitratorConfig(priority_order=["grammar", "csp", "dsp"])
     resolver = PriorityResolver(config)
 
-    orig_beats = [
-        Beat(episode=i, tension=4.0, beat_type=BeatType.SETUP) for i in range(1, 11)
-    ]
+    orig_beats = [Beat(episode=i, tension=4.0, beat_type=BeatType.SETUP) for i in range(1, 11)]
     orig_state = PlotState.from_beats(orig_beats, total_episodes=10)
 
     # At ep 5:

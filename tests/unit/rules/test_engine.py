@@ -1,4 +1,5 @@
 """Steps 8-10: ルールエンジンコアテスト。"""
+
 from __future__ import annotations
 
 import pytest
@@ -10,9 +11,9 @@ from src.rules.plot_events import PlotEvent, PlotEventType, Role
 from src.rules.rule_loader import RuleLoader
 from src.rules.state_machine import EmotionalStateMachine
 
-DEFAULT_RULES_PATH = RuleLoader.__module__ and __import__(
-    "src.rules.rule_loader", fromlist=["DEFAULT_RULES_PATH"]
-).DEFAULT_RULES_PATH
+DEFAULT_RULES_PATH = (
+    RuleLoader.__module__ and __import__("src.rules.rule_loader", fromlist=["DEFAULT_RULES_PATH"]).DEFAULT_RULES_PATH
+)
 
 
 def _make_engine() -> RuleEngine:
@@ -61,8 +62,7 @@ class TestProcessEvent:
             condition=lambda ctx: ctx.previous_tension >= 0.9,
         )
         engine = RuleEngine(rules=[rule], state_machine=EmotionalStateMachine())
-        event = PlotEvent("e1", 1, 1, "forced_cooperation",
-                          roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"})
+        event = PlotEvent("e1", 1, 1, "forced_cooperation", roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"})
 
         # 緊張が低い → 適用されない
         low_ctx = PlotContext(episode=1, previous_tension=0.3)
@@ -77,7 +77,10 @@ class TestProcessEvent:
         """役割に対応するキャラクターが欠落している場合はスキップ。"""
         engine = _make_engine()
         event = PlotEvent(
-            "e1", 1, 1, "betrayal",
+            "e1",
+            1,
+            1,
+            "betrayal",
             roles={Role.VICTIM: "A"},  # perpetrator 欠落
         )
         signals = engine.process_event(event, PlotContext(episode=1))
@@ -87,7 +90,10 @@ class TestProcessEvent:
         """source == target はスキップ。"""
         engine = _make_engine()
         event = PlotEvent(
-            "e1", 1, 1, "betrayal",
+            "e1",
+            1,
+            1,
+            "betrayal",
             roles={Role.VICTIM: "A", Role.PERPETRATOR: "A"},
         )
         signals = engine.process_event(event, PlotContext(episode=1))
@@ -101,10 +107,8 @@ class TestProcessEpisode:
         """エピソード全体の処理とベクトル変換。"""
         engine = _make_engine()
         events = [
-            PlotEvent("ep14_betrayal", 14, 3, "betrayal",
-                      roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"}),
-            PlotEvent("ep14_secret", 14, 1, "secret_shared",
-                      roles={Role.SHARER: "A", Role.RECEIVER: "B"}),
+            PlotEvent("ep14_betrayal", 14, 3, "betrayal", roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"}),
+            PlotEvent("ep14_secret", 14, 1, "secret_shared", roles={Role.SHARER: "A", Role.RECEIVER: "B"}),
         ]
         vector = engine.process_episode(14, events)
 
@@ -124,15 +128,14 @@ class TestProcessEpisode:
     def test_state_restored_from_snapshot(self):
         """前回スナップショットからの状態復元。"""
         engine = _make_engine()
-        events_14 = [PlotEvent("ep14_betrayal", 14, 1, "betrayal",
-                               roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"})]
+        events_14 = [PlotEvent("ep14_betrayal", 14, 1, "betrayal", roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"})]
         engine.process_episode(14, events_14)
         snapshot_14 = engine.last_snapshot
 
-        events_15 = [PlotEvent("ep15_rescue", 15, 1, "rescue",
-                               roles={Role.VICTIM: "A", Role.RESCUER: "B"})]
+        events_15 = [PlotEvent("ep15_rescue", 15, 1, "rescue", roles={Role.VICTIM: "A", Role.RESCUER: "B"})]
         vector_15 = engine.process_episode(
-            15, events_15,
+            15,
+            events_15,
             previous_snapshot=snapshot_14,
             previous_episode=14,
         )
@@ -192,14 +195,14 @@ class TestPersistence:
                 self.saved[(namespace, key)] = vector
 
         engine = _make_engine()
-        events = [PlotEvent("ep14_betrayal", 14, 1, "betrayal",
-                            roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"})]
+        events = [PlotEvent("ep14_betrayal", 14, 1, "betrayal", roles={Role.VICTIM: "A", Role.PERPETRATOR: "B"})]
         engine.process_episode(14, events)
 
         vector_store = MockVectorStore()
         graph_store = InMemoryGraphStore()
-        log_store = EventLogStore(str(__import__("pathlib").Path(
-            __import__("tempfile").mkdtemp()) / "test_events.jsonl"))
+        log_store = EventLogStore(
+            str(__import__("pathlib").Path(__import__("tempfile").mkdtemp()) / "test_events.jsonl")
+        )
 
         engine.persist_results(vector_store, graph_store, log_store, episode=14)
 
@@ -217,6 +220,7 @@ class TestPersistence:
 
         # Log
         from src.pipeline.emotional_residue import EmotionalSignal
+
         signals = log_store.query(pair=("A", "B"))
         assert len(signals) == 4
         assert all(isinstance(s, EmotionalSignal) for s in signals)
