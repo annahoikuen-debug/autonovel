@@ -151,3 +151,79 @@ export interface BranchMergeCommitResponse {
   committed_at: string;
 }
 
+// ============================================================================
+// Play モード(IF プレイヤーセッション)
+// バックエンドの正: src/backend/schemas/branch_play.py
+// ルート: src/backend/routers/branches.py の /api/branches/play 系
+// ============================================================================
+
+/** セッション開始リクエスト */
+export interface BranchPlayRequest {
+  book_id: number;
+  branch_id: number;
+}
+
+/** セッション作成 / 終了レスポンス */
+export interface BranchPlaySessionResponse {
+  session_id: string;
+  book_id: number;
+  branch_id: number;
+  current_node_id: string | null;
+  status: string;
+  updated_at: string | null; // ISO datetime string
+}
+
+/** グラフノードの選択肢(RouteNode.to_dict() の choices 要素) */
+export interface BranchPlayChoice {
+  id: string;
+  text: string;
+  conditions: Record<string, unknown>[];
+  target_node_id: string;
+  effects: Record<string, unknown>;
+  priority: number;
+}
+
+/** プレイ中の現在ノード(RouteNode.to_dict()) */
+export interface BranchPlayNode {
+  id: string;
+  episode_num: number;
+  content: string;
+  branch_type: string;
+  choices: BranchPlayChoice[];
+  merge_target?: string | null;
+  metadata?: Record<string, unknown>;
+  parent_ids?: string[];
+}
+
+/** 現セッション状態 */
+export interface BranchPlayStateResponse {
+  session_id: string;
+  book_id: number;
+  branch_id: number;
+  /** 現在ノード。グラフ未生成や完了後は空オブジェクトになり得る */
+  current_node: BranchPlayNode | Record<string, unknown>;
+  current_node_id: string | null;
+  context: Record<string, unknown>;
+  available_choices: BranchPlayChoice[];
+  save_points_count: number;
+  status: string;
+  updated_at: string | null;
+}
+
+/** セッション終了リクエスト */
+export interface BranchPlayEndRequest {
+  status?: string;
+}
+
+/** プレイスルー記録レスポンス */
+export interface BranchPlayPlaythroughResponse {
+  session_id: string;
+  book_id: number;
+  branch_id: number;
+  history: unknown[];
+  flags: Record<string, unknown>;
+  variables: Record<string, unknown>;
+  final_ending: string | null;
+  saved_at: string | null;
+}
+
