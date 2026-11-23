@@ -14,6 +14,11 @@ import {
   MergePreviewResponse,
   BranchTreeData,
   ChapterDiffResponse,
+  BranchPlayRequest,
+  BranchPlaySessionResponse,
+  BranchPlayStateResponse,
+  BranchPlayEndRequest,
+  BranchPlayPlaythroughResponse,
 } from '../types/branches';
 import { apiFetch, handleResponse } from './client';
 
@@ -95,4 +100,68 @@ export async function fetchChapterDiff(
   });
   const res = await apiFetch(`/api/branches/${bookId}/diff?${params.toString()}`);
   return handleResponse<ChapterDiffResponse>(res, `Failed to fetch chapter diff: ${res.status}`);
+}
+
+// ============================================================================
+// Play モード(IF プレイヤーセッション)
+// バックエンド: src/backend/routers/branches.py の /play 系(全て Bearer 必須)
+// ============================================================================
+
+/**
+ * IF プレイヤーセッションを開始する
+ *
+ * session_id はバックエンド側で UUID 自動発行される。
+ * ブランチが書籍に属さない場合は 404、他人の書籍は 403/404 になる(IDOR 対策済み)。
+ */
+export async function startPlaySession(payload: BranchPlayRequest): Promise<BranchPlaySessionResponse> {
+  const res = await apiFetch('/api/branches/play', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  return handleResponse<BranchPlaySessionResponse>(res, `Failed to start play session: ${res.status}`);
+}
+
+/** セッションの現状態(現在ノード / 利用可能な選択肢)を取得 */
+export async function fetchPlayState(sessionId: string): Promise<BranchPlayStateResponse> {
+  const res = await apiFetch(`/api/branches/play/${sessionId}/state`);
+  return handleResponse<BranchPlayStateResponse>(res, `Failed to fetch play state: ${res.status}`);
+}
+
+/** 選択肢を実行し、遷移後の状態を返す */
+export async function choosePlayChoice(sessionId: string, choiceId: string): Promise<BranchPlayStateResponse> {
+  const res = await apiFetch(`/api/branches/play/${sessionId}/choose`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ choice_id: choiceId }),
+  });
+  return handleResponse<BranchPlayStateResponse>(res, `Failed to choose: ${res.status}`);
+}
+
+/** 現状態をセーブポイントに追記保存し、保存後の状態を返す */
+export async function savePlayPoint(sessionId: string): Promise<BranchPlayStateResponse> {
+  const res = await apiFetch(`/api/branches/play/${sessionId}/save`, { method: 'POST' });
+  return handleResponse<BranchPlayStateResponse>(res, `Failed to save play point: ${res.status}`);
+}
+
+/** セーブポイント(index)から状態を復元する。範囲外は 400 */
+export async function loadPlayPoint(sessionId: string, index: number): Promise<BranchPlayStateResponse> {
+  const res = await apiFetch(`/api/branches/play/${sessionId}/load?index=${index}`, { method: 'POST' });
+  return handleResponse<BranchPlayStateResponse>(res, `Failed to load play point: ${res.status}`);
+}
+
+/** セッションを終了する。デフォルトは status="completed" */
+export async function endPlaySession(sessionId: string, payload?: BranchPlayEndRequest): Promise<BranchPlaySessionResponse> {
+  const res = await apiFetch(`/api/branches/play/${sessionId}/end`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload ?? {}),
+  });
+  return handleResponse<BranchPlaySessionResponse>(res, `Failed to end play session: ${res.status}`);
+}
+
+/** プレイスルー記録(履歴 + flags / variables)を取得 */
+export async function fetchPlaythrough(sessionId: string): Promise<BranchPlayPlaythroughResponse> {
+  const res = await apiFetch(`/api/branches/play/${sessionId}/playthrough`);
+  return handleResponse<BranchPlayPlaythroughResponse>(res, `Failed to fetch playthrough: ${res.status}`);
 }

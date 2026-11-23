@@ -10,6 +10,7 @@ import {
 import { EasyModePage } from "./pages/EasyModePage";
 import { StudioWorkspacePage } from "./pages/StudioWorkspacePage";
 import { WizardWorkflowPage } from "./pages/WizardWorkflowPage";
+import { PlayModePage } from "./pages/PlayModePage";
 import { WelcomePage } from "./pages/WelcomePage";
 import { LoginPage, RegisterPage } from "./pages/AuthPage";
 import { LpPage } from "./pages/lp/LpPage";
@@ -108,12 +109,16 @@ export const routes: RouteObject[] = [
   { path: "/app/wizard", element: <WizardWorkflowPage />, errorElement: <RouteErrorView /> },
   { path: "/app/studio", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },
   { path: "/app/studio/:bookId", element: <StudioWorkspacePage />, errorElement: <RouteErrorView /> },
+  // Play モード(Phase 0): 生成済み書籍の IF グラフを遊ぶ。docs/adr/002-play-mode-mainline.md
+  { path: "/app/play", element: <PlayModePage />, errorElement: <RouteErrorView /> },
+  { path: "/app/play/:bookId", element: <PlayModePage />, errorElement: <RouteErrorView /> },
   { path: "/welcome", element: <WelcomePage />, errorElement: <RouteErrorView /> },
   // --- 旧パスからの後方互換リダイレクト（ブックマーク・既存コードの遷移先を救済） ---
   { path: "/easy", element: <Navigate to="/app/easy" replace /> },
   { path: "/wizard", element: <Navigate to="/app/wizard" replace /> },
   { path: "/studio", element: <Navigate to="/app/studio" replace /> },
   { path: "/studio/:bookId", element: <RedirectStudioBook /> },
+  { path: "/play", element: <Navigate to="/app/play" replace /> },
   { path: "/app", element: <Navigate to="/app/easy" replace /> },
 ];
 

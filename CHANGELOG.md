@@ -4,6 +4,22 @@
 
 ## [Unreleased]
 
+### Play モード Phase 0 実装（2026-11-23）
+
+生成済み小説を「遊べる形」で再生する Play モードの UI を追加（`docs/plans/ROADMAP_PLAYABLE_NOVEL.md` Phase 0 / `docs/adr/002-play-mode-mainline.md`）。
+
+- **`/app/play`**（作品選択）と **`/app/play/:bookId`**（プレイ本体）を新設。既存 `/api/branches/play/*` のグラフ型プレイ（選択肢 → 分岐 → セーブ/ロード → プレイスルー記録）を UI から操作可能に
+- ヘッダーに「▶ Play」ボタン、Studio の「ブランチ管理」に「▶ プレイ」ボタン（選択中の分岐を引き継ぎ）
+- `usePlaySession` フック + 単体テスト 10 件、ページ結合テスト 9 件（全 398 テスト パス）
+- 旧 `/play` パスは `/app/play` へリダイレクト
+- **修復**: Node 26 環境で全テストが落ちる localStorage 問題を `frontend/tests/setup.ts` に polyfill を追加して解消
+- **注記**: 動的継続生成（選択時に AI が続きを書く）は未実装。Phase 1 で feature flag 付き導入を予定
+
+### 次期ロードマップ（プレイアブルノベル構想）の策定（2026-11-23）
+
+ISEKAI ZERO 型の「遊べる物語体験」を取り込む全体構想を `docs/plans/ROADMAP_PLAYABLE_NOVEL.md` として新設（提案・承認待ち）。
+Phase 0（Play モード UI）〜 Phase 4（UGC 公開・ゲート制）のフェーズ構成、現状資産マップ、横断設計方針、KPI・リスクを定義。
+
 ### Q1〜Q3 品質ゲート復旧・デッドコード削除・shim 焼却（2026-11-15）
 
 PLAN_Q1（赤いゲート復旧）/ PLAN_Q2（デッドコード削除）/ PLAN_Q3（shim 焼却）の実行結果。

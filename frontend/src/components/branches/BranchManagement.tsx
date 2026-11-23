@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Modal } from '../common/Modal';
 import { Button } from '../common/Button';
 import { BranchTree } from './BranchTree';
@@ -12,6 +13,7 @@ import { useNovelContext } from '@/context/NovelContext';
 import { BranchMergeRequest, MergePreviewResponse, ChapterDiffResponse, BranchMergeCommitResponse } from '@/types/branches';
 
 export const BranchManagement: React.FC<{ bookId: number }> = ({ bookId }) => {
+  const navigate = useNavigate();
   const { data: treeData, isLoading: treeLoading, isError: treeError } = useBranchTree(bookId);
   const [selectedBranchId, setSelectedBranchId] = React.useState<number | null>(null);
   const [compareBranchId, setCompareBranchId] = React.useState<number | null>(null);
@@ -159,7 +161,7 @@ export const BranchManagement: React.FC<{ bookId: number }> = ({ bookId }) => {
           {/* Controls and Preview */}
           <div style={{ flex: 1, minWidth: '250px' }}>
             <h2>操作パネル</h2>
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
                 type="button"
                 onClick={() => {
@@ -168,6 +170,22 @@ export const BranchManagement: React.FC<{ bookId: number }> = ({ bookId }) => {
                 style={{ padding: '8px 16px', backgroundColor: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
               >
                 メインルートに戻る
+              </button>
+              {/* Play モードへ(Phase 0 S13)。分岐を選んでから押すとその分岐を選択した状態でプレイ画面に遷移 */}
+              <button
+                type="button"
+                onClick={() => {
+                  navigate(
+                    selectedBranchId !== null
+                      ? `/app/play/${bookId}?branch=${selectedBranchId}`
+                      : `/app/play/${bookId}`
+                  );
+                }}
+                data-testid="branch-play-btn"
+                title="この作品の IF 分岐をプレイする"
+                style={{ padding: '8px 16px', backgroundColor: 'var(--success-color, #27ae60)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+              >
+                ▶ プレイ
               </button>
             </div>
 

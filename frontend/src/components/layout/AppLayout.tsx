@@ -178,6 +178,18 @@ export function AppLayout({ children, onMessage }: AppLayoutProps) {
             📊 相関図
           </Button>
 
+          {/* Play モード(Phase 0): 生成済み書籍の IF グラフを遊ぶ。docs/adr/002-play-mode-mainline.md */}
+          <Button
+            variant="success"
+            size="sm"
+            onClick={() =>
+              navigate(selectedBook ? `/app/play/${selectedBook.id}` : "/app/play")
+            }
+            data-testid="open-play-btn"
+          >
+            ▶ Play
+          </Button>
+
           {(() => {
             const c = getGenreBadgeConfig(selectedBook?.genre || "ハイファンタジー (R15)");
             return (

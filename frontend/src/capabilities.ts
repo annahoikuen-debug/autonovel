@@ -47,6 +47,11 @@ export const CAPABILITIES = {
     reason: "自動改善ループは未実装です（採点と傾向分析のみ実装済み）",
     note: "GET /books/{book_id}/chapters/{n}/score と novel.py の alerient 診断は使える",
   } as Capability,
+  /** Play モード: 生成済み書籍の IF グラフをプレイする。バックエンド実装済み(docs/STATUS.md §2)で Phase 0 で UI を接続 */
+  branchPlay: {
+    status: "wired",
+    note: "グラフ型プレイのみ。動的継続生成は Phase 1(feature flag ENABLE_DYNAMIC_BRANCH、docs/plans/ROADMAP_PLAYABLE_NOVEL.md)",
+  } as Capability,
 } as const satisfies Record<string, Capability>;
 
 export type CapabilityName = keyof typeof CAPABILITIES;
