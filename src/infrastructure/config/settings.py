@@ -202,6 +202,14 @@ class Settings(BaseSettings):
                     "本番環境 (APP_ENV=production) では CORS_ALLOW_HEADERS にワイルドカード "
                     "`*` を指定できません。必要なヘッダー名を明示してください。"
                 )
+            # CORS_ORIGINS に `*` が含まれると、資格情報付きクロスオリジンアクセスを
+            # 全オリジンに開放することになる。起動時に拒否する（app_factory 側でも
+            # 縦深防御としてチェックする）。
+            if "*" in [o.strip() for o in self.CORS_ORIGINS.split(",")]:
+                raise ValueError(
+                    "本番環境 (APP_ENV=production) では CORS_ORIGINS に '*' を設定できません。"
+                    "公開オリジンを明示的に列挙してください。"
+                )
         return self
 
     # 外部決済設定
