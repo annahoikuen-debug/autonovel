@@ -107,10 +107,10 @@ check("S8 chapter.id 呼び出し 0件", "update_chapter_content(chapter.id" not
 
 # --- Step 9: version ------------------------------------------------------
 _v = tomllib.loads(read("pyproject.toml"))["project"]["version"]
-check("S9 pyproject 6.0.0", _v == "6.0.0")
-check("S9 CLI / backend 一致", "6.0.0" in read("src/cli/main.py") and "6.0.0" in read("src/backend/__init__.py"))
-check("S9 frontend / docker 一致", "6.0.0" in read("frontend/package.json") and "6.0.0" in read("docker-compose.prod.yml"))
-check("S9 README バッジ", "version-6.0.0" in read("README.md"))
+check("S9 pyproject 7.0.0", _v == "7.0.0")
+check("S9 CLI / backend 一致", "7.0.0" in read("src/cli/main.py") and "7.0.0" in read("src/backend/__init__.py"))
+check("S9 frontend / docker 一致", "7.0.0" in read("frontend/package.json") and "7.0.0" in read("docker-compose.prod.yml"))
+check("S9 README バッジ", "version-7.0.0" in read("README.md"))
 
 # --- Step 10: lint -------------------------------------------------------
 check("S10 pyproject に残存の記録", "T6 Step 10 の残存" in read("pyproject.toml"))

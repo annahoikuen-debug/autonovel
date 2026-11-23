@@ -18,13 +18,16 @@ from src.models.illustration import SafetyLevel
 from src.publishing.illustration.image_service import ImageService
 
 
-def test_image_service_requires_api_key():
+def test_image_service_requires_api_key(monkeypatch):
     """Step 6: api_key が空文字 / None なら ValueError。
 
     NOTE: 実装は api_key 未指定時に settings.get_gemini_api_key() へフォールバック
     するため、先行テストが GOOGLE_GENAI_API_KEY / GEMINI_API_KEY を設定していると
-    ValueError にならない。テスト内で環境変数を除去してから検証する。
+    ValueError にならない。テスト内で環境変数と settings の両方を除去してから検証する。
+    .env ファイルの GEMINI_API_KEY は pydantic Settings が読み込むため、
+    環境変数だけでなく settings 属性も無効化する。
     """
+    monkeypatch.setattr("src.infrastructure.config.settings.settings.GEMINI_API_KEY", None, raising=False)
     with patch.dict(os.environ, {}, clear=False):
         os.environ.pop("GOOGLE_GENAI_API_KEY", None)
         os.environ.pop("GEMINI_API_KEY", None)

@@ -496,6 +496,77 @@
         }
       }
     },
+    "/easy_mode/easy_mode/onboarding-presets": {
+      "get": {
+        "tags": [
+          "easy_mode"
+        ],
+        "summary": "Get Onboarding Presets",
+        "description": "カクヨムランキング上位を狙う初心者向けプリセット一覧を返す。\n\nフラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は空リストを返し、\n現行のオンボーディング挙動を変更しない。",
+        "operationId": "get_onboarding_presets_easy_mode_easy_mode_onboarding_presets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Onboarding Presets Easy Mode Easy Mode Onboarding Presets Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/easy_mode/easy_mode/export-kakuyomu-package/{book_id}": {
+      "post": {
+        "tags": [
+          "easy_mode"
+        ],
+        "summary": "Export Kakuyomu Package",
+        "description": "カクヨム形式で整形した投稿用パッケージを返す。\n\nフラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は 404 を返し、\n現行のエクスポート挙動を変更しない。",
+        "operationId": "export_kakuyomu_package_easy_mode_easy_mode_export_kakuyomu_package__book_id__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/wizard/generate": {
       "post": {
         "tags": [
@@ -987,6 +1058,77 @@
         }
       }
     },
+    "/api/wizard/easy_mode/onboarding-presets": {
+      "get": {
+        "tags": [
+          "wizard"
+        ],
+        "summary": "Get Onboarding Presets",
+        "description": "カクヨムランキング上位を狙う初心者向けプリセット一覧を返す。\n\nフラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は空リストを返し、\n現行のオンボーディング挙動を変更しない。",
+        "operationId": "get_onboarding_presets_api_wizard_easy_mode_onboarding_presets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Onboarding Presets Api Wizard Easy Mode Onboarding Presets Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/wizard/easy_mode/export-kakuyomu-package/{book_id}": {
+      "post": {
+        "tags": [
+          "wizard"
+        ],
+        "summary": "Export Kakuyomu Package",
+        "description": "カクヨム形式で整形した投稿用パッケージを返す。\n\nフラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は 404 を返し、\n現行のエクスポート挙動を変更しない。",
+        "operationId": "export_kakuyomu_package_api_wizard_easy_mode_export_kakuyomu_package__book_id__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Book Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/easy-mode/generate": {
       "post": {
         "tags": [
@@ -1456,6 +1598,77 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/easy-mode/easy_mode/onboarding-presets": {
+      "get": {
+        "tags": [
+          "easy-mode"
+        ],
+        "summary": "Get Onboarding Presets",
+        "description": "カクヨムランキング上位を狙う初心者向けプリセット一覧を返す。\n\nフラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は空リストを返し、\n現行のオンボーディング挙動を変更しない。",
+        "operationId": "get_onboarding_presets_api_easy_mode_easy_mode_onboarding_presets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Onboarding Presets Api Easy Mode Easy Mode Onboarding Presets Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/easy-mode/easy_mode/export-kakuyomu-package/{book_id}": {
+      "post": {
+        "tags": [
+          "easy-mode"
+        ],
+        "summary": "Export Kakuyomu Package",
+        "description": "カクヨム形式で整形した投稿用パッケージを返す。\n\nフラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は 404 を返し、\n現行のエクスポート挙動を変更しない。",
+        "operationId": "export_kakuyomu_package_api_easy_mode_easy_mode_export_kakuyomu_package__book_id__post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Book Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -17141,6 +17354,48 @@
             },
             "type": "array",
             "title": "Suggestions"
+          },
+          "hook_metrics": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hook Metrics",
+            "description": "序盤フック・章末引き採点結果"
+          },
+          "ctr_metrics": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ctr Metrics",
+            "description": "タイトル・キャッチコピーCTR採点結果"
+          },
+          "ctr_suggestions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Ctr Suggestions",
+            "description": "CTR改善案タイトルリスト"
+          },
+          "tag_suggestions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tag Suggestions",
+            "description": "カクヨム推奨タグ候補リスト"
           }
         },
         "type": "object",

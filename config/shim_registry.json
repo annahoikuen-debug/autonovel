@@ -1,5 +1,7 @@
 {
-  "shims": [],
+  "shims": [
+    "src/services/audit_adapter.py"
+  ],
   "description": "後方互換 shim の一覧。新しい shim を追加したら必ずここに登録すること。",
-  "updated_at": "2026-11-15"
+  "updated_at": "2026-11-23"
 }

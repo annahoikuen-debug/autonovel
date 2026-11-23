@@ -146,7 +146,13 @@ describe("useNovelGeneration: キャンセルはエラーとして扱わない",
     });
 
     expect(onError).not.toHaveBeenCalled();
-    expect(onSuccess).toHaveBeenCalledWith("即時本文", []);
+    // 改善案1・2・4 のメトリクス(第3引数)が追加された。応答に無い場合は null/空の既定値
+    expect(onSuccess).toHaveBeenCalledWith("即時本文", [], {
+      hook_metrics: null,
+      ctr_metrics: null,
+      ctr_suggestions: [],
+      tag_suggestions: [],
+    });
   });
 
   it("suggestions から task_id を抽出できる", async () => {
@@ -169,7 +175,12 @@ describe("useNovelGeneration: キャンセルはエラーとして扱わない",
 
     expect(onError).not.toHaveBeenCalled();
     expect(mockedPoll).toHaveBeenCalledWith("task-9", expect.anything());
-    expect(onSuccess).toHaveBeenCalledWith("ポーリング本文", []);
+    expect(onSuccess).toHaveBeenCalledWith("ポーリング本文", [], {
+      hook_metrics: null,
+      ctr_metrics: null,
+      ctr_suggestions: [],
+      tag_suggestions: [],
+    });
   });
 
   it("即時応答の本文が空なら既存の原稿を残し、エラーとして報告する", async () => {
