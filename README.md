@@ -428,7 +428,9 @@ frontend は backend のヘルスチェック（`/health/liveness`）が OK に�
 | `REDIS_PASSWORD` | Redis の `--requirepass` パスワード |
 
 任意（既定あり）: `UVICORN_WORKERS`（既定 1）、`ACCESS_TOKEN_EXPIRE_MINUTES`（60）、
-`REFRESH_TOKEN_EXPIRE_DAYS`（14）、`FRONTEND_URL`、`LLM_PROVIDER`、`OPENAI_API_KEY`、
+`REFRESH_TOKEN_EXPIRE_DAYS`（14）、`AUTH_RATE_LIMIT_LOGIN`（10）/ `AUTH_RATE_LIMIT_REGISTER`（5）/
+`AUTH_RATE_LIMIT_REFRESH`（30）（いずれも 1分あたりの認証エンドポイント許容リクエスト数）、
+`FRONTEND_URL`、`LLM_PROVIDER`、`OPENAI_API_KEY`、
 `GEMINI_API_KEY`、`ANTHROPIC_API_KEY`、`STRIPE_SECRET_KEY`、`STRIPE_WEBHOOK_SECRET`。
 
 補足:
@@ -541,7 +543,8 @@ export_1.zip
 | `ENABLE_NSFW` | 官能コンテンツ生成の明示オプトイン（`true` / `false`） | `false` |
 | `HUEY_BACKEND` | タスクキュー（`sqlite` / `redis`） | `sqlite` |
 | `JWT_SECRET_KEY` | 本番必須。JWT の署名キー | ─ |
-| `CORS_ORIGINS` | 本番必須。許可オリジン | ─ |
+| `CORS_ORIGINS` | 本番必須。許可オリジン（`*` は本番起動時拒否） | ─ |
+| `AUTH_RATE_LIMIT_LOGIN` / `AUTH_RATE_LIMIT_REGISTER` / `AUTH_RATE_LIMIT_REFRESH` | 認証エンドポイントのレート制限（1分あたり） | `10` / `5` / `30` |
 | `VITE_SITE_URL` | フロントエンド本番オリジン（canonical / OGP 用）。未設定時は相対パス | ─ |
 | `VITE_API_BASE_URL` | API ベース URL | `http://localhost:8200` |
 
