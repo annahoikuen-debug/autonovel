@@ -404,7 +404,9 @@ class Settings(BaseSettings):
         そのため `*` を含む場合は `False` を返し、呼び出し元に資格情報付き
         アクセスを強制的に無効化させる。
         """
-        return ["*"] not in self.cors_origin_list
+        # 注意: `["*"] not in ...` は「リスト要素（str）の中にリストがあるか」の
+        # 意味になり常に False（=常に True を返す）バグだったため修正した。
+        return "*" not in self.cors_origin_list
 
     @property
     def cors_allow_headers_list(self) -> list[str]:
