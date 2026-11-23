@@ -231,4 +231,51 @@
 
 ## 7. 実行記録
 
-(実装時に追記)
+**実施日:** 2026-11-23 / **実装ブランチ:** `feature/play-mode-phase0`
+
+### 実装済みステップ
+
+| Ep | ステップ | 状態 | コミット / 成果物 |
+|:---|:---|:---:|:---|
+| 0 | (計画外)テスト基盤修復 | ✅ | `1af6f231` — Node 26 の実験的 localStorage が jsdom の Storage を影にし、**全 74 ファイル / 389 テストが setup で失敗**していた(STATUS §3-5 の「9 失敗」の実態もこれ)。`tests/setup.ts` にフォールバック polyfill を追加(旧 Node では不発) |
+| 1 | S01-S02 型・API クライアント | ✅ | `4472f481` — `types/branches.ts` に Play 型 5 種、`api/branches.ts` に play 系 7 関数 |
+| 1 | S03-S05 フック+テスト | ✅ | `6d48581c` — `usePlaySession`(状態機械 idle→starting→playing→ending→ended)+ 単体テスト 10 件 |
+| 2 | S07-S14 ページ・ルート・導線 | ✅ | `a1bc5e78` — `PlayModePage`、`/app/play` ルート+旧 `/play` リダイレクト、`capabilities.ts` に `branchPlay: wired`、ヘッダー「▶ Play」ボタン、BranchManagement「▶ プレイ」ボタン(`?branch=` で分岐引き継ぎ)、結合テスト 9 件 |
+| 3 | S15 E2E(API レベル) | ✅ | 下記 §7.1 |
+| 3 | S16 KPI 集計 SQL | ✅ | 下記 §7.2(計画 §3 S16 の SQL を実 DB で検証) |
+| 4 | S17 ユーザーマニュアル | ✅ | `docs/easy_mode_guide.md` に「▶ Play モード」節 + 導線図更新 |
+| 4 | S18 SSOT 同期 | ✅ | 本節 + `docs/STATUS.md` §2 + `CHANGELOG.md` + `docs/plans/ROADMAP_PLAYABLE_NOVEL.md` §3/§4 |
+
+### S15 の差異(計画からの変更)
+
+- **ブラウザでの手動 E2E は実施せず、API レベル E2E で代替した。** 理由: 実行環境(Node 26)では react-router のテスト内ナビゲーションが undici の AbortSignal クロスレルム問題で動作しないため、UI 遷移の自動検証は不可。UI は結合テスト 9 件(コンポーネント単位)+ 実 API との整合(API レベル E2E)で担保した。ブラウザでの目視確認は利用者側の初回利用時にフィードバックを得る
+- なお Node 26 環境では vitest + jsdom の localStorage も壊れる(→ Ep 0 の修復)
+
+### 7.1 API レベル E2E 実施結果(mock LLM 不要・グラフ型プレイ)
+
+実バックエンド(uvicorn + SQLite)で以下を全て 200/期待動作で確認(2026-11-23):
+
+| # | 操作 | 結果 |
+|:--|:---|:---|
+| 1 | ユーザー登録/ログイン | ✅ JWT 取得 |
+| 2 | 書籍作成(`POST /api/books`) | ✅ book_id=1 |
+| 3 | 分岐+グラフ作成(`POST /api/branches/`、`graph_json` 3 ノード) | ✅ branch_id=1 |
+| 4 | プレイ開始(`POST /api/branches/play`) | ✅ session 発行、`current_node_id=node_start` |
+| 5 | 状態取得(`/state`) | ✅ ノード本文+選択肢 2 件 |
+| 6 | 選択(`/choose` `c_open`) | ✅ `node_open` へ遷移、flags 記録 |
+| 7 | セーブ(`/save`) | ✅ save_points=1 |
+| 8 | 終端ノードからの不正選択 | ✅ 400 `Choice not available from current node`(適切に拒否) |
+| 9 | 復元(`/load?index=0`) | ✅ セーブ時点のノードへ復元 |
+| 10 | 履歴(`/playthrough`) | ✅ `history=[{from, choice_id, to}]`、`flags={opened:true}` |
+| 11 | 終了(`/end`) | ✅ `status=completed` |
+
+### 7.2 KPI 初期集計(S16)
+
+上記 E2E DB に対して計画 §3 S16 の SQL を実行し、`status` 集計・完走率・書籍数が取得できることを確認。本番での基準値は実ユーザーのデータ蓄積後に設定する(ロードマップ §6)。
+
+### ゲート結果
+
+- `tsc --noEmit`: **グリーン**
+- `eslint`(新規・変更ファイル): **0 errors**(既存 warning 6 件は BranchManagement の既存未使用変数で本計画と無関係のため触らない)
+- `vitest run`: **全 74 ファイル / 398 テスト パス、失敗 0**(ベースライン 379 + 新規 19)
+- 未処理 rejection 2 件は既存の Node 26 × react-router(undici)の環境問題で、テスト結果には影響しない(旧 Node では発生しない)

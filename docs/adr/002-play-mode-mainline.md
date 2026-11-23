@@ -2,7 +2,7 @@
 
 ## ステータス
 
-提案 (Proposed) — 承認時に「承認 (Accepted)」へ更新すること
+承認 (Accepted) — 2026-11-23。Phase 0 実装開始の指示により承認とし、Phase 0 を完了済み(`docs/implementation_plans/playable_novel_phase0.md` §7 実行記録参照)。Phase 1 の GO/NO-GO は Phase 0 の KPI ベースライン取得後。
 
 ## コンテキスト
 

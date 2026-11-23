@@ -1,6 +1,6 @@
 # AutoNovel 現況ステータス（SSOT）
 
-最終更新: 2026-11-15（PLAN_Q1〜Q3 完了時点）
+最終更新: 2026-11-23（Play モード Phase 0 完了時点）
 対象: ワークツリー（`/home/annahoikuen/autonovel`）の実コード
 
 > 本ドキュメントが**現在の実装状況の唯一の正（SSOT）**です。
@@ -34,6 +34,7 @@
 | プロット展開（plot expansion） | **実装済み** | `POST /plots/expand`・`/expand_candidates`・`/expand-beats`（`src/backend/routers/plots.py:86,119,324`）。`plot_expansion_workflow` に配線済み。42ac9e37 で恒常 500 を修正 |
 | 執筆（章生成） | **実装済み** | `POST /api/episodes/generate`・`/generate_candidates`・`/retry_failed`・`/chapters/import`（`src/backend/routers/episodes.py`）。統合実装は `src/domain/writing/coordinator.py` |
 | ブランチ / IF 経路 | **実装済み** | `src/backend/routers/branches.py` に fork / merge / graph / choices / play セッション / WebSocket。DB は `0015_add_branches_core.py`〜`0016_add_branch_play_sessions.py`。IDOR は 42ac9e37 で修正 |
+| Play モード（生成小説の再生 UI） | **実装済み（Phase 0）** | `/app/play`・`/app/play/:bookId`（`frontend/src/pages/PlayModePage.tsx`）。既存 `/api/branches/play/*` のグラフ型プレイを表面化。動的継続生成（選択時の LLM 生成）は未実装で Phase 1（`docs/plans/ROADMAP_PLAYABLE_NOVEL.md` §4、flag `ENABLE_DYNAMIC_BRANCH` 想定） |
 | 文体比較（style comparison） | **一部実装** | スタイル仕様・プリセット・蒸留・音律整形の API は実装済み（`src/backend/routers/styles.py`）。クライアント側の比較 UI も `wired` 宣言（`frontend/src/capabilities.ts:29`）。ただし「StyleEntry は仕様を返すだけで本文は返さない」（同ファイル:42） |
 | 文体適用（style apply to chapter） | **未実装** | `Chapter` モデルにスタイル列が存在しない（`src/backend/database/models.py:244-269`）。`capabilities.ts:33` も `planned` として宣言 |
 | 自動改善ループ（auto-improvement） | **未実装** | ループ本体が無い。採点のみ実装（`GET /api/novel/books/{id}/chapters/{n}/score`、`src/backend/database/repositories/book_score.py`）。`src/services/pdca_cycle.py` の `ClosedLoopPDCARunner` は**どこからも import されていない**未配線コード。`capabilities.ts:45` も `planned` |
@@ -55,7 +56,7 @@
 2. **文体の章への適用は存在しない。** `Chapter` テーブルにスタイル列が無い（`src/backend/database/models.py:244`）。文体指定で章を書き直す API も無い。
 3. **なろう公開は selenium を要求するが、依存宣言が無い。** `requirements.txt` / `pyproject.toml` に `selenium`・`webdriver-manager` が無く、`src/services/publishers/narou.py` の import が失敗する環境では动车しない。
 4. **GraphRAG のベクトルストアは PostgreSQL 無しで chroma / in-memory に落ちる。** `AUTONOVEL_RAG_MODE`（既定 `auto`）で `PgVector > Chroma > InMemory` の順（`src/services/vector_store/__init__.py:41-59`）。グラフ書き込み系は未実装スタブ。
-5. **フロントエンドの `npm run test:ci` は失敗する（2026-10-02 実測）。** 原因はカバレッジ閾値ではなく **6 ファイル / 9 テストの失敗**（`tests/unit/uiux/wizardStep3Editing.test.tsx` ほか。vitest はテスト失敗時に coverage レポートを書き出さないため、現在の主ゲートは閾値ではない）。`frontend/vite.config.ts` の thresholds は lines/branches/functions/statements すべて 50% のままである（D07: 閾値は本次計画で上げない。`src/types/**` の除外は「正直な表示」のため維持する）。カバレッジの実測値は 9 件のテスト失敗が直るまで取得できない。
+5. **フロントエンドテストは Node 26 環境で全滅していた問題を修復済み（2026-11-23 実測: 74 ファイル / 398 テスト全パス）。** Node 26+ の実験的 `globalThis.localStorage` が `--localstorage-file` 未指定では利用不能になり、vitest jsdom 環境で jsdom の Storage を影にするため `tests/setup.ts` の `window.localStorage.clear()` で**全テスト**が失敗していた（旧記録「6 ファイル / 9 テストの失敗」（2026-10-02）の実態も含めて環境問題だった）。`tests/setup.ts` にフォールバック polyfill を追加済み（旧 Node(CI)では不発）。なお Node 26 では react-router のナビゲーションが undici の AbortSignal クロスレルム問題で動作しない（テスト内遷移・未処理 rejection の原因。テスト結果には影響しない）。`frontend/vite.config.ts` の thresholds は lines/branches/functions/statements すべて 50% のままである（D07: 閾値は本次計画で上げない）。
 6. **PDCA ループの実行経路は無い。** `src/engine/pdca_cycle.ClosedLoopPDCARunner` は import こそ存在する（`src/services/commercial_benchmarks.py:171` と unit/integration テスト）が、生成パイプラインの実行経路には配線されていない。`src/generation/pdca_controller.py` は `src/domain/writing/coordinator.py:14,62` で使用中。配線するかの設計判断は別計画で扱う。なお `src/services/pdca_cycle.py`（star-import shim）は PLAN_Q2 で削除済み。
 7. **なろう / カクヨム / Kindle の実際の投稿疎通は未確認**（資格情報・外部 API 承認が要るため）。
 

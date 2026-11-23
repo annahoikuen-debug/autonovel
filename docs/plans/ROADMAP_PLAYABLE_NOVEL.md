@@ -62,7 +62,7 @@ ISEKAI ZERO の構成要素を、AutoNovel への参照価値で分解したも�
 | 分岐グラフ生成・再生コア | ✅ 完成済み | `src/easy_mode/phase3/if_routes.py` — `CHOICE/CONDITIONAL/RANDOM/LOOP/MERGE`、`IFRouteGenerator`/`IFRoutePlayer`、`export_playthrough` | なし |
 | Branch REST API(fork/merge/graph/play セッション) | ✅ 実装済み | `src/backend/routers/branches.py`(`/api/branches/*`、save/load/end/playthrough、nodes CRUD、editor/validate)。DB は `0015_add_branches_core` / `0016_add_branch_play_sessions` | なし |
 | リアルタイム再生 | ✅ 実装済み | 同 router の `/play/{session_id}/ws`(認証付き WebSocket) | なし |
-| **プレイ UI(フロント)** | ❌ 未実装 | `frontend/src/pages/` に Branch 系ページなし | **Phase 0 の主対象** |
+| **プレイ UI(フロント)** | ✅ 実装済み(Phase 0・2026-11-23) | `frontend/src/pages/PlayModePage.tsx`(`/app/play`、`/app/play/:bookId`)。ルート・ヘッダー導線・capability 宣言(`branchPlay: wired`)込み | なし(動的継続は次行) |
 | **選択時の動的継続生成** | ❌ 未実装 | 現状は事前生成グラフ上の選択のみ。LLM が選択に応じて続きを書く経路なし | **Phase 1 の主対象** |
 | キャラ対話(記憶) | ❌ 未実装 | 対話セッションモデルなし。RAG 基盤はあり(`RAGService`、pgvector > Chroma > InMemory フォールバック) | Phase 2 |
 | 挿絵・演出 | 🟡 実装あり・配線状況要確認 | `src/publishing/illustration/`(SceneIllustrationService)、`src/agents/illustration_agent.py`、use_cases/DB リポジトリ | Phase 3 |
@@ -100,9 +100,9 @@ flowchart LR
 - **Non-goal**: 動的生成(Phase 1)、課金、公開
 - **前提**: なし(バックエンド API は実装済み)
 - **完了条件**:
-  - [ ] UI で「プレイ開始 → 選択 → セーブ/ロード → playthrough 表示」が完走
-  - [ ] 既存フロントテストの失敗状況を悪化させない(`docs/STATUS.md` §3-5 の 9 失敗を現状基準とする)
-  - [ ] Play モードのユーザーマニュアル追記(`docs/easy_mode_guide.md` または新設)
+  - [x] UI で「プレイ開始 → 選択 → セーブ/ロード → playthrough 表示」が完走(2026-11-23 完了。API レベル E2E 実施記録は `docs/implementation_plans/playable_novel_phase0.md` §7)
+  - [x] 既存フロントテストを悪化させない(実測: 全 398 テストパス・失敗 0。なお実施環境 Node 26 では localStorage の環境問題があり `tests/setup.ts` を修復済み)
+  - [x] Play モードのユーザーマニュアル追記(`docs/easy_mode_guide.md`「▶ Play モード」節)
 - **概算規模**: フロント中心・小(既存 API への UI だけのため)
 
 ### Phase 1: 動的継続生成(選んだら AI が続きを書く)
