@@ -59,7 +59,9 @@ nav:
   - 法務:
     - プライバシーポリシー: legal/PRIVACY_POLICY.md
     - 利用規約: legal/TERMS_OF_SERVICE.md
-  - 設計・ロードマップ: plans/PLAN_J1_REMAINING_36STEPS.md
+  - 設計・ロードマップ:
+      - 残存36ステップ計画: plans/PLAN_J1_REMAINING_36STEPS.md
+      - 次期ロードマップ(プレイアブルノベル構想): plans/ROADMAP_PLAYABLE_NOVEL.md
 
 extra:
   social:

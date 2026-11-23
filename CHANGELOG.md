@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### 次期ロードマップ（プレイアブルノベル構想）の策定（2026-11-23）
+
+ISEKAI ZERO 型の「遊べる物語体験」を取り込む全体構想を `docs/plans/ROADMAP_PLAYABLE_NOVEL.md` として新設（提案・承認待ち）。
+Phase 0（Play モード UI）〜 Phase 4（UGC 公開・ゲート制）のフェーズ構成、現状資産マップ、横断設計方針、KPI・リスクを定義。
+
 ### Q1〜Q3 品質ゲート復旧・デッドコード削除・shim 焼却（2026-11-15）
 
 PLAN_Q1（赤いゲート復旧）/ PLAN_Q2（デッドコード削除）/ PLAN_Q3（shim 焼却）の実行結果。

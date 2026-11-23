@@ -84,6 +84,7 @@ docs/
 ├── bugs/                          # バグ報告・既知問題
 ├── implementation_plans/          # 実装計画書
 ├── plans/                         # 計画・ロードマップ資料
+│   ├── ROADMAP_PLAYABLE_NOVEL.md  # 次期ロードマップ(プレイアブルノベル構想)
 │   └── archived/                  # アーカイブ済み計画
 └── readme_vs_actual_status.md     # README vs 実態 精査レポート（SUPERSEDED・履歴用）
 ```
