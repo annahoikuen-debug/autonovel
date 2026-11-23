@@ -5,7 +5,7 @@
  * 完了条件: npm run test:ci の失敗数が現状の 9 から増えないこと(Q5)。
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook, act } from '@testing-library/react';
 import { usePlaySession } from './usePlaySession';
 import * as branchesApi from '../api/branches';
 import {
