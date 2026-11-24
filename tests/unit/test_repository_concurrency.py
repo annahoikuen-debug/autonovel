@@ -27,11 +27,15 @@ async def test_repository_get_set_state_async():
 
 
 @pytest.mark.asyncio
-async def test_recalc_all_book_scores_runs_without_concurrency_error():
+async def test_recalc_all_book_scores_runs_without_concurrency_error(monkeypatch):
     """Verify recalc_all_book_scores endpoint function handles sessions safely.
 
     例外時は status="error" が返るため、成功/失敗のどちらでも許容する。
     """
+    import src.backend.database.core as core
+
+    monkeypatch.setattr(core, "_async_db_manager", None)
+    monkeypatch.setattr(core, "_cached_async_url", None)
     from src.backend.database.core import get_db_manager
     import src.backend.database.models  # noqa: F401
     import src.backend.database.models_tenant  # noqa: F401  (Tenant FK 解決のため必須)

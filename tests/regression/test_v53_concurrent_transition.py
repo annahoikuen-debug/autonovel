@@ -133,8 +133,12 @@ async def test_concurrent_resolve_and_progress_does_not_rollback(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_concurrent_resolve_and_progress_gathered(tmp_path):
+async def test_concurrent_resolve_and_progress_gathered(tmp_path, monkeypatch):
     """2セッションを実際に並行実行しても、最終状態は resolved のまま"""
+    import src.backend.database.core as core
+
+    monkeypatch.setattr(core, "_async_db_manager", None)
+    monkeypatch.setattr(core, "_cached_async_url", None)
     async with _shared_file_db(tmp_path) as sf:
         f_id = await _plant(sf)
 

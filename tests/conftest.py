@@ -311,6 +311,80 @@ def reset_rate_limiters():
     reset_denylist()
 
 
+@pytest.fixture(autouse=True)
+def reset_db_singleton_and_metrics():
+    """各テストの前後で DB シングルトンとプロセスグローバル観測メトリクスをリセットする。
+
+    ``src.backend.database.core.get_db_manager()`` はモジュールレベルの
+    ``_async_db_manager`` / ``_cached_async_url`` / ``DATABASE_URL`` を持つ。
+    他テストでこれらを monkeypatch 変更すると、本テストが意図しない DB URL /
+    古いシングルトンを参照して flaky に失敗する。
+
+    ``foreshadowing_transitions_rejected_total`` 等の prometheus_client Counter も
+    プロセスグローバルで、他テストの inc() により before/after 差分アサーション
+    がずれるため、テスト前後にクリアする。
+
+    ImportError 時は安全にスキップ（CI release-consistency ジョブ等、依存未インストール
+    環境でも collection error にしない）。
+    """
+    import os
+
+    # --- setup: テスト前リセット ---
+    try:
+        import src.backend.database.core as db_core
+    except ImportError:
+        db_core = None
+
+    previous_db_url = None
+    previous_os_db_url = None
+    if db_core is not None:
+        previous_db_url = getattr(db_core, "DATABASE_URL", None)
+        previous_os_db_url = os.environ.get("DATABASE_URL")
+        db_core._async_db_manager = None
+        db_core._cached_async_url = None
+
+    # プロセスグローバルメトリカウンタをクリア対象として収集
+    try:
+        import src.backend.observability.metrics as obs_metrics
+    except ImportError:
+        obs_metrics = None
+
+    counter_metrics = []
+    if obs_metrics is not None:
+        counter_metrics = [
+            obs_metrics.foreshadowing_planted_total,
+            obs_metrics.foreshadowing_status_transitions_total,
+            obs_metrics.foreshadowing_transitions_rejected_total,
+            obs_metrics.foreshadowing_rescheduled_total,
+        ]
+
+    def _clear_counters():
+        for metric in counter_metrics:
+            try:
+                metric.clear()
+            except Exception:
+                try:
+                    metric._metrics.clear()  # type: ignore[attr-defined]
+                except Exception:
+                    pass
+
+    _clear_counters()
+    yield
+
+    # --- teardown: テスト後リセット ---
+    _clear_counters()
+
+    if db_core is not None:
+        db_core._async_db_manager = None
+        db_core._cached_async_url = None
+        if previous_db_url is not None:
+            db_core.DATABASE_URL = previous_db_url
+        if previous_os_db_url is not None:
+            os.environ["DATABASE_URL"] = previous_os_db_url
+        else:
+            os.environ.pop("DATABASE_URL", None)
+
+
 @pytest.fixture
 def client(db_session: Session):
     """FastAPI TestClient フィクスチャ."""

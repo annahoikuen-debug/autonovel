@@ -225,7 +225,7 @@ class TestLlmCallsPerEpisode:
         assert verdict["meets_target"] in (True, False)
         assert 0 < measured <= BASELINE_MAX_LLM_CALLS_PER_EPISODE
 
-    def test_real_audit_phase_call_count_is_measured(self) -> None:
+    def test_real_audit_phase_call_count_is_measured(self, monkeypatch) -> None:
         """本物の `AuditAgent` を走らせ、監査回数を**実測**すること。
 
         T6 Step 13 の主要観測点。従来は `5` をハードコードしていた。
@@ -235,6 +235,10 @@ class TestLlmCallsPerEpisode:
         （本番では 5 監査がそれぞれ LLM を呼ぶため上振れする）。
         効果測定表には下限値として記載すること。
         """
+        import src.backend.database.core as core
+
+        monkeypatch.setattr(core, "_async_db_manager", None)
+        monkeypatch.setattr(core, "_cached_async_url", None)
         measured = measure_real_audit_calls()
         print(f"\n[実測] 監査フェーズのLLM呼び出し回数: {measured}（決定的なスタブ LLM による下限値）")
         assert measured > 0, "監査フェーズの実測が 0"
