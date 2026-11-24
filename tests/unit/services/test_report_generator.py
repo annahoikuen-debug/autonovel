@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from datetime import datetime
 
-
-
 from src.models.report import EpisodeSummary, ProductionReport, QualityMetricsReport, TokenUsageReport
 from src.services.report_generator import ReportGenerator
 from src.services.token_tracker import TokenTracker
@@ -223,9 +221,13 @@ class TestToHtml:
 
     def test_to_html_basic(self):
         gen = ReportGenerator(output_dir="/tmp")
-        report = ProductionReport(title="t", genre="g", episode_summaries=[
-            EpisodeSummary(ep_num=1, title="第1話", word_count=100, summary="あらすじ", quality_score=0.8),
-        ])
+        report = ProductionReport(
+            title="t",
+            genre="g",
+            episode_summaries=[
+                EpisodeSummary(ep_num=1, title="第1話", word_count=100, summary="あらすじ", quality_score=0.8),
+            ],
+        )
         html = gen.to_html(report)
         assert html.startswith("<html><body>")
         assert html.endswith("</body></html>")

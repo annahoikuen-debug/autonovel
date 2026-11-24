@@ -78,7 +78,8 @@ def client():
 
     asyncio.run(_setup())
 
-    # Set test API key
+    # Set test API key(元値を保存しておき teardown で復元する)
+    original_allowed_api_keys = os.environ.get("ALLOWED_API_KEYS")
     os.environ["ALLOWED_API_KEYS"] = "testkey"
 
     from src.backend.auth import get_current_user
@@ -119,8 +120,10 @@ def client():
         bmod.get_db_manager = original_bmod_get_db_manager
         bmod.verify_book_ownership = original_verify_book_ownership
         app.dependency_overrides.clear()
-        if os.environ.get("ALLOWED_API_KEYS") == "testkey":
+        if original_allowed_api_keys is None:
             os.environ.pop("ALLOWED_API_KEYS", None)
+        else:
+            os.environ["ALLOWED_API_KEYS"] = original_allowed_api_keys
         import asyncio as _asyncio
 
         _asyncio.run(test_engine.dispose())
