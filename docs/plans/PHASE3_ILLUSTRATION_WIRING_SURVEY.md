@@ -86,31 +86,36 @@
 
 | 項目 | 場所 | 状態 |
 |---|---|---|
-| `IIllustrationService` ポート | `src/application/ports/illustration_service.py:14` | **infrastructure アダプタが存在しない**(参照は ports/use_cases のみ) |
+| **挿絵の生成・保存経路が実質存在しない** | 複数箇所(下記 3 行) | (a) 標準生成パイプラインは `ctx.artifacts["request"]` をセットする箇所が src 内にゼロ → `IllustrationAgent.execute` は常に no-op(`illustration_agent.py:62-75`)。(b) `POST /generate` は DI コンテナが `repo` を注入しない(`src/core/container/app.py:171-174`)ため `_persist:447` が常にスキップ=**DB 非保存**。(c) `POST /batch`(Huey)は `IllustrationWorkflow.repo=None`(`app.py:201-204` + `base_workflow.py:84-86`)で `assert self.repo is not None`(`illustration_workflow.py:76`)に失敗する**推測** |
+| **`multimedia_service` の illustrations フォールバック SQL が死にコード** | `src/backend/multimedia_service.py:350-356` | `file_path/chapter_number/caption/position` 列を要求するが ORM に存在しない(`models/illustration.py:21-27`)→ 常に例外握りつぶし(**推測**) |
+| **router は prefix 無しでルート直下マウント** | `src/backend/wiring.py:124`、`routers/illustrations.py:27` | 実パスは `/generate` `/images/...` 等。router 内 docstring の `GET /api/illustrations/status/...`(`:198`)は誤記 |
+| `IIllustrationService` ポート | `src/application/ports/illustration_service.py:14` | **infrastructure アダプタが存在しない**(実装クラス 0 件。事実上の実装は 4 層外のレガシー構成でポートと非互換) |
 | 3 つのユースケース | `src/application/use_cases/illustration_use_cases.py:18/:36/:53` | 定義+export のみで**どこからもインスタンス化されない(未配線)** |
-| `EasyModeIllustrationSkill` | `src/agents/skills/v1/easy_mode_illustration.py:15` | スタブ(常に空リスト) |
+| `EasyModeIllustrationSkill` | `src/agents/skills/v1/easy_mode_illustration.py:15` | スタブ(常に空リスト)。参照元 `config/manifests/easy_mode.yaml` 自体がロードされていない(**推測**: 遺物) |
 | `UnifiedIllustrationGenerator` | `clients/base.py:5` の docstring のみ | 実体なし |
 | `GeminiImageClient` | `clients/gemini_image_client.py:31` | src 内に呼び出し元なし(未配線・テストのみ) |
-| `get_image_adapter` / `get_image_client` ファクトリ | `factory.py:24` / `:58` | src 本体からは未使用(テストのみ) |
+| `get_image_adapter` / `get_image_client` ファクトリ | `factory.py:24` / `:58` | src 本体からは未使用(テストのみ)。**本線 `ImageService` はファクトリを経由しない** |
 | `IllustrationModal` | `frontend/src/components/illustrations/IllustrationModal.tsx:22` | **import している箇所が無い未配線 UI** |
-| エディタの「画像生成」ボタン | `frontend/src/components/editor/InlineAiToolbar.tsx:96-111` | **モック**(setTimeout→マーカー挿入のみ、API 呼び出し無し) |
-| `multimedia_artifacts` の illustration 書き込み | `src/backend/multimedia_service.py:303-423` | **読み取り専用**。`asset_type='illustration'` を書き込む経路が存在しない(実質 illustrations テーブルフォールバックで動作) |
+| エディタの「画像生成」ボタン | `frontend/src/components/editor/InlineAiToolbar.tsx:96-111` | **モック**(setTimeout→マーカー挿入のみ、API 呼び出し無し)。`MultimediaPreviewPanel` の `onGenerateImage` も Studio から未接続で非表示 |
+| `multimedia_artifacts` の illustration 書き込み | `src/backend/multimedia_service.py:303-423` | **読み取り専用**。`asset_type='illustration'` を書き込む経路が存在しない |
 | `/static` 配信 | `image_service.py:121-132` が返す `/static/illustrations/img_x.png` | **`StaticFiles` マウントが src 全体に存在せず、vite プロキシにも無い**→ブラウザからの `<img>` は 404 の可能性(要確認) |
 | Play モード | `frontend/src/pages/PlayModePage.tsx` | **illustration 参照ゼロ**。`BranchPlayNode` に画像/scene フィールド無し |
+| `IllustrationRepository` の取得 API | `src/infrastructure/repositories/illustration.py:14` | `create_illustration`/`list_illustrations`(book+type)のみ。**episode_number や scene での取得 API が無い**(ルーターが prompt 部分一致で代用) |
 | alembic | `src/backend/alembic/versions/*` | illustrations を扱う revision なし(create_all 依存) |
-| `docs/STATUS.md` | — | 本調査までは illustration の記載なし(本調査で追記済み) |
+| `docs/STATUS.md` | — | 本調査で追記済み(2026-11-24) |
 
 ---
 
 ## 3. Play モードに挿絵を表示するためのギャップリスト(優先度順)
 
-1. **P0 — ノード⇔挿絵の紐付けが無い**: `BranchPlayNode`(`types/branches.ts:187-196`)は `episode_num`/`content` のみ。`illustrations` テーブルに `branch_id`/`node_id` カラムは無い。既存照合 API は「prompt 部分一致+最新フォールバック」で Play モードには不適。**`episode_number` ベースの決定的クエリ(新規エンドポイント or 既存 API 拡張)が最小構成**
-2. **P0 — フロント表示面**: `PlayModePage.tsx` に画像取得/描画が無い。`found:false` 時のフォールバック表示(ロードマップ受入基準「挿絵なしでもフォールバック動作」)を実装する必要
-3. **P0/P1 — 生成済みデータが空の可能性**: ワークフローの表紙/話数生成は `agent.run()`(プロンプトのみ、`image_url=""`)。デフォルトで実画像が作られるのは yonkoma のみ。**実画像生成経路(`generate_episode_scenes` 等)をワークフローに接続**するか、`/generate` の同期実画像化が必要
+1. **P0 — 挿絵が生成・保存される経路がほぼ無い**: パイプラインは常に no-op、`/generate` は DB 非保存、`/batch` は assert 失敗の推測(§2 参照)。実画像が DB に積み上がるのは yonkoma 経路と CLI(`illustration_cli.py:69` → `generate_episode_scenes`)のみ。**まず「保存される経路」を直すことが前提**
+2. **P0 — ノード⇔挿絵の紐付けが無い**: `BranchPlayNode`(`types/branches.ts:187-196`)は `episode_num`/`content` のみ。`illustrations` テーブルに `branch_id`/`node_id` カラムは無い。既存照合 API は「prompt 部分一致+最新フォールバック」で Play モードには不適。**`episode_number` ベースの決定的クエリ(新規エンドポイント or 既存 API 拡張)が最小構成**
+3. **P0 — フロント表示面**: `PlayModePage.tsx` に画像取得/描画が無い。`found:false` 時のフォールバック表示(ロードマップ受入基準「挿絵なしでもフォールバック動作」)を実装する必要
 4. **P1 — 画像の HTTP 配信**: `/static/illustrations/...` がバックエンドでマウントされず vite プロキシにも無い。`StaticFiles` マウント or バイト配信 API(`multimedia.py:461` の `/files/{filename}` パターン流用候補)が必要
-5. **P1 — 生成トリガ**: 標準パイプラインでは easy_mode が `enable_illustration=False`、「生成済み小説に挿絵が無い」のがデフォルト。既存 `POST /batch` + Huey を Play 準備フローから叩く配線が候補
+5. **P1 — 生成トリガ**: 標準パイプラインでは easy_mode が `enable_illustration=False`、「生成済み小説に挿絵が無い」のがデフォルト。既存 `POST /batch` + Huey を Play 準備フローから叩く配線が候補(repo 注入の修正が前提)
 6. **P2 — アーキテクチャ整合**: `IIllustrationService` のアダプタ不在。既存 `IllustrationAgent`/`ImageService` を包むアダプタを置くか、既存経路(`AppContainer`)を直接使う判断(レイヤーチェック `scripts/check_layer_boundaries.py` に注意)
 7. **P2 — クレジット**: `/generate` 5cr、`/yonkoma` 20cr。Play 準備での一括生成は課金 UX 設計が別途必要
+8. **P2 — multimedia 側の列不一致解消**: EPUB/asset_pack で挿絵を出すなら `multimedia_service.py:350-356` の SQL 修正が要る(商業 EPUB と Play モードで挿絵ソースを統一)
 
 ---
 
@@ -132,17 +137,21 @@
 ## 5. 不明点・要確認事項(Phase 3 設計時に確認)
 
 1. **`/static` 配信の実体**: src 内に `StaticFiles` マウント無し。prod の nginx(`docker-compose.prod.yml`)で配信されるのか、現状 404 なのか要確認(**推測含む**)
-2. **`src/agents/skills/manifest.yaml` の active 配線状況**(未読)
-3. **`ImageService.generate` の同期 SDK 呼び出し**(`models.generate_images` は同期)— イベントループブロックの可能性。Play 中のオンデマンド生成を考える場合のレイテンシ要確認(**推測**)
-4. **alembic drift**: illustrations テーブルが create_all 依存(固有 revision 無し)
-5. **本線クライアントの決定**: Imagen 直叩き(`ImageService`)と未配線の `GeminiImageClient` のどちらを Phase 3 の正にするか → **ADR 推奨**
-6. 同期 `/generate` がクレジット消費後にプロンプトしか返さないのは仕様か実装途上か(コード上は「画像生成は将来実装」コメント、`illustration_agent.py:29`/:120)
+2. **`/batch` Huey 経路の実運用動作**: repo 未注入で `assert self.repo is not None` に落ちるはず(要ランタイム検証。テストはモック経由の可能性)
+3. **`src/agents/skills/manifest.yaml` の active 配線状況**(未読。v1 IllustrationSkill は終端ノード)
+4. **`ImageService.generate` の同期 SDK 呼び出し**(`models.generate_images` は同期)— イベントループブロックの可能性。Play 中のオンデマンド生成を考える場合のレイテンシ要確認(**推測**)
+5. **alembic drift**: illustrations テーブルが create_all 依存(固有 revision 無し)
+6. **本線クライアントの決定**: Imagen 直叩き(`ImageService`)と未配線の `GeminiImageClient` のどちらを Phase 3 の正にするか → **ADR 推奨**(併せて 3 系統のファクトリ/アダプタの整理も)
+7. 同期 `/generate` がクレジット消費後にプロンプトしか返さないのは仕様か実装途上か(コード上は「画像生成は将来実装」コメント、`illustration_agent.py:29`/:120)
+8. **`WritingService` への `illustration_agent` 注入**(`app.py:223`)は保持されるだけで呼ばれない(**推測**: 死に配線)
+9. **R15/NSFW と挿絵の組み合わせ**: `ENABLE_NSFW=false` 既定と `safety_level` の関係は Play 表示時のフィルタ要件として要確認
 
 ---
 
 ## 6. Phase 3 実装計画への示唆
 
-- 最小価値経路は「**生成済み(または Studio で挿絵生成済み)の illustrations を、episode_number 決定的クエリで Play シーンに表示**」。生成側の新規実装よりも**表示配線**が先行価値になる
+- **最初に「保存される経路」を直す**: DI への `repo` 注入(またはアダプタ実装)→ 実画像生成経路の接続 → 決定的クエリ API → Play 表示、の順が依存の自然な順序
+- 最小価値経路は「**生成済み(または Studio/CLI で挿絵生成済み)の illustrations を、episode_number 決定的クエリで Play シーンに表示**」。生成側の新規実装よりも**表示配線**が先行価値になる
 - 生成側を触るなら「ワークフローの話数生成を `run()`(プロンプトのみ)→ `generate_episode_scenes`(実画像)に差し替える」のが 1 行変更に近いが、**コスト・レイテンシ・フォールバック設計**が要る(失敗時も本編継続は既存方針 `pipeline_steps.py:535` と整合)
 - 挿絵なしフォールバックは既存 UI パターン(`found:false` → 画像非表示)で自然に実現可能
 
@@ -153,3 +162,4 @@
 | 日付 | 版 | 内容 |
 |:--|:--|:---|
 | 2026-11-24 | 0.1 | 初版作成(調査完了・実装未着手) |
+| 2026-11-25 | 0.2 | 二次精査の結果を反映(repo 未注入による永続化欠落、`/batch` assert、パイプライン no-op、multimedia SQL 列不一致、router prefix 誤記、取得 API 不在)。ギャップリストに「保存される経路の修復」を P0 追加 |

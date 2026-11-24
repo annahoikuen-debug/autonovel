@@ -32,7 +32,25 @@ if str(ROOT_DIR) not in sys.path:
 # _ability_checker / _plot_monitor）をモックで差し替えて挙動を検証するため、
 # ENABLE_AUDIT_LEGACY_CORE=true を必須とする。デフォルトは UnifiedAuditor のみ
 # 初期化され、レガシーコア属性が None のまま AttributeError になるため。
-os.environ["ENABLE_AUDIT_LEGACY_CORE"] = "true"
+#
+# 注意: かつてはモジュール import 時に `os.environ[...] = "true"` を行っていたが、
+# pytest はフルスイート実行時に全テストファイルを collection(import)するため、
+# この 1 行が**セッション全体の環境変数を汚染**していた。
+# 実際、tests/perf/test_v6_llm_call_budget.py の監査実測テストが
+# 「legacy core 経由だと決定的スタブ LLM で自己判定し LLM 呼び出し 0」のため
+# 順序依存で失敗していた（2026-11-24 特定）。フラグは AuditAgent.__init__ と
+# _run_core_audits 内で os.environ を**呼び出し時**に読むため、fixture で
+# テスト実行中だけ設定すれば import 時の設定は不要である。
+@pytest.fixture(autouse=True, scope="module")
+def _enable_audit_legacy_core():
+    """このモジュールのテスト中だけ ENABLE_AUDIT_LEGACY_CORE=true にする。"""
+    previous = os.environ.get("ENABLE_AUDIT_LEGACY_CORE")
+    os.environ["ENABLE_AUDIT_LEGACY_CORE"] = "true"
+    yield
+    if previous is None:
+        os.environ.pop("ENABLE_AUDIT_LEGACY_CORE", None)
+    else:
+        os.environ["ENABLE_AUDIT_LEGACY_CORE"] = previous
 
 from src.agents.audit_agent import (  # noqa: E402
     AUDIT_GATE_PENALTY_SCORE,

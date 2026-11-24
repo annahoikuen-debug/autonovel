@@ -33,7 +33,21 @@ if str(ROOT_DIR) not in sys.path:
 # _ability_checker / _plot_monitor）をモックで差し替えて挙動を検証するため、
 # ENABLE_AUDIT_LEGACY_CORE=true を必須とする。デフォルトは UnifiedAuditor のみ
 # 初期化され、レガシーコア属性が None のまま AttributeError になるため。
-os.environ["ENABLE_AUDIT_LEGACY_CORE"] = "true"
+#
+# 注意: モジュール import 時の os.environ 書き換えは、pytest がフルスイート実行時に
+# 全テストファイルを collection(import)するため**セッション全体を汚染**する。
+# tests/perf/test_v6_llm_call_budget.py の監査実測テストが順序依存で失敗した原因。
+# フラグは AuditAgent.__init__ で呼び出し時に読まれるため、fixture で十分。
+@pytest.fixture(autouse=True, scope="module")
+def _enable_audit_legacy_core():
+    """このモジュールのテスト中だけ ENABLE_AUDIT_LEGACY_CORE=true にする。"""
+    previous = os.environ.get("ENABLE_AUDIT_LEGACY_CORE")
+    os.environ["ENABLE_AUDIT_LEGACY_CORE"] = "true"
+    yield
+    if previous is None:
+        os.environ.pop("ENABLE_AUDIT_LEGACY_CORE", None)
+    else:
+        os.environ["ENABLE_AUDIT_LEGACY_CORE"] = previous
 
 from src.agents.audit_agent import (  # noqa: E402
     CORE_AUDIT_CRITERIA,
