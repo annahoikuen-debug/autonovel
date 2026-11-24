@@ -35,7 +35,13 @@ def client():
     # Override the database URL in the core module
     import src.backend.database.core as core_mod
 
-    core_mod.DATABASE_URL = db_url
+    # 復元用に差し替え前の値を保存する。この fixture はモジュール属性を
+    # 直接書き換えるため、teardown がないと後続テスト
+    # (例: tests/unit/backend/test_backend_database_core.py の singleton テスト)が
+    # TestMgr を見てしまい、実行順序依存の偽失敗になる
+    # (test_e2e_ws.py の client fixture と同じパターン)。
+    original_db_url = core_mod.DATABASE_URL
+    original_core_get_db_manager = core_mod.get_db_manager
 
     # Override the get_db_manager to return a manager using our test engine
     class TestMgr:
@@ -79,6 +85,9 @@ def client():
     from src.backend.database.models import User
     from src.backend.routers import branches as bmod
 
+    original_bmod_get_db_manager = bmod.get_db_manager
+    original_verify_book_ownership = bmod.verify_book_ownership
+
     app = FastAPI()
     app.include_router(bmod.router)
 
@@ -104,6 +113,17 @@ def client():
     try:
         yield TestClient(app)
     finally:
+        # --- teardown: パッチしたモジュール属性と env を元に戻す ---
+        core_mod.DATABASE_URL = original_db_url
+        core_mod.get_db_manager = original_core_get_db_manager
+        bmod.get_db_manager = original_bmod_get_db_manager
+        bmod.verify_book_ownership = original_verify_book_ownership
+        app.dependency_overrides.clear()
+        if os.environ.get("ALLOWED_API_KEYS") == "testkey":
+            os.environ.pop("ALLOWED_API_KEYS", None)
+        import asyncio as _asyncio
+
+        _asyncio.run(test_engine.dispose())
         try:
             os.unlink(db_path)
         except Exception:
