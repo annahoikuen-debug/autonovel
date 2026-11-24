@@ -27,7 +27,7 @@ async def test_repository_get_set_state_async():
 
 
 @pytest.mark.asyncio
-async def test_recalc_all_book_scores_runs_without_concurrency_error(monkeypatch):
+async def test_recalc_all_book_scores_runs_without_concurrency_error():
     """Verify recalc_all_book_scores endpoint function handles sessions safely.
 
     例外時は status="error" が返るため、成功/失敗のどちらでも許容する。

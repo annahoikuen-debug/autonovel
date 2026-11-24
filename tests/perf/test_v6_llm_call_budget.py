@@ -225,7 +225,7 @@ class TestLlmCallsPerEpisode:
         assert verdict["meets_target"] in (True, False)
         assert 0 < measured <= BASELINE_MAX_LLM_CALLS_PER_EPISODE
 
-    def test_real_audit_phase_call_count_is_measured(self, monkeypatch) -> None:
+    def test_real_audit_phase_call_count_is_measured(self) -> None:
         """本物の `AuditAgent` を走らせ、監査回数を**実測**すること。
 
         T6 Step 13 の主要観測点。従来は `5` をハードコードしていた。
