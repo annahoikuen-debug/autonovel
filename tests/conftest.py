@@ -351,11 +351,18 @@ def reset_db_singleton_and_metrics():
 
     counter_metrics = []
     if obs_metrics is not None:
+        # getattr 経由で収集する: メトリクス名の変更・削除時に
+        # fixture setup で AttributeError になり全テストが落ちるのを防ぐ
+        # (存在しない Counter はクリア対象から除外するだけ)。
         counter_metrics = [
-            obs_metrics.foreshadowing_planted_total,
-            obs_metrics.foreshadowing_status_transitions_total,
-            obs_metrics.foreshadowing_transitions_rejected_total,
-            obs_metrics.foreshadowing_rescheduled_total,
+            m
+            for m in (
+                getattr(obs_metrics, "foreshadowing_planted_total", None),
+                getattr(obs_metrics, "foreshadowing_status_transitions_total", None),
+                getattr(obs_metrics, "foreshadowing_transitions_rejected_total", None),
+                getattr(obs_metrics, "foreshadowing_rescheduled_total", None),
+            )
+            if m is not None
         ]
 
     def _clear_counters():

@@ -32,10 +32,8 @@ async def test_recalc_all_book_scores_runs_without_concurrency_error(monkeypatch
 
     例外時は status="error" が返るため、成功/失敗のどちらでも許容する。
     """
-    import src.backend.database.core as core
-
-    monkeypatch.setattr(core, "_async_db_manager", None)
-    monkeypatch.setattr(core, "_cached_async_url", None)
+    # DB シングルトンのリセットは tests/conftest.py の autouse fixture
+    # (reset_db_singleton_and_metrics)が前後で行うため、ここでは不要。
     from src.backend.database.core import get_db_manager
     import src.backend.database.models  # noqa: F401
     import src.backend.database.models_tenant  # noqa: F401  (Tenant FK 解決のため必須)

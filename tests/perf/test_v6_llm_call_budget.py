@@ -235,14 +235,12 @@ class TestLlmCallsPerEpisode:
         （本番では 5 監査がそれぞれ LLM を呼ぶため上振れする）。
         効果測定表には下限値として記載すること。
         """
-        import src.backend.database.core as core
-
-        monkeypatch.setattr(core, "_async_db_manager", None)
-        monkeypatch.setattr(core, "_cached_async_url", None)
+        # DB シングルトンのリセットは tests/conftest.py の autouse fixture が行う。
+        # 監査 env フラグ(ENABLE_AUDIT_LEGACY_CORE 等)の汚染対策は
+        # tests/contract 側の fixture 化(d585eeb4)で根元解消済み。
         measured = measure_real_audit_calls()
         print(f"\n[実測] 監査フェーズのLLM呼び出し回数: {measured}（決定的なスタブ LLM による下限値）")
-        assert measured > 0, "監査フェーズの実測が 0"
-        assert 0 < measured <= 10, f"監査回数が想定外: {measured}"
+        assert 0 < measured <= 10, f"監査回数が想定外(0 は env 汚染の兆候): {measured}"
 
     def test_structural_and_measured_are_tracked_separately(self) -> None:
         """構造推計と実測が別値として取得できること（混同防止）。

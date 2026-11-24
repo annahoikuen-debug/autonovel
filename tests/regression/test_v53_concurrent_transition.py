@@ -133,12 +133,12 @@ async def test_concurrent_resolve_and_progress_does_not_rollback(tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_concurrent_resolve_and_progress_gathered(tmp_path, monkeypatch):
-    """2セッションを実際に並行実行しても、最終状態は resolved のまま"""
-    import src.backend.database.core as core
+async def test_concurrent_resolve_and_progress_gathered(tmp_path):
+    """2セッションを実際に並行実行しても、最終状態は resolved のまま
 
-    monkeypatch.setattr(core, "_async_db_manager", None)
-    monkeypatch.setattr(core, "_cached_async_url", None)
+    DB シングルトンのリセットは tests/conftest.py の autouse fixture
+    (reset_db_singleton_and_metrics)が前後で行うため、ここでは不要。
+    """
     async with _shared_file_db(tmp_path) as sf:
         f_id = await _plant(sf)
 
