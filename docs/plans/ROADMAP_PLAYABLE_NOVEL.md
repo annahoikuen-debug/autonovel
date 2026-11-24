@@ -65,7 +65,7 @@ ISEKAI ZERO の構成要素を、AutoNovel への参照価値で分解したも�
 | **プレイ UI(フロント)** | ✅ 実装済み(Phase 0・2026-11-23) | `frontend/src/pages/PlayModePage.tsx`(`/app/play`、`/app/play/:bookId`)。ルート・ヘッダー導線・capability 宣言(`branchPlay: wired`)込み | なし(動的継続は次行) |
 | **選択時の動的継続生成** | ❌ 未実装 | 現状は事前生成グラフ上の選択のみ。LLM が選択に応じて続きを書く経路なし | **Phase 1 の主対象** |
 | キャラ対話(記憶) | ❌ 未実装 | 対話セッションモデルなし。RAG 基盤はあり(`RAGService`、pgvector > Chroma > InMemory フォールバック) | Phase 2 |
-| 挿絵・演出 | 🟡 実装あり・配線状況要確認 | `src/publishing/illustration/`(SceneIllustrationService)、`src/agents/illustration_agent.py`、use_cases/DB リポジトリ | Phase 3 |
+| 挿絵・演出 | 🟡 実装あり・未配線多数(2026-11-24 調査完了) | `src/publishing/illustration/`(SceneIllustrationService)、`src/agents/illustration_agent.py`、use_cases/DB リポジトリ。**詳細とギャップリストは `docs/plans/PHASE3_ILLUSTRATION_WIRING_SURVEY.md`** | Phase 3(最小価値経路は「表示配線」先行) |
 | マルチメディア台本 | ✅ 実装済み | `src/easy_mode/phase3/media_mix.py`(MANGA/AUDIO_DRAMA/VIDEO/LIGHT_NOVEL/WEBTOON) | 実生成(画像/音声)への接続は Phase 3 |
 | 課金基盤 | ✅ 実装済み(決済疎通未確認) | `src/backend/routers/billing.py`(Stripe: plans/balance/checkout/portal/transactions)+ webhook | 従量課金の設計拡張は Phase 1〜 |
 | UGC 公開・共有 | ❌ 未実装 | なし | Phase 4(ゲート) |
