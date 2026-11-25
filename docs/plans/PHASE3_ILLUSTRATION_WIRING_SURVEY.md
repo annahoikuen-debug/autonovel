@@ -108,11 +108,16 @@
 
 ## 3. Play モードに挿絵を表示するためのギャップリスト(優先度順)
 
-1. **P0 — 挿絵が生成・保存される経路がほぼ無い**: パイプラインは常に no-op、`/generate` は DB 非保存、`/batch` は assert 失敗の推測(§2 参照)。実画像が DB に積み上がるのは yonkoma 経路と CLI(`illustration_cli.py:69` → `generate_episode_scenes`)のみ。**まず「保存される経路」を直すことが前提**
-2. **P0 — ノード⇔挿絵の紐付けが無い**: `BranchPlayNode`(`types/branches.ts:187-196`)は `episode_num`/`content` のみ。`illustrations` テーブルに `branch_id`/`node_id` カラムは無い。既存照合 API は「prompt 部分一致+最新フォールバック」で Play モードには不適。**`episode_number` ベースの決定的クエリ(新規エンドポイント or 既存 API 拡張)が最小構成**
-3. **P0 — フロント表示面**: `PlayModePage.tsx` に画像取得/描画が無い。`found:false` 時のフォールバック表示(ロードマップ受入基準「挿絵なしでもフォールバック動作」)を実装する必要
-4. **P1 — 画像の HTTP 配信**: `/static/illustrations/...` がバックエンドでマウントされず vite プロキシにも無い。`StaticFiles` マウント or バイト配信 API(`multimedia.py:461` の `/files/{filename}` パターン流用候補)が必要
-5. **P1 — 生成トリガ**: 標準パイプラインでは easy_mode が `enable_illustration=False`、「生成済み小説に挿絵が無い」のがデフォルト。既存 `POST /batch` + Huey を Play 準備フローから叩く配線が候補(repo 注入の修正が前提)
+> **進捗(2026-11-25・Increment 1 完了後)**: 項目 2・3・4 は実装済み
+> (`GET /images/episode/...`、PlayModePage 表示+フォールバック、`/static` マウント+vite proxy)。
+> 項目 1(保存される経路)は **Increment 2 の対象として未実装**——現状は
+> yonkoma/CLI 経由で挿絵を作った場合のみ Play モードに表示される。
+
+1. **P0 — 挿絵が生成・保存される経路がほぼ無い**: パイプラインは常に no-op、`/generate` は DB 非保存、`/batch` は assert 失敗の推測(§2 参照)。実画像が DB に積み上がるのは yonkoma 経路と CLI(`illustration_cli.py:69` → `generate_episode_scenes`)のみ。**Increment 2 の主対象**
+2. ~~**P0 — ノード⇔挿絵の紐付けが無い**~~ → ✅ 実装済み: `GET /images/episode/{book_id}/{episode_number}`(episode_number 一致 + `illustration_type=episode` 優先 + IDOR 対策)
+3. ~~**P0 — フロント表示面**~~ → ✅ 実装済み: `PlayModePage.tsx` にシーン画像表示 + `found:false` 時のフォールバック
+4. ~~**P1 — 画像の HTTP 配信**~~ → ✅ 実装済み: `app_factory` に `/static` StaticFiles マウント + vite proxy(`/static` は openapi 非掲載のため routing-drift の CONDITIONAL_MOUNTS に登録)
+5. **P1 — 生成トリガ**: 標準パイプラインでは easy_mode が `enable_illustration=False`、「生成済み小説に挿絵が無い」のがデフォルト。既存 `POST /batch` + Huey を Play 準備フローから叩く配線が候補(repo 注入の修正が前提)= Increment 2
 6. **P2 — アーキテクチャ整合**: `IIllustrationService` のアダプタ不在。既存 `IllustrationAgent`/`ImageService` を包むアダプタを置くか、既存経路(`AppContainer`)を直接使う判断(レイヤーチェック `scripts/check_layer_boundaries.py` に注意)
 7. **P2 — クレジット**: `/generate` 5cr、`/yonkoma` 20cr。Play 準備での一括生成は課金 UX 設計が別途必要
 8. **P2 — multimedia 側の列不一致解消**: EPUB/asset_pack で挿絵を出すなら `multimedia_service.py:350-356` の SQL 修正が要る(商業 EPUB と Play モードで挿絵ソースを統一)
@@ -163,3 +168,4 @@
 |:--|:--|:---|
 | 2026-11-24 | 0.1 | 初版作成(調査完了・実装未着手) |
 | 2026-11-25 | 0.2 | 二次精査の結果を反映(repo 未注入による永続化欠落、`/batch` assert、パイプライン no-op、multimedia SQL 列不一致、router prefix 誤記、取得 API 不在)。ギャップリストに「保存される経路の修復」を P0 追加 |
+| 2026-11-25 | 0.3 | Increment 1(表示配線)完了を反映: 決定的クエリ API・Play 表示+フォールバック・`/static` 配信を実装(項目 2/3/4 完了)。ADR 003 承認。項目 1 は Increment 2 へ |

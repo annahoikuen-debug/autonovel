@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+### Phase 3 Increment 1: Play モード挿絵表示（2026-11-25）
+
+ADR 003（本線クライアント = Imagen `ImageService` 維持）に基づく表示配線の実装。
+
+- **新エンドポイント** `GET /images/episode/{book_id}/{episode_number}`: 話数一致 + `illustration_type=episode` 優先の決定的クエリ。IDOR 対策（所有権検証）と未生成 200+`found:false` 契約は既存準拠
+- **Play モード**: 現在ノードの話数の挿絵を表示。未生成時は画像なしでフォールバック
+- **`/static` 配信**: `app_factory` に StaticFiles マウント + vite proxy。routing-drift ガードの CONDITIONAL_MOUNTS に登録（openapi 非掲載マウント）
+- **修復**: `type:sync` が素の `python` を呼び失敗する問題（venv python + 絶対パス化）
+- 検証: バックエンド新規 4 ケース・フロント新規 2 ケース、フルスイート 9,571 パス / 失敗 0
+- **未実装（Increment 2）**: 生成・保存経路の修復（DI の repo 注入、パイプライン接続）
+
 ### 次期方向性ロードマップの新設（2026-11-25）
 
 - **`docs/ROADMAP_NEXT.md`** を新設: v7.0.0 の実コード精査（実測値つき）に基づく優先度付き方向性提案（P0〜P4・90日シーケンス・判断ゲート）。主眼は「機能追加」から「価値の実証」（CI 復活→本番デプロイ→実 LLM 計測でループを閉じる）への転換
