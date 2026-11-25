@@ -262,13 +262,16 @@
 |:---|:---:|:---|
 | Round 1 | 要修正 | 指摘 1 **[High] WS 経路の rollback 欠落** → CAS 失敗時のグラフ書き込み残留を `session.rollback()` で救済（REST と同一）。指摘 2 [High] REST のレート制限なし → `generate_limiter` 適用。指摘 3 [Medium] `new_node_id` の決定論的上書きリスク → `uuid4().hex[:6]` を付与。指摘 4 [Medium] `scene_number` が動的回数固定 → `context_json.history` の長さ + 1 に変更。指摘 7 [未確定] `run()` が persist 失敗も握り潰す → 生成成功・保存失敗を分離（保存失敗は警告のみで success 返却）。指摘 5 [Low] metrics ラベル → D-P4 として記録。指摘 6 [Low] off 差分ゼロ（state 追加）は妥当と評価 |
 
-### 10.4 TRACK-X
+### 10.4 TRACK-X（2026-11-26 実施）
 
 | TRACK | ステップ | 状態 | 実施結果 |
 |:---|:---|:---:|:---|
-| X | X1 品質ゲート | ⬜ | 実施中（フロント test:ci / バックエンド branches+contract+unit/backend / ruff 0 / mypy 326 < baseline 450） |
-| X | X2 review-loop | ⬜ | P0 review-loop は 3 ラウンドで LGTM（別セッション）。P1 の review-loop は次段で実施 |
-| X | X3 コミット分割 | ✅ | Increment 2 = `c369c6aa`（コミット済み）。TRACK-P はコミット予定 |
+| X | X1 品質ゲート | ✅ | branches + contract **209 passed / 2 skipped**・挿絵回帰 249 passed・動的継続+挿絵契約 **19 passed**・ruff **0 errors**・mypy **326 < baseline 450**（ratchet OK）・migration 往復 **exit 0**・4 層境界 **契約 1/2 OK**・フロント **76 files / 412 passed**・tsc 0 エラー・lint 0 errors・openapi 再生成 + type:sync 済み |
+| X | X2 review-loop | ✅ | **P0: 3 ラウンドで LGTM**（指摘 5 → 残存 2 → LGTM）/**P1: 2 ラウンドで LGTM**（Round 1 要修正 6 指摘（High 2・Medium 3・Low 1）→ 修正コミット `bab90be9` → Round 2 **LGTM**（全指摘解消確認））。修正内容: WS rollback・REST `generate_limiter`・非決定論的 `new_node_id`・scene_number 実進行化・persist 失敗分離 |
+| X | X3 コミット分割 | ✅ | ① `c369c6aa` Increment 2 ② `2ea33cb5` Play Phase 1 ③ `3aed9648` 計画書起票 ④ `bab90be9` review-loop 修正。**push 済み**（`3aed9648..bab90be9`） |
+
+> **残タスク（ユーザー側）**: P0 のユーザー側ブロッカー（GitHub Actions 設定 / docker ホスト / LLM API キー）が解消され次第、
+> `make verify` の CI 実行・本番デプロイ・実 LLM での KPI 実測（cost/play・完走率）・フラグ ON 判定（`plans/PLAN_P0_CLOSE_THE_LOOP_21STEPS.md` TRACK-B/C/D）を実施する。
 
 ---
 
