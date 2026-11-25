@@ -4041,6 +4041,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/branches/play/{session_id}/dynamic": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Play Dynamic Continue
+         * @description 動的継続生成: 選択の続きを LLM で生成し、新ノードとしてグラフに追加する (PLAN_P1 TRACK-P).
+         *
+         *     - flag `ENABLE_DYNAMIC_BRANCH` が OFF の場合は 503（既定挙動に影響しない）
+         *     - コスト上限（`PLAY_DYNAMIC_MAX_PER_SESSION`）超過時も 503
+         *     - 同期応答（Huey を経由しない・対話は即時応答が前提）
+         */
+        post: operations["play_dynamic_continue_api_branches_play__session_id__dynamic_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/branches/play/{session_id}/save": {
         parameters: {
             query?: never;
@@ -5944,6 +5968,22 @@ export interface components {
         BranchPlayChooseRequest: {
             /** Choice Id */
             choice_id: string;
+        } & {
+            [key: string]: unknown;
+        };
+        /**
+         * BranchPlayDynamicRequest
+         * @description 動的継続生成リクエスト (PLAN_P1 TRACK-P / REST 経路).
+         *
+         *     flag (`ENABLE_DYNAMIC_BRANCH`) が OFF の場合は 503 を返す。
+         */
+        BranchPlayDynamicRequest: {
+            /**
+             * Choice Text
+             * @description プレイヤーの選択テキスト
+             * @default
+             */
+            choice_text: string;
         } & {
             [key: string]: unknown;
         };
@@ -16311,6 +16351,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["BranchPlayStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    play_dynamic_continue_api_branches_play__session_id__dynamic_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BranchPlayDynamicRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */

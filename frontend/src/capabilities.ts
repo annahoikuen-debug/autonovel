@@ -52,6 +52,16 @@ export const CAPABILITIES = {
     status: "wired",
     note: "グラフ型プレイのみ。動的継続生成は Phase 1(feature flag ENABLE_DYNAMIC_BRANCH、docs/plans/ROADMAP_PLAYABLE_NOVEL.md)",
   } as Capability,
+  /**
+   * 動的継続生成: 選択の続きを LLM で生成する(PLAN_P1 TRACK-P・2026-11-26 実装)。
+   * REST POST /play/{id}/dynamic と WS dynamic_continue。
+   * サーバ flag ENABLE_DYNAMIC_BRANCH(既定 OFF)が ON のときのみ
+   * state.dynamic_available が true になり UI に表示される(サーバ側制御)。
+   */
+  dynamicBranch: {
+    status: "wired",
+    note: "flag 既定 OFF。flag ON かつ上限内のとき dynamic_available=true(PlayModePage の表示制御)",
+  } as Capability,
 } as const satisfies Record<string, Capability>;
 
 export type CapabilityName = keyof typeof CAPABILITIES;

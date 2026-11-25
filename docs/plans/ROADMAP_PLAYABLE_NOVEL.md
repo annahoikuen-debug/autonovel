@@ -63,7 +63,7 @@ ISEKAI ZERO の構成要素を、AutoNovel への参照価値で分解したも�
 | Branch REST API(fork/merge/graph/play セッション) | ✅ 実装済み | `src/backend/routers/branches.py`(`/api/branches/*`、save/load/end/playthrough、nodes CRUD、editor/validate)。DB は `0015_add_branches_core` / `0016_add_branch_play_sessions` | なし |
 | リアルタイム再生 | ✅ 実装済み | 同 router の `/play/{session_id}/ws`(認証付き WebSocket) | なし |
 | **プレイ UI(フロント)** | ✅ 実装済み(Phase 0・2026-11-23) | `frontend/src/pages/PlayModePage.tsx`(`/app/play`、`/app/play/:bookId`)。ルート・ヘッダー導線・capability 宣言(`branchPlay: wired`)込み | なし(動的継続は次行) |
-| **選択時の動的継続生成** | ❌ 未実装 | 現状は事前生成グラフ上の選択のみ。LLM が選択に応じて続きを書く経路なし | **Phase 1 の主対象** |
+| **選択時の動的継続生成** | ✅ **実装完了（2026-11-26・flag 既定 OFF）** | REST `POST /api/branches/play/{session_id}/dynamic` + WS `dynamic_continue`（`src/backend/routers/branches.py`）、use case `src/application/use_cases/play_dynamic_continue.py`、メトリクス `play_dynamic_*`、セッション上限 `PLAY_DYNAMIC_MAX_PER_SESSION`。flag `ENABLE_DYNAMIC_BRANCH` 既定 OFF（OFF で既存挙動不変を契約テストで担保）。実装は `plans/PLAN_P1_PLAY_ILLUSTRATION_16STEPS.md` TRACK-P。**KPI（cost/play・完走率）は未測定**（P0 のユーザー側ブロッカー解消後に取得） | **Phase 1 の主対象** |
 | キャラ対話(記憶) | ❌ 未実装 | 対話セッションモデルなし。RAG 基盤はあり(`RAGService`、pgvector > Chroma > InMemory フォールバック) | Phase 2 |
 | 挿絵・演出 | 🟡 実装あり・未配線多数(2026-11-24 調査完了) | `src/publishing/illustration/`(SceneIllustrationService)、`src/agents/illustration_agent.py`、use_cases/DB リポジトリ。**詳細とギャップリストは `docs/plans/PHASE3_ILLUSTRATION_WIRING_SURVEY.md`** | Phase 3(最小価値経路は「表示配線」先行) |
 | マルチメディア台本 | ✅ 実装済み | `src/easy_mode/phase3/media_mix.py`(MANGA/AUDIO_DRAMA/VIDEO/LIGHT_NOVEL/WEBTOON) | 実生成(画像/音声)への接続は Phase 3 |
@@ -117,10 +117,10 @@ flowchart LR
 - **Non-goal**: フルフリーチャット(自由入力での RP は選択肢の自由記述程度に限定して検討)
 - **前提**: Phase 0 完了(2026-11-23)+ **KPI ベースライン取得**。KPI の前提連鎖: CI 有効化(GitHub Actions がリポジトリ設定レベルでブロック中・2026-11-24 確認、GitHub Settings 確認はユーザー側タスク)→ 本番デプロイ → `branch_play_sessions` の行集計
 - **完了条件**:
-  - [ ] flag ON で「選択 → 続き生成 → 新選択肢」が完走し、flag OFF で既存挙動がバイト単位で不変
-  - [ ] 動的プレイの E2E テスト(REST + WS)が通過
-  - [ ] cost/play の p95 が測定され、上限(アビュースガード)が効く
-  - [ ] `make openapi` で `docs/openapi.json` 更新 + `npm run type:sync`
+  - [x] flag ON で「選択 → 続き生成 → 新選択肢」が完走し、flag OFF で既存挙動がバイト単位で不変（2026-11-26 実装。`tests/branches/test_dynamic_continue_ws.py` E2E 4 件 + `tests/contract/test_dynamic_branch_contract.py` 契約 8 件）
+  - [x] 動的プレイの E2E テスト(REST + WS)が通過（REST `POST /play/{session_id}/dynamic` + WS `dynamic_continue`・モック LLM）
+  - [ ] cost/play の p95 が測定され、上限(アビュースガード)が効く（**実装完了・計測待ち**。メトリクス `play_dynamic_scenes_total` / `play_dynamic_duration_seconds` と上限 `PLAY_DYNAMIC_MAX_PER_SESSION` は実装済み。実測は P0 のユーザー側ブロッカー(LLM キー・デプロイ)解消後に取得）
+  - [x] `make openapi` で `docs/openapi.json` 更新 + `npm run type:sync`（2026-11-26 実施）
 - **概算規模**: バックエンド中心・中(同期生成経路 + メトリクス + コスト設計)
 
 ### Phase 2: キャラ対話(記憶)

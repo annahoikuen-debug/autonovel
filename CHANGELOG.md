@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+### Play Phase 1: 動的継続生成（2026-11-26）
+
+ADR 002（Play モード本線化）の Phase 1。選択した時点で LLM が次シーンを生成する（`plans/PLAN_P1_PLAY_ILLUSTRATION_16STEPS.md` TRACK-P）。**flag `ENABLE_DYNAMIC_BRANCH` 既定 OFF**（OFF では既存挙動不変を契約テストで担保）。
+
+- **REST `POST /api/branches/play/{session_id}/dynamic`**: 選択テキストから続きのシーンを生成し、新ノードとして分岐グラフに追加。flag OFF は 503
+- **WS `dynamic_continue` アクション**: リアルタイムプレイ用の同一ロジック（共有ヘルパー）。flag OFF は error 応答のみ（既存の未定義アクション扱いと同一）
+- **use case**: `src/application/use_cases/play_dynamic_continue.py`（軽量版: 単発 LLM 呼び出し・JSON パースは fail-open・決定論的プロンプト・4 層境界を維持）
+- **メトリクス**: `play_dynamic_scenes_total{book_id}` / `play_dynamic_duration_seconds`（flag OFF では無音）
+- **コスト上限**: 1 セッションあたり `PLAY_DYNAMIC_MAX_PER_SESSION`（既定 30）。超過時は error 応答
+- **フロント**: `usePlaySession` に `dynamicContinue`、PlayModePage に「✨ 続きを生成 (AI)」パネル（`state.dynamic_available` が true のときのみ表示・flag 制御はサーバ側）、capability `dynamicBranch: wired`
+- **テスト**: WS E2E 4 件（flag OFF エラー / flag ON 完走 / 上限 / 既存 choose 不変）+ 契約 8 件 + use case 単体 + フロント 15 件。openapi 再生成 + 型同期済み
+- **KPI（cost/play・完走率）は未測定**（P0 のユーザー側ブロッカー解消後に取得）
+
 ### Phase 3 Increment 2: 挿絵の生成・保存経路を修復（2026-11-26）
 
 ADR 003（本線クライアント = Imagen `ImageService`）に基づく生成・保存経路の修復（`plans/PLAN_P1_PLAY_ILLUSTRATION_16STEPS.md` TRACK-I）。

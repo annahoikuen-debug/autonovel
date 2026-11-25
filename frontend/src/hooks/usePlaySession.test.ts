@@ -22,6 +22,7 @@ vi.mock('../api/branches', () => ({
   loadPlayPoint: vi.fn(),
   endPlaySession: vi.fn(),
   fetchPlaythrough: vi.fn(),
+  dynamicContinueScene: vi.fn(),
 }));
 
 const mockStart = vi.mocked(branchesApi.startPlaySession);
@@ -31,6 +32,7 @@ const mockSave = vi.mocked(branchesApi.savePlayPoint);
 const mockLoad = vi.mocked(branchesApi.loadPlayPoint);
 const mockEnd = vi.mocked(branchesApi.endPlaySession);
 const mockHistory = vi.mocked(branchesApi.fetchPlaythrough);
+const mockDynamic = vi.mocked(branchesApi.dynamicContinueScene);
 
 const SESSION: BranchPlaySessionResponse = {
   session_id: '11111111-1111-1111-1111-111111111111',
@@ -241,6 +243,52 @@ describe('usePlaySession', () => {
     expect(result.current.session).toBeNull();
     expect(result.current.state).toBeNull();
     expect(result.current.playthrough).toBeNull();
+    expect(result.current.dynamicScene).toBeNull();
+  });
+
+  it('dynamicContinue: 生成結果を dynamicScene に保持し state を更新する (PLAN_P1 TRACK-P)', async () => {
+    mockStart.mockResolvedValue(SESSION);
+    mockState.mockResolvedValue({ ...STATE_A, dynamic_available: true, dynamic_count: 0 });
+    mockDynamic.mockResolvedValue({
+      scene: {
+        session_id: SESSION.session_id,
+        node_id: 'dyn_s1_1',
+        text: '夜風の中、彼は剣を抜いた。',
+        choices: [{ id: 'dyn_1', text: '前へ進む', kind: 'dynamic' }],
+        dynamic_count: 1,
+      },
+      state: { ...STATE_A, current_node_id: 'dyn_s1_1', dynamic_available: true, dynamic_count: 1 },
+    });
+
+    const { result } = renderHook(() => usePlaySession());
+    await act(async () => {
+      await result.current.start(1, 1);
+    });
+    await act(async () => {
+      await result.current.dynamicContinue('前へ進む');
+    });
+
+    expect(mockDynamic).toHaveBeenCalledWith(SESSION.session_id, '前へ進む');
+    expect(result.current.dynamicScene?.text).toBe('夜風の中、彼は剣を抜いた。');
+    expect(result.current.state?.current_node_id).toBe('dyn_s1_1');
+    expect(result.current.error).toBeNull();
+  });
+
+  it('dynamicContinue: サーバ 503(flag OFF)時はエラーになる', async () => {
+    mockStart.mockResolvedValue(SESSION);
+    mockState.mockResolvedValue(STATE_A);
+    mockDynamic.mockRejectedValue(new Error('Failed to generate dynamic scene: 503'));
+
+    const { result } = renderHook(() => usePlaySession());
+    await act(async () => {
+      await result.current.start(1, 1);
+    });
+    await act(async () => {
+      await result.current.dynamicContinue('前へ進む');
+    });
+
+    expect(result.current.dynamicScene).toBeNull();
+    expect(result.current.error).toContain('503');
   });
 
   it('セッション未開始での choose / save / load は API を呼ばない', async () => {

@@ -26,6 +26,7 @@ from src.backend.security.jwt import decode_token
 from src.backend.security.token_denylist import is_revoked
 from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.database.uow import UnitOfWork
+from src.application.use_cases.play_dynamic_continue import PlayDynamicContinueUseCase
 from src.core.container import AppContainer
 from src.core.exceptions import AppError
 from src.backend.database.core import get_db_manager
@@ -41,6 +42,7 @@ from src.backend.schemas.branch import (
     BranchResponse,
 )
 from src.backend.schemas.branch_play import (
+    BranchPlayDynamicRequest,
     BranchPlayRequest,
     BranchPlayStateResponse,
     BranchPlayChooseRequest,
@@ -644,6 +646,37 @@ async def play_choose(
     return await get_play_state(session_id, session, current_user)
 
 
+@router.post("/play/{session_id}/dynamic")
+async def play_dynamic_continue(
+    session_id: str,
+    payload: BranchPlayDynamicRequest,
+    session: AsyncSession = Depends(get_branch_session),
+    current_user: User = Depends(get_current_user),
+) -> dict[str, Any]:
+    """動的継続生成: 選択の続きを LLM で生成し、新ノードとしてグラフに追加する (PLAN_P1 TRACK-P).
+
+    - flag `ENABLE_DYNAMIC_BRANCH` が OFF の場合は 503（既定挙動に影響しない）
+    - コスト上限（`PLAY_DYNAMIC_MAX_PER_SESSION`）超過時も 503
+    - 同期応答（Huey を経由しない・対話は即時応答が前提）
+    """
+    if not _validate_uuid(session_id):
+        raise HTTPException(status_code=400, detail="Invalid session_id (UUID required)")
+    repo = BranchRepository(session)
+    # IDOR 防止: 他人のセッションを操作できないようにする（既存 choose と同一パターン）
+    sess = await _assert_play_session_ownership(session_id, current_user, session)
+
+    try:
+        scene = await _handle_dynamic_continue(repo, session, sess, payload.choice_text.strip())
+    except _DynamicContinueRejected as e:
+        await session.rollback()
+        raise HTTPException(status_code=503, detail=e.message)
+    await session.commit()
+
+    fresh = await repo.get_play_session(session_id)
+    state = await _load_state_dict(repo, fresh) if fresh is not None else None
+    return {"scene": {k: v for k, v in scene.items() if k != "type"}, "state": state}
+
+
 @router.post("/play/{session_id}/save", response_model=BranchPlayStateResponse)
 async def play_save(
     session_id: str,
@@ -905,6 +938,14 @@ async def _load_state_dict(repo: BranchRepository, sess: Any) -> dict[str, Any]:
     nodes = graph.get("nodes", {}) or {}
     current = nodes.get(sess.current_node_id or "") or {}
     available_choices = current.get("choices", []) or []
+    # PLAN_P1 TRACK-P (P3): 動的継続の可否を state に載せる（既存フィールドは不変・
+    # 追加のみの非破壊変更）。flag OFF では常に False（既定挙動）。
+    dynamic_count = int((sess.context_json or {}).get("dynamic_count") or 0)
+    dynamic_available = bool(
+        settings.ENABLE_DYNAMIC_BRANCH
+        and (sess.status or "active") == "active"
+        and dynamic_count < settings.PLAY_DYNAMIC_MAX_PER_SESSION
+    )
     return {
         "type": "state",
         "session_id": sess.id,
@@ -914,6 +955,124 @@ async def _load_state_dict(repo: BranchRepository, sess: Any) -> dict[str, Any]:
         "context": sess.context_json or {},
         "save_points_count": len(sess.save_points_json or []),
         "status": sess.status or "active",
+        "dynamic_available": dynamic_available,
+        "dynamic_count": dynamic_count,
+    }
+
+
+def _make_dynamic_llm() -> Any:
+    """動的シーン生成用の軽量 LLM 呼び出し関数を構築する（PLAN_P1 TRACK-P / P2）。
+
+    本執筆パイプライン（監査・RAG 付き）ではなく単発生成に留める。
+    モデルは settings の LLM_PROVIDER に従う（mock の場合はモック応答）。
+    """
+    from src.llm.service import LLMService
+
+    svc = LLMService()
+
+    async def _llm(prompt: str) -> str:
+        return await svc.generate(prompt, max_tokens=1200)
+
+    return _llm
+
+
+class _DynamicContinueRejected(Exception):
+    """動的継続が不可の理由を表す（WS は error 応答、REST は 503 に変換）。"""
+
+    def __init__(self, message: str):
+        super().__init__(message)
+        self.message = message
+
+
+async def _handle_dynamic_continue(
+    repo: BranchRepository,
+    session: AsyncSession,
+    sess: Any,
+    choice_text: str,
+) -> dict[str, Any]:
+    """動的継続生成の共有ロジック（WS と REST から利用・PLAN_P1 TRACK-P / P3）。
+
+    flag OFF / 非アクティブ / 上限超過時は `_DynamicContinueRejected` を送出する。
+    成功時は新しいノードをグラフへ追加し、セッションを CAS で移動する。
+    """
+    if not settings.ENABLE_DYNAMIC_BRANCH:
+        raise _DynamicContinueRejected("dynamic continuation is disabled")
+
+    if sess.status and sess.status != "active":
+        raise _DynamicContinueRejected(f"Session not active (status={sess.status})")
+
+    # コスト上限（P5）: セッションあたりの動的生成回数
+    context = dict(sess.context_json or {})
+    dyn_count = int(context.get("dynamic_count") or 0)
+    if dyn_count >= settings.PLAY_DYNAMIC_MAX_PER_SESSION:
+        raise _DynamicContinueRejected("dynamic limit reached")
+
+    graph = await repo.load_branch_graph(int(sess.branch_id)) or {}
+    nodes = graph.get("nodes", {}) or {}
+    current = nodes.get(sess.current_node_id or "") or {}
+    current_text = str(current.get("content") or current.get("text") or "")
+
+    import time as _time
+
+    started = _time.monotonic()
+    use_case = PlayDynamicContinueUseCase(llm=_make_dynamic_llm())
+    scene = await use_case.execute(
+        current_scene_text=current_text,
+        choice_text=choice_text,
+        genre=str(context.get("genre") or ""),
+        title=str(context.get("title") or ""),
+        scene_number=dyn_count + 1,
+    )
+
+    # グラフ更新: 新ノード追加 + 現在ノードに動的選択肢を追加
+    new_node_id = f"dyn_{sess.id}_{dyn_count + 1}"
+    nodes[new_node_id] = {
+        "id": new_node_id,
+        "content": scene.text,
+        "choices": [],
+        "dynamic": True,
+        "episode_number": None,
+    }
+    dynamic_choice = {
+        "id": f"{new_node_id}_c",
+        "text": choice_text or "続きを生成",
+        "target_node_id": new_node_id,
+        "kind": "dynamic",
+    }
+    if isinstance(current, dict):
+        current.setdefault("choices", []).append(dynamic_choice)
+    graph["nodes"] = nodes
+    await repo.save_branch_graph(int(sess.branch_id), graph)
+
+    # セッション移動 (CAS・既存 choose と同一パターン)
+    context["dynamic_count"] = dyn_count + 1
+    expected_version = int(sess.version or 1)
+    ok = await repo.update_play_session_state_optimistic(
+        session_id=str(sess.id),
+        expected_version=expected_version,
+        current_node_id=new_node_id,
+        context_json=context,
+        save_points_json=list(sess.save_points_json or []),
+    )
+    if not ok:
+        raise _DynamicContinueRejected("Concurrent modification")
+
+    # メトリクス (P4)
+    from src.backend.observability.metrics import (
+        play_dynamic_duration_seconds,
+        play_dynamic_scenes_total,
+    )
+
+    play_dynamic_scenes_total.labels(book_id=str(sess.book_id)).inc()
+    play_dynamic_duration_seconds.observe(_time.monotonic() - started)
+
+    return {
+        "type": "dynamic_scene",
+        "session_id": str(sess.id),
+        "node_id": new_node_id,
+        "text": scene.text,
+        "choices": scene.choices,
+        "dynamic_count": dyn_count + 1,
     }
 
 
@@ -1141,6 +1300,28 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
                 await websocket.send_json({"type": "closed", "status": status})
                 await websocket.close(code=1000)
                 break
+
+            elif action == "dynamic_continue":
+                # PLAN_P1 TRACK-P (P3): 選択の続きを LLM で生成する動的継続。
+                # 共有ヘルパー（REST 経路と同一ロジック）。flag OFF では error 応答
+                # のみ（既存の未定義アクション扱いと同一・off 差分ゼロ）。
+                try:
+                    payload_scene = await _handle_dynamic_continue(
+                        repo,
+                        session,
+                        sess,
+                        str((data or {}).get("choice_text") or "").strip()[:200],
+                    )
+                except _DynamicContinueRejected as e:
+                    await websocket.send_json({"type": "error", "message": e.message})
+                    continue
+
+                # reload して最新 state を push
+                sess = await repo.get_play_session(session_id)
+                if sess is None:
+                    break
+                await websocket.send_json(payload_scene)
+                await websocket.send_json(await _load_state_dict(repo, sess))
 
             else:
                 await websocket.send_json({"type": "error", "message": f"Unknown action: {action}"})

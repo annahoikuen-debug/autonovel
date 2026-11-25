@@ -350,6 +350,12 @@ class Settings(BaseSettings):
     ENABLE_EASY_ILLUSTRATION: bool = False
     # 1 作品あたりの挿絵生成枚数上限（パイプライン経路のコスト上限）。0 = 無制限
     ILLUSTRATION_MAX_PER_BOOK: int = 20
+    # Play モード動的継続生成 (ADR 002 / PLAN_P1 TRACK-P)
+    # 選択時に LLM が次シーンを生成する経路。既定 OFF（off 差分ゼロ契約:
+    # OFF では WS の dynamic_continue が未定義アクション扱いになり既存挙動不変）。
+    ENABLE_DYNAMIC_BRANCH: bool = False
+    # 1 プレイセッションあたりの動的生成回数上限（コスト上限）
+    PLAY_DYNAMIC_MAX_PER_SESSION: int = 30
     # 外部投稿プラグイン。`.env` に書かれた値を PluginRegistry が参照する。
     ENABLE_SOCIAL_POSTING: bool = False
     VOICEVOX_URL: str = "http://localhost:50021"

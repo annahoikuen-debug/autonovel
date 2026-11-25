@@ -57,6 +57,17 @@ class BranchPlayChooseRequest(BaseModel):
     model_config = MODEL_CONFIG_DEFAULTS
 
 
+class BranchPlayDynamicRequest(BaseModel):
+    """動的継続生成リクエスト (PLAN_P1 TRACK-P / REST 経路).
+
+    flag (`ENABLE_DYNAMIC_BRANCH`) が OFF の場合は 503 を返す。
+    """
+
+    choice_text: str = Field(default="", max_length=200, description="プレイヤーの選択テキスト")
+
+    model_config = MODEL_CONFIG_DEFAULTS
+
+
 class BranchPlayEndRequest(BaseModel):
     """セッション終了リクエスト."""
 

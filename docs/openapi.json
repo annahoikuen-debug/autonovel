@@ -10613,6 +10613,66 @@
         }
       }
     },
+    "/api/branches/play/{session_id}/dynamic": {
+      "post": {
+        "tags": [
+          "branches"
+        ],
+        "summary": "Play Dynamic Continue",
+        "description": "動的継続生成: 選択の続きを LLM で生成し、新ノードとしてグラフに追加する (PLAN_P1 TRACK-P).\n\n- flag `ENABLE_DYNAMIC_BRANCH` が OFF の場合は 503（既定挙動に影響しない）\n- コスト上限（`PLAY_DYNAMIC_MAX_PER_SESSION`）超過時も 503\n- 同期応答（Huey を経由しない・対話は即時応答が前提）",
+        "operationId": "play_dynamic_continue_api_branches_play__session_id__dynamic_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BranchPlayDynamicRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Play Dynamic Continue Api Branches Play  Session Id  Dynamic Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/branches/play/{session_id}/save": {
       "post": {
         "tags": [
@@ -14977,6 +15037,21 @@
         ],
         "title": "BranchPlayChooseRequest",
         "description": "選択肢実行リクエスト."
+      },
+      "BranchPlayDynamicRequest": {
+        "properties": {
+          "choice_text": {
+            "type": "string",
+            "maxLength": 200,
+            "title": "Choice Text",
+            "description": "プレイヤーの選択テキスト",
+            "default": ""
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "BranchPlayDynamicRequest",
+        "description": "動的継続生成リクエスト (PLAN_P1 TRACK-P / REST 経路).\n\nflag (`ENABLE_DYNAMIC_BRANCH`) が OFF の場合は 503 を返す。"
       },
       "BranchPlayEndRequest": {
         "properties": {

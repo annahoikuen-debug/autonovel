@@ -18,6 +18,7 @@ import {
   BranchPlaySessionResponse,
   BranchPlayStateResponse,
   BranchPlayPlaythroughResponse,
+  BranchPlayDynamicResponse,
 } from '../types/branches';
 import {
   startPlaySession,
@@ -27,6 +28,7 @@ import {
   loadPlayPoint,
   endPlaySession,
   fetchPlaythrough,
+  dynamicContinueScene,
 } from '../api/branches';
 
 /** セッションのフェーズ */
@@ -63,6 +65,13 @@ export interface UsePlaySessionResult {
   end: () => Promise<void>;
   /** プレイスルー記録を取得する */
   loadHistory: () => Promise<void>;
+  /**
+   * 動的継続生成: 選択テキストから続きのシーンを LLM で生成する (PLAN_P1 TRACK-P)。
+   * サーバ flag (ENABLE_DYNAMIC_BRANCH) が OFF の場合はエラーになる。
+   */
+  dynamicContinue: (choiceText: string) => Promise<void>;
+  /** 直近の動的継続で生成されたシーン(null = 未生成) */
+  dynamicScene: BranchPlayDynamicResponse['scene'] | null;
   /** idle へ戻す(新しいプレイを始める) */
   reset: () => void;
 }
@@ -72,6 +81,7 @@ export function usePlaySession(): UsePlaySessionResult {
   const [session, setSession] = useState<BranchPlaySessionResponse | null>(null);
   const [state, setState] = useState<BranchPlayStateResponse | null>(null);
   const [playthrough, setPlaythrough] = useState<BranchPlayPlaythroughResponse | null>(null);
+  const [dynamicScene, setDynamicScene] = useState<BranchPlayDynamicResponse['scene'] | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -187,8 +197,27 @@ export function usePlaySession(): UsePlaySessionResult {
     setSession(null);
     setState(null);
     setPlaythrough(null);
+    setDynamicScene(null);
     setError(null);
   }, []);
+
+  const dynamicContinue = useCallback(
+    async (choiceText: string) => {
+      if (!session) return;
+      setBusy(true);
+      setError(null);
+      try {
+        const res = await dynamicContinueScene(session.session_id, choiceText);
+        setDynamicScene(res.scene);
+        if (res.state) setState(res.state);
+      } catch (err) {
+        setError(toMessage(err));
+      } finally {
+        setBusy(false);
+      }
+    },
+    [session]
+  );
 
   return {
     phase,
@@ -197,6 +226,8 @@ export function usePlaySession(): UsePlaySessionResult {
     playthrough,
     busy,
     error,
+    dynamicScene,
+    dynamicContinue,
     start,
     refresh,
     choose,

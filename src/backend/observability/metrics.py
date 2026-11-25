@@ -725,6 +725,23 @@ longform_context_chars = Histogram(
     ["layer"],
 )
 
+# ============================================================================
+# Play モード動的継続生成 (ADR 002 / PLAN_P1 TRACK-P / P4)
+# flag OFF では一切インクリメントされない（無音性を契約テストで担保）
+# ============================================================================
+
+play_dynamic_scenes_total = Counter(
+    "play_dynamic_scenes_total",
+    "Total dynamically generated play scenes (ENABLE_DYNAMIC_BRANCH=1 only)",
+    ["book_id"],
+)
+
+play_dynamic_duration_seconds = Histogram(
+    "play_dynamic_duration_seconds",
+    "Wall-clock duration of dynamic scene generation (first-response latency proxy)",
+    buckets=(0.5, 1, 2, 5, 10, 20, 30, 60, 120),
+)
+
 
 def reset():
     """テスト用リセット関数"""

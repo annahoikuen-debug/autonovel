@@ -53,6 +53,7 @@ vi.mock("../api/branches", () => ({
   loadPlayPoint: vi.fn(),
   endPlaySession: vi.fn(),
   fetchPlaythrough: vi.fn(),
+  dynamicContinueScene: vi.fn(),
 }));
 
 vi.mock("../api/books", () => ({
@@ -81,6 +82,7 @@ const mockSave = vi.mocked(branchesApi.savePlayPoint);
 const mockLoad = vi.mocked(branchesApi.loadPlayPoint);
 const mockEnd = vi.mocked(branchesApi.endPlaySession);
 const mockHistory = vi.mocked(branchesApi.fetchPlaythrough);
+const mockDynamic = vi.mocked(branchesApi.dynamicContinueScene);
 
 const BRANCHES: BranchResponse[] = [
   { id: 1, book_id: 1, name: "メイン", parent_id: null, fork_ep_num: 0, created_at: null },
@@ -217,6 +219,50 @@ describe("PlayModePage", () => {
     expect(mockChoose).toHaveBeenCalledWith(SESSION.session_id, "c1");
     // 選択肢が無いノードでは終端メッセージが出る
     expect(screen.getByText(/この先の選択肢はありません/)).toBeInTheDocument();
+  });
+
+  it("dynamic_available=true のとき動的継続 UI が表示される (PLAN_P1 TRACK-P)", async () => {
+    mockFetchBranches.mockResolvedValue(BRANCHES);
+    mockStart.mockResolvedValue(SESSION);
+    // flag ON 相当: サーバが dynamic_available=true を返す
+    mockState.mockResolvedValue({ ...STATE_A, dynamic_available: true, dynamic_count: 0 });
+    mockDynamic.mockResolvedValue({
+      scene: {
+        session_id: SESSION.session_id,
+        node_id: "dyn_1",
+        text: "夜風の中、彼は剣を抜いた。",
+        choices: [{ id: "dyn_1", text: "前へ進む", kind: "dynamic" }],
+        dynamic_count: 1,
+      },
+      state: { ...STATE_A, dynamic_available: true, dynamic_count: 1 },
+    });
+
+    const user = userEvent.setup();
+    renderAt("/app/play/1");
+    await user.click(await screen.findByTestId("play-start-btn"));
+
+    const btn = await screen.findByTestId("play-dynamic-btn");
+    expect(btn).toBeInTheDocument();
+    await user.type(screen.getByTestId("play-dynamic-input"), "前へ進む");
+    await user.click(btn);
+    await waitFor(() => {
+      expect(mockDynamic).toHaveBeenCalledWith(SESSION.session_id, "前へ進む");
+    });
+  });
+
+  it("dynamic_available=false（flag OFF）では動的継続 UI を表示しない", async () => {
+    mockFetchBranches.mockResolvedValue(BRANCHES);
+    mockStart.mockResolvedValue(SESSION);
+    mockState.mockResolvedValue(STATE_A); // dynamic_available なし = flag OFF
+
+    const user = userEvent.setup();
+    renderAt("/app/play/1");
+    await user.click(await screen.findByTestId("play-start-btn"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("play-scene-content")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("play-dynamic-btn")).not.toBeInTheDocument();
   });
 
   it("セーブ→ロードが UI から行える", async () => {

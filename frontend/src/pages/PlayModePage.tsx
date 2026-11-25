@@ -106,6 +106,7 @@ export function PlayModePage() {
 function PlaySessionView({ bookId }: { bookId: number }) {
   const play = usePlaySession();
   const [sceneImageUrl, setSceneImageUrl] = useState<string | null>(null);
+  const [dynamicChoiceText, setDynamicChoiceText] = useState("");
   const [searchParams] = useSearchParams();
   /** ?branch=<id> で分岐を事前選択できる(BranchManagement からの導線) */
   const preselectedBranchId = useMemo(() => {
@@ -274,6 +275,37 @@ function PlaySessionView({ bookId }: { bookId: number }) {
             <p style={{ color: "var(--text-muted)" }}>
               この先の選択肢はありません(グラフの終端に到達しました)。
             </p>
+          )}
+
+          {/* PLAN_P1 TRACK-P: 動的継続生成。サーバ flag (ENABLE_DYNAMIC_BRANCH) が
+              有効なときのみ state.dynamic_available が true になるため、
+              flag OFF 環境ではこのブロックは表示されない（既定挙動に影響しない）。 */}
+          {play.state?.dynamic_available && (
+            <Panel title="✨ 続きを生成 (AI)">
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  value={dynamicChoiceText}
+                  onChange={(e) => setDynamicChoiceText(e.target.value)}
+                  placeholder="どう進めたいか自由に入力（例: 洞窟の奥へ進む）"
+                  disabled={play.busy}
+                  data-testid="play-dynamic-input"
+                  style={{ flex: 1, padding: "8px 12px" }}
+                />
+                <Button
+                  variant="accent-purple"
+                  onClick={() => play.dynamicContinue(dynamicChoiceText.trim() || "続きを生成")}
+                  disabled={play.busy}
+                  data-testid="play-dynamic-btn"
+                >
+                  🪄 生成
+                </Button>
+              </div>
+              {play.dynamicScene && (
+                <p style={{ color: "var(--text-muted)", marginTop: "8px", fontSize: "13px" }}>
+                  直近の生成: {play.dynamicScene.text.slice(0, 80)}…（このセッションで {play.dynamicScene.dynamic_count} 回）
+                </p>
+              )}
+            </Panel>
           )}
 
           <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>

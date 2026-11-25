@@ -17,6 +17,7 @@ import {
   BranchPlayRequest,
   BranchPlaySessionResponse,
   BranchPlayStateResponse,
+  BranchPlayDynamicResponse,
   BranchPlayEndRequest,
   BranchPlayPlaythroughResponse,
 } from '../types/branches';
@@ -164,4 +165,20 @@ export async function endPlaySession(sessionId: string, payload?: BranchPlayEndR
 export async function fetchPlaythrough(sessionId: string): Promise<BranchPlayPlaythroughResponse> {
   const res = await apiFetch(`/api/branches/play/${sessionId}/playthrough`);
   return handleResponse<BranchPlayPlaythroughResponse>(res, `Failed to fetch playthrough: ${res.status}`);
+}
+
+/**
+ * 動的継続生成: 選択の続きを LLM で生成し、新ノードとしてグラフに追加する (PLAN_P1 TRACK-P)。
+ * サーバ側 flag (ENABLE_DYNAMIC_BRANCH) が OFF の場合は 503 で拒否される。
+ */
+export async function dynamicContinueScene(
+  sessionId: string,
+  choiceText: string
+): Promise<BranchPlayDynamicResponse> {
+  const res = await apiFetch(`/api/branches/play/${sessionId}/dynamic`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ choice_text: choiceText }),
+  });
+  return handleResponse<BranchPlayDynamicResponse>(res, `Failed to generate dynamic scene: ${res.status}`);
 }

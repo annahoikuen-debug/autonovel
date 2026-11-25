@@ -208,6 +208,22 @@ export interface BranchPlayStateResponse {
   save_points_count: number;
   status: string;
   updated_at: string | null;
+  /** 動的継続が利用可能か（サーバ側 flag ENABLE_DYNAMIC_BRANCH と上限で決まる。PLAN_P1 TRACK-P） */
+  dynamic_available?: boolean;
+  /** このセッションで実行済みの動的生成回数 */
+  dynamic_count?: number;
+}
+
+/** 動的継続生成の応答 (POST /play/{session_id}/dynamic) */
+export interface BranchPlayDynamicResponse {
+  scene: {
+    session_id: string;
+    node_id: string;
+    text: string;
+    choices: { id: string; text: string; kind: string }[];
+    dynamic_count: number;
+  };
+  state: BranchPlayStateResponse | null;
 }
 
 /** セッション終了リクエスト */
