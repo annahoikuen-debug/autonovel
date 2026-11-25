@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any
 from src.engine.auto_workflow_pipeline import create_easy_mode_pipeline
+from src.infrastructure.config.settings import settings
 from src.engine.pipeline_base import WorkflowContext
 from src.easy_mode.hooks import (
     evaluate_and_maybe_rewrite,
@@ -81,7 +82,11 @@ class EasyModePipeline:
             enable_spice_guard=True,
             max_rewrite_iterations=2,
             target_audit_score=95.0,
-            enable_illustration=False,
+            # ADR 003 Increment 2 / PLAN_P1 TRACK-I (I5):
+            # ハードコード False から flag 制御へ。既定 OFF のため off 差分ゼロ。
+            # flag ON 時も illustration_settings.enableIllustration が未設定なら
+            # IllustrationStep の既存二重ゲートで skip される。
+            enable_illustration=settings.ENABLE_EASY_ILLUSTRATION,
             illustration_settings={},
             enable_catharsis_analysis=False,
             enable_marketing=True,

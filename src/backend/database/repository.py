@@ -84,6 +84,10 @@ class DataRepositoryFacade:
                         "rules",
                         "audit",
                         "prompt_versions",
+                        # UoW モードの列挙と同一集合に揃える（Auto mode でも
+                        # create_illustration など挿絵系が解決されるようにする）。
+                        # PLAN_P1 TRACK-I / I2（ADR 003 Increment 2）。
+                        "illustrations",
                     ]:
                         repo = getattr(temp_uow, repo_attr)
                         if hasattr(repo, name):

@@ -103,14 +103,28 @@ class IllustrationWorkflow(BaseWorkflow):
             interval = settings.get("episodeInterval", 3)
 
             # 本の全エピソード数を取得 (repo経由)
-            chapters = await self.repo.get_chapters(book_id)
+            # PLAN_P1 TRACK-I / I3（ADR 003 Increment 2）: `get_chapters` は
+            # DataRepositoryFacade / ChapterRepository のどちらにも存在せず
+            # AttributeError になっていたため、実在する
+            # `get_all_non_anchor_chapters(book_id, branch_id)` に置換した。
+            chapters = await self.repo.get_all_non_anchor_chapters(book_id, branch_id)
             total_chapters = len(chapters)
 
             if total_chapters > 0:
                 target_chapters = range(1, total_chapters + 1, interval)
                 total_steps = len(target_chapters)
 
+                # PLAN_P1 TRACK-I / I6（ADR 003 Increment 2）: 1 作品あたりの
+                # 生成枚数上限（コスト上限）。0 = 無制限。results には表紙も含まれる。
+                max_per_book = int(settings.get("maxPerBook", 0) or 0)
+
                 for i, ep_num in enumerate(target_chapters):
+                    if max_per_book > 0 and len(results) >= max_per_book:
+                        reporter.report(
+                            f"挿絵生成が 1 作品あたりの上限 {max_per_book} 枚に達したため残りをスキップします",
+                            "warning",
+                        )
+                        break
                     reporter.update_progress((i + 1) / total_steps, 1, f"第{ep_num}話の挿絵を生成中...")
 
                     ep_request = IllustrationRequest(

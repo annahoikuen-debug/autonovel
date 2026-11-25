@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+### Phase 3 Increment 2: 挿絵の生成・保存経路を修復（2026-11-26）
+
+ADR 003（本線クライアント = Imagen `ImageService`）に基づく生成・保存経路の修復（`plans/PLAN_P1_PLAY_ILLUSTRATION_16STEPS.md` TRACK-I）。
+
+- **DI 修復**: `AppContainer` が `IllustrationAgent` / `IllustrationWorkflow` に `repo` を注入（従来は未注入で `/generate` が DB 非保存・`/batch` が `assert self.repo is not None` で落ちていた）
+- **`get_chapters` AttributeError 修復**: `IllustrationWorkflow.execute` が存在しない `repo.get_chapters` を呼んでいたため、実在する `get_all_non_anchor_chapters(book_id, branch_id)` に置換
+- **facade 修復**: `DataRepositoryFacade.__getattr__` の Auto-mode フォールバック列挙に `illustrations` を追加（UoW モードと同一集合に揃え、`create_illustration` が解決されるように）
+- **実画像経路の接続**: `IllustrationAgent.run()` が `ImageService` を実際に呼ぶよう修正。**キー未設定環境では従来どおり prompt-only にフォールバック**（現行挙動を維持・CI は mock 運用のまま）
+- **easy mode の flag 化**: `enable_illustration=False` ハードコードを `ENABLE_EASY_ILLUSTRATION` flag に変更（**既定 OFF・off 差分ゼロ契約**を `tests/contract/test_illustration_pipeline_gate.py` で担保）
+- **コスト上限**: 1 作品あたりの生成枚数上限 `ILLUSTRATION_MAX_PER_BOOK`（既定 20）。超過分は skip し作品本体は継続
+- **テスト**: `tests/unit/backend/test_illustration_di_injection.py`（G1/G2/G3/G7 の反証→緑）+ 契約テスト新規 6 件 + 既存回帰 249 passed / 失敗 0
+
+### P0 実行計画の起票と CI 発火状況の訂正（2026-11-26）
+
+- **CI 発火状況の訂正**: Q7（2026-11-24）の「CI 復活」記載は**誤り**であったことが GitHub REST API（無認証）の実測で確定（`docs/ROADMAP_NEXT.md` §3 / `plans/PLAN_P0_CLOSE_THE_LOOP_21STEPS.md` §1.1）。YAML 構文の修復は事実だが、**全 workflow が 2026-11-03 以降 1 件も発火しておらず**、main ブランチの workflow runs は 0 件。不発の原因は workflow ファイルではなくリポジトリ/アカウント設定レベル（`ci.yml` 自体は `state: active` で登録済み）→ 要ユーザー側確認（Settings → Actions / Billing）
+- `plans/PLAN_P0_CLOSE_THE_LOOP_21STEPS.md`（P0「ループを閉じる」実行計画書・21 ステップ）を起票し、TRACK-A を実施（2026-11-26）。TRACK-B/C/D は実行環境の制約（docker 未導入・LLM API キーなし）により ESR 記録として残置。進行方針は計画書 §10.4 の Deviation 記録に従う
+
 ### Phase 3 Increment 1: Play モード挿絵表示（2026-11-25）
 
 ADR 003（本線クライアント = Imagen `ImageService` 維持）に基づく表示配線の実装。

@@ -344,6 +344,12 @@ class Settings(BaseSettings):
     # マルチメディア展開 (Phase 7: Asset Pack / Media Mix / IF Routes / eBook)
     ENABLE_MULTIMEDIA: bool = False
     ENABLE_AUDIO_SYNTH: bool = False
+    # 挿絵生成 (ADR 003 Increment 2 / PLAN_P1 TRACK-I)
+    # easy mode パイプライン経路の挿絵生成スイッチ。既定 OFF（off 差分ゼロ契約）。
+    # OFF でも既存 API 経路（POST /generate / /yonkoma / /batch）は従来どおり動く。
+    ENABLE_EASY_ILLUSTRATION: bool = False
+    # 1 作品あたりの挿絵生成枚数上限（パイプライン経路のコスト上限）。0 = 無制限
+    ILLUSTRATION_MAX_PER_BOOK: int = 20
     # 外部投稿プラグイン。`.env` に書かれた値を PluginRegistry が参照する。
     ENABLE_SOCIAL_POSTING: bool = False
     VOICEVOX_URL: str = "http://localhost:50021"

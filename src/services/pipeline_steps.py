@@ -520,8 +520,15 @@ class IllustrationStep(WorkflowStep):
                 repo=engine.repo,
             )
 
+            # ADR 003 Increment 2 / PLAN_P1 TRACK-I (I6): 1 作品あたりの
+            # 生成枚数上限（コスト上限）。0 = 無制限。超過分は生成せず skip する。
+            from src.infrastructure.config.settings import settings as app_settings
+
+            ill_settings = dict(ctx.illustration_settings)
+            ill_settings.setdefault("maxPerBook", app_settings.ILLUSTRATION_MAX_PER_BOOK)
+
             ill_res = await ill_workflow.execute(
-                reporter=reporter, book_id=ctx.book_id, settings=ctx.illustration_settings
+                reporter=reporter, book_id=ctx.book_id, settings=ill_settings
             )
             if ill_res.get("status") == "success":
                 ctx.illustrations = ill_res.get("illustrations", [])

@@ -108,13 +108,49 @@ class IllustrationAgent(SkillAgent):
         raise ValueError("Invalid or missing illustration request")
 
     async def run(self, **kwargs) -> dict[str, Any]:
-        """エージェントのメイン実行ロジック (将来の画像生成用)。
+        """エージェントのメイン実行ロジック。
+
+        ADR 003 Increment 2（PLAN_P1 TRACK-I / I4）: 実画像生成を試み、
+        ImageService が使えない環境（キー未設定等）では従来どおり
+        prompt-only にフォールバックする（現行挙動を維持・P5 原則）。
 
         kwargs:
             - request: IllustrationRequest
         """
-        # 現在は画像生成未実装。プロンプトのみ返す generate_prompt_only を使用
-        return await self.generate_prompt_only(**kwargs)
+        try:
+            request = self._coerce_request(kwargs.get("request"))
+            kind = _type_value(request.illustration_type)
+            result = await self._generate_image(request, kind)
+            illustration_id = await self._persist(request, result)
+            result.illustration_id = illustration_id
+            return {
+                "status": "success",
+                "result": result,
+                "prompt": result.prompt,
+                "image_generated": True,
+            }
+        except Exception as e:  # noqa: BLE001
+            # キー未設定 / ネットワーク失敗 / mock 環境などは prompt-only にフォールバック
+            logger.info(
+                "IllustrationAgent: 実画像生成に失敗したため prompt-only にフォールバックします (%s)",
+                e,
+            )
+            return await self.generate_prompt_only(**kwargs)
+
+    async def _generate_image(self, request: IllustrationRequest, kind: str) -> IllustrationResult:
+        """タイプ別の実画像生成。ImageService を実際に呼ぶ経路（ADR 003 本線）。
+
+        yonkoma は `episode_text` 必須の別シグネチャであり、/yonkoma API の
+        専用経路（`generate_episode_yonkoma`）で実画像化済みのため、
+        単一 request の run() 経路では対象外（prompt-only フォールバック）。
+        """
+        if kind == IllustrationType.COVER.value:
+            return await self._generate_cover(request)
+        if kind == IllustrationType.CHARACTER.value:
+            return await self._generate_character(request)
+        if kind == IllustrationType.YONKOMA.value:
+            raise ValueError("yonkoma requires episode_text; use generate_episode_yonkoma")
+        return await self._generate_episode(request)
 
     async def generate_prompt_only(self, **kwargs) -> dict[str, Any]:
         """プロンプトのみ生成するメソッド (画像生成は将来実装)。

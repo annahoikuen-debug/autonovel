@@ -169,3 +169,24 @@
 | 2026-11-24 | 0.1 | 初版作成(調査完了・実装未着手) |
 | 2026-11-25 | 0.2 | 二次精査の結果を反映(repo 未注入による永続化欠落、`/batch` assert、パイプライン no-op、multimedia SQL 列不一致、router prefix 誤記、取得 API 不在)。ギャップリストに「保存される経路の修復」を P0 追加 |
 | 2026-11-25 | 0.3 | Increment 1(表示配線)完了を反映: 決定的クエリ API・Play 表示+フォールバック・`/static` 配信を実装(項目 2/3/4 完了)。ADR 003 承認。項目 1 は Increment 2 へ |
+| 2026-11-26 | 0.4 | **2026-11-26 実査(PLAN_P1 TRACK-I / I1)**: 保存経路のギャップを G1-G7 として行番号つきで確定(`plans/PLAN_P1_PLAY_ILLUSTRATION_16STEPS.md` §1.1 参照)。Increment 2 実装完了を反映(G1/G2/G3/G7 修復・I4 実画像接続・I5 flag 化・I6 上限) |
+
+---
+
+## 7. 2026-11-26 実査: 保存経路のギャップ確定(PLAN_P1 TRACK-I / I1)
+
+`plans/PLAN_P1_PLAY_ILLUSTRATION_16STEPS.md` §1.1 として実地確認した G1-G7。行番号は 2026-11-26 時点。
+
+| # | 欠落 | 実地確認結果 | 修復ステップ |
+|:--|:---|:---|:---|
+| G1 | DI が `IllustrationAgent` に `repo` を注入しない | `src/core/container/app.py` の `illustration_agent` プロバイダは `image_service` のみ。`SkillAgent.__init__`（`skill_base.py:27-38`）は `repo` を受ける | I2 ✅ |
+| G2 | DI が `IllustrationWorkflow` に `repo` を注入しない | 同 `illustration_workflow` プロバイダは `illustration_agent` のみ。`illustration_workflow.py:76,153` の `assert self.repo is not None` で Huey 経由 `/batch` が落ちる | I2 ✅ |
+| G3 | `repo.get_chapters(book_id)` が存在しない | `illustration_workflow.py:106`。`ChapterRepository` に `get_chapters` は存在しない（`get_chapter` / `get_chapters_before` / `get_all_non_anchor_chapters` のみ）→ assert 通過後も AttributeError | I3 ✅（`get_all_non_anchor_chapters` に置換） |
+| G4 | パイプラインからの生成は常に no-op | `ctx.artifacts["request"]` セット箇所ゼロ。`IllustrationStep`（`pipeline_steps.py:489-535`）は `ctx.enable_illustration` ゲートで skip。workflow 自体は `engine.repo` を受けて動作 | I5/I6 ✅（flag + 上限で到達可能に） |
+| G5 | easy mode が `enable_illustration=False` ハードコード | `src/easy_mode/pipeline.py:84` | I5 ✅（`ENABLE_EASY_ILLUSTRATION` flag 化・既定 OFF） |
+| G6 | `agent.run()` はプロンプトのみ（`image_url=""` で永続化） | `illustration_agent.py` — 実画像経路 `_generate_episode`(:176) が `run` から呼ばれない | I4 ✅（`run` → `_generate_image` 接続・失敗時 prompt-only フォールバック維持） |
+| G7 | facade の Auto-mode フォールバックに `illustrations` がない | `src/backend/database/repository.py` `__getattr__` — UoW モード列挙には `illustrations` 含む（UoW 経由で `IllustrationRepository.create_illustration` 解決可）が、Auto mode フォールバック列挙に含まれない | I2 ✅（列挙に追加） |
+
+検証: `tests/unit/backend/test_illustration_di_injection.py`（G1/G2/G3/G7 の反証→緑）+ `tests/contract/test_illustration_pipeline_gate.py`（off 差分ゼロ・上限・フォールバック契約）。
+
+---

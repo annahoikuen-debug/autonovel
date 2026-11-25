@@ -171,6 +171,9 @@ class AppContainer(InfraContainer):
     illustration_agent: providers.Factory = providers.Factory(
         "src.agents.illustration_agent.IllustrationAgent",
         image_service=image_service,
+        # ADR 003 Increment 2: repo を注入しないと `_persist` が self.repo is None
+        # で保存をスキップし、生成結果が DB に積み上がらない（PLAN_P1 TRACK-I / I2）。
+        repo=repo,
     )
     engine: providers.Factory = providers.Factory(
         "src.backend.orchestrator_engine_adapter.OrchestratorEngineAdapter",
@@ -201,6 +204,9 @@ class AppContainer(InfraContainer):
     illustration_workflow: providers.Factory = providers.Factory(
         "src.backend.workflows.illustration_workflow.IllustrationWorkflow",
         illustration_agent=illustration_agent,
+        # ADR 003 Increment 2: repo 未注入だと Huey 経由の /batch が
+        # `assert self.repo is not None` で落ちる（PLAN_P1 TRACK-I / I2）。
+        repo=repo,
     )
 
     # BookScore & WritingService

@@ -46,6 +46,13 @@ Phase 3 事前調査(`docs/plans/PHASE3_ILLUSTRATION_WIRING_SURVEY.md`)により
 - **トレードオフ**: B/C の未配線コードが残存する(技術的負債の棚上げ)。`docstring` の `UnifiedIllustrationGenerator` 言及は実体がないまま残る
 - **コスト**: Increment 1 は生成を行わないため新規 API コストはゼロ。生成経路の修復(Increment 2)は Imagen の課金(モデル別)が発生するため、別途レート制限・上限の設計を要する
 
+## 実施記録
+
+| Increment | 状態 | 内容 |
+|:--|:--|:---|
+| **Increment 1(表示配線)** | ✅ 完了(2026-11-25・`8ddfe522` / `fa88fe1a`) | 決定的クエリ API・Play 表示+フォールバック・`/static` 配信 + vite proxy |
+| **Increment 2(生成・保存経路の修復)** | ✅ 完了(2026-11-26・`plans/PLAN_P1_PLAY_ILLUSTRATION_16STEPS.md` TRACK-I) | DI への `repo` 注入(agent/workflow・`src/core/container/app.py`)、`get_chapters` AttributeError 修復(`get_all_non_anchor_chapters` に置換)、facade Auto-mode への `illustrations` 追加、`run()` の実画像接続(**キー未設定時は prompt-only フォールバックを維持**)、easy mode `ENABLE_EASY_ILLUSTRATION` flag 化(**既定 OFF**・off 差分ゼロ契約)、`ILLUSTRATION_MAX_PER_BOOK`(既定 20)コスト上限。テスト: `tests/unit/backend/test_illustration_di_injection.py` / `tests/contract/test_illustration_pipeline_gate.py`。**実 LLM キーでの生成実測は未実施**(P0 TRACK-C 待ち) |
+
 ## 関連
 
 - `docs/plans/PHASE3_ILLUSTRATION_WIRING_SURVEY.md` — 本決定の根拠となる調査
