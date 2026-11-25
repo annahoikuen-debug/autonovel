@@ -4,6 +4,13 @@
 
 ## [Unreleased]
 
+### Phase 3 挿絵配線調査・ロードマップ更新（2026-11-25）
+
+- **挿絵配線調査**（`docs/plans/PHASE3_ILLUSTRATION_WIRING_SURVEY.md`）: 実装済み/未配線/ギャップ(P0-P2)/外部 API 依存を整理。「保存される経路がほぼ無い」(DI の repo 未注入・パイプライン常時 no-op・`/static` 配信なし)を主要ギャップとして特定
+- **ロードマップ更新**（`docs/plans/ROADMAP_PLAYABLE_NOVEL.md` v0.2）: Phase 3 に調査結果の実装順を反映、Phase 1 の前提に CI 有効化→デプロイ→KPI のブロッカー連鎖を明記、リスク Top5 を CI 不発の現実に更新
+- **フレーキー全解消**: 監査系契約テストの import 時 env 汚染・e2e_rest の属性復元漏れ等を修正し、フルスイート **9,570 パス / 失敗 0**
+- review-loop スキルによる 4 ラウンドのレビュー・修正サイクルを実施(最終判定 LGTM)
+
 ### Q7 green wave 第1弾・CI 復活・カクヨムランキング支援のマージ（2026-11-24）
 
 `fix/q7-green-wave1`（21 コミット・105 ファイル）を統合ブランチで検証のうえマージ。
