@@ -61,6 +61,16 @@ vi.mock("../api/books", () => ({
   createBook: vi.fn(),
 }));
 
+vi.mock("../api/illustrations", () => ({
+  // 既定は「挿絵なし」(undefined) — 画像を出すテストのみ個別に上書きする
+  fetchSceneIllustration: vi.fn().mockResolvedValue(undefined),
+  fetchEpisodeIllustration: vi.fn().mockResolvedValue(undefined),
+}));
+
+import { fetchEpisodeIllustration } from "../api/illustrations";
+
+const mockFetchEpisodeIllustration = vi.mocked(fetchEpisodeIllustration);
+
 import * as branchesApi from "../api/branches";
 
 const mockFetchBranches = vi.mocked(branchesApi.fetchBranches);
@@ -295,6 +305,40 @@ describe("PlayModePage", () => {
       expect(screen.getByText(/この作品はまだ分岐がありません/)).toBeInTheDocument();
     });
     expect(screen.getByTestId("play-guidance-studio-link")).toBeInTheDocument();
+  });
+
+  it("挿絵が存在する話ではシーン画像を表示する(Phase 3 Increment 1)", async () => {
+    mockFetchBranches.mockResolvedValue(BRANCHES);
+    mockStart.mockResolvedValue(SESSION);
+    mockState.mockResolvedValue(STATE_A);
+    mockFetchEpisodeIllustration.mockResolvedValue("/static/illustrations/ep2.png");
+
+    const user = userEvent.setup();
+    renderAt("/app/play/1");
+    await user.click(await screen.findByTestId("play-start-btn"));
+
+    const img = await screen.findByTestId("play-scene-image");
+    expect(img).toHaveAttribute("src", "/static/illustrations/ep2.png");
+    // 呼び出しは現在ノードの話数に対して行われる
+    await waitFor(() => {
+      expect(mockFetchEpisodeIllustration).toHaveBeenCalledWith(1, 1);
+    });
+  });
+
+  it("挿絵が存在しない話では画像を表示せず本文のみでフォールバックする", async () => {
+    mockFetchBranches.mockResolvedValue(BRANCHES);
+    mockStart.mockResolvedValue(SESSION);
+    mockState.mockResolvedValue(STATE_A);
+    mockFetchEpisodeIllustration.mockResolvedValue(undefined);
+
+    const user = userEvent.setup();
+    renderAt("/app/play/1");
+    await user.click(await screen.findByTestId("play-start-btn"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("play-scene-content")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("play-scene-image")).not.toBeInTheDocument();
   });
 
   it("旧パス /play は 404 画面にならない(routes.test.tsx の家訓に従い、遷移先の詳細は手動 E2E に委ねる)", () => {

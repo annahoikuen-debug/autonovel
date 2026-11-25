@@ -18,10 +18,13 @@ SERVER = "src/backend/server.py"
 # FastAPI の組み込みドキュメント系。vite 自身が別のものを出すため対象外。
 BUILTIN_PREFIXES = {"/docs", "/redoc", "/openapi.json"}
 
-# server.py で条件付きマウントされる router。plugin_registry の設定に依存するため、
-# 実行環境の app には現れないことがある。理由 必须。
+# server.py(app_factory)で openapi paths に現れない mount / 条件付き router。
+# - /multimedia: plugin_registry の設定に依存するため、実行環境の app には現れないことがある
+# - /static: StaticFiles マウント(挿絵画像配信)。OpenAPI paths に載らない恒常マウント
+#   (docs/plans/PHASE3_ILLUSTRATION_WIRING_SURVEY.md の Increment 1、ADR 003)
 CONDITIONAL_MOUNTS: dict[str, str] = {
     "/multimedia": "server.py:190 `plugin_registry.is_enabled('multimedia')` が true のときだけマウント",
+    "/static": "app_factory で StaticFiles マウント(挿絵画像配信)。OpenAPI に載らないため両方向チェック対象外",
 }
 
 

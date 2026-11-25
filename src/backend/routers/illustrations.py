@@ -279,6 +279,58 @@ async def get_scene_illustration(
     }
 
 
+@router.get("/images/episode/{book_id}/{episode_number}")
+async def get_episode_illustration(
+    book_id: int,
+    episode_number: int,
+    current_user: User = Depends(get_current_user),
+):
+    """エピソード番号で**決定的に**挿絵画像 URL を返す（Play モード用）。
+
+    既存 ``GET /images/{book_id}/{scene_name}`` はプロンプト部分一致 + 最新
+    フォールバックであり、Play モードのノード（= 話数）とは紐付けられない。
+    本エンドポイントは ``episode_number`` 一致 + ``image_url`` 非空の行から
+    ``illustration_type == "episode"`` を最優先し、無ければ新しい順で最初の行を返す。
+
+    レスポンス契約は既存エンドポイントと同一（未生成は 200 + ``found: false``）。
+    """
+    if episode_number < 1:
+        raise HTTPException(status_code=422, detail="episode_number は 1 以上であること")
+
+    async with UnitOfWork(AppContainer.db()) as uow:
+        # IDOR 防止: 作品の所有権を必ず検証する
+        await verify_book_ownership(book_id, current_user, uow)
+
+        stmt = (
+            select(Illustration)
+            .where(
+                Illustration.book_id == book_id,
+                Illustration.episode_number == episode_number,
+                Illustration.image_url != "",
+            )
+            .order_by(Illustration.id.desc())
+        )
+        assert uow.session is not None
+        result = await uow.session.execute(stmt)
+        candidates = list(result.scalars().all())
+
+    usable = [row for row in candidates if (row.image_url or "").strip()]
+    if not usable:
+        return {"found": False, "image_url": None, "illustration_id": None}
+
+    # illustration_type == "episode"（本文挿絵）を最優先し、無ければ新しい順の先頭
+    matched = next(
+        (row for row in usable if row.illustration_type == IllustrationType.EPISODE.value),
+        usable[0],
+    )
+
+    return {
+        "found": True,
+        "image_url": matched.image_url,
+        "illustration_id": matched.id,
+    }
+
+
 @router.get("/status/{task_id}")
 async def get_illustration_status(task_id: str, current_user: User = Depends(get_current_user)):
     """Huey タスクのステータス・結果を取得する。"""

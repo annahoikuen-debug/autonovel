@@ -190,3 +190,112 @@ def test_illustration_status_endpoint_404():
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
+
+
+def test_get_episode_illustration_prefers_episode_type(tmp_path):
+    """GET /images/episode/{book_id}/{episode_number} の契約検証(Phase 3 Increment 1)。
+
+    - episode_number 一致 + image_url 非空の行から illustration_type=episode を最優先する
+    - image_url が空(プロンプトのみ)の行は found: false
+    - episode_number < 1 は 422
+    - IDOR 防止: verify_book_ownership が実行される(所有者なし作品は取得不可)
+    """
+    import asyncio
+
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+
+    from src.backend.auth import get_current_user
+    from src.backend.database.core import DatabaseManager
+    from src.backend.database.models import Base, Book, Illustration, User
+    from src.backend.routers import illustrations as imod
+    from src.core.container import AppContainer
+    from src.core.exceptions.base import NotFoundError
+
+    db_url = f"sqlite+aiosqlite:///{tmp_path / 'ill.db'}"
+    manager = DatabaseManager(db_url)
+
+    async def _setup():
+        async with manager.engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        async with manager.get_session() as session:
+            session.add(
+                User(
+                    id=1,
+                    email="ill@example.com",
+                    hashed_password="x",
+                    display_name="t",
+                    role="admin",
+                    status="active",
+                )
+            )
+            session.add(Book(id=1, title="t", genre="g", concept="c", current_branch_id=1, user_id=1))
+            await session.commit()
+            # FK(users→books)が解決した行を別コミットで積む(単一 flush での
+            # 挿入順序と PRAGMA foreign_keys=ON の組合わせで FK 違反になるため分割)
+            # 話数 2: episode 型を先に挿入し、より新しい id の cover 型より優先されることを検証
+            session.add(
+                Illustration(
+                    book_id=1,
+                    illustration_type="episode",
+                    episode_number=2,
+                    prompt="p2",
+                    image_url="/static/illustrations/b.png",
+                )
+            )
+            session.add(
+                Illustration(
+                    book_id=1,
+                    illustration_type="cover",
+                    episode_number=2,
+                    prompt="p1",
+                    image_url="/static/illustrations/a.png",
+                )
+            )
+            # 話数 3: image_url 空(プロンプト生成のみ) → found: false
+            session.add(
+                Illustration(
+                    book_id=1,
+                    illustration_type="episode",
+                    episode_number=3,
+                    prompt="p3",
+                    image_url="",
+                )
+            )
+            await session.commit()
+
+    asyncio.run(_setup())
+
+    owner = User(id=1, email="ill@example.com", role="admin", status="active")
+    app = FastAPI()
+    app.include_router(imod.router)
+    app.dependency_overrides[get_current_user] = lambda: owner
+
+    try:
+        with (
+            patch.object(AppContainer, "db", return_value=manager),
+            TestClient(app) as client,
+        ):
+            # 話数 2: episode 型を優先(id は cover の方が新しいが無視される)
+            r = client.get("/images/episode/1/2")
+            assert r.status_code == 200
+            body = r.json()
+            assert body["found"] is True
+            assert body["image_url"] == "/static/illustrations/b.png"
+
+            # 話数 3: 実画像なし → found: false(未生成と障害を区別する契約)
+            r3 = client.get("/images/episode/1/3")
+            assert r3.status_code == 200
+            assert r3.json()["found"] is False
+
+            # episode_number < 1 は 422
+            r0 = client.get("/images/episode/1/0")
+            assert r0.status_code == 422
+
+            # 存在しない作品 → 所有権検証が NotFoundError を投げる(IDOR 防止)。
+            # 本番アプリではグローバル例外ハンドラがこれを 404 に変換するが、
+            # このテストの素の FastAPI() にはハンドラがないため例外が透過する
+            with pytest.raises(NotFoundError):
+                client.get("/images/episode/999/1")
+    finally:
+        asyncio.run(manager.engine.dispose())

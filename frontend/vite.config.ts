@@ -30,6 +30,8 @@ export default defineConfig({
       "/generate": { target: backendUrl, changeOrigin: true },
       "/status": { target: backendUrl, changeOrigin: true },
       "/images": { target: backendUrl, changeOrigin: true },
+      // 挿絵画像の静的配信(ImageService が static/illustrations/ に保存)
+      "/static": { target: backendUrl, changeOrigin: true },
       "/yonkoma": { target: backendUrl, changeOrigin: true },
       "/orchestrated": { target: backendUrl, changeOrigin: true },
       // 条件付きマウント: server.py は plugin_registry.is_enabled("multimedia") が

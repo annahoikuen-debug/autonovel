@@ -10,10 +10,11 @@
  *   - 動的継続生成は Phase 1(feature flag ENABLE_DYNAMIC_BRANCH、既定 OFF)
  *   - WebSocket は使わない(Q2: REST のみ)
  */
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchBranches } from "../api/branches";
+import { fetchEpisodeIllustration } from "../api/illustrations";
 import { BranchResponse, BranchPlayNode } from "../types/branches";
 import { usePlaySession } from "../hooks/usePlaySession";
 import { Button } from "../components/common/Button";
@@ -104,6 +105,7 @@ export function PlayModePage() {
 /** ブランチ選択 + プレイ本体 */
 function PlaySessionView({ bookId }: { bookId: number }) {
   const play = usePlaySession();
+  const [sceneImageUrl, setSceneImageUrl] = useState<string | null>(null);
   const [searchParams] = useSearchParams();
   /** ?branch=<id> で分岐を事前選択できる(BranchManagement からの導線) */
   const preselectedBranchId = useMemo(() => {
@@ -126,6 +128,25 @@ function PlaySessionView({ bookId }: { bookId: number }) {
   const hasChoices = (play.state?.available_choices ?? []).length > 0;
   /** グラフが空(未生成 or 終端後の空状態)の判定。ガイダンス表示用(S10) */
   const graphMissing = play.phase === "playing" && play.state != null && node == null && !hasChoices;
+
+  // 現在ノードの話数に対応する挿絵を解決する(Phase 3 Increment 1)。
+  // 見つからない・取得失敗のときは画像なしでフォールバック(ロードマップ受入基準)。
+  const episodeNum = node?.episode_num ?? null;
+  useEffect(() => {
+    let cancelled = false;
+    setSceneImageUrl(null);
+    if (episodeNum == null || episodeNum < 1) return;
+    fetchEpisodeIllustration(bookId, episodeNum)
+      .then((url) => {
+        if (!cancelled && url) setSceneImageUrl(url);
+      })
+      .catch(() => {
+        // 取得失敗は「画像なし」として黙ってフォールバックする
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [bookId, episodeNum]);
 
   const handleStart = async () => {
     if (effectiveBranchId == null) return;
@@ -208,6 +229,19 @@ function PlaySessionView({ bookId }: { bookId: number }) {
             <Panel
               title={`第 ${node.episode_num} 話${node.branch_type ? `（${node.branch_type}）` : ""}`}
             >
+              {sceneImageUrl && (
+                <img
+                  src={sceneImageUrl}
+                  alt={`第 ${node.episode_num} 話の挿絵`}
+                  data-testid="play-scene-image"
+                  style={{
+                    maxWidth: "100%",
+                    borderRadius: "8px",
+                    marginBottom: "12px",
+                    display: "block",
+                  }}
+                />
+              )}
               <div
                 data-testid="play-scene-content"
                 style={{ whiteSpace: "pre-wrap", lineHeight: 1.9, color: "var(--text-main)" }}

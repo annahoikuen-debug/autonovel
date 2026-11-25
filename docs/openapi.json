@@ -9781,6 +9781,58 @@
         }
       }
     },
+    "/images/episode/{book_id}/{episode_number}": {
+      "get": {
+        "summary": "Get Episode Illustration",
+        "description": "エピソード番号で**決定的に**挿絵画像 URL を返す（Play モード用）。\n\n既存 ``GET /images/{book_id}/{scene_name}`` はプロンプト部分一致 + 最新\nフォールバックであり、Play モードのノード（= 話数）とは紐付けられない。\n本エンドポイントは ``episode_number`` 一致 + ``image_url`` 非空の行から\n``illustration_type == \"episode\"`` を最優先し、無ければ新しい順で最初の行を返す。\n\nレスポンス契約は既存エンドポイントと同一（未生成は 200 + ``found: false``）。",
+        "operationId": "get_episode_illustration_images_episode__book_id___episode_number__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "book_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Book Id"
+            }
+          },
+          {
+            "name": "episode_number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Episode Number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/status/{task_id}": {
       "get": {
         "summary": "Get Illustration Status",

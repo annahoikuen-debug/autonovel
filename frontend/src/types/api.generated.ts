@@ -184,8 +184,57 @@ export interface paths {
         /**
          * Export With Data Endpoint
          * @description クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする
+         *
+         *     認証済みユーザー本人の作品のみエクスポート・上書きできる（C1: 他者の book_id を
+         *     推測して差し替えパッケージを取得/上書きできないようにする）。
          */
         post: operations["export_with_data_endpoint_easy_mode_export_with_data_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/easy_mode/easy_mode/onboarding-presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Onboarding Presets
+         * @description カクヨムランキング上位を狙う初心者向けプリセット一覧を返す。
+         *
+         *     フラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は空リストを返し、
+         *     現行のオンボーディング挙動を変更しない。
+         */
+        get: operations["get_onboarding_presets_easy_mode_easy_mode_onboarding_presets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/easy_mode/easy_mode/export-kakuyomu-package/{book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Kakuyomu Package
+         * @description カクヨム形式で整形した投稿用パッケージを返す。
+         *
+         *     フラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は 404 を返し、
+         *     現行のエクスポート挙動を変更しない。
+         */
+        post: operations["export_kakuyomu_package_easy_mode_easy_mode_export_kakuyomu_package__book_id__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -372,8 +421,57 @@ export interface paths {
         /**
          * Export With Data Endpoint
          * @description クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする
+         *
+         *     認証済みユーザー本人の作品のみエクスポート・上書きできる（C1: 他者の book_id を
+         *     推測して差し替えパッケージを取得/上書きできないようにする）。
          */
         post: operations["export_with_data_endpoint_api_wizard_export_with_data_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wizard/easy_mode/onboarding-presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Onboarding Presets
+         * @description カクヨムランキング上位を狙う初心者向けプリセット一覧を返す。
+         *
+         *     フラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は空リストを返し、
+         *     現行のオンボーディング挙動を変更しない。
+         */
+        get: operations["get_onboarding_presets_api_wizard_easy_mode_onboarding_presets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/wizard/easy_mode/export-kakuyomu-package/{book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Kakuyomu Package
+         * @description カクヨム形式で整形した投稿用パッケージを返す。
+         *
+         *     フラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は 404 を返し、
+         *     現行のエクスポート挙動を変更しない。
+         */
+        post: operations["export_kakuyomu_package_api_wizard_easy_mode_export_kakuyomu_package__book_id__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -560,8 +658,57 @@ export interface paths {
         /**
          * Export With Data Endpoint
          * @description クライアントの最新ステート（本文・設定）を反映して即座にZIPパッケージをエクスポートする
+         *
+         *     認証済みユーザー本人の作品のみエクスポート・上書きできる（C1: 他者の book_id を
+         *     推測して差し替えパッケージを取得/上書きできないようにする）。
          */
         post: operations["export_with_data_endpoint_api_easy_mode_export_with_data_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/easy-mode/easy_mode/onboarding-presets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Onboarding Presets
+         * @description カクヨムランキング上位を狙う初心者向けプリセット一覧を返す。
+         *
+         *     フラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は空リストを返し、
+         *     現行のオンボーディング挙動を変更しない。
+         */
+        get: operations["get_onboarding_presets_api_easy_mode_easy_mode_onboarding_presets_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/easy-mode/easy_mode/export-kakuyomu-package/{book_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Export Kakuyomu Package
+         * @description カクヨム形式で整形した投稿用パッケージを返す。
+         *
+         *     フラグ ENABLE_ONBOARDING_KAKUYOMU_MODE が False の間は 404 を返し、
+         *     現行のエクスポート挙動を変更しない。
+         */
+        post: operations["export_kakuyomu_package_api_easy_mode_easy_mode_export_kakuyomu_package__book_id__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1223,6 +1370,9 @@ export interface paths {
         /**
          * Get Models Info
          * @description サーバー既定のモデル構成および利用可能プロバイダ一覧を返す。
+         *
+         *     configured_keys は管理者のみに開示し、一般ユーザーには
+         *     プロバイダ設定の有無を隠蔽する（Step 19）。
          */
         get: operations["get_models_info_api_system_models_info_get"];
         put?: never;
@@ -1679,26 +1829,6 @@ export interface paths {
         get: operations["list_specialists_admin_audit_specialists_get"];
         put?: never;
         post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/audit/aggregate_test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test Aggregate
-         * @description 任意の原稿で監査集約を実行（テスト用）
-         */
-        post: operations["test_aggregate_admin_audit_aggregate_test_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2277,6 +2407,16 @@ export interface paths {
         /**
          * Get Dag Status
          * @description Step 57: Get DAG workflow status, progress, and node execution states.
+         *
+         *     所有権の判定が出来ないため管理者/API Key に限定する（P1）:
+         *     - DAGGraph に owner / book_id フィールドが無く、checkpoint から
+         *       所有者を導出できない
+         *     - dag_id は `novel_b{book_id}_ep{ep}` と `orch_{correlation_id}` の
+         *       2 形式があり、正規表現では全形式をカバーできない
+         *     - 返り値に node の error 文字列・実行時間が含まれるため、
+         *       任意ユーザーに開示しない
+         *     TODO(H1-2): DAGGraph に owner_id を持ち、checkpoint に永続化して
+         *       per-owner の照合を行う（設計は plans/PLAN_SECURITY_GATE_AND_DEBT_2026-11.md §4-3）。
          */
         get: operations["get_dag_status_api_tasks_dag__dag_id__get"];
         put?: never;
@@ -3594,6 +3734,33 @@ export interface paths {
          *     完全一致に処分し、無ければ最も新しい挿絵へフォールバックする。
          */
         get: operations["get_scene_illustration_images__book_id___scene_name__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/images/episode/{book_id}/{episode_number}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Episode Illustration
+         * @description エピソード番号で**決定的に**挿絵画像 URL を返す（Play モード用）。
+         *
+         *     既存 ``GET /images/{book_id}/{scene_name}`` はプロンプト部分一致 + 最新
+         *     フォールバックであり、Play モードのノード（= 話数）とは紐付けられない。
+         *     本エンドポイントは ``episode_number`` 一致 + ``image_url`` 非空の行から
+         *     ``illustration_type == "episode"`` を最優先し、無ければ新しい順で最初の行を返す。
+         *
+         *     レスポンス契約は既存エンドポイントと同一（未生成は 200 + ``found: false``）。
+         */
+        get: operations["get_episode_illustration_images_episode__book_id___episode_number__get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5067,8 +5234,8 @@ export interface paths {
          * Orchestrated Events
          * @description オーケストレーション中のAgentEventをSSEでリアルタイム配信。
          *
-         *     IDOR 防止: correlation_id は単なる識別子（`book_<id>_branch_<id>_ep_<n>`）で、
-         *     他人の生成イベントを購読できてしまう。作品 ID を解決して所有者を検証する。
+         *     EventSource は Authorization ヘッダーを送信できないため、クエリ文字列の
+         *     短命ストリームトークンで認証・作品スコープ所有権を検証する（H6）。
          */
         get: operations["orchestrated_events_orchestrated_events__correlation_id__get"];
         put?: never;
@@ -5295,74 +5462,6 @@ export interface components {
              * @default
              */
             diff_summary: string;
-        };
-        /** AuditAggregateTestRequest */
-        AuditAggregateTestRequest: {
-            /**
-             * Book Id
-             * @description 対象書籍ID
-             */
-            book_id: number;
-            /**
-             * Chapter Number
-             * @description 対象章番号
-             */
-            chapter_number: number;
-            /**
-             * Draft Text
-             * @description 監査対象の原稿テキスト
-             */
-            draft_text: string;
-            /** World Bible Snapshot */
-            world_bible_snapshot?: {
-                [key: string]: unknown;
-            };
-            /** Style Dna */
-            style_dna?: {
-                [key: string]: unknown;
-            };
-            /**
-             * Plot Tree
-             * @default
-             */
-            plot_tree: string;
-            /**
-             * Plot Summary
-             * @default
-             */
-            plot_summary: string;
-            /**
-             * Illustration Prompts
-             * @default
-             */
-            illustration_prompts: string;
-            /**
-             * Genre
-             * @default literary
-             */
-            genre: string;
-            /**
-             * Phase
-             * @default mid_writing
-             */
-            phase: string;
-        };
-        /** AuditAggregateTestResponse */
-        AuditAggregateTestResponse: {
-            /** Overall */
-            overall: number;
-            /** By Specialist */
-            by_specialist: {
-                [key: string]: number;
-            };
-            /** Missing */
-            missing: string[];
-            /** Weights Used */
-            weights_used: {
-                [key: string]: number;
-            };
-            /** Lowest Dimension */
-            lowest_dimension: string | null;
         };
         /**
          * AuditFastHybridRequest
@@ -6696,6 +6795,11 @@ export interface components {
              * @description 終了話数（未指定時はtarget_episodesまで）
              */
             end_ep?: number | null;
+            /**
+             * Spine Quality
+             * @description STORY_SPINE 構造テンプレートの適用レベル。未指定 = 注入なし
+             */
+            spine_quality?: ("off" | "soft" | "hard") | null;
         };
         /**
          * EbookExportRequest
@@ -7288,6 +7392,30 @@ export interface components {
             error: string;
             /** Suggestions */
             suggestions?: string[];
+            /**
+             * Hook Metrics
+             * @description 序盤フック・章末引き採点結果
+             */
+            hook_metrics?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Ctr Metrics
+             * @description タイトル・キャッチコピーCTR採点結果
+             */
+            ctr_metrics?: {
+                [key: string]: unknown;
+            } | null;
+            /**
+             * Ctr Suggestions
+             * @description CTR改善案タイトルリスト
+             */
+            ctr_suggestions?: string[];
+            /**
+             * Tag Suggestions
+             * @description カクヨム推奨タグ候補リスト
+             */
+            tag_suggestions?: string[];
         };
         /**
          * GraphEvidenceNode
@@ -8349,9 +8477,19 @@ export interface components {
             critique: string;
             /**
              * Actionable Patch
-             * @description 推奨局所修正パッチ
+             * @description 推奨局所修正パッチ（従来互換・文字列）
              */
             actionable_patch?: string | null;
+            /**
+             * Actionable Quote
+             * @description H8: 置換対象の逐語引用（400字以内）
+             */
+            actionable_quote?: string | null;
+            /**
+             * Actionable Replacement
+             * @description H8: 差し替え後文章
+             */
+            actionable_replacement?: string | null;
         };
         /**
          * RagContextRequest
@@ -9799,6 +9937,59 @@ export interface operations {
             };
         };
     };
+    get_onboarding_presets_easy_mode_easy_mode_onboarding_presets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    export_kakuyomu_package_easy_mode_easy_mode_export_kakuyomu_package__book_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     generate_content_api_wizard_generate_post: {
         parameters: {
             query?: never;
@@ -10110,6 +10301,59 @@ export interface operations {
             };
         };
     };
+    get_onboarding_presets_api_wizard_easy_mode_onboarding_presets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    export_kakuyomu_package_api_wizard_easy_mode_export_kakuyomu_package__book_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     generate_content_api_easy_mode_generate_post: {
         parameters: {
             query?: never;
@@ -10400,6 +10644,59 @@ export interface operations {
                 "application/json": components["schemas"]["ExportRequestPayload"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_onboarding_presets_api_easy_mode_easy_mode_onboarding_presets_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    export_kakuyomu_package_api_easy_mode_easy_mode_export_kakuyomu_package__book_id__post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -12244,41 +12541,6 @@ export interface operations {
             };
         };
     };
-    test_aggregate_admin_audit_aggregate_test_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                Authorization?: string;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AuditAggregateTestRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuditAggregateTestResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_audit_weights_admin_audit_weights_get: {
         parameters: {
             query?: {
@@ -13345,7 +13607,9 @@ export interface operations {
     get_dag_status_api_tasks_dag__dag_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                Authorization?: string;
+            };
             path: {
                 dag_id: string;
             };
@@ -14377,9 +14641,7 @@ export interface operations {
     produce_novel_api_novel_produce_post: {
         parameters: {
             query?: never;
-            header?: {
-                Authorization?: string;
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -15527,6 +15789,38 @@ export interface operations {
             path: {
                 book_id: number;
                 scene_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_episode_illustration_images_episode__book_id___episode_number__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                book_id: number;
+                episode_number: number;
             };
             cookie?: never;
         };
@@ -18023,7 +18317,10 @@ export interface operations {
     };
     orchestrated_events_orchestrated_events__correlation_id__get: {
         parameters: {
-            query?: never;
+            query: {
+                /** @description ストリーム認証トークン（短命・作品スコープ） */
+                token: string;
+            };
             header?: never;
             path: {
                 correlation_id: string;

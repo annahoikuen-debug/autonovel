@@ -16,10 +16,12 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import AbstractAsyncContextManager, asynccontextmanager
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from src.api.middleware.rate_limit import RateLimitMiddleware
@@ -188,6 +190,14 @@ def create_app(
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=settings.cors_allow_headers_list,
     )
+
+    # 挿絵画像の静的配信。`ImageService._save_image` が CWD 相対の
+    # `static/illustrations/` に保存し `/static/illustrations/...` の URL を返す
+    # (docs/plans/PHASE3_ILLUSTRATION_WIRING_SURVEY.md §2 の「/static 配信なし」ギャップ)。
+    # ディレクトリが無い状態での起動も許容する（生成前にアクセスしても 404 でよい）。
+    static_dir = Path("static")
+    static_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
     # コアルーター登録
     # Step 19: プラグイン無効時は該当ルーターをスキップする条件付きマウント
