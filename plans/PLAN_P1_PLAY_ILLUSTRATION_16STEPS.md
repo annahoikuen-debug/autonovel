@@ -251,9 +251,16 @@
 
 ### 10.3 Deviation 記録（P12）
 
-- **D-P1**: 計画書 P3 は「WS 経路に追加」のみだったが、**REST エンドポイント `POST /play/{session_id}/dynamic` を追加した**。理由: Play UI（Phase 0）は REST ベースで実装されており（`docs/plans/ROADMAP_PLAYABLE_NOVEL.md` §4 Phase 0「REST を優先し WS は任意」）、WS 専用では UI から動的継続を使えない。flag OFF では REST は 503（既存挙動に影響しない）・openapi 再生成済み
-- **D-P2**: 計画書 P5 の `PLAY_DYNAMIC_DAILY_MAX_PER_USER`（日次上限）は未実装。理由: 日次集約は Redis/DB 集計を要し、セッション上限 + メトリクス観測で一次保護は成立する。日次上限は cost/play の実測（P0 TRACK-C）後に必要性和判断する
+- **D-P1**: 計画書 P3 は「WS 経路に追加」のみだったが、**REST エンドポイント `POST /play/{session_id}/dynamic` を追加した**。理由: Play UI（Phase 0）は REST ベースで実装されており（`docs/plans/ROADMAP_PLAYABLE_NOVEL.md` §4 Phase 0「REST を優先し WS は任意」）、WS 専用では UI から動的継続を使えない。flag OFF では REST は 503（既存挙動に影響しない）・openapi 再生成済み。**review-loop Round 2 修正で REST に `generate_limiter`（1 分あたり 10 回・既存ミドルウェア）を適用**
+- **D-P2**: 計画書 P5 の `PLAY_DYNAMIC_DAILY_MAX_PER_USER`（日次上限）は未実装。理由: 日次集約は Redis/DB 集計を要し、セッション上限 + メトリクス観測 + REST の `generate_limiter` で一次保護は成立する。**Phase 2 課題**（review-loop 指摘 2）: per-user の厳密な上限は cost/play の実測（P0 TRACK-C）後に必要性和判断する
 - **D-P3**: WS 初期 state に `dynamic_available` / `dynamic_count` フィールドを追加（既存フィールドは不変・非破壊追加）。flag OFF では常に false
+- **D-P4**（review-loop 指摘 5・Low）: `play_dynamic_scenes_total` の `book_id` ラベルは書籍数に比例した系列増加になり得る。Phase 1 規模では実害なし。多段テナント化する際にラベル見直し
+
+### 10.5 review-loop（TRACK-P・2026-11-26）
+
+| Round | 判定 | 指摘と対応 |
+|:---|:---:|:---|
+| Round 1 | 要修正 | 指摘 1 **[High] WS 経路の rollback 欠落** → CAS 失敗時のグラフ書き込み残留を `session.rollback()` で救済（REST と同一）。指摘 2 [High] REST のレート制限なし → `generate_limiter` 適用。指摘 3 [Medium] `new_node_id` の決定論的上書きリスク → `uuid4().hex[:6]` を付与。指摘 4 [Medium] `scene_number` が動的回数固定 → `context_json.history` の長さ + 1 に変更。指摘 7 [未確定] `run()` が persist 失敗も握り潰す → 生成成功・保存失敗を分離（保存失敗は警告のみで success 返却）。指摘 5 [Low] metrics ラベル → D-P4 として記録。指摘 6 [Low] off 差分ゼロ（state 追加）は妥当と評価 |
 
 ### 10.4 TRACK-X
 

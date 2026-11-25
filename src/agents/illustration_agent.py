@@ -121,14 +121,6 @@ class IllustrationAgent(SkillAgent):
             request = self._coerce_request(kwargs.get("request"))
             kind = _type_value(request.illustration_type)
             result = await self._generate_image(request, kind)
-            illustration_id = await self._persist(request, result)
-            result.illustration_id = illustration_id
-            return {
-                "status": "success",
-                "result": result,
-                "prompt": result.prompt,
-                "image_generated": True,
-            }
         except Exception as e:  # noqa: BLE001
             # キー未設定 / ネットワーク失敗 / mock 環境などは prompt-only にフォールバック
             logger.info(
@@ -136,6 +128,24 @@ class IllustrationAgent(SkillAgent):
                 e,
             )
             return await self.generate_prompt_only(**kwargs)
+
+        # review-loop 指摘 7: 生成成功・保存失敗は prompt-only に落とさず
+        # 警告のみで success を返す（「生成したのに保存されない」暗黙消滅を防ぐ）。
+        illustration_id = None
+        try:
+            illustration_id = await self._persist(request, result)
+        except Exception as e:  # noqa: BLE001
+            logger.warning(
+                "IllustrationAgent: 実画像の DB 保存に失敗しましたが、生成結果は返します (%s)",
+                e,
+            )
+        result.illustration_id = illustration_id
+        return {
+            "status": "success",
+            "result": result,
+            "prompt": result.prompt,
+            "image_generated": True,
+        }
 
     async def _generate_image(self, request: IllustrationRequest, kind: str) -> IllustrationResult:
         """タイプ別の実画像生成。ImageService を実際に呼ぶ経路（ADR 003 本線）。

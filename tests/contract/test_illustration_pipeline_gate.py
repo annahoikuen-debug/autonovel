@@ -152,3 +152,33 @@ async def test_agent_run_generates_real_image_when_service_available() -> None:
     assert res["result"].image_url == "/static/illustrations/ep3.png"
     agent.repo.create_illustration.assert_awaited_once()
     assert res["result"].illustration_id == 99
+
+
+async def test_agent_run_keeps_image_on_persist_failure() -> None:
+    """review-loop 指摘 7: 生成成功・保存失敗では画像を保持したまま success を返す。
+
+    生成済み画像を prompt-only フォールバックで握り潰さない
+    （「生成したのに保存されない」暗黙消滅の防止）。
+    """
+    from src.agents.illustration_agent import IllustrationAgent
+    from src.models.illustration import IllustrationModel, IllustrationRequest, IllustrationType, SafetyLevel
+
+    agent = IllustrationAgent(image_service=MagicMock())
+    agent.image_service.generate = AsyncMock(return_value="/static/illustrations/ep3.png")
+    agent.repo = MagicMock()
+    agent.repo.create_illustration = AsyncMock(side_effect=RuntimeError("db down"))
+
+    request = IllustrationRequest(
+        book_id=1,
+        illustration_type=IllustrationType.EPISODE,
+        episode_number=3,
+        model=IllustrationModel.AUTO,
+        safety_level=SafetyLevel.BLOCK_SOME,
+    )
+    res = await agent.run(request=request)
+
+    assert res["status"] == "success"
+    assert res["image_generated"] is True
+    assert res["result"].image_url == "/static/illustrations/ep3.png"
+    # 保存失敗でも生成結果は失われない（illustration_id は None）
+    assert res["result"].illustration_id is None

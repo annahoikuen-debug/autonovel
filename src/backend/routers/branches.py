@@ -15,7 +15,7 @@ import zipfile
 from datetime import datetime
 from typing import Any, AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,6 +26,7 @@ from src.backend.security.jwt import decode_token
 from src.backend.security.token_denylist import is_revoked
 from src.backend.security.owner_guard import verify_book_ownership
 from src.backend.database.uow import UnitOfWork
+from src.backend.rate_limit import generate_limiter
 from src.application.use_cases.play_dynamic_continue import PlayDynamicContinueUseCase
 from src.core.container import AppContainer
 from src.core.exceptions import AppError
@@ -650,6 +651,7 @@ async def play_choose(
 async def play_dynamic_continue(
     session_id: str,
     payload: BranchPlayDynamicRequest,
+    http_request: Request,
     session: AsyncSession = Depends(get_branch_session),
     current_user: User = Depends(get_current_user),
 ) -> dict[str, Any]:
@@ -657,8 +659,10 @@ async def play_dynamic_continue(
 
     - flag `ENABLE_DYNAMIC_BRANCH` が OFF の場合は 503（既定挙動に影響しない）
     - コスト上限（`PLAY_DYNAMIC_MAX_PER_SESSION`）超過時も 503
+    - レート制限（既存 `generate_limiter` と同一の 1 分あたり 10 回）を適用
     - 同期応答（Huey を経由しない・対話は即時応答が前提）
     """
+    await generate_limiter.check(http_request)
     if not _validate_uuid(session_id):
         raise HTTPException(status_code=400, detail="Invalid session_id (UUID required)")
     repo = BranchRepository(session)
@@ -1016,16 +1020,20 @@ async def _handle_dynamic_continue(
 
     started = _time.monotonic()
     use_case = PlayDynamicContinueUseCase(llm=_make_dynamic_llm())
+    # review-loop 指摘 4: シーン番号は動的生成回数ではなく実プレイ進行（履歴長）に基づく
+    history_len = len(context.get("history") or [])
     scene = await use_case.execute(
         current_scene_text=current_text,
         choice_text=choice_text,
         genre=str(context.get("genre") or ""),
         title=str(context.get("title") or ""),
-        scene_number=dyn_count + 1,
+        scene_number=history_len + 1,
     )
 
-    # グラフ更新: 新ノード追加 + 現在ノードに動的選択肢を追加
-    new_node_id = f"dyn_{sess.id}_{dyn_count + 1}"
+    # グラフ更新: 新ノード追加 + 現在ノードに動的選択肢を追加。
+    # review-loop 指摘 3: ID に非決定性要素を含め、rollback もれ等でリトライが
+    # 発生しても既存ノードの上書き・選択肢の重複追記を防ぐ。
+    new_node_id = f"dyn_{sess.id}_{dyn_count + 1}_{uuid.uuid4().hex[:6]}"
     nodes[new_node_id] = {
         "id": new_node_id,
         "content": scene.text,
@@ -1313,6 +1321,10 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
                         str((data or {}).get("choice_text") or "").strip()[:200],
                     )
                 except _DynamicContinueRejected as e:
+                    # review-loop 指摘 1: CAS 失敗時も save_branch_graph の UPDATE が
+                    # トランザクションに残留するため rollback してから次のメッセージに
+                    # 巻き込まれないよう戻す（REST 経路と同一の救済）。
+                    await session.rollback()
                     await websocket.send_json({"type": "error", "message": e.message})
                     continue
 
