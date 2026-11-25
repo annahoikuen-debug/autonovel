@@ -63,9 +63,13 @@
 - 理由は「実 LLM での AB 測定が未実施」。「機能はあるが ON にしてよいかの判断データがない」状態。
 - 実書籍データが存在しない（`scripts/measure_spine_alignment.py` の `book_count = 0`、`docs/STATUS.md` §7）。
   本番デプロイ未実施のため KPI（完走率・伏線回収率・cost/play）がすべて未計測。
-- **CI が発火していない可能性が高い**: `CHANGELOG.md`（Q7・2026-11-24）は「YAML 構文エラー修復で CI 復活」と記載するが、
-  `docs/plans/ROADMAP_PLAYABLE_NOVEL.md` v0.2 §7 は同日「push しても check runs 0・リポジトリ/アカウント設定レベルのブロック推定」と記載。
-  **記述が矛盾しており、実態は未解決。** 最初に要検証（GitHub Settings → Actions / Billing）。
+- **CI が発火していない（2026-11-26 実測で確定）**: GitHub REST API による無認証読み取りの結果、
+  `ci.yml` は **`state: active` で登録済み**（YAML 構文問題は解消済み）であるが、
+  **main ブランチの workflow runs は 0 件**、リポジトリ全体の最終発火は **2026-11-03（`lp.yml`・feature branch）**。
+  つまり **Actions 全体が 2026-11-03 以降 1 件も発火しておらず**、`CHANGELOG.md` Q7 の「CI 復活」記載は誤り
+  （YAML 修復は事実だが発火は復活していない）。不発の原因はリポジトリ/アカウント設定レベル
+  （fork 由来リポジトリでの Actions 無効化 or Billing 等を推定。settings API は認証必須のためユーザー側確認が必要）。
+  実行計画: `plans/PLAN_P0_CLOSE_THE_LOOP_21STEPS.md`（2026-11-25 起票・TRACK-A 実施記録参照）
 
 > これが解けない限り、機能を足すほど判断材料のないフラグが増えるだけになる。
 
@@ -142,12 +146,13 @@
 
 ### 優先度 P1: 進行中の「縦切り」を完成させる（2〜4 週間）
 
-作業ツリーには挿絵 Increment 1（決定的クエリ API・Play 表示・`/static` 配信・vite proxy）の未コミット変更があり、
-テストは緑（backend 8 passed / frontend 11 passed）。これをコミットして縦切りを閉じる:
+> **2026-11-26 更新**: Increment 1（決定的クエリ API・Play 表示・`/static` 配信・vite proxy）は
+> 並行作業セッションにより `8ddfe522`（実装）+ `fa88fe1a`（ドキュメント）として**コミット・push 済み**。
+> 実行計画: `plans/PLAN_P1_PLAY_ILLUSTRATION_16STEPS.md`（2026-11-26 起票）
 
-1. 挿絵 Increment 1 をコミット（現状の WIP を確定）
-2. 挿絵 Increment 2（保存経路の修復: DI への `repo` 注入、パイプライン接続、レート制限）を ADR 003 の範囲で実施
-3. Play モード Phase 1（`ENABLE_DYNAMIC_BRANCH`）は **P0 の KPI 基盤ができてから**着手
+1. ~~挿絵 Increment 1 をコミット~~ → **完了**（`8ddfe522` / `fa88fe1a`）
+2. 挿絵 Increment 2（保存経路の修復: DI への `repo` 注入、`get_chapters` 修復、パイプライン接続、コスト上限）を ADR 003 の範囲で実施
+3. Play モード Phase 1（`ENABLE_DYNAMIC_BRANCH`）— 「P0 の KPI 基盤ができてから」の前提は P0 のユーザー側ブロッカーにより未達だが、ユーザー指示により**実装を先行**する。KPI 計測（cost/play・完走率等）は P0 再開後に取得（**実装完了・計測待ち**）
 
 理由: Play モードは ADR 002 で本線承認済みで、**唯一「生成物がそのまま遊べる」という市場差別化**を持つ機能。
 中途半端に広げず、1 本の体験として完成させる。
