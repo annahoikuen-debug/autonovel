@@ -2,6 +2,12 @@
 
 **作成日:** 2026-11-23
 **ステータス:** 📋 提案(承認待ち)
+
+> **⚠️ 実行方針の上位決定(2026-11-26)**: [`docs/ROADMAP_NEXT.md`](../ROADMAP_NEXT.md) がユーザー裁定により**上位方針として承認**された。これにより:
+> - 実行順序・優先度は ROADMAP_NEXT §5 に従う(**P0「ループを閉じる」が最優先**、P1 で Play 縦切り完成が正式に織り込まれた)
+> - Phase 3 Increment 2 と Phase 1(動的継続生成)の実行は **P1 実行計画書 `plans/PLAN_P1_PLAY_ILLUSTRATION_16STEPS.md` に委譲**(本書はスコープの上位定義として有効)
+> - Increment 1(表示配線)は完了済み(`8ddfe522`/`fa88fe1a`)
+> - Phase 4(UGC・収益)のゲート制は維持(ROADMAP_NEXT P4 も同じ判断)
 **参照サービス:** [ISEKAI ZERO](https://www.isekaizero.ai/ja)(AIチャット × 物語ゲーム型ロールプレイプラットフォーム)
 **前提ドキュメント:** `docs/STATUS.md`(実装状況 SSOT) / `docs/implementation_plans/if_routes_productization.md`(IF ルート製品化 72 ステップ計画)
 
@@ -239,3 +245,4 @@ flowchart LR
 |:--|:--|:---|
 | 2026-11-23 | 0.1 | 初版作成(提案段階・承認待ち) |
 | 2026-11-25 | 0.2 | Phase 0 完了・ADR 002 承認・Phase 3 調査完了を反映。Phase 1 の前提に CI 有効化→デプロイ→KPI のブロッカー連鎖を明記。Phase 3 に調査結果の実装順(保存経路修復→決定的クエリ→表示→配信)を反映。§5 に品質ゲート現状・エージェント協業方針を追加。§7 を現実リスク(CI 不発)に更新 |
+| 2026-11-26 | 0.3 | ROADMAP_NEXT.md の上位方針承認を反映。Increment 2 / Phase 1 の実行を `plans/PLAN_P1_PLAY_ILLUSTRATION_16STEPS.md` に委譲。Increment 1 完了(表示配線)を記録 |

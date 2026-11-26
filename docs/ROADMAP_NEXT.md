@@ -1,7 +1,7 @@
 # AutoNovel 次期方向性ロードマップ（2026-11-25 精査）
 
 作成日: 2026-11-25
-ステータス: 📋 提案（承認待ち）
+ステータス: ✅ 承認（2026-11-26 ユーザー裁定）。本書を上位方針とし、機能系ロードマップ（`docs/plans/ROADMAP_PLAYABLE_NOVEL.md`）の実行順序・優先度は本書 §5 に従う。CI 発火は 2026-11-26 に確認済み（HEAD に 16 check runs）。
 作成経緯: v7.0.0（2026-11-25 時点）のワークツリー実コードに対する精査に基づく方向性提案。
 ルートの `ANALYSIS_AND_PROPOSALS.md`（同日作成・未追跡）の内容を **本書に統合** し、同ファイルは削除済み。
 前提ドキュメント: [`docs/STATUS.md`](STATUS.md)（実装状況 SSOT）/ [`docs/plans/ROADMAP_PLAYABLE_NOVEL.md`](plans/ROADMAP_PLAYABLE_NOVEL.md) / [`docs/ROADMAP_IMPROVEMENTS.md`](ROADMAP_IMPROVEMENTS.md)
