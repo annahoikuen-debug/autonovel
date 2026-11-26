@@ -35,6 +35,21 @@ def main() -> int:
             return 1
         if args.out.read_text(encoding="utf-8") != text:
             print(f"[fail] スナップショットが Reality と不一致。`{args.out}` を再生成せよ")
+            # CI では生成環境差（依存バージョン・実行環境）の切り分けに必要なため
+            # 不一致の差分を表示する（先頭 60 行。巨大化を避けるため制限付き）。
+            import difflib
+
+            current = args.out.read_text(encoding="utf-8").splitlines()
+            reality = text.splitlines()
+            diff = list(
+                difflib.unified_diff(
+                    current, reality, fromfile="snapshot", tofile="reality", n=1, lineterm=""
+                )
+            )
+            for line in diff[:60]:
+                print(line)
+            if len(diff) > 60:
+                print(f"... (diff 全 {len(diff)} 行中 60 行のみ表示)")
             return 1
         print("[ok] スナップショットは最新")
         return 0
