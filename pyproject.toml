@@ -128,8 +128,9 @@ nlp = [
     "spacy>=3.7.0",
 ]
 observability = [
-    # src/monitoring/sentry.py がモジュール直下で import する。
-    # src/api/middleware/error_handler.py:19 側は try/except で保護済み。
+    # src/api/middleware/error_handler.py:19 側は try/except で保護済み（importorskip 系テストの通過条件にも使う）。
+    # 注: 旧 src/monitoring/（sentry.py/otel.py）は PLAN_Q2 で削除済み。本線の
+    # Prometheus メトリクスは src/backend/observability/metrics.py。
     "sentry-sdk>=2.0.0",
 ]
 load = [
