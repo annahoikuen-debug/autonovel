@@ -31,7 +31,7 @@ ADR 003（本線クライアント = Imagen `ImageService`）に基づく生成�
 
 ### P0 実行計画の起票と CI 発火状況の訂正（2026-11-26）
 
-- **CI 発火状況の訂正**: Q7（2026-11-24）の「CI 復活」記載は**誤り**であったことが GitHub REST API（無認証）の実測で確定（`docs/ROADMAP_NEXT.md` §3 / `plans/PLAN_P0_CLOSE_THE_LOOP_21STEPS.md` §1.1）。YAML 構文の修復は事実だが、**全 workflow が 2026-11-03 以降 1 件も発火しておらず**、main ブランチの workflow runs は 0 件。不発の原因は workflow ファイルではなくリポジトリ/アカウント設定レベル（`ci.yml` 自体は `state: active` で登録済み）→ 要ユーザー側確認（Settings → Actions / Billing）
+- **CI 発火状況の訂正 → 同日中に復活**: Q7（2026-11-24）の「CI 復活」記載は**誤り**であったことが GitHub REST API（無認証）の実測で確定（`docs/ROADMAP_NEXT.md` §3 / `plans/PLAN_P0_CLOSE_THE_LOOP_21STEPS.md` §1.1）。YAML 構文の修復は事実だが、**全 workflow が 2026-11-03 以降 1 件も発火しておらず**、main ブランチの workflow runs は 0 件。不発の原因は workflow ファイルではなくリポジトリ/アカウント設定レベル（fork 由来の Actions 無効化を推定）→ ユーザーが Settings を修正し、**同日中に復活**（空コミット push で main に runs 0 → 3 件・`ci.yml` run #1 が史上初めて発火・5 job 起動を確認）。初回 run は format ratchet 1 件のみ fail → `e254d6ac` で修正。**mypy ratchet は CI（Python 3.12）でも成功**（ratchet baseline 450 の妥当性が初めて実機で実証）
 - `plans/PLAN_P0_CLOSE_THE_LOOP_21STEPS.md`（P0「ループを閉じる」実行計画書・21 ステップ）を起票し、TRACK-A を実施（2026-11-26）。TRACK-B/C/D は実行環境の制約（docker 未導入・LLM API キーなし）により ESR 記録として残置。進行方針は計画書 §10.4 の Deviation 記録に従う
 
 ### Phase 3 Increment 1: Play モード挿絵表示（2026-11-25）

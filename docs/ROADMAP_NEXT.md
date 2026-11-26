@@ -63,13 +63,11 @@
 - 理由は「実 LLM での AB 測定が未実施」。「機能はあるが ON にしてよいかの判断データがない」状態。
 - 実書籍データが存在しない（`scripts/measure_spine_alignment.py` の `book_count = 0`、`docs/STATUS.md` §7）。
   本番デプロイ未実施のため KPI（完走率・伏線回収率・cost/play）がすべて未計測。
-- **CI が発火していない（2026-11-26 実測で確定）**: GitHub REST API による無認証読み取りの結果、
-  `ci.yml` は **`state: active` で登録済み**（YAML 構文問題は解消済み）であるが、
-  **main ブランチの workflow runs は 0 件**、リポジトリ全体の最終発火は **2026-11-03（`lp.yml`・feature branch）**。
-  つまり **Actions 全体が 2026-11-03 以降 1 件も発火しておらず**、`CHANGELOG.md` Q7 の「CI 復活」記載は誤り
-  （YAML 修復は事実だが発火は復活していない）。不発の原因はリポジトリ/アカウント設定レベル
-  （fork 由来リポジトリでの Actions 無効化 or Billing 等を推定。settings API は認証必須のためユーザー側確認が必要）。
-  実行計画: `plans/PLAN_P0_CLOSE_THE_LOOP_21STEPS.md`（2026-11-25 起票・TRACK-A 実施記録参照）
+- **CI 不発 → 2026-11-26 に復活（解決済み）**: GitHub REST API による無認証読み取りで「`ci.yml` は `state: active`
+  だが main の workflow runs 0 件・全 workflow が 2026-11-03 以降不発（fork 由来の設定レベル不発）」と確定していたが、
+  **ユーザーが Settings を修正したことで同日中に復活**。空コミット push で main に runs 0 → 3 件（`ci.yml` run #1 が
+  史上初めて発火・5 job 起動を確認）。初回 run は format ratchet 1 件のみ fail（`e254d6ac` で修正）。実行計画:
+  `plans/PLAN_P0_CLOSE_THE_LOOP_21STEPS.md`（TRACK-A 実施記録参照）
 
 > これが解けない限り、機能を足すほど判断材料のないフラグが増えるだけになる。
 

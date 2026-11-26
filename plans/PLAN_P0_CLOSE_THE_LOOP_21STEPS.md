@@ -309,10 +309,10 @@
 | TRACK | ステップ | 状態 | 実施結果 |
 |:---|:---|:---:|:---|
 | A | A1 push と観測 | ✅ | ① `git push origin main` → **Everything up-to-date**（origin/main = `fa88fe1a`、`ls-remote` で一致確認）② **再観測（2026-11-26・P1 実装完了後）**: `273dd0e2..3aed9648` を push（Increment 2 / Play Phase 1 / 計画書）。push 自体は届いているが **check runs は 0 のまま**（A2 未解決を再確認） |
-| A | A2 設定切り分け（ユーザー） | ⏸ ESR | `gh` 未導入のため GitHub REST API（無認証）で代替実施。**判明した実測**: ① 6 workflows すべて `state: active`（ci.yml 含む、updated 2026-11-23）② main ブランチの runs = **0 件** ③ リポジトリ全体 32 runs・最終発火 2026-11-03 16:38（`lp.yml` × feature branch・failure）④ `/actions/permissions` は 401（認証必須）。**結論: workflow ファイル側は正常、不発はリポジトリ/アカウント設定レベルで確定。** Settings（Actions 有効化・Billing）の確認は**ユーザー側タスクとして残置** |
+| A | A2 設定切り分け（ユーザー） | ✅ **完了** | ① 初回（2026-11-26）: `gh` 未導入のため GitHub REST API（無認証）で代替実施し、**不発の原因はリポジトリ/アカウント設定レベル**と確定（main runs 0 件・全 workflow 11-03 以降不発・`/actions/permissions` は 401）。② **ユーザーが Settings を確認・修正（fork の Actions 有効化等）し、同日中に解消** |
 | A | A3 workflow 登録確認 | ✅ | `ci.yml` は workflows API に registered・active。YAML パース失敗は解消済みと確認（`test_workflow_syntax.py` の対象領域） |
-| A | A4 実発火確認 | ⏸ ESR | A2（ユーザー側設定）が解けない限り発火しない。**本計画ではここで停止し、P1 へ進行**（根拠は §10.4 D-1: ユーザーの 2026-11-26 指示。ESR §9 の「3 日以上停滞」条項は未達のため適用外） |
-| A | A5 CI 緑確定 | ⏸ ESR | 未達。ただし記述矛盾の解消は実施済み: ① `docs/ROADMAP_NEXT.md` §3 課題A と本書 §1.1 に 2026-11-26 実測を反映 ② `CHANGELOG.md` Unreleased に Q7「CI 復活」記載の訂正注記を追加（A5 の割当タスクとして実施） |
+| A | A4 実発火確認 | ✅ **完了（2026-11-26）** | 空コミット `74ac31e6` を push → **main ブランチの workflow runs が 0 → 3 件**。`ci.yml` が **run #1 として史上初めて発火**（lp.yml #33・fusion.yml #1 も同時発火）。5 job 起動を確認 |
+| A | A5 CI 緑確定 | 🔄 実施中 | 初回 run（`74ac31e6`）の実測: **release-consistency ✅ / static-analysis ❌（format ratchet のみ）** / test・integration・frontend 実行中。**mypy ratchet は CI（Python 3.12）で成功**（§1.1 の「予測値 388」は pass 実績に）。format fail の原因は Increment 2 で触った `pipeline_steps.py` 1 か所の未整形 → `e254d6ac` で修正済み・**再観測待ち**。記述矛盾の解消（ROADMAP_NEXT §3 課題A・CHANGELOG 訂正注記）は実施済み |
 
 ### 10.2 TRACK-B/C/D（ESR 記録 — 2026-11-26 時点の実行環境）
 
