@@ -10,7 +10,10 @@ dependencies = [
     "pydantic>=2.6",
     "pydantic-settings>=2.2",
     "email-validator>=2.0.0",
-    "sqlalchemy>=2.0",
+    # [asyncio] extra で greenlet を保証する（asyncio モジュールは必須依存。
+    # requirements.txt は greenlet を明示指定しているが、pip install -e ..
+    # のみの環境（CI frontend job のスナップショット鮮度確認等）でも動くように）。
+    "sqlalchemy[asyncio]>=2.0",
     "huey>=2.5",
     "httpx>=0.27",
     "psycopg2-binary>=2.9",
