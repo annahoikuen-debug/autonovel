@@ -527,9 +527,7 @@ class IllustrationStep(WorkflowStep):
             ill_settings = dict(ctx.illustration_settings)
             ill_settings.setdefault("maxPerBook", app_settings.ILLUSTRATION_MAX_PER_BOOK)
 
-            ill_res = await ill_workflow.execute(
-                reporter=reporter, book_id=ctx.book_id, settings=ill_settings
-            )
+            ill_res = await ill_workflow.execute(reporter=reporter, book_id=ctx.book_id, settings=ill_settings)
             if ill_res.get("status") == "success":
                 ctx.illustrations = ill_res.get("illustrations", [])
                 reporter.report(f"🎨 挿絵生成完了: {len(ctx.illustrations)}枚", "info")
