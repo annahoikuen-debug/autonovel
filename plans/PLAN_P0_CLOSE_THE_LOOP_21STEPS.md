@@ -312,7 +312,7 @@
 | A | A2 設定切り分け（ユーザー） | ✅ **完了** | ① 初回（2026-11-26）: `gh` 未導入のため GitHub REST API（無認証）で代替実施し、**不発の原因はリポジトリ/アカウント設定レベル**と確定（main runs 0 件・全 workflow 11-03 以降不発・`/actions/permissions` は 401）。② **ユーザーが Settings を確認・修正（fork の Actions 有効化等）し、同日中に解消** |
 | A | A3 workflow 登録確認 | ✅ | `ci.yml` は workflows API に registered・active。YAML パース失敗は解消済みと確認（`test_workflow_syntax.py` の対象領域） |
 | A | A4 実発火確認 | ✅ **完了（2026-11-26）** | 空コミット `74ac31e6` を push → **main ブランチの workflow runs が 0 → 3 件**。`ci.yml` が **run #1 として史上初めて発火**（lp.yml #33・fusion.yml #1 も同時発火）。5 job 起動を確認 |
-| A | A5 CI 緑確定 | 🔄 実施中 | 初回 run（`74ac31e6`）の実測: **release-consistency ✅ / static-analysis ❌（format ratchet のみ）** / test・integration・frontend 実行中。**mypy ratchet は CI（Python 3.12）で成功**（§1.1 の「予測値 388」は pass 実績に）。format fail の原因は Increment 2 で触った `pipeline_steps.py` 1 か所の未整形 → `e254d6ac` で修正済み・**再観測待ち**。記述矛盾の解消（ROADMAP_NEXT §3 課題A・CHANGELOG 訂正注記）は実施済み |
+| A | A5 CI 緑確定 | 🔄 実施中 | **run #1（`74ac31e6`）**: release-consistency ✅ / static-analysis ❌（format ratchet のみ）→ `e254d6ac` で修正。**mypy ratchet は CI（Python 3.12）で成功**（§1.1 の「予測値 388」は pass 実績に）。**run #3（`c8d4a73c`）**: release-consistency ✅・**static-analysis ✅（format 修正が効いた・ruff/mypy/format/untracked/layer 全緑）**・integration 実行中 / test ❌（**collection regression guard 失敗**・unit suite 未実行）/ frontend ❌（**planning_options スナップショット鮮度失敗**・Typecheck/Lint/Unit tests は ✅）。**両失敗ともローカル（3.13.5）では再現不能**（check_test_collection exit 0 actual=10047 > baseline 9763 / planning_options --check ok・`.env` 退避・DB 退避でも一致）。CI 環境（Python 3.12・最小依存）特有の問題と推定。**ログは認証必須（403 実測）のためユーザーにログ共有 or `gh auth` を依頼中** |
 
 ### 10.2 TRACK-B/C/D（ESR 記録 — 2026-11-26 時点の実行環境）
 
