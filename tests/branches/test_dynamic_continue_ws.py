@@ -249,6 +249,29 @@ def test_dynamic_continue_rest_full_flow(client):
         bmod.settings.ENABLE_DYNAMIC_BRANCH = False
 
 
+def test_dynamic_continue_ws_rate_limited(client):
+    """WS 動的継続の接続単位レート制限(10 回/分)。
+
+    flag OFF でも reject 前にスロットを消費するため、LLM モック不要で検証できる:
+    同一接続で 11 回送ると 10 回は "dynamic continuation is disabled"、
+    11 回目はレート制限エラーになる(review-loop Round 2 指摘 1)。
+    """
+    sid = _setup_play(client)
+    with client.websocket_connect(f"/api/branches/play/{sid}/ws", headers=_ws_headers()) as ws:
+        initial = ws.receive_json()
+        assert initial["type"] == "state"
+
+        for i in range(10):
+            ws.send_json({"action": "dynamic_continue", "choice_text": f"x{i}"})
+            resp = ws.receive_json()
+            assert resp == {"type": "error", "message": "dynamic continuation is disabled"}
+
+        ws.send_json({"action": "dynamic_continue", "choice_text": "x10"})
+        resp = ws.receive_json()
+        assert resp["type"] == "error"
+        assert resp["message"] == "dynamic rate limit exceeded (10/min)"
+
+
 def test_existing_choose_unaffected(client):
     """既存 choose は動的継続追加の影響を受けない（既存挙動不変）。"""
     r = client.post("/api/branches/", json={"book_id": 1, "name": "c"})

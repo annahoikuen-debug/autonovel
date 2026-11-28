@@ -137,3 +137,57 @@ def settings_enabled() -> bool:
     from src.infrastructure.config.settings import settings
 
     return bool(settings.ENABLE_DYNAMIC_BRANCH)
+
+
+def test_dynamic_continue_cas_failure_maps_to_409() -> None:
+    """CAS 失敗（楽観ロック競合）は 409 に変換される（一時障害の 503 と区別）。
+
+    review-loop Round 2 指摘 2: 503 のままだとクライアントが「一時障害」と
+    誤認してリトライ設計を誤る。`_DynamicContinueRejected.status_code` の契約を
+    スタブ repo で直接検証する（flag ON が必要なため設定し teardown で戻す）。
+    """
+    import asyncio
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    from src.backend.routers import branches as br
+    from src.infrastructure.config.settings import settings as app_settings
+
+    sess = SimpleNamespace(
+        id="sess-1",
+        book_id=1,
+        branch_id=1,
+        current_node_id="n1",
+        version=1,
+        status="active",
+        context_json={"dynamic_count": 0, "history": []},
+        save_points_json=[],
+    )
+    repo = SimpleNamespace(
+        load_branch_graph=AsyncMock(
+            return_value={"entry_node_id": "n1", "nodes": {"n1": {"content": "start", "choices": []}}}
+        ),
+        save_branch_graph=AsyncMock(),
+        update_play_session_state_optimistic=AsyncMock(return_value=False),
+    )
+
+    original_flag = app_settings.ENABLE_DYNAMIC_BRANCH
+    original_llm = br._make_dynamic_llm
+    app_settings.ENABLE_DYNAMIC_BRANCH = True
+
+    async def _fake_llm(prompt: str) -> str:
+        return _sample_llm_response()
+
+    br._make_dynamic_llm = lambda: _fake_llm
+    try:
+        with pytest.raises(br._DynamicContinueRejected) as ei:
+            asyncio.run(
+                br._handle_dynamic_continue(repo=repo, session=None, sess=sess, choice_text="前へ進む")
+            )
+        assert ei.value.status_code == 409
+        assert ei.value.message == "Concurrent modification"
+        # save_branch_graph は CAS 前に呼ばれる（REST/WS 経路で rollback される対象）
+        repo.save_branch_graph.assert_awaited_once()
+    finally:
+        app_settings.ENABLE_DYNAMIC_BRANCH = original_flag
+        br._make_dynamic_llm = original_llm
