@@ -673,7 +673,7 @@ async def play_dynamic_continue(
         scene = await _handle_dynamic_continue(repo, session, sess, payload.choice_text.strip())
     except _DynamicContinueRejected as e:
         await session.rollback()
-        raise HTTPException(status_code=503, detail=e.message)
+        raise HTTPException(status_code=e.status_code, detail=e.message)
     await session.commit()
 
     fresh = await repo.get_play_session(session_id)
@@ -981,11 +981,17 @@ def _make_dynamic_llm() -> Any:
 
 
 class _DynamicContinueRejected(Exception):
-    """動的継続が不可の理由を表す（WS は error 応答、REST は 503 に変換）。"""
+    """動的継続が不可の理由を表す（WS は error 応答、REST は対応する HTTP ステータスに変換）。
 
-    def __init__(self, message: str):
+    既定は 503（flag OFF などのサービス側要因）。クライアント側の状態競合
+    （CAS 失敗など）は 409 を渡す——503 だとクライアントが「一時障害」と
+    誤認してリトライ設計を誤る（review-loop Phase 1 Round 1 指摘 4）。
+    """
+
+    def __init__(self, message: str, status_code: int = 503):
         super().__init__(message)
         self.message = message
+        self.status_code = status_code
 
 
 async def _handle_dynamic_continue(
@@ -1063,7 +1069,7 @@ async def _handle_dynamic_continue(
         save_points_json=list(sess.save_points_json or []),
     )
     if not ok:
-        raise _DynamicContinueRejected("Concurrent modification")
+        raise _DynamicContinueRejected("Concurrent modification", status_code=409)
 
     # メトリクス (P4)
     from src.backend.observability.metrics import (
@@ -1088,6 +1094,10 @@ async def _handle_dynamic_continue(
 _WS_MAX_MESSAGE_BYTES = 64 * 1024
 # 1 接続あたりのメッセージレート上限 (1 秒あたりの受信回数)
 _WS_MAX_MESSAGES_PER_SEC = 50
+# 動的継続 (LLM 呼び出し) の接続あたり上限 (1 分あたり)。REST の generate_limiter
+# と同じ 10 回/分相当——WS には REST のリミッタが効かないため接続単位で敷く
+# (review-loop Phase 1 Round 1 指摘 3)
+_WS_DYNAMIC_MAX_PER_MIN = 10
 # WebSocket 認可失敗時に使う application-defined close code
 _WS_POLICY_VIOLATION = 1008
 
@@ -1182,6 +1192,9 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
 
         # 初期 state を push
         await websocket.send_json(await _load_state_dict(repo, sess))
+
+        # 動的継続 (LLM 呼び出し) の接続単位レート制限用タイムスタンプ
+        dynamic_call_times: list[float] = []
 
         while True:
             if sess is None:
@@ -1313,6 +1326,16 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
                 # PLAN_P1 TRACK-P (P3): 選択の続きを LLM で生成する動的継続。
                 # 共有ヘルパー（REST 経路と同一ロジック）。flag OFF では error 応答
                 # のみ（既存の未定義アクション扱いと同一・off 差分ゼロ）。
+                # レート制限: LLM 呼び出しを伴うため接続あたり 10 回/分
+                # （REST は generate_limiter 10 回/分と同一水準。review-loop 指摘 3）。
+                now = asyncio.get_event_loop().time()
+                dynamic_call_times[:] = [t for t in dynamic_call_times if now - t < 60.0]
+                if len(dynamic_call_times) >= _WS_DYNAMIC_MAX_PER_MIN:
+                    await websocket.send_json(
+                        {"type": "error", "message": "dynamic rate limit exceeded (10/min)"}
+                    )
+                    continue
+                dynamic_call_times.append(now)
                 try:
                     payload_scene = await _handle_dynamic_continue(
                         repo,

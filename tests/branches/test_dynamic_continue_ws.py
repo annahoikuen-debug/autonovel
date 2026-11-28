@@ -15,6 +15,20 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.backend.database.models import Base, Book, User
+from src.backend.observability import metrics as _metrics
+
+
+def _scene_metric_total() -> float:
+    """play_dynamic_scenes_total のカウンタ合計(未初期化なら 0)。
+
+    `_created` サンプル(Unix タイムスタンプ)は除外する。
+    """
+    return sum(
+        s.value
+        for family in _metrics.play_dynamic_scenes_total.collect()
+        for s in family.samples
+        if s.name.endswith("_total")
+    )
 
 
 @pytest.fixture
@@ -143,13 +157,18 @@ def test_dynamic_continue_disabled_by_default(client):
 
 
 def test_dynamic_continue_full_flow(client):
-    """flag ON: 選択 → 生成 → 新ノード追加 → セッション移動が完走する。"""
+    """flag ON: 選択 → 生成 → 新ノード追加 → セッション移動が完走する。
+
+    メトリクスの陽性対照も兼ねる: 成功 1 回で play_dynamic_scenes_total が
+    ちょうど 1 増えること（無音性契約の逆側。契約テストの恒真排除と対になる）。
+    """
     from src.backend.routers import branches as bmod
 
     sid = _setup_play(client)
     with client.websocket_connect(f"/api/branches/play/{sid}/ws", headers=_ws_headers()) as ws:
         initial = ws.receive_json()
         assert initial["type"] == "state"
+        metric_before = _scene_metric_total()
 
         bmod.settings.ENABLE_DYNAMIC_BRANCH = True
         try:
@@ -166,6 +185,8 @@ def test_dynamic_continue_full_flow(client):
             assert state["current_node_id"] == scene["node_id"]
             assert state["dynamic_available"] is True
             assert state["dynamic_count"] == 1
+            # 陽性対照: 成功 1 回でカウンタが +1
+            assert _scene_metric_total() == pytest.approx(metric_before + 1)
         finally:
             bmod.settings.ENABLE_DYNAMIC_BRANCH = False
 
@@ -190,6 +211,43 @@ def test_dynamic_continue_respects_session_limit(client):
         finally:
             bmod.settings.ENABLE_DYNAMIC_BRANCH = False
             bmod.settings.PLAY_DYNAMIC_MAX_PER_SESSION = original_limit
+
+
+def test_dynamic_continue_rest_disabled_by_default(client):
+    """flag OFF（既定）: REST dynamic は 503（off 差分ゼロ契約の HTTP レベル検証）。
+
+    review-loop Round 1 指摘 1（ブロッカー）: これまで WS 経路のみの検証で、
+    REST の flag ゲートが実 HTTP レベルで未テストだった。
+    """
+    sid = _setup_play(client)
+    r = client.post(
+        f"/api/branches/play/{sid}/dynamic",
+        json={"choice_text": "前へ進む"},
+        headers=_ws_headers(),
+    )
+    assert r.status_code == 503
+    assert r.json()["detail"] == "dynamic continuation is disabled"
+
+
+def test_dynamic_continue_rest_full_flow(client):
+    """flag ON: REST でも選択 → 生成 → 新ノード → セッション移動が完走する。"""
+    from src.backend.routers import branches as bmod
+
+    sid = _setup_play(client)
+    bmod.settings.ENABLE_DYNAMIC_BRANCH = True
+    try:
+        r = client.post(
+            f"/api/branches/play/{sid}/dynamic",
+            json={"choice_text": "前へ進む"},
+            headers=_ws_headers(),
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert "剣" in body["scene"]["text"]
+        assert body["scene"]["dynamic_count"] == 1
+        assert body["state"]["current_node_id"] == body["scene"]["node_id"]
+    finally:
+        bmod.settings.ENABLE_DYNAMIC_BRANCH = False
 
 
 def test_existing_choose_unaffected(client):

@@ -119,6 +119,7 @@ flowchart LR
   - 選択 → 次シーン生成の経路を WS(`play_ws`)に追加。同期応答のため Huey バッチは経由させない(対話は即時応答が前提)
   - 生成は既存執筆パイプラインの軽量版(コンテキスト構築 + 本文生成 + 簡易監査)を流用。4 層境界を守り、use_cases 層に新規ユースケースとして実装
   - コスト計測メトリクス(1 プレイあたりトークン/コスト)を `src/backend/observability/metrics.py` に追加
+  - **仕様メモ(動的ノードの蓄積)**: 動的ノードは分岐グラフへ**永続蓄積**される(プレイスルーごとに dynamic ノード+選択肢が増える。セッション上限 `PLAY_DYNAMIC_MAX_PER_SESSION=30` と WS 10 回/分のレート制限で律速)。merge・`/validate`・グラフ編集 UI への長期的影響を踏まえ、セッションスコープ化または終了時圧縮を Increment 3/Phase 2 で検討する(review-loop Round 1 指摘 5)
   - 従量課金の設計(Spending 実装は Stripe 基盤 `src/backend/routers/billing.py` を拡張。実装は Phase 2 以降にずらしてもよい)
 - **Non-goal**: フルフリーチャット(自由入力での RP は選択肢の自由記述程度に限定して検討)
 - **前提**: Phase 0 完了(2026-11-23)+ **KPI ベースライン取得**。KPI の前提連鎖: CI 有効化(GitHub Actions がリポジトリ設定レベルでブロック中・2026-11-24 確認、GitHub Settings 確認はユーザー側タスク)→ 本番デプロイ → `branch_play_sessions` の行集計

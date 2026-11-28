@@ -2,9 +2,10 @@
 
 契約:
 - `ENABLE_DYNAMIC_BRANCH=false`（既定）: WS の `dynamic_continue` は error 応答のみ・
-  既存 `choose` は無影響・REST エンドポイントを増やさない（openapi 差分ゼロの根拠）
+  既存 `choose` は無影響・REST は 503（flag ゲート。off 差分ゼロの HTTP 検証は
+  `tests/branches/test_dynamic_continue_ws.py` の REST テスト）
 - use case は LLM 応答の JSON パースに fail-open し、決定論的プロンプトを持つ
-- メトリクスは flag OFF で無音（WS E2E は `tests/branches/test_dynamic_continue_ws.py`）
+- メトリクスは flag OFF で無音（拒否経路を実際に実行して前後比較する）
 """
 
 from __future__ import annotations
@@ -94,8 +95,9 @@ def test_dynamic_branch_flag_on_via_env() -> None:
 def test_dynamic_continue_rest_registered_but_flag_gated() -> None:
     """動的継続は WS と REST に実装される（Play UI は REST ベース・Phase 0 方針と整合）。
 
-    REST は flag OFF で 503 を返すため、既定挙動に影響しない
-    （E2E は `tests/branches/test_dynamic_continue_ws.py` で担保）。
+    REST は flag OFF で 503 を返すため、既定挙動に影響しない。
+    HTTP レベルの 503/200 検証は
+    `tests/branches/test_dynamic_continue_ws.py` の REST テストで担保する。
     """
     from src.backend.routers import branches as br
 
@@ -111,14 +113,22 @@ def _metric_samples(metric) -> list[tuple[str, float]]:
 def test_dynamic_metrics_silent_by_default() -> None:
     """flag OFF（既定）では動的生成メトリクスが増えない（無音性契約）。
 
-    実際の無音性（WS の flag OFF で generate を呼ばない）は
-    `tests/branches/test_dynamic_continue_ws.py::test_dynamic_continue_disabled_by_default`
-    が担保する。ここではカウンタ自体が変化しないことを確認する。
+    before/after の間で flag OFF の**拒否経路を実際に実行**する
+    （router 共有ヘルパーが `_DynamicContinueRejected` を送出するまで進む。
+    repo/session は触られる前に拒否されるため None でよい）。
+    拒否経路がカウンタに触れないことの実質検証であり、
+    恒真 assert（before と after の間に何も実行しない比較）は排除した
+    （review-loop Phase 1 Round 1 指摘 2）。
     """
+    import asyncio
+
     from src.backend.observability import metrics as m
+    from src.backend.routers import branches as br
 
     assert settings_enabled() is False
     before = _metric_samples(m.play_dynamic_scenes_total)
+    with pytest.raises(br._DynamicContinueRejected):
+        asyncio.run(br._handle_dynamic_continue(repo=None, session=None, sess=None, choice_text="x"))
     after = _metric_samples(m.play_dynamic_scenes_total)
     assert before == after
 
