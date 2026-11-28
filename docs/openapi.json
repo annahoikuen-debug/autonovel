@@ -10619,7 +10619,7 @@
           "branches"
         ],
         "summary": "Play Dynamic Continue",
-        "description": "動的継続生成: 選択の続きを LLM で生成し、新ノードとしてグラフに追加する (PLAN_P1 TRACK-P).\n\n- flag `ENABLE_DYNAMIC_BRANCH` が OFF の場合は 503（既定挙動に影響しない）\n- コスト上限（`PLAY_DYNAMIC_MAX_PER_SESSION`）超過時も 503\n- 同期応答（Huey を経由しない・対話は即時応答が前提）",
+        "description": "動的継続生成: 選択の続きを LLM で生成し、新ノードとしてグラフに追加する (PLAN_P1 TRACK-P).\n\n- flag `ENABLE_DYNAMIC_BRANCH` が OFF の場合は 503（既定挙動に影響しない）\n- コスト上限（`PLAY_DYNAMIC_MAX_PER_SESSION`）超過時も 503\n- レート制限（既存 `generate_limiter` と同一の 1 分あたり 10 回）を適用\n- 同期応答（Huey を経由しない・対話は即時応答が前提）",
         "operationId": "play_dynamic_continue_api_branches_play__session_id__dynamic_post",
         "security": [
           {
