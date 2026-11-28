@@ -93,6 +93,7 @@ def client():
         return Book(id=book_id, user_id=1)
 
     bmod.verify_book_ownership = _fake_verify_book_ownership
+
     # 動的生成の LLM をモック（決定論的 JSON 応答）
     async def _fake_llm(prompt: str) -> str:
         return json.dumps({"scene": "夜風の中、彼は剣を抜いた。", "choices": ["前へ進む", "休む"]}, ensure_ascii=False)
@@ -134,9 +135,7 @@ def _setup_play(client):
     bid = r.json()["id"]
     graph = {
         "entry_node_id": "n1",
-        "nodes": {
-            "n1": {"id": "n1", "episode_num": 1, "content": "start", "branch_type": "choice", "choices": []}
-        },
+        "nodes": {"n1": {"id": "n1", "episode_num": 1, "content": "start", "branch_type": "choice", "choices": []}},
     }
     client.put(f"/api/branches/1/graph?branch_id={bid}", json=graph)
     return client.post("/api/branches/play", json={"book_id": 1, "branch_id": bid}).json()["session_id"]

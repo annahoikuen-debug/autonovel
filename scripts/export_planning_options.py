@@ -41,11 +41,7 @@ def main() -> int:
 
             current = args.out.read_text(encoding="utf-8").splitlines()
             reality = text.splitlines()
-            diff = list(
-                difflib.unified_diff(
-                    current, reality, fromfile="snapshot", tofile="reality", n=1, lineterm=""
-                )
-            )
+            diff = list(difflib.unified_diff(current, reality, fromfile="snapshot", tofile="reality", n=1, lineterm=""))
             for line in diff[:60]:
                 print(line)
             if len(diff) > 60:

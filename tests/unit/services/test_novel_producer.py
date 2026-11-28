@@ -172,8 +172,11 @@ class TestBuildContext:
     def test_build_context_first_episode(self):
         producer = NovelProducer()
         project = NovelProject(
-            title="t", genre="g", synopsis="s",
-            target_episodes=5, target_word_count_per_episode=3000,
+            title="t",
+            genre="g",
+            synopsis="s",
+            target_episodes=5,
+            target_word_count_per_episode=3000,
         )
         producer.create_project(project)
         context = producer._build_context(ep_num=1)
@@ -187,8 +190,11 @@ class TestBuildContext:
     def test_build_context_last_episode(self):
         producer = NovelProducer()
         project = NovelProject(
-            title="t", genre="g", synopsis="s",
-            target_episodes=5, target_word_count_per_episode=3000,
+            title="t",
+            genre="g",
+            synopsis="s",
+            target_episodes=5,
+            target_word_count_per_episode=3000,
         )
         producer.create_project(project)
         context = producer._build_context(ep_num=5)
@@ -208,8 +214,11 @@ class TestBuildContext:
     def test_build_context_with_previous_episode(self):
         producer = NovelProducer()
         project = NovelProject(
-            title="t", genre="g", synopsis="s",
-            target_episodes=5, target_word_count_per_episode=3000,
+            title="t",
+            genre="g",
+            synopsis="s",
+            target_episodes=5,
+            target_word_count_per_episode=3000,
         )
         producer.create_project(project)
         # 1話目を追加
@@ -242,8 +251,11 @@ class TestGenerateEpisode:
         producer.episode_writer = writer
 
         project = NovelProject(
-            title="t", genre="g", synopsis="s",
-            target_episodes=3, target_word_count_per_episode=3000,
+            title="t",
+            genre="g",
+            synopsis="s",
+            target_episodes=3,
+            target_word_count_per_episode=3000,
         )
         producer.create_project(project)
 
@@ -268,8 +280,11 @@ class TestGenerateEpisode:
         producer.episode_writer = writer
 
         project = NovelProject(
-            title="t", genre="g", synopsis="s",
-            target_episodes=3, target_word_count_per_episode=3000,
+            title="t",
+            genre="g",
+            synopsis="s",
+            target_episodes=3,
+            target_word_count_per_episode=3000,
         )
         producer.create_project(project)
 
@@ -301,8 +316,11 @@ class TestGenerateEpisode:
         producer.episode_writer = writer
 
         project = NovelProject(
-            title="t", genre="g", synopsis="s",
-            target_episodes=3, target_word_count_per_episode=3000,
+            title="t",
+            genre="g",
+            synopsis="s",
+            target_episodes=3,
+            target_word_count_per_episode=3000,
         )
         producer.create_project(project)
 
@@ -323,8 +341,11 @@ class TestGenerateAllEpisodes:
         producer.episode_writer = writer
 
         project = NovelProject(
-            title="t", genre="g", synopsis="s",
-            target_episodes=3, target_word_count_per_episode=3000,
+            title="t",
+            genre="g",
+            synopsis="s",
+            target_episodes=3,
+            target_word_count_per_episode=3000,
         )
         producer.create_project(project)
 
@@ -368,8 +389,11 @@ class TestGenerateAllEpisodes:
         producer.episode_writer = writer
 
         project = NovelProject(
-            title="t", genre="g", synopsis="s",
-            target_episodes=3, target_word_count_per_episode=3000,
+            title="t",
+            genre="g",
+            synopsis="s",
+            target_episodes=3,
+            target_word_count_per_episode=3000,
         )
         producer.create_project(project)
 
@@ -443,7 +467,9 @@ class TestGenerateReport:
     def test_generate_report_without_episodes(self):
         producer = NovelProducer()
         project = NovelProject(
-            title="t", genre="g", synopsis="s",
+            title="t",
+            genre="g",
+            synopsis="s",
             target_episodes=1,
         )
         producer.create_project(project)
@@ -476,8 +502,11 @@ class TestGenerateAllEpisodesEdgeCases:
         producer.episode_writer = writer
 
         project = NovelProject(
-            title="t", genre="g", synopsis="s",
-            target_episodes=2, target_word_count_per_episode=3000,
+            title="t",
+            genre="g",
+            synopsis="s",
+            target_episodes=2,
+            target_word_count_per_episode=3000,
         )
         producer.create_project(project)
 

@@ -220,9 +220,7 @@ class TestCharacterArc:
 
     def test_to_metadata(self):
         novel_id = NovelId.generate()
-        character = Character.create(
-            novel_id, "名前", "役割", "人格", "能力"
-        )
+        character = Character.create(novel_id, "名前", "役割", "人格", "能力")
         metadata = character.to_metadata()
         assert metadata.name == "名前"
         assert metadata.role == "役割"

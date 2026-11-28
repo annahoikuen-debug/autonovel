@@ -1331,9 +1331,7 @@ async def play_ws(websocket: WebSocket, session_id: str) -> None:
                 now = asyncio.get_event_loop().time()
                 dynamic_call_times[:] = [t for t in dynamic_call_times if now - t < 60.0]
                 if len(dynamic_call_times) >= _WS_DYNAMIC_MAX_PER_MIN:
-                    await websocket.send_json(
-                        {"type": "error", "message": "dynamic rate limit exceeded (10/min)"}
-                    )
+                    await websocket.send_json({"type": "error", "message": "dynamic rate limit exceeded (10/min)"})
                     continue
                 dynamic_call_times.append(now)
                 try:

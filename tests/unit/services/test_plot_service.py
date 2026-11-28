@@ -82,9 +82,7 @@ class TestPlotService:
         repo.plots_return_value = [{"ep": 1}]
         service = PlotService(repo)
 
-        result = await service.get_plots_between(
-            book_id=42, start_ep=1, end_ep=3, branch_id=99
-        )
+        result = await service.get_plots_between(book_id=42, start_ep=1, end_ep=3, branch_id=99)
 
         assert len(result) == 1
         args, kwargs = repo.get_plots_between_calls[0]
@@ -108,9 +106,7 @@ class TestPlotService:
         repo = _StubRepository()
         service = PlotService(repo)
 
-        await service.update_plot_blueprint(
-            branch_id=99, ep_num=3, blueprint="blueprint text", book_id=42
-        )
+        await service.update_plot_blueprint(branch_id=99, ep_num=3, blueprint="blueprint text", book_id=42)
 
         args, kwargs = repo.update_plot_blueprint_calls[0]
         assert args == (99, 3, "blueprint text")
